@@ -1,0 +1,9 @@
+
+/* Bison & Flex found */
+#undef HAVE_BISON_FLEX
+
+/* Libxml2 found */
+#undef HAVE_LIBXML2
+
+/* Red-black tree lookup is enabled */
+#undef RL_TREE_LOOKUP
