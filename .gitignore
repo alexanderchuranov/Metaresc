@@ -1,3 +1,9 @@
+*.la
+*.lex.[ch]
+*.lo
+*.o
+*.tab.[ch]
+/Makefile.in
 aclocal.m4
 autom4te.cache/*
 config.guess
@@ -13,11 +19,6 @@ m4/*
 missing
 src/.deps/*
 src/.libs/*
-*.lex.[ch]
-*.tab.[ch]
-*.lo
-*.la
-*.o
 src/stamp-h1
 src/stamp-h2
 tests/.deps/*
