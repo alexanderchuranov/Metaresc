@@ -404,7 +404,7 @@ hash_str (char * str)
   if (NULL == str)
     return (hash_value);
   while (*str)
-    hash_value += hash_value * 61 + (unsigned char)*str++;
+    hash_value = (hash_value + (unsigned char)*str++) * 0xFEDCBA987654321;
   return (hash_value);
 }
 
