@@ -222,7 +222,7 @@ RL_TYPEDEF_STRUCT ()
 #ifndef RL_TREE_LOOKUP
   RL_STRUCT (rl_ra_rl_td_ptr_t, hash, "hash for type descriptors lookup")
 #else /* RL_TREE_LOOKUP */
-  RL_POINTER_STRUCT (rl_red_black_tree_node_t, tree, "B-tree for type descriptors lookup")
+  RL_POINTER (rl_red_black_tree_node_t, tree, "B-tree for type descriptors lookup")
 #endif /* RL_TREE_LOOKUP */
   RL_RARRAY (rl_td_ptr_t, des, "types descriptors")
   RL_POINTER (rl_red_black_tree_node_t, enum_by_name, "B-tree with enums mapping")
