@@ -50,8 +50,8 @@ RL_END_UNION ("comment")
 #define RL_TYPE_NAME union_enum_discriminator_t
 RL_TYPEDEF_ENUM ()
   RL_ENUM_DEF (UED_DEFAULT)
-  RL_COMMENTED_ENUM_DEF (UED_INT32, , "union_uint32")
-  RL_COMMENTED_ENUM_DEF (UED_FLOAT, , "union_float")
+  RL_ENUM_DEF (UED_INT32, , "union_uint32")
+  RL_ENUM_DEF (UED_FLOAT, , "union_float")
 RL_END_ENUM ()
 
 #undef RL_TYPE_NAME
