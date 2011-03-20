@@ -77,10 +77,6 @@ extern void tdestroy (void *__root, __free_fn_t __freefct);
 #define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 
-#define malloc(ARGS...) RL_MALLOC(ARGS)
-#define realloc(ARGS...) RL_REALLOC(ARGS)
-#define free(ARGS...) RL_FREE(ARGS)
-
 #define node_t RL_TYPEDEF_PREFIX(rl_red_black_tree_node_t)
 typedef struct node_t *node;
 
