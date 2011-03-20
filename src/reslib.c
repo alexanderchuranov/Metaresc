@@ -24,14 +24,19 @@
 #define RL_MODE DESC /* we'll need descriptors of our own types */
 #include <rlprotos.h>
 
+static void * rl_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
+static void * rl_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
+static char * rl_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
+static void rl_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
+
 /** ResLib configuration structure */
 rl_conf_t rl_conf = {
   .rl_mem = { /**< all memory functions may be replaced on user defined */
     .mem_alloc_strategy = 2, /**< Memory allocation strategy. Default is to double buffer every time. */
-    .malloc = malloc, /**< Pointer to malloc function. */
-    .realloc = realloc, /**< Pointer to realloc function. */
-    .strdup = strdup, /**< Pointer to strdup function. */
-    .free = free, /**< Pointer to free function. */
+    .malloc = rl_malloc, /**< Pointer to malloc function. */
+    .realloc = rl_realloc, /**< Pointer to realloc function. */
+    .strdup = rl_strdup, /**< Pointer to strdup function. */
+    .free = rl_free, /**< Pointer to free function. */
   },
   .log_level = RL_LL_ALL, /**< default log level ALL */
   .msg_handler = NULL, /**< pointer on user defined message handler */
