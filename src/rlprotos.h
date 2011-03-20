@@ -195,10 +195,10 @@ RL_END_STRUCT ("rl_td_t pointer wrapper")
 #define RL_TYPE_NAME rl_mem_t
 RL_TYPEDEF_STRUCT ()
   RL_FLOAT (mem_alloc_strategy, "memory allocation strategy")
-  RL_FUNC (void*, malloc, (size_t), "pointer on malloc() function")
-  RL_FUNC (void*, realloc, (void*, size_t), "pointer on realloc() function")
-  RL_FUNC (char*, strdup, (const char*), "pointer on strdup() function")
-  RL_FUNC (void, free, (void*), "pointer on free() function")
+  RL_FUNC (void*, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function")
+  RL_FUNC (void*, realloc, (const char *, const char *, int, void*, size_t), "pointer on realloc() function")
+  RL_FUNC (char*, strdup, (const char *, const char *, int, const char*), "pointer on strdup() function")
+  RL_FUNC (void, free, (const char *, const char *, int, void*), "pointer on free() function")
 RL_END_STRUCT ("ResLib memory operations")
 
 #undef RL_TYPE_NAME
