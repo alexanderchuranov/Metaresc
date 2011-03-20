@@ -88,17 +88,9 @@
 #include <string.h>
 #include <tsearch.h>
 
-#ifdef LIBC_CODE
-typedef struct node_t
-{
-  /* Callers expect this to be the first element in the structure - do not
-     move!  */
-  const void *key;
-  struct node_t *left;
-  struct node_t *right;
-  unsigned int red:1;
-} *node;
-#endif
+#define malloc(ARGS...) RL_MALLOC(ARGS)
+#define free(ARGS...) RL_FREE(ARGS)
+
 typedef const struct node_t *const_node;
 
 #undef DEBUGGING
