@@ -404,10 +404,10 @@ extern char * xml_unquote_string (char*);
 
 #define RL_MEM_INIT(FUNC, ATTR...) void ATTR rl_mem_init (void) { FUNC; }
 
-#define RL_MALLOC(SIZE) (rl_conf.rl_mem.malloc)(SIZE)
-#define RL_REALLOC(PTR, SIZE) (rl_conf.rl_mem.realloc)(PTR, SIZE)
-#define RL_STRDUP(STR) (rl_conf.rl_mem.strdup)(STR)
-#define RL_FREE(PTR) (rl_conf.rl_mem.free)(PTR)
+#define RL_MALLOC(SIZE) (rl_conf.rl_mem.malloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, SIZE)
+#define RL_REALLOC(PTR, SIZE) (rl_conf.rl_mem.realloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR, SIZE)
+#define RL_STRDUP(STR) (rl_conf.rl_mem.strdup)(__FILE__, __PRETTY_FUNCTION__, __LINE__, STR)
+#define RL_FREE(PTR) (rl_conf.rl_mem.free)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR)
 
 /*
   Macro for type registration.
