@@ -83,7 +83,30 @@
     
     <section>
       <title>What you need to use the library</title>
-      <para />
+      <para>
+        <itemizedlist>
+          <listitem><para>
+            Library headers and binary (static or dynamic) installed
+          </para></listitem>
+          
+          <listitem><para>
+            GNU C Compiler 4.2 or newer
+          </para></listitem>
+        </itemizedlist>
+      </para>
+      
+      <para>
+        Yes, at present the list of supported compilers isn't
+        long. This is because to provide all its features the library
+        has to use very sophisticated language and run-time
+        mechanisms. Porting the library to other compilers is a work
+        in progress.
+      </para>
+      
+      <para>
+        Note, that now not only the library itself, but also its
+        clients have to be written in C and compiled with the GCC.
+      </para>
     </section>
     
     <section>
