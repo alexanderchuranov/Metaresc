@@ -38,7 +38,44 @@
 
   <section xml:id="distinctive">
     <title>Distinctive Features</title>
-    <para />
+    
+    <para>
+      There are other solutions for data marshalling around. To make
+      an intelligent choice you need to know how they all differ. The
+      following is a list of features that are specific to METARESC.
+    </para>
+    
+    <para>
+      <itemizedlist>
+        <listitem><para>
+        Works with arbitrary types, structures of any complexity.
+        </para></listitem>
+        
+        <listitem><para>
+        Each type is described only once at the time of its declaration.  
+        </para></listitem>
+        
+        <listitem><para>
+        Supports multiple input/output formats.
+        </para></listitem>
+        
+        <listitem><para>
+        Exposes metadata, supports run-time introspection of types.
+        </para></listitem>
+        
+        <listitem><para>
+        Provides global registry of types and metadata-by-typename lookup.
+        </para></listitem>
+        
+        <listitem><para>
+        Fast compilation for code which uses the library.
+        </para></listitem>
+        
+        <listitem><para>
+        Reasonable CPU and memory consumption.
+        </para></listitem>
+      </itemizedlist>
+    </para>
   </section>
   
   <section xml:id="general">
