@@ -1,0 +1,50 @@
+
+@import "reset.css";
+/*@import "ie.css";*/
+@import "elements.css";
+
+.navheader table {
+    margin-bottom: 1em;
+}
+
+.book {
+    margin-bottom: 1em;
+}
+
+.toc, .toc > dl {
+    margin: 1em 0px;
+}
+
+.toc dl {
+    margin-bottom: 1.2em;
+}
+
+.section    { margin-bottom: 3em; }
+.simplesect { margin: 2em 0px; }
+
+.table-contents table, .informaltable table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table-contents th, .informaltable th {
+    background: #eee;
+}
+
+.table-contents th, .table-contents td, .informaltable th, .informaltable td {
+    padding: 0.2em 0.5em 0.7em;
+    border: 1px solid black;
+    vertical-align: top;
+}
+
+.glosslist dt { font-style: italic; }
+
+.emphasis { font-style: italic; }
+
+.screen, .programlisting {
+    margin: 1em 0px;
+    padding: 0.3em 0.5em;
+    background: #e0e0e0;
+    color: black;
+    border: 1px solid #bbb;
+}

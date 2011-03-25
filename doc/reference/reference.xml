@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<article xmlns="http://docbook.org/ns/docbook"
+      xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0">
+  
+  <info>
+    <title>
+      METARESC library reference
+    </title>
+
+    <author>
+      <personname>
+        <firstname>Alexander</firstname>
+        <surname>Churanov</surname>
+      </personname>
+    </author>
+
+    <copyright>
+      <year>2011</year>
+      <holder>Alexander Churanov</holder>
+    </copyright>
+  </info>
+  
+  <section xml:id="overview">
+    <title>Overview</title>
+    
+    <para>
+      METARESC is a software library written in C programming
+      language. It allows declaring types using a special METARESC
+      grammar. The variables of types declared that way may be
+      subsequently serialized into various formats and deserialized
+      later. To achieve this the library adds metadata annotations to
+      types. These annotations may be used for may purposes far beyond
+      just achieving the persistence. Run-time type introspection,
+      easier parsing, mapping to relational databases are some
+      examples, which immediately come to mind.
+    </para>
+  </section>
+  
+  <section xml:id="type-declaration">
+    <title>Declaring Types</title>
+    
+    <section>
+      <title>Why special grammar?</title>
+      <para>
+        The C programming language does not provide metadata for
+        types: neither for built-ins, nor for used-defined
+        sturtures. For example, in plain C it is impossible to walk
+        through the members of the structure, get their names and
+        types programmatically. This ability, called type
+        introspection, is crucial for data persistence. To perform
+        deserialization the application needs to know where to place
+        incoming data.
+      </para>
+      
+      <para>
+        To overcome this, the library provides specific grammar for
+        declaring types. User-defined types, declared that way, contain
+        the necessary metadata, added by the library.
+      </para>
+    </section>
+    
+    <section>
+      <title>Using built-in types</title>
+      <para />
+    </section>
+  </section>
+  
+  <section xml:id="data-persistence">
+    <title>Data Persistence</title>
+    <para />
+  </section>
+  
+  <section xml:id="metadata-tech">
+    <title>Metadata and their applications</title>
+    <para />
+  </section>
+  
+</article>
