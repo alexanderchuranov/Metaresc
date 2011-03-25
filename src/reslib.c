@@ -409,7 +409,7 @@ hash_str (char * str)
   if (NULL == str)
     return (hash_value);
   while (*str)
-    hash_value = (hash_value + (unsigned char)*str++) * 0xFEDCBA987654321;
+    hash_value = (hash_value + (unsigned char)*str++) * 0xFEDCBA987654321LL;
   return (hash_value);
 }
 
@@ -901,7 +901,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
   {
-    rl_td_t ** tdpp = rl_rarray_append ((rl_rarray_t*)&rl_conf.des, sizeof (rl_conf.des.data[0]));
+    rl_td_t ** tdpp = rl_rarray_append ((void*)&rl_conf.des, sizeof (rl_conf.des.data[0]));
     if (NULL == tdpp)
       {
 	RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);

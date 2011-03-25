@@ -17,6 +17,8 @@ typedef char str_t[16];
 #include "test.h"
 #include "test.h"
 
+#include <tsearch.h>
+
 static void
 free_sample (sample_t * sample_)
 {
@@ -44,10 +46,10 @@ free_sample (sample_t * sample_)
 
 static void rl_mem_init_custom (void)
 {
-  void * my_malloc (size_t size) { return (malloc (size)); }
-  void * my_realloc (void * ptr, size_t size) { return (realloc (ptr, size)); }
-  char * my_strdup (const char * str) { return (strdup (str)); }
-  void my_free (void * ptr) { free (ptr); }
+  void * my_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
+  void * my_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
+  char * my_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
+  void my_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
 
   //RL_MESSAGE (RL_LL_TRACE, RL_MESSAGE_ENTER_CONSTRUCTOR);
   
@@ -58,7 +60,79 @@ static void rl_mem_init_custom (void)
   rl_conf.rl_mem.free = my_free;
 }
 
-RL_MEM_INIT (rl_mem_init_custom ());
+RL_MEM_INIT (rl_mem_init_custom ())
+
+#define MAX_LEN (5)
+#define ALPH "_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+static uint64_t
+hash_str (char * str)
+{
+  uint64_t hash_value = 0;
+  if (NULL == str)
+    return (hash_value);
+  while (*str)
+    hash_value = (hash_value + (unsigned char)*str++) * 0xFEDCBA987654321LL;
+  
+  return (hash_value);
+}
+
+static int cmp_hash (const void * x, const void * y)
+{
+  uint64_t x_ = (uint64_t)x;
+  uint64_t y_ = (uint64_t)y;
+  return ((x_ > y_) - (x_ < y_));
+}
+
+static int hash_name (char * name, rl_red_black_tree_node_t ** root)
+{
+  static int cnt = 0;
+  uint64_t hash = hash_str (name);
+  rl_red_black_tree_node_t * match = tfind ((void*)hash, (void*)root, cmp_hash);
+  if ((++cnt & ((1 << 19) - 1)) == 0)
+    {
+      printf ("%d '%s' %" SCNu64 "\r", cnt, name, hash);
+      fflush (stdout);
+    }
+  if (match)
+    printf ("match %d '%s' %" SCNu64 "\n", cnt, name, hash);
+  else
+    {
+      match = tsearch ((void*)hash, (void*)root, cmp_hash);
+      if (!match)
+	{
+	  printf ("Malloc failed\n");
+	  return (!0);
+	}
+    }
+  return (0);
+}
+
+static int test_hash ()
+{
+  int idx[MAX_LEN];
+  char name[MAX_LEN + 1];
+  int i, len;
+  rl_red_black_tree_node_t * root = NULL;
+
+  for (len = 1; len <= MAX_LEN; ++len)
+    {
+      for (i = 0; i < len; ++i)
+	name[i] = ALPH[ idx[i] = 0 ];
+      name[len] = 0;
+      for (;;)
+	{
+	  if (hash_name (name, &root))
+	    break;
+	  for (i = len - 1; ((i >= 0) && (idx[i] == sizeof (ALPH) - 2)); --i)
+	    name[i] = ALPH[ idx[i] = 0 ];
+	  if (i < 0)
+	    break;
+	  name[i] = ALPH[ ++idx[i] ];
+	}
+    }
+  return (0);
+}
 
 int
 main (void)
@@ -152,6 +226,8 @@ main (void)
     .ptr_null = NULL,
     .arr = {2, 3},
   };
+
+  //test_hash ();
 
 #if 1
   point.sample = &sample;
@@ -410,6 +486,16 @@ main (void)
       printf ("\n");
       RL_FREE (str);
     }
+
+#define COUNT(...) COUNT_ (0, ## __VA_ARGS__)
+#define COUNT_(...) COUNT__ (__VA_ARGS__, 3, 2, 1, 0)
+#define COUNT__(_0, _1, _2, _3, N, ...) COUNT_ ## N (_1, _2, _3)
+#define COUNT_0(...) 0
+#define COUNT_1(...) 1
+#define COUNT_2(...) 2
+#define COUNT_3(...) 3
+
+  x = COUNT(1, 2, 3);
 
 #ifdef HAVE_LIBXML2 
   /* Clean up everything else before quitting. */
