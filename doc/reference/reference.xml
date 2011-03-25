@@ -35,6 +35,35 @@
       examples, which immediately come to mind.
     </para>
   </section>
+
+  <section xml:id="distinctive">
+    <title>Distinctive Features</title>
+    <para />
+  </section>
+  
+  <section xml:id="general">
+    <title>Getting Started</title>
+    
+    <section>
+      <title>What you need to use the library</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Installation</title>
+      
+      <section>
+        <title>Installing pre-built version</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>Installing from source</title>
+        <para />
+      </section>
+    </section>
+    
+  </section>
   
   <section xml:id="type-declaration">
     <title>Declaring Types</title>
@@ -60,19 +89,45 @@
     </section>
     
     <section>
+      <title>Declaring structures</title>
+      <para />
+    </section>
+    
+    <section>
       <title>Using built-in types</title>
       <para />
     </section>
+    
   </section>
   
   <section xml:id="data-persistence">
     <title>Data Persistence</title>
-    <para />
+    
+    <section>
+      <title>Serialization</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Deserialization</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Supported Data Formats</title>
+      <para />
+    </section>
+    
   </section>
   
   <section xml:id="metadata-tech">
     <title>Metadata and their applications</title>
-    <para />
+    
+    <section>
+      <title>Understaning type and field descriptors</title>
+      <para />
+    </section>
+    
   </section>
   
 </article>
