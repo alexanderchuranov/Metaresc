@@ -113,13 +113,101 @@
       <title>Installation</title>
       
       <section>
-        <title>Installing pre-built version</title>
-        <para />
+        <title>Installing from software repository</title>
+        <para>
+          It's recommended that you first check whether the pre-built
+          package (or source port) exists in your operating system
+          software repository. Installing from repository has several
+          advantages:
+          <itemizedlist>
+            <listitem><para>
+              The library is already built with the appropriate options.
+            </para></listitem>
+            
+            <listitem><para>
+              The library is installable in the appropriate place on
+              your system.
+            </para></listitem>
+            
+            <listitem><para>
+              The package is likely to be tested by maintainer.
+            </para></listitem>
+            
+            <listitem><para>
+              The package may have dependent packages that are
+              instantly testing METARESC package correctness.
+            </para></listitem>
+            
+            <listitem><para>
+              It's faster.
+            </para></listitem>
+          </itemizedlist>
+        </para>
+        
+        <para>
+          At present the METARESC team does not maintain a package or
+          port for any operating system. This is, however, much
+          anticipated.
+        </para>
       </section>
       
       <section>
         <title>Installing from source</title>
-        <para />
+        <para>
+          Installing from source may be helful in the following cases:
+          <itemizedlist>
+            <listitem><para>
+              You need custom compile-time options for the library.
+            </para></listitem>
+            
+            <listitem><para>
+              There is no package that you can install.
+            </para></listitem>
+            
+            <listitem><para>
+              You have to install the library into custom location.
+            </para></listitem>
+            
+            <listitem><para>
+              You want to modify the source code. In this case,
+              please, respect the license.
+            </para></listitem>
+          </itemizedlist>
+        </para>
+        
+        <para>
+          To install the library from source you first need to obtain
+          the code. This may be accomplished by checking the code out
+          from the Git repository on Github. Use the following command
+          to check out the code ("cloning" in Git lingo):
+          <screen>git clone git://github.com/alexanderchuranov/Metaresc.git</screen>
+          
+          Once you have the code it's time to configure and build the
+          library. METARESC build is based on popular GNU Build System
+          (a.k.a. "Autotools"), so you may already know what to do
+          with it. The first step is configuration for your
+          environment. This is what the <command>configure</command>
+          script exists for. At this stage you may specify various
+          build and installation options. Most common are "prefix",
+          allowing you to install into custom location, and "LEX",
+          overriding the selection of a lexer. The latter is useful,
+          for example, on FreeBSD, which has a flex in the base system
+          and other in ports, and their versions differ dramatically.
+        </para>
+        
+        <para>
+          After configuring the library may be built with
+          <command>make</command> and installed with <command>make
+          install</command>. All the steps may (but not necessarily
+          have to) look like this:
+          
+          <screen>
+git clone git://github.com/alexanderchuranov/Metaresc.git
+cd Metaresc
+./configure LEX=/usr/local/bin/flex prefix=/special/path
+make
+make install </screen>
+        </para>
       </section>
     </section>
     
