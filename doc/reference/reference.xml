@@ -105,7 +105,9 @@
       
       <para>
         Note, that now not only the library itself, but also its
-        clients have to be written in C and compiled with the GCC.
+        clients have to be written in C and compiled with the GCC. You
+        need to compile files which include library headers with
+        -std=gnu99 compiler option.
       </para>
     </section>
     
@@ -181,25 +183,50 @@
           from the Git repository on Github. Use the following command
           to check out the code ("cloning" in Git lingo):
           <screen>git clone git://github.com/alexanderchuranov/Metaresc.git</screen>
-          
+        </para>
+        
+        <para>
+          The build process of METARESC requires following software to
+          be installed on your system:
+          <itemizedlist>
+            <listitem><para>Bison 2.4.3</para></listitem>
+            <listitem><para>Flex 2.5.35</para></listitem>
+            <listitem><para>Help2Man 1.39.2</para></listitem>
+            <listitem><para>Libtool 2.4</para></listitem>
+          </itemizedlist>
+          The library is known to work with these versions of
+          software. Newer software is also expected to work.
+        </para>
+        
+        <para>
           Once you have the code it's time to configure and build the
           library. METARESC build is based on popular GNU Build System
           (a.k.a. "Autotools"), so you may already know what to do
           with it. The first step is configuration for your
           environment. This is what the <command>configure</command>
-          script exists for. At this stage you may specify various
-          build and installation options. Most common are "prefix",
-          allowing you to install into custom location, and "LEX",
-          overriding the selection of a lexer. The latter is useful,
-          for example, on FreeBSD, which has a flex in the base system
-          and other in ports, and their versions differ dramatically.
+          script exists for. Most often it requires no arguments and
+          finished successfully. After this you may run
+          <command>make</command> command, followed by <command>make
+          install</command> to build and install the library
+          respectively. All the steps may look like this:
+          
+          <screen>
+git clone git://github.com/alexanderchuranov/Metaresc.git
+cd Metaresc
+./configure
+make
+make install </screen>
         </para>
         
         <para>
-          After configuring the library may be built with
-          <command>make</command> and installed with <command>make
-          install</command>. All the steps may (but not necessarily
-          have to) look like this:
+          At the configuration stage you may optionally specify various
+          build and installation parameters. Most common are "prefix",
+          allowing you to install into custom location, and "LEX",
+          overriding the selection of a lexer. The latter is useful,
+          for example, on FreeBSD, which has a flex in the base system
+          and other in ports, and their versions differ
+          dramatically. The following is an example of using
+          configuration options:
           
           <screen>
 git clone git://github.com/alexanderchuranov/Metaresc.git
