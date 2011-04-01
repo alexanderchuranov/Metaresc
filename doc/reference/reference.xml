@@ -358,7 +358,7 @@ category: Development
         /></programlisting>
         This program produces output like this:
         <screen><![CDATA[<?xml version="1.0"?>
-<x>5</x>x>]]></screen>
+<x>5</x>]]></screen>
       </para>
       
       <para>
@@ -366,7 +366,7 @@ category: Development
         integer value in the textual form, would anyone implement a
         feature-rich library for that? Naturally, the most anticipated
         way of serializing data is calling a library function (or
-        macro), passing a pointer to structure variable. This
+        macro) and passing a pointer to structure variable. This
         sturcture would include other structures and point to other
         variables of built-in or user-defined types. So, on to
         structures.
