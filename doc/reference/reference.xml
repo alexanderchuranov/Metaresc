@@ -397,8 +397,19 @@ category: Development
     </section>
     
     <section>
-      <title>Using built-in types</title>
-      <para />
+      <title>Declaring built-in types</title>
+      <para>
+        The library has two facilities for declaring fields of the
+        structure to be integer of floating-point types:
+        <code>RL_AUTO</code> and type-specific macros. Using
+        <code>RL_AUTO</code> is easier, you have to specify the type
+        and the name of the variable, as shown in the example below.
+        <programlisting language="c"><xi:include
+          href="../../examples/builtins_auto.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+      </para>
     </section>
     
   </section>
