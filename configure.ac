@@ -92,5 +92,5 @@ AC_ARG_ENABLE(tree-lookup,
 	[  --enable-tree-lookup		enables red-black tree lookup for type descriptor search instead of non-collision hash],
 	AC_DEFINE(RL_TREE_LOOKUP, [], [Red-black tree lookup is enabled]))
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile examples/Makefile])
 AC_OUTPUT

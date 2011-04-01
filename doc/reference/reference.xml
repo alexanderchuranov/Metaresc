@@ -236,6 +236,42 @@ make
 make install </screen>
         </para>
       </section>
+      
+      <section>
+        <title>Running sample application</title>
+        <para>
+          The source package contains a sample application that uses
+          the library and deserializes objects from the XML file. To
+          run the program type the following commands:
+          <screen><![CDATA[
+cd examples
+./gjobs < gjobs.xml]]></screen>
+          You should see an output like this:
+          <screen><![CDATA[
+1 Jobs registered
+=======  Job
+projectID: 3
+application: GBackup
+category: Development
+------ Person
+	name: Nathan Clemons
+	email: nathan@windsofstorm.net
+	company: FooBar Software
+	organisation: 
+	
+	smail: 321 Hillview Court, Somewhere-city, ZQ 54312, Zimbovia
+	Web: web://foobarsoftware/
+	phone: 011 4321 917 123 45 67
+------
+1 developers
+------ Person
+------
+=======]]></screen>
+          
+          This indicates that the library is built successfully and
+          may be used by applications.
+        </para>
+      </section>
     </section>
     
   </section>
