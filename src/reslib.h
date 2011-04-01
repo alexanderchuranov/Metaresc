@@ -182,7 +182,8 @@
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE,						\
       .rl_type_ext = RL_TYPE_EXT,					\
-      .count = sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),	\
+      .count = sizeof(TYPE) == 0 ? 0 :                                  \
+        sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
       .row_count = 1,							\
       .value = 0,							\
       .ext = NULL,							\
@@ -196,7 +197,8 @@
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE_DETECT (TYPE),					\
       .rl_type_ext = RL_TYPE_EXT_ARRAY,					\
-      .count = sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),	\
+      .count = sizeof(TYPE) == 0 ? 0 :                                  \
+        sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
       .row_count = sizeof (((RL_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE), \
       .value = 0,							\
       .ext = NULL,							\
@@ -440,7 +442,8 @@ extern char * xml_unquote_string (char*);
 	  .rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),			\
 	  .rl_type_ext = RL_TYPE_EXT_DETECT (RL_TYPE_NAME, S_PTR),	\
 	  .size = sizeof (RL_TYPE_NAME),				\
-	  .count = sizeof (S_PTR) / sizeof (RL_TYPE_NAME),		\
+	  .count = sizeof (RL_TYPE_NAME) == 0 ? 0 :                     \
+            sizeof (S_PTR) / sizeof (RL_TYPE_NAME),                     \
 	  .row_count = 1,						\
 	};								\
       RL_TYPE_NAME * check_type = S_PTR;				\
@@ -543,7 +546,8 @@ extern char * xml_unquote_string (char*);
 	    .rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),			\
 	    .rl_type_ext = RL_TYPE_EXT_NONE,				\
 	    .size = sizeof (RL_TYPE_NAME),				\
-	    .count = (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),	\
+	    .count = sizeof (RL_TYPE_NAME) == 0 ? 0 :                   \
+              (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),               \
 	    .row_count = 1,						\
 	  };								\
 	  RL_TYPE_NAME * __check_type__ = S_PTR + 0;			\
@@ -630,7 +634,8 @@ extern char * xml_unquote_string (char*);
 	.rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),			\
 	.rl_type_ext = RL_TYPE_EXT_NONE,				\
 	.size = sizeof (RL_TYPE_NAME),					\
-	.count = (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),		\
+	.count = sizeof (RL_TYPE_NAME) == 0 ? 0 :                       \
+          (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),                   \
 	.row_count = 1,							\
       };								\
       RL_TYPE_NAME * __check_type__ = S_PTR + 0;			\
@@ -724,7 +729,8 @@ extern char * xml_unquote_string (char*);
 		.rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),		\
 		.rl_type_ext = RL_TYPE_EXT_DETECT (RL_TYPE_NAME, S_PTR), \
 		.size = sizeof (RL_TYPE_NAME),				\
-		.count = (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),	\
+		.count = sizeof (RL_TYPE_NAME) == 0 ? 0 :               \
+                  (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),           \
 		.row_count = 1,						\
 	      };							\
 	      rl_td_t * _tdp_ = rl_get_td_by_name (_fd_.type);		\
