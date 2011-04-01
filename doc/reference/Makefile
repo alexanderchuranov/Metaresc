@@ -18,7 +18,7 @@ clean:
 	rm -f *.html *.tmp
 
 test: ${SOURCE}
-	xmllint --noout --schema ${DOCBOOK_ROOT}/xsd/docbook.xsd ${.ALLSRC}
+	xmllint --xinclude --noout --schema ${DOCBOOK_ROOT}/xsd/docbook.xsd ${.ALLSRC}
 
 deploy: all
 	rm -f ${HTML_DEST}/*

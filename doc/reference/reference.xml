@@ -280,6 +280,51 @@ category: Development
     <title>Declaring Types</title>
     
     <section>
+      <title>Introductory example</title>
+      <para>
+        The example below may help you get the basic idea on how the
+        metadata-enabled types are declared. First, the header file:
+        <programlisting language="c"><xi:include
+          href="../../examples/basic.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        This header declares a structure type named
+        <code>employee_t</code> with three fields: "firstname" and
+        "lastname" of <code>char*</code> type, "salary" of
+        <code>uint32_t</code> type.
+      </para>
+      
+      <para>
+        All metadata-enabled types should be declared within a header
+        file. The header must include the <code>reslib.h</code>
+        library header and have <code>#undef RL_MODE</code> statement
+        at the end, after all declarations.
+      </para>
+      
+      <para>
+        Now the implementation file:
+        <programlisting language="c"><xi:include
+          href="../../examples/basic.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        The program uses the library <code>RL_SAVE_XML</code> facility
+        to serialize the variable of type <code>employee_t</code> into
+        XML. Note, that the header file with declaration of
+        serializable type is included <emphasis>twice</emphasis>:
+        first time to generate the usual C type declaration, second to
+        generate metadata. For this very reason the header file where
+        the serializable types are declared <emphasis>must
+        not</emphasis> have usual <code>#ifndef / #define /
+        #endif</code> compiler guard.
+      </para>
+      <!--
+          TODO: where to get the example if instaling form package
+      -->
+    </section>
+    
+    <section>
       <title>Why special grammar?</title>
       <para>
         The C programming language does not provide metadata for
