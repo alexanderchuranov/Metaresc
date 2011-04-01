@@ -346,7 +346,54 @@ category: Development
     
     <section>
       <title>Declaring structures</title>
-      <para />
+      <para>
+        The first thing you should do in order to serialize something is
+        to declare a structure. Technically, METARESC is able to work
+        with variables of built-in types directly. The code below is perfectly
+        legal:
+        <programlisting language="c"><xi:include
+          href="../../examples/justabuiltin.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        This program produces output like this:
+        <screen><![CDATA[<?xml version="1.0"?>
+<x>5</x>x>]]></screen>
+      </para>
+      
+      <para>
+        However if the serialization was all about writing a single
+        integer value in the textual form, would anyone implement a
+        feature-rich library for that? Naturally, the most anticipated
+        way of serializing data is calling a library function (or
+        macro), passing a pointer to structure variable. This
+        sturcture would include other structures and point to other
+        variables of built-in or user-defined types. So, on to
+        structures.
+      </para>
+      
+      <para>
+        In METARESC the structure body is declared using
+        <code>RL_TYPEDEF_STRUCT</code> and
+        <code>RL_END_STRUCT</code>. The name of the structure is
+        introduced with the <code>RL_TYPE_NAME</code> macro. As the
+        names of these macros suggest, the name of the structure
+        becomes a type, as if introduced with <code>typedef
+        struct</code>. Due to implementation specifics the name of the
+        structure should be passed as the value of the
+        <code>RL_TYPE_NAME</code> macro, and the macro must be unset
+        just before specifying a new value.
+      </para>
+      
+      <para>
+        The following example summarizes all that: it just declares a
+        structure. Empty, without any members.
+        <programlisting language="c"><xi:include
+          href="../../examples/emptystruct.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+      </para>
     </section>
     
     <section>

@@ -4,7 +4,7 @@
 #include <string.h>
 
 #include <basic.h>
-#include <basic.h> // deliberately included second time
+#include <basic.h> // included second time for a reason
 
 void read_string(char** dest, char const prompt[])
 {
