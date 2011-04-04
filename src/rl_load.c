@@ -609,7 +609,7 @@ rl_load_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs)
   if (ptrs->ra.data[idx].first_child < 0)
     return (!0);
   /* check whether pointer should have offsprings or not */
-  if (RL_TYPE_VOID == ptrs->ra.data[idx].fd.rl_type)
+  if ((RL_TYPE_NONE == ptrs->ra.data[idx].fd.rl_type) || (RL_TYPE_VOID == ptrs->ra.data[idx].fd.rl_type))
     RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNEXPECTED_DATA);
   else
     {
@@ -757,6 +757,7 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
  */
 static void __attribute__((constructor)) rl_init_load_rl (void)
 {
+  rl_io_handlers[RL_TYPE_NONE].load.rl = rl_load_none;
   rl_io_handlers[RL_TYPE_VOID].load.rl = rl_load_none;
   rl_io_handlers[RL_TYPE_ENUM].load.rl = rl_load_enum;
   rl_io_handlers[RL_TYPE_BITMASK].load.rl = rl_load_bitmask;

@@ -456,8 +456,6 @@ extern char * xml_unquote_string (char*);
       rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
       if (__tdp__)							\
 	__fd__.rl_type = __tdp__->rl_type;				\
-      if (RL_TYPE_NONE == __fd__.rl_type)				\
-	__fd__.rl_type = RL_TYPE_VOID;					\
       if (NULL == __ptr__)						\
 	__ptr__ = strchr (__name__, 0);					\
       --__ptr__;							\
@@ -550,8 +548,6 @@ extern char * xml_unquote_string (char*);
 	  rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
 	  if (__tdp__)							\
 	    __fd__.rl_type = __tdp__->rl_type;				\
-	  if (RL_TYPE_NONE == __fd__.rl_type)				\
-	    __fd__.rl_type = RL_TYPE_VOID;				\
 	  RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
 	  if (__check_type__ != NULL)					\
 	    __status__ = xdr_load (__check_type__, &__fd__, __xdrs__, NULL); \
@@ -637,8 +633,6 @@ extern char * xml_unquote_string (char*);
       rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
       if (__tdp__)							\
 	__fd__.rl_type = __tdp__->rl_type;				\
-      if (RL_TYPE_NONE == __fd__.rl_type)				\
-	__fd__.rl_type = RL_TYPE_VOID;					\
       RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
       if (NULL != __check_type__) 					\
 	__idx__ = xml2_load (XML, &__ptrs__);				\
@@ -730,8 +724,6 @@ extern char * xml_unquote_string (char*);
 	      rl_td_t * _tdp_ = rl_get_td_by_name (_fd_.type);		\
 	      if (_tdp_)						\
 		_fd_.rl_type = _tdp_->rl_type;				\
-	      if (RL_TYPE_NONE == _fd_.rl_type)				\
-		_fd_.rl_type = RL_TYPE_VOID;				\
 	      _status_ = rl_load (_check_type_, &_fd_, 0, &_ptrs_);	\
 	    }								\
 	  rl_free_ptrs (&_ptrs_);					\

@@ -377,7 +377,7 @@ rl_save_pointer_postponed (int postpone, int idx, rl_save_data_t * rl_save_data)
       rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
       rl_save_data->ptrs.ra.data[ref_idx].flags |= RL_PDF_IS_REFERENCED;
     }
-  else if (fd_.rl_type != RL_TYPE_VOID)
+  else if ((fd_.rl_type != RL_TYPE_NONE) && (fd_.rl_type != RL_TYPE_VOID))
     {
       if (postpone)
 	{
@@ -415,7 +415,7 @@ rl_post_process (rl_save_data_t * rl_save_data)
       rl_save_data->ptrs.ra.data[idx].level = rl_save_data->ptrs.ra.data[rl_save_data->ptrs.ra.data[idx].parent].level + 1;
       
       if ((RL_TYPE_EXT_POINTER == rl_save_data->ptrs.ra.data[idx].fd.rl_type_ext) &&
-	  (RL_TYPE_VOID == rl_save_data->ptrs.ra.data[idx].fd.rl_type) &&
+	  ((RL_TYPE_NONE == rl_save_data->ptrs.ra.data[idx].fd.rl_type) || (RL_TYPE_VOID == rl_save_data->ptrs.ra.data[idx].fd.rl_type)) &&
 	  (rl_save_data->ptrs.ra.data[idx].ref_idx < 0) &&
 	  (NULL != *(void**)rl_save_data->ptrs.ra.data[idx].data))
 	{

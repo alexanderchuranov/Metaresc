@@ -548,6 +548,7 @@ xdr_load (void * data, rl_fd_t * fdp, XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
  */
 static void __attribute__((constructor)) rl_init_save_xdr (void)
 {
+  rl_io_handlers[RL_TYPE_NONE].save.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_VOID].save.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_ENUM].save.xdr = xdr_uint_;
   rl_io_handlers[RL_TYPE_BITMASK].save.xdr = xdr_uint_;
@@ -579,6 +580,7 @@ static void __attribute__((constructor)) rl_init_save_xdr (void)
  */
 static void __attribute__((constructor)) rl_init_load_xdr (void)
 {
+  rl_io_handlers[RL_TYPE_NONE].load.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_VOID].load.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_ENUM].load.xdr = xdr_uint_;
   rl_io_handlers[RL_TYPE_BITMASK].load.xdr = xdr_uint_;

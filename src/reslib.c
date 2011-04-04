@@ -824,7 +824,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
 }
 
 static int
-rl_check_fields_types (rl_td_t * tdp)
+rl_check_fields_types (rl_td_t * tdp, void * args)
 {
   int i;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
@@ -834,8 +834,6 @@ rl_check_fields_types (rl_td_t * tdp)
 	rl_td_t * tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
 	if (tdp_)
 	  tdp->fields.data[i].rl_type = tdp_->rl_type;
-	else
-	  tdp->fields.data[i].rl_type = RL_TYPE_VOID;
       }
   return (0);
 }
@@ -918,7 +916,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   if (RL_TYPE_ENUM == tdp->rl_type)
     rl_add_enum (tdp);
 
-  rl_check_fields_types (tdp);
+  rl_td_foreach (rl_check_fields_types, tdp);
   return (0);
 }
 

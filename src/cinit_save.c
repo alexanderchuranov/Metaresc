@@ -354,6 +354,7 @@ json_save_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data
  */
 static void __attribute__((constructor)) rl_init_save_cinit (void)
 {
+  rl_io_handlers[RL_TYPE_NONE].save.cinit = cinit_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.cinit = cinit_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.cinit = cinit_save_enum;
   rl_io_handlers[RL_TYPE_BITMASK].save.cinit = cinit_save_bitmask;
@@ -382,6 +383,7 @@ static void __attribute__((constructor)) rl_init_save_cinit (void)
 
 static void __attribute__((constructor)) rl_init_save_json (void)
 {
+  rl_io_handlers[RL_TYPE_NONE].save.json = cinit_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.json = cinit_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.json = cinit_save_enum;
   rl_io_handlers[RL_TYPE_BITMASK].save.json = cinit_save_bitmask;

@@ -334,6 +334,7 @@ scm_save_empty (int idx, rl_ra_rl_ptrdes_t * ptrs)
  */
 static void __attribute__((constructor)) rl_init_save_scm (void)
 {
+  rl_io_handlers[RL_TYPE_NONE].save.scm = scm_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.scm = scm_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.scm = scm_save_enum;
   rl_io_handlers[RL_TYPE_BITMASK].save.scm = scm_save_bitmask;

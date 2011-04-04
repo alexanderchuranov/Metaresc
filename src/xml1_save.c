@@ -191,6 +191,7 @@ xml_save_empty (int idx, rl_ra_rl_ptrdes_t * ptrs)
  */
 void __attribute__((constructor)) rl_init_save_xml1 (void)
 {
+  rl_io_handlers[RL_TYPE_NONE].save.xml = xml_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.xml = xml_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.xml = xml_save_enum;
   rl_io_handlers[RL_TYPE_BITMASK].save.xml = xml_save_bitmask;
