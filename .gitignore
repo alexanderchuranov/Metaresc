@@ -17,6 +17,7 @@ libtool
 ltmain.sh
 m4/*
 missing
+examples/Makefile.in
 src/.deps/*
 src/.libs/*
 src/stamp-h1

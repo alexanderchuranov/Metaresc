@@ -105,7 +105,9 @@
       
       <para>
         Note, that now not only the library itself, but also its
-        clients have to be written in C and compiled with the GCC.
+        clients have to be written in C and compiled with the GCC. You
+        need to compile files which include library headers with
+        -std=gnu99 compiler option.
       </para>
     </section>
     
@@ -181,25 +183,50 @@
           from the Git repository on Github. Use the following command
           to check out the code ("cloning" in Git lingo):
           <screen>git clone git://github.com/alexanderchuranov/Metaresc.git</screen>
-          
+        </para>
+        
+        <para>
+          The build process of METARESC requires following software to
+          be installed on your system:
+          <itemizedlist>
+            <listitem><para>Bison 2.4.3</para></listitem>
+            <listitem><para>Flex 2.5.35</para></listitem>
+            <listitem><para>Help2Man 1.39.2</para></listitem>
+            <listitem><para>Libtool 2.4</para></listitem>
+          </itemizedlist>
+          The library is known to work with these versions of
+          software. Newer software is also expected to work.
+        </para>
+        
+        <para>
           Once you have the code it's time to configure and build the
           library. METARESC build is based on popular GNU Build System
           (a.k.a. "Autotools"), so you may already know what to do
           with it. The first step is configuration for your
           environment. This is what the <command>configure</command>
-          script exists for. At this stage you may specify various
-          build and installation options. Most common are "prefix",
-          allowing you to install into custom location, and "LEX",
-          overriding the selection of a lexer. The latter is useful,
-          for example, on FreeBSD, which has a flex in the base system
-          and other in ports, and their versions differ dramatically.
+          script exists for. Most often it requires no arguments and
+          finished successfully. After this you may run
+          <command>make</command> command, followed by <command>make
+          install</command> to build and install the library
+          respectively. All the steps may look like this:
+          
+          <screen>
+git clone git://github.com/alexanderchuranov/Metaresc.git
+cd Metaresc
+./configure
+make
+make install </screen>
         </para>
         
         <para>
-          After configuring the library may be built with
-          <command>make</command> and installed with <command>make
-          install</command>. All the steps may (but not necessarily
-          have to) look like this:
+          At the configuration stage you may optionally specify various
+          build and installation parameters. Most common are "prefix",
+          allowing you to install into custom location, and "LEX",
+          overriding the selection of a lexer. The latter is useful,
+          for example, on FreeBSD, which has a flex in the base system
+          and other in ports, and their versions differ
+          dramatically. The following is an example of using
+          configuration options:
           
           <screen>
 git clone git://github.com/alexanderchuranov/Metaresc.git
@@ -209,12 +236,93 @@ make
 make install </screen>
         </para>
       </section>
+      
+      <section>
+        <title>Running sample application</title>
+        <para>
+          The source package contains a sample application that uses
+          the library and deserializes objects from the XML file. To
+          run the program type the following commands:
+          <screen><![CDATA[
+cd examples
+./gjobs < gjobs.xml]]></screen>
+          You should see an output like this:
+          <screen><![CDATA[
+1 Jobs registered
+=======  Job
+projectID: 3
+application: GBackup
+category: Development
+------ Person
+	name: Nathan Clemons
+	email: nathan@windsofstorm.net
+	company: FooBar Software
+	organisation: 
+	
+	smail: 321 Hillview Court, Somewhere-city, ZQ 54312, Zimbovia
+	Web: web://foobarsoftware/
+	phone: 011 4321 917 123 45 67
+------
+1 developers
+------ Person
+------
+=======]]></screen>
+          
+          This indicates that the library is built successfully and
+          may be used by applications.
+        </para>
+      </section>
     </section>
     
   </section>
   
   <section xml:id="type-declaration">
     <title>Declaring Types</title>
+    
+    <section>
+      <title>Introductory example</title>
+      <para>
+        The example below may help you get the basic idea on how the
+        metadata-enabled types are declared. First, the header file:
+        <programlisting language="c"><xi:include
+          href="../../examples/basic.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        This header declares a structure type named
+        <code>employee_t</code> with three fields: "firstname" and
+        "lastname" of <code>char*</code> type, "salary" of
+        <code>uint32_t</code> type.
+      </para>
+      
+      <para>
+        All metadata-enabled types should be declared within a header
+        file. The header must include the <code>reslib.h</code>
+        library header and have <code>#undef RL_MODE</code> statement
+        at the end, after all declarations.
+      </para>
+      
+      <para>
+        Now the implementation file:
+        <programlisting language="c"><xi:include
+          href="../../examples/basic.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        The program uses the library <code>RL_SAVE_XML</code> facility
+        to serialize the variable of type <code>employee_t</code> into
+        XML. Note, that the header file with declaration of
+        serializable type is included <emphasis>twice</emphasis>:
+        first time to generate the usual C type declaration, second to
+        generate metadata. For this very reason the header file where
+        the serializable types are declared <emphasis>must
+        not</emphasis> have usual <code>#ifndef / #define /
+        #endif</code> compiler guard.
+      </para>
+      <!--
+          TODO: where to get the example if instaling form package
+      -->
+    </section>
     
     <section>
       <title>Why special grammar?</title>
@@ -238,12 +346,70 @@ make install </screen>
     
     <section>
       <title>Declaring structures</title>
-      <para />
+      <para>
+        The first thing you should do in order to serialize something is
+        to declare a structure. Technically, METARESC is able to work
+        with variables of built-in types directly. The code below is perfectly
+        legal:
+        <programlisting language="c"><xi:include
+          href="../../examples/justabuiltin.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        This program produces output like this:
+        <screen><![CDATA[<?xml version="1.0"?>
+<x>5</x>]]></screen>
+      </para>
+      
+      <para>
+        However if the serialization was all about writing a single
+        integer value in the textual form, would anyone implement a
+        feature-rich library for that? Naturally, the most anticipated
+        way of serializing data is calling a library function (or
+        macro) and passing a pointer to structure variable. This
+        sturcture would include other structures and point to other
+        variables of built-in or user-defined types. So, on to
+        structures.
+      </para>
+      
+      <para>
+        In METARESC the structure body is declared using
+        <code>RL_TYPEDEF_STRUCT</code> and
+        <code>RL_END_STRUCT</code>. The name of the structure is
+        introduced with the <code>RL_TYPE_NAME</code> macro. As the
+        names of these macros suggest, the name of the structure
+        becomes a type, as if introduced with <code>typedef
+        struct</code>. Due to implementation specifics the name of the
+        structure should be passed as the value of the
+        <code>RL_TYPE_NAME</code> macro, and the macro must be unset
+        just before specifying a new value.
+      </para>
+      
+      <para>
+        The following example summarizes all that: it just declares a
+        structure. Empty, without any members.
+        <programlisting language="c"><xi:include
+          href="../../examples/emptystruct.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+      </para>
     </section>
     
     <section>
-      <title>Using built-in types</title>
-      <para />
+      <title>Declaring built-in types</title>
+      <para>
+        The library has two facilities for declaring fields of the
+        structure to be integer of floating-point types:
+        <code>RL_AUTO</code> and type-specific macros. Using
+        <code>RL_AUTO</code> is easier, you have to specify the type
+        and the name of the variable, as shown in the example below.
+        <programlisting language="c"><xi:include
+          href="../../examples/builtins_auto.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+      </para>
     </section>
     
   </section>
