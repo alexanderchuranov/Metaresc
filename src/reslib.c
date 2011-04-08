@@ -827,13 +827,29 @@ static int
 rl_check_fields_types (rl_td_t * tdp, void * args)
 {
   int i;
+  rl_td_t * tdp_;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  
   for (i = 0; i < fields_count; ++i)
-    if (RL_TYPE_NONE == tdp->fields.data[i].rl_type)
+    switch (tdp->fields.data[i].rl_type)
       {
-	rl_td_t * tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
+	/* RL_AUTO type resolution */
+      case RL_TYPE_NONE:
+	/* Enum detection */
+      case RL_TYPE_INT8:
+      case RL_TYPE_UINT8:
+      case RL_TYPE_INT16:
+      case RL_TYPE_UINT16:
+      case RL_TYPE_INT32:
+      case RL_TYPE_UINT32:
+      case RL_TYPE_INT64:
+      case RL_TYPE_UINT64:
+	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
 	if (tdp_)
 	  tdp->fields.data[i].rl_type = tdp_->rl_type;
+	break;
+      default:
+	break;
       }
   return (0);
 }
