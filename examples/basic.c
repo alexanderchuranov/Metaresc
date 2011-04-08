@@ -6,35 +6,17 @@
 #include <basic.h>
 #include <basic.h> // included second time for a reason
 
-void read_string(char** dest, char const prompt[])
-{
-  char s[256];
-  
-  printf ("%s: ", prompt);
-  scanf ("%256s", s);
-  
-  *dest = malloc (strlen(s) + 1);
-  strcpy (*dest, s);
-}
-
-void read_uint32(uint32_t* dest, char const prompt[])
-{
-  printf ("%s: ", prompt);
-  scanf ("%d", dest);
-}
-
 int
 main (int argc, char * argv[])
 {
   employee_t employee;
   
-  read_string (&employee.firstname, "first name");
-  read_string (&employee.lastname, "last name");
-  read_uint32 (&employee.salary, "salary");
+  employee.firstname = strdup ("John");
+  employee.lastname  = strdup ("Smith");
+  employee.salary    = 123456;
   
   char* str = RL_SAVE_XML (employee_t, &employee);
-  puts ("");
-  puts (str);
+  printf ("%s\n", str);
   RL_FREE (str);
   
   return (EXIT_SUCCESS);
