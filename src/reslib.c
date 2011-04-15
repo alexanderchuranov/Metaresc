@@ -895,7 +895,10 @@ rl_check_fields_types (rl_td_t * tdp, void * args)
 			case RL_TYPE_UINT64:
 			  tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
 			  if (tdp_)
-			    tdp->fields.data[i].rl_type = tdp_->rl_type;
+			    {
+			      tdp->fields.data[i].rl_type = tdp_->rl_type;
+			      tdp->fields.data[i].size = tdp_->size;
+			    }
 			  break;
 
 			default:
