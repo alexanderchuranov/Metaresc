@@ -688,7 +688,7 @@ int
 rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   int status = 0;
-  RL_RARRAY_PROTO (int, rl_ra_idx);
+  RL_RARRAY_PROTO ( ,int, rl_ra_idx);
 
   rl_ra_idx.data = NULL;
   rl_ra_idx.size = 0;
