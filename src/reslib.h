@@ -80,7 +80,11 @@
   Second argument might be ATTRIBUTES(...) with typedef attributes, comments and extended meta information. The rest is list of fields/enums declarations.
   Next macro checks that ATTRIBUTES are presented.
  */
-#define P00_TYPEDEF(P00_TYPE, RL_TYPE_NAME, FIRST, ...)			\
+#define P00_TYPEDEF(P00_TYPE, RL_TYPE_NAME, ...)			\
+  P99_IF_ELSE (P99_IS_EMPTY (__VA_ARGS__))				\
+  (TYPEDEF_ATTR (P00_TYPE, RL_TYPE_NAME, ATTRIBUTES (,), ))		\
+  (P00_TYPEDEF_ (P00_TYPE, RL_TYPE_NAME, __VA_ARGS__))
+#define P00_TYPEDEF_(P00_TYPE, RL_TYPE_NAME, FIRST, ...)		\
   P99_IF_ELSE (P99_HAS_NO_PAREN (FIRST))				\
   (P99_IF_ELSE (P99_PASTE2 (P00_IS_ATTRIBUTES_EQ_, FIRST))		\
    (TYPEDEF_ATTR (P00_TYPE, RL_TYPE_NAME, ATTRIBUTES (,), FIRST, __VA_ARGS__)) \
