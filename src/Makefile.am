@@ -28,7 +28,7 @@ if HAVE_LIBXML2
   libreslib_la_SOURCES += xml2_save.c xml2_load.c
 endif
 
-pkginclude_HEADERS = reslib.h rlprotos.h rlexport.h
+pkginclude_HEADERS = reslib.h rlprotos.h rlexport.h p99/*
 
 clean-local:
 	rm -f *.tab.[ch] *.lex.[ch]
