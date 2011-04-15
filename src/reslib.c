@@ -833,6 +833,29 @@ rl_check_fields_types (rl_td_t * tdp, void * args)
   int i;
   rl_td_t * tdp_;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  static size_t sizes[] =
+    {
+      [0 ... RL_MAX_TYPES - 1] = 0,
+      [RL_TYPE_NONE] = 0,
+      [RL_TYPE_VOID] = sizeof (void),
+      [RL_TYPE_INT8] = sizeof (int8_t),
+      [RL_TYPE_UINT8] = sizeof (uint8_t),
+      [RL_TYPE_INT16] = sizeof (int16_t),
+      [RL_TYPE_UINT16] = sizeof (uint16_t),
+      [RL_TYPE_INT32] = sizeof (int32_t),
+      [RL_TYPE_UINT32] = sizeof (uint32_t),
+      [RL_TYPE_INT64] = sizeof (int64_t),
+      [RL_TYPE_UINT64] = sizeof (uint64_t),
+      [RL_TYPE_FLOAT] = sizeof (float),
+      [RL_TYPE_DOUBLE] = sizeof (double),
+      [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
+      [RL_TYPE_CHAR] = sizeof (char),
+      [RL_TYPE_CHAR_ARRAY] = sizeof (char),
+      [RL_TYPE_STRING] = sizeof (char*),
+      [RL_TYPE_STRUCT] = sizeof (void),
+      [RL_TYPE_UNION] = sizeof (void),
+      [RL_TYPE_ANON_UNION] = sizeof (void),
+    };
   
   for (i = 0; i < fields_count; ++i)
     {
@@ -881,6 +904,7 @@ rl_check_fields_types (rl_td_t * tdp, void * args)
 		      tdp->fields.data[i].type = type;
 		      tdp->fields.data[i].rl_type_ext = RL_TYPE_EXT_POINTER;
 		      tdp->fields.data[i].rl_type = ptr_rl_type;
+		      tdp->fields.data[i].size = sizes[ptr_rl_type];
 		      /* autodetect structures and enums */
 		      switch (tdp->fields.data[i].rl_type)
 			{
