@@ -122,10 +122,18 @@
 /*
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted RL_ type prefix.
   The 3rd macro unfolds to RL_{AUTO|INT32|...}_{PROTO|DESC} (RL_TYPE_NAME, ARGS...)
+  Last one detects unkown field qualifiers.
  */
-#define P00_FIELD_UNFOLD(RL_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (RL_TYPE_NAME, P99_PASTE2 (P00_COMMA_, FIELD))
-#define P00_FIELD_UNFOLD_(RL_TYPE_NAME, FIELD) P00_FIELD_UNFOLD__ (RL_TYPE_NAME, FIELD)
-#define P00_FIELD_UNFOLD__(RL_TYPE_NAME, FIELD, ARGS) P00_UNFOLD (FIELD, RL_TYPE_NAME, P99_REMOVE_PAREN (ARGS))
+#define P00_FIELD_UNFOLD(RL_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (RL_TYPE_NAME, FIELD, P99_PASTE2 (P00_COMMA_, FIELD))
+#define P00_FIELD_UNFOLD_(RL_TYPE_NAME, FIELD, RL_FIELD_COMMA) P00_FIELD_UNFOLD__ (RL_TYPE_NAME, FIELD, RL_FIELD_COMMA)
+#define P00_FIELD_UNFOLD__(RL_TYPE_NAME, FIELD, RL_FIELD_COMMA,  ...)	\
+  P99_IF_ELSE (P99_IS_EMPTY (__VA_ARGS__))				\
+  (P00_UNFOLD (RL_UNKNOWN, RL_TYPE_NAME, FIELD))			\
+  (P00_UNFOLD (RL_FIELD_COMMA, RL_TYPE_NAME, P99_REMOVE_PAREN (__VA_ARGS__)))
+
+/* produce compilation error for unkown field qualifiers */
+#define RL_UNKNOWN_PROTO(RL_TYPE_NAME, ...) int _1[RL_STRINGIFY(__VA_ARGS__)()];
+#define RL_UNKNOWN_DESC(RL_TYPE_NAME, ...) { RL_STRINGIFY(__VA_ARGS__)(), },
 
 /* Check for empty trailing enum definition  */
 #define P00_ENUM_DEF(RL_TYPE_NAME, FIELD, I) P99_IF_ELSE (P99_IS_EMPTY (FIELD)) () (P00_ENUM_DEF_ (RL_TYPE_NAME, FIELD))
@@ -141,6 +149,7 @@
   (P00_UNFOLD (RL_ENUM_DEF, RL_TYPE_NAME, P99_REMOVE_PAREN (FIELD)))
 
 /* list of substitutions for P00_FIELD_UNFOLD_ */
+#define P00_COMMA_FIELD RL_FIELD,
 #define P00_COMMA_AUTO RL_AUTO,
 #define P00_COMMA_NONE RL_NONE,
 #define P00_COMMA_ENUM RL_ENUM,
