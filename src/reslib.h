@@ -39,33 +39,27 @@
 
 #define RL_STRINGIFY(STR) #STR
 
-#define RL_PAREN_NONEMPTY(...) RL_PAREN_NONEMPTY_ (0, ## __VA_ARGS__)
-#define RL_PAREN_NONEMPTY_(...) RL_PAREN_NONEMPTY_ARGN (__VA_ARGS__, 1, 0)
-#define RL_PAREN_NONEMPTY_ARGN(_0, X, N, ...) RL_PAREN_NONEMPTY_ARG ## N (X)
-#define RL_PAREN_NONEMPTY_ARG0(X) 
-#define RL_PAREN_NONEMPTY_ARG1(X) (X)
-
-#define RL_TYPE_DETECT(TYPE, SUFFIX...) (0 /* RL_TYPE_NONE */		\
-					 | (__builtin_types_compatible_p (void SUFFIX, TYPE) ? RL_TYPE_VOID : 0) \
-					 | (__builtin_types_compatible_p (int8_t SUFFIX, TYPE) ? RL_TYPE_INT8 : 0) \
-					 | (__builtin_types_compatible_p (uint8_t SUFFIX, TYPE) ? RL_TYPE_UINT8 : 0) \
-					 | (__builtin_types_compatible_p (int16_t SUFFIX, TYPE) ? RL_TYPE_INT16 : 0) \
-					 | (__builtin_types_compatible_p (uint16_t SUFFIX, TYPE) ? RL_TYPE_UINT16 : 0) \
-					 | (__builtin_types_compatible_p (int32_t SUFFIX, TYPE) ? RL_TYPE_INT32 : 0) \
-					 | (__builtin_types_compatible_p (uint32_t SUFFIX, TYPE) ? RL_TYPE_UINT32 : 0) \
-					 | (__builtin_types_compatible_p (int64_t SUFFIX, TYPE) ? RL_TYPE_INT64 : 0) \
-					 | (__builtin_types_compatible_p (uint64_t SUFFIX, TYPE) ? RL_TYPE_UINT64 : 0) \
-					 | (__builtin_types_compatible_p (float SUFFIX, TYPE) ? RL_TYPE_FLOAT : 0) \
-					 | (__builtin_types_compatible_p (double SUFFIX, TYPE) ? RL_TYPE_DOUBLE : 0) \
-					 | (__builtin_types_compatible_p (long double SUFFIX, TYPE) ? RL_TYPE_LONG_DOUBLE : 0) \
-					 | (__builtin_types_compatible_p (char SUFFIX, TYPE) ? RL_TYPE_CHAR : 0) \
-					 | (__builtin_types_compatible_p (char RL_PAREN_NONEMPTY (SUFFIX) [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
-					 | (__builtin_types_compatible_p (unsigned char RL_PAREN_NONEMPTY (SUFFIX) [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
-					 | (__builtin_types_compatible_p (signed char RL_PAREN_NONEMPTY (SUFFIX) [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
-					 | (__builtin_types_compatible_p (char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
-					 | (__builtin_types_compatible_p (unsigned char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
-					 | (__builtin_types_compatible_p (signed char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
-					 )
+#define RL_TYPE_DETECT_INNER(PREFIX, TYPE, SUFFIX, PAREN_SUFFIX)	\
+  (0 /* RL_TYPE_NONE */							\
+   | (__builtin_types_compatible_p (PREFIX void SUFFIX, TYPE) ? RL_TYPE_VOID : 0) \
+   | (__builtin_types_compatible_p (PREFIX int8_t SUFFIX, TYPE) ? RL_TYPE_INT8 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint8_t SUFFIX, TYPE) ? RL_TYPE_UINT8 : 0) \
+   | (__builtin_types_compatible_p (PREFIX int16_t SUFFIX, TYPE) ? RL_TYPE_INT16 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint16_t SUFFIX, TYPE) ? RL_TYPE_UINT16 : 0) \
+   | (__builtin_types_compatible_p (PREFIX int32_t SUFFIX, TYPE) ? RL_TYPE_INT32 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint32_t SUFFIX, TYPE) ? RL_TYPE_UINT32 : 0) \
+   | (__builtin_types_compatible_p (PREFIX int64_t SUFFIX, TYPE) ? RL_TYPE_INT64 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint64_t SUFFIX, TYPE) ? RL_TYPE_UINT64 : 0) \
+   | (__builtin_types_compatible_p (PREFIX float SUFFIX, TYPE) ? RL_TYPE_FLOAT : 0) \
+   | (__builtin_types_compatible_p (PREFIX double SUFFIX, TYPE) ? RL_TYPE_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX long double SUFFIX, TYPE) ? RL_TYPE_LONG_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX char SUFFIX, TYPE) ? RL_TYPE_CHAR : 0) \
+   | (__builtin_types_compatible_p (PREFIX char PAREN_SUFFIX [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
+   | (__builtin_types_compatible_p (PREFIX char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
+   | (__builtin_types_compatible_p (const char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
+   )
+#define RL_TYPE_DETECT(TYPE) RL_TYPE_DETECT_INNER ( , TYPE, ,)
+#define RL_TYPE_DETECT_PTR(TYPE) (RL_TYPE_DETECT_INNER ( , TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const, TYPE, *, (*)))
 #define RL_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE[], typeof (S_PTR)) ? RL_TYPE_EXT_ARRAY : RL_TYPE_EXT_NONE)
 
 /* P99 interface */
@@ -200,6 +194,23 @@
 #define RL_ENUM_DEF_ARG3(RL_TYPE, RL_TYPE_NAME, NAME, RHS, COM, EXT) RL_TYPE (RL_TYPE_NAME, NAME, RHS, COM)
 #define RL_ENUM_DEF_ARG4(RL_TYPE, RL_TYPE_NAME, NAME, RHS, COM, EXT) RL_TYPE (RL_TYPE_NAME, NAME, RHS, COM, EXT)
 
+#define RL_FOR1(X, _0, ...) X (_0)
+#define RL_FOR2(X, _0, ...) X (_0) RL_FOR1 (X, __VA_ARGS__)
+#define RL_FOR3(X, _0, ...) X (_0) RL_FOR2 (X, __VA_ARGS__)
+#define RL_FOR4(X, _0, ...) X (_0) RL_FOR3 (X, __VA_ARGS__)
+#define RL_FOR5(X, _0, ...) X (_0) RL_FOR4 (X, __VA_ARGS__)
+#define RL_FOR6(X, _0, ...) X (_0) RL_FOR5 (X, __VA_ARGS__)
+#define RL_FOR7(X, _0, ...) X (_0) RL_FOR6 (X, __VA_ARGS__)
+#define RL_FOR8(X, _0, ...) X (_0) RL_FOR7 (X, __VA_ARGS__)
+#define RL_FOR9(X, _0, ...) X (_0) RL_FOR8 (X, __VA_ARGS__)
+#define RL_NARG(...) RL_NARG_ (__VA_ARGS__, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+#define RL_NARG_(_1, _2, _3, _4, _5, _6, _7, _8, _9, N, ...) N
+#define RL_PASTE2(_0, _1) RL_PASTE2_ (_0, _1)
+#define RL_PASTE2_(_0, _1) _0 ## _1
+#define RL_FOR(X, ...) RL_PASTE2 (RL_FOR, RL_NARG (__VA_ARGS__)) (X, __VA_ARGS__)
+#define RL_REMOVE_PAREN_(...) __VA_ARGS__
+#define RL_REMOVE_PAREN(...) RL_REMOVE_PAREN_ __VA_ARGS__
+
 #define RL_TYPEDEF_STRUCT(...) RL_UNFOLD (RL_TYPEDEF_STRUCT, __VA_ARGS__)
 
 #define RL_AUTO(...) RL_UNFOLD (RL_AUTO, __VA_ARGS__)
@@ -331,7 +342,7 @@
       .comment = "" COM,						\
       },
 
-#define RL_AUTO_DESC_(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, SUFFIX, RL_TYPE_DETECT (TYPE) | RL_MAX_TYPES * RL_TYPE_DETECT (TYPE, *), RL_TYPE_EXT_DETECT (TYPE, ((RL_TYPE_NAME*)NULL)->NAME), COM)
+#define RL_AUTO_DESC_(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, SUFFIX, RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_DETECT (TYPE, ((RL_TYPE_NAME*)NULL)->NAME), COM, .rl_type_ptr = RL_TYPE_DETECT_PTR (TYPE))
 
 #define RL_AUTO_DESC(...) RL_TYPE_ARGN_ (RL_AUTO_DESC_, __VA_ARGS__)
 #define RL_NONE_DESC(...) RL_TYPE_ARGN_ (RL_NONE_DESC_, __VA_ARGS__)
@@ -358,7 +369,8 @@
 #define RL_POINTER_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_POINTER, COM)
 #define RL_POINTER_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_STRUCT, RL_TYPE_EXT_POINTER, COM)
 #define RL_RARRAY_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_RARRAY, COM)
-#define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_VOID, RL_TYPE_EXT_NONE, COM)
+#define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_FUNC, RL_TYPE_EXT_NONE, COM, .args = { .alloc_size = -1, .size = 0, .data = (rl_fd_t[]){ RL_FUNC_ARG (TYPE, "return value") RL_FOR (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS)) { .rl_type = RL_TYPE_TRAILING_RECORD, }, }, })
+#define RL_FUNC_ARG(ARG, COM...) { .type = #ARG, .rl_type = RL_TYPE_DETECT (ARG), .rl_type_ptr = RL_TYPE_DETECT_PTR (ARG), .rl_type_ext = RL_TYPE_EXT_NONE, .comment = "" COM, },
 #define RL_END_STRUCT_DESC(RL_TYPE_NAME, COM...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 
 #define RL_TYPEDEF_UNION_DESC(RL_TYPE_NAME, ATTR...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_UNION, ATTR)
@@ -491,6 +503,7 @@ extern int rl_td_foreach (int (*func) (rl_td_t*, void*), void*);
 extern rl_td_t * rl_get_td_by_name (char*);
 extern void rl_message_format (void (*output_handler) (char*), rl_message_id_t, va_list);
 extern void rl_message (const char*, const char*, int, rl_log_level_t, rl_message_id_t, ...);
+extern void rl_message_unsupported_node_type (rl_fd_t*);
 extern void * rl_rarray_append (rl_rarray_t*, int);
 extern int __attribute__ ((format (printf, 2, 3))) rl_ra_printf (rl_rarray_t*, const char*, ...);
 
@@ -521,6 +534,15 @@ extern char * xml_unquote_string (char*);
 #define RL_BITMASK_OR_DELIMITER " | "
 
 #define RL_MESSAGE(LOG_LEVEL, MSG_ID...) rl_message (__FILE__, __PRETTY_FUNCTION__, __LINE__, LOG_LEVEL, MSG_ID)
+#define RL_MESSAGE_UNSUPPORTED_NODE_TYPE_(FDP)				\
+  ({									\
+    rl_fd_t * __fdp__ = FDP;						\
+    rl_td_t * rl_type_td = rl_get_td_by_name ("rl_type_t");		\
+    rl_td_t * rl_type_ext_td = rl_get_td_by_name ("rl_type_ext_t");	\
+    rl_fd_t * rl_type_fd = rl_type_td ? rl_get_enum_by_value (rl_type_td, __fdp__->rl_type) : NULL; \
+    rl_fd_t * rl_type_ext_fd = rl_type_ext_td ? rl_get_enum_by_value (rl_type_ext_td, __fdp__->rl_type_ext) : NULL; \
+    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, (rl_type_fd ? rl_type_fd->name : "unknown"), __fdp__->rl_type, (rl_type_ext_fd ? rl_type_ext_fd->name : "unknown"), __fdp__->rl_type_ext); \
+  })
 
 #define RL_MEM_INIT(FUNC, ATTR...) void ATTR rl_mem_init (void) { FUNC; }
 
