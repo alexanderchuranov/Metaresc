@@ -619,11 +619,14 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  int fields_count = j - i; /* additional trailing element with rl_type = RL_TYPE_TRAILING_RECORD */
 	  rl_fd_t * fields_data = RL_MALLOC (fields_count * sizeof (rl_fd_t));
 	  static int rl_type_anonymous_union_cnt = 0;
-	  char * type = RL_MALLOC (sizeof (RL_TYPE_ANONYMOUS_UNION_TEMPLATE) + RL_INT_TO_STRING_BUF_SIZE);
+	  char type_[sizeof (RL_TYPE_ANONYMOUS_UNION_TEMPLATE) + RL_INT_TO_STRING_BUF_SIZE];
+	  char * type;
 	  rl_td_t * tdp_ = RL_MALLOC (sizeof (rl_td_t));
 	  int size = 0;
 	  void ** ptr;
 
+	  sprintf (type_, RL_TYPE_ANONYMOUS_UNION_TEMPLATE, rl_type_anonymous_union_cnt++);
+	  type = RL_STRDUP (type_);
 	  if ((NULL == fields_data) || (NULL == type) || (NULL == tdp_))
 	    {
 	      if (fields_data)
@@ -643,8 +646,8 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (void*));
 	  if (ptr)
 	    *ptr = tdp_;
-	  
-	  sprintf (type, RL_TYPE_ANONYMOUS_UNION_TEMPLATE, rl_type_anonymous_union_cnt++);
+
+	  memset (tdp_, 0, sizeof (*tdp_));
 	  for (j = 0; j < fields_count - 1; ++j)
 	    {
 	      fields_data[j] = tdp->fields.data[i + 1 + j];
@@ -656,6 +659,7 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  tdp_->rl_type = RL_TYPE_ANON_UNION;
 	  tdp_->type = type;
 	  tdp_->attr = tdp->fields.data[i].comment; /* anonymous union stringified attributes are saved into comments field */
+	  tdp_->comment = tdp->fields.data[i + fields_count].comment; /* copy comment from RL_END_ANON_UNION record */
 	  tdp_->ext = NULL;
 	  tdp_->size = size;
 	  tdp_->fields.data = fields_data;
@@ -668,7 +672,7 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  tdp->fields.data[i].rl_type = RL_TYPE_ANON_UNION;
 	  tdp->fields.data[i].size = size;
 
-	  if (rl_add_type (tdp_, tdp->fields.data[i].comment, NULL))
+	  if (rl_add_type (tdp_, NULL, NULL))
 	    {
 	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_ANON_UNION_TYPE_ERROR, type);
 	      return (0);
