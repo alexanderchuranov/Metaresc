@@ -133,7 +133,7 @@ cinit_save (rl_ra_rl_ptrdes_t * _ptrs_)
     else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES) && rl_io_handlers[fdp->rl_type].save.cinit)
       skip_node = rl_io_handlers[fdp->rl_type].save.cinit (idx, ptrs, save_data);
     else
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+      RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
     return (skip_node);
   }
   
@@ -151,7 +151,7 @@ json_save (rl_ra_rl_ptrdes_t * _ptrs_)
     else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES) && rl_io_handlers[fdp->rl_type].save.json)
       skip_node = rl_io_handlers[fdp->rl_type].save.json (idx, ptrs, save_data);
     else
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+      RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
     return (skip_node);
   }
   
@@ -373,6 +373,7 @@ static void __attribute__((constructor)) rl_init_save_cinit (void)
   rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.cinit = cinit_save_char_array;
   rl_io_handlers[RL_TYPE_STRING].save.cinit = cinit_save_string;
   rl_io_handlers[RL_TYPE_STRUCT].save.cinit = cinit_save_struct;
+  rl_io_handlers[RL_TYPE_FUNC].save.cinit = cinit_save_none;
   rl_io_handlers[RL_TYPE_UNION].save.cinit = cinit_save_struct;
   rl_io_handlers[RL_TYPE_ANON_UNION].save.cinit = cinit_save_anon_union;
 
@@ -402,6 +403,7 @@ static void __attribute__((constructor)) rl_init_save_json (void)
   rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.json = cinit_save_char_array;
   rl_io_handlers[RL_TYPE_STRING].save.json = cinit_save_string;
   rl_io_handlers[RL_TYPE_STRUCT].save.json = cinit_save_struct;
+  rl_io_handlers[RL_TYPE_FUNC].save.json = cinit_save_none;
   rl_io_handlers[RL_TYPE_UNION].save.json = cinit_save_struct;
   rl_io_handlers[RL_TYPE_ANON_UNION].save.json = cinit_save_anon_union;
 
