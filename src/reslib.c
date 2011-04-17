@@ -828,11 +828,8 @@ rl_build_field_names_hash (rl_td_t * tdp)
 }
 
 static int
-rl_check_fields_types (rl_td_t * tdp, void * args)
+rl_auto_field_detect (rl_fd_t * fdp)
 {
-  int i;
-  rl_td_t * tdp_;
-  int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   static size_t sizes[] =
     {
       [0 ... RL_MAX_TYPES - 1] = 0,
@@ -856,87 +853,121 @@ rl_check_fields_types (rl_td_t * tdp, void * args)
       [RL_TYPE_UNION] = sizeof (void),
       [RL_TYPE_ANON_UNION] = sizeof (void),
     };
+  rl_td_t * tdp = rl_get_td_by_name (fdp->type);
   
-  for (i = 0; i < fields_count; ++i)
+  if (tdp)
+    fdp->rl_type = tdp->rl_type;
+  else if (RL_TYPE_EXT_NONE == fdp->rl_type_ext)
     {
-      /* RL_AUTO packed into rl_type 2 values - field rl_type and rl_type for field as pointer */
-      rl_type_t ptr_rl_type = tdp->fields.data[i].rl_type / RL_MAX_TYPES;
-      tdp->fields.data[i].rl_type %= RL_MAX_TYPES;
-      
-      switch (tdp->fields.data[i].rl_type)
+      /* auto detect pointers */
+      char * end = strchr (fdp->type, 0) - 1;
+      if ('*' == *end)
 	{
-	  /* Enum detection */
-	case RL_TYPE_INT8:
-	case RL_TYPE_UINT8:
-	case RL_TYPE_INT16:
-	case RL_TYPE_UINT16:
-	case RL_TYPE_INT32:
-	case RL_TYPE_UINT32:
-	case RL_TYPE_INT64:
-	case RL_TYPE_UINT64:
-	  tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
-	  if (tdp_)
-	    tdp->fields.data[i].rl_type = tdp_->rl_type;
-	  break;
-	
-	case RL_TYPE_NONE: /* RL_AUTO type resolution */
-	  tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
-	  if (tdp_)
-	    tdp->fields.data[i].rl_type = tdp_->rl_type;
-	  else if (RL_TYPE_EXT_NONE == tdp->fields.data[i].rl_type_ext)
+	  char * type;
+	  /* remove whitespaces before * */
+	  while (isspace (end[-1]))
+	    --end;
+	  type = strndup (fdp->type, end - fdp->type);
+	  if (type)
 	    {
-	      /* auto detect pointers */
-	      char * end = strchr (tdp->fields.data[i].type, 0) - 1;
-	      if ('*' == *end)
+	      /* all internally allocated memory should be added to special array for proper cleanup */
+	      void ** ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (rl_conf.allocated_mem.data[0]));
+	      if (ptr)
+		*ptr = type;
+	      /* set new type */
+	      fdp->type = type;
+	      fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
+	      fdp->rl_type = fdp->rl_type_ptr;
+	      fdp->size = sizes[fdp->rl_type];
+	      /* autodetect structures and enums */
+	      switch (fdp->rl_type)
 		{
-		  char * type;
-		  /* remove whitespaces before * */
-		  while (isspace (end[-1]))
-		    --end;
-		  type = strndup (tdp->fields.data[i].type, end - tdp->fields.data[i].type);
-		  if (type)
+		case RL_TYPE_NONE:
+		case RL_TYPE_INT8:
+		case RL_TYPE_UINT8:
+		case RL_TYPE_INT16:
+		case RL_TYPE_UINT16:
+		case RL_TYPE_INT32:
+		case RL_TYPE_UINT32:
+		case RL_TYPE_INT64:
+		case RL_TYPE_UINT64:
+		  tdp = rl_get_td_by_name (fdp->type);
+		  if (tdp)
 		    {
-		      /* all internally allocated memory should be added to special array for proper cleanup */
-		      void ** ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (rl_conf.allocated_mem.data[0]));
-		      if (ptr)
-			*ptr = type;
-		      /* set new type */
-		      tdp->fields.data[i].type = type;
-		      tdp->fields.data[i].rl_type_ext = RL_TYPE_EXT_POINTER;
-		      tdp->fields.data[i].rl_type = ptr_rl_type;
-		      tdp->fields.data[i].size = sizes[ptr_rl_type];
-		      /* autodetect structures and enums */
-		      switch (tdp->fields.data[i].rl_type)
-			{
-			case RL_TYPE_NONE:
-			case RL_TYPE_INT8:
-			case RL_TYPE_UINT8:
-			case RL_TYPE_INT16:
-			case RL_TYPE_UINT16:
-			case RL_TYPE_INT32:
-			case RL_TYPE_UINT32:
-			case RL_TYPE_INT64:
-			case RL_TYPE_UINT64:
-			  tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
-			  if (tdp_)
-			    {
-			      tdp->fields.data[i].rl_type = tdp_->rl_type;
-			      tdp->fields.data[i].size = tdp_->size;
-			    }
-			  break;
+		      fdp->rl_type = tdp->rl_type;
+		      fdp->size = tdp->size;
+		    }
+		  break;
 
-			default:
-			  break;
-			}
-		    }		    
+		default:
+		  break;
 		}
-	    }
-	  break;
-	  
-	default:
-	  break;
+	    }		    
 	}
     }
+  return (EXIT_SUCCESS);
+}
+
+static int
+rl_func_field_detect (rl_fd_t * fdp)
+{
+  int i;
+  for (i = 0; fdp->args.data[i].rl_type != RL_TYPE_TRAILING_RECORD; ++i)
+    switch (fdp->args.data[i].rl_type)
+      {
+      case RL_TYPE_NONE:
+      case RL_TYPE_INT8:
+      case RL_TYPE_UINT8:
+      case RL_TYPE_INT16:
+      case RL_TYPE_UINT16:
+      case RL_TYPE_INT32:
+      case RL_TYPE_UINT32:
+      case RL_TYPE_INT64:
+      case RL_TYPE_UINT64:
+	rl_auto_field_detect (&fdp->args.data[i]);
+	break;
+      default:
+	break;
+      }
+  fdp->args.size = i * sizeof (fdp->args.data[0]);
+  return (EXIT_SUCCESS);
+}
+
+static int
+rl_check_fields_types (rl_td_t * tdp, void * args)
+{
+  int i;
+  rl_td_t * tdp_;
+  int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  
+  for (i = 0; i < fields_count; ++i)
+    switch (tdp->fields.data[i].rl_type)
+      {
+	/* Enum detection */
+      case RL_TYPE_INT8:
+      case RL_TYPE_UINT8:
+      case RL_TYPE_INT16:
+      case RL_TYPE_UINT16:
+      case RL_TYPE_INT32:
+      case RL_TYPE_UINT32:
+      case RL_TYPE_INT64:
+      case RL_TYPE_UINT64:
+	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
+	if (tdp_)
+	  tdp->fields.data[i].rl_type = tdp_->rl_type;
+	break;
+	
+      case RL_TYPE_NONE: /* RL_AUTO type resolution */
+	rl_auto_field_detect (&tdp->fields.data[i]);
+	break;
+	  
+      case RL_TYPE_FUNC:
+	rl_func_field_detect (&tdp->fields.data[i]);
+	break;
+	  
+      default:
+	break;
+      }
   return (0);
 }
 
