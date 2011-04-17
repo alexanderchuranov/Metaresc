@@ -494,7 +494,7 @@ xdr_save (XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
 	}
       else
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+	  RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 	  return (0);
 	}
       
@@ -533,7 +533,7 @@ xdr_load (void * data, rl_fd_t * fdp, XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
 	   && rl_io_handlers[fdp->rl_type].load.xdr)
     status = rl_io_handlers[fdp->rl_type].load.xdr (xdrs, idx, ptrs);
   else
-    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+    RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
   if (status && (0 == idx))
     status = rl_set_crossrefs (ptrs);
@@ -567,6 +567,7 @@ static void __attribute__((constructor)) rl_init_save_xdr (void)
   rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.xdr = xdr_char_array_; 
   rl_io_handlers[RL_TYPE_STRING].save.xdr = xdr_save_string;
   rl_io_handlers[RL_TYPE_STRUCT].save.xdr = xdr_none; 
+  rl_io_handlers[RL_TYPE_FUNC].save.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_UNION].save.xdr = xdr_save_union; 
   rl_io_handlers[RL_TYPE_ANON_UNION].save.xdr = xdr_save_union; 
      
@@ -599,6 +600,7 @@ static void __attribute__((constructor)) rl_init_load_xdr (void)
   rl_io_handlers[RL_TYPE_CHAR_ARRAY].load.xdr = xdr_char_array_; 
   rl_io_handlers[RL_TYPE_STRING].load.xdr = xdr_load_string;
   rl_io_handlers[RL_TYPE_STRUCT].load.xdr = xdr_load_struct; 
+  rl_io_handlers[RL_TYPE_FUNC].load.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_UNION].load.xdr = xdr_load_union; 
   rl_io_handlers[RL_TYPE_ANON_UNION].load.xdr = xdr_load_union; 
      

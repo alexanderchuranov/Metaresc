@@ -733,7 +733,7 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
 	   && rl_io_handlers[fdp->rl_type].load.rl)
     status = rl_io_handlers[fdp->rl_type].load.rl (idx, ptrs);
   else
-    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+    RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
 
   /* set cross references at the upper level */
   if (0 == idx)
@@ -776,6 +776,7 @@ static void __attribute__((constructor)) rl_init_load_rl (void)
   rl_io_handlers[RL_TYPE_CHAR_ARRAY].load.rl = rl_load_char_array;
   rl_io_handlers[RL_TYPE_STRING].load.rl = rl_load_string;
   rl_io_handlers[RL_TYPE_STRUCT].load.rl = rl_load_struct;
+  rl_io_handlers[RL_TYPE_FUNC].load.rl = rl_load_none;
   rl_io_handlers[RL_TYPE_UNION].load.rl = rl_load_struct;
   rl_io_handlers[RL_TYPE_ANON_UNION].load.rl = rl_load_anon_union;
 

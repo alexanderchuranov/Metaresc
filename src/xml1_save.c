@@ -52,7 +52,7 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 	       && rl_io_handlers[fdp->rl_type].save.xml)
 	content = rl_io_handlers[fdp->rl_type].save.xml (idx, ptrs);
       else
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+	RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
       if (content)
 	{
@@ -210,6 +210,7 @@ void __attribute__((constructor)) rl_init_save_xml1 (void)
   rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.xml = xml_save_char_array;
   rl_io_handlers[RL_TYPE_STRING].save.xml = xml_save_string;
   rl_io_handlers[RL_TYPE_STRUCT].save.xml = xml_save_empty;
+  rl_io_handlers[RL_TYPE_FUNC].save.xml = xml_save_none;
   rl_io_handlers[RL_TYPE_UNION].save.xml = xml_save_empty;
   rl_io_handlers[RL_TYPE_ANON_UNION].save.xml = xml_save_empty;
 

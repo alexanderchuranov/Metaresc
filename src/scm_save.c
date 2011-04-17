@@ -92,7 +92,7 @@ scm_save (rl_ra_rl_ptrdes_t * ptrs)
 		   && rl_io_handlers[fdp->rl_type].save.scm)
 	    content = rl_io_handlers[fdp->rl_type].save.scm (idx, ptrs);
 	  else
-	    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+	    RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
 
 	  if (content)
 	    {
@@ -353,6 +353,7 @@ static void __attribute__((constructor)) rl_init_save_scm (void)
   rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.scm = scm_save_char_array;
   rl_io_handlers[RL_TYPE_STRING].save.scm = scm_save_string;
   rl_io_handlers[RL_TYPE_STRUCT].save.scm = scm_save_empty;
+  rl_io_handlers[RL_TYPE_FUNC].save.scm = scm_save_none;
   rl_io_handlers[RL_TYPE_UNION].save.scm = scm_save_empty;
   rl_io_handlers[RL_TYPE_ANON_UNION].save.scm = scm_save_empty;
 

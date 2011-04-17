@@ -29,7 +29,7 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 	       && rl_io_handlers[fdp->rl_type].save.xml)
 	content = rl_io_handlers[fdp->rl_type].save.xml (idx, ptrs);
       else
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->rl_type_ext, fdp->rl_type);
+	RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
       if (content)
 	{
