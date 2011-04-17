@@ -107,12 +107,15 @@
 /*
   field descritions might be in two forms.
   1. RL_TYPE_MACRO (ARGS) for type scpecific declarations like INT32 (x)
-  2. (TYPE, NAME, SUFFIX...) for auto detection declarations. Equivalent of AUTO (ARGS)
+  2. (TYPE, NAME, SUFFIX...) for auto detection declarations or functions declarations. Suffix with parentheses denotes function.
  */
-#define P00_FIELD_(RL_TYPE_NAME, FIELD)		\
-  P99_IF_ELSE (P99_HAS_NO_PAREN (FIELD))	\
-  (P00_FIELD_UNFOLD (RL_TYPE_NAME, FIELD))	\
-  (P00_FIELD_UNFOLD (RL_TYPE_NAME, AUTO FIELD))
+#define P00_FIELD_(RL_TYPE_NAME, FIELD)					\
+  P99_IF_ELSE (P99_HAS_NO_PAREN (FIELD))				\
+  (P00_FIELD_UNFOLD (RL_TYPE_NAME, FIELD))				\
+  (P99_IF_ELSE (P99_HAS_NO_PAREN (P99_SUB (2, 1, P99_REMOVE_PAREN (FIELD)))) \
+   (P00_FIELD_UNFOLD (RL_TYPE_NAME, AUTO FIELD))			\
+   (P00_FIELD_UNFOLD (RL_TYPE_NAME, FUNC FIELD)))
+
 /*
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted RL_ type prefix.
   The 3rd macro unfolds to RL_{AUTO|INT32|...}_{PROTO|DESC} (RL_TYPE_NAME, ARGS...)
