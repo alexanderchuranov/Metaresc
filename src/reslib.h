@@ -69,6 +69,7 @@
 #define TYPEDEF_STRUCT(...) P00_TYPEDEF (STRUCT, __VA_ARGS__)
 #define TYPEDEF_UNION(...) P00_TYPEDEF (UNION, __VA_ARGS__)
 #define TYPEDEF_ENUM(...) P00_TYPEDEF (ENUM, __VA_ARGS__)
+#define TYPEDEF_CHAR_ARRAY(...) P00_UNFOLD (RL_TYPEDEF_CHAR_ARRAY, __VA_ARGS__)
 /*
   TYPEDEF_{STRUCT|UNION|ENUM} have first agrument type name.
   Second argument might be ATTRIBUTES(...) with typedef attributes, comments and extended meta information. The rest is list of fields/enums declarations.
@@ -93,28 +94,39 @@
 #define P00_GET_LAST_ATTRIBUTES(FIRST, ...) (__VA_ARGS__) /* extract typedef comments and extended meta information */
 /*
   Next macro produces typedef prolog, body and epilog.
-  Prolog is RL_TYPEDEF_{STRUCT|UNION|ENUM}_{PROTO|DESC} (RL_TYPE_NAME, ATTR)
+  Prolog is RL_TYPEDEF_{STRUCT|UNION|ENUM}_{PROTO|DESC} (RL_TYPE_NAME, ATTR...)
   Body is a list of fields or enums definition. Structs and union fields are handled with P00_FIELD. Enums definitions are handled with P00_ENUM_DEF.
-  Epilog is RL_END_{STRUCT|UNION|ENUM}_{PROTO|DESC} (RL_TYPE_NAME, COM)
+  Epilog is RL_END_{STRUCT|UNION|ENUM}_{PROTO|DESC} (RL_TYPE_NAME, COM...)
  */
 #define TYPEDEF_ATTR(P00_TYPE, RL_TYPE_NAME, ATTR_COM_EXT, ...)		\
-  P00_UNFOLD (P99_PASTE3 (RL_TYPEDEF, _, P00_TYPE), RL_TYPE_NAME, P99_PASTE2 (P00_GET_FIRST_, ATTR_COM_EXT)) \
+  P00_UNFOLD (P99_PASTE2 (RL_TYPEDEF_, P00_TYPE), RL_TYPE_NAME, P99_PASTE2 (P00_GET_FIRST_, ATTR_COM_EXT)) \
   P99_FOR (RL_TYPE_NAME, P99_NARG (__VA_ARGS__), P00_SER, P99_IF_EQ (P00_TYPE, ENUM) (P00_ENUM_DEF) (P00_FIELD), __VA_ARGS__) \
-  P00_UNFOLD (P99_PASTE3 (RL_END, _, P00_TYPE), RL_TYPE_NAME, P99_REMOVE_PAREN (P99_PASTE2 (P00_GET_LAST_, ATTR_COM_EXT)))
+  P00_UNFOLD (P99_PASTE2 (RL_END_, P00_TYPE), RL_TYPE_NAME, P99_REMOVE_PAREN (P99_PASTE2 (P00_GET_LAST_, ATTR_COM_EXT)))
 
 /* field handler checks for trailing empty field */
 #define P00_FIELD(RL_TYPE_NAME, FIELD, I) P99_IF_ELSE (P99_IS_EMPTY (FIELD)) () (P00_FIELD_ (RL_TYPE_NAME, FIELD))
 /*
   field descritions might be in two forms.
   1. RL_TYPE_MACRO (ARGS) for type scpecific declarations like INT32 (x)
-  2. (TYPE, NAME, SUFFIX...) for auto detection declarations or functions declarations. Suffix with parentheses denotes function.
+  2. (TYPE, NAME, SUFFIX..., COMMENT..., EXT...) for auto detection declarations.
  */
 #define P00_FIELD_(RL_TYPE_NAME, FIELD)					\
   P99_IF_ELSE (P99_HAS_NO_PAREN (FIELD))				\
   (P00_FIELD_UNFOLD (RL_TYPE_NAME, FIELD))				\
-  (P99_IF_ELSE (P99_HAS_NO_PAREN (P99_SUB (2, 1, P99_REMOVE_PAREN (FIELD)))) \
-   (P00_FIELD_UNFOLD (RL_TYPE_NAME, AUTO FIELD))			\
-   (P00_FIELD_UNFOLD (RL_TYPE_NAME, FUNC FIELD)))
+  (P00_FIELD_DETECT (RL_TYPE_NAME, FIELD, P99_SUB (2, 1, P99_REMOVE_PAREN (FIELD))))
+
+/*
+  There are 3 options for auto-detection:
+    a. Suffix with parentheses goes to FUNC as function.
+    b. Non-empty suffix without parentheses goes to ARRAY as array.
+    c. Everything else goes to AUTO.
+ */
+#define P00_FIELD_DETECT(RL_TYPE_NAME, FIELD, SUFFIX)	\
+  P99_IF_ELSE (P99_HAS_NO_PAREN (SUFFIX))		\
+  (P99_IF_ELSE (P99_IS_EMPTY (SUFFIX))			\
+   (P00_FIELD_UNFOLD (RL_TYPE_NAME, AUTO FIELD))	\
+   (P00_FIELD_UNFOLD (RL_TYPE_NAME, ARRAY FIELD)))	\
+  (P00_FIELD_UNFOLD (RL_TYPE_NAME, FUNC FIELD))
 
 /*
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted RL_ type prefix.
@@ -253,6 +265,8 @@
 #define RL_ENUM_DEF(...) RL_UNFOLD (RL_ENUM_DEF, __VA_ARGS__)
 #define RL_END_ENUM(...) RL_UNFOLD (RL_END_ENUM, __VA_ARGS__)
 
+#define RL_TYPEDEF_CHAR_ARRAY(...) RL_UNFOLD (RL_TYPEDEF_CHAR_ARRAY, __VA_ARGS__)
+
 /* Macroses for prototypes generation mode */
 #define RL_TYPEDEF_STRUCT_PROTO(RL_TYPE_NAME, ATTR...) typedef struct RL_TYPEDEF_PREFIX (RL_TYPE_NAME) RL_TYPE_NAME; struct ATTR RL_TYPEDEF_PREFIX (RL_TYPE_NAME) {
 
@@ -297,6 +311,8 @@
 #define RL_ENUM_DEF_PROTO_(RL_TYPE_NAME, NAME, RHS, COM...) NAME RHS,
 #define RL_ENUM_DEF_PROTO(...) RL_ENUM_DEF_ (RL_ENUM_DEF_PROTO_, __VA_ARGS__)
 #define RL_END_ENUM_PROTO(RL_TYPE_NAME, COM...) } RL_TYPE_NAME;
+
+#define RL_TYPEDEF_CHAR_ARRAY_PROTO(RL_TYPE_NAME, SIZE, ...) typedef char RL_TYPE_NAME[SIZE];
 
 /* Macroses for descriptors generation mode */
 
@@ -409,8 +425,9 @@
 #define RL_TYPEDEF_ENUM_DESC(RL_TYPE_NAME, ATTR...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_ENUM, ATTR)
 #define RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, RHS, COM...) { .type = RL_STRINGIFY (RL_TYPE_NAME), .name = #NAME, .value = NAME, .rl_type = RL_TYPE_ENUM, .ext = NULL, .comment = "" COM, },
 #define RL_ENUM_DEF_DESC(...) RL_ENUM_DEF_ (RL_ENUM_DEF_DESC_, __VA_ARGS__)
-
 #define RL_END_ENUM_DESC(RL_TYPE_NAME, COM...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
+
+#define RL_TYPEDEF_CHAR_ARRAY_DESC(RL_TYPE_NAME, SIZE, COM...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_CHAR_ARRAY) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 
 #define RL_TYPEDEF_DESC(RL_TYPE_NAME, RL_TYPE, ATTR...) RL_DESCRIPTOR_ATTR rl_td_t RL_DESCRIPTOR_PREFIX (RL_TYPE_NAME) = { \
     .rl_type = RL_TYPE,							\
