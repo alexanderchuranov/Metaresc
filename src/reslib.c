@@ -793,6 +793,9 @@ rl_build_field_names_hash (rl_td_t * tdp)
     for (j = i + 1; j < fields_count; ++j)
       if (tdp->fields.data[i].hash_value == tdp->fields.data[j].hash_value)
 	return (!0);
+
+  if (0 == fields_count)
+    return (0);
   
   while (NULL == tdp->lookup_by_name.data)
     {
@@ -895,6 +898,7 @@ rl_auto_field_detect (rl_fd_t * fdp)
 		case RL_TYPE_UINT32:
 		case RL_TYPE_INT64:
 		case RL_TYPE_UINT64:
+		case RL_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
 		  tdp = rl_get_td_by_name (fdp->type);
 		  if (tdp)
 		    {
