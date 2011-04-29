@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include <gjobs.h>
-#include <gjobs.h>
 
 static void
 print_person (person_t * person)

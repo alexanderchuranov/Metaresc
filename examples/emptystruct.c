@@ -6,7 +6,6 @@
 #include <string.h>
 
 #include <emptystruct.h>
-#include <emptystruct.h>
 
 int
 main (int argc, char * argv[])
