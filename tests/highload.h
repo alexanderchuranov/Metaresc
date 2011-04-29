@@ -4,16 +4,10 @@
 
 #include <reslib.h>
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME list_t
-RL_TYPEDEF_STRUCT ()
-  RL_POINTER (list_t, next)
-RL_END_STRUCT ()
+TYPEDEF_STRUCT (list_t,
+		(list_t *, next)
+		)
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME array_t
-RL_TYPEDEF_STRUCT ()
-  RL_RARRAY (list_t, rarray)
-RL_END_STRUCT ()
-
-#undef RL_MODE
+TYPEDEF_STRUCT (array_t,
+		RARRAY (list_t, rarray)
+		)

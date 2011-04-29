@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 #include <highload.h>
-#include <highload.h>
 
 #define ARRAY_SIZE (160 * 1024)
 

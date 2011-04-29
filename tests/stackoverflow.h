@@ -8,10 +8,6 @@
 #define VALGRIND_LIMIT ((1024 - 256 - 128 + 8 + 2) * 1024) /* valgrind default limit */
 #define ARRAY_SIZE VALGRIND_LIMIT
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME large_struct_t
-RL_TYPEDEF_STRUCT ()
-  RL_NONE (char, array, [ARRAY_SIZE])
-RL_END_STRUCT ()
-
-#undef RL_MODE
+TYPEDEF_STRUCT (large_struct_t,
+		NONE (char, array, [ARRAY_SIZE])
+		)

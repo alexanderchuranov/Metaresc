@@ -7,7 +7,6 @@
 
 //#define RL_CHECK_TYPES(RL_TYPE_NAME, S_PTR...)
 #include <stackoverflow.h>
-#include <stackoverflow.h>
 
 static large_struct_t large_struct = {
   .array = { [0 ... ARRAY_SIZE - 1] = 0, },

@@ -6,7 +6,6 @@
 #include <stdlib.h>
 
 #include <ptr_ext.h>
-#include <ptr_ext.h>
 
 int main ()
 {

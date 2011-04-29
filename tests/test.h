@@ -9,12 +9,11 @@
 #undef FALSE
 #undef TRUE
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME boolean_t
-RL_TYPEDEF_ENUM (__attribute__ ((packed,aligned(1))))
-  RL_ENUM_DEF (FALSE, = 0)
-  RL_ENUM_DEF (TRUE, = !0)
-RL_END_ENUM ()
+TYPEDEF_ENUM (boolean_t,
+	      ATTRIBUTES (__attribute__ ((packed,aligned(1)))),
+	      (FALSE, = 0),
+	      (TRUE, = !0),
+	      )
 
 #undef RL_TYPE_NAME
 #define RL_TYPE_NAME mask_t
@@ -25,35 +24,40 @@ RL_TYPEDEF_ENUM (__attribute__ ((packed,aligned(2))))
   RL_ENUM_DEF (EXEC, = (1 << 2))
 RL_END_ENUM ()
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME point_t
-RL_TYPEDEF_STRUCT (__attribute__((packed)))
-  RL_FLOAT (x, "Comment", &((meta_info_t){.meta_type = SIMPLE, .info = "comment field",}))
-  RL_DOUBLE (y, "Comment", "comment")
-  RL_POINTER_STRUCT (sample_t, sample)
-RL_END_STRUCT ("Comment", &((meta_info_t){.meta_type = SIMPLE, .info = "comment struct",}))
+TYPEDEF_STRUCT (point_t,
+		ATTRIBUTES (__attribute__((packed)), "Comment on struct", &((meta_info_t){.meta_type = SIMPLE, .info = "comment struct",})),
+		FLOAT (x, "Comment", &((meta_info_t){.meta_type = SIMPLE, .info = "comment field",})),
+		DOUBLE (y, "Comment", "comment"),
+		POINTER_STRUCT (sample_t, sample),
+		)
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME char_t
-RL_TYPEDEF_STRUCT ()
-  RL_CHAR (c)
-RL_END_STRUCT ()
+TYPEDEF_STRUCT (char_t, CHAR (c))
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME union_t
-RL_TYPEDEF_UNION (__attribute__((__transparent_union__)))
-  RL_UINT32 (union_uint32)
-  RL_FLOAT (union_float)
-RL_END_UNION ("comment")
+TYPEDEF_STRUCT
+(empty_t,
+ (int, x_, (int, const char*, const char * *, const int*, void *, void**,  char*, char**)),
+ (str_t, p),
+ ANON_UNION (__attribute__((__transparent_union__))),
+   INT32 (x),
+   (float, y),
+ END_ANON_UNION (),
+ (double, z, [2]),
+ FIELD (int32_t, q, [3], RL_TYPE_INT32, RL_TYPE_EXT_ARRAY, "com", NULL),
+ (long double *, w, , "comment", NULL),
+ )
 
-#undef RL_TYPE_NAME
-#define RL_TYPE_NAME union_enum_discriminator_t
-RL_TYPEDEF_ENUM ()
-  RL_ENUM_DEF (UED_DEFAULT)
-  RL_ENUM_DEF (UED_INT32, , "union_uint32")
-  RL_ENUM_DEF (UED_FLOAT, , "union_float")
-RL_END_ENUM ()
+TYPEDEF_UNION (union_t,
+	       ATTRIBUTES (__attribute__((__transparent_union__)), "comment"),
+	       UINT32 (union_uint32),
+	       FLOAT (union_float),
+	       )
 
+TYPEDEF_ENUM (union_enum_discriminator_t,
+	      UED_DEFAULT,
+	      (UED_INT32, , "union_uint32"),
+	      (UED_FLOAT, , "union_float"),
+	      )
+  
 #undef RL_TYPE_NAME
 #define RL_TYPE_NAME sample_t
 RL_TYPEDEF_STRUCT ()
@@ -93,7 +97,7 @@ RL_TYPEDEF_STRUCT ()
   RL_UNION (union_t, _union_enum, "union_enum_discriminator")
   RL_UINT8 (union_int_discriminator)
   RL_UNION (union_t, _union_int, "union_int_discriminator")
-  RL_ENUM (boolean_t, bool)
+  RL_ENUM (boolean_t, _bool)
   RL_BITMASK (mask_t, mask)
   RL_STRING (string)
   RL_STRING (string_empty)

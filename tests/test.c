@@ -14,7 +14,9 @@
 
 #define BUF_SIZE (65536)
 typedef char str_t[16];
+#define RL_MODE PROTO
 #include "test.h"
+#define RL_MODE DESC
 #include "test.h"
 
 #include <tsearch.h>
@@ -202,7 +204,7 @@ main (void)
     ._union_enum = {.union_uint32 = 1987654321},
     .union_int_discriminator = 0,
     ._union_int = {.union_float = M_PI},
-    .bool = TRUE,
+    ._bool = TRUE,
     .mask = READ | EXEC,
     .string = "\n\\\"HI\62\65\12<&lt;&gt;>&amp;\\\"",
     .string_empty = NULL,
@@ -486,17 +488,6 @@ main (void)
       printf ("\n");
       RL_FREE (str);
     }
-
-#define COUNT(...) COUNT_ (0, ## __VA_ARGS__)
-#define COUNT_(...) COUNT__ (__VA_ARGS__, 3, 2, 1, 0)
-#define COUNT__(_0, _1, _2, _3, N, ...) COUNT_ ## N (_1, _2, _3)
-#define COUNT_0(...) 0
-#define COUNT_1(...) 1
-#define COUNT_2(...) 2
-#define COUNT_3(...) 3
-
-  x = COUNT(1, 2, 3);
-
 #ifdef HAVE_LIBXML2 
   /* Clean up everything else before quitting. */
   xmlCleanupParser();
