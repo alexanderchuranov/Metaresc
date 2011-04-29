@@ -2,17 +2,6 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of ResLib project */
 
-#ifndef RL_MODE
-/* RL_MODE assign as DESC and PROTO depending on trigger */
-#ifndef RL_MODE_TRIGGER
-#define RL_MODE PROTO
-#define RL_MODE_TRIGGER
-#else /* defined (RL_MODE_TRIGGER) */
-#define RL_MODE DESC
-#undef RL_MODE_TRIGGER
-#endif /* RL_MODE_TRIGGER */
-#endif /* !defined(RL_MODE) */
-
 /* ResLib prototypes */
 #ifndef _RESLIB_H_
 #define _RESLIB_H_
@@ -63,57 +52,71 @@
 #define RL_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE[], typeof (S_PTR)) ? RL_TYPE_EXT_ARRAY : RL_TYPE_EXT_NONE)
 
 /* P99 interface */
-
 #include <p99/p99_classification.h>
 
 #define TYPEDEF_STRUCT(...) P00_TYPEDEF (STRUCT, __VA_ARGS__)
 #define TYPEDEF_UNION(...) P00_TYPEDEF (UNION, __VA_ARGS__)
 #define TYPEDEF_ENUM(...) P00_TYPEDEF (ENUM, __VA_ARGS__)
-#define TYPEDEF_CHAR_ARRAY(...) P00_UNFOLD (RL_TYPEDEF_CHAR_ARRAY, __VA_ARGS__)
+#define TYPEDEF_CHAR_ARRAY(...) P00_TYPEDEF (CHAR_ARRAY, __VA_ARGS__)
+
+#define P00_TYPEDEF(...) P99_PASTE2 (P00_MODE_, RL_MODE) (__VA_ARGS__)
+#define P00_MODE_PROTO(...) P00_TYPEDEF_MODE (PROTO, __VA_ARGS__)
+#define P00_MODE_DESC(...) P00_TYPEDEF_MODE (DESC, __VA_ARGS__)
+#define P00_MODE_RL_MODE(...)  P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__)
+
+#define P00_TYPEDEF_MODE(P00_MODE, P00_TYPE, ...) P99_PASTE2 (P00_TYPEDEF_, P00_TYPE) (P00_MODE, P00_TYPE, __VA_ARGS__)
+#define P00_TYPEDEF_STRUCT P00_TYPEDEF_COMPAUND
+#define P00_TYPEDEF_UNION P00_TYPEDEF_COMPAUND
+#define P00_TYPEDEF_ENUM P00_TYPEDEF_COMPAUND
+#define P00_TYPEDEF_CHAR_ARRAY(P00_MODE, P00_TYPE, ...) P99_PASTE2 (RL_TYPEDEF_CHAR_ARRAY_, P00_MODE) (__VA_ARGS__)
+
 /*
   TYPEDEF_{STRUCT|UNION|ENUM} have first agrument type name.
   Second argument might be ATTRIBUTES(...) with typedef attributes, comments and extended meta information. The rest is list of fields/enums declarations.
   Next macro checks that ATTRIBUTES are presented.
  */
-#define P00_TYPEDEF(P00_TYPE, RL_TYPE_NAME, ...)			\
+#define P00_TYPEDEF_COMPAUND(P00_MODE, P00_TYPE, P00_TYPE_NAME, ...)	\
   P99_IF_ELSE (P99_IS_EMPTY (__VA_ARGS__))				\
-  (TYPEDEF_ATTR (P00_TYPE, RL_TYPE_NAME, ATTRIBUTES (,), ))		\
-  (P00_TYPEDEF_ (P00_TYPE, RL_TYPE_NAME, __VA_ARGS__))
-#define P00_TYPEDEF_(P00_TYPE, RL_TYPE_NAME, FIRST, ...)		\
+  (TYPEDEF_ATTR (P00_MODE, P00_TYPE, P00_TYPE_NAME, ATTRIBUTES (,), ))	\
+  (P00_TYPEDEF_COMPAUND_ (P00_MODE, P00_TYPE, P00_TYPE_NAME, __VA_ARGS__))
+#define P00_TYPEDEF_COMPAUND_(P00_MODE, P00_TYPE, P00_TYPE_NAME, FIRST, ...) \
   P99_IF_ELSE (P99_HAS_NO_PAREN (FIRST))				\
   (P99_IF_ELSE (P99_PASTE2 (P00_IS_ATTRIBUTES_EQ_, FIRST))		\
-   (TYPEDEF_ATTR (P00_TYPE, RL_TYPE_NAME, ATTRIBUTES (,), FIRST, __VA_ARGS__)) \
-   (TYPEDEF_ATTR (P00_TYPE, RL_TYPE_NAME, FIRST, __VA_ARGS__)))		\
-  (TYPEDEF_ATTR (P00_TYPE, RL_TYPE_NAME, ATTRIBUTES (,), FIRST, __VA_ARGS__))
+   (TYPEDEF_ATTR (P00_MODE, P00_TYPE, P00_TYPE_NAME, ATTRIBUTES (,), FIRST, __VA_ARGS__)) \
+   (TYPEDEF_ATTR (P00_MODE, P00_TYPE, P00_TYPE_NAME, FIRST, __VA_ARGS__))) \
+  (TYPEDEF_ATTR (P00_MODE, P00_TYPE, P00_TYPE_NAME, ATTRIBUTES (,), FIRST, __VA_ARGS__))
 
-#define P00_UNFOLD(NODE, ...) P99_PASTE3 (NODE, _, RL_MODE) (__VA_ARGS__) /* adds to macro globally defined suffix - PROTO or DESC */
 #define P00_IS_ATTRIBUTES_EQ_ATTRIBUTES(...) 0 /* help macro for ATTRIBUTES test IF clause */
-#define P00_IS_ENUM_EQ_ENUM(...) , /* help macro for ENUM test IF clause */
+#define P00_UNFOLD(PREFIX, P00_TYPE, P00_MODE, ...) P99_PASTE4 (PREFIX, P00_TYPE, _, P00_MODE) (__VA_ARGS__)
 
 #define P00_GET_FIRST_ATTRIBUTES(FIRST, ...) FIRST /* extract typedef attributes */
 #define P00_GET_LAST_ATTRIBUTES(FIRST, ...) (__VA_ARGS__) /* extract typedef comments and extended meta information */
 /*
   Next macro produces typedef prolog, body and epilog.
-  Prolog is RL_TYPEDEF_{STRUCT|UNION|ENUM}_{PROTO|DESC} (RL_TYPE_NAME, ATTR...)
+  Prolog is RL_TYPEDEF_{STRUCT|UNION|ENUM}_{PROTO|DESC} (P00_TYPE_NAME, ATTR...)
   Body is a list of fields or enums definition. Structs and union fields are handled with P00_FIELD. Enums definitions are handled with P00_ENUM_DEF.
-  Epilog is RL_END_{STRUCT|UNION|ENUM}_{PROTO|DESC} (RL_TYPE_NAME, COM...)
+  Epilog is RL_END_{STRUCT|UNION|ENUM}_{PROTO|DESC} (P00_TYPE_NAME, COM...)
  */
-#define TYPEDEF_ATTR(P00_TYPE, RL_TYPE_NAME, ATTR_COM_EXT, ...)		\
-  P00_UNFOLD (P99_PASTE2 (RL_TYPEDEF_, P00_TYPE), RL_TYPE_NAME, P99_PASTE2 (P00_GET_FIRST_, ATTR_COM_EXT)) \
-  P99_FOR (RL_TYPE_NAME, P99_NARG (__VA_ARGS__), P00_SER, P99_IF_EQ (P00_TYPE, ENUM) (P00_ENUM_DEF) (P00_FIELD), __VA_ARGS__) \
-  P00_UNFOLD (P99_PASTE2 (RL_END_, P00_TYPE), RL_TYPE_NAME, P99_REMOVE_PAREN (P99_PASTE2 (P00_GET_LAST_, ATTR_COM_EXT)))
+#define TYPEDEF_ATTR(P00_MODE, P00_TYPE, P00_TYPE_NAME, ATTR_COM_EXT, ...) \
+  P00_UNFOLD (RL_TYPEDEF_, P00_TYPE, P00_MODE, P00_TYPE_NAME, P99_PASTE2 (P00_GET_FIRST_, ATTR_COM_EXT)) \
+  P99_FOR ((P00_MODE, P00_TYPE_NAME), P99_NARG (__VA_ARGS__), P00_SER, P99_PASTE3 (P00_, P00_TYPE, _HANDLER), __VA_ARGS__) \
+  P00_UNFOLD (RL_END_, P00_TYPE, P00_MODE, P00_TYPE_NAME, P99_REMOVE_PAREN (P99_PASTE2 (P00_GET_LAST_, ATTR_COM_EXT)))
+
+#define P00_STRUCT_HANDLER P00_FIELD
+#define P00_UNION_HANDLER P00_FIELD
+#define P00_ENUM_HANDLER P00_ENUM_DEF
 
 /* field handler checks for trailing empty field */
-#define P00_FIELD(RL_TYPE_NAME, FIELD, I) P99_IF_ELSE (P99_IS_EMPTY (FIELD)) () (P00_FIELD_ (RL_TYPE_NAME, FIELD))
+#define P00_FIELD(P00_MODE_TYPE_NAME, FIELD, I) P99_IF_ELSE (P99_IS_EMPTY (FIELD)) () (P00_FIELD_ (P00_MODE_TYPE_NAME, FIELD))
 /*
   field descritions might be in two forms.
   1. RL_TYPE_MACRO (ARGS) for type scpecific declarations like INT32 (x)
   2. (TYPE, NAME, SUFFIX..., COMMENT..., EXT...) for auto detection declarations.
  */
-#define P00_FIELD_(RL_TYPE_NAME, FIELD)					\
+#define P00_FIELD_(P00_MODE_TYPE_NAME, FIELD)				\
   P99_IF_ELSE (P99_HAS_NO_PAREN (FIELD))				\
-  (P00_FIELD_UNFOLD (RL_TYPE_NAME, FIELD))				\
-  (P00_FIELD_DETECT (RL_TYPE_NAME, FIELD, P99_SUB (2, 1, P99_REMOVE_PAREN (FIELD))))
+  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FIELD))			\
+  (P00_FIELD_DETECT (P00_MODE_TYPE_NAME, FIELD, P99_SUB (2, 1, P99_REMOVE_PAREN (FIELD))))
 
 /*
   There are 3 options for auto-detection:
@@ -121,73 +124,74 @@
     b. Non-empty suffix without parentheses goes to ARRAY as array.
     c. Everything else goes to AUTO.
  */
-#define P00_FIELD_DETECT(RL_TYPE_NAME, FIELD, SUFFIX)	\
-  P99_IF_ELSE (P99_HAS_NO_PAREN (SUFFIX))		\
-  (P99_IF_ELSE (P99_IS_EMPTY (SUFFIX))			\
-   (P00_FIELD_UNFOLD (RL_TYPE_NAME, AUTO FIELD))	\
-   (P00_FIELD_UNFOLD (RL_TYPE_NAME, ARRAY FIELD)))	\
-  (P00_FIELD_UNFOLD (RL_TYPE_NAME, FUNC FIELD))
+#define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)	\
+  P99_IF_ELSE (P99_HAS_NO_PAREN (SUFFIX))			\
+  (P99_IF_ELSE (P99_IS_EMPTY (SUFFIX))				\
+   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))		\
+   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY FIELD)))	\
+  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FUNC FIELD))
 
+#define P00_GET_MODE(P00_MODE, P00_TYPE_NAME) P00_MODE
+#define P00_GET_TYPE_NAME(P00_MODE, P00_TYPE_NAME) P00_TYPE_NAME
 /*
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted RL_ type prefix.
-  The 3rd macro unfolds to RL_{AUTO|INT32|...}_{PROTO|DESC} (RL_TYPE_NAME, ARGS...)
+  The 3rd macro unfolds to RL_{AUTO|INT32|...}_{PROTO|DESC} (P00_TYPE_NAME, ARGS...)
   Last one detects unkown field qualifiers.
  */
-#define P00_FIELD_UNFOLD(RL_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (RL_TYPE_NAME, FIELD, P99_PASTE2 (P00_COMMA_, FIELD))
-#define P00_FIELD_UNFOLD_(RL_TYPE_NAME, FIELD, RL_FIELD_COMMA) P00_FIELD_UNFOLD__ (RL_TYPE_NAME, FIELD, RL_FIELD_COMMA)
-#define P00_FIELD_UNFOLD__(RL_TYPE_NAME, FIELD, RL_FIELD_COMMA,  ...)	\
+#define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, P99_PASTE2 (P00_COMMA_, FIELD))
+#define P00_FIELD_UNFOLD_(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA) P00_FIELD_UNFOLD__ (P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA)
+#define P00_FIELD_UNFOLD__(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA,  ...)	\
   P99_IF_ELSE (P99_IS_EMPTY (__VA_ARGS__))				\
-  (P00_UNFOLD (RL_UNKNOWN, RL_TYPE_NAME, FIELD))			\
-  (P00_UNFOLD (RL_FIELD_COMMA, RL_TYPE_NAME, P99_REMOVE_PAREN (__VA_ARGS__)))
+  (P00_UNFOLD (RL_, UNKNOWN, P00_GET_MODE P00_MODE_TYPE_NAME, , FIELD))	\
+  (P00_UNFOLD (RL_, P00_FIELD_COMMA, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, P99_REMOVE_PAREN (__VA_ARGS__)))
 
 /* produce compilation error for unkown field qualifiers */
-#define RL_UNKNOWN_PROTO(RL_TYPE_NAME, ...) int _1[RL_STRINGIFY(__VA_ARGS__)()];
-#define RL_UNKNOWN_DESC(RL_TYPE_NAME, ...) { RL_STRINGIFY(__VA_ARGS__)(), },
+#define RL_UNKNOWN_PROTO(P00_TYPE_NAME, ...) int _1[RL_STRINGIFY(__VA_ARGS__)()];
+#define RL_UNKNOWN_DESC(P00_TYPE_NAME, ...) { RL_STRINGIFY(__VA_ARGS__)(), },
 
-/* Check for empty trailing enum definition  */
-#define P00_ENUM_DEF(RL_TYPE_NAME, FIELD, I) P99_IF_ELSE (P99_IS_EMPTY (FIELD)) () (P00_ENUM_DEF_ (RL_TYPE_NAME, FIELD))
 /*
-  enums definition might be in two forms.
+  Check for empty trailing enum definition
+  Enums definition might be in two forms.
   1. just a enum name
   2. (ENUM_NAME, RIGHT_HAND_SIDE..., COMMENT..., EXT...) enum and some extra information in parentheses
-  both unfolds into RL_ENUM_DEF_{PROTO|DESC} (RL_TYPE_NAME, ARGS)
- */
-#define P00_ENUM_DEF_(RL_TYPE_NAME, FIELD)				\
-  P99_IF_ELSE (P99_HAS_NO_PAREN (FIELD))				\
-  (P00_UNFOLD (RL_ENUM_DEF, RL_TYPE_NAME, FIELD))			\
-  (P00_UNFOLD (RL_ENUM_DEF, RL_TYPE_NAME, P99_REMOVE_PAREN (FIELD)))
+  both unfolds into RL_ENUM_DEF_{PROTO|DESC} (P00_TYPE_NAME, ARGS)
+*/
+#define P00_ENUM_DEF(P00_MODE_TYPE_NAME, FIELD, I)			\
+  P99_IF_ELSE (P99_IS_EMPTY (FIELD))					\
+  ()									\
+  (P00_UNFOLD (RL_, ENUM_DEF, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, P99_REMOVE_PAREN (FIELD)))
 
 /* list of substitutions for P00_FIELD_UNFOLD_ */
-#define P00_COMMA_FIELD RL_FIELD,
-#define P00_COMMA_AUTO RL_AUTO,
-#define P00_COMMA_NONE RL_NONE,
-#define P00_COMMA_ENUM RL_ENUM,
-#define P00_COMMA_BITMASK RL_BITMASK,
-#define P00_COMMA_INT8 RL_INT8,
-#define P00_COMMA_UINT8 RL_UINT8,
-#define P00_COMMA_INT16 RL_INT16,
-#define P00_COMMA_UINT16 RL_UINT16,
-#define P00_COMMA_INT32 RL_INT32,
-#define P00_COMMA_UINT32 RL_UINT32,
-#define P00_COMMA_INT64 RL_INT64,
-#define P00_COMMA_UINT64 RL_UINT64,
-#define P00_COMMA_FLOAT RL_FLOAT,
-#define P00_COMMA_DOUBLE RL_DOUBLE,
-#define P00_COMMA_LONG_DOUBLE RL_LONG_DOUBLE,
-#define P00_COMMA_CHAR RL_CHAR,
-#define P00_COMMA_STRING RL_STRING,
-#define P00_COMMA_CHAR_ARRAY RL_CHAR_ARRAY,
-#define P00_COMMA_STRUCT RL_STRUCT,
-#define P00_COMMA_UNION RL_UNION,
-#define P00_COMMA_ARRAY RL_ARRAY,
-#define P00_COMMA_POINTER RL_POINTER,
-#define P00_COMMA_POINTER_STRUCT RL_POINTER_STRUCT,
-#define P00_COMMA_RARRAY RL_RARRAY,
-#define P00_COMMA_FUNC RL_FUNC,
+#define P00_COMMA_FIELD FIELD,
+#define P00_COMMA_AUTO AUTO,
+#define P00_COMMA_NONE NONE,
+#define P00_COMMA_ENUM ENUM,
+#define P00_COMMA_BITMASK BITMASK,
+#define P00_COMMA_INT8 INT8,
+#define P00_COMMA_UINT8 UINT8,
+#define P00_COMMA_INT16 INT16,
+#define P00_COMMA_UINT16 UINT16,
+#define P00_COMMA_INT32 INT32,
+#define P00_COMMA_UINT32 UINT32,
+#define P00_COMMA_INT64 INT64,
+#define P00_COMMA_UINT64 UINT64,
+#define P00_COMMA_FLOAT FLOAT,
+#define P00_COMMA_DOUBLE DOUBLE,
+#define P00_COMMA_LONG_DOUBLE LONG_DOUBLE,
+#define P00_COMMA_CHAR CHAR,
+#define P00_COMMA_STRING STRING,
+#define P00_COMMA_CHAR_ARRAY CHAR_ARRAY,
+#define P00_COMMA_STRUCT STRUCT,
+#define P00_COMMA_UNION UNION,
+#define P00_COMMA_ARRAY ARRAY,
+#define P00_COMMA_POINTER POINTER,
+#define P00_COMMA_POINTER_STRUCT POINTER_STRUCT,
+#define P00_COMMA_RARRAY RARRAY,
+#define P00_COMMA_FUNC FUNC,
 
-#define P00_COMMA_ANON_UNION RL_ANON_UNION,
-#define P00_COMMA_NAMED_ANON_UNION RL_NAMED_ANON_UNION,
-#define P00_COMMA_END_ANON_UNION RL_END_ANON_UNION,
+#define P00_COMMA_ANON_UNION ANON_UNION,
+#define P00_COMMA_NAMED_ANON_UNION NAMED_ANON_UNION,
+#define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
 /* P99 interface end */
 
@@ -325,8 +329,22 @@
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE,						\
       .rl_type_ext = RL_TYPE_EXT,					\
-      .count = sizeof(TYPE) == 0 ? 0 :                                  \
+      .count = sizeof (TYPE) == 0 ? 0 :					\
         sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
+      .row_count = 1,							\
+      .value = 0,							\
+      .ext = NULL,							\
+      .comment = "" COM,						\
+      },
+
+#define RL_POINTER_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, COM...)  { \
+    .type = #TYPE,							\
+      .name = #NAME,							\
+      .size = 0,							\
+      .offset = offsetof (RL_TYPE_NAME, NAME),				\
+      .rl_type = RL_TYPE_STRUCT,					\
+      .rl_type_ext = RL_TYPE_EXT_POINTER,				\
+      .count = 1,							\
       .row_count = 1,							\
       .value = 0,							\
       .ext = NULL,							\
@@ -340,7 +358,7 @@
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE_DETECT (TYPE),					\
       .rl_type_ext = RL_TYPE_EXT_ARRAY,					\
-      .count = sizeof(TYPE) == 0 ? 0 :                                  \
+      .count = sizeof (TYPE) == 0 ? 0 :					\
         sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
       .row_count = sizeof (((RL_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE), \
       .value = 0,							\
@@ -386,7 +404,6 @@
 #define RL_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_STRUCT, RL_TYPE_EXT_NONE, COM)
 #define RL_UNION_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_UNION, RL_TYPE_EXT_NONE, COM)
 #define RL_POINTER_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_POINTER, COM)
-#define RL_POINTER_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_STRUCT, RL_TYPE_EXT_POINTER, COM)
 #define RL_RARRAY_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_RARRAY, COM)
 #define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_FUNC, RL_TYPE_EXT_NONE, COM, .args = { .alloc_size = -1, .size = 0, .data = (rl_fd_t[]){ RL_FUNC_ARG (TYPE, "return value") RL_FOR (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS)) { .rl_type = RL_TYPE_TRAILING_RECORD, }, }, })
 #define RL_FUNC_ARG(TYPE, COM...) { .type = #TYPE, .size = sizeof (TYPE), .rl_type = RL_TYPE_DETECT (TYPE), .rl_type_ptr = RL_TYPE_DETECT_PTR (TYPE), .rl_type_ext = RL_TYPE_EXT_NONE, .comment = "" COM, },
@@ -471,7 +488,16 @@
 #endif /* HAVE_LIBXML2 */
 #include <rpc/types.h>
 #include <rpc/xdr.h>
+
+#ifndef RL_MODE
+#define RL_MODE_UNDEFINED
+#define RL_MODE PROTO
+#endif
 #include <rlprotos.h>
+#ifdef RL_MODE_UNDEFINED
+#undef RL_MODE_UNDEFINED
+#undef RL_MODE
+#endif
 
 extern rl_conf_t rl_conf;
 

@@ -964,6 +964,18 @@ rl_check_fields_types (rl_td_t * tdp, void * args)
 	if (tdp_)
 	  tdp->fields.data[i].rl_type = tdp_->rl_type;
 	break;
+
+	/*
+	  RL_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size in compile time.
+	 */
+      case RL_TYPE_STRUCT:
+	if (RL_TYPE_EXT_POINTER == tdp->fields.data[i].rl_type_ext)
+	  {
+	    tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
+	    if (tdp_)
+	      tdp->fields.data[i].size = tdp_->size;
+	  }
+	break;
 	
       case RL_TYPE_NONE: /* RL_AUTO type resolution */
 	rl_auto_field_detect (&tdp->fields.data[i]);
