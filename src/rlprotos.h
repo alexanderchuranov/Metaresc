@@ -259,7 +259,7 @@ TYPEDEF_STRUCT (rl_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(int, parent, , "index of current parent"),
 		(rl_red_black_tree_node_t *, typed_ptrs_tree, , "B-tree with typed nodes"),
 		(rl_red_black_tree_node_t *, untyped_ptrs_tree, , "B-tree with untyped nodes"),
-		RARRAY (int32_t, rl_ra_idx, "indexes of postponed nodes"),
+		RARRAY (int, rl_ra_idx, "indexes of postponed nodes"),
 		)
 
 TYPEDEF_STRUCT (rl_load_io_t, ATTRIBUTES ( , "load handlers"),
