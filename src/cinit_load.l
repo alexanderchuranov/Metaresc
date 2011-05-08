@@ -18,6 +18,7 @@
    static char * unquote (char*);
    static char * unquote_char (char*);
    static char * get_id (char*);
+   static char * get_type (char*);
 %}
 
  /*--------------------------------------------------------------------
@@ -55,7 +56,7 @@ RL_REF_IDX "ref_idx"
 
 {ID}{WS}":" { yylval->string = get_id (yytext); return (TOK_CINIT_FIELD_PREFIX); }
 
-"("{WS}{ID}{WS}"["{WS}"]"{WS}")"  { yylval->string = get_id (&yytext[1]); return (TOK_CINIT_FIELD_CAST); }
+"("({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"  { yylval->string = get_type (&yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
 ({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_BITMASK); }
 
@@ -180,6 +181,24 @@ static char * get_id (char * start)
   while (isspace (*start)) ++start;
   stop = start;
   while (isalnum (*stop) || ('_' == *stop)) ++stop;
+  size = stop - start;
+  id = RL_MALLOC (size + 1);
+  if (id)
+    {
+      memcpy (id, start, size);
+      id[size] = 0;
+    }
+  return (id);
+}
+
+static char * get_type (char * start)
+{
+  int size;
+  char * id;
+  char * stop;
+  while (isspace (*start)) ++start;
+  stop = strchr (start, '[');
+  while (isspace (stop[-1])) --stop;
   size = stop - start;
   id = RL_MALLOC (size + 1);
   if (id)
