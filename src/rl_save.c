@@ -22,8 +22,30 @@ rl_cmp_ptrdes (rl_ptrdes_t * x, rl_ptrdes_t * y)
   if (diff) return (diff);
   diff = x->fd.rl_type - y->fd.rl_type;
   if (diff) return (diff);
-  diff = strcmp (x->fd.type, y->fd.type);
-  if (diff) return (diff);
+
+  switch (x->fd.rl_type)
+    {
+    case RL_TYPE_STRING:
+    case RL_TYPE_CHAR_ARRAY:
+    case RL_TYPE_CHAR:
+    case RL_TYPE_VOID:
+    case RL_TYPE_INT8:
+    case RL_TYPE_UINT8:
+    case RL_TYPE_INT16:
+    case RL_TYPE_UINT16:
+    case RL_TYPE_INT32:
+    case RL_TYPE_UINT32:
+    case RL_TYPE_INT64:
+    case RL_TYPE_UINT64:
+    case RL_TYPE_FLOAT:
+    case RL_TYPE_DOUBLE:
+    case RL_TYPE_LONG_DOUBLE:
+      break;
+    default:
+      diff = strcmp (x->fd.type, y->fd.type);
+      if (diff) return (diff);
+      break;
+    }
   return (0);
 }
 
@@ -85,6 +107,17 @@ rl_resolve_untyped_forward_ref (rl_save_data_t * rl_save_data)
       return (-1);
     }
   ref_idx = *(long*)tree_search_result;
+
+  /*
+    We need to walk up in a object tree and find upper parent with the same address.
+    I.e. we need to detect situation like
+  .ptr = (type1_t[]){
+    .first_field1 = {
+      .first_field2 = xxx,
+    }
+  }
+  first_field2 has the same address as .ptr and lookup will return match for .ptr node.
+  */
   for (;;)
     {
       int parent = ptrs->ra.data[same_ptr].parent;
@@ -92,6 +125,10 @@ rl_resolve_untyped_forward_ref (rl_save_data_t * rl_save_data)
 	break;
       same_ptr = parent;
     }
+  /*
+    node with the same address was found and it was not a parent structure.
+    Found node is a pointer if its parent has rl_type_ext == RL_TYPE_EXT_POINTER
+   */
   if ((ref_idx != same_ptr) && (ptrs->ra.data[ref_idx].parent >= 0))
     if (RL_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[ref_idx].parent].fd.rl_type_ext)
       return (ref_idx);
