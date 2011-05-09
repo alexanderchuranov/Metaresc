@@ -1,6 +1,6 @@
 # -*- makefile -*-
 
-AM_CFLAGS = --fast-math -g -O2 -Wall
+AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
 
 SUFFIXES = .y .l .lex.h .tab.h .lex.c .tab.c
 
