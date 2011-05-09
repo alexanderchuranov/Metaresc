@@ -596,20 +596,18 @@ rl_get_td_by_name (char * type)
   return (NULL);
 }
 
-#define RL_TYPE_ANONYMOUS_UNION_TEMPLATE "rl_type_anonymous_union_%d_t"
-
 static int
 rl_anon_unions_extract (rl_td_t * tdp)
 {
+  int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   int i, j;
   
   if (NULL == tdp)
     return (0);
   
-  for (i = 0; i < tdp->fields.size / sizeof (tdp->fields.data[0]); ++i)
+  for (i = 0; i < count; ++i)
     if (RL_TYPE_ANON_UNION == tdp->fields.data[i].rl_type)
       {
-	int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
 	for (j = i + 1; j < count; ++j)
 	  if (RL_TYPE_END_ANON_UNION == tdp->fields.data[j].rl_type)
 	    break;
@@ -617,64 +615,38 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  return (0);
 	{
 	  int fields_count = j - i; /* additional trailing element with rl_type = RL_TYPE_TRAILING_RECORD */
-	  rl_fd_t * fields_data = RL_MALLOC (fields_count * sizeof (rl_fd_t));
 	  static int rl_type_anonymous_union_cnt = 0;
-	  char type_[sizeof (RL_TYPE_ANONYMOUS_UNION_TEMPLATE) + RL_INT_TO_STRING_BUF_SIZE];
-	  char * type;
-	  rl_td_t * tdp_ = RL_MALLOC (sizeof (rl_td_t));
-	  int size = 0;
-	  void ** ptr;
+	  rl_td_t * tdp_ = tdp->fields.data[i].ext;
+	  rl_fd_t * first = &tdp->fields.data[i + 1];
 
-	  sprintf (type_, RL_TYPE_ANONYMOUS_UNION_TEMPLATE, rl_type_anonymous_union_cnt++);
-	  type = RL_STRDUP (type_);
-	  if ((NULL == fields_data) || (NULL == type) || (NULL == tdp_))
+	  tdp_->size = 0;
+	  /* rotate fields until all union fields will be shifted to the end of the array */
+	  for (j = 0; j < fields_count; ++j)
 	    {
-	      if (fields_data)
-		RL_FREE (fields_data);
-	      if (type)
-		RL_FREE (type);
-	      if (tdp_)
-		RL_FREE (tdp_);
-	      return (0);
+	      rl_fd_t fd = *first;
+	      memmove (first, &first[1], (count - i - 1) * sizeof (*first));
+	      fd.offset = 0; /* reset offset to zero */
+	      tdp->fields.data[count] = fd;
+	      if (fd.size > tdp_->size)
+		tdp_->size = fd.size; /* find union max size member */
 	    }
-	  ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (void*));
-	  if (ptr)
-	    *ptr = fields_data;
-	  ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (void*));
-	  if (ptr)
-	    *ptr = type;
-	  ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (void*));
-	  if (ptr)
-	    *ptr = tdp_;
-
-	  memset (tdp_, 0, sizeof (*tdp_));
-	  for (j = 0; j < fields_count - 1; ++j)
-	    {
-	      fields_data[j] = tdp->fields.data[i + 1 + j];
-	      if (fields_data[j].size > size)
-		size = fields_data[j].size;
-	      fields_data[j].offset = 0;
-	    }
-	  fields_data[fields_count - 1].rl_type = RL_TYPE_TRAILING_RECORD; /* trailing record */
+	  tdp->fields.data[count].rl_type = RL_TYPE_TRAILING_RECORD; /* trailing record */
 	  tdp_->rl_type = RL_TYPE_ANON_UNION;
-	  tdp_->type = type;
+	  sprintf (tdp_->type, RL_TYPE_ANONYMOUS_UNION_TEMPLATE, rl_type_anonymous_union_cnt++);
 	  tdp_->attr = tdp->fields.data[i].comment; /* anonymous union stringified attributes are saved into comments field */
-	  tdp_->comment = tdp->fields.data[i + fields_count].comment; /* copy comment from RL_END_ANON_UNION record */
+	  tdp_->comment = tdp->fields.data[count].comment; /* copy comment from RL_END_ANON_UNION record */
 	  tdp_->ext = NULL;
-	  tdp_->size = size;
-	  tdp_->fields.data = fields_data;
+	  tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
 
-	  tdp->fields.data[i].comment = tdp->fields.data[i + fields_count].comment; /* copy comment from RL_END_ANON_UNION record */
-	  for (j = i + fields_count + 1; j < count; ++j)
-	    tdp->fields.data[j - fields_count] = tdp->fields.data[j];
+	  tdp->fields.data[i].comment = tdp->fields.data[count].comment; /* copy comment from RL_END_ANON_UNION record */
 	  tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
-	  tdp->fields.data[i].type = type;
-	  tdp->fields.data[i].rl_type = RL_TYPE_ANON_UNION;
-	  tdp->fields.data[i].size = size;
+	  count -= fields_count;
+	  tdp->fields.data[i].type = tdp_->type;
+	  tdp->fields.data[i].size = tdp_->size;
 
 	  if (rl_add_type (tdp_, NULL, NULL))
 	    {
-	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_ANON_UNION_TYPE_ERROR, type);
+	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->type);
 	      return (0);
 	    }
 	}
@@ -744,30 +716,91 @@ rl_get_enum_by_name (int64_t * value, char * name)
 }
 
 static int
-rl_check_fields_names (rl_td_t * tdp)
+rl_normalize_type (rl_fd_t * fdp)
+{
+  static char * keywords[] =
+    {
+      "struct",
+      "union",
+      "enum",
+      "const",
+      "__const",
+      "__const__",
+      "volatile",
+      "__volatile",
+      "__volatile__",
+      "restrict",
+      "__restrict",
+      "__restrict__",
+    };
+  static int isdelimiter [1 << (8 * sizeof (uint8_t))] =
+    {
+      [0 ... (1 << (8 * sizeof (char))) - 1] = 0,
+      [0] = !0,
+      [(uint8_t)' '] = !0,
+      [(uint8_t)'*'] = !0,
+    };
+  int i;
+  char * ptr;
+  int prev_is_space = 0;
+  int modified = 0;
+  
+  for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
+    {
+      int length = strlen (keywords[i]);
+      ptr = fdp->type;
+      for (;;)
+	{
+	  char * found = strstr (ptr, keywords[i]);
+	  if (!found)
+	    break;
+	  if (isdelimiter[(uint8_t)found[length]] && ((found == fdp->type) || isdelimiter[(uint8_t)found[-1]]))
+	    {
+	      memset (found, ' ', length); /* delete all keywords */
+	      modified = !0;
+	    }
+	  ++ptr; /* keyword might be a part of type name and we need to start search of keywork from next symbol */
+	}
+    }
+  if (modified)
+    {
+      /* we need to drop all space characters */
+      ptr = fdp->type;
+      for (i = 0; isspace (fdp->type[i]); ++i);
+      for (; fdp->type[i]; ++i)
+	if (isspace (fdp->type[i]))
+	  prev_is_space = !0;
+	else
+	  {
+	    if (prev_is_space)
+	      *ptr++ = ' ';
+	    *ptr++ = fdp->type[i];
+	    prev_is_space = 0;
+	  }
+      *ptr = 0;
+    }
+  return (EXIT_SUCCESS);
+}
+
+static int
+rl_check_fields (rl_td_t * tdp)
 {
   int i, j;
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
     {
-      /* Check names for of the fileds. Array definitions may contain brackets which are not acceptable as XML tag names. */
+      /*
+	Check names of the fileds.
+	RL_NONE definitions may contain brackets (for arrays) or braces (for function pointers).
+      */
       char * name = tdp->fields.data[i].name;
       if (name)
 	{
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
-	  if (*name) /* check for invalid characters */
-	    {
-	      char * cleared_name = strndup (tdp->fields.data[i].name, name - tdp->fields.data[i].name);
-	      if (cleared_name)
-		{
-		  tdp->fields.data[i].name = cleared_name;
-		  /* all internally allocated memory should be added to special array for proper cleanup */
-		  void ** ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (rl_conf.allocated_mem.data[0]));
-		  if (ptr)
-		    *ptr = tdp->fields.data[i].name;
-		}
-	    }
+	  if (*name) /* strings with field names might be in read-only memory. For RL_NONE names are saved in writable memory. */
+	    *name = 0; /* truncate on first invalid charecter */
 	}
+      rl_normalize_type (&tdp->fields.data[i]);
     }
   /* check for name duplicates */
   for (i = 0; i < count; ++i)
@@ -863,53 +896,46 @@ rl_auto_field_detect (rl_fd_t * fdp)
   rl_td_t * tdp = rl_get_td_by_name (fdp->type);
   
   if (tdp)
-    fdp->rl_type = tdp->rl_type;
+    {
+      fdp->rl_type = tdp->rl_type;
+      fdp->size = tdp->size; /* size of forward pointers could be resolved only at the time of type registration */
+    }
   else if (RL_TYPE_EXT_NONE == fdp->rl_type_ext)
     {
       /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
       if ('*' == *end)
 	{
-	  char * type;
 	  /* remove whitespaces before * */
 	  while (isspace (end[-1]))
 	    --end;
-	  type = strndup (fdp->type, end - fdp->type);
-	  if (type)
+	  *end = 0; /* trancate type name */
+	  fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
+	  fdp->rl_type = fdp->rl_type_ptr;
+	  fdp->size = sizes[fdp->rl_type];
+	  /* autodetect structures and enums */
+	  switch (fdp->rl_type)
 	    {
-	      /* all internally allocated memory should be added to special array for proper cleanup */
-	      void ** ptr = rl_rarray_append ((void*)&rl_conf.allocated_mem, sizeof (rl_conf.allocated_mem.data[0]));
-	      if (ptr)
-		*ptr = type;
-	      /* set new type */
-	      fdp->type = type;
-	      fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
-	      fdp->rl_type = fdp->rl_type_ptr;
-	      fdp->size = sizes[fdp->rl_type];
-	      /* autodetect structures and enums */
-	      switch (fdp->rl_type)
+	    case RL_TYPE_NONE:
+	    case RL_TYPE_INT8:
+	    case RL_TYPE_UINT8:
+	    case RL_TYPE_INT16:
+	    case RL_TYPE_UINT16:
+	    case RL_TYPE_INT32:
+	    case RL_TYPE_UINT32:
+	    case RL_TYPE_INT64:
+	    case RL_TYPE_UINT64:
+	    case RL_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
+	      tdp = rl_get_td_by_name (fdp->type);
+	      if (tdp)
 		{
-		case RL_TYPE_NONE:
-		case RL_TYPE_INT8:
-		case RL_TYPE_UINT8:
-		case RL_TYPE_INT16:
-		case RL_TYPE_UINT16:
-		case RL_TYPE_INT32:
-		case RL_TYPE_UINT32:
-		case RL_TYPE_INT64:
-		case RL_TYPE_UINT64:
-		case RL_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
-		  tdp = rl_get_td_by_name (fdp->type);
-		  if (tdp)
-		    {
-		      fdp->rl_type = tdp->rl_type;
-		      fdp->size = tdp->size;
-		    }
-		  break;
-
-		default:
-		  break;
+		  fdp->rl_type = tdp->rl_type;
+		  fdp->size = tdp->size;
 		}
+	      break;
+
+	    default:
+	      break;
 	    }		    
 	}
     }
@@ -921,28 +947,31 @@ rl_func_field_detect (rl_fd_t * fdp)
 {
   int i;
   for (i = 0; fdp->args.data[i].rl_type != RL_TYPE_TRAILING_RECORD; ++i)
-    switch (fdp->args.data[i].rl_type)
-      {
-      case RL_TYPE_NONE:
-      case RL_TYPE_INT8:
-      case RL_TYPE_UINT8:
-      case RL_TYPE_INT16:
-      case RL_TYPE_UINT16:
-      case RL_TYPE_INT32:
-      case RL_TYPE_UINT32:
-      case RL_TYPE_INT64:
-      case RL_TYPE_UINT64:
-	rl_auto_field_detect (&fdp->args.data[i]);
-	break;
-      default:
-	break;
-      }
+    {
+      rl_normalize_type (&fdp->args.data[i]);
+      switch (fdp->args.data[i].rl_type)
+	{
+	case RL_TYPE_NONE:
+	case RL_TYPE_INT8:
+	case RL_TYPE_UINT8:
+	case RL_TYPE_INT16:
+	case RL_TYPE_UINT16:
+	case RL_TYPE_INT32:
+	case RL_TYPE_UINT32:
+	case RL_TYPE_INT64:
+	case RL_TYPE_UINT64:
+	  rl_auto_field_detect (&fdp->args.data[i]);
+	  break;
+	default:
+	  break;
+	}
+    }
   fdp->args.size = i * sizeof (fdp->args.data[0]);
   return (EXIT_SUCCESS);
 }
 
 static int
-rl_check_fields_types (rl_td_t * tdp, void * args)
+rl_detect_fields_types (rl_td_t * tdp, void * args)
 {
   int i;
   rl_td_t * tdp_;
@@ -1046,8 +1075,8 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   if (NULL != ext)
     tdp->ext = ext;
 
-  rl_check_fields_names (tdp);
   rl_anon_unions_extract (tdp);
+  rl_check_fields (tdp);
   rl_build_field_names_hash (tdp);
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
@@ -1069,7 +1098,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   if (RL_TYPE_ENUM == tdp->rl_type)
     rl_add_enum (tdp);
 
-  rl_td_foreach (rl_check_fields_types, tdp);
+  rl_td_foreach (rl_detect_fields_types, tdp);
   return (0);
 }
 
