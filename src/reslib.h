@@ -197,13 +197,24 @@
 #define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
 #define RL_COMPILETIME_ASSERT(X) (int)sizeof (struct { int:-!!(X); });
-#define RL_COMPARE_COMPAUND_TYPES(TYPE1, TYPE2, ...) P99_FOR ((TYPE1, TYPE2), P99_NARG (__VA_ARGS__), P00_BOR, P00_COMPARE_FIELDS, __VA_ARGS__)
+/*
+  For types defined using standard language approach you will need to create analog types with metaresc.
+  For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
+  Usage: RL_COMPARE_COMPAUND_TYPES (system_type, metaresc_type, commonly_named_field, (field_for_system_type, field_for_metaresc_type), ...)
+  Macro evaluates to 0 at compile time if all fields are compatible. Otherwise it is non-zero.
+ */
+#define RL_COMPARE_COMPAUND_TYPES(TYPE1, TYPE2, ...) ((sizeof (TYPE1) != sizeof (TYPE2)) | P99_FOR ((TYPE1, TYPE2), P99_NARG (__VA_ARGS__), P00_BOR, P00_COMPARE_FIELDS, __VA_ARGS__))
 #define P00_GET_FIRST(_1, _2) _1
 #define P00_GET_SECOND(_1, _2) _2
 #define P00_COMPARE_FIELDS(TYPE1_TYPE2, NAME, I) P99_IF_ELSE (P99_HAS_NO_PAREN (NAME)) (RL_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, NAME, P00_GET_SECOND TYPE1_TYPE2, NAME)) (RL_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, P00_GET_FIRST NAME, P00_GET_SECOND TYPE1_TYPE2, P00_GET_SECOND NAME))
 
 #ifndef RL_COMPARE_FIELDS_EXT
 #define RL_COMPARE_FIELDS_EXT(...) 0
+/*
+  if your types contains only builtin types then you can do more precies comparation.
+  #undef RL_COMPARE_FIELDS_EXT
+  #define RL_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) __builtin_types_compatible_p (typeof (((TYPE1*)NULL)->NAME1), typeof (((TYPE2*)NULL)->NAME2))
+ */
 #endif /* RL_COMPARE_FIELDS_EXT */
 #define RL_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) != offsetof (TYPE2, NAME2)) | (sizeof (((TYPE1*)NULL)->NAME1) != sizeof (((TYPE2*)NULL)->NAME2)) | RL_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
 
