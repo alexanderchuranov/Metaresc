@@ -180,10 +180,6 @@ TYPEDEF_STRUCT (rl_mem_t, ATTRIBUTES ( , "ResLib memory operations"),
 		(void, free, (const char *, const char *, int, void*), "pointer on free() function"),
 		)
 
-TYPEDEF_STRUCT (rl_void_ptr_t,
-		(void *, ptr),
-		)
-
 TYPEDEF_STRUCT (rl_ra_rl_td_ptr_t,
 		RARRAY (rl_td_ptr_t, ra, "non-collision hash table"),
 		)
@@ -199,7 +195,6 @@ TYPEDEF_STRUCT (rl_conf_t, ATTRIBUTES ( , "ResLib configuration"),
 #endif /* RL_TREE_LOOKUP */
 		RARRAY (rl_td_ptr_t, des, "types descriptors"),
 		(rl_red_black_tree_node_t *, enum_by_name, , "B-tree with enums mapping"),
-		RARRAY (rl_void_ptr_t, allocated_mem, "memory to deallocate"),
 		)
 
 TYPEDEF_ENUM (rl_ptrdes_flags_t, ATTRIBUTES ( , "bitmask values"),

@@ -56,11 +56,6 @@ rl_conf_t rl_conf = {
 #else /* RL_TREE_LOOKUP */
   .tree = NULL,
 #endif /* RL_TREE_LOOKUP */
-  .allocated_mem = { /**< resizable array with strings for cleanup */
-    .data = NULL, /* descriptors rl_rarray_t */
-    .size = 0,
-    .alloc_size = 0,
-  },
   .enum_by_name = NULL,
 };
 
@@ -139,17 +134,6 @@ static void __attribute__((destructor)) rl_cleanup (void)
     RL_FREE (rl_conf.des.data);
   rl_conf.des.data = NULL;
   rl_conf.des.size = rl_conf.des.alloc_size = 0;
-
-  if (rl_conf.allocated_mem.data)
-    {
-      int i;
-      for (i = 0; i < rl_conf.allocated_mem.size / sizeof (rl_conf.allocated_mem.data[0]); ++i)
-	if (rl_conf.allocated_mem.data[i].ptr)
-	  RL_FREE (rl_conf.allocated_mem.data[i].ptr);
-      RL_FREE (rl_conf.allocated_mem.data);
-      rl_conf.allocated_mem.data = NULL;
-    }
-  rl_conf.allocated_mem.size = rl_conf.allocated_mem.alloc_size = 0;
 }
 
 void
