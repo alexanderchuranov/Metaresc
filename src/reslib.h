@@ -13,7 +13,7 @@
 #define RL_DESCRIPTOR_PREFIX(RL_TYPE_NAME) rl_td_ ## RL_TYPE_NAME
 #endif /* RL_DESCRIPTOR_PREFIX */
 #ifndef RL_TYPEDEF_PREFIX
-#define RL_TYPEDEF_PREFIX(RL_TYPE_NAME) rl_s_ ## RL_TYPE_NAME
+#define RL_TYPEDEF_PREFIX(RL_TYPE_NAME) RL_TYPE_NAME
 #endif /* RL_TYPEDEF_PREFIX */
 #ifndef RL_ANON_UNION_NAME
 #define RL_ANON_UNION_NAME(LINE) anon_union_ ## LINE
@@ -26,7 +26,8 @@
 #define RL_DESCRIPTOR_ATTR static
 #endif /* RL_DESCRIPTOR_ATTR */
 
-#define RL_STRINGIFY(STR) #STR
+/* make a string from argument in writable memory. #STR itself is in read-only memory */
+#define RL_STRINGIFY(STR) (char []) { #STR }
 
 #define RL_TYPE_DETECT_INNER(PREFIX, TYPE, SUFFIX, PAREN_SUFFIX)	\
   (0 /* RL_TYPE_NONE */							\
@@ -46,10 +47,12 @@
    | (__builtin_types_compatible_p (PREFIX char PAREN_SUFFIX [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
    | (__builtin_types_compatible_p (PREFIX char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
    | (__builtin_types_compatible_p (const char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
+   | (__builtin_types_compatible_p (volatile char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
+   | (__builtin_types_compatible_p (const volatile char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
    )
 #define RL_TYPE_DETECT(TYPE) RL_TYPE_DETECT_INNER ( , TYPE, ,)
-#define RL_TYPE_DETECT_PTR(TYPE) (RL_TYPE_DETECT_INNER ( , TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const, TYPE, *, (*)))
-#define RL_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE[], typeof (S_PTR)) ? RL_TYPE_EXT_ARRAY : RL_TYPE_EXT_NONE)
+#define RL_TYPE_DETECT_PTR(TYPE) (RL_TYPE_DETECT_INNER ( , TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const, TYPE, *, (*)) | RL_TYPE_DETECT_INNER (volatile, TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const volatile, TYPE, *, (*)))
+#define RL_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE [], typeof (S_PTR)) ? RL_TYPE_EXT_ARRAY : RL_TYPE_EXT_NONE)
 
 /* P99 interface */
 #include <p99/p99_classification.h>
@@ -146,8 +149,8 @@
   (P00_UNFOLD (RL_, P00_FIELD_COMMA, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, P99_REMOVE_PAREN (__VA_ARGS__)))
 
 /* produce compilation error for unkown field qualifiers */
-#define RL_UNKNOWN_PROTO(P00_TYPE_NAME, ...) int _1[RL_STRINGIFY(__VA_ARGS__)()];
-#define RL_UNKNOWN_DESC(P00_TYPE_NAME, ...) { RL_STRINGIFY(__VA_ARGS__)(), },
+#define RL_UNKNOWN_PROTO(P00_TYPE_NAME, ...) int _1[#__VA_ARGS__()];
+#define RL_UNKNOWN_DESC(P00_TYPE_NAME, ...) { #__VA_ARGS__(), },
 
 /*
   Check for empty trailing enum definition
@@ -323,7 +326,7 @@
 #define RL_TYPEDEF_STRUCT_DESC(RL_TYPE_NAME, ATTR...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_STRUCT, ATTR)
 
 #define RL_FIELD_DESC(RL_TYPE_NAME, TYPE, NAME, SUFFIX, RL_TYPE, RL_TYPE_EXT, COM...)  { \
-    .type = #TYPE,							\
+    .type = RL_STRINGIFY (TYPE),					\
       .name = #NAME,							\
       .size = sizeof (TYPE),						\
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
@@ -337,8 +340,8 @@
       .comment = "" COM,						\
       },
 
-#define RL_POINTER_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, COM...)  { \
-    .type = #TYPE,							\
+#define RL_POINTER_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, COM...)  {	\
+    .type = RL_STRINGIFY (TYPE),					\
       .name = #NAME,							\
       .size = 0,							\
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
@@ -352,7 +355,7 @@
       },
 
 #define RL_ARRAY_DESC(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...)  {	\
-    .type = #TYPE,							\
+    .type = RL_STRINGIFY (TYPE),					\
       .name = #NAME,							\
       .size = sizeof (TYPE),						\
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
@@ -367,8 +370,8 @@
       },
 
 #define RL_NONE_DESC_(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...)  {	\
-    .type = #TYPE,							\
-      .name = #NAME,							\
+    .type = RL_STRINGIFY (TYPE),					\
+      .name = RL_STRINGIFY (NAME),					\
       .size = sizeof (TYPE),						\
       .offset = 0,							\
       .rl_type = RL_TYPE_VOID,						\
@@ -405,18 +408,19 @@
 #define RL_UNION_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_UNION, RL_TYPE_EXT_NONE, COM)
 #define RL_POINTER_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_POINTER, COM)
 #define RL_RARRAY_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_RARRAY, COM)
-#define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_FUNC, RL_TYPE_EXT_NONE, COM, .args = { .alloc_size = -1, .size = 0, .data = (rl_fd_t[]){ RL_FUNC_ARG (TYPE, "return value") RL_FOR (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS)) { .rl_type = RL_TYPE_TRAILING_RECORD, }, }, })
-#define RL_FUNC_ARG(TYPE, COM...) { .type = #TYPE, .size = sizeof (TYPE), .rl_type = RL_TYPE_DETECT (TYPE), .rl_type_ptr = RL_TYPE_DETECT_PTR (TYPE), .rl_type_ext = RL_TYPE_EXT_NONE, .comment = "" COM, },
+#define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_FUNC, RL_TYPE_EXT_NONE, COM, .args = { .alloc_size = -1, .size = 0, .data = (rl_fd_t []){ RL_FUNC_ARG (TYPE, "return value") RL_FOR (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS)) { .rl_type = RL_TYPE_TRAILING_RECORD, }, }, })
+#define RL_FUNC_ARG(TYPE, COM...) { .type = RL_STRINGIFY (TYPE), .size = sizeof (TYPE), .rl_type = RL_TYPE_DETECT (TYPE), .rl_type_ptr = RL_TYPE_DETECT_PTR (TYPE), .rl_type_ext = RL_TYPE_EXT_NONE, .comment = "" COM, },
 #define RL_END_STRUCT_DESC(RL_TYPE_NAME, COM...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 
 #define RL_TYPEDEF_UNION_DESC(RL_TYPE_NAME, ATTR...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_UNION, ATTR)
 #define RL_END_UNION_DESC(RL_TYPE_NAME, COM...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 #define RL_ANON_UNION_DESC(RL_TYPE_NAME, ATTR...) RL_ANON_UNION_DESC_ (RL_TYPE_NAME, __LINE__, ATTR)
-#define RL_ANON_UNION_DESC_(RL_TYPE_NAME, LINE, ATTR...) RL_NAMED_ANON_UNION_DESC (RL_TYPE_NAME, RL_ANON_UNION_NAME (LINE), ATTR)
+#define RL_ANON_UNION_DESC_(RL_TYPE_NAME, LINE, ATTR...) RL_ANON_UNION_DESC__ (RL_TYPE_NAME, RL_ANON_UNION_NAME (LINE), ATTR)
+#define RL_ANON_UNION_DESC__(RL_TYPE_NAME, NAME, ATTR...) RL_NAMED_ANON_UNION_DESC (RL_TYPE_NAME, NAME, ATTR)
 
 #define RL_NAMED_ANON_UNION_DESC(RL_TYPE_NAME, NAME, ATTR...) {		\
-    .type = "anon_union_t",						\
-      .name = RL_STRINGIFY (NAME),					\
+    .type = "",								\
+      .name = #NAME,							\
       .size = 0,							\
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE_ANON_UNION,					\
@@ -424,19 +428,19 @@
       .count = 0,							\
       .row_count = 0,							\
       .comment = #ATTR,							\
-      .ext = NULL							\
+      .ext = (rl_td_t[]){ { .type = (char []) {RL_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, } }, \
       },
 #define RL_END_ANON_UNION_DESC(RL_TYPE_NAME, COM...) {	\
-    .type = "anon_union_t",			\
-      .name = NULL,				\
-      .size = 0,				\
-      .offset = 0,				\
-      .rl_type = RL_TYPE_END_ANON_UNION,	\
-      .rl_type_ext = RL_TYPE_EXT_NONE,		\
-      .count = 0,				\
-      .row_count = 0,				\
-      .ext = NULL,				\
-      .comment = "" COM,			\
+    .type = "",						\
+      .name = NULL,					\
+      .size = 0,					\
+      .offset = 0,					\
+      .rl_type = RL_TYPE_END_ANON_UNION,		\
+      .rl_type_ext = RL_TYPE_EXT_NONE,			\
+      .count = 0,					\
+      .row_count = 0,					\
+      .ext = NULL,					\
+      .comment = "" COM,				\
       },
 
 #define RL_TYPEDEF_ENUM_DESC(RL_TYPE_NAME, ATTR...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_ENUM, ATTR)
@@ -448,16 +452,18 @@
 
 #define RL_TYPEDEF_DESC(RL_TYPE_NAME, RL_TYPE, ATTR...) RL_DESCRIPTOR_ATTR rl_td_t RL_DESCRIPTOR_PREFIX (RL_TYPE_NAME) = { \
     .rl_type = RL_TYPE,							\
-    .type = RL_STRINGIFY (RL_TYPE_NAME),				\
+    .type = #RL_TYPE_NAME,						\
     .size = sizeof (RL_TYPE_NAME),					\
     .attr = #ATTR,							\
     .ext = NULL,							\
-    .fields = { .alloc_size = -1, .size = 0, .data = (rl_fd_t[]){
+    .fields = { .alloc_size = -1, .size = 0, .data = (rl_fd_t []){
 #define RL_TYPEDEF_END_DESC(RL_TYPE_NAME, COM...) {.rl_type = RL_TYPE_TRAILING_RECORD} } }, .comment = "" COM }; static inline void __attribute__((constructor)) RL_CONSTRUCTOR_PREFIX (RL_TYPE_NAME) (void) { RL_ADD_TYPE (RL_TYPE_NAME); }
 
 /* Library exports */
 #define RL_MAX_TYPES (256)
 #define RL_MAX_STRING_LENGTH ((unsigned int)-1)
+
+#define RL_TYPE_ANONYMOUS_UNION_TEMPLATE "rl_type_anonymous_union_%d_t"
 
 #define RL_INT_TO_STRING_BUF_SIZE (32)
 #define RL_FLOAT_TO_STRING_BUF_SIZE (256)
@@ -620,7 +626,7 @@ extern char * xml_unquote_string (char*);
 #endif /* RL_CHECK_TYPES */
 
 #define RL_SAVE_RL(RL_TYPE_NAME, S_PTR) ({				\
-      char __name__[] = #S_PTR;						\
+      char * __name__ = RL_STRINGIFY (S_PTR);				\
       rl_fd_t __fd__ =							\
 	{								\
 	  .name = __name__,						\
