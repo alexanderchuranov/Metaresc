@@ -35,13 +35,20 @@ TYPEDEF_STRUCT (char_t, CHAR (c))
 
 TYPEDEF_STRUCT
 (empty_t,
- (int, x_, (int, const char*, const char * *, const int*, void *, void**,  char*, char**)),
+ (int, x_, (int, __volatile__ __const__ char*, __volatile __const char * *, volatile const int*, void *, void**,  char*, char**, struct sample_t *)),
  (str_t, p),
  ANON_UNION (__attribute__((__transparent_union__))),
    INT32 (x),
    (float, y),
- END_ANON_UNION (),
+ END_ANON_UNION ("xxx"),
+ NAMED_ANON_UNION (huh),
+   INT32 (x),
+   (float, y),
+ END_ANON_UNION ("com1"),
  (double, z, [2]),
+ (void, e, (void)),
+ (const long double volatile* __restrict__ __const const __const__  __volatile__, union_),
+ (const struct sample_t *, forward),
  FIELD (int32_t, q, [3], RL_TYPE_INT32, RL_TYPE_EXT_ARRAY, "com", NULL),
  (long double *, w, , "comment", NULL),
  )
@@ -67,6 +74,8 @@ RL_TYPEDEF_STRUCT ()
   RL_POINTER (point_t, ptr_bkw)
   RL_POINTER (point_t, ptr_bkw_mismatch)
   RL_POINTER (point_t, ptr_external)
+  RL_POINTER (double volatile const, type_renamed)
+  RL_POINTER ( long double, typename_with_spaces)
   RL_POINTER (void, pointer_on_pointer)
   RL_INT8 (_int8, "Comment", (meta_info_t[]){{.format = "0x%02" SCNx8 " "}})
   RL_UINT8 (_uint8, "Comment", &((meta_info_t){.format = "0x%02" SCNx8 " "}))

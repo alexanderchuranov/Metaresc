@@ -37,7 +37,9 @@ free_sample (sample_t * sample_)
   if (sample_->rarray_.data)
     RL_FREE (sample_->rarray_.data);
   if (sample_->ptr_external)
-    RL_FREE (sample_->ptr_external);
+    RL_FREE ((void*)sample_->ptr_external);
+  if (sample_->typename_with_spaces)
+    RL_FREE (sample_->typename_with_spaces);
   if (sample_->ptr_int8)
     RL_FREE (sample_->ptr_int8);
   if (sample_->ptr_uint8)
@@ -174,6 +176,8 @@ main (void)
     .ptr_bkw = &sample.point,
     .ptr_bkw_mismatch = (point_t*)&sample.point.y,
     .ptr_external = &point,
+    .type_renamed = &point.y,
+    .typename_with_spaces = (long double[]){ 1 },
     .pointer_on_pointer = &sample.ptr_bkw,
     ._int8 = -1 ^ ((uint8_t)-1 >> 1),
     ._uint8 = (uint8_t)-1,
@@ -467,7 +471,7 @@ main (void)
   printf ("XDR size = %d\n", XDR_GETPOS (&xdrs));
 #endif
 
-  rl_type_t x = RL_TYPE_DETECT (typeof (0.0L));
+  rl_type_t x = RL_TYPE_DETECT (typeof (volatile const char*));
   str = RL_SAVE_CINIT (rl_type_t, &x);
   if (str)
     {
@@ -494,3 +498,5 @@ main (void)
 #endif /* HAVE_LIBXML2 */
   return (EXIT_SUCCESS);
 }
+
+
