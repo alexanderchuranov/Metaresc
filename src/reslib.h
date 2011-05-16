@@ -65,7 +65,7 @@
 #define P00_TYPEDEF(...) P99_PASTE2 (P00_MODE_, RL_MODE) (__VA_ARGS__)
 #define P00_MODE_PROTO(...) P00_TYPEDEF_MODE (PROTO, __VA_ARGS__)
 #define P00_MODE_DESC(...) P00_TYPEDEF_MODE (DESC, __VA_ARGS__)
-#define P00_MODE_RL_MODE(...)  P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__)
+#define P00_MODE_RL_MODE(...) P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__)
 
 #define P00_TYPEDEF_MODE(P00_MODE, P00_TYPE, ...) P99_PASTE2 (P00_TYPEDEF_, P00_TYPE) (P00_MODE, P00_TYPE, __VA_ARGS__)
 #define P00_TYPEDEF_STRUCT P00_TYPEDEF_COMPAUND
@@ -127,11 +127,11 @@
     b. Non-empty suffix without parentheses goes to ARRAY as array.
     c. Everything else goes to AUTO.
  */
-#define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)	\
-  P99_IF_ELSE (P99_HAS_NO_PAREN (SUFFIX))			\
-  (P99_IF_ELSE (P99_IS_EMPTY (SUFFIX))				\
-   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))		\
-   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY FIELD)))	\
+#define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)		\
+  P99_IF_ELSE (P99_HAS_NO_PAREN (SUFFIX))				\
+  (P99_IF_ELSE (P99_IS_EMPTY (SUFFIX))					\
+   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))			\
+   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY FIELD)))		\
   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FUNC FIELD))
 
 #define P00_GET_MODE(P00_MODE, P00_TYPE_NAME) P00_MODE
@@ -169,6 +169,7 @@
 #define P00_COMMA_AUTO AUTO,
 #define P00_COMMA_NONE NONE,
 #define P00_COMMA_ENUM ENUM,
+#define P00_COMMA_BITFIELD BITFIELD,
 #define P00_COMMA_BITMASK BITMASK,
 #define P00_COMMA_INT8 INT8,
 #define P00_COMMA_UINT8 UINT8,
@@ -213,7 +214,7 @@
 /*
   if your types contains only builtin types then you can do more precies comparation.
   #undef RL_COMPARE_FIELDS_EXT
-  #define RL_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) __builtin_types_compatible_p (typeof (((TYPE1*)NULL)->NAME1), typeof (((TYPE2*)NULL)->NAME2))
+  #define RL_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) !__builtin_types_compatible_p (typeof (((TYPE1*)NULL)->NAME1), typeof (((TYPE2*)NULL)->NAME2))
  */
 #endif /* RL_COMPARE_FIELDS_EXT */
 #define RL_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) != offsetof (TYPE2, NAME2)) | (sizeof (((TYPE1*)NULL)->NAME1) != sizeof (((TYPE2*)NULL)->NAME2)) | RL_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
@@ -260,6 +261,7 @@
 #define RL_AUTO(...) RL_UNFOLD (RL_AUTO, __VA_ARGS__)
 #define RL_NONE(...) RL_UNFOLD (RL_NONE, __VA_ARGS__)
 #define RL_ENUM(...) RL_UNFOLD (RL_ENUM, __VA_ARGS__)
+#define RL_BITFIELD(...) RL_UNFOLD (RL_BITFIELD, __VA_ARGS__)
 #define RL_BITMASK(...) RL_UNFOLD (RL_BITMASK, __VA_ARGS__)
 #define RL_INT8(...) RL_UNFOLD (RL_INT8, __VA_ARGS__)
 #define RL_UINT8(...) RL_UNFOLD (RL_UINT8, __VA_ARGS__)
@@ -305,6 +307,7 @@
 
 #define RL_FIELD_PROTO(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) TYPE NAME SUFFIX;
 #define RL_ENUM_PROTO(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, TYPE, NAME, )
+#define RL_BITFIELD_PROTO(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, TYPE, NAME, : SUFFIX)
 #define RL_BITMASK_PROTO(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, TYPE, NAME, )
 #define RL_INT8_PROTO(RL_TYPE_NAME, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, int8_t, NAME, )
 #define RL_UINT8_PROTO(RL_TYPE_NAME, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, uint8_t, NAME, )
@@ -357,22 +360,17 @@
       .count = sizeof (TYPE) == 0 ? 0 :					\
         sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
       .row_count = 1,							\
-      .value = 0,							\
-      .ext = NULL,							\
       .comment = "" COM,						\
       },
 
 #define RL_POINTER_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, COM...)  {	\
     .type = RL_STRINGIFY (TYPE),					\
       .name = #NAME,							\
-      .size = 0,							\
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE_STRUCT,					\
       .rl_type_ext = RL_TYPE_EXT_POINTER,				\
       .count = 1,							\
       .row_count = 1,							\
-      .value = 0,							\
-      .ext = NULL,							\
       .comment = "" COM,						\
       },
 
@@ -386,8 +384,6 @@
       .count = sizeof (TYPE) == 0 ? 0 :					\
         sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
       .row_count = sizeof (((RL_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE), \
-      .value = 0,							\
-      .ext = NULL,							\
       .comment = "" COM,						\
       },
 
@@ -395,16 +391,24 @@
     .type = RL_STRINGIFY (TYPE),					\
       .name = RL_STRINGIFY (NAME),					\
       .size = sizeof (TYPE),						\
-      .offset = 0,							\
       .rl_type = RL_TYPE_VOID,						\
       .rl_type_ext = RL_TYPE_EXT_NONE,					\
-      .count = 0,							\
-      .row_count = 0,							\
-      .ext = NULL,							\
       .comment = "" COM,						\
       },
 
-#define RL_AUTO_DESC_(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, SUFFIX, RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_DETECT (TYPE, ((RL_TYPE_NAME*)NULL)->NAME), COM, .rl_type_ptr = RL_TYPE_DETECT_PTR (TYPE))
+#define RL_BITFIELD_DESC(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) {	\
+    .type = RL_STRINGIFY (TYPE),					\
+      .name = RL_STRINGIFY (NAME),					\
+      .size = sizeof (TYPE),						\
+      .rl_type = RL_TYPE_BITFIELD,					\
+      .rl_type_aux = RL_TYPE_DETECT (TYPE),				\
+      .rl_type_ext = RL_TYPE_EXT_NONE,					\
+      .width = SUFFIX,							\
+      .bitfield = { .size = sizeof (RL_TYPE_NAME), .alloc_size = -1, .data = (uint8_t*)((RL_TYPE_NAME[]){ { .NAME = -1 } }), }, \
+      .comment = "" COM,						\
+      },
+
+#define RL_AUTO_DESC_(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, SUFFIX, RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_DETECT (TYPE, ((RL_TYPE_NAME*)NULL)->NAME), COM, .rl_type_aux = RL_TYPE_DETECT_PTR (TYPE))
 
 #define RL_AUTO_DESC(...) RL_TYPE_ARGN_ (RL_AUTO_DESC_, __VA_ARGS__)
 #define RL_NONE_DESC(...) RL_TYPE_ARGN_ (RL_NONE_DESC_, __VA_ARGS__)
@@ -431,7 +435,7 @@
 #define RL_POINTER_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_POINTER, COM)
 #define RL_RARRAY_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_RARRAY, COM)
 #define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_FUNC, RL_TYPE_EXT_NONE, COM, .args = { .alloc_size = -1, .size = 0, .data = (rl_fd_t []){ RL_FUNC_ARG (TYPE, "return value") RL_FOR (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS)) { .rl_type = RL_TYPE_TRAILING_RECORD, }, }, })
-#define RL_FUNC_ARG(TYPE, COM...) { .type = RL_STRINGIFY (TYPE), .size = sizeof (TYPE), .rl_type = RL_TYPE_DETECT (TYPE), .rl_type_ptr = RL_TYPE_DETECT_PTR (TYPE), .rl_type_ext = RL_TYPE_EXT_NONE, .comment = "" COM, },
+#define RL_FUNC_ARG(TYPE, COM...) { .type = RL_STRINGIFY (TYPE), .size = sizeof (TYPE), .rl_type = RL_TYPE_DETECT (TYPE), .rl_type_aux = RL_TYPE_DETECT_PTR (TYPE), .rl_type_ext = RL_TYPE_EXT_NONE, .comment = "" COM, },
 #define RL_END_STRUCT_DESC(RL_TYPE_NAME, COM...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 
 #define RL_TYPEDEF_UNION_DESC(RL_TYPE_NAME, ATTR...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_UNION, ATTR)
@@ -570,9 +574,10 @@ extern void rl_add_child (int, int, rl_ra_rl_ptrdes_t*);
 extern void rl_free_ptrs (rl_ra_rl_ptrdes_t*);
 extern rl_fd_t * rl_get_fd_by_name (rl_td_t*, char*);
 extern rl_fd_t * rl_get_enum_by_value (rl_td_t*, int64_t);
-extern int rl_get_enum_by_name (int64_t*, char*);
+extern int rl_get_enum_by_name (uint64_t*, char*);
 extern int rl_parse_add_node (rl_load_t*);
-
+extern int rl_load_bitfield_value (rl_ptrdes_t*, uint64_t*);
+extern int rl_save_bitfield_value (rl_ptrdes_t*, uint64_t*);
 extern int rl_td_foreach (int (*func) (rl_td_t*, void*), void*);
 extern rl_td_t * rl_get_td_by_name (char*);
 extern void rl_message_format (void (*output_handler) (char*), rl_message_id_t, va_list);
@@ -590,6 +595,7 @@ extern char * rl_stringify_uint32 (rl_ptrdes_t*);
 extern char * rl_stringify_int64 (rl_ptrdes_t*);
 extern char * rl_stringify_uint64 (rl_ptrdes_t*);
 extern char * rl_stringify_enum (rl_ptrdes_t*);
+extern char * rl_stringify_bitfield (rl_ptrdes_t*);
 extern char * rl_stringify_bitmask (rl_ptrdes_t*, char*);
 extern char * rl_stringify_float (rl_ptrdes_t*);
 extern char * rl_stringify_double (rl_ptrdes_t*);

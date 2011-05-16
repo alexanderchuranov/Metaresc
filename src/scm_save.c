@@ -186,6 +186,7 @@ SCM_SAVE_TYPE (enum);
 SCM_SAVE_TYPE (float);
 SCM_SAVE_TYPE (double);
 SCM_SAVE_TYPE (long_double_t);
+SCM_SAVE_TYPE (bitfield);
 
 #define RL_SCM_BITMASK_OR_DELIMITER " "
 #define RL_SCM_BITMASK_TEMPLATE "(bit-or %s)"
@@ -337,6 +338,7 @@ static void __attribute__((constructor)) rl_init_save_scm (void)
   rl_io_handlers[RL_TYPE_NONE].save.scm = scm_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.scm = scm_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.scm = scm_save_enum;
+  rl_io_handlers[RL_TYPE_BITFIELD].save.scm = scm_save_bitfield;
   rl_io_handlers[RL_TYPE_BITMASK].save.scm = scm_save_bitmask;
   rl_io_handlers[RL_TYPE_INT8].save.scm = scm_save_int8;
   rl_io_handlers[RL_TYPE_UINT8].save.scm = scm_save_uint8;

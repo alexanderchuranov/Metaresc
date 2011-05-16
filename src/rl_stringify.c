@@ -144,6 +144,36 @@ rl_stringify_enum (rl_ptrdes_t * ptrdes)
 }
 
 /**
+ * RL_BITFIELD type saving handler. Stringify as integer.
+ * @param ptrs resizeable array with pointers descriptors 
+ * @return stringified enum value
+ */
+char *
+rl_stringify_bitfield (rl_ptrdes_t * ptrdes)
+{
+  rl_ptrdes_t ptrdes_;
+  uint64_t value;
+
+  rl_save_bitfield_value (ptrdes, &value);
+  ptrdes_ = *ptrdes;
+  ptrdes_.data = &value;
+
+  switch (ptrdes->fd.rl_type_aux)
+    {
+    case RL_TYPE_INT8: return (rl_stringify_int8 (&ptrdes_));
+    case RL_TYPE_UINT8: return (rl_stringify_uint8 (&ptrdes_));
+    case RL_TYPE_INT16: return (rl_stringify_int16 (&ptrdes_));
+    case RL_TYPE_UINT16: return (rl_stringify_uint16 (&ptrdes_));
+    case RL_TYPE_INT32: return (rl_stringify_int32 (&ptrdes_));
+    case RL_TYPE_UINT32: return (rl_stringify_uint32 (&ptrdes_));
+    case RL_TYPE_INT64: return (rl_stringify_int64 (&ptrdes_));
+    case RL_TYPE_UINT64: return (rl_stringify_uint64 (&ptrdes_));
+    case RL_TYPE_ENUM: return (rl_stringify_enum (&ptrdes_));
+    default: return (rl_stringify_uint64 (&ptrdes_));
+    }
+}
+
+/**
  * RL_BITMASK type saving handler. Look up type descriptor and save as
  * stringified bitmask value or as integer otherwise.
  * @param ptrs resizeable array with pointers descriptors 
