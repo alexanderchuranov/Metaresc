@@ -41,6 +41,12 @@ rl_cmp_ptrdes (rl_ptrdes_t * x, rl_ptrdes_t * y)
     case RL_TYPE_DOUBLE:
     case RL_TYPE_LONG_DOUBLE:
       break;
+    case RL_TYPE_BITFIELD:
+      diff = x->fd.shift - y->fd.shift;
+      if (diff) return (diff);
+      diff = x->fd.width - y->fd.width;
+      if (diff) return (diff);
+      break;
     default:
       diff = strcmp (x->fd.type, y->fd.type);
       if (diff) return (diff);
