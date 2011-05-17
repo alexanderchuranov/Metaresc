@@ -30,9 +30,7 @@
       subsequently serialized into various formats and deserialized
       later. To achieve this the library adds metadata annotations to
       types. These annotations may be used for may purposes far beyond
-      just achieving the persistence. Run-time type introspection,
-      easier parsing, mapping to relational databases are some
-      examples, which immediately come to mind.
+      just achieving the persistence.
     </para>
   </section>
 
@@ -81,173 +79,180 @@
   <section xml:id="general">
     <title>Getting Started</title>
     
-    <section>
-      <title>What you need to use the library</title>
-      <para>
-        <itemizedlist>
-          <listitem><para>
-            Library headers and binary (static or dynamic) installed
-          </para></listitem>
-          
-          <listitem><para>
-            GNU C Compiler 4.2 or newer
-          </para></listitem>
-        </itemizedlist>
-      </para>
-      
-      <para>
-        Yes, at present the list of supported compilers isn't
-        long. This is because to provide all its features the library
-        has to use very sophisticated language and run-time
-        mechanisms. Porting the library to other compilers is a work
-        in progress.
-      </para>
-      
-      <para>
-        Note, that now not only the library itself, but also its
-        clients have to be written in C and compiled with the GCC. You
-        need to compile files which include library headers with
-        -std=gnu99 compiler option.
-      </para>
-    </section>
-    
-    <section>
-      <title>Installation</title>
+    <section xml:id="obtaining">
+      <title>How to get METARESC on your machine</title>
       
       <section>
-        <title>Installing from software repository</title>
+        <title>What you need to use the library</title>
         <para>
-          It's recommended that you first check whether the pre-built
-          package (or source port) exists in your operating system
-          software repository. Installing from repository has several
-          advantages:
           <itemizedlist>
             <listitem><para>
-              The library is already built with the appropriate options.
+              Library headers and binary (static or dynamic) installed
             </para></listitem>
             
             <listitem><para>
-              The library is installable in the appropriate place on
-              your system.
-            </para></listitem>
-            
-            <listitem><para>
-              The package is likely to be tested by maintainer.
-            </para></listitem>
-            
-            <listitem><para>
-              The package may have dependent packages that are
-              instantly testing METARESC package correctness.
-            </para></listitem>
-            
-            <listitem><para>
-              It's faster.
+              GNU C Compiler 4.2 or newer
             </para></listitem>
           </itemizedlist>
         </para>
         
         <para>
-          At present the METARESC team does not maintain a package or
-          port for any operating system. This is, however, much
-          anticipated.
+          At present the list of supported compilers is just a single
+          item. This is because to provide all its features the library
+          has to use very sophisticated language and run-time
+          mechanisms. Porting the library to other compilers is a work
+          in progress.
+        </para>
+        
+        <para>
+          Note, that now not only the library itself, but also its
+          clients have to be written in C and compiled with the GCC. You
+          need to compile files which include library headers with
+          -std=gnu99 compiler option.
         </para>
       </section>
       
       <section>
-        <title>Installing from source</title>
-        <para>
-          Installing from source may be helful in the following cases:
-          <itemizedlist>
-            <listitem><para>
-              You need custom compile-time options for the library.
-            </para></listitem>
-            
-            <listitem><para>
-              There is no package that you can install.
-            </para></listitem>
-            
-            <listitem><para>
-              You have to install the library into custom location.
-            </para></listitem>
-            
-            <listitem><para>
-              You want to modify the source code. In this case,
-              please, respect the license.
-            </para></listitem>
-          </itemizedlist>
-        </para>
+        <title>Installation</title>
         
-        <para>
-          To install the library from source you first need to obtain
-          the code. This may be accomplished by checking the code out
-          from the Git repository on Github. Use the following command
-          to check out the code ("cloning" in Git lingo):
-          <screen>git clone git://github.com/alexanderchuranov/Metaresc.git</screen>
-        </para>
-        
-        <para>
-          The build process of METARESC requires following software to
-          be installed on your system:
-          <itemizedlist>
-            <listitem><para>Bison 2.4.3</para></listitem>
-            <listitem><para>Flex 2.5.35</para></listitem>
-            <listitem><para>Help2Man 1.39.2</para></listitem>
-            <listitem><para>Libtool 2.4</para></listitem>
-          </itemizedlist>
-          The library is known to work with these versions of
-          software. Newer software is also expected to work.
-        </para>
-        
-        <para>
-          Once you have the code it's time to configure and build the
-          library. METARESC build is based on popular GNU Build System
-          (a.k.a. "Autotools"), so you may already know what to do
-          with it. The first step is configuration for your
-          environment. This is what the <command>configure</command>
-          script exists for. Most often it requires no arguments and
-          finished successfully. After this you may run
-          <command>make</command> command, followed by <command>make
-          install</command> to build and install the library
-          respectively. All the steps may look like this:
+        <section>
+          <title>Installing from software repository</title>
+          <para>
+            It's recommended that you first check whether the pre-built
+            package (or source port) exists in your operating system
+            software repository. Installing from repository has several
+            advantages:
+            
+            <itemizedlist>
+              <listitem><para>
+                The library is already built with the appropriate options.
+              </para></listitem>
+              
+              <listitem><para>
+                The library is installable in the appropriate place on
+                your system.
+              </para></listitem>
+              
+              <listitem><para>
+                The package is likely to be tested by maintainer.
+              </para></listitem>
+              
+              <listitem><para>
+                The package may have dependent packages that are
+                instantly testing METARESC package correctness.
+              </para></listitem>
+              
+              <listitem><para>
+                It's faster.
+              </para></listitem>
+            </itemizedlist>
+          </para>
           
-          <screen>
+          <para>
+            At present the METARESC team does not maintain a package or
+            port for any operating system. This is, however, much
+            anticipated.
+          </para>
+        </section>
+        
+        <section>
+          <title>Installing from source</title>
+          <para>
+            Installing from source may be helful in the following cases:
+            <itemizedlist>
+              <listitem><para>
+                You need custom compile-time options for the library.
+              </para></listitem>
+              
+              <listitem><para>
+                There is no package that you can install.
+              </para></listitem>
+              
+              <listitem><para>
+                You have to install the library into custom location.
+              </para></listitem>
+              
+              <listitem><para>
+                You want to modify the source code. In this case,
+                please, respect the license.
+              </para></listitem>
+            </itemizedlist>
+          </para>
+          
+          <para>
+            To install the library from source you first need to obtain
+            the code. This may be accomplished by checking the code out
+            from the Git repository on Github. Use the following command
+            to check out the code ("cloning" in Git lingo):
+            <screen>git clone git://github.com/alexanderchuranov/Metaresc.git</screen>
+          </para>
+          
+          <para>
+            The build process of METARESC requires following software to
+            be installed on your system:
+            <itemizedlist>
+              <listitem><para>Bison 2.4.3</para></listitem>
+              <listitem><para>Flex 2.5.35</para></listitem>
+              <listitem><para>Help2Man 1.39.2</para></listitem>
+              <listitem><para>Libtool 2.4</para></listitem>
+            </itemizedlist>
+            The library is known to work with these versions of
+            software. Newer software is also expected to work.
+          </para>
+          
+          <para>
+            Once you have the code it's time to configure and build the
+            library. METARESC build is based on popular GNU Build System
+            (a.k.a. "Autotools"), so you may already know what to do
+            with it. The first step is configuration for your
+            environment. This is what the <command>configure</command>
+            script exists for. Most often it requires no arguments and
+            finishes successfully. After this you may run
+            <command>make</command> command, followed by <command>make
+            install</command> to build and install the library
+            respectively. All the steps may look like this:
+            
+            <screen>
 git clone git://github.com/alexanderchuranov/Metaresc.git
 cd Metaresc
 ./configure
 make
 make install </screen>
-        </para>
-        
-        <para>
-          At the configuration stage you may optionally specify various
-          build and installation parameters. Most common are "prefix",
-          allowing you to install into custom location, and "LEX",
-          overriding the selection of a lexer. The latter is useful,
-          for example, on FreeBSD, which has a flex in the base system
-          and other in ports, and their versions differ
-          dramatically. The following is an example of using
-          configuration options:
+          </para>
           
-          <screen>
+          <para>
+            At the configuration stage you may optionally specify various
+            build and installation parameters. Most common are "prefix",
+            allowing you to install into custom location, and "LEX",
+            overriding the selection of a lexer. The latter is useful,
+            for example, on FreeBSD, which has a flex in the base system
+            and other in ports, and their versions differ
+            dramatically. The following is an example of using
+            configuration options:
+            
+            <screen>
 git clone git://github.com/alexanderchuranov/Metaresc.git
 cd Metaresc
 ./configure LEX=/usr/local/bin/flex prefix=/special/path
 make
 make install </screen>
-        </para>
-      </section>
-      
-      <section>
-        <title>Running sample application</title>
-        <para>
-          The source package contains a sample application that uses
-          the library and deserializes objects from the XML file. To
-          run the program type the following commands:
-          <screen><![CDATA[
+          </para>
+        </section>
+        
+        <section>
+          <title>Running sample application</title>
+          <para>
+            The source package contains a sample application that uses
+            the library and deserializes objects from the XML file. To
+            run the program type the following commands:
+            
+            <screen><![CDATA[
 cd examples
 ./gjobs < gjobs.xml]]></screen>
-          You should see an output like this:
-          <screen><![CDATA[
+            
+            You should see an output like this:
+            
+            <screen><![CDATA[
 1 Jobs registered
 =======  Job
 projectID: 3
@@ -266,10 +271,314 @@ category: Development
 1 developers
 ------ Person
 ------
-=======]]></screen>
+======= ]]></screen>
+            
+            This indicates that the library is built successfully and
+            may be used by applications.
+          </para>
+        </section>
+      </section>
+    </section>
+    
+    <section xml:id="building-clients">
+      <title>Building client applications</title>
+      
+      <section>
+        <title>Using the library in a simple way</title>
+        <para>
+          The easiest way to use a library is to include the
+          <filename>reslib.h</filename> header file and start
+          declaring metadata-enabled types. You may include this
+          header in a header file of your project, where the
+          serializable data type is to be declared. Or you may include
+          the header and your type declaration in some implementation
+          file. The latter is illustrated by the following example:
+                    
+          <programlisting language="c"><xi:include
+          href="../../examples/basic.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
           
-          This indicates that the library is built successfully and
-          may be used by applications.
+          For this code sample to compile correctly you need to let
+          the compiler know where to find METARESC headers and either
+          static or dynamic library. For a Linux system this typically
+          looks like this:
+          
+          <screen><![CDATA[
+cc -std=gnu99 -Ipath/to/metaresc/headers -I/usr/include/libxml2 -c -o basic.o basic.c
+cc -Lpath/to/metaresc/libs -lreslib -o basic basic.o ]]></screen>
+          
+          If the METARESC library is installed in /usr, as when
+          installing from a pre-built package, then paths to the
+          library may be omitted, since the compiler already knows it
+          should look for headers in /usr/local and for libraries in
+          /usr/lib:
+          
+          <screen><![CDATA[
+cc -std=gnu99 -I/usr/include/libxml2 -c -o basic.o basic.c
+cc -lreslib -o basic basic.o ]]></screen>
+          
+          Note, that in both cases paths to libxml2 header files are
+          also specified. This is only necessary if METARESC was built
+          with libxml2 support (which is the default).
+        </para>
+        
+        <para>
+          The exact commands, of course, depend on the operating
+          system and its configuration. On FreeBSD, for example,
+          /usr/include and /usr/lib traditionally only contain files of the
+          operating system and all third-party software gets installed
+          in /usr/local. In this case you have to additionally specify
+          /usr/local/include as a header search path and
+          /usr/local/lib as a library search path. METARESC depends on
+          some standard facilities, like iconv, which go into
+          /usr/local on FreeBSD. The commands for this system may look
+          like the following:
+          
+          <screen><![CDATA[
+cc -std=gnu99 -I/usr/local/include/libxml2 -I/usr/local/include -c -o basic.o basic.c
+cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
+        </para>
+        <!-- TODO: verify all command lines for Linuxen -->
+        <para>
+          The code sample above is extremely simplifed. Of course, the
+          serializable type declarations may reside in their own
+          header files, and there may be many of them, and some of
+          them may be included into others, as necessary. This has no
+          impact on the functionality of METARESC.
+        </para>
+      </section>
+      
+      <section>
+        <title>Optimizing application start-up</title>
+        <para>
+          The "just include header file" approach, suggested in the
+          previous section is convenient and suitable for many types
+          of applications. It is the recommended way to use the
+          library unless you have specific requirements for memory and
+          CPU usage. Applications written it C language are likely to
+          have such requirements. And this is why you may want to
+          consider the other method of accessing the METARESC
+          facilities from your program.
+        </para>
+        
+        <para>
+          When the <filename>reslib.h</filename> header file is
+          included into a client program, METARESC has to generate the
+          following for each serializable type, declared within the
+          translation unit:
+          
+          <itemizedlist>
+            <listitem><para>
+              Metadata, a structured set of data which describes the
+              internals of the serializable type: how many fields
+              there are in the structure, what their types are, what
+              their names are, etc.
+            </para></listitem>
+            <listitem><para>
+              Functions for accessing metadata for the type and for
+              registering the type in the application-wide type
+              registry.
+            </para></listitem>
+            <listitem><para>
+              Ordinary type declaration, e.g. "struct user {
+              ...". Obviously, this is necessary for the program to
+              manipulate the variables of that type.
+            </para></listitem>
+          </itemizedlist>
+          
+          The ordinary type declaration has no specific impact on the
+          CPU and memory usage, since it is exactly the same you would
+          declare if METARECS was not used. Metadata, however,
+          occupies space in the executable file both on disk and in
+          memory, when loaded. Functions for working with metadata
+          not only also occupy space, but get executed when the
+          application starts. This is necessary for building a global,
+          application-wide type registry.
+        </para>
+        
+        <para>
+          So far, all this stuff is just necessary for successful
+          serialization and deserialization of data. The things that
+          may be undesirable are that all this generated stuff is
+          added to <emphasis>each</emphasis> source file, which
+          includes the header with serializable type declaration,
+          either directly or via other headers.
+        </para>
+        
+        <para>
+          This happens because of two things. First, it is necessary
+          to put metadata and functions into executable and to build
+          the type registry upon program start. Second, the C language
+          doesn't have a notion of "put to executable" — the
+          stuff, generated by preprocessor out of header files, is
+          just included into the source file. If the header is
+          included in two files, there are two copies of metadata and
+          related functions in the program.
+        </para>
+        
+        <para>
+          If this is concern, you have to optimize the program. To
+          assist in that, METARESC provides type registration
+          optimization and a way to generate declarations separately
+          from metadata stuff.
+        </para>
+        
+        <para>
+          Type registration optimization happens when the program
+          starts building the type registry. The process of builing
+          type registry occurs in a program which uses METARESC before
+          the control is passed to the function
+          <function>main</function>. During this phase special
+          "start-up" METARESC code from each compiled source file,
+          which includes library headers, is executed. If the same
+          serializable type declaration is included into more than one
+          source file, the code to register the same type may be
+          called more than once. The library detecs that the type is
+          already registered and does not perform the registration
+          again. This optimization is performed automatically and is
+          not controlled by the client application.
+        </para>
+        
+        <para>
+          The most effect is however achieved when type declarations
+          and metadata-related things are generated separately. The
+          preprocessor metaprogram contained in library header files
+          may be specifically instructed to generate either type
+          declarations or metadata and related functions. For
+          exploiting this, you need to define (or re-define) the
+          <code>RL_MODE</code> macro right <emphasis>before</emphasis>
+          including the <filename>reslib.h</filename> header. The
+          macro may have following values:
+          
+          <informaltable>
+            <tgroup cols="2" align="left" colsep="1" rowsep="1">
+              <thead>
+                <row>
+                  <entry>Value</entry>
+                  <entry>Meaning</entry>
+                </row>
+              </thead>
+              <tbody>
+                <row>
+                  <entry>PROTO</entry>
+                  <entry>
+                    Generate type declarations only. For all types,
+                    declared later in the file using METARESC grammar,
+                    only declarations will be generated. This provides
+                    the ability to use the variables of declared
+                    types, access their members, etc.
+                  </entry>
+                </row>
+                <row>
+                  <entry>DESC</entry>
+                  <entry>
+                    Generate metadata and related code, including type
+                    registration code. This makes metadata available
+                    both to the library and the program.
+                  </entry>
+                </row>
+              </tbody>
+            </tgroup>
+          </informaltable>
+        </para>
+        
+        <para>
+          The recommended way to use separatly generated declarations
+          and metadata stuff is as follows:
+          
+          <orderedlist>
+            <listitem><para>
+              For each serializable type three files should exist: the
+              "naked" header file with declarations, the "ordinary" header
+              file and the "implementation" source file.
+            </para></listitem>
+            
+            <listitem><para>
+              In the "naked header file" include the
+              <filename>reslib.h</filename> library header and declare
+              types using METARESC grammar. This file should not have
+              any protection from incluing it multiple times.
+            </para></listitem>
+            
+            <listitem><para>
+              In the "ordinary" header file, specify the
+              <code>RL_MODE</code> as <code>PROTO</code>, then include
+              the "naked" header file. If you have functions that
+              "implement" a serializable type, this header file is a
+              natural place to put their definitions into.
+            </para></listitem>
+            
+            <listitem><para>
+              The "implementation" source file should include the
+              "ordinary" header file, then unconditionally re-declare
+              <code>RL_MODE</code> macro to <code>DESC</code> and
+              include the "naked" header file with declarations. It's
+              convenient to define functions that "implement" a
+              serializable type in this source file.
+            </para></listitem>
+            
+            <listitem><para>
+              It is not necessary to create three files for each
+              type. Types may be declared, for example, in groups or
+              in any other way you see fit. The only mandatory thing
+              about this is that for each serializable type there
+              should be a file with declarations, a header file with
+              protection against multiple inclusion and a compilable
+              source file which includes "naked" declarations first
+              with <code>PROTO</code> mode, then with
+              <code>DESC</code> mode.
+            </para></listitem>
+            
+            <listitem><para>
+              The "ordinary" header files may be included in other
+              application header and source files like any regular
+              header file.
+            </para></listitem>
+          </orderedlist>
+        </para>
+        
+        <para>
+          The rules above are exemplified in the following code
+          sample. First, the
+          <filename>separate_employee_decl.h</filename> file with
+          "naked" declarations:
+          
+          <programlisting language="c"><xi:include
+          href="../../examples/separate_employee_decl.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          Then, the "ordinary" header file with proctection from
+          multiple inclusion
+          (<filename>separate_employee.h</filename>):
+          
+          <programlisting language="c"><xi:include
+          href="../../examples/separate_employee.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          The "implementation" source file
+          (<filename>separate_employee.c</filename>):
+          
+          <programlisting language="c"><xi:include
+          href="../../examples/separate_employee.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          And, finally, the regular source file, which uses the
+          <filename>separate_employee.h</filename> "ordinary" header
+          file and contains the <function>main</function> function:
+          
+          <programlisting language="c"><xi:include
+          href="../../examples/separate.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
         </para>
       </section>
     </section>
@@ -278,52 +587,7 @@ category: Development
   
   <section xml:id="type-declaration">
     <title>Declaring Types</title>
-    
-    <section>
-      <title>Introductory example</title>
-      <para>
-        The example below may help you get the basic idea on how the
-        metadata-enabled types are declared. First, the header file:
-        <programlisting language="c"><xi:include
-          href="../../examples/basic.h"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-        This header declares a structure type named
-        <code>employee_t</code> with three fields: "firstname" and
-        "lastname" of <code>char*</code> type, "salary" of
-        <code>uint32_t</code> type.
-      </para>
-      
-      <para>
-        All metadata-enabled types should be declared within a header
-        file. The header must include the <code>reslib.h</code>
-        library header and have <code>#undef RL_MODE</code> statement
-        at the end, after all declarations.
-      </para>
-      
-      <para>
-        Now the implementation file:
-        <programlisting language="c"><xi:include
-          href="../../examples/basic.c"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-        The program uses the library <code>RL_SAVE_XML</code> facility
-        to serialize the variable of type <code>employee_t</code> into
-        XML. Note, that the header file with declaration of
-        serializable type is included <emphasis>twice</emphasis>:
-        first time to generate the usual C type declaration, second to
-        generate metadata. For this very reason the header file where
-        the serializable types are declared <emphasis>must
-        not</emphasis> have usual <code>#ifndef / #define /
-        #endif</code> compiler guard.
-      </para>
-      <!--
-          TODO: where to get the example if instaling form package
-      -->
-    </section>
-    
+        
     <section>
       <title>Why special grammar?</title>
       <para>
@@ -443,5 +707,52 @@ category: Development
     </section>
     
   </section>
+  
+  <appendix>
+    <title>
+      Effects of separate generation of declarations and metadata
+    </title>
+    
+    <para>
+      <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+          <thead>
+            <row>
+              <entry>Number of files</entry>
+              <entry>Simple (build/start/size)</entry>
+              <entry>Optimized (build/start/size)</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>1</entry>
+              <entry>0.67 / 0.00 / 108.3 k</entry>
+              <entry>0.59 / 0.00 / 5.0 k</entry>
+            </row>
+            <row>
+              <entry>10</entry>
+              <entry>3.52 / 0.00 / 119.0 k</entry>
+              <entry>3.17 / 0.00 / 6.0 k</entry>
+            </row>
+            <row>
+              <entry>100</entry>
+              <entry>32.63 / 0.01 / 236.0 k</entry>
+              <entry>29.36 / 0.00 / 15.3 k</entry>
+            </row>
+            <row>
+              <entry>50</entry>
+              <entry>16.21 / 0.00 / 172.1 k</entry>
+              <entry>15.12 / 0.00 / 10.1 k</entry>
+            </row>
+            <row>
+              <entry>500</entry>
+              <entry>157.30 / 0.09 / 777.7 k</entry>
+              <entry>146.58 / 0.00 / 56.7 k</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </informaltable>
+    </para>
+  </appendix>
   
 </article>
