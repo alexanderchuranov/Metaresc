@@ -189,6 +189,7 @@ CINIT_SAVE_TYPE (enum);
 CINIT_SAVE_TYPE (float);
 CINIT_SAVE_TYPE (double);
 CINIT_SAVE_TYPE (long_double_t);
+CINIT_SAVE_TYPE (bitfield);
 CINIT_SAVE_TYPE (bitmask, , RL_BITMASK_OR_DELIMITER);
 
 /**
@@ -357,6 +358,7 @@ static void __attribute__((constructor)) rl_init_save_cinit (void)
   rl_io_handlers[RL_TYPE_NONE].save.cinit = cinit_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.cinit = cinit_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.cinit = cinit_save_enum;
+  rl_io_handlers[RL_TYPE_BITFIELD].save.cinit = cinit_save_bitfield;
   rl_io_handlers[RL_TYPE_BITMASK].save.cinit = cinit_save_bitmask;
   rl_io_handlers[RL_TYPE_INT8].save.cinit = cinit_save_int8;
   rl_io_handlers[RL_TYPE_UINT8].save.cinit = cinit_save_uint8;
@@ -387,6 +389,7 @@ static void __attribute__((constructor)) rl_init_save_json (void)
   rl_io_handlers[RL_TYPE_NONE].save.json = cinit_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.json = cinit_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.json = cinit_save_enum;
+  rl_io_handlers[RL_TYPE_BITFIELD].save.json = cinit_save_bitfield;
   rl_io_handlers[RL_TYPE_BITMASK].save.json = cinit_save_bitmask;
   rl_io_handlers[RL_TYPE_INT8].save.json = cinit_save_int8;
   rl_io_handlers[RL_TYPE_UINT8].save.json = cinit_save_uint8;

@@ -235,6 +235,61 @@ strndup (const char * str, size_t size)
 #endif /* HAVE_STRNDUP */
 
 /**
+ * Extract bits of bit-field, extend sign bits if needed.
+ * @param ptrdes pointer descriptor
+ * @param value pointer on variable for bit-field value
+ * @return status
+ */
+int
+rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
+{
+  uint8_t * ptr = ptrdes->data;
+  int i;
+
+  *value = *ptr++ >> ptrdes->fd.shift;
+  for (i = 8 - ptrdes->fd.shift; i < ptrdes->fd.width; i += 8)
+    *value |= ((uint64_t)*ptr++) << i;
+  *value &= (2LL << (ptrdes->fd.width - 1)) - 1;
+  switch (ptrdes->fd.rl_type_aux)
+    {
+    case RL_TYPE_INT8:
+    case RL_TYPE_INT16:
+    case RL_TYPE_INT32:
+    case RL_TYPE_INT64:
+      /* extend sign bit */
+      if (*value & (1 << (ptrdes->fd.width - 1)))
+	*value |= -1 - ((1 << ptrdes->fd.width) - 1);
+      break;
+    default:
+      break;
+    }
+  return (EXIT_SUCCESS);
+}
+
+int
+rl_load_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
+{
+  uint8_t * ptr = ptrdes->data;
+  int i;
+
+  *value &= (2LL << (ptrdes->fd.width - 1)) - 1;
+  if (ptrdes->fd.shift + ptrdes->fd.width >= 8)
+    *ptr &= ((1 << ptrdes->fd.shift) - 1);
+  else
+    *ptr &= (-1 - ((1 << (ptrdes->fd.shift + ptrdes->fd.width)) - 1)) | ((1 << ptrdes->fd.shift) - 1);
+  *ptr++ |= *value << ptrdes->fd.shift;
+  for (i = 8 - ptrdes->fd.shift; i < ptrdes->fd.width; i += 8)
+    if (ptrdes->fd.width - i >= 8)
+      *ptr++ = *value >> i;
+    else
+      {
+	*ptr &= -1 - ((1 << (ptrdes->fd.width - i)) - 1);
+	*ptr++ |= *value >> i;
+      }
+  return (EXIT_SUCCESS);
+}
+
+/**
  * Rarray memory allocation/reallocation
  * @param rarray a pointer on resizable array
  * @param size size of array elements
@@ -587,7 +642,7 @@ rl_anon_unions_extract (rl_td_t * tdp)
   int i, j;
   
   if (NULL == tdp)
-    return (0);
+    return (EXIT_FAILURE);
   
   for (i = 0; i < count; ++i)
     if (RL_TYPE_ANON_UNION == tdp->fields.data[i].rl_type)
@@ -596,7 +651,7 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  if (RL_TYPE_END_ANON_UNION == tdp->fields.data[j].rl_type)
 	    break;
 	if (j >= count)
-	  return (0);
+	  return (EXIT_FAILURE);
 	{
 	  int fields_count = j - i; /* additional trailing element with rl_type = RL_TYPE_TRAILING_RECORD */
 	  static int rl_type_anonymous_union_cnt = 0;
@@ -631,11 +686,11 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  if (rl_add_type (tdp_, NULL, NULL))
 	    {
 	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->type);
-	      return (0);
+	      return (EXIT_SUCCESS);
 	    }
 	}
       }
-  return (!0);
+  return (EXIT_SUCCESS);
 }
 
 static int
@@ -662,21 +717,21 @@ rl_add_enum (rl_td_t * tdp)
       if (NULL == fdpp)
 	{
 	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	  return (-1);
+	  return (EXIT_FAILURE);
 	}
       if (*fdpp != &tdp->fields.data[i])
 	{
 	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->name, tdp->type);
-	  return (-1);
+	  return (EXIT_FAILURE);
 	}
       fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value, cmp_enums_by_value);  
       if (NULL == fdpp)
 	{
 	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	  return (-1);
+	  return (EXIT_FAILURE);
 	}
     }
-  return (0);
+  return (EXIT_SUCCESS);
 }
 
 rl_fd_t *
@@ -690,7 +745,7 @@ rl_get_enum_by_value (rl_td_t * tdp, int64_t value)
 }
 
 int
-rl_get_enum_by_name (int64_t * value, char * name)
+rl_get_enum_by_name (uint64_t * value, char * name)
 {
   rl_fd_t fd = { .name = name };
   rl_fd_t ** fdpp = tfind (&fd, (void*)&rl_conf.enum_by_name, cmp_enums_by_name);
@@ -743,7 +798,7 @@ rl_normalize_type (rl_fd_t * fdp)
 	      memset (found, ' ', length); /* delete all keywords */
 	      modified = !0;
 	    }
-	  ++ptr; /* keyword might be a part of type name and we need to start search of keywork from next symbol */
+	  ++ptr; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
 	}
     }
   if (modified)
@@ -767,24 +822,42 @@ rl_normalize_type (rl_fd_t * fdp)
 }
 
 static int
+rl_init_bitfield (rl_fd_t * fdp)
+{
+  int i;
+  for (i = 0; i < fdp->bitfield.size; ++i)
+    if (fdp->bitfield.data[i])
+      break;
+  fdp->offset = i;
+  for (i = 0; i < 8; ++i)
+    if (fdp->bitfield.data[fdp->offset] & (1 << i))
+      break;
+  fdp->shift = i;
+  return (EXIT_SUCCESS);
+}
+
+static int
 rl_check_fields (rl_td_t * tdp)
 {
   int i, j;
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
     {
+      rl_fd_t * fdp = &tdp->fields.data[i];
       /*
 	Check names of the fileds.
-	RL_NONE definitions may contain brackets (for arrays) or braces (for function pointers).
+	RL_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
       */
-      char * name = tdp->fields.data[i].name;
+      char * name = fdp->name;
       if (name)
 	{
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
 	  if (*name) /* strings with field names might be in read-only memory. For RL_NONE names are saved in writable memory. */
 	    *name = 0; /* truncate on first invalid charecter */
 	}
-      rl_normalize_type (&tdp->fields.data[i]);
+      rl_normalize_type (fdp);
+      if (RL_TYPE_BITFIELD == fdp->rl_type)
+	rl_init_bitfield (fdp);
     }
   /* check for name duplicates */
   for (i = 0; i < count; ++i)
@@ -792,7 +865,7 @@ rl_check_fields (rl_td_t * tdp)
       if (tdp->fields.data[i].name && tdp->fields.data[j].name && (0 == strcmp (tdp->fields.data[i].name, tdp->fields.data[j].name)))
 	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_DUPLICATED_FIELDS, tdp->fields.data[i].name, tdp->type);
   
-  return (0);
+  return (EXIT_SUCCESS);
 }
 
 static int
@@ -809,10 +882,10 @@ rl_build_field_names_hash (rl_td_t * tdp)
   for (i = 0; i < fields_count; ++i)
     for (j = i + 1; j < fields_count; ++j)
       if (tdp->fields.data[i].hash_value == tdp->fields.data[j].hash_value)
-	return (!0);
+	return (EXIT_FAILURE);
 
   if (0 == fields_count)
-    return (0);
+    return (EXIT_SUCCESS);
   
   while (NULL == tdp->lookup_by_name.data)
     {
@@ -828,7 +901,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
 	{
 	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
 	  tdp->lookup_by_name.alloc_size = tdp->lookup_by_name.size = 0;
-	  return (!0);
+	  return (EXIT_FAILURE);
 	}
       for (i = 0; i < size; ++i)
 	array[i].fdp = NULL;
@@ -848,7 +921,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
       else
 	RL_FREE (array); /* otherwise try to find new hash size */
     }
-  return (0);
+  return (EXIT_SUCCESS);
 }
 
 static int
@@ -895,7 +968,7 @@ rl_auto_field_detect (rl_fd_t * fdp)
 	    --end;
 	  *end = 0; /* trancate type name */
 	  fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
-	  fdp->rl_type = fdp->rl_type_ptr;
+	  fdp->rl_type = fdp->rl_type_aux;
 	  fdp->size = sizes[fdp->rl_type];
 	  /* autodetect structures and enums */
 	  switch (fdp->rl_type)
@@ -978,6 +1051,12 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
 	  tdp->fields.data[i].rl_type = tdp_->rl_type;
 	break;
 
+      case RL_TYPE_BITFIELD:
+	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
+	if (tdp_)
+	  tdp->fields.data[i].rl_type_aux = tdp_->rl_type;
+	break;
+
 	/*
 	  RL_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size in compile time.
 	 */
@@ -1001,7 +1080,7 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
       default:
 	break;
       }
-  return (0);
+  return (EXIT_SUCCESS);
 }
 
 rl_fd_t *
@@ -1040,10 +1119,10 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   int count;
 
   if (NULL == tdp)
-    return (0); /* assert */
+    return (EXIT_FAILURE); /* assert */
   /* check whether this type is already in the list */
   if (rl_get_td_by_name (tdp->type))
-    return (!0); /* this type is already registered */
+    return (EXIT_SUCCESS); /* this type is already registered */
 
   va_start (args, comment);
   ext = va_arg (args, void*);
@@ -1069,7 +1148,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
     if (NULL == tdpp)
       {
 	RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	return (!0);
+	return (EXIT_FAILURE);
       }
     *tdpp = tdp;
   }
@@ -1083,7 +1162,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
     rl_add_enum (tdp);
 
   rl_td_foreach (rl_detect_fields_types, tdp);
-  return (0);
+  return (EXIT_SUCCESS);
 }
 
 int

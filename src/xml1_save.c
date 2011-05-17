@@ -136,6 +136,7 @@ XML_SAVE_TYPE (enum);
 XML_SAVE_TYPE (float);
 XML_SAVE_TYPE (double);
 XML_SAVE_TYPE (long_double_t);
+XML_SAVE_TYPE (bitfield);
 XML_SAVE_TYPE (bitmask, , RL_BITMASK_OR_DELIMITER);
 
 /**
@@ -194,6 +195,7 @@ void __attribute__((constructor)) rl_init_save_xml1 (void)
   rl_io_handlers[RL_TYPE_NONE].save.xml = xml_save_none;
   rl_io_handlers[RL_TYPE_VOID].save.xml = xml_save_none;
   rl_io_handlers[RL_TYPE_ENUM].save.xml = xml_save_enum;
+  rl_io_handlers[RL_TYPE_BITFIELD].save.xml = xml_save_bitfield;
   rl_io_handlers[RL_TYPE_BITMASK].save.xml = xml_save_bitmask;
   rl_io_handlers[RL_TYPE_INT8].save.xml = xml_save_int8;
   rl_io_handlers[RL_TYPE_UINT8].save.xml = xml_save_uint8;

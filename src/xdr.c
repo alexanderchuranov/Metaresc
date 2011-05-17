@@ -269,6 +269,50 @@ xdr_char_array_ (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 }
 
 static int
+xdr_rl_typed_int (XDR * xdrs, rl_type_t rl_type, int size, void * value)
+{
+  switch (rl_type)
+    {
+    case RL_TYPE_INT8: return (xdr_int8_t (xdrs, value));
+    case RL_TYPE_UINT8: return (xdr_uint8_t (xdrs, value));
+    case RL_TYPE_INT16: return (xdr_int16_t (xdrs, value));
+    case RL_TYPE_UINT16: return (xdr_uint16_t (xdrs, value));
+    case RL_TYPE_INT32: return (xdr_int32_t (xdrs, value));
+    case RL_TYPE_UINT32: return (xdr_uint32_t (xdrs, value));
+    case RL_TYPE_INT64: return (xdr_int64_t (xdrs, value));
+    case RL_TYPE_UINT64: return (xdr_uint64_t (xdrs, value));
+    case RL_TYPE_ENUM:
+      switch (size)
+	{
+	case sizeof (uint8_t): return (xdr_uint8_t (xdrs, value));
+	case sizeof (uint16_t): return (xdr_uint16_t (xdrs, value));
+	case sizeof (uint32_t): return (xdr_uint32_t (xdrs, value));
+	case sizeof (uint64_t): return (xdr_uint64_t (xdrs, value));
+	default: return (xdr_uint64_t (xdrs, value));
+	}
+    default: return (xdr_uint64_t (xdrs, value));
+    }  
+}
+
+static int
+xdr_save_bitfield (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  uint64_t value;
+  if (EXIT_SUCCESS != rl_save_bitfield_value (&ptrs->ra.data[idx], &value))
+    return (0);
+  return (xdr_rl_typed_int (xdrs, ptrs->ra.data[idx].fd.rl_type_aux, ptrs->ra.data[idx].fd.size, &value));
+}
+
+static int
+xdr_load_bitfield (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  uint64_t value;
+  if (!xdr_rl_typed_int (xdrs, ptrs->ra.data[idx].fd.rl_type_aux, ptrs->ra.data[idx].fd.size, &value))
+    return (0);
+  return (EXIT_SUCCESS == rl_load_bitfield_value (&ptrs->ra.data[idx], &value));
+}
+
+static int
 xdr_save_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   void ** str = ptrs->ra.data[idx].data;
@@ -551,6 +595,7 @@ static void __attribute__((constructor)) rl_init_save_xdr (void)
   rl_io_handlers[RL_TYPE_NONE].save.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_VOID].save.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_ENUM].save.xdr = xdr_uint_;
+  rl_io_handlers[RL_TYPE_BITFIELD].save.xdr = xdr_save_bitfield;
   rl_io_handlers[RL_TYPE_BITMASK].save.xdr = xdr_uint_;
   rl_io_handlers[RL_TYPE_INT8].save.xdr = xdr_int_;
   rl_io_handlers[RL_TYPE_UINT8].save.xdr = xdr_uint_;
@@ -584,6 +629,7 @@ static void __attribute__((constructor)) rl_init_load_xdr (void)
   rl_io_handlers[RL_TYPE_NONE].load.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_VOID].load.xdr = xdr_none; 
   rl_io_handlers[RL_TYPE_ENUM].load.xdr = xdr_uint_;
+  rl_io_handlers[RL_TYPE_BITFIELD].load.xdr = xdr_load_bitfield;
   rl_io_handlers[RL_TYPE_BITMASK].load.xdr = xdr_uint_;
   rl_io_handlers[RL_TYPE_INT8].load.xdr = xdr_int_;
   rl_io_handlers[RL_TYPE_UINT8].load.xdr = xdr_uint_;

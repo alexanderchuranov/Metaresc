@@ -66,7 +66,7 @@ rl_set_crossrefs (rl_ra_rl_ptrdes_t * ptrs)
 }
 
 static char *
-rl_get_enum (int64_t * data, char * str)  
+rl_get_enum (uint64_t * data, char * str)  
 {
   char * name = str;
   int size;
@@ -123,7 +123,7 @@ rl_get_enum (int64_t * data, char * str)
  * @return A pointer rest of parsed string
  */
 static char *
-rl_get_int (int64_t * data, char * str)
+rl_get_int (uint64_t * data, char * str)
 {
   int offset;
   while (isspace (*str))
@@ -185,7 +185,7 @@ static int
 rl_load_integer (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   char * str = ptrs->ra.data[idx].value;
-  int64_t value;
+  uint64_t value;
   
   if (NULL == str)
     {
@@ -246,9 +246,31 @@ rl_load_enum (int idx, rl_ra_rl_ptrdes_t * ptrs)
 }
 
 /**
+ * RL_BITFIELD load handler. Load int from string and save it to
+ * bit shifted field.
+ * @param idx node index
+ * @param ptrs pointers descriptors resizeable array
+ * @return Status of read (0 - failure, !0 - success)
+ */
+static int
+rl_load_bitfield (int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  rl_ptrdes_t * ptrdes = &ptrs->ra.data[idx];
+  uint64_t value = 0;
+  char * str = rl_get_int (&value, ptrdes->value);
+
+  if ((NULL == str) || (*str != 0))
+    {
+      if (str)
+	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, ptrdes->value);
+      return (0);
+    }
+
+  return (EXIT_SUCCESS == rl_load_bitfield_value (ptrdes, &value));
+}
+
+/**
  * RL_BITMASK load handler. Handles logical OR operation.
- * @param data pointer on place to save int
- * @param fdp pointer on filed descriptor
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
@@ -257,7 +279,7 @@ static int
 rl_load_bitmask (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   char * str = ptrs->ra.data[idx].value;
-  int value = 0;
+  int64_t value = 0;
   
   if (NULL == str)
     {
@@ -266,7 +288,7 @@ rl_load_bitmask (int idx, rl_ra_rl_ptrdes_t * ptrs)
     }
   for (;;)
     {
-      int64_t bit;
+      uint64_t bit;
       str = rl_get_int (&bit, str);
       if (NULL == str)
 	return (0);
@@ -288,8 +310,6 @@ rl_load_bitmask (int idx, rl_ra_rl_ptrdes_t * ptrs)
 
 /**
  * RL_FLOAT, RL_DOUBLE, RL_LONG_DOUBLE load handler.
- * @param data pointer on place to save int
- * @param fdp pointer on filed descriptor
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
@@ -327,8 +347,6 @@ RL_LOAD_FLOAT_TYPE (long_double_t, "%Lg", RL_MESSAGE_READ_LONG_DOUBLE)
 
 /**
  * RL_CHAR load handler. Handles nonprint characters in octal format.
- * @param data pointer on place to save int
- * @param fdp pointer on filed descriptor
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
@@ -374,8 +392,6 @@ rl_load_char (int idx, rl_ra_rl_ptrdes_t * ptrs)
 
 /**
  * RL_STRING load handler. Allocate memory for a string.
- * @param data pointer on place to save int
- * @param fdp pointer on filed descriptor
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
@@ -723,7 +739,10 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
   ptrs->ra.data[idx].fd.count = fdp->count;
   ptrs->ra.data[idx].fd.row_count = fdp->row_count;
   ptrs->ra.data[idx].fd.rl_type = fdp->rl_type;
+  ptrs->ra.data[idx].fd.rl_type_aux = fdp->rl_type_aux;
   ptrs->ra.data[idx].fd.rl_type_ext = fdp->rl_type_ext;
+  ptrs->ra.data[idx].fd.width = fdp->width;
+  ptrs->ra.data[idx].fd.shift = fdp->shift;
   
   /* route loading */
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
@@ -760,6 +779,7 @@ static void __attribute__((constructor)) rl_init_load_rl (void)
   rl_io_handlers[RL_TYPE_NONE].load.rl = rl_load_none;
   rl_io_handlers[RL_TYPE_VOID].load.rl = rl_load_none;
   rl_io_handlers[RL_TYPE_ENUM].load.rl = rl_load_enum;
+  rl_io_handlers[RL_TYPE_BITFIELD].load.rl = rl_load_bitfield;
   rl_io_handlers[RL_TYPE_BITMASK].load.rl = rl_load_bitmask;
   rl_io_handlers[RL_TYPE_INT8].load.rl = rl_load_integer;
   rl_io_handlers[RL_TYPE_UINT8].load.rl = rl_load_integer;
