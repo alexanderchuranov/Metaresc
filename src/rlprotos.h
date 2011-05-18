@@ -179,7 +179,7 @@ TYPEDEF_STRUCT (rl_td_t, ATTRIBUTES ( , "ResLib type descriptor"),
 		(uint64_t, hash_value, , "type name hash value"),
 #endif /* RL_TREE_LOOKUP */
 		(char *, attr, , "stringified typedef attributes"),
-		(uint32_t, size, , "size of type"),
+		(int, size, , "size of type"),
 		RARRAY (rl_fd_t, fields, "fields or enums descriptors"),
 		(char *, comment, , "type comments"),
 		(void *, ext, , "extra pointer for user data"),
