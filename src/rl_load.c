@@ -238,7 +238,7 @@ rl_load_enum (int idx, rl_ra_rl_ptrdes_t * ptrs)
       fdp = rl_get_fd_by_name (tdp, str);
       if (fdp)
 	{
-	  memcpy (ptrs->ra.data[idx].data, &fdp->value, ptrs->ra.data[idx].fd.size);
+	  memcpy (ptrs->ra.data[idx].data, &fdp->param.enum_value, ptrs->ra.data[idx].fd.size);
 	  return (!0);
 	}
     }
@@ -418,7 +418,7 @@ static int
 rl_load_char_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   char * str = ptrs->ra.data[idx].value;
-  int max_size = ptrs->ra.data[idx].fd.count * ptrs->ra.data[idx].fd.size;
+  int max_size = ptrs->ra.data[idx].fd.param.array_param.count * ptrs->ra.data[idx].fd.size;
   if (str)
     {
       if (strlen (str) >= max_size)
@@ -489,16 +489,16 @@ rl_load_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   char * data = ptrs->ra.data[idx].data;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
-  int row_count = fd_.row_count;
-  int count = fd_.count;
+  int row_count = fd_.param.array_param.row_count;
+  int count = fd_.param.array_param.count;
   int i = 0;
   
-  if (1 == fd_.row_count)
+  if (1 == fd_.param.array_param.row_count)
     fd_.rl_type_ext = RL_TYPE_EXT_NONE; /* prepare copy of filed descriptor for array elements loading */
   else
     {
-      fd_.count = row_count;
-      fd_.row_count = 1;
+      fd_.param.array_param.count = row_count;
+      fd_.param.array_param.row_count = 1;
     }
   
   /* loop on subnodes */
@@ -736,13 +736,13 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
   if ((NULL == ptrs->ra.data[idx].fd.type) && (fdp->type))
     ptrs->ra.data[idx].fd.type = RL_STRDUP (fdp->type);
   ptrs->ra.data[idx].fd.size = fdp->size;
-  ptrs->ra.data[idx].fd.count = fdp->count;
-  ptrs->ra.data[idx].fd.row_count = fdp->row_count;
+  ptrs->ra.data[idx].fd.param.array_param.count = fdp->param.array_param.count;
+  ptrs->ra.data[idx].fd.param.array_param.row_count = fdp->param.array_param.row_count;
   ptrs->ra.data[idx].fd.rl_type = fdp->rl_type;
   ptrs->ra.data[idx].fd.rl_type_aux = fdp->rl_type_aux;
   ptrs->ra.data[idx].fd.rl_type_ext = fdp->rl_type_ext;
-  ptrs->ra.data[idx].fd.width = fdp->width;
-  ptrs->ra.data[idx].fd.shift = fdp->shift;
+  ptrs->ra.data[idx].fd.param.bitfield_param.width = fdp->param.bitfield_param.width;
+  ptrs->ra.data[idx].fd.param.bitfield_param.shift = fdp->param.bitfield_param.shift;
   
   /* route loading */
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)

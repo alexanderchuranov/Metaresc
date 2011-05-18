@@ -81,9 +81,10 @@ TYPEDEF_ENUM (rl_type_t, ATTRIBUTES ( , "ResLib types"),
 	      RL_TYPE_LONG_DOUBLE,
 	      RL_TYPE_STRUCT,
 	      RL_TYPE_ENUM,
-	      RL_TYPE_BITFIELD,
+	      (RL_TYPE_ENUM_VALUE, , "enum_value"), /* comment refers to union member in rl_param_t */
+	      (RL_TYPE_FUNC, , "func_param"),
+	      (RL_TYPE_BITFIELD, , "bitfield_param"),
 	      RL_TYPE_BITMASK,
-	      RL_TYPE_FUNC,
 	      RL_TYPE_UNION,
 	      RL_TYPE_ANON_UNION,
 	      RL_TYPE_END_ANON_UNION,
@@ -119,22 +120,34 @@ TYPEDEF_STRUCT (rl_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
 		(rl_red_black_t, red),
 		)
 
+TYPEDEF_STRUCT (rl_array_param_t, ATTRIBUTES ( , "array parameters"),
+		(int, count, , "array size"),
+		(int, row_count, , "row size"),
+		)
+
+TYPEDEF_STRUCT (rl_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
+		(int, width, , "bit-field width in bits"),
+		(int, shift, , "bit-field shift in first byte"),
+		RARRAY (uint8_t, bitfield, "zero-struct with flagged bit-fields"),
+		)
+
+TYPEDEF_UNION (rl_param_t, ATTRIBUTES ( , "optional parameters for different types"),
+	       (rl_array_param_t, array_param, , "array parameters - default for serialization"),
+	       (int64_t, enum_value, , "enum value"),
+	       (rl_bitfield_param_t, bitfield_param, , "bit-field parameters"),
+	       RARRAY (struct rl_fd_t, func_param, "function arguments descriptors"),
+	       )
+
 TYPEDEF_STRUCT (rl_fd_t, ATTRIBUTES ( , "ResLib field descriptor"),
 		(char *, type, , "stringified type name"),
 		(char *, name, , "name of the field"),
 		(uint64_t, hash_value, , "hash of the name"),
-		(uint32_t, size, , "size of field"),
-		(uint32_t, offset, , "offset in structure"),
+		(int, size, , "size of field"),
+		(int, offset, , "offset in structure"),
 		(rl_type_t, rl_type, , "ResLib type"),
 		(rl_type_t, rl_type_aux, , "ResLib type if field is a pointer on builtin types or bit-field"),
 		(rl_type_ext_t, rl_type_ext, , "ResLib type extension"),
-		(uint32_t, count, , "array size"),
-		(uint32_t, row_count, , "row size"),
-		(int64_t, value, , "enum value"),
-		(int, width, , "bit-field width in bits"),
-		(int, shift, , "bit-field shift in first byte"),
-		RARRAY (uint8_t, bitfield, "zero-struct with flagged bit-fields"),
-		RARRAY (rl_fd_t, args, "function arguments descriptors"),
+		(rl_param_t, param, , "rl_type"),
 		(char *, comment, , "field comments"),
 		/*
 		  ext field can be used by user for extended information

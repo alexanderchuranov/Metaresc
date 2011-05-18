@@ -152,7 +152,7 @@ rl_message_format (void (*output_handler) (char*), rl_message_id_t message_id, v
 	  int i;
 	  rl_fd_t * fdp = tdp->fields.data;
 	  for (i = 0; fdp[i].rl_type != RL_TYPE_TRAILING_RECORD; ++i)
-	    messages[fdp[i].value] = fdp[i].comment;
+	    messages[fdp[i].param.enum_value] = fdp[i].comment;
 	}
       messages_inited = !0;
     }
@@ -246,10 +246,10 @@ rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
   uint8_t * ptr = ptrdes->data;
   int i;
 
-  *value = *ptr++ >> ptrdes->fd.shift;
-  for (i = 8 - ptrdes->fd.shift; i < ptrdes->fd.width; i += 8)
+  *value = *ptr++ >> ptrdes->fd.param.bitfield_param.shift;
+  for (i = 8 - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += 8)
     *value |= ((uint64_t)*ptr++) << i;
-  *value &= (2LL << (ptrdes->fd.width - 1)) - 1;
+  *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
   switch (ptrdes->fd.rl_type_aux)
     {
     case RL_TYPE_INT8:
@@ -257,8 +257,8 @@ rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
     case RL_TYPE_INT32:
     case RL_TYPE_INT64:
       /* extend sign bit */
-      if (*value & (1 << (ptrdes->fd.width - 1)))
-	*value |= -1 - ((1 << ptrdes->fd.width) - 1);
+      if (*value & (1 << (ptrdes->fd.param.bitfield_param.width - 1)))
+	*value |= -1 - ((1 << ptrdes->fd.param.bitfield_param.width) - 1);
       break;
     default:
       break;
@@ -272,18 +272,18 @@ rl_load_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
   uint8_t * ptr = ptrdes->data;
   int i;
 
-  *value &= (2LL << (ptrdes->fd.width - 1)) - 1;
-  if (ptrdes->fd.shift + ptrdes->fd.width >= 8)
-    *ptr &= ((1 << ptrdes->fd.shift) - 1);
+  *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
+  if (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width >= 8)
+    *ptr &= ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
   else
-    *ptr &= (-1 - ((1 << (ptrdes->fd.shift + ptrdes->fd.width)) - 1)) | ((1 << ptrdes->fd.shift) - 1);
-  *ptr++ |= *value << ptrdes->fd.shift;
-  for (i = 8 - ptrdes->fd.shift; i < ptrdes->fd.width; i += 8)
-    if (ptrdes->fd.width - i >= 8)
+    *ptr &= (-1 - ((1 << (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width)) - 1)) | ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
+  *ptr++ |= *value << ptrdes->fd.param.bitfield_param.shift;
+  for (i = 8 - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += 8)
+    if (ptrdes->fd.param.bitfield_param.width - i >= 8)
       *ptr++ = *value >> i;
     else
       {
-	*ptr &= -1 - ((1 << (ptrdes->fd.width - i)) - 1);
+	*ptr &= -1 - ((1 << (ptrdes->fd.param.bitfield_param.width - i)) - 1);
 	*ptr++ |= *value >> i;
       }
   return (EXIT_SUCCESS);
@@ -392,9 +392,9 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   ptrdes->fd.offset = 0;
   ptrdes->fd.rl_type = RL_TYPE_VOID;
   ptrdes->fd.rl_type_ext = RL_TYPE_EXT_NONE;
-  ptrdes->fd.count = 0;
-  ptrdes->fd.row_count = 0;
-  ptrdes->fd.value = 0;
+  ptrdes->fd.param.array_param.count = 0;
+  ptrdes->fd.param.array_param.row_count = 0;
+  ptrdes->fd.param.enum_value = 0;
   ptrdes->fd.comment = NULL;
   ptrdes->fd.ext = NULL;
   ptrdes->level = 0;
@@ -655,7 +655,7 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	{
 	  int fields_count = j - i; /* additional trailing element with rl_type = RL_TYPE_TRAILING_RECORD */
 	  static int rl_type_anonymous_union_cnt = 0;
-	  rl_td_t * tdp_ = tdp->fields.data[i].ext;
+	  rl_td_t * tdp_ = tdp->fields.data[i].ext; /* statically allocated memory for new type descriptor */
 	  rl_fd_t * first = &tdp->fields.data[i + 1];
 
 	  tdp_->size = 0;
@@ -664,6 +664,9 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	    {
 	      rl_fd_t fd = *first;
 	      memmove (first, &first[1], (count - i - 1) * sizeof (*first));
+	      /* offset of union memebers may differ from offset of anonymous unionplace holder */
+	      if (fd.offset != 0) /* RL_NONE and RL_END_ANON_UNION has zero offset */
+		tdp->fields.data[i].offset = fd.offset;
 	      fd.offset = 0; /* reset offset to zero */
 	      tdp->fields.data[count] = fd;
 	      if (fd.size > tdp_->size)
@@ -696,7 +699,7 @@ rl_anon_unions_extract (rl_td_t * tdp)
 static int
 cmp_enums_by_value (const void * x, const void * y)
 {
-  return ((((const rl_fd_t *) x)->value > ((const rl_fd_t *) y)->value) - (((const rl_fd_t *) x)->value < ((const rl_fd_t *) y)->value));
+  return ((((const rl_fd_t *) x)->param.enum_value > ((const rl_fd_t *) y)->param.enum_value) - (((const rl_fd_t *) x)->param.enum_value < ((const rl_fd_t *) y)->param.enum_value));
 }
 
 static int
@@ -737,7 +740,7 @@ rl_add_enum (rl_td_t * tdp)
 rl_fd_t *
 rl_get_enum_by_value (rl_td_t * tdp, int64_t value)
 {
-  rl_fd_t fd = { .value = value };
+  rl_fd_t fd = { .param = { .enum_value = value, }, };
   rl_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value, cmp_enums_by_value);
   if (fdpp)
     return (*fdpp);
@@ -750,7 +753,7 @@ rl_get_enum_by_name (uint64_t * value, char * name)
   rl_fd_t fd = { .name = name };
   rl_fd_t ** fdpp = tfind (&fd, (void*)&rl_conf.enum_by_name, cmp_enums_by_name);
   if (fdpp)
-    *value = (*fdpp)->value;
+    *value = (*fdpp)->param.enum_value;
   return (!!fdpp);
 }
 
@@ -825,14 +828,14 @@ static int
 rl_init_bitfield (rl_fd_t * fdp)
 {
   int i;
-  for (i = 0; i < fdp->bitfield.size; ++i)
-    if (fdp->bitfield.data[i])
+  for (i = 0; i < fdp->param.bitfield_param.bitfield.size; ++i)
+    if (fdp->param.bitfield_param.bitfield.data[i])
       break;
   fdp->offset = i;
   for (i = 0; i < 8; ++i)
-    if (fdp->bitfield.data[fdp->offset] & (1 << i))
+    if (fdp->param.bitfield_param.bitfield.data[fdp->offset] & (1 << i))
       break;
-  fdp->shift = i;
+  fdp->param.bitfield_param.shift = i;
   return (EXIT_SUCCESS);
 }
 
@@ -1003,10 +1006,10 @@ static int
 rl_func_field_detect (rl_fd_t * fdp)
 {
   int i;
-  for (i = 0; fdp->args.data[i].rl_type != RL_TYPE_TRAILING_RECORD; ++i)
+  for (i = 0; fdp->param.func_param.data[i].rl_type != RL_TYPE_TRAILING_RECORD; ++i)
     {
-      rl_normalize_type (&fdp->args.data[i]);
-      switch (fdp->args.data[i].rl_type)
+      rl_normalize_type (&fdp->param.func_param.data[i]);
+      switch (fdp->param.func_param.data[i].rl_type)
 	{
 	case RL_TYPE_NONE:
 	case RL_TYPE_INT8:
@@ -1017,13 +1020,13 @@ rl_func_field_detect (rl_fd_t * fdp)
 	case RL_TYPE_UINT32:
 	case RL_TYPE_INT64:
 	case RL_TYPE_UINT64:
-	  rl_auto_field_detect (&fdp->args.data[i]);
+	  rl_auto_field_detect (&fdp->param.func_param.data[i]);
 	  break;
 	default:
 	  break;
 	}
     }
-  fdp->args.size = i * sizeof (fdp->args.data[0]);
+  fdp->param.func_param.size = i * sizeof (fdp->param.func_param.data[0]);
   return (EXIT_SUCCESS);
 }
 

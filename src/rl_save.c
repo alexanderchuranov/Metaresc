@@ -42,9 +42,9 @@ rl_cmp_ptrdes (rl_ptrdes_t * x, rl_ptrdes_t * y)
     case RL_TYPE_LONG_DOUBLE:
       break;
     case RL_TYPE_BITFIELD:
-      diff = x->fd.shift - y->fd.shift;
+      diff = x->fd.param.bitfield_param.shift - y->fd.param.bitfield_param.shift;
       if (diff) return (diff);
-      diff = x->fd.width - y->fd.width;
+      diff = x->fd.param.bitfield_param.width - y->fd.param.bitfield_param.width;
       if (diff) return (diff);
       break;
     default:
@@ -358,16 +358,16 @@ rl_save_array (rl_save_data_t * rl_save_data)
   int idx = rl_save_data->ptrs.ra.size / sizeof (rl_save_data->ptrs.ra.data[0]) - 1;
   char * data = rl_save_data->ptrs.ra.data[idx].data;
   rl_fd_t fd_ = rl_save_data->ptrs.ra.data[idx].fd;
-  int row_count = fd_.row_count;
-  int count = fd_.count;
+  int row_count = fd_.param.array_param.row_count;
+  int count = fd_.param.array_param.count;
   int i;
   
-  if (1 == fd_.row_count)
+  if (1 == fd_.param.array_param.row_count)
     fd_.rl_type_ext = RL_TYPE_EXT_NONE; /* set extended type property to RL_NONE in copy of field descriptor */
   else
     {
-      fd_.count = row_count;
-      fd_.row_count = 1;
+      fd_.param.array_param.count = row_count;
+      fd_.param.array_param.row_count = 1;
     }
   /* add each array element to this node */
   rl_save_data->parent = idx;
@@ -390,7 +390,7 @@ rl_save_rarray (rl_save_data_t * rl_save_data)
   int i;
   /* set extended type property to RL_NONE in copy of field descriptor */
   fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-  count = rl_save_data->ptrs.ra.data[idx].fd.count = ra->size / fd_.size;
+  count = rl_save_data->ptrs.ra.data[idx].fd.param.array_param.count = ra->size / fd_.size;
   /* do nothing if rarray is empty */
   if (NULL == ra->data)
     return;

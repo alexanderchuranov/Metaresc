@@ -263,7 +263,7 @@ xdr_long_double (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 static int
 xdr_char_array_ (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  unsigned int size = ptrs->ra.data[idx].fd.size * ptrs->ra.data[idx].fd.count;
+  unsigned int size = ptrs->ra.data[idx].fd.size * ptrs->ra.data[idx].fd.param.array_param.count;
   void ** char_array = &ptrs->ra.data[idx].data;
   return (xdr_bytes (xdrs, (char**)char_array, &size, RL_MAX_STRING_LENGTH));
 }
@@ -406,15 +406,15 @@ xdr_load_array (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   int i;
   char * data = ptrs->ra.data[idx].data;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
-  int count = fd_.count;
-  int row_count = fd_.row_count;
+  int count = fd_.param.array_param.count;
+  int row_count = fd_.param.array_param.row_count;
   
-  if (1 == fd_.row_count)
+  if (1 == fd_.param.array_param.row_count)
     fd_.rl_type_ext = RL_TYPE_EXT_NONE; /* set extended type property to RL_NONE in copy of field descriptor */
   else
     {
-      fd_.count = row_count;
-      fd_.row_count = 1;
+      fd_.param.array_param.count = row_count;
+      fd_.param.array_param.row_count = 1;
     }
 
   for (i = 0; i < count; i += row_count)

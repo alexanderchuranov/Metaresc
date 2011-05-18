@@ -357,9 +357,14 @@
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE,						\
       .rl_type_ext = RL_TYPE_EXT,					\
-      .count = sizeof (TYPE) == 0 ? 0 :					\
-        sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
-      .row_count = 1,							\
+      .param =								\
+      {									\
+	.array_param = {						\
+	  .count = sizeof (TYPE) == 0 ? 0 :				\
+	  sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),		\
+	  .row_count = 1,						\
+	},								\
+      },								\
       .comment = "" COM,						\
       },
 
@@ -369,8 +374,6 @@
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE_STRUCT,					\
       .rl_type_ext = RL_TYPE_EXT_POINTER,				\
-      .count = 1,							\
-      .row_count = 1,							\
       .comment = "" COM,						\
       },
 
@@ -381,11 +384,17 @@
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE_DETECT (TYPE),					\
       .rl_type_ext = RL_TYPE_EXT_ARRAY,					\
-      .count = sizeof (TYPE) == 0 ? 0 :					\
-        sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),           \
-      .row_count = sizeof (((RL_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE), \
+      .param =								\
+      {									\
+	.array_param = {						\
+	  .count = sizeof (TYPE) == 0 ? 0 :				\
+	  sizeof (((RL_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),		\
+	  .row_count = sizeof (TYPE) == 0 ? 0 :				\
+	  sizeof (((RL_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE),	\
+	},								\
+      },								\
       .comment = "" COM,						\
-      },
+	 },
 
 #define RL_NONE_DESC_(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...)  {	\
     .type = RL_STRINGIFY (TYPE),					\
@@ -403,10 +412,16 @@
       .rl_type = RL_TYPE_BITFIELD,					\
       .rl_type_aux = RL_TYPE_DETECT (TYPE),				\
       .rl_type_ext = RL_TYPE_EXT_NONE,					\
-      .width = SUFFIX,							\
-      .bitfield = { .size = sizeof (RL_TYPE_NAME), .alloc_size = -1, .data = (uint8_t*)((RL_TYPE_NAME[]){ { .NAME = -1 } }), }, \
+      .param = {								\
+      .bitfield_param = {						\
+	.width = SUFFIX,						\
+	.bitfield = {							\
+	  .size = sizeof (RL_TYPE_NAME),				\
+	  .alloc_size = -1,						\
+	  .data = (uint8_t*)((RL_TYPE_NAME[]){ { .NAME = -1 } }), },	\
+      }, },								\
       .comment = "" COM,						\
-      },
+	 },
 
 #define RL_AUTO_DESC_(RL_TYPE_NAME, TYPE, NAME, SUFFIX, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, SUFFIX, RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_DETECT (TYPE, ((RL_TYPE_NAME*)NULL)->NAME), COM, .rl_type_aux = RL_TYPE_DETECT_PTR (TYPE))
 
@@ -434,7 +449,7 @@
 #define RL_UNION_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_UNION, RL_TYPE_EXT_NONE, COM)
 #define RL_POINTER_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_POINTER, COM)
 #define RL_RARRAY_DESC(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_DETECT (TYPE), RL_TYPE_EXT_RARRAY, COM)
-#define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_FUNC, RL_TYPE_EXT_NONE, COM, .args = { .alloc_size = -1, .size = 0, .data = (rl_fd_t []){ RL_FUNC_ARG (TYPE, "return value") RL_FOR (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS)) { .rl_type = RL_TYPE_TRAILING_RECORD, }, }, })
+#define RL_FUNC_DESC(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_DESC (RL_TYPE_NAME, TYPE, NAME, , RL_TYPE_FUNC, RL_TYPE_EXT_NONE, COM, .param = { .func_param = { .alloc_size = -1, .size = 0, .data = (rl_fd_t []){ RL_FUNC_ARG (TYPE, "return value") RL_FOR (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS)) { .rl_type = RL_TYPE_TRAILING_RECORD, }, }, }, })
 #define RL_FUNC_ARG(TYPE, COM...) { .type = RL_STRINGIFY (TYPE), .size = sizeof (TYPE), .rl_type = RL_TYPE_DETECT (TYPE), .rl_type_aux = RL_TYPE_DETECT_PTR (TYPE), .rl_type_ext = RL_TYPE_EXT_NONE, .comment = "" COM, },
 #define RL_END_STRUCT_DESC(RL_TYPE_NAME, COM...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 
@@ -447,30 +462,31 @@
 #define RL_NAMED_ANON_UNION_DESC(RL_TYPE_NAME, NAME, ATTR...) {		\
     .type = "",								\
       .name = #NAME,							\
-      .size = 0,							\
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE_ANON_UNION,					\
       .rl_type_ext = RL_TYPE_EXT_NONE,					\
-      .count = 0,							\
-      .row_count = 0,							\
       .comment = #ATTR,							\
       .ext = (rl_td_t[]){ { .type = (char []) {RL_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, } }, \
       },
 #define RL_END_ANON_UNION_DESC(RL_TYPE_NAME, COM...) {	\
     .type = "",						\
-      .name = NULL,					\
-      .size = 0,					\
-      .offset = 0,					\
       .rl_type = RL_TYPE_END_ANON_UNION,		\
       .rl_type_ext = RL_TYPE_EXT_NONE,			\
-      .count = 0,					\
-      .row_count = 0,					\
-      .ext = NULL,					\
       .comment = "" COM,				\
       },
 
 #define RL_TYPEDEF_ENUM_DESC(RL_TYPE_NAME, ATTR...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_ENUM, ATTR)
-#define RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, RHS, COM...) { .type = RL_STRINGIFY (RL_TYPE_NAME), .name = #NAME, .value = NAME, .rl_type = RL_TYPE_ENUM, .ext = NULL, .comment = "" COM, },
+#define RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, RHS, COM...) {		\
+    .type = RL_STRINGIFY (RL_TYPE_NAME),				\
+      .name = #NAME,							\
+      .rl_type = RL_TYPE_ENUM_VALUE,					\
+      .rl_type_ext = RL_TYPE_EXT_NONE,					\
+      .param =								\
+      {									\
+	.enum_value = NAME,						\
+      },								\
+      .comment = "" COM,						\
+	 },
 #define RL_ENUM_DEF_DESC(...) RL_ENUM_DEF_ (RL_ENUM_DEF_DESC_, __VA_ARGS__)
 #define RL_END_ENUM_DESC(RL_TYPE_NAME, COM...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 
@@ -662,9 +678,14 @@ extern char * xml_unquote_string (char*);
 	  .rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),			\
 	  .rl_type_ext = RL_TYPE_EXT_DETECT (RL_TYPE_NAME, S_PTR),	\
 	  .size = sizeof (RL_TYPE_NAME),				\
-	  .count = sizeof (RL_TYPE_NAME) == 0 ? 0 :                     \
-            sizeof (S_PTR) / sizeof (RL_TYPE_NAME),                     \
-	  .row_count = 1,						\
+	  .param = 							\
+	  {								\
+	    .array_param = {						\
+	      .count = sizeof (RL_TYPE_NAME) == 0 ? 0 :			\
+	      sizeof (S_PTR) / sizeof (RL_TYPE_NAME),			\
+	      .row_count = 1,						\
+	    },								\
+	  },								\
 	};								\
       RL_TYPE_NAME * check_type = S_PTR;				\
       rl_save_data_t __rl_save_data__ =					\
@@ -764,9 +785,14 @@ extern char * xml_unquote_string (char*);
 	    .rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),			\
 	    .rl_type_ext = RL_TYPE_EXT_NONE,				\
 	    .size = sizeof (RL_TYPE_NAME),				\
-	    .count = sizeof (RL_TYPE_NAME) == 0 ? 0 :                   \
-              (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),               \
-	    .row_count = 1,						\
+	    .param = 							\
+	    {								\
+	      .array_param = {						\
+		.count = sizeof (RL_TYPE_NAME) == 0 ? 0 :		\
+		(sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),		\
+		.row_count = 1,						\
+	      },							\
+	    },								\
 	  };								\
 	  RL_TYPE_NAME * __check_type__ = S_PTR + 0;			\
 	  rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
@@ -850,9 +876,14 @@ extern char * xml_unquote_string (char*);
 	.rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),			\
 	.rl_type_ext = RL_TYPE_EXT_NONE,				\
 	.size = sizeof (RL_TYPE_NAME),					\
-	.count = sizeof (RL_TYPE_NAME) == 0 ? 0 :                       \
-          (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),                   \
-	.row_count = 1,							\
+	.param = 							\
+	{								\
+	  .array_param = {						\
+	    .count = sizeof (RL_TYPE_NAME) == 0 ? 0 :			\
+	    (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),			\
+	    .row_count = 1,						\
+	  },								\
+	},								\
       };								\
       RL_TYPE_NAME * __check_type__ = S_PTR + 0;			\
       rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
@@ -943,9 +974,14 @@ extern char * xml_unquote_string (char*);
 		.rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),		\
 		.rl_type_ext = RL_TYPE_EXT_DETECT (RL_TYPE_NAME, S_PTR), \
 		.size = sizeof (RL_TYPE_NAME),				\
-		.count = sizeof (RL_TYPE_NAME) == 0 ? 0 :               \
-                  (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),           \
-		.row_count = 1,						\
+		.param = 						\
+		{							\
+		  .array_param = {					\
+		    .count = sizeof (RL_TYPE_NAME) == 0 ? 0 :		\
+		    (sizeof S_PTR + 0) / sizeof (RL_TYPE_NAME),		\
+		    .row_count = 1,					\
+		  },							\
+		},							\
 	      };							\
 	      rl_td_t * _tdp_ = rl_get_td_by_name (_fd_.type);		\
 	      if (_tdp_)						\

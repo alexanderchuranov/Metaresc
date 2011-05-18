@@ -215,8 +215,8 @@ rl_stringify_bitmask (rl_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
     {
       /* decompose value on bitmask */
       for (i = 0; i < count; ++i)
-	if ((value & tdp->fields.data[i].value)
-	    && !(~value & tdp->fields.data[i].value))
+	if ((value & tdp->fields.data[i].param.enum_value)
+	    && !(~value & tdp->fields.data[i].param.enum_value))
 	  {
 	    if (NULL == str)
 	      str = RL_STRDUP (tdp->fields.data[i].name);
@@ -234,7 +234,7 @@ rl_stringify_bitmask (rl_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
 		strcat (str, bitmask_or_delimiter);
 		strcat (str, name);
 	      }
-	    value &= ~tdp->fields.data[i].value;
+	    value &= ~tdp->fields.data[i].param.enum_value;
 	  }
 
       if (value != 0)

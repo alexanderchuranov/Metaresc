@@ -74,7 +74,7 @@ cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*no
 	    if (rl_ra_printf (&rl_ra_str, RL_CINIT_ATTR_INT, RL_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	      return (NULL);
 	  if (save_data.prefix)
-	    if (rl_ra_printf (&rl_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.size * ptrs->ra.data[idx].fd.count, ptrs->ra.data[idx].fd.type) < 0)
+	    if (rl_ra_printf (&rl_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.size * ptrs->ra.data[idx].fd.param.array_param.count, ptrs->ra.data[idx].fd.type) < 0)
 	      return (NULL);
 	  if (save_data.content)
 	    {
