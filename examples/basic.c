@@ -1,9 +1,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
-#include <basic.h>
+#include <reslib.h>
+
+TYPEDEF_STRUCT (employee_t,
+		(char *,firstname),
+		(char *, lastname),
+		(int, salary),
+		)
 
 int
 main (int argc, char * argv[])
@@ -15,7 +20,7 @@ main (int argc, char * argv[])
   employee.salary    = 123456;
   
   char * str = RL_SAVE_XML (employee_t, &employee);
-  printf ("%s\n", str);
+  printf ("%s", str);
   RL_FREE (str);
   
   return (EXIT_SUCCESS);
