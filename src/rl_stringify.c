@@ -25,21 +25,23 @@ RL_OUTPUT_FORMAT_TYPE (float, "%.7f");
 RL_OUTPUT_FORMAT_TYPE (double, "%.16g");
 RL_OUTPUT_FORMAT_TYPE (long_double_t, "%.20Lg");
 
-rl_output_format_t rl_output_format[RL_MAX_TYPES] =
-  {
-    [0 ... RL_MAX_TYPES - 1] = NULL,
-    [RL_TYPE_INT8] = rl_output_format_int8_t,
-    [RL_TYPE_UINT8] = rl_output_format_uint8_t,
-    [RL_TYPE_INT16] = rl_output_format_int16_t,
-    [RL_TYPE_UINT16] = rl_output_format_uint16_t,
-    [RL_TYPE_INT32] = rl_output_format_int32_t,
-    [RL_TYPE_UINT32] = rl_output_format_uint32_t,
-    [RL_TYPE_INT64] = rl_output_format_int64_t,
-    [RL_TYPE_UINT64] = rl_output_format_uint64_t,
-    [RL_TYPE_FLOAT] = rl_output_format_float,
-    [RL_TYPE_DOUBLE] = rl_output_format_double,
-    [RL_TYPE_LONG_DOUBLE] = rl_output_format_long_double_t,
-  };
+/**
+ * Init IO handlers Table
+ */
+void __attribute__((constructor)) rl_init_output_format (void)
+{
+  rl_conf.output_format[RL_TYPE_INT8] = rl_output_format_int8_t;
+  rl_conf.output_format[RL_TYPE_UINT8] = rl_output_format_uint8_t;
+  rl_conf.output_format[RL_TYPE_INT16] = rl_output_format_int16_t;
+  rl_conf.output_format[RL_TYPE_UINT16] = rl_output_format_uint16_t;
+  rl_conf.output_format[RL_TYPE_INT32] = rl_output_format_int32_t;
+  rl_conf.output_format[RL_TYPE_UINT32] = rl_output_format_uint32_t;
+  rl_conf.output_format[RL_TYPE_INT64] = rl_output_format_int64_t;
+  rl_conf.output_format[RL_TYPE_UINT64] = rl_output_format_uint64_t;
+  rl_conf.output_format[RL_TYPE_FLOAT] = rl_output_format_float;
+  rl_conf.output_format[RL_TYPE_DOUBLE] = rl_output_format_double;
+  rl_conf.output_format[RL_TYPE_LONG_DOUBLE] = rl_output_format_long_double_t;
+}
 
 /**
  * RL_UINTxx type saving handler. Make a string from *(uintXX_t*)data.
@@ -48,7 +50,8 @@ rl_output_format_t rl_output_format[RL_MAX_TYPES] =
  */
 #define RL_STRINGIFY_INT(TYPE, RL_TYPE)					\
   char * rl_stringify_ ## TYPE (rl_ptrdes_t * ptrdes) {			\
-    if (rl_output_format[RL_TYPE]) return (rl_output_format[RL_TYPE](ptrdes)); \
+    if (rl_conf.output_format[RL_TYPE])					\
+      return (rl_conf.output_format[RL_TYPE](ptrdes));			\
     return (RL_STRDUP ("0"));						\
   }
 
@@ -68,8 +71,8 @@ RL_STRINGIFY_INT (uint64, RL_TYPE_UINT64);
  */
 #define RL_STRINGIFY_TYPE(TYPE, RL_TYPE) char * rl_stringify_ ## TYPE (rl_ptrdes_t * ptrdes) { \
     TYPE value = *(TYPE*)ptrdes->data;					\
-    if (!isnan (value) && !isinf (value) && (rl_output_format[RL_TYPE])) \
-      return (rl_output_format[RL_TYPE](ptrdes));			\
+    if (!isnan (value) && !isinf (value) && (rl_conf.output_format[RL_TYPE])) \
+      return (rl_conf.output_format[RL_TYPE](ptrdes));			\
     return (RL_STRDUP ("0"));						\
   }
 

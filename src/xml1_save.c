@@ -46,11 +46,11 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 
       /* route saving handler */
       if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-	  && rl_io_ext_handlers[fdp->rl_type_ext].save.xml)
-	content = rl_io_ext_handlers[fdp->rl_type_ext].save.xml (idx, ptrs);
+	  && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml)
+	content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml (idx, ptrs);
       else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	       && rl_io_handlers[fdp->rl_type].save.xml)
-	content = rl_io_handlers[fdp->rl_type].save.xml (idx, ptrs);
+	       && rl_conf.io_handlers[fdp->rl_type].save.xml)
+	content = rl_conf.io_handlers[fdp->rl_type].save.xml (idx, ptrs);
       else
 	RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
@@ -192,31 +192,32 @@ xml_save_empty (int idx, rl_ra_rl_ptrdes_t * ptrs)
  */
 void __attribute__((constructor)) rl_init_save_xml1 (void)
 {
-  rl_io_handlers[RL_TYPE_NONE].save.xml = xml_save_none;
-  rl_io_handlers[RL_TYPE_VOID].save.xml = xml_save_none;
-  rl_io_handlers[RL_TYPE_ENUM].save.xml = xml_save_enum;
-  rl_io_handlers[RL_TYPE_BITFIELD].save.xml = xml_save_bitfield;
-  rl_io_handlers[RL_TYPE_BITMASK].save.xml = xml_save_bitmask;
-  rl_io_handlers[RL_TYPE_INT8].save.xml = xml_save_int8;
-  rl_io_handlers[RL_TYPE_UINT8].save.xml = xml_save_uint8;
-  rl_io_handlers[RL_TYPE_INT16].save.xml = xml_save_int16;
-  rl_io_handlers[RL_TYPE_UINT16].save.xml = xml_save_uint16;
-  rl_io_handlers[RL_TYPE_INT32].save.xml = xml_save_int32;
-  rl_io_handlers[RL_TYPE_UINT32].save.xml = xml_save_uint32;
-  rl_io_handlers[RL_TYPE_INT64].save.xml = xml_save_int64;
-  rl_io_handlers[RL_TYPE_UINT64].save.xml = xml_save_uint64;
-  rl_io_handlers[RL_TYPE_FLOAT].save.xml = xml_save_float;
-  rl_io_handlers[RL_TYPE_DOUBLE].save.xml = xml_save_double;
-  rl_io_handlers[RL_TYPE_LONG_DOUBLE].save.xml = xml_save_long_double_t;
-  rl_io_handlers[RL_TYPE_CHAR].save.xml = xml_save_char;
-  rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.xml = xml_save_char_array;
-  rl_io_handlers[RL_TYPE_STRING].save.xml = xml_save_string;
-  rl_io_handlers[RL_TYPE_STRUCT].save.xml = xml_save_empty;
-  rl_io_handlers[RL_TYPE_FUNC].save.xml = xml_save_none;
-  rl_io_handlers[RL_TYPE_UNION].save.xml = xml_save_empty;
-  rl_io_handlers[RL_TYPE_ANON_UNION].save.xml = xml_save_empty;
+  rl_conf.io_handlers[RL_TYPE_NONE].save.xml = xml_save_none;
+  rl_conf.io_handlers[RL_TYPE_VOID].save.xml = xml_save_none;
+  rl_conf.io_handlers[RL_TYPE_ENUM].save.xml = xml_save_enum;
+  rl_conf.io_handlers[RL_TYPE_BITFIELD].save.xml = xml_save_bitfield;
+  rl_conf.io_handlers[RL_TYPE_BITMASK].save.xml = xml_save_bitmask;
+  rl_conf.io_handlers[RL_TYPE_INT8].save.xml = xml_save_int8;
+  rl_conf.io_handlers[RL_TYPE_UINT8].save.xml = xml_save_uint8;
+  rl_conf.io_handlers[RL_TYPE_INT16].save.xml = xml_save_int16;
+  rl_conf.io_handlers[RL_TYPE_UINT16].save.xml = xml_save_uint16;
+  rl_conf.io_handlers[RL_TYPE_INT32].save.xml = xml_save_int32;
+  rl_conf.io_handlers[RL_TYPE_UINT32].save.xml = xml_save_uint32;
+  rl_conf.io_handlers[RL_TYPE_INT64].save.xml = xml_save_int64;
+  rl_conf.io_handlers[RL_TYPE_UINT64].save.xml = xml_save_uint64;
+  rl_conf.io_handlers[RL_TYPE_FLOAT].save.xml = xml_save_float;
+  rl_conf.io_handlers[RL_TYPE_DOUBLE].save.xml = xml_save_double;
+  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].save.xml = xml_save_long_double_t;
+  rl_conf.io_handlers[RL_TYPE_CHAR].save.xml = xml_save_char;
+  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].save.xml = xml_save_char_array;
+  rl_conf.io_handlers[RL_TYPE_STRING].save.xml = xml_save_string;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].save.xml = xml_save_empty;
+  rl_conf.io_handlers[RL_TYPE_FUNC].save.xml = xml_save_none;
+  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].save.xml = xml_save_none;
+  rl_conf.io_handlers[RL_TYPE_UNION].save.xml = xml_save_empty;
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.xml = xml_save_empty;
 
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].save.xml = xml_save_empty;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].save.xml = xml_save_empty;
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].save.xml = xml_save_empty;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.xml = xml_save_empty;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.xml = xml_save_empty;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.xml = xml_save_empty;
 }

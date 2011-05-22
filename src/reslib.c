@@ -57,44 +57,44 @@ rl_conf_t rl_conf = {
   .tree = NULL,
 #endif /* RL_TREE_LOOKUP */
   .enum_by_name = NULL,
+  .output_format = { [0 ... RL_MAX_TYPES - 1] = NULL, },
+  .io_handlers =
+  { [0 ... RL_MAX_TYPES - 1] =
+    {
+      .load =
+      {
+	.rl = NULL,
+	.xdr = NULL,
+      },
+      .save =
+      {
+	.rl = NULL,
+	.xdr = NULL,
+	.xml = NULL,
+	.cinit = NULL,
+	.scm = NULL,
+      },
+    }
+  },  
+  .io_ext_handlers =
+  { [0 ... RL_MAX_TYPES - 1] =
+    {
+      .load =
+      {
+	.rl = NULL,
+	.xdr = NULL,
+      },
+      .save =
+      {
+	.rl = NULL,
+	.xdr = NULL,
+	.xml = NULL,
+	.cinit = NULL,
+	.scm = NULL,
+      },
+    }
+  },
 };
-
-rl_io_handler_t rl_io_handlers[RL_MAX_TYPES] =
-  { [0 ... RL_MAX_TYPES - 1] =
-    {
-      .load =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-      },
-      .save =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-	.xml = NULL,
-	.cinit = NULL,
-	.scm = NULL,
-      },
-    }
-  };
-rl_io_handler_t rl_io_ext_handlers[RL_MAX_TYPES] =
-  { [0 ... RL_MAX_TYPES - 1] =
-    {
-      .load =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-      },
-      .save =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-	.xml = NULL,
-	.cinit = NULL,
-	.scm = NULL,
-      },
-    }
-  };
 
 RL_MEM_INIT ( , __attribute__((constructor,weak)));
 
@@ -959,13 +959,6 @@ rl_auto_field_detect (rl_fd_t * fdp)
     {
       fdp->rl_type = tdp->rl_type;
       fdp->size = tdp->size; /* size of forward pointers could be resolved only at the time of type registration */
-      if (RL_TYPE_FUNC == fdp->rl_type)
-	{
-	  fdp->param.func_param.size = tdp->fields.size;
-	  fdp->param.func_param.alloc_size = tdp->fields.alloc_size;
-	  fdp->param.func_param.data = tdp->fields.data;
-	  fdp->param.func_param.ext = tdp->fields.ext;
-	}
     }
   else if (RL_TYPE_EXT_NONE == fdp->rl_type_ext)
     {

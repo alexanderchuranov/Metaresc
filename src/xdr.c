@@ -525,15 +525,15 @@ xdr_save (XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
     {
       rl_fd_t * fdp = &ptrs->ra.data[idx].fd;
       if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-	  && rl_io_ext_handlers[fdp->rl_type_ext].save.xdr)
+	  && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xdr)
 	{
-	  if (!rl_io_ext_handlers[fdp->rl_type_ext].save.xdr (xdrs, idx, ptrs))
+	  if (!rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xdr (xdrs, idx, ptrs))
 	    return (0);
 	}
       else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	       && rl_io_handlers[fdp->rl_type].save.xdr)
+	       && rl_conf.io_handlers[fdp->rl_type].save.xdr)
 	{
-	  if (!rl_io_handlers[fdp->rl_type].save.xdr (xdrs, idx, ptrs))
+	  if (!rl_conf.io_handlers[fdp->rl_type].save.xdr (xdrs, idx, ptrs))
 	    return (0);
 	}
       else
@@ -571,11 +571,11 @@ xdr_load (void * data, rl_fd_t * fdp, XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
   ptrs->ra.data[idx].fd = *fdp;
 
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-      && rl_io_ext_handlers[fdp->rl_type_ext].load.xdr)
-    status = rl_io_ext_handlers[fdp->rl_type_ext].load.xdr (xdrs, idx, ptrs);
+      && rl_conf.io_ext_handlers[fdp->rl_type_ext].load.xdr)
+    status = rl_conf.io_ext_handlers[fdp->rl_type_ext].load.xdr (xdrs, idx, ptrs);
   else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	   && rl_io_handlers[fdp->rl_type].load.xdr)
-    status = rl_io_handlers[fdp->rl_type].load.xdr (xdrs, idx, ptrs);
+	   && rl_conf.io_handlers[fdp->rl_type].load.xdr)
+    status = rl_conf.io_handlers[fdp->rl_type].load.xdr (xdrs, idx, ptrs);
   else
     RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
@@ -592,33 +592,34 @@ xdr_load (void * data, rl_fd_t * fdp, XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
  */
 static void __attribute__((constructor)) rl_init_save_xdr (void)
 {
-  rl_io_handlers[RL_TYPE_NONE].save.xdr = xdr_none; 
-  rl_io_handlers[RL_TYPE_VOID].save.xdr = xdr_none; 
-  rl_io_handlers[RL_TYPE_ENUM].save.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_BITFIELD].save.xdr = xdr_save_bitfield;
-  rl_io_handlers[RL_TYPE_BITMASK].save.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT8].save.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT8].save.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT16].save.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT16].save.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT32].save.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT32].save.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT64].save.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT64].save.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_FLOAT].save.xdr = xdr_float_; 
-  rl_io_handlers[RL_TYPE_DOUBLE].save.xdr = xdr_double_; 
-  rl_io_handlers[RL_TYPE_LONG_DOUBLE].save.xdr = xdr_long_double;
-  rl_io_handlers[RL_TYPE_CHAR].save.xdr = xdr_int_; 
-  rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.xdr = xdr_char_array_; 
-  rl_io_handlers[RL_TYPE_STRING].save.xdr = xdr_save_string;
-  rl_io_handlers[RL_TYPE_STRUCT].save.xdr = xdr_none; 
-  rl_io_handlers[RL_TYPE_FUNC].save.xdr = xdr_none; 
-  rl_io_handlers[RL_TYPE_UNION].save.xdr = xdr_save_union; 
-  rl_io_handlers[RL_TYPE_ANON_UNION].save.xdr = xdr_save_union; 
+  rl_conf.io_handlers[RL_TYPE_NONE].save.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_VOID].save.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_ENUM].save.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_BITFIELD].save.xdr = xdr_save_bitfield;
+  rl_conf.io_handlers[RL_TYPE_BITMASK].save.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT8].save.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT8].save.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT16].save.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT16].save.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT32].save.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT32].save.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT64].save.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT64].save.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_FLOAT].save.xdr = xdr_float_; 
+  rl_conf.io_handlers[RL_TYPE_DOUBLE].save.xdr = xdr_double_; 
+  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].save.xdr = xdr_long_double;
+  rl_conf.io_handlers[RL_TYPE_CHAR].save.xdr = xdr_int_; 
+  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].save.xdr = xdr_char_array_; 
+  rl_conf.io_handlers[RL_TYPE_STRING].save.xdr = xdr_save_string;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].save.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_FUNC].save.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].save.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_UNION].save.xdr = xdr_save_union; 
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.xdr = xdr_save_union; 
      
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].save.xdr = xdr_none;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].save.xdr = xdr_save_rarray; 
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].save.xdr = xdr_save_pointer; 
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.xdr = xdr_none;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.xdr = xdr_save_rarray; 
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.xdr = xdr_save_pointer; 
 }
 
 /**
@@ -626,31 +627,32 @@ static void __attribute__((constructor)) rl_init_save_xdr (void)
  */
 static void __attribute__((constructor)) rl_init_load_xdr (void)
 {
-  rl_io_handlers[RL_TYPE_NONE].load.xdr = xdr_none; 
-  rl_io_handlers[RL_TYPE_VOID].load.xdr = xdr_none; 
-  rl_io_handlers[RL_TYPE_ENUM].load.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_BITFIELD].load.xdr = xdr_load_bitfield;
-  rl_io_handlers[RL_TYPE_BITMASK].load.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT8].load.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT8].load.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT16].load.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT16].load.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT32].load.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT32].load.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_INT64].load.xdr = xdr_int_;
-  rl_io_handlers[RL_TYPE_UINT64].load.xdr = xdr_uint_;
-  rl_io_handlers[RL_TYPE_FLOAT].load.xdr = xdr_float_; 
-  rl_io_handlers[RL_TYPE_DOUBLE].load.xdr = xdr_double_; 
-  rl_io_handlers[RL_TYPE_LONG_DOUBLE].load.xdr = xdr_long_double; 
-  rl_io_handlers[RL_TYPE_CHAR].load.xdr = xdr_int_; 
-  rl_io_handlers[RL_TYPE_CHAR_ARRAY].load.xdr = xdr_char_array_; 
-  rl_io_handlers[RL_TYPE_STRING].load.xdr = xdr_load_string;
-  rl_io_handlers[RL_TYPE_STRUCT].load.xdr = xdr_load_struct; 
-  rl_io_handlers[RL_TYPE_FUNC].load.xdr = xdr_none; 
-  rl_io_handlers[RL_TYPE_UNION].load.xdr = xdr_load_union; 
-  rl_io_handlers[RL_TYPE_ANON_UNION].load.xdr = xdr_load_union; 
+  rl_conf.io_handlers[RL_TYPE_NONE].load.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_VOID].load.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_ENUM].load.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_BITFIELD].load.xdr = xdr_load_bitfield;
+  rl_conf.io_handlers[RL_TYPE_BITMASK].load.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT8].load.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT8].load.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT16].load.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT16].load.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT32].load.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT32].load.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_INT64].load.xdr = xdr_int_;
+  rl_conf.io_handlers[RL_TYPE_UINT64].load.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_FLOAT].load.xdr = xdr_float_; 
+  rl_conf.io_handlers[RL_TYPE_DOUBLE].load.xdr = xdr_double_; 
+  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].load.xdr = xdr_long_double; 
+  rl_conf.io_handlers[RL_TYPE_CHAR].load.xdr = xdr_int_; 
+  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].load.xdr = xdr_char_array_; 
+  rl_conf.io_handlers[RL_TYPE_STRING].load.xdr = xdr_load_string;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].load.xdr = xdr_load_struct; 
+  rl_conf.io_handlers[RL_TYPE_FUNC].load.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].load.xdr = xdr_none; 
+  rl_conf.io_handlers[RL_TYPE_UNION].load.xdr = xdr_load_union; 
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].load.xdr = xdr_load_union; 
      
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].load.xdr = xdr_load_array;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].load.xdr = xdr_load_rarray; 
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].load.xdr = xdr_load_pointer; 
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].load.xdr = xdr_load_array;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].load.xdr = xdr_load_rarray; 
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].load.xdr = xdr_load_pointer; 
 }

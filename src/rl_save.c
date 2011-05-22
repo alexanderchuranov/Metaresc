@@ -222,11 +222,11 @@ rl_save_inner (void * data, rl_fd_t * fdp, rl_save_data_t * rl_save_data)
 
   /* route saving handler */
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-      && rl_io_ext_handlers[fdp->rl_type_ext].save.rl)
-    rl_io_ext_handlers[fdp->rl_type_ext].save.rl (rl_save_data);
+      && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.rl)
+    rl_conf.io_ext_handlers[fdp->rl_type_ext].save.rl (rl_save_data);
   else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	   && rl_io_handlers[fdp->rl_type].save.rl)
-    rl_io_handlers[fdp->rl_type].save.rl (rl_save_data);
+	   && rl_conf.io_handlers[fdp->rl_type].save.rl)
+    rl_conf.io_handlers[fdp->rl_type].save.rl (rl_save_data);
 }
 
 /**
@@ -524,13 +524,13 @@ rl_save (void * data, rl_fd_t * fdp, rl_save_data_t * rl_save_data)
  */
 static void __attribute__((constructor)) rl_init_save_rl (void)
 {
-  rl_io_handlers[RL_TYPE_STRING].save.rl = rl_save_string;
+  rl_conf.io_handlers[RL_TYPE_STRING].save.rl = rl_save_string;
   
-  rl_io_handlers[RL_TYPE_STRUCT].save.rl = rl_save_struct;
-  rl_io_handlers[RL_TYPE_UNION].save.rl = rl_save_union;
-  rl_io_handlers[RL_TYPE_ANON_UNION].save.rl = rl_save_union;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].save.rl = rl_save_struct;
+  rl_conf.io_handlers[RL_TYPE_UNION].save.rl = rl_save_union;
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.rl = rl_save_union;
 
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].save.rl = rl_save_array;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].save.rl = rl_save_rarray;
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].save.rl = rl_save_pointer;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.rl = rl_save_array;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.rl = rl_save_rarray;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.rl = rl_save_pointer;
 }

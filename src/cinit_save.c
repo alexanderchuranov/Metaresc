@@ -128,10 +128,10 @@ cinit_save (rl_ra_rl_ptrdes_t * _ptrs_)
   int node_handler (rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * save_data)
   {
     int skip_node = 0;
-    if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES) && rl_io_ext_handlers[fdp->rl_type_ext].save.cinit)
-      skip_node = rl_io_ext_handlers[fdp->rl_type_ext].save.cinit (idx, ptrs, save_data);
-    else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES) && rl_io_handlers[fdp->rl_type].save.cinit)
-      skip_node = rl_io_handlers[fdp->rl_type].save.cinit (idx, ptrs, save_data);
+    if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES) && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.cinit)
+      skip_node = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.cinit (idx, ptrs, save_data);
+    else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES) && rl_conf.io_handlers[fdp->rl_type].save.cinit)
+      skip_node = rl_conf.io_handlers[fdp->rl_type].save.cinit (idx, ptrs, save_data);
     else
       RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
     return (skip_node);
@@ -146,10 +146,10 @@ json_save (rl_ra_rl_ptrdes_t * _ptrs_)
   int node_handler (rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * save_data)
   {
     int skip_node = 0;
-    if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES) && rl_io_ext_handlers[fdp->rl_type_ext].save.json)
-      skip_node = rl_io_ext_handlers[fdp->rl_type_ext].save.json (idx, ptrs, save_data);
-    else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES) && rl_io_handlers[fdp->rl_type].save.json)
-      skip_node = rl_io_handlers[fdp->rl_type].save.json (idx, ptrs, save_data);
+    if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES) && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.json)
+      skip_node = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.json (idx, ptrs, save_data);
+    else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES) && rl_conf.io_handlers[fdp->rl_type].save.json)
+      skip_node = rl_conf.io_handlers[fdp->rl_type].save.json (idx, ptrs, save_data);
     else
       RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
     return (skip_node);
@@ -355,62 +355,64 @@ json_save_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data
  */
 static void __attribute__((constructor)) rl_init_save_cinit (void)
 {
-  rl_io_handlers[RL_TYPE_NONE].save.cinit = cinit_save_none;
-  rl_io_handlers[RL_TYPE_VOID].save.cinit = cinit_save_none;
-  rl_io_handlers[RL_TYPE_ENUM].save.cinit = cinit_save_enum;
-  rl_io_handlers[RL_TYPE_BITFIELD].save.cinit = cinit_save_bitfield;
-  rl_io_handlers[RL_TYPE_BITMASK].save.cinit = cinit_save_bitmask;
-  rl_io_handlers[RL_TYPE_INT8].save.cinit = cinit_save_int8;
-  rl_io_handlers[RL_TYPE_UINT8].save.cinit = cinit_save_uint8;
-  rl_io_handlers[RL_TYPE_INT16].save.cinit = cinit_save_int16;
-  rl_io_handlers[RL_TYPE_UINT16].save.cinit = cinit_save_uint16;
-  rl_io_handlers[RL_TYPE_INT32].save.cinit = cinit_save_int32;
-  rl_io_handlers[RL_TYPE_UINT32].save.cinit = cinit_save_uint32;
-  rl_io_handlers[RL_TYPE_INT64].save.cinit = cinit_save_int64;
-  rl_io_handlers[RL_TYPE_UINT64].save.cinit = cinit_save_uint64;
-  rl_io_handlers[RL_TYPE_FLOAT].save.cinit = cinit_save_float;
-  rl_io_handlers[RL_TYPE_DOUBLE].save.cinit = cinit_save_double;
-  rl_io_handlers[RL_TYPE_LONG_DOUBLE].save.cinit = cinit_save_long_double_t;
-  rl_io_handlers[RL_TYPE_CHAR].save.cinit = cinit_save_char;
-  rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.cinit = cinit_save_char_array;
-  rl_io_handlers[RL_TYPE_STRING].save.cinit = cinit_save_string;
-  rl_io_handlers[RL_TYPE_STRUCT].save.cinit = cinit_save_struct;
-  rl_io_handlers[RL_TYPE_FUNC].save.cinit = cinit_save_none;
-  rl_io_handlers[RL_TYPE_UNION].save.cinit = cinit_save_struct;
-  rl_io_handlers[RL_TYPE_ANON_UNION].save.cinit = cinit_save_anon_union;
+  rl_conf.io_handlers[RL_TYPE_NONE].save.cinit = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_VOID].save.cinit = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_ENUM].save.cinit = cinit_save_enum;
+  rl_conf.io_handlers[RL_TYPE_BITFIELD].save.cinit = cinit_save_bitfield;
+  rl_conf.io_handlers[RL_TYPE_BITMASK].save.cinit = cinit_save_bitmask;
+  rl_conf.io_handlers[RL_TYPE_INT8].save.cinit = cinit_save_int8;
+  rl_conf.io_handlers[RL_TYPE_UINT8].save.cinit = cinit_save_uint8;
+  rl_conf.io_handlers[RL_TYPE_INT16].save.cinit = cinit_save_int16;
+  rl_conf.io_handlers[RL_TYPE_UINT16].save.cinit = cinit_save_uint16;
+  rl_conf.io_handlers[RL_TYPE_INT32].save.cinit = cinit_save_int32;
+  rl_conf.io_handlers[RL_TYPE_UINT32].save.cinit = cinit_save_uint32;
+  rl_conf.io_handlers[RL_TYPE_INT64].save.cinit = cinit_save_int64;
+  rl_conf.io_handlers[RL_TYPE_UINT64].save.cinit = cinit_save_uint64;
+  rl_conf.io_handlers[RL_TYPE_FLOAT].save.cinit = cinit_save_float;
+  rl_conf.io_handlers[RL_TYPE_DOUBLE].save.cinit = cinit_save_double;
+  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].save.cinit = cinit_save_long_double_t;
+  rl_conf.io_handlers[RL_TYPE_CHAR].save.cinit = cinit_save_char;
+  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].save.cinit = cinit_save_char_array;
+  rl_conf.io_handlers[RL_TYPE_STRING].save.cinit = cinit_save_string;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].save.cinit = cinit_save_struct;
+  rl_conf.io_handlers[RL_TYPE_FUNC].save.cinit = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].save.cinit = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_UNION].save.cinit = cinit_save_struct;
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.cinit = cinit_save_anon_union;
 
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].save.cinit = cinit_save_struct;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].save.cinit = cinit_save_rarray;
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].save.cinit = cinit_save_pointer;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.cinit = cinit_save_struct;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.cinit = cinit_save_rarray;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.cinit = cinit_save_pointer;
 }
 
 static void __attribute__((constructor)) rl_init_save_json (void)
 {
-  rl_io_handlers[RL_TYPE_NONE].save.json = cinit_save_none;
-  rl_io_handlers[RL_TYPE_VOID].save.json = cinit_save_none;
-  rl_io_handlers[RL_TYPE_ENUM].save.json = cinit_save_enum;
-  rl_io_handlers[RL_TYPE_BITFIELD].save.json = cinit_save_bitfield;
-  rl_io_handlers[RL_TYPE_BITMASK].save.json = cinit_save_bitmask;
-  rl_io_handlers[RL_TYPE_INT8].save.json = cinit_save_int8;
-  rl_io_handlers[RL_TYPE_UINT8].save.json = cinit_save_uint8;
-  rl_io_handlers[RL_TYPE_INT16].save.json = cinit_save_int16;
-  rl_io_handlers[RL_TYPE_UINT16].save.json = cinit_save_uint16;
-  rl_io_handlers[RL_TYPE_INT32].save.json = cinit_save_int32;
-  rl_io_handlers[RL_TYPE_UINT32].save.json = cinit_save_uint32;
-  rl_io_handlers[RL_TYPE_INT64].save.json = cinit_save_int64;
-  rl_io_handlers[RL_TYPE_UINT64].save.json = cinit_save_uint64;
-  rl_io_handlers[RL_TYPE_FLOAT].save.json = cinit_save_float;
-  rl_io_handlers[RL_TYPE_DOUBLE].save.json = cinit_save_double;
-  rl_io_handlers[RL_TYPE_LONG_DOUBLE].save.json = cinit_save_long_double_t;
-  rl_io_handlers[RL_TYPE_CHAR].save.json = cinit_save_char;
-  rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.json = cinit_save_char_array;
-  rl_io_handlers[RL_TYPE_STRING].save.json = cinit_save_string;
-  rl_io_handlers[RL_TYPE_STRUCT].save.json = cinit_save_struct;
-  rl_io_handlers[RL_TYPE_FUNC].save.json = cinit_save_none;
-  rl_io_handlers[RL_TYPE_UNION].save.json = cinit_save_struct;
-  rl_io_handlers[RL_TYPE_ANON_UNION].save.json = cinit_save_anon_union;
+  rl_conf.io_handlers[RL_TYPE_NONE].save.json = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_VOID].save.json = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_ENUM].save.json = cinit_save_enum;
+  rl_conf.io_handlers[RL_TYPE_BITFIELD].save.json = cinit_save_bitfield;
+  rl_conf.io_handlers[RL_TYPE_BITMASK].save.json = cinit_save_bitmask;
+  rl_conf.io_handlers[RL_TYPE_INT8].save.json = cinit_save_int8;
+  rl_conf.io_handlers[RL_TYPE_UINT8].save.json = cinit_save_uint8;
+  rl_conf.io_handlers[RL_TYPE_INT16].save.json = cinit_save_int16;
+  rl_conf.io_handlers[RL_TYPE_UINT16].save.json = cinit_save_uint16;
+  rl_conf.io_handlers[RL_TYPE_INT32].save.json = cinit_save_int32;
+  rl_conf.io_handlers[RL_TYPE_UINT32].save.json = cinit_save_uint32;
+  rl_conf.io_handlers[RL_TYPE_INT64].save.json = cinit_save_int64;
+  rl_conf.io_handlers[RL_TYPE_UINT64].save.json = cinit_save_uint64;
+  rl_conf.io_handlers[RL_TYPE_FLOAT].save.json = cinit_save_float;
+  rl_conf.io_handlers[RL_TYPE_DOUBLE].save.json = cinit_save_double;
+  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].save.json = cinit_save_long_double_t;
+  rl_conf.io_handlers[RL_TYPE_CHAR].save.json = cinit_save_char;
+  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].save.json = cinit_save_char_array;
+  rl_conf.io_handlers[RL_TYPE_STRING].save.json = cinit_save_string;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].save.json = cinit_save_struct;
+  rl_conf.io_handlers[RL_TYPE_FUNC].save.json = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].save.json = cinit_save_none;
+  rl_conf.io_handlers[RL_TYPE_UNION].save.json = cinit_save_struct;
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.json = cinit_save_anon_union;
 
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].save.json = json_save_array;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].save.json = json_save_array;
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].save.json = json_save_pointer;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.json = json_save_array;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.json = json_save_array;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.json = json_save_pointer;
 }

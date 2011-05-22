@@ -81,6 +81,7 @@ TYPEDEF_ENUM (rl_type_t, ATTRIBUTES ( , "ResLib types"),
 	      RL_TYPE_LONG_DOUBLE,
 	      RL_TYPE_STRUCT,
 	      RL_TYPE_ENUM,
+	      RL_TYPE_FUNC_TYPE,
 	      (RL_TYPE_ENUM_VALUE, , "enum_value"), /* comment refers to union member in rl_param_t */
 	      (RL_TYPE_FUNC, , "func_param"),
 	      (RL_TYPE_BITFIELD, , "bitfield_param"),
@@ -201,19 +202,6 @@ TYPEDEF_STRUCT (rl_ra_rl_td_ptr_t,
 		RARRAY (rl_td_ptr_t, ra, "non-collision hash table"),
 		)
 
-TYPEDEF_STRUCT (rl_conf_t, ATTRIBUTES ( , "ResLib configuration"),
-		(rl_mem_t, rl_mem, , "memory operations"),
-		(rl_log_level_t, log_level),
-		(void, msg_handler, (const char*, const char*, int, rl_log_level_t, rl_message_id_t, va_list), "handler for error messages"),
-#ifndef RL_TREE_LOOKUP
-		(rl_ra_rl_td_ptr_t, hash, , "hash for type descriptors lookup"),
-#else /* RL_TREE_LOOKUP */
-		(rl_red_black_tree_node_t *, tree, , "B-tree for type descriptors lookup"),
-#endif /* RL_TREE_LOOKUP */
-		RARRAY (rl_td_ptr_t, des, "types descriptors"),
-		(rl_red_black_tree_node_t *, enum_by_name, , "B-tree with enums mapping"),
-		)
-
 TYPEDEF_ENUM (rl_ptrdes_flags_t, ATTRIBUTES ( , "bitmask values"),
 	      (RL_PDF_NONE, = 0),
 	      (RL_PDF_IS_NULL, = (1 << 0)),
@@ -292,5 +280,22 @@ TYPEDEF_STRUCT (rl_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
 		(rl_load_io_t, load, , "load handlers"),
 		(rl_save_io_t, save, , "save handlers"),
 		)
+
 TYPEDEF_FUNC (rl_output_format_t, char*, (rl_ptrdes_t*), "formater handler")
+
+TYPEDEF_STRUCT (rl_conf_t, ATTRIBUTES ( , "ResLib configuration"),
+		(rl_mem_t, rl_mem, , "memory operations"),
+		(rl_log_level_t, log_level),
+		(void, msg_handler, (const char*, const char*, int, rl_log_level_t, rl_message_id_t, va_list), "handler for error messages"),
+#ifndef RL_TREE_LOOKUP
+		(rl_ra_rl_td_ptr_t, hash, , "hash for type descriptors lookup"),
+#else /* RL_TREE_LOOKUP */
+		(rl_red_black_tree_node_t *, tree, , "B-tree for type descriptors lookup"),
+#endif /* RL_TREE_LOOKUP */
+		RARRAY (rl_td_ptr_t, des, "types descriptors"),
+		(rl_red_black_tree_node_t *, enum_by_name, , "B-tree with enums mapping"),
+		(rl_output_format_t, output_format, [RL_MAX_TYPES], "formaters"),
+		(rl_io_handler_t, io_handlers, [RL_MAX_TYPES], "formaters"),
+		(rl_io_handler_t, io_ext_handlers, [RL_MAX_TYPES], "formaters"),
+		)
 

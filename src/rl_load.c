@@ -746,11 +746,11 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
   
   /* route loading */
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-      && rl_io_ext_handlers[fdp->rl_type_ext].load.rl)
-    status = rl_io_ext_handlers[fdp->rl_type_ext].load.rl (idx, ptrs);
+      && rl_conf.io_ext_handlers[fdp->rl_type_ext].load.rl)
+    status = rl_conf.io_ext_handlers[fdp->rl_type_ext].load.rl (idx, ptrs);
   else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	   && rl_io_handlers[fdp->rl_type].load.rl)
-    status = rl_io_handlers[fdp->rl_type].load.rl (idx, ptrs);
+	   && rl_conf.io_handlers[fdp->rl_type].load.rl)
+    status = rl_conf.io_handlers[fdp->rl_type].load.rl (idx, ptrs);
   else
     RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
 
@@ -776,31 +776,32 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
  */
 static void __attribute__((constructor)) rl_init_load_rl (void)
 {
-  rl_io_handlers[RL_TYPE_NONE].load.rl = rl_load_none;
-  rl_io_handlers[RL_TYPE_VOID].load.rl = rl_load_none;
-  rl_io_handlers[RL_TYPE_ENUM].load.rl = rl_load_enum;
-  rl_io_handlers[RL_TYPE_BITFIELD].load.rl = rl_load_bitfield;
-  rl_io_handlers[RL_TYPE_BITMASK].load.rl = rl_load_bitmask;
-  rl_io_handlers[RL_TYPE_INT8].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_UINT8].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_INT16].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_UINT16].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_INT32].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_UINT32].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_INT64].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_UINT64].load.rl = rl_load_integer;
-  rl_io_handlers[RL_TYPE_FLOAT].load.rl = rl_load_float;
-  rl_io_handlers[RL_TYPE_DOUBLE].load.rl = rl_load_double;
-  rl_io_handlers[RL_TYPE_LONG_DOUBLE].load.rl = rl_load_long_double_t;
-  rl_io_handlers[RL_TYPE_CHAR].load.rl = rl_load_char;
-  rl_io_handlers[RL_TYPE_CHAR_ARRAY].load.rl = rl_load_char_array;
-  rl_io_handlers[RL_TYPE_STRING].load.rl = rl_load_string;
-  rl_io_handlers[RL_TYPE_STRUCT].load.rl = rl_load_struct;
-  rl_io_handlers[RL_TYPE_FUNC].load.rl = rl_load_none;
-  rl_io_handlers[RL_TYPE_UNION].load.rl = rl_load_struct;
-  rl_io_handlers[RL_TYPE_ANON_UNION].load.rl = rl_load_anon_union;
+  rl_conf.io_handlers[RL_TYPE_NONE].load.rl = rl_load_none;
+  rl_conf.io_handlers[RL_TYPE_VOID].load.rl = rl_load_none;
+  rl_conf.io_handlers[RL_TYPE_ENUM].load.rl = rl_load_enum;
+  rl_conf.io_handlers[RL_TYPE_BITFIELD].load.rl = rl_load_bitfield;
+  rl_conf.io_handlers[RL_TYPE_BITMASK].load.rl = rl_load_bitmask;
+  rl_conf.io_handlers[RL_TYPE_INT8].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_UINT8].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_INT16].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_UINT16].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_INT32].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_UINT32].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_INT64].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_UINT64].load.rl = rl_load_integer;
+  rl_conf.io_handlers[RL_TYPE_FLOAT].load.rl = rl_load_float;
+  rl_conf.io_handlers[RL_TYPE_DOUBLE].load.rl = rl_load_double;
+  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].load.rl = rl_load_long_double_t;
+  rl_conf.io_handlers[RL_TYPE_CHAR].load.rl = rl_load_char;
+  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].load.rl = rl_load_char_array;
+  rl_conf.io_handlers[RL_TYPE_STRING].load.rl = rl_load_string;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].load.rl = rl_load_struct;
+  rl_conf.io_handlers[RL_TYPE_FUNC].load.rl = rl_load_none;
+  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].load.rl = rl_load_none;
+  rl_conf.io_handlers[RL_TYPE_UNION].load.rl = rl_load_struct;
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].load.rl = rl_load_anon_union;
 
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].load.rl = rl_load_array;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].load.rl = rl_load_rarray;
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].load.rl = rl_load_pointer;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].load.rl = rl_load_array;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].load.rl = rl_load_rarray;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].load.rl = rl_load_pointer;
 };

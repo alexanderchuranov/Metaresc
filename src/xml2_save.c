@@ -23,11 +23,11 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
       
       /* route saving handler */
       if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-	  && rl_io_ext_handlers[fdp->rl_type_ext].save.xml)
-	content = rl_io_ext_handlers[fdp->rl_type_ext].save.xml (idx, ptrs);
+	  && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml)
+	content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml (idx, ptrs);
       else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	       && rl_io_handlers[fdp->rl_type].save.xml)
-	content = rl_io_handlers[fdp->rl_type].save.xml (idx, ptrs);
+	       && rl_conf.io_handlers[fdp->rl_type].save.xml)
+	content = rl_conf.io_handlers[fdp->rl_type].save.xml (idx, ptrs);
       else
 	RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 

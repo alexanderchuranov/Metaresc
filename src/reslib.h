@@ -520,7 +520,7 @@
 
 #define RL_TYPEDEF_CHAR_ARRAY_DESC(RL_TYPE_NAME, SIZE, COM...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_CHAR_ARRAY) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
 #define RL_TYPEDEF_FUNC_DESC(RL_TYPE_NAME, RET_TYPE, ARGS, COM...)	\
-  RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_FUNC)				\
+  RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_FUNC_TYPE)			\
   RL_FUNC_ARG (RET_TYPE, "return value")				\
   RL_FOREACH (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS))			\
   RL_TYPEDEF_END_DESC (RL_TYPE_NAME, COM)
@@ -584,9 +584,6 @@
 typedef long double long_double_t;
 
 extern rl_conf_t rl_conf;
-extern rl_io_handler_t rl_io_handlers[RL_MAX_TYPES];
-extern rl_io_handler_t rl_io_ext_handlers[RL_MAX_TYPES];
-extern rl_output_format_t rl_output_format[RL_MAX_TYPES];
 
 extern int __attribute__ ((sentinel(0))) rl_add_type (rl_td_t*, char*, ...);
 extern char * rl_read_xml_doc (FILE*);

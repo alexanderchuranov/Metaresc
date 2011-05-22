@@ -86,11 +86,11 @@ scm_save (rl_ra_rl_ptrdes_t * ptrs)
 	{
 	  /* route saving handler */
 	  if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-	      && rl_io_ext_handlers[fdp->rl_type_ext].save.scm)
-	    content = rl_io_ext_handlers[fdp->rl_type_ext].save.scm (idx, ptrs);
+	      && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.scm)
+	    content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.scm (idx, ptrs);
 	  else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-		   && rl_io_handlers[fdp->rl_type].save.scm)
-	    content = rl_io_handlers[fdp->rl_type].save.scm (idx, ptrs);
+		   && rl_conf.io_handlers[fdp->rl_type].save.scm)
+	    content = rl_conf.io_handlers[fdp->rl_type].save.scm (idx, ptrs);
 	  else
 	    RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
 
@@ -335,31 +335,32 @@ scm_save_empty (int idx, rl_ra_rl_ptrdes_t * ptrs)
  */
 static void __attribute__((constructor)) rl_init_save_scm (void)
 {
-  rl_io_handlers[RL_TYPE_NONE].save.scm = scm_save_none;
-  rl_io_handlers[RL_TYPE_VOID].save.scm = scm_save_none;
-  rl_io_handlers[RL_TYPE_ENUM].save.scm = scm_save_enum;
-  rl_io_handlers[RL_TYPE_BITFIELD].save.scm = scm_save_bitfield;
-  rl_io_handlers[RL_TYPE_BITMASK].save.scm = scm_save_bitmask;
-  rl_io_handlers[RL_TYPE_INT8].save.scm = scm_save_int8;
-  rl_io_handlers[RL_TYPE_UINT8].save.scm = scm_save_uint8;
-  rl_io_handlers[RL_TYPE_INT16].save.scm = scm_save_int16;
-  rl_io_handlers[RL_TYPE_UINT16].save.scm = scm_save_uint16;
-  rl_io_handlers[RL_TYPE_INT32].save.scm = scm_save_int32;
-  rl_io_handlers[RL_TYPE_UINT32].save.scm = scm_save_uint32;
-  rl_io_handlers[RL_TYPE_INT64].save.scm = scm_save_int64;
-  rl_io_handlers[RL_TYPE_UINT64].save.scm = scm_save_uint64;
-  rl_io_handlers[RL_TYPE_FLOAT].save.scm = scm_save_float;
-  rl_io_handlers[RL_TYPE_DOUBLE].save.scm = scm_save_double;
-  rl_io_handlers[RL_TYPE_LONG_DOUBLE].save.scm = scm_save_long_double_t;
-  rl_io_handlers[RL_TYPE_CHAR].save.scm = scm_save_char;
-  rl_io_handlers[RL_TYPE_CHAR_ARRAY].save.scm = scm_save_char_array;
-  rl_io_handlers[RL_TYPE_STRING].save.scm = scm_save_string;
-  rl_io_handlers[RL_TYPE_STRUCT].save.scm = scm_save_empty;
-  rl_io_handlers[RL_TYPE_FUNC].save.scm = scm_save_none;
-  rl_io_handlers[RL_TYPE_UNION].save.scm = scm_save_empty;
-  rl_io_handlers[RL_TYPE_ANON_UNION].save.scm = scm_save_empty;
+  rl_conf.io_handlers[RL_TYPE_NONE].save.scm = scm_save_none;
+  rl_conf.io_handlers[RL_TYPE_VOID].save.scm = scm_save_none;
+  rl_conf.io_handlers[RL_TYPE_ENUM].save.scm = scm_save_enum;
+  rl_conf.io_handlers[RL_TYPE_BITFIELD].save.scm = scm_save_bitfield;
+  rl_conf.io_handlers[RL_TYPE_BITMASK].save.scm = scm_save_bitmask;
+  rl_conf.io_handlers[RL_TYPE_INT8].save.scm = scm_save_int8;
+  rl_conf.io_handlers[RL_TYPE_UINT8].save.scm = scm_save_uint8;
+  rl_conf.io_handlers[RL_TYPE_INT16].save.scm = scm_save_int16;
+  rl_conf.io_handlers[RL_TYPE_UINT16].save.scm = scm_save_uint16;
+  rl_conf.io_handlers[RL_TYPE_INT32].save.scm = scm_save_int32;
+  rl_conf.io_handlers[RL_TYPE_UINT32].save.scm = scm_save_uint32;
+  rl_conf.io_handlers[RL_TYPE_INT64].save.scm = scm_save_int64;
+  rl_conf.io_handlers[RL_TYPE_UINT64].save.scm = scm_save_uint64;
+  rl_conf.io_handlers[RL_TYPE_FLOAT].save.scm = scm_save_float;
+  rl_conf.io_handlers[RL_TYPE_DOUBLE].save.scm = scm_save_double;
+  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].save.scm = scm_save_long_double_t;
+  rl_conf.io_handlers[RL_TYPE_CHAR].save.scm = scm_save_char;
+  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].save.scm = scm_save_char_array;
+  rl_conf.io_handlers[RL_TYPE_STRING].save.scm = scm_save_string;
+  rl_conf.io_handlers[RL_TYPE_STRUCT].save.scm = scm_save_empty;
+  rl_conf.io_handlers[RL_TYPE_FUNC].save.scm = scm_save_none;
+  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].save.scm = scm_save_none;
+  rl_conf.io_handlers[RL_TYPE_UNION].save.scm = scm_save_empty;
+  rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.scm = scm_save_empty;
 
-  rl_io_ext_handlers[RL_TYPE_EXT_ARRAY].save.scm = scm_save_empty;
-  rl_io_ext_handlers[RL_TYPE_EXT_RARRAY].save.scm = scm_save_empty;
-  rl_io_ext_handlers[RL_TYPE_EXT_POINTER].save.scm = scm_save_pointer;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.scm = scm_save_empty;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.scm = scm_save_empty;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.scm = scm_save_pointer;
 }
