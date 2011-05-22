@@ -7,3 +7,6 @@
 
 /* Red-black tree lookup is enabled */
 #undef RL_TREE_LOOKUP
+
+/* Preprocessor routines depth */
+#undef RL_PP_DEPTH

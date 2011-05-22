@@ -1,6 +1,6 @@
 # -*- makefile -*-
 
-AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
+AM_CFLAGS = --fast-math -g -O2 -Wall
 
 SUFFIXES = .y .l .lex.h .tab.h .lex.c .tab.c
 
@@ -28,7 +28,7 @@ if HAVE_LIBXML2
   libreslib_la_SOURCES += xml2_save.c xml2_load.c
 endif
 
-pkginclude_HEADERS = reslib.h rlprotos.h rlexport.h p99/*
+pkginclude_HEADERS = reslib.h rlprotos.h rlexport.h rlpp.h
 
 clean-local:
 	rm -f *.tab.[ch] *.lex.[ch]
@@ -39,3 +39,5 @@ cinit_load.tab.c: cinit_load.y cinit_load.lex.h
 cinit_load.lex.c: cinit_load.l cinit_load.tab.h
 scm_load.tab.c: scm_load.y scm_load.lex.h
 scm_load.lex.c: scm_load.l scm_load.tab.h
+rlpp.h: rlpp.sh
+	./rlpp.sh `grep RL_PP_DEPTH rlexport.h | cut -d " " -f 3` > rlpp.h
