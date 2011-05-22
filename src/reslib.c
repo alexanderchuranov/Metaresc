@@ -959,6 +959,13 @@ rl_auto_field_detect (rl_fd_t * fdp)
     {
       fdp->rl_type = tdp->rl_type;
       fdp->size = tdp->size; /* size of forward pointers could be resolved only at the time of type registration */
+      if (RL_TYPE_FUNC == fdp->rl_type)
+	{
+	  fdp->param.func_param.size = tdp->fields.size;
+	  fdp->param.func_param.alloc_size = tdp->fields.alloc_size;
+	  fdp->param.func_param.data = tdp->fields.data;
+	  fdp->param.func_param.ext = tdp->fields.ext;
+	}
     }
   else if (RL_TYPE_EXT_NONE == fdp->rl_type_ext)
     {
