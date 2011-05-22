@@ -581,12 +581,9 @@
 #undef RL_MODE
 #endif
 
-extern rl_conf_t rl_conf;
-
-typedef char * (*rl_output_format_t) (rl_ptrdes_t*);
-
 typedef long double long_double_t;
 
+extern rl_conf_t rl_conf;
 extern rl_io_handler_t rl_io_handlers[RL_MAX_TYPES];
 extern rl_io_handler_t rl_io_ext_handlers[RL_MAX_TYPES];
 extern rl_output_format_t rl_output_format[RL_MAX_TYPES];

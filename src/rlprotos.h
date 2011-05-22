@@ -292,3 +292,5 @@ TYPEDEF_STRUCT (rl_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
 		(rl_load_io_t, load, , "load handlers"),
 		(rl_save_io_t, save, , "save handlers"),
 		)
+TYPEDEF_FUNC (rl_output_format_t, char*, (rl_ptrdes_t*), "formater handler")
+
