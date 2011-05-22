@@ -19,19 +19,20 @@ for (( I=1; $I < $PP_DEPTH ; I=$I+1 )); do
 done
 echo 
 
+echo -n "#define RL_ARG"$PP_DEPTH"(" 
+for (( I=1; $I <=$PP_DEPTH ; I=$I+1 )); do
+  echo -n "_$I, "  
+done
+echo "...) _"$PP_DEPTH 
+echo 
+
 echo "#define RL_NARG(...) RL_NARG_ (0, ##__VA_ARGS__)" 
 
-echo -n "#define RL_NARG_(...) RL_NARG__ (__VA_ARGS__, " 
-for (( I=$PP_DEPTH; $I >= 0 ; I=$I-1 )); do
+echo -n "#define RL_NARG_(...) RL_ARG$PP_DEPTH (__VA_ARGS__, " 
+for (( I=$PP_DEPTH-2; $I >= 0 ; I=$I-1 )); do
   echo -n "$I, "  
 done
 echo ")" 
-
-echo -n "#define RL_NARG__(" 
-for (( I=0; $I <=$PP_DEPTH ; I=$I+1 )); do
-  echo -n "_$I, "  
-done
-echo "N, ...) N" 
 echo 
 
 echo -n "#define RL_HAS_COMMA(...) RL_ARG"$PP_DEPTH "(__VA_ARGS__, " 
@@ -39,12 +40,6 @@ for (( I=2; $I <$PP_DEPTH ; I=$I+1 )); do
   echo -n "1, "  
 done
 echo "0, ...)" 
-
-echo -n "#define RL_ARG"$PP_DEPTH"(" 
-for (( I=1; $I <=$PP_DEPTH ; I=$I+1 )); do
-  echo -n "_$I, "  
-done
-echo "...) _"$PP_DEPTH 
 echo 
 
 echo "#endif /* _RLPP_H_ */" 
