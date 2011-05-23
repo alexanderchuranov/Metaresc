@@ -20,7 +20,7 @@
 #include <string.h> /* for strlen () & memset () */
 #include <ctype.h> /* for isspace () */
 #include <stdarg.h> /* for va_list */
-#include <inttypes.h> /* for int32_t */
+#include <inttypes.h> /* for int8_t, int16_t, int32_t, int64_t, SCNxXX, etc */
 #ifdef HAVE_LIBXML2
 # include <libxml/xmlmemory.h>
 # include <libxml/parser.h>
@@ -104,6 +104,8 @@
    | (__builtin_types_compatible_p (PREFIX uint32_t SUFFIX, TYPE) ? RL_TYPE_UINT32 : 0) \
    | (__builtin_types_compatible_p (PREFIX int64_t SUFFIX, TYPE) ? RL_TYPE_INT64 : 0) \
    | (__builtin_types_compatible_p (PREFIX uint64_t SUFFIX, TYPE) ? RL_TYPE_UINT64 : 0) \
+   | (__builtin_types_compatible_p (PREFIX RL_UNCOVERED_TYPE SUFFIX, TYPE) ? RL_PASTE2 (RL_TYPE_INT, RL_SIZEOF_UNCOVERED_TYPE) : 0) \
+   | (__builtin_types_compatible_p (PREFIX unsigned RL_UNCOVERED_TYPE SUFFIX, TYPE) ? RL_PASTE2 (RL_TYPE_UINT, RL_SIZEOF_UNCOVERED_TYPE) : 0) \
    | (__builtin_types_compatible_p (PREFIX float SUFFIX, TYPE) ? RL_TYPE_FLOAT : 0) \
    | (__builtin_types_compatible_p (PREFIX double SUFFIX, TYPE) ? RL_TYPE_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX long double SUFFIX, TYPE) ? RL_TYPE_LONG_DOUBLE : 0) \
@@ -1024,9 +1026,9 @@
 #undef RL_MODE
 #endif
 
-extern rl_conf_t rl_conf;
-
 typedef long double long_double_t;
+
+extern rl_conf_t rl_conf;
 
 extern int __attribute__ ((sentinel(0))) rl_add_type (rl_td_t*, char*, ...);
 extern char * rl_read_xml_doc (FILE*);

@@ -5,8 +5,16 @@
 /* Libxml2 found */
 #undef HAVE_LIBXML2
 
+/* Preprocessor routines depth */
+#undef RL_PP_DEPTH
+
+/* sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t,
+   uint64_t */
+#undef RL_SIZEOF_UNCOVERED_TYPE
+
 /* Red-black tree lookup is enabled */
 #undef RL_TREE_LOOKUP
 
-/* Preprocessor routines depth */
-#undef RL_PP_DEPTH
+/* int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t
+   */
+#undef RL_UNCOVERED_TYPE
