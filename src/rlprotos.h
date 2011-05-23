@@ -295,7 +295,7 @@ TYPEDEF_STRUCT (rl_conf_t, ATTRIBUTES ( , "ResLib configuration"),
 		RARRAY (rl_td_ptr_t, des, "types descriptors"),
 		(rl_red_black_tree_node_t *, enum_by_name, , "B-tree with enums mapping"),
 		(rl_output_format_t, output_format, [RL_MAX_TYPES], "formaters"),
-		(rl_io_handler_t, io_handlers, [RL_MAX_TYPES], "formaters"),
-		(rl_io_handler_t, io_ext_handlers, [RL_MAX_TYPES], "formaters"),
+		(rl_io_handler_t, io_handlers, [RL_MAX_TYPES], "io handlers"),
+		(rl_io_handler_t, io_ext_handlers, [RL_MAX_TYPES], "io handlers"),
 		)
 

@@ -6,6 +6,73 @@
 #ifndef _RESLIB_H_
 #define _RESLIB_H_
 
+#include <rlpp.h>
+#include <rlexport.h>
+
+#ifndef __USE_GNU
+#define __USE_GNU
+#endif /* __USE_GNU */
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif /* _GNU_SOURCE */
+#include <stdio.h> /* for FILE */
+#include <stddef.h> /* for offsetof */
+#include <string.h> /* for strlen () & memset () */
+#include <ctype.h> /* for isspace () */
+#include <stdarg.h> /* for va_list */
+#include <inttypes.h> /* for int32_t */
+#ifdef HAVE_LIBXML2
+# include <libxml/xmlmemory.h>
+# include <libxml/parser.h>
+#endif /* HAVE_LIBXML2 */
+#include <rpc/types.h>
+#include <rpc/xdr.h>
+
+/* Library exports */
+#define RL_MAX_TYPES (256)
+#define RL_MAX_STRING_LENGTH ((unsigned int)-1)
+
+#define RL_TYPE_ANONYMOUS_UNION_TEMPLATE "rl_type_anonymous_union_%d_t"
+
+#define RL_INT_TO_STRING_BUF_SIZE (32)
+#define RL_FLOAT_TO_STRING_BUF_SIZE (256)
+#define RL_CHAR_TO_STRING_BUF_SIZE (8)
+
+#define RL_MAX_INDENT_LEVEL (30) /* the same constant as in libxml2 */
+#define RL_MIN(X,Y) ({ typeof(X) _x_ = (X); typeof(Y) _y_ = (Y); (_x_ < _y_) ? _x_ : _y_; })
+#define RL_MAX(X,Y) ({ typeof(X) _x_ = (X); typeof(Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
+#define RL_LIMIT_LEVEL(LEVEL) RL_MIN (LEVEL, RL_MAX_INDENT_LEVEL)
+
+/* each refereed structure will have REF_IDX property */
+#define RL_REF_IDX "ref_idx"
+/* references on already saved structures will be replaced with nodes that have only REF index property */
+#define RL_REF "ref"
+/* XML attribute for zero length strings */
+#define RL_ISNULL "isnull"
+
+#define RL_BITMASK_OR_DELIMITER " | "
+
+#define RL_MESSAGE(LOG_LEVEL, MSG_ID...) rl_message (__FILE__, __PRETTY_FUNCTION__, __LINE__, LOG_LEVEL, MSG_ID)
+#define RL_MESSAGE_UNSUPPORTED_NODE_TYPE_(FDP)				\
+  ({									\
+    rl_fd_t * __fdp__ = FDP;						\
+    rl_td_t * rl_type_td = rl_get_td_by_name ("rl_type_t");		\
+    rl_td_t * rl_type_ext_td = rl_get_td_by_name ("rl_type_ext_t");	\
+    rl_fd_t * rl_type_fd = rl_type_td ? rl_get_enum_by_value (rl_type_td, __fdp__->rl_type) : NULL; \
+    rl_fd_t * rl_type_ext_fd = rl_type_ext_td ? rl_get_enum_by_value (rl_type_ext_td, __fdp__->rl_type_ext) : NULL; \
+    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, (rl_type_fd ? rl_type_fd->name : "unknown"), __fdp__->rl_type, (rl_type_ext_fd ? rl_type_ext_fd->name : "unknown"), __fdp__->rl_type_ext); \
+  })
+
+/* make a string from argument in writable memory. #STR itself is in read-only memory */
+#define RL_STRINGIFY(STR) (char []) { #STR }
+
+#define RL_MEM_INIT(FUNC, ATTR...) void ATTR rl_mem_init (void) { FUNC; }
+
+#define RL_MALLOC(SIZE) (rl_conf.rl_mem.malloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, SIZE)
+#define RL_REALLOC(PTR, SIZE) (rl_conf.rl_mem.realloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR, SIZE)
+#define RL_STRDUP(STR) (rl_conf.rl_mem.strdup)(__FILE__, __PRETTY_FUNCTION__, __LINE__, STR)
+#define RL_FREE(PTR) (rl_conf.rl_mem.free)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR)
+
 /*
   you can redefine this prefixes from outside before first include of reslib.h
 */
@@ -25,9 +92,6 @@
 #ifndef RL_DESCRIPTOR_ATTR
 #define RL_DESCRIPTOR_ATTR static
 #endif /* RL_DESCRIPTOR_ATTR */
-
-/* make a string from argument in writable memory. #STR itself is in read-only memory */
-#define RL_STRINGIFY(STR) (char []) { #STR }
 
 #define RL_TYPE_DETECT_INNER(PREFIX, TYPE, SUFFIX, PAREN_SUFFIX)	\
   (0 /* RL_TYPE_NONE */							\
@@ -532,148 +596,10 @@
     .attr = #ATTR,							\
     .ext = NULL,							\
     .fields = { .alloc_size = -1, .size = 0, .data = (rl_fd_t []){
-#define RL_TYPEDEF_END_DESC(RL_TYPE_NAME, COM...) {.rl_type = RL_TYPE_TRAILING_RECORD} } }, .comment = "" COM }; static inline void __attribute__((constructor)) RL_CONSTRUCTOR_PREFIX (RL_TYPE_NAME) (void) { RL_ADD_TYPE (RL_TYPE_NAME); }
-
-/* Library exports */
-#define RL_MAX_TYPES (256)
-#define RL_MAX_STRING_LENGTH ((unsigned int)-1)
-
-#define RL_TYPE_ANONYMOUS_UNION_TEMPLATE "rl_type_anonymous_union_%d_t"
-
-#define RL_INT_TO_STRING_BUF_SIZE (32)
-#define RL_FLOAT_TO_STRING_BUF_SIZE (256)
-#define RL_CHAR_TO_STRING_BUF_SIZE (8)
-
-#define RL_MAX_INDENT_LEVEL (30) /* the same constant as in libxml2 */
-#define RL_MIN(X,Y) ({ typeof(X) _x_ = (X); typeof(Y) _y_ = (Y); (_x_ < _y_) ? _x_ : _y_; })
-#define RL_MAX(X,Y) ({ typeof(X) _x_ = (X); typeof(Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
-#define RL_LIMIT_LEVEL(LEVEL) RL_MIN (LEVEL, RL_MAX_INDENT_LEVEL)
-
-#include <rlpp.h>
-#include <rlexport.h>
-
-#ifndef __USE_GNU
-#define __USE_GNU
-#endif /* __USE_GNU */
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#endif /* _GNU_SOURCE */
-#include <stdio.h> /* for FILE */
-#include <stddef.h> /* for offsetof */
-#include <string.h> /* for strlen () & memset () */
-#include <ctype.h> /* for isspace () */
-#include <stdarg.h> /* for va_list */
-#include <inttypes.h> /* for int32_t */
-#ifdef HAVE_LIBXML2
-# include <libxml/xmlmemory.h>
-# include <libxml/parser.h>
-#endif /* HAVE_LIBXML2 */
-#include <rpc/types.h>
-#include <rpc/xdr.h>
-
-#ifndef RL_MODE
-#define RL_MODE_UNDEFINED
-#define RL_MODE PROTO
-#endif
-#include <rlprotos.h>
-#ifdef RL_MODE_UNDEFINED
-#undef RL_MODE_UNDEFINED
-#undef RL_MODE
-#endif
-
-typedef long double long_double_t;
-
-extern rl_conf_t rl_conf;
-
-extern int __attribute__ ((sentinel(0))) rl_add_type (rl_td_t*, char*, ...);
-extern char * rl_read_xml_doc (FILE*);
-
-extern void rl_save (void*, rl_fd_t*, rl_save_data_t*);
-extern int rl_load (void*, rl_fd_t*, int, rl_ra_rl_ptrdes_t*);
-#ifdef HAVE_LIBXML2
-extern xmlNodePtr xml2_save (rl_ra_rl_ptrdes_t*);
-extern int xml2_load (xmlNodePtr, rl_ra_rl_ptrdes_t*);
-#endif /* HAVE_LIBXML2 */
-extern int xdr_save (XDR*, rl_ra_rl_ptrdes_t*);
-extern int xdr_load (void*, rl_fd_t*, XDR*, rl_ra_rl_ptrdes_t*);
-extern void xdrra_create (XDR*, rl_rarray_t*, enum xdr_op);
-
-extern char * xml1_save (rl_ra_rl_ptrdes_t*);
-#ifdef HAVE_BISON_FLEX
-extern int xml1_load (char*, rl_ra_rl_ptrdes_t*);
-#endif /* HAVE_BISON_FLEX */
-extern char * cinit_save (rl_ra_rl_ptrdes_t*);
-#ifdef HAVE_BISON_FLEX
-extern int cinit_load (char*, rl_ra_rl_ptrdes_t*);
-#endif /* HAVE_BISON_FLEX */
-extern char * json_save (rl_ra_rl_ptrdes_t*);
-
-extern char * scm_save (rl_ra_rl_ptrdes_t*);
-#ifdef HAVE_BISON_FLEX
-extern int scm_load (char*, rl_ra_rl_ptrdes_t*);
-#endif /* HAVE_BISON_FLEX */
-
-extern int rl_add_ptr_to_list (rl_ra_rl_ptrdes_t*);
-extern void rl_add_child (int, int, rl_ra_rl_ptrdes_t*);
-extern void rl_free_ptrs (rl_ra_rl_ptrdes_t*);
-extern rl_fd_t * rl_get_fd_by_name (rl_td_t*, char*);
-extern rl_fd_t * rl_get_enum_by_value (rl_td_t*, int64_t);
-extern int rl_get_enum_by_name (uint64_t*, char*);
-extern int rl_parse_add_node (rl_load_t*);
-extern int rl_load_bitfield_value (rl_ptrdes_t*, uint64_t*);
-extern int rl_save_bitfield_value (rl_ptrdes_t*, uint64_t*);
-extern int rl_td_foreach (int (*func) (rl_td_t*, void*), void*);
-extern rl_td_t * rl_get_td_by_name (char*);
-extern void rl_message_format (void (*output_handler) (char*), rl_message_id_t, va_list);
-extern void rl_message (const char*, const char*, int, rl_log_level_t, rl_message_id_t, ...);
-extern void rl_message_unsupported_node_type (rl_fd_t*);
-extern void * rl_rarray_append (rl_rarray_t*, int);
-extern int __attribute__ ((format (printf, 2, 3))) rl_ra_printf (rl_rarray_t*, const char*, ...);
-
-extern char * rl_stringify_int8 (rl_ptrdes_t*);
-extern char * rl_stringify_uint8 (rl_ptrdes_t*);
-extern char * rl_stringify_int16 (rl_ptrdes_t*);
-extern char * rl_stringify_uint16 (rl_ptrdes_t*);
-extern char * rl_stringify_int32 (rl_ptrdes_t*);
-extern char * rl_stringify_uint32 (rl_ptrdes_t*);
-extern char * rl_stringify_int64 (rl_ptrdes_t*);
-extern char * rl_stringify_uint64 (rl_ptrdes_t*);
-extern char * rl_stringify_enum (rl_ptrdes_t*);
-extern char * rl_stringify_bitfield (rl_ptrdes_t*);
-extern char * rl_stringify_bitmask (rl_ptrdes_t*, char*);
-extern char * rl_stringify_float (rl_ptrdes_t*);
-extern char * rl_stringify_double (rl_ptrdes_t*);
-extern char * rl_stringify_long_double_t (rl_ptrdes_t*);
-
-extern char * xml_quote_string (char*);
-extern char * xml_unquote_string (char*);
-
-/* each refereed structure will have REF_IDX property */
-#define RL_REF_IDX "ref_idx"
-/* references on already saved structures will be replaced with nodes that have only REF index property */
-#define RL_REF "ref"
-/* XML attribute for zero length strings */
-#define RL_ISNULL "isnull"
-
-#define RL_BITMASK_OR_DELIMITER " | "
-
-#define RL_MESSAGE(LOG_LEVEL, MSG_ID...) rl_message (__FILE__, __PRETTY_FUNCTION__, __LINE__, LOG_LEVEL, MSG_ID)
-#define RL_MESSAGE_UNSUPPORTED_NODE_TYPE_(FDP)				\
-  ({									\
-    rl_fd_t * __fdp__ = FDP;						\
-    rl_td_t * rl_type_td = rl_get_td_by_name ("rl_type_t");		\
-    rl_td_t * rl_type_ext_td = rl_get_td_by_name ("rl_type_ext_t");	\
-    rl_fd_t * rl_type_fd = rl_type_td ? rl_get_enum_by_value (rl_type_td, __fdp__->rl_type) : NULL; \
-    rl_fd_t * rl_type_ext_fd = rl_type_ext_td ? rl_get_enum_by_value (rl_type_ext_td, __fdp__->rl_type_ext) : NULL; \
-    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNSUPPORTED_NODE_TYPE, (rl_type_fd ? rl_type_fd->name : "unknown"), __fdp__->rl_type, (rl_type_ext_fd ? rl_type_ext_fd->name : "unknown"), __fdp__->rl_type_ext); \
-  })
-
-#define RL_MEM_INIT(FUNC, ATTR...) void ATTR rl_mem_init (void) { FUNC; }
-
-#define RL_MALLOC(SIZE) (rl_conf.rl_mem.malloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, SIZE)
-#define RL_REALLOC(PTR, SIZE) (rl_conf.rl_mem.realloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR, SIZE)
-#define RL_STRDUP(STR) (rl_conf.rl_mem.strdup)(__FILE__, __PRETTY_FUNCTION__, __LINE__, STR)
-#define RL_FREE(PTR) (rl_conf.rl_mem.free)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR)
+#define RL_TYPEDEF_END_DESC(RL_TYPE_NAME, COM...)			\
+  {.rl_type = RL_TYPE_TRAILING_RECORD} } },				\
+    .comment = "" COM };						\
+  static inline void __attribute__((constructor)) RL_CONSTRUCTOR_PREFIX (RL_TYPE_NAME) (void) { RL_ADD_TYPE (RL_TYPE_NAME); }
 
 /*
   Macro for type registration.
@@ -1087,5 +1013,82 @@ extern char * xml_unquote_string (char*);
 #endif /* HAVE_BISON_FLEX */
 
 #endif /* HAVE_LIBXML2 */
+
+#ifndef RL_MODE
+#define RL_MODE_UNDEFINED
+#define RL_MODE PROTO
+#endif
+#include <rlprotos.h>
+#ifdef RL_MODE_UNDEFINED
+#undef RL_MODE_UNDEFINED
+#undef RL_MODE
+#endif
+
+extern rl_conf_t rl_conf;
+
+typedef long double long_double_t;
+
+extern int __attribute__ ((sentinel(0))) rl_add_type (rl_td_t*, char*, ...);
+extern char * rl_read_xml_doc (FILE*);
+
+extern void rl_save (void*, rl_fd_t*, rl_save_data_t*);
+extern int rl_load (void*, rl_fd_t*, int, rl_ra_rl_ptrdes_t*);
+#ifdef HAVE_LIBXML2
+extern xmlNodePtr xml2_save (rl_ra_rl_ptrdes_t*);
+extern int xml2_load (xmlNodePtr, rl_ra_rl_ptrdes_t*);
+#endif /* HAVE_LIBXML2 */
+extern int xdr_save (XDR*, rl_ra_rl_ptrdes_t*);
+extern int xdr_load (void*, rl_fd_t*, XDR*, rl_ra_rl_ptrdes_t*);
+extern void xdrra_create (XDR*, rl_rarray_t*, enum xdr_op);
+
+extern char * xml1_save (rl_ra_rl_ptrdes_t*);
+#ifdef HAVE_BISON_FLEX
+extern int xml1_load (char*, rl_ra_rl_ptrdes_t*);
+#endif /* HAVE_BISON_FLEX */
+extern char * cinit_save (rl_ra_rl_ptrdes_t*);
+#ifdef HAVE_BISON_FLEX
+extern int cinit_load (char*, rl_ra_rl_ptrdes_t*);
+#endif /* HAVE_BISON_FLEX */
+extern char * json_save (rl_ra_rl_ptrdes_t*);
+
+extern char * scm_save (rl_ra_rl_ptrdes_t*);
+#ifdef HAVE_BISON_FLEX
+extern int scm_load (char*, rl_ra_rl_ptrdes_t*);
+#endif /* HAVE_BISON_FLEX */
+
+extern int rl_add_ptr_to_list (rl_ra_rl_ptrdes_t*);
+extern void rl_add_child (int, int, rl_ra_rl_ptrdes_t*);
+extern void rl_free_ptrs (rl_ra_rl_ptrdes_t*);
+extern rl_fd_t * rl_get_fd_by_name (rl_td_t*, char*);
+extern rl_fd_t * rl_get_enum_by_value (rl_td_t*, int64_t);
+extern int rl_get_enum_by_name (uint64_t*, char*);
+extern int rl_parse_add_node (rl_load_t*);
+extern int rl_load_bitfield_value (rl_ptrdes_t*, uint64_t*);
+extern int rl_save_bitfield_value (rl_ptrdes_t*, uint64_t*);
+extern int rl_td_foreach (int (*func) (rl_td_t*, void*), void*);
+extern rl_td_t * rl_get_td_by_name (char*);
+extern void rl_message_format (void (*output_handler) (char*), rl_message_id_t, va_list);
+extern void rl_message (const char*, const char*, int, rl_log_level_t, rl_message_id_t, ...);
+extern void rl_message_unsupported_node_type (rl_fd_t*);
+extern void * rl_rarray_append (rl_rarray_t*, int);
+extern int __attribute__ ((format (printf, 2, 3))) rl_ra_printf (rl_rarray_t*, const char*, ...);
+
+extern char * rl_stringify_int8 (rl_ptrdes_t*);
+extern char * rl_stringify_uint8 (rl_ptrdes_t*);
+extern char * rl_stringify_int16 (rl_ptrdes_t*);
+extern char * rl_stringify_uint16 (rl_ptrdes_t*);
+extern char * rl_stringify_int32 (rl_ptrdes_t*);
+extern char * rl_stringify_uint32 (rl_ptrdes_t*);
+extern char * rl_stringify_int64 (rl_ptrdes_t*);
+extern char * rl_stringify_uint64 (rl_ptrdes_t*);
+extern char * rl_stringify_enum (rl_ptrdes_t*);
+extern char * rl_stringify_bitfield (rl_ptrdes_t*);
+extern char * rl_stringify_bitmask (rl_ptrdes_t*, char*);
+extern char * rl_stringify_float (rl_ptrdes_t*);
+extern char * rl_stringify_double (rl_ptrdes_t*);
+extern char * rl_stringify_long_double_t (rl_ptrdes_t*);
+
+extern char * xml_quote_string (char*);
+extern char * xml_unquote_string (char*);
 
 #endif /* _RESLIB_H_ */
