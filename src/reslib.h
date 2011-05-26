@@ -93,6 +93,10 @@
 #define RL_DESCRIPTOR_ATTR static
 #endif /* RL_DESCRIPTOR_ATTR */
 
+/*
+  Help macro for internal type detection. It compares variable with all known builin types.
+  Compaund types are detected in runtime.
+ */
 #define RL_TYPE_DETECT_INNER(PREFIX, TYPE, SUFFIX, PAREN_SUFFIX)	\
   (0 /* RL_TYPE_NONE */							\
    | (__builtin_types_compatible_p (PREFIX void SUFFIX, TYPE) ? RL_TYPE_VOID : 0) \
@@ -118,8 +122,10 @@
    )
 #define RL_TYPE_DETECT(TYPE) RL_TYPE_DETECT_INNER ( , TYPE, ,)
 #define RL_TYPE_DETECT_PTR(TYPE) (RL_TYPE_DETECT_INNER ( , TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const, TYPE, *, (*)) | RL_TYPE_DETECT_INNER (volatile, TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const volatile, TYPE, *, (*)))
+/* Help macro for arrays auto-detection */
 #define RL_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE [], typeof (S_PTR)) ? RL_TYPE_EXT_ARRAY : RL_TYPE_EXT_NONE)
 
+/* internal macros for arguments evaluation and concatination */
 #define RL_PASTE2(...) RL_PASTE2_ (__VA_ARGS__)
 #define RL_PASTE2_(_0, _1) _0 ## _1
 #define RL_PASTE3(...) RL_PASTE3_ (__VA_ARGS__)
@@ -127,15 +133,21 @@
 #define RL_PASTE4(...) RL_PASTE4_ (__VA_ARGS__)
 #define RL_PASTE4_(_0, _1, _2, _3) _0 ## _1 ## _2 ## _3
 
+/* Interface macros for unrolled loops from rlpp.h */
 #define RL_FOREACH(X, ...) RL_PASTE2 (RL_FOREACH, RL_NARG (__VA_ARGS__)) (X, __VA_ARGS__)
 #define RL_FOR(NAME, N, OP, FUNC, ...) RL_PASTE2 (RL_FOR, N) (NAME, OP, FUNC, __VA_ARGS__)
 
+/*
+  Next group of macroses detects empty argument list. Implementation is GNU specific.
+  For non-GNU systems more tricky detection required.
+ */
 #define RL_IS_EMPTY(...) RL_PASTE2 (RL_IS_EMPTY, RL_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
 #define RL_IS_EMPTY1(...) 0
 #define RL_IS_EMPTY0(...) RL_IS_EMPTY_(0, ## __VA_ARGS__)
 #define RL_IS_EMPTY_(...) RL_IS_EMPTY__ (__VA_ARGS__, 0, 1)
 #define RL_IS_EMPTY__(_0, _1, _2, ...) _2
 
+/* Next group of macroses checks that it has only one argument and it is 0 */
 #define RL_IS_0_EQ_0 ,
 #define RL_IS_EQ_0(...) RL_PASTE2 (RL_IS_EQ_0_ARG, RL_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
 #define RL_IS_EQ_0_ARG0(X) RL_IS_EQ_0_ARG0_ (RL_PASTE2 (RL_IS_0_EQ_, X))
@@ -147,31 +159,44 @@
 #define RL_IS_EQ_0_ARG0__10 0
 #define RL_IS_EQ_0_ARG0__11 1
 
+/* If clause implementation. Usage RL_IF_ELSE (test_value) (expand_if_nonzero) (expand_if_zero) */
 #define RL_IGNORE(...)
 #define RL_IDENT(...) __VA_ARGS__
 #define RL_IF_ELSE0(...) __VA_ARGS__ RL_IGNORE
 #define RL_IF_ELSE1(...) RL_IDENT
 #define RL_IF_ELSE(...) RL_PASTE2 (RL_IF_ELSE, RL_IS_EQ_0 (__VA_ARGS__))
 
+/* Next macro RL_HAS_NO_PAREN(...) checks that arguments are in parents */
 #define RL_DETECT_PAREN(...) 0
 #define RL_HAS_NO_PAREN(...) RL_PASTE2 (RL_HAS_NO_PAREN_ARG, RL_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
 #define RL_HAS_NO_PAREN_ARG0(X) RL_IF_ELSE (RL_IS_EQ_0 (RL_DETECT_PAREN X)) (0) (1)
 #define RL_HAS_NO_PAREN_ARG1(...) 1
 
+/* RL_REMOVE_PAREN(...) removes parents if they are presented */
 #define RL_REMOVE_PAREN_(...) __VA_ARGS__
 #define RL_REMOVE_PAREN(...) RL_IF_ELSE (RL_HAS_NO_PAREN (__VA_ARGS__)) (__VA_ARGS__) (RL_REMOVE_PAREN_ __VA_ARGS__)
 
+/* Main macroses for types definition. It passes type of definition to next level. */
 #define TYPEDEF_STRUCT(...) P00_TYPEDEF (STRUCT, __VA_ARGS__)
 #define TYPEDEF_UNION(...) P00_TYPEDEF (UNION, __VA_ARGS__)
 #define TYPEDEF_ENUM(...) P00_TYPEDEF (ENUM, __VA_ARGS__)
 #define TYPEDEF_CHAR_ARRAY(...) P00_TYPEDEF (CHAR_ARRAY, __VA_ARGS__)
 #define TYPEDEF_FUNC(...) P00_TYPEDEF (FUNC, __VA_ARGS__)
 
-#define P00_TYPEDEF(...) RL_PASTE2 (P00_MODE_, RL_MODE) (__VA_ARGS__)
-#define P00_MODE_PROTO(...) P00_TYPEDEF_MODE (PROTO, __VA_ARGS__)
-#define P00_MODE_DESC(...) P00_TYPEDEF_MODE (DESC, __VA_ARGS__)
-#define P00_MODE_RL_MODE(...) P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__)
+/*
+  Checks if RL_MODE was defined. If it was undefined automtically produce prototypes and descriptors.
+  Library could be unintrusively extended for other modes. Defined RL_MODE transparently passed to lower level.
+ */
+#define RL_IS_RL_MODE_EQ_RL_MODE 0
+#define P00_TYPEDEF(...)						\
+  RL_IF_ELSE (RL_PASTE2 (RL_IS_RL_MODE_EQ_, RL_MODE))			\
+  (P00_TYPEDEF_MODE (RL_MODE, __VA_ARGS__))				\
+  (P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__))
 
+/*
+  Here is switch on definition type.
+  CHAR_ARRAY and FUNC should be directly expanded to RL_TYPEDEF_CHAR_ARRAY and RL_TYPEDEF_FUNC respectively.
+ */
 #define P00_TYPEDEF_MODE(P00_MODE, P00_TYPE, ...) RL_PASTE2 (P00_TYPEDEF_, P00_TYPE) (P00_MODE, P00_TYPE, __VA_ARGS__)
 #define P00_TYPEDEF_STRUCT P00_TYPEDEF_COMPAUND
 #define P00_TYPEDEF_UNION P00_TYPEDEF_COMPAUND
