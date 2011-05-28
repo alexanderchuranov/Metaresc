@@ -314,7 +314,7 @@ rl_save_union (rl_save_data_t * rl_save_data)
 			rl_ptrdes_t ptrdes = { .data = discriminator, .fd = *parent_fdp, };
 			rl_td_t * enum_tdp = rl_get_td_by_name (parent_fdp->type);
 			rl_save_bitfield_value (&ptrdes, &value);
-			if (enum_tdp)
+			if (enum_tdp && (RL_TYPE_ENUM == enum_tdp->rl_type))
 			  {
 			    rl_fd_t * enum_fdp = rl_get_enum_by_value (enum_tdp, value);
 			    if (enum_fdp)
@@ -331,27 +331,28 @@ rl_save_union (rl_save_data_t * rl_save_data)
 			int64_t enum_value = 0;
 			rl_td_t * enum_tdp = rl_get_td_by_name (parent_fdp->type);
 			rl_fd_t * enum_fdp;
-			if (NULL == enum_tdp)
-			  break;
-		      
-			switch (parent_fdp->size)
+			
+			if (enum_tdp && (RL_TYPE_ENUM == enum_tdp->rl_type))
 			  {
-			  case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
-			  case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
-			  case sizeof (uint32_t): enum_value = *(uint32_t*)discriminator; break;
-			  case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
-			  default:
+			    switch (parent_fdp->size)
+			      {
+			      case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
+			      case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
+			      case sizeof (uint32_t): enum_value = *(uint32_t*)discriminator; break;
+			      case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
+			      default:
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-			    memcpy (&enum_value, discriminator, RL_MIN (parent_fdp->size, sizeof (enum_value)));
+				memcpy (&enum_value, discriminator, RL_MIN (parent_fdp->size, sizeof (enum_value)));
 #else
 #error Support for non little endian architectures to be implemented
 #endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
-			    break;
-			  }
+				break;
+			      }
 		      
-			enum_fdp = rl_get_enum_by_value (enum_tdp, enum_value);
-			if (enum_fdp)
-			  named_discriminator = enum_fdp->comment;
+			    enum_fdp = rl_get_enum_by_value (enum_tdp, enum_value);
+			    if (enum_fdp)
+			      named_discriminator = enum_fdp->comment;
+			  }
 			break;
 		      }
 		    default: break;
