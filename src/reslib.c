@@ -258,7 +258,7 @@ rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
     case RL_TYPE_INT64:
       /* extend sign bit */
       if (*value & (1 << (ptrdes->fd.param.bitfield_param.width - 1)))
-	*value |= -1 - ((1 << ptrdes->fd.param.bitfield_param.width) - 1);
+	*value |= -1 - ((2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1);
       break;
     default:
       break;
