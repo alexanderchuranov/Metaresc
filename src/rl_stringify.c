@@ -5,6 +5,7 @@
 #define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 #include <math.h>
+#include <endian.h>
 
 #define RL_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   static char * rl_output_format_ ## TYPE (rl_ptrdes_t * ptrdes) {	\
@@ -111,7 +112,11 @@ rl_get_int_value (rl_ptrdes_t * ptrdes)
     case sizeof (uint32_t): value = * (uint32_t*) ptrdes->data; break;
     case sizeof (uint64_t): value = * (uint64_t*) ptrdes->data; break;
     default:
+#if __BYTE_ORDER == __LITTLE_ENDIAN
       memcpy (&value, ptrdes->data, RL_MIN (ptrdes->fd.size, sizeof (value))); /* NB: only for little endian */
+#else
+#error Support for non little endian architectures to be implemented
+#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
       break;
     }
   value &= (2LL << (8 * ptrdes->fd.size - 1)) - 1; /* Somehow (1 << 32) == 1, that's why we need this trick */ 
