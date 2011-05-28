@@ -3,6 +3,7 @@
 /* This file is part of ResLib project */
 
 #include <tsearch.h>
+#include <endian.h>
 
 #ifdef HAVE_CONFIG_H
 # include <rlconfig.h>
@@ -292,45 +293,70 @@ rl_save_union (rl_save_data_t * rl_save_data)
 	    {
 	      void * discriminator = (char*)rl_save_data->ptrs.ra.data[rl_save_data->ptrs.ra.data[idx].parent].data + parent_fdp->offset;
 	      char * named_discriminator = NULL;
-	      if (RL_TYPE_EXT_NONE == parent_fdp->rl_type_ext)
-		switch (parent_fdp->rl_type)
-		  {
-		  case RL_TYPE_UINT8: field_idx = *(uint8_t*)discriminator; break;
-		  case RL_TYPE_INT8: field_idx = *(int8_t*)discriminator; break;
-		  case RL_TYPE_UINT16: field_idx = *(uint16_t*)discriminator; break;
-		  case RL_TYPE_INT16: field_idx = *(int16_t*)discriminator; break;
-		  case RL_TYPE_UINT32: field_idx = *(uint32_t*)discriminator; break;
-		  case RL_TYPE_INT32: field_idx = *(int32_t*)discriminator; break;
-		  case RL_TYPE_UINT64: field_idx = *(uint64_t*)discriminator; break;
-		  case RL_TYPE_INT64: field_idx = *(int64_t*)discriminator; break;
-		  case RL_TYPE_CHAR_ARRAY: named_discriminator = (char*)discriminator; break;
-		  case RL_TYPE_STRING: named_discriminator = *(char**)discriminator; break;
-		  case RL_TYPE_ENUM:
+	      
+	      if ((RL_TYPE_EXT_NONE == parent_fdp->rl_type_ext) || (RL_TYPE_EXT_POINTER == parent_fdp->rl_type_ext))
+		{
+		  if (RL_TYPE_EXT_POINTER == parent_fdp->rl_type_ext)
+		    discriminator = *(void**)discriminator;
+		  switch (parent_fdp->rl_type)
 		    {
-		      int64_t enum_value = 0;
-		      rl_td_t * enum_tdp = rl_get_td_by_name (parent_fdp->type);
-		      rl_fd_t * enum_fdp;
-		      if (NULL == enum_tdp)
+		    case RL_TYPE_UINT8: field_idx = *(uint8_t*)discriminator; break;
+		    case RL_TYPE_INT8: field_idx = *(int8_t*)discriminator; break;
+		    case RL_TYPE_UINT16: field_idx = *(uint16_t*)discriminator; break;
+		    case RL_TYPE_INT16: field_idx = *(int16_t*)discriminator; break;
+		    case RL_TYPE_UINT32: field_idx = *(uint32_t*)discriminator; break;
+		    case RL_TYPE_INT32: field_idx = *(int32_t*)discriminator; break;
+		    case RL_TYPE_UINT64: field_idx = *(uint64_t*)discriminator; break;
+		    case RL_TYPE_INT64: field_idx = *(int64_t*)discriminator; break;
+		    case RL_TYPE_BITFIELD:
+		      {
+			uint64_t value = 0;
+			rl_ptrdes_t ptrdes = { .data = discriminator, .fd = *parent_fdp, };
+			rl_td_t * enum_tdp = rl_get_td_by_name (parent_fdp->type);
+			rl_save_bitfield_value (&ptrdes, &value);
+			if (enum_tdp)
+			  {
+			    rl_fd_t * enum_fdp = rl_get_enum_by_value (enum_tdp, value);
+			    if (enum_fdp)
+			      named_discriminator = enum_fdp->comment;
+			  }
+			else
+			  field_idx = value;
 			break;
-		      
-		      switch (parent_fdp->size)
-			{
-			case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
-			case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
-			case sizeof (uint32_t): enum_value = *(uint32_t*)discriminator; break;
-			case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
-			default:
-			  memcpy (&enum_value, discriminator, RL_MIN (parent_fdp->size, sizeof (enum_value))); /* to be fixed for bigendian systems */
+		      }
+		    case RL_TYPE_CHAR_ARRAY: named_discriminator = (char*)discriminator; break;
+		    case RL_TYPE_STRING: named_discriminator = *(char**)discriminator; break;
+		    case RL_TYPE_ENUM:
+		      {
+			int64_t enum_value = 0;
+			rl_td_t * enum_tdp = rl_get_td_by_name (parent_fdp->type);
+			rl_fd_t * enum_fdp;
+			if (NULL == enum_tdp)
 			  break;
-			}
 		      
-		      enum_fdp = rl_get_enum_by_value (enum_tdp, enum_value);
-		      if (enum_fdp)
-			named_discriminator = enum_fdp->comment;
-		      break;
+			switch (parent_fdp->size)
+			  {
+			  case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
+			  case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
+			  case sizeof (uint32_t): enum_value = *(uint32_t*)discriminator; break;
+			  case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
+			  default:
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+			    memcpy (&enum_value, discriminator, RL_MIN (parent_fdp->size, sizeof (enum_value)));
+#else
+#error Support for non little endian architectures to be implemented
+#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
+			    break;
+			  }
+		      
+			enum_fdp = rl_get_enum_by_value (enum_tdp, enum_value);
+			if (enum_fdp)
+			  named_discriminator = enum_fdp->comment;
+			break;
+		      }
+		    default: break;
 		    }
-		  default: break;
-		  }
+		}
 	      if (named_discriminator && named_discriminator[0])
 		{
 		  rl_fd_t * union_fdp = rl_get_fd_by_name (tdp, named_discriminator);
