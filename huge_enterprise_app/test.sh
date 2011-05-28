@@ -15,8 +15,8 @@ perform_test()
     [ "$variant" = "optimized" ] && optimize=YES || optimize=NO
     
     make -s clean distclean
-    buildtime=$( (time -p make NUMFILES=${numfiles} OPTIMIZED=${optimize} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
-    filesize=$(stat -f '%z' huge_enterprise_app)
+    buildtime=$( (time -p make -j NUMFILES=${numfiles} OPTIMIZED=${optimize} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
+    filesize=$( stat --format '%s' huge_enterprise_app )
     starttime=$( (time -p ./huge_enterprise_app > /dev/null) 2>&1 | grep real | awk '{print $NF;}' )
     
     echo "$numfiles files $variant build $buildtime start $starttime size $filesize"
@@ -24,7 +24,7 @@ perform_test()
 
 test_all_sizes()
 {
-    for numfiles in 1 10 50 100 500
+    for numfiles in 1 10 50 100
     do
         echo -n "${numfiles}..." > /dev/stderr
         perform_test $numfiles simple
@@ -69,17 +69,15 @@ print_averages()
 
 export LANG=C
 
-pass=0
-while [ "$pass" -lt "$numpasses" ]
+for (( pass = 0; $pass < $numpasses; pass = $pass + 1 ));
 do
     echo "pass #${pass}" > /dev/stderr
     test_all_sizes > pass${pass}
-    pass=$(( $pass + 1 ))
 done
 
 make -s clean distclean
 
-tested_numbers=$(cat pass* | cut -d' ' -f1 | sort -u)
+tested_numbers=$(cat pass* | cut -d' ' -f1 | sort -n | uniq)
 
 for number in $tested_numbers
 do

@@ -85,6 +85,7 @@ generate_suffix_of_main()
         echo 'int main()'
         echo '{'
         echo '  puts("It has started!");'
+        echo '  return (0);'
         echo '}'
         echo
     ) >> main.c
@@ -99,14 +100,12 @@ generate_include_for_main()
 
 generate_prefix_of_main
 
-fileno=0;
-while [ "$fileno" -lt "$numfiles" ]
+for (( fileno = 1; $fileno <= $numfiles; fileno = $fileno + 1 ));
 do
     printno=$(printf "%05u" $fileno)
     generate_header $printno $optimized
     generate_source $printno $optimized
     generate_include_for_main $printno
-    fileno=$(( $fileno + 1 ))
 done;
 
 generate_suffix_of_main

@@ -2,16 +2,29 @@
 NUMFILES  ?= 500
 OPTIMIZED ?= NO
 
-all: main.c
-	make -f huge_enterprise_app.mk all
+BINARY = huge_enterprise_app
 
+CFLAGS += -Wall -I../src `xml2-config --cflags`
+LDADD += ../src/.libs/libreslib.a
+
+all: ${BINARY}
+
+SOURCES = $(shell seq -f file_%05g.c -s " " ${NUMFILES}) main.c
+OBJECTS = $(patsubst %.c,%.o, ${SOURCES})
+
+${BINARY}: ${OBJECTS}
+	${CC} ${CFLAGS} -o $@ $? ${LDADD}
+
+${SOURCES}: generate
+
+generate:
+	./generate.sh ${NUMFILES} ${OPTIMIZED}
+	
 clean:
-	make -f huge_enterprise_app.mk clean
+	${RM} ${BINARY} *.o
 
 distclean:
-	rm -f header_*.h file_*.c main.c
+	${RM} ${BINARY} *.o header_*.h file_*.c main.c
 
 .PHONY: clean distclean
 
-main.c:
-	./generate.sh ${NUMFILES} ${OPTIMIZED}
