@@ -6,7 +6,7 @@ echo
 
 echo "#define RL_FOREACH0(...)" 
 for (( I = 0; $I < $PP_DEPTH; I = $I + 1 )); do
-  NEXT=`expr $I + 1`
+  NEXT=$(( $I + 1 ))
   echo "#define RL_FOREACH$NEXT(X, _0, ...) X (_0) RL_FOREACH$I (X, __VA_ARGS__)" 
 done
 echo 
@@ -14,7 +14,7 @@ echo
 echo "#define RL_FOR0(NAME, OP, FUNC, X, ...) " 
 echo "#define RL_FOR1(NAME, OP, FUNC, X, ...) FUNC (NAME, X, 1)" 
 for (( I = 1; $I < $PP_DEPTH; I = $I + 1 )); do
-  NEXT=`expr $I + 1`
+  NEXT=$(( $I + 1 ))
   echo "#define RL_FOR$NEXT(NAME, OP, FUNC, X, ...) OP (NAME, $I, FUNC (NAME, X, $NEXT), RL_FOR$I (NAME, OP, FUNC, __VA_ARGS__))" 
 done
 echo 
