@@ -1,5 +1,5 @@
 
-NUMFILES  ?= 500
+NUMFILES  ?= 100
 OPTIMIZED ?= NO
 
 BINARY = huge_enterprise_app
@@ -17,14 +17,14 @@ ${BINARY}: ${OBJECTS}
 
 ${SOURCES}: generate
 
-generate:
+generate: generate.sh
 	./generate.sh ${NUMFILES} ${OPTIMIZED}
 	
 clean:
 	${RM} ${BINARY} *.o
 
 distclean:
-	${RM} ${BINARY} *.o header_*.h file_*.c main.c
+	${RM} ${BINARY} *.o header_*.h file_*.c main.c main.h
 
 .PHONY: clean distclean
 

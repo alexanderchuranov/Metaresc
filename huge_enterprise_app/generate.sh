@@ -50,6 +50,7 @@ generate_source()
     (
         echo
         echo "#include \"header_${fileno}.h\""
+        echo '#include "main.h"'
         echo
         
         if [ "$optimized" = "YES" ]
@@ -69,18 +70,13 @@ generate_source()
     ) >> ${name}
 }
 
-generate_prefix_of_main()
+generate_main()
 {
     (
         echo
         echo '#include <stdio.h>'
+        echo '#include "main.h"'
         echo
-    ) > main.c
-}
-
-generate_suffix_of_main()
-{
-    (
         echo
         echo 'int main()'
         echo '{'
@@ -88,24 +84,44 @@ generate_suffix_of_main()
         echo '  return (0);'
         echo '}'
         echo
-    ) >> main.c
+    ) > main.c
 }
 
-generate_include_for_main()
+generate_prefix_of_main_h()
+{
+    (
+        echo
+        echo "#ifndef _METARESC_HUGE_ENTERPRISE_APP_TEST_HEADER_MAIN_INCLUDED_"
+        echo "#define _METARESC_HUGE_ENTERPRISE_APP_TEST_HEADER_MAIN_INCLUDED_"
+        echo
+    ) > main.h
+}
+
+generate_include_for_main_h()
 {
     local fileno=$1
     
-    echo "#include \"header_${fileno}.h\"" >> main.c
+    echo "#include \"header_${fileno}.h\"" >> main.h
 }
 
-generate_prefix_of_main
+generate_suffix_of_main_h()
+{
+    (
+        echo
+        echo '#endif'
+    ) >> main.h
+}
+
+generate_prefix_of_main_h
 
 for (( fileno = 1; $fileno <= $numfiles; fileno = $fileno + 1 ));
 do
     printno=$(printf "%05u" $fileno)
     generate_header $printno $optimized
     generate_source $printno $optimized
-    generate_include_for_main $printno
+    generate_include_for_main_h $printno
 done;
 
-generate_suffix_of_main
+generate_suffix_of_main_h
+
+generate_main
