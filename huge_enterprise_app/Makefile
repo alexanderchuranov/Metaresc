@@ -13,7 +13,7 @@ SOURCES = $(shell seq -f file_%05g.c -s " " ${NUMFILES}) main.c
 OBJECTS = $(patsubst %.c,%.o, ${SOURCES})
 
 ${BINARY}: ${OBJECTS}
-	${CC} ${CFLAGS} -o $@ $? ${LDADD}
+	${CC} -o $@ $? ${LDADD}
 
 ${SOURCES}: generate
 
