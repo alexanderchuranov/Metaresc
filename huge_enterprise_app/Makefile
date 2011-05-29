@@ -1,6 +1,5 @@
 
 NUMFILES  ?= 100
-OPTIMIZED ?= NO
 
 BINARY = huge_enterprise_app
 
@@ -18,7 +17,7 @@ ${BINARY}: ${OBJECTS}
 ${SOURCES}: generate
 
 generate: generate.sh
-	./generate.sh ${NUMFILES} ${OPTIMIZED}
+	./generate.sh ${NUMFILES}
 	
 clean:
 	${RM} ${BINARY} *.o

@@ -1,12 +1,10 @@
 #!/bin/sh
 
 numfiles=$1
-optimized=${2:-NO}
 
 generate_header()
 {
     local fileno=$1
-    local optimized=$2
     local name="header_${fileno}.h"
     
     : > ${name}
@@ -16,15 +14,6 @@ generate_header()
         echo "#ifndef _METARESC_HUGE_ENTERPRISE_APP_TEST_HEADER_${fileno}_INCLUDED_"
         echo "#define _METARESC_HUGE_ENTERPRISE_APP_TEST_HEADER_${fileno}_INCLUDED_"
         echo
-        
-        if [ "$optimized" = "YES" ]
-        then
-            echo '#ifndef RL_MODE'
-            echo '# define RL_MODE PROTO'
-            echo '#endif'
-            echo
-        fi
-        
         echo '#include <reslib.h>'
         echo
         echo "TYPEDEF_STRUCT (struct_${fileno}_t,"
@@ -42,7 +31,6 @@ generate_header()
 generate_source()
 {
     local fileno=$1
-    local optimized=$2
     local name="file_${fileno}.c"
     
     : > ${name}
@@ -52,15 +40,6 @@ generate_source()
         echo "#include \"header_${fileno}.h\""
         echo '#include "main.h"'
         echo
-        
-        if [ "$optimized" = "YES" ]
-        then
-            echo '#undef RL_MODE'
-            echo '#define RL_MODE DESC'
-            echo "#include \"header_${fileno}.h\""
-            echo
-        fi
-        
         echo "void f${fileno}(void)"
         echo '{'
         echo "  struct_${fileno}_t s;"
@@ -117,8 +96,8 @@ generate_prefix_of_main_h
 for (( fileno = 1; $fileno <= $numfiles; fileno = $fileno + 1 ));
 do
     printno=$(printf "%05u" $fileno)
-    generate_header $printno $optimized
-    generate_source $printno $optimized
+    generate_header $printno
+    generate_source $printno
     generate_include_for_main_h $printno
 done;
 

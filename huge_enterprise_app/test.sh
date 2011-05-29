@@ -12,10 +12,10 @@ perform_test()
     local filesize='N/A'
     local starttime='N/A'
     
-    [ "$variant" = "optimized" ] && optimize=YES || optimize=NO
+    [ "$variant" = "optimized" ] && CFLAGS="-DRL_MODE=PROTO" || CFLAGS=""
     
-    make -s clean distclean
-    buildtime=$( (time -p make -j NUMFILES=${numfiles} OPTIMIZED=${optimize} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
+    make distclean
+    buildtime=$( (time -p CFLAGS=${CFLAGS} make -j NUMFILES=${numfiles} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
     filesize=$( stat --format '%s' huge_enterprise_app )
     starttime=$( (time -p ./huge_enterprise_app > /dev/null) 2>&1 | grep real | awk '{print $NF;}' )
     
@@ -75,7 +75,7 @@ do
     test_all_sizes > pass${pass}
 done
 
-make -s clean distclean
+make distclean
 
 tested_numbers=$(cat pass* | cut -d' ' -f1 | sort -n | uniq)
 
