@@ -1,0 +1,11 @@
+#ifndef _METARESC_HUGE_ENTERPRISE_APP_TEST_HEADER_@FILENO@_INCLUDED_
+#define _METARESC_HUGE_ENTERPRISE_APP_TEST_HEADER_@FILENO@_INCLUDED_
+#include <reslib.h>
+
+TYPEDEF_STRUCT (struct_@FILENO@_t,
+		(int, a),
+		(long, b),
+		(void*, c),
+		)
+void f@FILENO@(void);
+#endif // guardian

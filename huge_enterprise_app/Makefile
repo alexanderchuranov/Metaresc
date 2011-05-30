@@ -14,16 +14,22 @@ OBJECTS = $(patsubst %.c,%.o, ${SOURCES})
 ${BINARY}: ${OBJECTS}
 	${CC} -o $@ $? ${LDADD}
 
-${SOURCES}: generate
+main.c: main.h
 
-generate: generate.sh
-	./generate.sh ${NUMFILES}
+file_%.c: file_%.h
+	sed -e s/@FILENO@/$(patsubst file_%.c,%,$@)/ < file.c.in > $@
+
+file_%.h:
+	sed -e s/@FILENO@/$(patsubst file_%.h,%,$@)/ < file.h.in > $@
+
+main.h: $(patsubst %.c, %.h, $(patsubst main.c, , ${SOURCES})) 
+	echo -e "#ifndef _MAIN_H_\n#define _MAIN_H_\n" $(patsubst %,"#include \"%\"\n", $?) "#endif\n" > main.h
 	
 clean:
 	${RM} ${BINARY} *.o
 
 distclean:
-	${RM} ${BINARY} *.o header_*.h file_*.c main.c main.h
+	${RM} ${BINARY} *.o file_*.[ch] main.h
 
 .PHONY: clean distclean
 
