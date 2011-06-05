@@ -4,19 +4,18 @@ NUMFILES  ?= 100
 BINARY = huge_enterprise_app
 
 CFLAGS += -Wall -I../src `xml2-config --cflags`
-LDADD += ../src/.libs/libreslib.a
+LDADD += ../src/.libs/libreslib.a `xml2-config --libs`
 
 all: ${BINARY}
 
 SOURCES = $(shell seq -f file_%05g.c -s " " ${NUMFILES}) main.c
-OBJECTS = $(patsubst %.c,%.o, ${SOURCES})
 
-${BINARY}: ${OBJECTS}
+${BINARY}: $(patsubst %.c,%.o, ${SOURCES})
 	${CC} -o $@ $? ${LDADD}
 
 main.c: main.h
 
-file_%.c: file_%.h
+file_%.c: file_%.h main.h
 	sed -e s/@FILENO@/$(patsubst file_%.c,%,$@)/ < file.c.in > $@
 
 file_%.h:
@@ -31,5 +30,5 @@ clean:
 distclean:
 	${RM} ${BINARY} *.o file_*.[ch] main.h
 
-.PHONY: clean distclean
+.PHONY: clean distclean all
 
