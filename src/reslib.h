@@ -52,7 +52,7 @@
 
 #define RL_BITMASK_OR_DELIMITER " | "
 
-#define RL_MESSAGE(LOG_LEVEL, MSG_ID...) rl_message (__FILE__, __PRETTY_FUNCTION__, __LINE__, LOG_LEVEL, MSG_ID)
+#define RL_MESSAGE(LOG_LEVEL, MSG_ID...) rl_message (__FILE__, __FUNCTION__, __LINE__, LOG_LEVEL, MSG_ID)
 #define RL_MESSAGE_UNSUPPORTED_NODE_TYPE_(FDP)				\
   ({									\
     rl_fd_t * __fdp__ = FDP;						\
@@ -68,10 +68,10 @@
 
 #define RL_MEM_INIT(FUNC, ATTR...) void ATTR rl_mem_init (void) { FUNC; }
 
-#define RL_MALLOC(SIZE) (rl_conf.rl_mem.malloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, SIZE)
-#define RL_REALLOC(PTR, SIZE) (rl_conf.rl_mem.realloc)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR, SIZE)
-#define RL_STRDUP(STR) (rl_conf.rl_mem.strdup)(__FILE__, __PRETTY_FUNCTION__, __LINE__, STR)
-#define RL_FREE(PTR) (rl_conf.rl_mem.free)(__FILE__, __PRETTY_FUNCTION__, __LINE__, PTR)
+#define RL_MALLOC(SIZE) (rl_conf.rl_mem.malloc)(__FILE__, __FUNCTION__, __LINE__, SIZE)
+#define RL_REALLOC(PTR, SIZE) (rl_conf.rl_mem.realloc)(__FILE__, __FUNCTION__, __LINE__, PTR, SIZE)
+#define RL_STRDUP(STR) (rl_conf.rl_mem.strdup)(__FILE__, __FUNCTION__, __LINE__, STR)
+#define RL_FREE(PTR) (rl_conf.rl_mem.free)(__FILE__, __FUNCTION__, __LINE__, PTR)
 
 /*
   you can redefine this prefixes from outside before first include of reslib.h
