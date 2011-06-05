@@ -962,9 +962,16 @@ rl_auto_field_detect (rl_fd_t * fdp)
     }
   else if (RL_TYPE_EXT_NONE == fdp->rl_type_ext)
     {
-      /* auto detect pointers */
+      /* auto detect functions and pointers */
       char * end = strchr (fdp->type, 0) - 1;
-      if ('*' == *end)
+      if (')' == *end)
+	{
+	  fdp->rl_type = RL_TYPE_FUNC;
+	  fdp->param.func_param.size = 0;
+	  fdp->param.func_param.alloc_size = 0;
+	  fdp->param.func_param.data = NULL;
+	}
+      else if ('*' == *end)
 	{
 	  /* remove whitespaces before * */
 	  while (isspace (end[-1]))
@@ -1061,7 +1068,7 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
 	break;
 
 	/*
-	  RL_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size in compile time.
+	  RL_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
 	 */
       case RL_TYPE_STRUCT:
 	if (RL_TYPE_EXT_POINTER == tdp->fields.data[i].rl_type_ext)
