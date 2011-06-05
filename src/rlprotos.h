@@ -28,6 +28,7 @@ TYPEDEF_ENUM (rl_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (RL_MESSAGE_XDR_LOAD_FAILED, , "XDR load failed."),
 	      (RL_MESSAGE_NO_TYPE_DESCRIPTOR, , "Can't find type descriptor for '%s'."),
 	      (RL_MESSAGE_NOT_A_UNION, , "Type '%s' is not a union."),
+	      (RL_MESSAGE_STRING_IS_NULL, , "Input string is NULL."),
 	      (RL_MESSAGE_NULL_POINTER, , "Can't save/load to/from NULL pointer."),
 	      (RL_MESSAGE_IDS_COLLISION, , "Two XML nodes have the same %s=%" SCNd32 "."),
 	      (RL_MESSAGE_UNDEFINED_REF_IDX, , "Reference on a node with %s=%" SCNd32 " could not be found."),

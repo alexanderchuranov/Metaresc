@@ -868,16 +868,22 @@
       };								\
       RL_TYPE_NAME * __check_type__ = S_PTR + 0;			\
       rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
-      if (__tdp__)							\
-	__fd__.rl_type = __tdp__->rl_type;				\
-      RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
-      if (NULL != __check_type__) 					\
-	__idx__ = xml2_load (XML, &__ptrs__);				\
-      else								\
+      xmlNodePtr __xml__ = (XML);					\
+      if (NULL == __xml__)						\
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
-      if (__idx__ >= 0)							\
-	__status__ = rl_load (__check_type__, &__fd__, __idx__, &__ptrs__); \
-      rl_free_ptrs (&__ptrs__);						\
+      else								\
+	{								\
+	  if (__tdp__)							\
+	    __fd__.rl_type = __tdp__->rl_type;				\
+	  RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
+	  if (NULL != __check_type__) 					\
+	    __idx__ = xml2_load (__xml__, &__ptrs__);			\
+	  else								\
+	    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
+	  if (__idx__ >= 0)						\
+	    __status__ = rl_load (__check_type__, &__fd__, __idx__, &__ptrs__); \
+	  rl_free_ptrs (&__ptrs__);					\
+	}								\
       __status__;							\
     })
 
@@ -896,31 +902,33 @@
 #define RL_LOAD_XML2_NODE_ARG2(RL_TYPE_NAME, XML, S_PTR) RL_LOAD_XML2_NODE_ARG2_ (RL_TYPE_NAME, XML)
 
 #define RL_LOAD_XML2_ARG3(RL_TYPE_NAME, STR, S_PTR) ({			\
-      int __status__ = 0;						\
+      int _status_ = 0;							\
       RL_TYPE_NAME * _check_type_ = S_PTR + 0;				\
+      char * __str__ = (STR);						\
       RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
       if (NULL == _check_type_)						\
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
+      else if (NULL == __str__)						\
+	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_STRING_IS_NULL);		\
       else								\
 	{								\
-	  char * __str__ = (STR);					\
 	  xmlDocPtr __doc__ = xmlParseMemory (__str__, strlen (__str__)); \
 	  if (__doc__)							\
 	    {								\
 	      xmlNodePtr __node__ = xmlDocGetRootElement (__doc__);	\
-	      __status__ = RL_LOAD_XML2_NODE_ARG3 (RL_TYPE_NAME, __node__, _check_type_); \
+	      _status_ = RL_LOAD_XML2_NODE_ARG3 (RL_TYPE_NAME, __node__, _check_type_); \
 	      xmlFreeDoc (__doc__);					\
 	    }								\
 	}								\
-      __status__;							\
+      _status_;								\
     })
 
 #define RL_LOAD_XML2_ARG2_(RL_TYPE_NAME, STR) ({			\
-      int _status_ = 0;							\
+      int ___status___ = 0;						\
       RL_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
-      _status_ = RL_LOAD_XML2_ARG3 (RL_TYPE_NAME, STR, &__result__);	\
-      if (0 == _status_)						\
+      ___status___ = RL_LOAD_XML2_ARG3 (RL_TYPE_NAME, STR, &__result__); \
+      if (0 == ___status___)						\
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_LOAD_STRUCT_FAILED);	\
       __result__;							\
     })
@@ -939,12 +947,14 @@
 #define RL_LOAD_METHOD_ARG3(METHOD, RL_TYPE_NAME, STR, S_PTR) ({	\
       int _status_ = 0;							\
       RL_TYPE_NAME * _check_type_ = S_PTR + 0;				\
+      char * _str_ = (STR);						\
       RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
       if (NULL == _check_type_)						\
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
+      else if (NULL == _str_)						\
+	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_STRING_IS_NULL);		\
       else								\
 	{								\
-	  char * _str_ = (STR);						\
 	  rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, .ext = NULL } }; \
 	  _status_ = METHOD (_str_, &_ptrs_);				\
 	  if (0 == _status_)						\
