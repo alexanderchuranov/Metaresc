@@ -638,15 +638,21 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
       
       <para>
         In METARESC the structure body is declared using
-        <code>RL_TYPEDEF_STRUCT</code> and
-        <code>RL_END_STRUCT</code>. The name of the structure is
-        introduced with the <code>RL_TYPE_NAME</code> macro. As the
-        names of these macros suggest, the name of the structure
-        becomes a type, as if introduced with <code>typedef
-        struct</code>. Due to implementation specifics the name of the
-        structure should be passed as the value of the
-        <code>RL_TYPE_NAME</code> macro, and the macro must be unset
-        just before specifying a new value.
+        <code>TYPEDEF_STRUCT</code> macro. It is variadic macro. The
+        first argument is a type name and the rest is the list of
+        structure fields. Fields declarations have form <code>[FIELD_TYPE]
+          (type, name, [suffix], [comment], [extra
+        pointer])</code>. <code>FIELD_TYPE</code> denotes internal 
+        library types. The full list is:
+	<variablelist>
+	  <varlistentry>
+	    <term>NONE</term>
+	    <listitem>
+	      <para>
+		field that should not be serialized/deserialized. Arguments
+	      </para>
+	    </listitem>
+	  </varlistentry>
       </para>
       
       <para>
@@ -702,7 +708,7 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
     <title>Metadata and their applications</title>
     
     <section>
-      <title>Understaning type and field descriptors</title>
+      <title>Understanding type and field descriptors</title>
       <para />
     </section>
     
