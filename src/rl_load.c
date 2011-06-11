@@ -667,29 +667,30 @@ rl_load_anon_union (int idx, rl_ra_rl_ptrdes_t * ptrs)
   return (rl_load_struct (idx, ptrs));
 }
 
-void
-rl_free_ptrs (rl_ra_rl_ptrdes_t * ptrs)
+int
+rl_free_ptrs (rl_ra_rl_ptrdes_t ptrs)
 {
-  if (ptrs->ra.data)
+  if (ptrs.ra.data)
     {
-      int count = ptrs->ra.size / sizeof (ptrs->ra.data[0]);
+      int count = ptrs.ra.size / sizeof (ptrs.ra.data[0]);
       int i;
       for (i = 0; i < count; ++i)
 	{
-	  if (ptrs->ra.data[i].value)
-	    RL_FREE (ptrs->ra.data[i].value);
-	  ptrs->ra.data[i].value = NULL;
-	  if (ptrs->ra.data[i].fd.type)
-	    RL_FREE (ptrs->ra.data[i].fd.type);
-	  ptrs->ra.data[i].fd.type = NULL;
-	  if (ptrs->ra.data[i].fd.name)
-	    RL_FREE (ptrs->ra.data[i].fd.name);
-	  ptrs->ra.data[i].fd.name = NULL;
+	  if (ptrs.ra.data[i].value)
+	    RL_FREE (ptrs.ra.data[i].value);
+	  ptrs.ra.data[i].value = NULL;
+	  if (ptrs.ra.data[i].fd.type)
+	    RL_FREE (ptrs.ra.data[i].fd.type);
+	  ptrs.ra.data[i].fd.type = NULL;
+	  if (ptrs.ra.data[i].fd.name)
+	    RL_FREE (ptrs.ra.data[i].fd.name);
+	  ptrs.ra.data[i].fd.name = NULL;
 	}
-      RL_FREE (ptrs->ra.data);
-      ptrs->ra.data = NULL;
-      ptrs->ra.size = ptrs->ra.alloc_size = 0;
+      RL_FREE (ptrs.ra.data);
+      ptrs.ra.data = NULL;
+      ptrs.ra.size = ptrs.ra.alloc_size = 0;
     }
+  return (EXIT_SUCCESS);
 }
 
 /**
