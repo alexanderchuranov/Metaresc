@@ -4,6 +4,13 @@
 
 #include <reslib.h>
 
+TYPEDEF_STRUCT (rl_void_ptr_t, ATTRIBUTES ( , "pointer on any type"),
+		ANON_UNION (),
+		(void *, ptr, , "default void pointer"),
+		END_ANON_UNION ("type"),
+		(char *, type),
+		)
+
 TYPEDEF_ENUM (rl_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      (RL_LL_ALL, = 0),
 	      RL_LL_TRACE,
