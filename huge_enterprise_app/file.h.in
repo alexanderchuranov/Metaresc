@@ -8,4 +8,5 @@ TYPEDEF_STRUCT (struct_@FILENO@_t,
 		(void*, c),
 		)
 void f@FILENO@(void);
+
 #endif // guardian

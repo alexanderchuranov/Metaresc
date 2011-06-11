@@ -32,3 +32,4 @@ distclean:
 
 .PHONY: clean distclean all
 
+.PRECIOUS: file_%.[ch]
