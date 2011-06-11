@@ -650,6 +650,8 @@
 #define RL_CHECK_TYPES(RL_TYPE_NAME, S_PTR...) ({ (void) ((RL_TYPE_NAME*)0 - (typeof (S_PTR + 0))0); })
 #endif /* RL_CHECK_TYPES */
 
+#define RL_FREE_RECURSIVELY(RL_TYPE_NAME, S_PTR) rl_free_recursively (RL_SAVE_RL (RL_TYPE_NAME, S_PTR))
+
 #define RL_SAVE_RL(RL_TYPE_NAME, S_PTR) ({				\
       char * __name__ = RL_STRINGIFY (S_PTR);				\
       rl_fd_t __fd__ =							\
@@ -882,7 +884,7 @@
 	    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
 	  if (__idx__ >= 0)						\
 	    __status__ = rl_load (__check_type__, &__fd__, __idx__, &__ptrs__); \
-	  rl_free_ptrs (&__ptrs__);					\
+	  rl_free_ptrs (__ptrs__);					\
 	}								\
       __status__;							\
     })
@@ -979,7 +981,7 @@
 		_fd_.rl_type = _tdp_->rl_type;				\
 	      _status_ = rl_load (_check_type_, &_fd_, 0, &_ptrs_);	\
 	    }								\
-	  rl_free_ptrs (&_ptrs_);					\
+	  rl_free_ptrs (_ptrs_);					\
 	}								\
       _status_;								\
     })
@@ -1095,7 +1097,8 @@ extern int scm_load (char*, rl_ra_rl_ptrdes_t*);
 
 extern int rl_add_ptr_to_list (rl_ra_rl_ptrdes_t*);
 extern void rl_add_child (int, int, rl_ra_rl_ptrdes_t*);
-extern void rl_free_ptrs (rl_ra_rl_ptrdes_t*);
+extern int rl_free_recursively (rl_ra_rl_ptrdes_t);
+extern int rl_free_ptrs (rl_ra_rl_ptrdes_t);
 extern rl_fd_t * rl_get_fd_by_name (rl_td_t*, char*);
 extern rl_fd_t * rl_get_enum_by_value (rl_td_t*, int64_t);
 extern int rl_get_enum_by_name (uint64_t*, char*);

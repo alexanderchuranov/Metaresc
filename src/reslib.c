@@ -98,11 +98,22 @@ rl_conf_t rl_conf = {
 
 RL_MEM_INIT ( , __attribute__((constructor,weak)));
 
+static rl_td_t *
+rl_get_void_ptr_td (void)
+{
+  rl_td_t * void_ptr_tdp = rl_get_td_by_name ("rl_void_ptr_t");
+  if (NULL == void_ptr_tdp)
+    return (NULL);
+  return (rl_get_td_by_name (void_ptr_tdp->fields.data[0].type));
+}
+
 /**
  * Memory cleanp handler.
  */
 static void __attribute__((destructor)) rl_cleanup (void)
 {
+  rl_td_t * void_ptr_tdp = rl_get_void_ptr_td ();
+  
   void dummy_free_func (void * nodep) {}
   
   int free_lookup_tree (rl_td_t * tdp, void * arg)
@@ -115,6 +126,12 @@ static void __attribute__((destructor)) rl_cleanup (void)
     tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
     return (0);
   }
+
+  if (void_ptr_tdp)
+    {
+      RL_FREE (void_ptr_tdp->fields.data);
+      void_ptr_tdp->fields.data = NULL;
+    }
   
   tdestroy (rl_conf.enum_by_name, dummy_free_func);
   rl_conf.enum_by_name = NULL;
@@ -434,6 +451,54 @@ rl_add_child (int parent, int child, rl_ra_rl_ptrdes_t * ptrs)
       ptrs->ra.data[child].next = -1;
     }
   ptrs->ra.data[parent].last_child = child;
+}
+
+static int rl_cmp_idx (const void * a, const void * b)
+{
+  return (((const rl_ptrdes_t*)a)->idx - ((const rl_ptrdes_t*)b)->idx);
+}
+
+int
+rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
+{
+  int i;
+  for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
+    switch (ptrs.ra.data[i].fd.rl_type_ext)
+      {
+      case RL_TYPE_EXT_POINTER:
+	if ((NULL == *(void**)ptrs.ra.data[i].data) || (ptrs.ra.data[i].ref_idx >= 0))
+	  ptrs.ra.data[i].idx = -1;
+	break;
+      case RL_TYPE_EXT_RARRAY:
+	if (NULL == ((rl_rarray_t*)ptrs.ra.data[i].data)->data)
+	  ptrs.ra.data[i].idx = -1;
+	break;
+      default:
+	if ((RL_TYPE_STRING != ptrs.ra.data[i].fd.rl_type) ||
+	    (NULL == *(char**)ptrs.ra.data[i].data))
+	  ptrs.ra.data[i].idx = -1;
+	break;
+      }
+  qsort (ptrs.ra.data, ptrs.ra.size / sizeof (ptrs.ra.data[0]), sizeof (ptrs.ra.data[0]), rl_cmp_idx);
+  for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
+    if (ptrs.ra.data[i].idx < 0)
+      break;
+    else
+      switch (ptrs.ra.data[i].fd.rl_type_ext)
+	{
+	case RL_TYPE_EXT_POINTER:
+	  RL_FREE (*(void**)ptrs.ra.data[i].data);
+	  break;
+	case RL_TYPE_EXT_RARRAY:
+	  RL_FREE (((rl_rarray_t*)ptrs.ra.data[i].data)->data);
+	  break;
+	default:
+	  RL_FREE (*(char**)ptrs.ra.data[i].data);
+	  break;
+	}
+  if (ptrs.ra.data)
+    RL_FREE (ptrs.ra.data);
+  return (EXIT_SUCCESS);
 }
 
 /**
@@ -877,11 +942,11 @@ rl_build_field_names_hash (rl_td_t * tdp)
   int i, j;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
 
+  tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
+  tdp->lookup_by_name.data = NULL;
   for (i = 0; i < fields_count; ++i)
     tdp->fields.data[i].hash_value = hash_str (tdp->fields.data[i].name);
 
-  tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
-  tdp->lookup_by_name.data = NULL;
   for (i = 0; i < fields_count; ++i)
     for (j = i + 1; j < fields_count; ++j)
       if (tdp->fields.data[i].hash_value == tdp->fields.data[j].hash_value)
@@ -924,6 +989,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
       else
 	RL_FREE (array); /* otherwise try to find new hash size */
     }
+  
   return (EXIT_SUCCESS);
 }
 
@@ -1043,7 +1109,7 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
   int i;
   rl_td_t * tdp_;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
-  
+
   for (i = 0; i < fields_count; ++i)
     switch (tdp->fields.data[i].rl_type)
       {
@@ -1114,6 +1180,42 @@ rl_get_fd_by_name (rl_td_t * tdp, char * name)
   return (NULL);
 }
 
+static int
+rl_register_type_pointer (rl_td_t * tdp)
+{
+  rl_fd_t * fdp;
+  rl_td_t * union_tdp = rl_get_void_ptr_td ();
+  if (NULL == union_tdp)
+    return (EXIT_FAILURE);
+  if (rl_get_fd_by_name (union_tdp, tdp->type))
+    return (EXIT_FAILURE);
+  if (union_tdp->fields.alloc_size < 0)
+    {
+      int alloc_size = sizeof (union_tdp->fields.data[0]) + union_tdp->fields.size;
+      rl_fd_t * fields_data = RL_MALLOC (alloc_size);
+      if (NULL == fields_data)
+	return (EXIT_FAILURE);
+      memcpy (fields_data, union_tdp->fields.data, union_tdp->fields.size);
+      union_tdp->fields.data = fields_data;
+      union_tdp->fields.alloc_size = alloc_size;
+    }
+  fdp = rl_rarray_append ((rl_rarray_t*)&union_tdp->fields, sizeof (union_tdp->fields.data[0]));
+  if (NULL == fdp)
+    return (EXIT_FAILURE);
+  memset (fdp, 0, sizeof (*fdp));
+  fdp->type = tdp->type;
+  fdp->name = tdp->type;
+  fdp->size = tdp->size;
+  fdp->offset = 0;
+  fdp->rl_type = tdp->rl_type;
+  fdp->rl_type_aux = RL_TYPE_VOID;
+  fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
+  if (union_tdp->lookup_by_name.data)
+    RL_FREE (union_tdp->lookup_by_name.data);
+  union_tdp->lookup_by_name.data = NULL;
+  return (rl_build_field_names_hash (union_tdp));
+}
+
 /**
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
@@ -1140,6 +1242,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
 
   for (count = 0; RL_TYPE_TRAILING_RECORD != tdp->fields.data[count].rl_type; ++count);
   tdp->fields.size = count * sizeof (tdp->fields.data[0]);
+  tdp->fields.alloc_size = -1;
   tdp->fields.ext = NULL;
   
   if ((NULL != comment) && comment[0])
@@ -1172,6 +1275,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
     rl_add_enum (tdp);
 
   rl_td_foreach (rl_detect_fields_types, tdp);
+  rl_register_type_pointer (tdp);
   return (EXIT_SUCCESS);
 }
 
