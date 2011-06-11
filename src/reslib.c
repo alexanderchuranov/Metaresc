@@ -458,10 +458,16 @@ static int rl_cmp_idx (const void * a, const void * b)
   return (((const rl_ptrdes_t*)a)->idx - ((const rl_ptrdes_t*)b)->idx);
 }
 
+/**
+ * Recursively free all allocated memory. Needs to be done from bottom to top.
+ * @param ptrs resizable array with serialized data
+ * @return status, EXIT_SUCCESS or EXIT_FAILURE
+ */
 int
 rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 {
   int i;
+  /* set idx property to -1 for all nodes which are not dynamically allocated */
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
     switch (ptrs.ra.data[i].fd.rl_type_ext)
       {
@@ -479,6 +485,7 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 	  ptrs.ra.data[i].idx = -1;
 	break;
       }
+  /* sort out nodes to the end of the array */
   qsort (ptrs.ra.data, ptrs.ra.size / sizeof (ptrs.ra.data[0]), sizeof (ptrs.ra.data[0]), rl_cmp_idx);
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
     if (ptrs.ra.data[i].idx < 0)
@@ -1180,6 +1187,11 @@ rl_get_fd_by_name (rl_td_t * tdp, char * name)
   return (NULL);
 }
 
+/**
+ * Add type to union rl_void_ptr_t.
+ * @param tdp a pointer on statically initialized type descriptor
+ * @return status, EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_register_type_pointer (rl_td_t * tdp)
 {
@@ -1191,7 +1203,8 @@ rl_register_type_pointer (rl_td_t * tdp)
     return (EXIT_FAILURE);
   if (union_tdp->fields.alloc_size < 0)
     {
-      int alloc_size = sizeof (union_tdp->fields.data[0]) + union_tdp->fields.size;
+      /* reallocate descriptors of union fields into heap */
+      int alloc_size = sizeof (union_tdp->fields.data[0]) + union_tdp->fields.size; /* allocate one additional slot */
       rl_fd_t * fields_data = RL_MALLOC (alloc_size);
       if (NULL == fields_data)
 	return (EXIT_FAILURE);
@@ -1213,6 +1226,7 @@ rl_register_type_pointer (rl_td_t * tdp)
   if (union_tdp->lookup_by_name.data)
     RL_FREE (union_tdp->lookup_by_name.data);
   union_tdp->lookup_by_name.data = NULL;
+  /* we need to rebuild hash table each time because array with fields descriptors might be reallocated */
   return (rl_build_field_names_hash (union_tdp));
 }
 
