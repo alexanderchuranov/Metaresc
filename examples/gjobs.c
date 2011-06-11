@@ -6,7 +6,49 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <gjobs.h>
+#include <reslib.h>
+
+TYPEDEF_STRUCT (project_t,
+		(int, ID)
+		)
+
+TYPEDEF_ENUM (status_t,
+	      Open,
+	      Close,
+	      )
+
+TYPEDEF_STRUCT (update_t,
+	       (status_t, Status),
+	       (char *, Modified),
+	       (char *, Salary),
+	       )
+     
+TYPEDEF_STRUCT (person_t,
+		(char *, Person),
+		(char *, Email),
+		(char *, Company),
+		(char *, Organisation),
+		(char *, Webpage),
+		(char *, Snailmail),
+		(char *, Phone),
+		)
+
+TYPEDEF_STRUCT (job_t,
+		(project_t, Project),
+		(char *, Application),
+		(char *, Category),
+		(update_t, Update),
+		RARRAY (person_t, Developers),
+		(person_t, Contact),
+		(char *, Requirements),
+		(char *, Skills),
+		(char *, Details),
+		)
+
+TYPEDEF_STRUCT (helping_t,
+		RARRAY (job_t, Jobs),
+		)
+
 
 static void
 print_person (person_t * person)
@@ -53,52 +95,6 @@ print_helping (helping_t * helping)
     print_job (&helping->Jobs.data[i]);
 }
 
-static void
-free_person (person_t * person)
-{
-  if (person == NULL) return;
-  if (person->Person) RL_FREE (person->Person);
-  if (person->Email) RL_FREE (person->Email);
-  if (person->Company) RL_FREE (person->Company);
-  if (person->Organisation) RL_FREE (person->Organisation);
-  if (person->Snailmail) RL_FREE (person->Snailmail);
-  if (person->Webpage) RL_FREE (person->Webpage);
-  if (person->Phone) RL_FREE (person->Phone);
-}
-
-static void
-free_job (job_t * job)
-{
-  int i;
-  int developers;
-
-  if (job == NULL) return;
-  if (job->Application != NULL) RL_FREE (job->Application);
-  if (job->Category != NULL) RL_FREE (job->Category);
-  if (job->Requirements != NULL) RL_FREE (job->Requirements);
-  if (job->Skills != NULL) RL_FREE (job->Skills);
-  if (job->Details != NULL) RL_FREE (job->Details);
-
-  if (job->Update.Modified != NULL) RL_FREE (job->Update.Modified);
-  if (job->Update.Salary != NULL) RL_FREE (job->Update.Salary);
-    
-  free_person (&job->Contact);
-  developers = job->Developers.size / sizeof (job->Developers.data[0]);
-  for (i = 0; i < developers; ++i)
-    free_person (&job->Developers.data[i]);
-  RL_FREE (job->Developers.data);
-}
-
-static void
-free_helping (helping_t * helping)
-{
-  int i;
-  int jobs = helping->Jobs.size / sizeof (helping->Jobs.data[0]);
-  for (i = 0; i < jobs; ++i)
-    free_job (&helping->Jobs.data[i]);
-  RL_FREE (helping->Jobs.data);
-}
-
 int
 main (int argc, char * argv[])
 {
@@ -119,7 +115,7 @@ main (int argc, char * argv[])
 	printf ("Load failed\n");
       else
 	print_helping (&helping);
-      free_helping (&helping);
+      RL_FREE_RECURSIVELY (helping_t, &helping);
       RL_FREE (str);
     }
 
