@@ -585,7 +585,8 @@
       .rl_type = RL_TYPE_ANON_UNION,					\
       .rl_type_ext = RL_TYPE_EXT_NONE,					\
       .comment = #ATTR,							\
-      .ext = (rl_td_t[]){ { .type = (char []) {RL_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, } }, \
+      .ext = {(rl_td_t[]){ { .type = (char []) {RL_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, } }}, \
+      .ptr_type = "rl_td_t",						\
       },
 #define RL_END_ANON_UNION_DESC(RL_TYPE_NAME, COM...) {	\
     .type = "",						\
@@ -621,7 +622,6 @@
     .type = #RL_TYPE_NAME,						\
     .size = sizeof (RL_TYPE_NAME),					\
     .attr = #ATTR,							\
-    .ext = NULL,							\
     .fields = { .alloc_size = -1, .size = 0, .data = (rl_fd_t []){
 #define RL_TYPEDEF_END_DESC(RL_TYPE_NAME, COM...)			\
   {.rl_type = RL_TYPE_TRAILING_RECORD} } },				\
@@ -676,8 +676,8 @@
 	  .parent = -1,							\
 	  .typed_ptrs_tree = NULL,					\
 	  .untyped_ptrs_tree = NULL,					\
-	  .rl_ra_idx = { .data = NULL, .size = 0, .alloc_size = 0, .ext = NULL, }, \
-	  .ptrs = { .ra = { .data = NULL, .size = 0, .alloc_size = 0, .ext = NULL } } \
+	  .rl_ra_idx = { .data = NULL, .size = 0, .alloc_size = 0, }, \
+	  .ptrs = { .ra = { .data = NULL, .size = 0, .alloc_size = 0, } } \
 	};								\
       char * __ptr__ = strchr (__name__, '[');				\
       rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
@@ -719,7 +719,7 @@
 
 #define RL_SAVE_XDR_RA(RL_TYPE_NAME, S_PTR) ({				\
       XDR _xdrs_;							\
-      rl_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, .ext = NULL }; \
+      rl_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, }; \
       xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
       if (0 == RL_SAVE_XDR (RL_TYPE_NAME, &_xdrs_, S_PTR))		\
 	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_XDR_SAVE_FAILED);		\
@@ -743,7 +743,7 @@
 #define RL_SAVE_SCM(RL_TYPE_NAME, S_PTR) RL_SAVE_METHOD (scm_save, RL_TYPE_NAME, S_PTR)
 
 #define RL_SAVE_METHOD_RA(METHOD, RL_TYPE_NAME, S_PTR) ({		\
-      rl_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, .ext = NULL }; \
+      rl_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, }; \
       _ra_.data = METHOD (RL_TYPE_NAME, S_PTR);				\
       if (_ra_.data) _ra_.size = _ra_.alloc_size = strlen (_ra_.data) + 1; \
       _ra_;								\
@@ -852,7 +852,7 @@
 #define RL_LOAD_XML2_NODE_ARG3(RL_TYPE_NAME, XML, S_PTR) ({		\
       int __status__ = 0;						\
       int __idx__ = -1;							\
-      rl_ra_rl_ptrdes_t __ptrs__ = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, .ext = NULL } }; \
+      rl_ra_rl_ptrdes_t __ptrs__ = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }; \
       rl_fd_t __fd__ = {						\
 	.type = #RL_TYPE_NAME,						\
 	.name = NULL,							\
@@ -957,7 +957,7 @@
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_STRING_IS_NULL);		\
       else								\
 	{								\
-	  rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, .ext = NULL } }; \
+	  rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }; \
 	  _status_ = METHOD (_str_, &_ptrs_);				\
 	  if (0 == _status_)						\
 	    {								\

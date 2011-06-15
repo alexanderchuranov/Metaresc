@@ -31,7 +31,7 @@
 char *
 xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 {
-  rl_rarray_t rl_ra_str = { .data = RL_STRDUP (RL_XML1_DOCUMENT_HEADER), .size = sizeof (RL_XML1_DOCUMENT_HEADER), .alloc_size = sizeof (RL_XML1_DOCUMENT_HEADER), .ext = NULL, };
+  rl_rarray_t rl_ra_str = { .data = RL_STRDUP (RL_XML1_DOCUMENT_HEADER), .size = sizeof (RL_XML1_DOCUMENT_HEADER), .alloc_size = sizeof (RL_XML1_DOCUMENT_HEADER), .ext = { NULL }, };
   int idx = 0;
 
   if (NULL == rl_ra_str.data)

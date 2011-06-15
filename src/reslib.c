@@ -98,21 +98,12 @@ rl_conf_t rl_conf = {
 
 RL_MEM_INIT ( , __attribute__((constructor,weak)));
 
-static rl_td_t *
-rl_get_void_ptr_td (void)
-{
-  rl_td_t * void_ptr_tdp = rl_get_td_by_name ("rl_void_ptr_t");
-  if (NULL == void_ptr_tdp)
-    return (NULL);
-  return (rl_get_td_by_name (void_ptr_tdp->fields.data[0].type));
-}
-
 /**
  * Memory cleanp handler.
  */
 static void __attribute__((destructor)) rl_cleanup (void)
 {
-  rl_td_t * void_ptr_tdp = rl_get_void_ptr_td ();
+  rl_td_t * void_ptr_tdp = rl_get_td_by_name ("rl_ptr_t");
   
   void dummy_free_func (void * nodep) {}
   
@@ -413,7 +404,8 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   ptrdes->fd.param.array_param.row_count = 0;
   ptrdes->fd.param.enum_value = 0;
   ptrdes->fd.comment = NULL;
-  ptrdes->fd.ext = NULL;
+  ptrdes->fd.ext.ptr = NULL;
+  ptrdes->fd.ptr_type = NULL;
   ptrdes->level = 0;
   ptrdes->idx = -1; /* NB! To be initialized in depth search in rl_save */
   ptrdes->ref_idx = -1;
@@ -425,7 +417,8 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   ptrdes->flags = RL_PDF_NONE;
   ptrdes->union_field_idx = 0;
   ptrdes->value = NULL;
-  ptrdes->ext = NULL;
+  ptrdes->ext.ptr = NULL;
+  ptrdes->ptr_type = NULL;
   return (ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1);
 }
 
@@ -727,7 +720,7 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	{
 	  int fields_count = j - i; /* additional trailing element with rl_type = RL_TYPE_TRAILING_RECORD */
 	  static int rl_type_anonymous_union_cnt = 0;
-	  rl_td_t * tdp_ = tdp->fields.data[i].ext; /* statically allocated memory for new type descriptor */
+	  rl_td_t * tdp_ = tdp->fields.data[i].ext.ptr; /* statically allocated memory for new type descriptor */
 	  rl_fd_t * first = &tdp->fields.data[i + 1];
 
 	  tdp_->size = 0;
@@ -749,7 +742,6 @@ rl_anon_unions_extract (rl_td_t * tdp)
 	  sprintf (tdp_->type, RL_TYPE_ANONYMOUS_UNION_TEMPLATE, rl_type_anonymous_union_cnt++);
 	  tdp_->attr = tdp->fields.data[i].comment; /* anonymous union stringified attributes are saved into comments field */
 	  tdp_->comment = tdp->fields.data[count].comment; /* copy comment from RL_END_ANON_UNION record */
-	  tdp_->ext = NULL;
 	  tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
 
 	  tdp->fields.data[i].comment = tdp->fields.data[count].comment; /* copy comment from RL_END_ANON_UNION record */
@@ -1196,7 +1188,7 @@ static int
 rl_register_type_pointer (rl_td_t * tdp)
 {
   rl_fd_t * fdp;
-  rl_td_t * union_tdp = rl_get_void_ptr_td ();
+  rl_td_t * union_tdp = rl_get_td_by_name ("rl_ptr_t");
   if (NULL == union_tdp)
     return (EXIT_FAILURE);
   if (rl_get_fd_by_name (union_tdp, tdp->type))
@@ -1263,7 +1255,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
     tdp->comment = comment;
 
   if (NULL != ext)
-    tdp->ext = ext;
+    tdp->ext.ptr = ext;
 
   rl_anon_unions_extract (tdp);
   rl_check_fields (tdp);

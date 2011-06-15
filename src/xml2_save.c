@@ -44,7 +44,7 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 	    {
 	      char number[RL_INT_TO_STRING_BUF_SIZE];
 	      node->_private = (void*)idx;
-	      ptrs->ra.data[idx].ext = node;
+	      ptrs->ra.data[idx].ext.ptr = node;
 
 	      if (content[0])
 		xmlNodeSetContent (node, (unsigned char*)content);
@@ -66,7 +66,7 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 		xmlSetProp (node, (unsigned char*)RL_ISNULL, (unsigned char*)"true");      
 
 	      if (parent >= 0)
-		xmlAddChild (ptrs->ra.data[parent].ext, node);
+		xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
 	    }
 	}
 
@@ -80,7 +80,7 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 	}
     }
   
-  return (ptrs->ra.data[0].ext);
+  return (ptrs->ra.data[0].ext.ptr);
 }
 
 extern void rl_init_save_xml1 (void);

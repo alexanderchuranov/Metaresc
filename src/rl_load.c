@@ -421,7 +421,21 @@ rl_load_char_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
   int max_size = ptrs->ra.data[idx].fd.param.array_param.count * ptrs->ra.data[idx].fd.size;
   if (str)
     {
-      if (strlen (str) >= max_size)
+      int str_len = strlen (str);
+      if ((0 == strcmp (ptrs->ra.data[idx].fd.type, "rl_char_array_t")) &&
+	  (ptrs->ra.data[idx].parent >= 0) &&
+	  (RL_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.rl_type_ext))
+	{
+	  void * data = RL_REALLOC (ptrs->ra.data[idx].data, str_len + 1);
+	  ptrs->ra.data[idx].data = data;
+	  *(void**)ptrs->ra.data[ptrs->ra.data[idx].parent].data = data;
+	  if (NULL == data)
+	    {
+	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	      return (0);
+	    }
+	}
+      else if (str_len >= max_size)
 	{
 	  str[max_size - 1] = 0;
 	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_STRING_TRUNCATED);
@@ -429,7 +443,7 @@ rl_load_char_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
       strcpy (ptrs->ra.data[idx].data, str);
     }
   else
-    memset (ptrs->ra.data[idx].data, 0, max_size);
+    *(char*)ptrs->ra.data[idx].data = 0;
   return (!0);
 }
 
@@ -446,6 +460,7 @@ rl_load_struct (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   rl_td_t * tdp = rl_get_td_by_name (ptrs->ra.data[idx].fd.type); /* look up for type descriptor */
   char * data = ptrs->ra.data[idx].data;
+  int first_child = ptrs->ra.data[idx].first_child;
   rl_fd_t * fdp;
   
   /* get pointer on structure descriptor */
@@ -455,9 +470,13 @@ rl_load_struct (int idx, rl_ra_rl_ptrdes_t * ptrs)
       return (0);
     }
 
-  fdp = tdp->fields.data;
+  if ((0 == strcmp (tdp->type, "rl_ptr_t")) && (first_child >= 0) && ptrs->ra.data[first_child].fd.type)
+    fdp = rl_get_fd_by_name (tdp, ptrs->ra.data[first_child].fd.type);
+  else
+    fdp = tdp->fields.data;
+  
   /* loop on all subnodes */
-  for (idx = ptrs->ra.data[idx].first_child; idx >= 0; idx = ptrs->ra.data[idx].next)
+  for (idx = first_child; idx >= 0; idx = ptrs->ra.data[idx].next)
     {
       if (ptrs->ra.data[idx].fd.name)
 	fdp = rl_get_fd_by_name (tdp, ptrs->ra.data[idx].fd.name);
@@ -536,7 +555,8 @@ rl_load_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs)
   int idx_;
 
   /* initialize resizeable array */
-  ra->ext = rl_get_td_by_name (fd_.name);
+  ra->ext.ptr = rl_get_td_by_name (fd_.name);
+  ra->ptr_type = "rl_td_t";
   ra->size = ra->alloc_size = 0;
   ra->data = NULL;
 

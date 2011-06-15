@@ -4,12 +4,11 @@
 
 #include <reslib.h>
 
-TYPEDEF_STRUCT (rl_void_ptr_t, ATTRIBUTES ( , "pointer on any type"),
-		ANON_UNION (),
+TYPEDEF_UNION (rl_ptr_t, ATTRIBUTES ( , "pointer on any type"),
 		(void *, ptr, , "default void pointer"),
-		END_ANON_UNION ("type"),
-		(char *, type),
 		)
+
+TYPEDEF_CHAR_ARRAY (rl_char_array_t, 1)
 
 TYPEDEF_ENUM (rl_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      (RL_LL_ALL, = 0),
@@ -114,7 +113,8 @@ TYPEDEF_STRUCT (rl_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable arr
 		(void *, data, , "pointer on data array"),
 		(int32_t, size, , "used space in bytes"),
 		(int32_t, alloc_size, , "allocated space in bytes"),
-		(void *, ext, , "extra pointer for user data"),
+		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
+		(char *, ptr_type, , "union discriminator"),
 		)
 
 TYPEDEF_ENUM (rl_red_black_t, ATTRIBUTES (__attribute__ ((packed,aligned(sizeof (unsigned char)))), "Red/Black enum"),
@@ -162,17 +162,14 @@ TYPEDEF_STRUCT (rl_fd_t, ATTRIBUTES ( , "ResLib field descriptor"),
 		  ext field can be used by user for extended information
 		  placed after comments for tricky intialization
 		  sample:
-		  RL_NONE (void*, ext, , "user extended info", &ext_info_struct)
+		  RL_NONE (void*, ext, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
 		  or
-		  RL_NONE (void*, ext, , "user extended info", .ext = &ext_info_struct)
+		  RL_NONE (void*, ext, , "user extended info", { (ext_info_t[]){ {.field = XXX}, {.field = YYY} } }, "ext_info_t")
 		  or
-		  RL_NONE (void*, ext, , "user extended info", &((ext_info_t){ .field = XXX }))
-		  or
-		  RL_NONE (void*, ext, , "user extended info", (ext_info_t[]){ {.field = XXX}, {.field = YYY} })
-		  or
-		  RL_NONE (void*, ext, , "user extended info", "one more extra string")
+		  RL_NONE (void*, ext, , "user extended info", { "one more extra string" }, "rl_char_array_t")
 		*/
-		(void *, ext, , "extra pointer for user data"),
+		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
+		(char *, ptr_type, , "union discriminator"),
 		)
 
 TYPEDEF_STRUCT (rl_fd_ptr_t, ATTRIBUTES ( , "rl_fd_t pointer wrapper"),
@@ -191,7 +188,8 @@ TYPEDEF_STRUCT (rl_td_t, ATTRIBUTES ( , "ResLib type descriptor"),
 		(int, size, , "size of type"),
 		RARRAY (rl_fd_t, fields, "fields or enums descriptors"),
 		(char *, comment, , "type comments"),
-		(void *, ext, , "extra pointer for user data"),
+		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
+		(char *, ptr_type, , "union discriminator"),
 		) /* type descriptor */
 
 TYPEDEF_STRUCT (rl_td_ptr_t, ATTRIBUTES ( , "rl_td_t pointer wrapper"),
@@ -230,7 +228,8 @@ TYPEDEF_STRUCT (rl_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		BITMASK (rl_ptrdes_flags_t, flags),
 		(int, union_field_idx, , "field descriptor for unions"),
 		(char *, value, , "stringified value"),
-		(void *, ext, , "extra pointer for user data"),
+		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
+		(char *, ptr_type, , "union discriminator"),
 		) /* pointer descriptor */
 
 TYPEDEF_STRUCT (rl_ra_rl_ptrdes_t, ATTRIBUTES ( , "rl_ptrdes_t resizable array"),

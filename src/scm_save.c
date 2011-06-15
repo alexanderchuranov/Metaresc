@@ -47,7 +47,7 @@ static int scm_is_array[RL_MAX_TYPES] = {
 char *
 scm_save (rl_ra_rl_ptrdes_t * ptrs)
 {
-  rl_rarray_t rl_ra_str = { .data = RL_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = NULL, };
+  rl_rarray_t rl_ra_str = { .data = RL_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = { NULL }, };
   int idx = 0;
 
   if (NULL == rl_ra_str.data)

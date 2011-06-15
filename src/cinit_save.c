@@ -39,7 +39,7 @@ static int cinit_named_node[RL_MAX_TYPES] = {
 static char *
 cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*node_handler) (rl_fd_t*, int, rl_ra_rl_ptrdes_t*, rl_save_type_data_t*))
 {
-  rl_rarray_t rl_ra_str = { .data = RL_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = NULL, };
+  rl_rarray_t rl_ra_str = { .data = RL_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = { NULL }, };
   int idx = 0;
 
   if (NULL == rl_ra_str.data)
@@ -61,9 +61,9 @@ cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*no
 	  if (ptrs->ra.data[idx].level > 0)
 	    if (rl_ra_printf (&rl_ra_str, RL_CINIT_INDENT_TEMPLATE, level * RL_CINIT_INDENT_SPACES, "") < 0)
 	      return (NULL);
-	  if (ptrs->ra.data[idx].parent >= 0)
-	    if (RL_TYPE_EXT_NONE == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.rl_type_ext)
-	      named_node = cinit_named_node[ptrs->ra.data[ptrs->ra.data[idx].parent].fd.rl_type];
+	  if ((ptrs->ra.data[idx].parent >= 0) && (RL_TYPE_EXT_NONE == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.rl_type_ext)
+	      && strcmp ("rl_ptr_t", ptrs->ra.data[ptrs->ra.data[idx].parent].fd.type)) /* ugly hack for synthetic type. rl_ptr_t members should be unnamed */
+	    named_node = cinit_named_node[ptrs->ra.data[ptrs->ra.data[idx].parent].fd.rl_type];
 	  if (RL_CINIT_NAMED_FIELDS == named_node)
 	    if (rl_ra_printf (&rl_ra_str, named_field_template, ptrs->ra.data[idx].fd.name) < 0)
 	      return (NULL);
@@ -82,7 +82,8 @@ cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*no
 		return (NULL);
 	      RL_FREE (save_data.content);
 	    }
-	  ptrs->ra.data[idx].ext = save_data.suffix;
+	  ptrs->ra.data[idx].ext.ptr = save_data.suffix;
+	  ptrs->ra.data[idx].ptr_type = "rl_char_array_t";
 	}
       
       if (ptrs->ra.data[idx].first_child >= 0)
@@ -103,12 +104,12 @@ cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*no
 	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra.data[idx].parent;
-	      if (ptrs->ra.data[idx].ext)
+	      if (ptrs->ra.data[idx].ext.ptr)
 		{
 		  level = RL_LIMIT_LEVEL (ptrs->ra.data[idx].level);
 		  if (rl_ra_printf (&rl_ra_str, RL_CINIT_INDENT_TEMPLATE, level * RL_CINIT_INDENT_SPACES, "") < 0)
 		    return (NULL);
-		  if (rl_ra_printf (&rl_ra_str, "%s", (char*)ptrs->ra.data[idx].ext) < 0)
+		  if (rl_ra_printf (&rl_ra_str, "%s", (char*)ptrs->ra.data[idx].ext.ptr) < 0)
 		    return (NULL);
 		  if (idx != 0)
 		    if (rl_ra_printf (&rl_ra_str, RL_CINIT_FIELDS_DELIMITER) < 0)
