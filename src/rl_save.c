@@ -3,7 +3,8 @@
 /* This file is part of ResLib project */
 
 #include <tsearch.h>
-#include <endian.h>
+#include <rlconfig.h>
+#include ENDIAN_H
 
 #ifdef HAVE_CONFIG_H
 # include <rlconfig.h>
