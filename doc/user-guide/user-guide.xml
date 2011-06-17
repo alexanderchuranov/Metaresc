@@ -611,29 +611,6 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
     <section>
       <title>Declaring structures</title>
       <para>
-        The first thing you should do in order to serialize something is
-        to declare a structure. Technically, METARESC is able to work
-        with variables of built-in types directly. The code below is perfectly
-        legal:
-        <programlisting language="c"><xi:include
-          href="../../examples/justabuiltin.c"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-        This program produces output like this:
-        <screen><![CDATA[<?xml version="1.0"?>
-<x>5</x>]]></screen>
-      </para>
-      
-      <para>
-        However if the serialization was all about writing a single
-        integer value in the textual form, would anyone implement a
-        feature-rich library for that? Naturally, the most anticipated
-        way of serializing data is calling a library function (or
-        macro) and passing a pointer to structure variable. This
-        sturcture would include other structures and point to other
-        variables of built-in or user-defined types. So, on to
-        structures.
       </para>
       
       <para>
@@ -642,7 +619,7 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
         first argument is a type name and the rest is the list of
         structure fields. Fields declarations have form
         <code>[FIELD_TYPE] (type, name, [suffix], [comment], [extra
-        pointer])</code>.  <code>FIELD_TYPE</code> denotes internal
+        pointer])</code>. <code>FIELD_TYPE</code> denotes internal
         library types. The full list is:
         
 	<variablelist>
@@ -658,8 +635,6 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
       </para>
       
       <para>
-        The following example summarizes all that: it just declares a
-        structure. Empty, without any members.
         <programlisting language="c"><xi:include
           href="../../examples/emptystruct.h"
           parse="text"
@@ -671,11 +646,6 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
     <section>
       <title>Declaring built-in types</title>
       <para>
-        The library has two facilities for declaring fields of the
-        structure to be integer of floating-point types:
-        <code>RL_AUTO</code> and type-specific macros. Using
-        <code>RL_AUTO</code> is easier, you have to specify the type
-        and the name of the variable, as shown in the example below.
         <programlisting language="c"><xi:include
           href="../../examples/builtins_auto.h"
           parse="text"
