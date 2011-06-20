@@ -6,7 +6,12 @@
 #include <reslib.h>
 #include <rlconfig.h>
 #include <math.h>
-#include ENDIAN_H
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#endif /* HAVE_ENDIAN_H */
+#ifdef HAVE_MACHINE_ENDIAN_H
+#include <machine/endian.h>
+#endif /* HAVE_MACHINE_ENDIAN_H */
 
 #define RL_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   static char * rl_output_format_ ## TYPE (rl_ptrdes_t * ptrdes) {	\

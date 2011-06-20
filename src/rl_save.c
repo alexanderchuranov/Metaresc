@@ -4,7 +4,12 @@
 
 #include <tsearch.h>
 #include <rlconfig.h>
-#include ENDIAN_H
+#ifdef HAVE_ENDIAN_H
+#include <endian.h>
+#endif /* HAVE_ENDIAN_H */
+#ifdef HAVE_MACHINE_ENDIAN_H
+#include <machine/endian.h>
+#endif /* HAVE_MACHINE_ENDIAN_H */
 
 #ifdef HAVE_CONFIG_H
 # include <rlconfig.h>
