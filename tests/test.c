@@ -12,6 +12,7 @@
 # include <rlconfig.h>
 #endif /* HAVE_CONFIG_H */
 
+#include <reslib.h>
 #define BUF_SIZE (65536)
 typedef char str_t[16];
 #define RL_MODE PROTO
@@ -24,28 +25,7 @@ typedef char str_t[16];
 static void
 free_sample (sample_t * sample_)
 {
-  if (sample_->union_str_discriminator)
-    RL_FREE (sample_->union_str_discriminator);
-  if (sample_->string)
-    RL_FREE (sample_->string);
-  if (sample_->string_zero)
-    RL_FREE (sample_->string_zero);
-  if (sample_->string_full)
-    RL_FREE (sample_->string_full);
-  if (sample_->rarray.data)
-    RL_FREE (sample_->rarray.data);
-  if (sample_->rarray_.data)
-    RL_FREE (sample_->rarray_.data);
-  if (sample_->ptr_external)
-    RL_FREE ((void*)sample_->ptr_external);
-  if (sample_->typename_with_spaces)
-    RL_FREE (sample_->typename_with_spaces);
-  if (sample_->ptr_int8)
-    RL_FREE (sample_->ptr_int8);
-  if (sample_->ptr_uint8)
-    RL_FREE (sample_->ptr_uint8);
-  if (sample_->ptr_char)
-    RL_FREE (sample_->ptr_char);
+  RL_FREE_RECURSIVELY (sample_t, sample_);
 }
 
 static void rl_mem_init_custom (void)
@@ -141,7 +121,7 @@ static int test_hash ()
 int
 main (void)
 {
-  rl_output_format_t old_uint8 = rl_output_format[RL_TYPE_UINT8];
+  rl_output_format_t old_uint8 = rl_conf.output_format[RL_TYPE_UINT8];
   char * str = NULL;
   XDR xdrs;
   rl_rarray_t ra;
@@ -188,6 +168,9 @@ main (void)
     ._int = -1,
     ._int64 = -1 ^ ((uint64_t)-1 >> 1),
     ._uint64 = (uint64_t)-1,
+    .b1 = NONE,
+    .b2 = READ,
+    .b3 = WRITE,
     ._float = M_E,
     ._double = M_PI,
     .ld = -M_PI,
@@ -221,7 +204,7 @@ main (void)
     .array2d = {{1 ,2 }, {3, 4}, {5, 6}},
     .array_none = {{'e'}, {'f'}},
     .rarray = { .data = (char_t[]){{'g'}, {'h'}}, .size = 2 },
-    .rarray_ = { .data = "ijk", .size = 4 },
+    .rarray_1 = { .data = "ijk", .size = 4 },
     .rarray_empty = { .data = NULL, .size = 0 },
     ._void = NULL,
     .next = &sample,
@@ -237,7 +220,8 @@ main (void)
 
 #if 1
   point.sample = &sample;
-  sample.ptr_char_ = &sample.rarray_.data[3];
+  memcpy (&sample.rarray_2, &sample.rarray_1, sizeof (sample.rarray_1));
+  sample.ptr_char_ = &sample.rarray_1.data[3];
   sample._void = &sample.string_empty;
   
 #ifdef HAVE_LIBXML2
@@ -249,14 +233,14 @@ main (void)
   char * format_double(rl_ptrdes_t * ptrdes) { char str[RL_FLOAT_TO_STRING_BUF_SIZE] = ""; sprintf (str, "%.20g", *(double*)ptrdes->data); return RL_STRDUP (str); }
   char * format_uint8(rl_ptrdes_t * ptrdes) {
     char str[RL_INT_TO_STRING_BUF_SIZE] = "";
-    if ((NULL == ptrdes->fd.ext) || (NULL == ((meta_info_t*)ptrdes->fd.ext)->format))
+    if ((NULL == ptrdes->fd.ext.ptr) || (NULL == ((meta_info_t*)ptrdes->fd.ext.ptr)->format))
       return (old_uint8 (ptrdes));
-    sprintf (str, ((meta_info_t*)ptrdes->fd.ext)->format, *(int8_t*)ptrdes->data);
+    sprintf (str, ((meta_info_t*)ptrdes->fd.ext.ptr)->format, *(int8_t*)ptrdes->data);
     return (RL_STRDUP (str));
   }
-  rl_output_format[RL_TYPE_FLOAT] = format_float;
-  rl_output_format[RL_TYPE_DOUBLE] = format_double;
-  rl_output_format[RL_TYPE_UINT8] = format_uint8;
+  rl_conf.output_format[RL_TYPE_FLOAT] = format_float;
+  rl_conf.output_format[RL_TYPE_DOUBLE] = format_double;
+  rl_conf.output_format[RL_TYPE_UINT8] = format_uint8;
 
   xdrmem_create (&xdrs, xdr_orig, sizeof (xdr_orig), XDR_ENCODE);
   if (0 == RL_SAVE_XDR (sample_t, &xdrs, &sample))
@@ -471,7 +455,7 @@ main (void)
   printf ("XDR size = %d\n", XDR_GETPOS (&xdrs));
 #endif
 
-  rl_type_t x = RL_TYPE_DETECT (typeof (volatile const char*));
+  rl_type_t x = RL_TYPE_DETECT (typeof (.0));
   str = RL_SAVE_CINIT (rl_type_t, &x);
   if (str)
     {
@@ -492,11 +476,19 @@ main (void)
       printf ("\n");
       RL_FREE (str);
     }
+
+  ieee754_float_t ie;
+  ie.f = M_PI * 2;
+  str = RL_SAVE_CINIT (ieee754_float_t, &ie);
+  if (str)
+    {
+      printf ("emp = %s\n", str);
+      RL_FREE (str);
+    }
+
 #ifdef HAVE_LIBXML2 
   /* Clean up everything else before quitting. */
   xmlCleanupParser();
 #endif /* HAVE_LIBXML2 */
   return (EXIT_SUCCESS);
 }
-
-
