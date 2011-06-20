@@ -4,6 +4,8 @@
 *.o
 *.tab.[ch]
 /Makefile.in
+COPYING
+INSTALL
 aclocal.m4
 autom4te.cache/*
 config.guess
@@ -20,6 +22,7 @@ missing
 examples/Makefile.in
 src/.deps/*
 src/.libs/*
+src/rlpp.h
 src/stamp-h1
 src/stamp-h2
 tests/.deps/*

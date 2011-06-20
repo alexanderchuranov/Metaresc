@@ -4,7 +4,7 @@
   
   <info>
     <title>
-      METARESC library reference
+      METARESC Library User Guide
     </title>
 
     <author>
@@ -390,7 +390,7 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
           
           The ordinary type declaration has no specific impact on the
           CPU and memory usage, since it is exactly the same you would
-          declare if METARECS was not used. Metadata, however,
+          declare if METARESC was not used. Metadata, however,
           occupies space in the executable file both on disk and in
           memory, when loaded. Functions for working with metadata
           not only also occupy space, but get executed when the
@@ -610,40 +610,119 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
     
     <section>
       <title>Declaring structures</title>
+      
       <para>
-        The first thing you should do in order to serialize something is
-        to declare a structure. Technically, METARESC is able to work
-        with variables of built-in types directly. The code below is perfectly
-        legal:
+        In METARESC language the structure is declared using
+        <code>TYPEDEF_STRUCT</code> variadic macro, that is with
+        variable number of arguments. The first argument is an
+        identifier - the name of the structure and the rest is the
+        list of field declarations. Recall the example from the
+        previous chapter:
+        
         <programlisting language="c"><xi:include
-          href="../../examples/justabuiltin.c"
+          href="../../examples/simple_structure.h"
           parse="text"
           xmlns:xi="http://www.w3.org/2003/XInclude"
         /></programlisting>
-        This program produces output like this:
-        <screen><![CDATA[<?xml version="1.0"?>
-<x>5</x>]]></screen>
       </para>
       
       <para>
-        However if the serialization was all about writing a single
-        integer value in the textual form, would anyone implement a
-        feature-rich library for that? Naturally, the most anticipated
-        way of serializing data is calling a library function (or
-        macro) and passing a pointer to structure variable. This
-        sturcture would include other structures and point to other
-        variables of built-in or user-defined types. So, on to
-        structures.
+        Fields of the structure may be of standard C types,
+        user-defined types and types, specific to METARESC. Field
+        declarations for standard and user-defined types have
+        following form:
+        
+        <programlisting language="c">( type, name, suffix<subscript>opt</subscript>, comment<subscript>opt</subscript>, user-data<subscript>opt</subscript> )</programlisting>
+        
+        The first two arguments specify field type and name. Other
+        three arguments are optional. If any of optional arguments is
+        used in a declaration, then the previous optional argument
+        must be specified too. That is to have a comment you need to
+        specify type suffix as well:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/suffixes_comments_userdata.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
       </para>
       
       <para>
-        In METARESC the structure body is declared using
-        <code>TYPEDEF_STRUCT</code> macro. It is variadic macro. The
-        first argument is a type name and the rest is the list of
-        structure fields. Fields declarations have form <code>[FIELD_TYPE]
-          (type, name, [suffix], [comment], [extra
-        pointer])</code>. <code>FIELD_TYPE</code> denotes internal 
+        The type suffix argument is used for declaring arrays with
+        fixed number of elements. METARESC is able to recognize one-
+        and two- dimensional arrays. If you need to specify a type
+        prefix as well, you should put in into the type field, so that
+        a two-dimensional array of pointers to pointers to int looks
+        like this:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/type_prefixes.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+      </para>
+      
+      <para>
+        The comment and user-data fields are useful if you are
+        accessing metadata for yor types programmatically at
+        run-time. The comment argument of field declaration is any
+        text you may find useful to "attach" to the field. The
+        user-data argument is a <code>void*</code> pointer, treated by
+        the library as opaque data. It may point to any statically
+        allocated object with external linkage (a global variable, for
+        example). The alternative is simply using the user-data field
+        for a second coment field.
+      </para>
+      
+      <para>
+        Structures may also have fields of METARESC-specific
+        types. For more information see <xref linkend="lib-specific-types"/>.
+      </para>
+    </section>
+    
+    <section>
+      <title>Declaring basic types</title>
+      <para>
+        METARESC supports all basic C types, defined in ISO 9899:1999
+        (see section 6.2.5, paragraph 14). The supported types are
+        listed in the following code sample:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/builtins.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+      </para>
+    </section>
+    
+    <section>
+      <title>Declaring enumerations</title>
+      <para/>
+    </section>
+    
+    <section>
+      <title>Declaring unions</title>
+      <para/>
+    </section>
+    
+    <section>
+      <title>Declaring functions</title>
+      <para/>
+    </section>
+    
+    <section>
+      <title>Declaring bit-fields</title>
+      <para/>
+    </section>
+    
+    <section xml:id="lib-specific-types">
+      <title>Data types, provided by the library</title>
+      <para>
+        <programlisting language="c">[FIELD_TYPE] (type, name,
+        [suffix], [comment], [extra pointer])</programlisting>
+        <code>FIELD_TYPE</code> denotes internal
         library types. The full list is:
+        
 	<variablelist>
 	  <varlistentry>
 	    <term>NONE</term>
@@ -653,32 +732,7 @@ cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
 	      </para>
 	    </listitem>
 	  </varlistentry>
-      </para>
-      
-      <para>
-        The following example summarizes all that: it just declares a
-        structure. Empty, without any members.
-        <programlisting language="c"><xi:include
-          href="../../examples/emptystruct.h"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-      </para>
-    </section>
-    
-    <section>
-      <title>Declaring built-in types</title>
-      <para>
-        The library has two facilities for declaring fields of the
-        structure to be integer of floating-point types:
-        <code>RL_AUTO</code> and type-specific macros. Using
-        <code>RL_AUTO</code> is easier, you have to specify the type
-        and the name of the variable, as shown in the example below.
-        <programlisting language="c"><xi:include
-          href="../../examples/builtins_auto.h"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
+        </variablelist>
       </para>
     </section>
     

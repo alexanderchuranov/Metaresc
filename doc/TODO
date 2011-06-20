@@ -1,0 +1,2 @@
+* verify that macro arguments are positional
+* verify that user-data must be enclosed in braces

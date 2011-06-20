@@ -3,14 +3,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <builtins_auto.h>
+#include <builtins.h>
 
 int
 main (int argc, char * argv[])
 {
-  builtins_auto_t b;
+  builtins_t b;
   memset (&b, -1, sizeof (b));
-  char * str = RL_SAVE_XML (builtins_auto_t, &b);
+  char * str = RL_SAVE_XML (builtins_t, &b);
   if (str)
     {
       puts (str);

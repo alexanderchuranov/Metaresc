@@ -1,6 +1,6 @@
 
-SOURCE = reference.xml
-HTML_DEST = ${HOME}/web/nginx-root/html/metaresc/reference
+SOURCE = user-guide.xml
+HTML_DEST = ${HOME}/web/nginx-root/html/metaresc/user-guide
 
 # docbook stuff
 

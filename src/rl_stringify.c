@@ -4,8 +4,9 @@
 
 #define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
+#include <rlconfig.h>
 #include <math.h>
-#include <endian.h>
+#include ENDIAN_H
 
 #define RL_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   static char * rl_output_format_ ## TYPE (rl_ptrdes_t * ptrdes) {	\

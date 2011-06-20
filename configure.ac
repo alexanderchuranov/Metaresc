@@ -67,6 +67,22 @@ AC_FUNC_ALLOCA
 AC_HEADER_STDC
 AC_CHECK_HEADERS([inttypes.h libintl.h malloc.h stddef.h stdlib.h string.h unistd.h])
 
+AC_MSG_CHECKING([for endian.h])
+# Linux non-standard location
+if test -e /usr/include/endian.h; then
+  AC_DEFINE(ENDIAN_H, </usr/include/endian.h>, [ path to endian.h ])
+  AC_MSG_RESULT([/usr/include/endian.h])
+else
+# BSD non-standard location
+  if test -e /usr/include/machine/endian.h; then
+    AC_DEFINE(ENDIAN_H, </usr/include/machine/endian.h>, [ path to endian.h ])
+    AC_MSG_RESULT([/usr/include/machine/endian.h])
+  else
+# There is no standard location :-)
+    AC_MSG_FAILURE([endian.h not found])
+  fi
+fi
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
 AC_C_CONST
