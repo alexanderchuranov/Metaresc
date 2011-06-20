@@ -52,3 +52,5 @@ code {
 li {
     margin-left: 2em;
 }
+
+sub { font-style: italic; }
