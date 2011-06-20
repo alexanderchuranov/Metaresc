@@ -170,7 +170,7 @@ rl_get_int (uint64_t * data, char * str)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_none (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_none (int idx, rl_load_data_t * load_data)
 {
   return (!0);
 }
@@ -182,8 +182,9 @@ rl_load_none (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_integer (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_integer (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * str = ptrs->ra.data[idx].value;
   uint64_t value;
   
@@ -215,8 +216,9 @@ rl_load_integer (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_enum (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_enum (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * str = ptrs->ra.data[idx].value;
   char * tail;
   rl_td_t * tdp = rl_get_td_by_name (ptrs->ra.data[idx].fd.type);
@@ -242,7 +244,7 @@ rl_load_enum (int idx, rl_ra_rl_ptrdes_t * ptrs)
 	  return (!0);
 	}
     }
-  return (rl_load_integer (idx, ptrs));
+  return (rl_load_integer (idx, load_data));
 }
 
 /**
@@ -253,8 +255,9 @@ rl_load_enum (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_bitfield (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_bitfield (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   rl_ptrdes_t * ptrdes = &ptrs->ra.data[idx];
   uint64_t value = 0;
   char * str = rl_get_int (&value, ptrdes->value);
@@ -276,8 +279,9 @@ rl_load_bitfield (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_bitmask (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_bitmask (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * str = ptrs->ra.data[idx].value;
   int64_t value = 0;
   
@@ -316,8 +320,9 @@ rl_load_bitmask (int idx, rl_ra_rl_ptrdes_t * ptrs)
  */
 #define RL_LOAD_FLOAT_TYPE(TYPE, FORMAT, ERROR_ENUM)			\
   static int								\
-  rl_load_ ## TYPE (int idx, rl_ra_rl_ptrdes_t * ptrs)			\
+  rl_load_ ## TYPE (int idx, rl_load_data_t * load_data)		\
   {									\
+    rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;				\
     char * str = ptrs->ra.data[idx].value;				\
     int offset;								\
     if (NULL == str)							\
@@ -352,8 +357,9 @@ RL_LOAD_FLOAT_TYPE (long_double_t, "%Lg", RL_MESSAGE_READ_LONG_DOUBLE)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_char (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_char (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * str = ptrs->ra.data[idx].value;
   int status = !0;
   
@@ -397,8 +403,9 @@ rl_load_char (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_string (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * str = ptrs->ra.data[idx].value;
   if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
     *(char**)ptrs->ra.data[idx].data = NULL;
@@ -415,8 +422,9 @@ rl_load_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_char_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_char_array (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * str = ptrs->ra.data[idx].value;
   int max_size = ptrs->ra.data[idx].fd.param.array_param.count * ptrs->ra.data[idx].fd.size;
   if (str)
@@ -456,8 +464,9 @@ rl_load_char_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_struct (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_struct (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   rl_td_t * tdp = rl_get_td_by_name (ptrs->ra.data[idx].fd.type); /* look up for type descriptor */
   char * data = ptrs->ra.data[idx].data;
   int first_child = ptrs->ra.data[idx].first_child;
@@ -486,7 +495,7 @@ rl_load_struct (int idx, rl_ra_rl_ptrdes_t * ptrs)
 	  return (0);
 	}
       /* recursively load subnode */
-      if (!rl_load (&data[fdp->offset], fdp, idx, ptrs))
+      if (!rl_load (&data[fdp->offset], fdp, idx, load_data))
 	return (0);
       
       ++fdp;
@@ -504,8 +513,9 @@ rl_load_struct (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_array (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * data = ptrs->ra.data[idx].data;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
   int row_count = fd_.param.array_param.row_count;
@@ -530,7 +540,7 @@ rl_load_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
 	  return (0);
 	}
 	/* load recursively */
-	if (!rl_load (&data[i * fd_.size], &fd_, idx, ptrs))
+	if (!rl_load (&data[i * fd_.size], &fd_, idx, load_data))
 	  return (0);
 	i += row_count;
       }
@@ -546,8 +556,9 @@ rl_load_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_rarray (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   rl_rarray_t * ra = ptrs->ra.data[idx].data;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
   char * name = NULL;
@@ -601,7 +612,7 @@ rl_load_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs)
       
       for (idx = ptrs->ra.data[idx].first_child; idx >= 0; idx = ptrs->ra.data[idx].next) /* loop on subnodes */
 	{
-	  if (!rl_load (((char*)ra->data) + count * fd_.size, &fd_, idx, ptrs))
+	  if (!rl_load (((char*)ra->data) + count * fd_.size, &fd_, idx, load_data))
 	    return (0);
 	  ++count;
 	}
@@ -610,8 +621,9 @@ rl_load_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs)
 }
 
 static int
-rl_load_pointer_postponed (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_pointer_postponed (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   void ** data = ptrs->ra.data[idx].data;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
   fd_.rl_type_ext = RL_TYPE_EXT_NONE;
@@ -624,7 +636,7 @@ rl_load_pointer_postponed (int idx, rl_ra_rl_ptrdes_t * ptrs)
     }
   memset (*data, 0, fd_.size);
   /* load recursively */
-  return (rl_load (*data, &fd_, ptrs->ra.data[idx].first_child, ptrs));
+  return (rl_load (*data, &fd_, ptrs->ra.data[idx].first_child, load_data));
 }
 
 /**
@@ -635,8 +647,9 @@ rl_load_pointer_postponed (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_pointer (int idx, rl_load_data_t * load_data)
 {
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   void ** data = ptrs->ra.data[idx].data;
   /* default initializer */
   *data = NULL;
@@ -649,7 +662,7 @@ rl_load_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs)
     RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNEXPECTED_DATA);
   else
     {
-      int * idx_ = rl_rarray_append (ptrs->ra.ext, sizeof (int));
+      int * idx_ = rl_rarray_append ((void*)&load_data->rl_ra_idx, sizeof (load_data->rl_ra_idx.data[0]));
       if (NULL == idx_)
 	return (0);
       *idx_ = idx;
@@ -667,7 +680,7 @@ rl_load_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_anon_union (int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load_anon_union (int idx, rl_load_data_t * load_data)
 {
   /*
     Anonimous unions in C init style saved as named field folowed by union itself. Named field has type of zero length static string and must be inited by empty string. Here is an example.
@@ -675,6 +688,7 @@ rl_load_anon_union (int idx, rl_ra_rl_ptrdes_t * ptrs)
       .union_float = 3.1415927410,
     },
    */
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   int next = ptrs->ra.data[idx].next;
   if ((ptrs->ra.data[idx].first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
       ptrs->ra.data[idx].value && (0 == ptrs->ra.data[idx].value[0]) && /* content must be an empty string */
@@ -684,7 +698,7 @@ rl_load_anon_union (int idx, rl_ra_rl_ptrdes_t * ptrs)
 	ptrs->ra.data[next].fd.name = RL_STRDUP (ptrs->ra.data[idx].fd.name);
       return (!0); /* now next node has a name and will be loaded by top level procedure */
     }
-  return (rl_load_struct (idx, ptrs));
+  return (rl_load_struct (idx, load_data));
 }
 
 int
@@ -722,16 +736,18 @@ rl_free_ptrs (rl_ra_rl_ptrdes_t ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 int
-rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
+rl_load (void * data, rl_fd_t * fdp, int idx, rl_load_data_t * load_data)
 {
   int status = 0;
-  RL_RARRAY_PROTO ( ,int, rl_ra_idx);
+  rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
 
-  rl_ra_idx.data = NULL;
-  rl_ra_idx.size = 0;
-  if (NULL == ptrs->ra.ext)
-    ptrs->ra.ext = &rl_ra_idx;
-
+  if (0 == idx)
+    {
+      load_data->rl_ra_idx.data = NULL;
+      load_data->rl_ra_idx.size = 0;
+      load_data->rl_ra_idx.alloc_size = 0;
+    }
+  
   if ((idx < 0) || (idx >= ptrs->ra.size / sizeof (ptrs->ra.data[0])))
     {
       RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_SAVE_IDX_RANGE_CHECK);
@@ -768,25 +784,30 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_ra_rl_ptrdes_t * ptrs)
   /* route loading */
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
       && rl_conf.io_ext_handlers[fdp->rl_type_ext].load.rl)
-    status = rl_conf.io_ext_handlers[fdp->rl_type_ext].load.rl (idx, ptrs);
+    status = rl_conf.io_ext_handlers[fdp->rl_type_ext].load.rl (idx, load_data);
   else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
 	   && rl_conf.io_handlers[fdp->rl_type].load.rl)
-    status = rl_conf.io_handlers[fdp->rl_type].load.rl (idx, ptrs);
+    status = rl_conf.io_handlers[fdp->rl_type].load.rl (idx, load_data);
   else
     RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
 
   /* set cross references at the upper level */
   if (0 == idx)
     {
-      while (rl_ra_idx.size > 0)
+      while (load_data->rl_ra_idx.size > 0)
 	{
-	  rl_ra_idx.size -= sizeof (rl_ra_idx.data[0]);
-	  rl_load_pointer_postponed (rl_ra_idx.data[rl_ra_idx.size / sizeof (rl_ra_idx.data[0])], ptrs);
+	  load_data->rl_ra_idx.size -= sizeof (load_data->rl_ra_idx.data[0]);
+	  rl_load_pointer_postponed (load_data->rl_ra_idx.data[load_data->rl_ra_idx.size / sizeof (load_data->rl_ra_idx.data[0])], load_data);
 	}
       if (status)
 	status = rl_set_crossrefs (ptrs);
-      if (rl_ra_idx.data)
-	RL_FREE (rl_ra_idx.data);
+      if (load_data->rl_ra_idx.data)
+	{
+	  RL_FREE (load_data->rl_ra_idx.data);
+	  load_data->rl_ra_idx.data = NULL;
+	  load_data->rl_ra_idx.size = 0;
+	  load_data->rl_ra_idx.alloc_size = 0;
+	}
     }
   
   return (status);

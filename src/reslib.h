@@ -446,7 +446,7 @@
 #define RL_POINTER_PROTO(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, TYPE *, NAME, )
 #define RL_POINTER_STRUCT_PROTO(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, struct RL_TYPEDEF_PREFIX (TYPE) *, NAME, )
 /* rarray defenition should be syncroonized with rl_rarray_t type definition */
-#define RL_RARRAY_PROTO(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; int32_t size; int32_t alloc_size; void * ext;}, NAME, )
+#define RL_RARRAY_PROTO(RL_TYPE_NAME, TYPE, NAME, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; int32_t size; int32_t alloc_size; rl_ptr_t ext; char * ptr_type;}, NAME, )
 #define RL_FUNC_PROTO(RL_TYPE_NAME, TYPE, NAME, ARGS, COM...) RL_FIELD_PROTO (RL_TYPE_NAME, TYPE, (*NAME), ARGS)
 #define RL_END_STRUCT_PROTO(RL_TYPE_NAME, COM...) };
 
@@ -852,7 +852,9 @@
 #define RL_LOAD_XML2_NODE_ARG3(RL_TYPE_NAME, XML, S_PTR) ({		\
       int __status__ = 0;						\
       int __idx__ = -1;							\
-      rl_ra_rl_ptrdes_t __ptrs__ = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }; \
+      rl_load_data_t __load_data__ = {					\
+	.ptrs = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }, \
+	.rl_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, };	\
       rl_fd_t __fd__ = {						\
 	.type = #RL_TYPE_NAME,						\
 	.name = NULL,							\
@@ -879,12 +881,12 @@
 	    __fd__.rl_type = __tdp__->rl_type;				\
 	  RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
 	  if (NULL != __check_type__) 					\
-	    __idx__ = xml2_load (__xml__, &__ptrs__);			\
+	    __idx__ = xml2_load (__xml__, &__load_data__.ptrs);		\
 	  else								\
 	    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
 	  if (__idx__ >= 0)						\
-	    __status__ = rl_load (__check_type__, &__fd__, __idx__, &__ptrs__); \
-	  rl_free_ptrs (__ptrs__);					\
+	    __status__ = rl_load (__check_type__, &__fd__, __idx__, &__load_data__); \
+	  rl_free_ptrs (__load_data__.ptrs);				\
 	}								\
       __status__;							\
     })
@@ -957,8 +959,10 @@
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_STRING_IS_NULL);		\
       else								\
 	{								\
-	  rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }; \
-	  _status_ = METHOD (_str_, &_ptrs_);				\
+	  rl_load_data_t _load_data_ = {				\
+	    .ptrs = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }, \
+	    .rl_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, }; \
+	  _status_ = METHOD (_str_, &_load_data_.ptrs);			\
 	  if (0 == _status_)						\
 	    {								\
 	      rl_fd_t _fd_ = {						\
@@ -979,9 +983,9 @@
 	      rl_td_t * _tdp_ = rl_get_td_by_name (_fd_.type);		\
 	      if (_tdp_)						\
 		_fd_.rl_type = _tdp_->rl_type;				\
-	      _status_ = rl_load (_check_type_, &_fd_, 0, &_ptrs_);	\
+	      _status_ = rl_load (_check_type_, &_fd_, 0, &_load_data_); \
 	    }								\
-	  rl_free_ptrs (_ptrs_);					\
+	  rl_free_ptrs (_load_data_.ptrs);				\
 	}								\
       _status_;								\
     })
@@ -1071,7 +1075,7 @@ extern int __attribute__ ((sentinel(0))) rl_add_type (rl_td_t*, char*, ...);
 extern char * rl_read_xml_doc (FILE*);
 
 extern void rl_save (void*, rl_fd_t*, rl_save_data_t*);
-extern int rl_load (void*, rl_fd_t*, int, rl_ra_rl_ptrdes_t*);
+extern int rl_load (void*, rl_fd_t*, int, rl_load_data_t*);
 #ifdef HAVE_LIBXML2
 extern xmlNodePtr xml2_save (rl_ra_rl_ptrdes_t*);
 extern int xml2_load (xmlNodePtr, rl_ra_rl_ptrdes_t*);

@@ -118,7 +118,7 @@ static void __attribute__((destructor)) rl_cleanup (void)
     return (0);
   }
 
-  if (void_ptr_tdp)
+  if ((void_ptr_tdp) && (void_ptr_tdp->fields.alloc_size > 0) && (void_ptr_tdp->fields.data))
     {
       RL_FREE (void_ptr_tdp->fields.data);
       void_ptr_tdp->fields.data = NULL;
@@ -1249,7 +1249,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   for (count = 0; RL_TYPE_TRAILING_RECORD != tdp->fields.data[count].rl_type; ++count);
   tdp->fields.size = count * sizeof (tdp->fields.data[0]);
   tdp->fields.alloc_size = -1;
-  tdp->fields.ext = NULL;
+  tdp->fields.ext.ptr = NULL;
   
   if ((NULL != comment) && comment[0])
     tdp->comment = comment;

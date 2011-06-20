@@ -261,8 +261,13 @@ TYPEDEF_STRUCT (rl_load_t, ATTRIBUTES ( , "ResLib load parser data"),
 		(rl_ra_rl_ptrdes_t *, ptrs, , "resizable array with rl_ptrdes_t"),
 		)
 
+TYPEDEF_STRUCT (rl_load_data_t,
+		(rl_ra_rl_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
+		RARRAY (int, rl_ra_idx, "indexes of postponed nodes"),
+		)
+
 TYPEDEF_STRUCT (rl_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
-		(rl_ra_rl_ptrdes_t, ptrs, , "internal representation of saved tree"),
+		(rl_ra_rl_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(int, parent, , "index of current parent"),
 		(rl_red_black_tree_node_t *, typed_ptrs_tree, , "B-tree with typed nodes"),
 		(rl_red_black_tree_node_t *, untyped_ptrs_tree, , "B-tree with untyped nodes"),
@@ -270,7 +275,7 @@ TYPEDEF_STRUCT (rl_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		)
 
 TYPEDEF_STRUCT (rl_load_io_t, ATTRIBUTES ( , "load handlers"),
-		(int, rl, (int, rl_ra_rl_ptrdes_t*), "handler for internal format parsing"),
+		(int, rl, (int, rl_load_data_t*), "handler for internal format parsing"),
 		(int, xdr, (XDR*, int, rl_ra_rl_ptrdes_t*), "handler for XDR parsing"),
 		)
 
