@@ -1,6 +1,11 @@
 
 #include <reslib.h>
 
-TYPEDEF_STRUCT (example_t,
-                (int**, a, [11][3])
+typedef struct {
+  int x, *p;
+} s1_t;
+
+TYPEDEF_STRUCT (s2_t,
+                (int, x),
+                (int*, p)
                 )
