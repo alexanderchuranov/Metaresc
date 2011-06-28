@@ -20,12 +20,12 @@ TYPEDEF_ENUM (mask_t,
 	      (NONE, = 0),
 	      (READ, = (1 << 0)),
 	      (WRITE, = (1 << 1)),
-	      (EXEC, = (1 << 2)),
+	      (EXEC, = (1 << 2), "RL_ENUM_DEF_ARGN test", { "RL_ENUM_DEF_ARGN meta" }, "rl_char_array_t"),
 	      )
 
 TYPEDEF_STRUCT (point_t,
 		ATTRIBUTES (__attribute__((packed)), "Comment on struct", { &((meta_info_t){.meta_type = SIMPLE, .info = "comment struct",})}, "meta_info_t"),
-		FLOAT (x, "Comment", {&((meta_info_t){.meta_type = SIMPLE, .info = "comment field",})}, "meta_info_t"),
+		(float, x, , "Comment", {&((meta_info_t){.meta_type = SIMPLE, .info = "comment field",})}, "meta_info_t"),
 		DOUBLE (y, "Comment", {"ext comment"}, "rl_char_array_t"),
 		POINTER_STRUCT (sample_t, sample),
 		)
