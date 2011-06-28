@@ -639,7 +639,7 @@
          used in a declaration, then the previous optional argument
          must be specified too. That is to have a comment you need to
          specify type suffix as well:
-
+         
          <programlisting language="c"><xi:include
            href="../../examples/suffixes_comments_userdata.h"
            parse="text"
@@ -689,8 +689,12 @@
        </para>
 
        <para>
+         For some field types the field declaration grammar is more
+         involved. Most notable are anonymous unions and bit-fields.
          Structures may also have fields of METARESC-specific
-         types. For more information see <xref linkend="lib-specific-types"/>.
+         types. For more information see <xref
+         linkend="decl-unions"/>, <xref linkend="decl-bfields"/> and
+         <xref linkend="lib-specific-types"/>.
        </para>
      </section>
 
@@ -785,10 +789,12 @@
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
+         
+         <!-- TODO: verify that arrays and type prefixes are compatible -->
        </para>
     </section>
     
-    <section>
+    <section xml:id="decl-unions">
       <title>Declaring unions</title>
       <para>
         The declaration of the named union type follows the same rules
@@ -862,29 +868,35 @@
       </para>
     </section>
     
-    <section>
+    <section xml:id="decl-bfields">
       <title>Declaring bit-fields</title>
-      <para/>
+      <para>
+        Structures may implement memory-efficient storage of integers
+        by using bit-fields — bit sequences, which reside in standard
+        integer types side-by-side. METARESC language allows you to
+        declare bit-fields of the structure via the
+        <code>BITFIELD</code> macro. It's arguments are the base type,
+        the name of the field and the number of bits it occupies. The
+        structure in the example below has several bit-fields. This
+        makes it possible to access each field individually without
+        having to encode/decode data, yet retains compact
+        representation in computer memory:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/bitfields.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+      </para>
     </section>
     
     <section xml:id="lib-specific-types">
       <title>Data types, provided by the library</title>
       <para>
-        <programlisting language="c">[FIELD_TYPE] (type, name,
-        [suffix], [comment], [extra pointer])</programlisting>
-        <code>FIELD_TYPE</code> denotes internal
-        library types. The full list is:
-        
-	<variablelist>
-	  <varlistentry>
-	    <term>NONE</term>
-	    <listitem>
-	      <para>
-		field that should not be serialized/deserialized. Arguments
-	      </para>
-	    </listitem>
-	  </varlistentry>
-        </variablelist>
+        In addition to the usual types found in C language, the
+        library allows declaring a structure field to be of
+        METARESC-specific RARRAY or CHAR_ARRAY types.
+        <!-- TODO: write about RARRAY and CHAR_ARRAY -->
       </para>
     </section>
     
@@ -894,17 +906,47 @@
     <title>Data Persistence</title>
     
     <section>
-      <title>Serialization</title>
+      <title>Overview</title>
       <para />
     </section>
     
     <section>
-      <title>Deserialization</title>
-      <para />
+      <title>Marshalling supported types</title>
+      
+      <section>
+        <title>Marshalling structures and basic types</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>Marshalling enumerations</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>Marshalling arrays</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>Marshalling unions</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>Marshalling pointers</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>Marshalling pointers to functions</title>
+        <para />
+      </section>
+      
     </section>
     
     <section>
-      <title>Supported Data Formats</title>
+      <title>Input-output Formats</title>
       <para />
     </section>
     
