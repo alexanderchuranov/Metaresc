@@ -1204,7 +1204,7 @@ rl_register_type_pointer (rl_td_t * tdp)
       union_tdp->fields.data = fields_data;
       union_tdp->fields.alloc_size = alloc_size;
     }
-  fdp = rl_rarray_append ((rl_rarray_t*)&union_tdp->fields, sizeof (union_tdp->fields.data[0]));
+  fdp = rl_rarray_append ((void*)&union_tdp->fields, sizeof (union_tdp->fields.data[0]));
   if (NULL == fdp)
     return (EXIT_FAILURE);
   memset (fdp, 0, sizeof (*fdp));
