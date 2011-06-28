@@ -4,24 +4,22 @@ HTML_DEST = ${HOME}/web/nginx-root/html/metaresc/user-guide
 
 # docbook stuff
 
-STYLE ?= xhtml/chunk.xsl
-
-XSLT_PARAMS = --param use.id.as.filename 1 --stringparam html.stylesheet '/css/metaresc/screen.css'
-
-DOCBOOK_XSL_STYLES = /usr/local/share/xsl/docbook
 DOCBOOK_ROOT = /usr/local/share/xml/docbook/5.0
 
-all: ${SOURCE}
-	xsltproc --xinclude ${XSLT_PARAMS} ${DOCBOOK_XSL_STYLES}/${STYLE} ${.ALLSRC}
+STYLESHEET = ./customization.xsl
+SCHEMA = ${DOCBOOK_ROOT}/xsd/docbook.xsd
 
-clean:
-	rm -f *.html *.tmp
+all: ${SOURCE}
+	xsltproc --xinclude ${XSLT_PARAMS} ${STYLESHEET} ${.ALLSRC}
 
 test: ${SOURCE}
-	xmllint --xinclude --noout --schema ${DOCBOOK_ROOT}/xsd/docbook.xsd ${.ALLSRC}
+	xmllint --xinclude --noout --schema ${SCHEMA} ${.ALLSRC}
 
 deploy: all
 	rm -f ${HTML_DEST}/*
 	mv *html ${HTML_DEST}/
+
+clean:
+	rm -f *.html *.tmp
 
 .PHONY: test clean

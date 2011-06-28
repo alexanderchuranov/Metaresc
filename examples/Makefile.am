@@ -2,7 +2,7 @@
 
 AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
 
-noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers
+noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions
 
 gjobs_SOURCES = gjobs.c
 gjobs_LDADD = ../src/libreslib.la
@@ -48,3 +48,24 @@ type_prefixes_LDADD = ../src/libreslib.la
 
 function_pointers_SOURCES = function_pointers.c
 function_pointers_LDADD = ../src/libreslib.la
+
+bitfields_SOURCES = bitfields.c
+bitfields_LDADD = ../src/libreslib.la
+
+marshalling_structures_basic_types_SOURCES = marshalling_structures_basic_types.c
+marshalling_structures_basic_types_LDADD = ../src/libreslib.la
+
+marshalling_enumerations_SOURCES = marshalling_enumerations.c
+marshalling_enumerations_LDADD = ../src/libreslib.la
+
+marshalling_arrays_SOURCES = marshalling_arrays.c
+marshalling_arrays_LDADD = ../src/libreslib.la
+
+marshalling_unions_SOURCES = marshalling_unions.c
+marshalling_unions_LDADD = ../src/libreslib.la
+
+marshalling_pointers_SOURCES = marshalling_pointers.c
+marshalling_pointers_LDADD = ../src/libreslib.la
+
+marshalling_pointers_to_functions_SOURCES = marshalling_pointers_to_functions.c
+marshalling_pointers_to_functions_LDADD = ../src/libreslib.la
