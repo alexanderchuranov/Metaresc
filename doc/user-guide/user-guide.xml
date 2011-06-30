@@ -907,7 +907,60 @@
     
     <section>
       <title>Overview</title>
-      <para />
+      <para>
+        Among various applications of metadata, data persistence — the
+        ability to save objects from the memory into a storage
+        external to the program and successfully restore them later,
+        possibly in a different program invocation — is probably the
+        most popular one. METARESC supports data persistence
+        out-of-box, providing tools for serializing to and
+        de-serializing from multiple data representation formats. The
+        supported formats are: XML, JSON, C-init, SCM and XDR. They
+        are described in details later in this guide. The XML, JSON,
+        C-init and SCM are textual formats and the XDR is a binary
+        format.
+      </para>
+      
+      <para>
+        For each textual serialization format there is a macro named
+        like <code>RL_SAVE_</code>XXX, where XXX is a suffix, which
+        specifies the desired data representation. A macro like that
+        accepts two arguments: the name of the serializable type and a
+        pointer to the variable of that type to be serialized. The
+        return value is a pointer to the character string. Is is
+        allocated dynamically and must be released using the
+        <code>RL_FREE</code> library macro. The following is an
+        example of serializing data to XML:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/basic.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        
+        If the serialization fails, the returned value is
+        <code>NULL</code>.
+      </para>
+      
+      <para>
+        For de-serializing data from each textual format there is a
+        couple of macros: with two and three arguments. Macros with
+        three arguments take a type name, a pointer to the source
+        string and a pointer to the variable that will receive the
+        loaded value. The usage looks like the following:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/deserialization_3_args.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        
+        The naming scheme is <code>RL_LOAD_</code>XXX, where XXX
+        specifies the format. The returned value is an
+        <code>int</code>, which is zero if loading failed and non-zero
+        otherwise.
+      </para>
+      
     </section>
     
     <section>
@@ -943,11 +996,46 @@
         <para />
       </section>
       
+      <section>
+        <title>Marshalling bit-fields</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>Marshalling data types, provided by the library</title>
+        <para />
+      </section>
+      
     </section>
     
     <section>
       <title>Input-output Formats</title>
-      <para />
+      
+      <section>
+        <title>XML format</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>JSON format</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>C-init format</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>SCM format</title>
+        <para />
+      </section>
+      
+      <section>
+        <title>XDR format</title>
+        <para />
+      </section>
+      
     </section>
     
   </section>

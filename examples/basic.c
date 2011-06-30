@@ -20,8 +20,15 @@ main (int argc, char * argv[])
   employee.salary    = 123456;
   
   char * str = RL_SAVE_XML (employee_t, &employee);
-  printf ("%s", str);
-  RL_FREE (str);
   
-  return (EXIT_SUCCESS);
+  if (str)
+  {
+    printf ("%s", str);
+    RL_FREE (str);
+    return (EXIT_SUCCESS);
+  }
+  else {
+    fprintf(stderr, "Serialization error has occurred.\n");
+    return (EXIT_FAILURE);
+  }
 }

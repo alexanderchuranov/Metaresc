@@ -2,7 +2,7 @@
 
 AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
 
-noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions
+noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions marshalling_bit_fields deserialization_3_args
 
 gjobs_SOURCES = gjobs.c
 gjobs_LDADD = ../src/libreslib.la
@@ -69,3 +69,9 @@ marshalling_pointers_LDADD = ../src/libreslib.la
 
 marshalling_pointers_to_functions_SOURCES = marshalling_pointers_to_functions.c
 marshalling_pointers_to_functions_LDADD = ../src/libreslib.la
+
+marshalling_bit_fields_SOURCES = marshalling_bit_fields.c
+marshalling_bit_fields_LDADD = ../src/libreslib.la
+
+deserialization_3_args_SOURCES = deserialization_3_args.c
+deserialization_3_args_LDADD = ../src/libreslib.la
