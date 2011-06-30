@@ -966,24 +966,156 @@
     <section>
       <title>Marshalling supported types</title>
       
+      <para>
+        This section describes the behavior of the library related to
+        data marshalling, which does not depend on the particular
+        representation format.
+      </para>
+      
       <section>
         <title>Marshalling structures and basic types</title>
-        <para />
+        <para>
+          When saving a structure, constisting of fields of basic
+          types, the library saves the name and value of each field in
+          the order of declaration. The composition of structures,
+          e.g. when a structure object being serialized contains a
+          field of structure type, is handled by recursing into the
+          field and saving all sub-field names and values. The
+          recursion depth is exactly defined by the declaration of the
+          type. To have an example, consider the following
+          declaration:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_structures_basic_types.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          If an instance of <code>basics_t</code> is serialized to
+          XML, it may look like this:
+          
+          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
+<b>
+  <c>Z</c>
+  <uli>123</uli>
+  <fl>
+    <f>0.3000000</f>
+    <ld>3.1400000000000001243</ld>
+  </fl>
+</b>]]></programlisting>
+          
+          <!-- TODO: add example of composition in "declarations"
+               section -->
+        </para>
       </section>
       
       <section>
         <title>Marshalling enumerations</title>
-        <para />
+        <para>
+          If the field of the structure has enumerated type, then when
+          serializing the field into a textual representation METARESC
+          uses the readable enumeration member name instead of
+          numerical value. For instance, if declared like this:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_enumerations.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          The variable of <code>screen_t</code> type may have the
+          following XML representation:
+          
+          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
+<cons25>
+  <width>80</width>
+  <height>25</height>
+  <bg>BLACK</bg>
+  <fg>WHITE</fg>
+</cons25>]]></programlisting>
+        </para>
+        
+        <!-- TODO: What if the value in XML is not in the set of
+             enumeration members? -->
       </section>
       
       <section>
         <title>Marshalling arrays</title>
-        <para />
+        <para>
+          If the field of the structure is an array, then during
+          serialization the library saves each element's value. The
+          process starts from the element with zero index. The
+          elements are named after the array field. <!-- TODO: is is
+          correct? Is this compatible with the XML Schemas that may be
+          written to verify the serialized output? --> As usual, there
+          is an example. The declaration looks like this:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_arrays.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          And the XML output looks like this:
+          
+          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
+<wa>
+  <a>
+    <a>11</a>
+    <a>17</a>
+    <a>23</a>
+  </a>
+</wa>]]></programlisting>
+        </para>
       </section>
       
       <section>
         <title>Marshalling unions</title>
-        <para />
+        <para>
+          The union is very similar to a structure with a constraint
+          that only the field that was most recently written may be
+          read <footnote><para>ISO/IEC 9899:1999
+          J1.1</para></footnote>. This allows compilers to optimize
+          memory consumption of the program and don't store all the
+          fields of the union in the memory at the same time
+          <footnote><para>see C99 6.7.2.1p5 and
+          6.7.2.1p14</para></footnote>. It's tricky to serialize the
+          union, since C doesn't provide any means to determine which
+          field was most recently written. At present, METARESC relies
+          on the behavior of GCC, which allows cross-reading of union
+          members<footnote><para>The library code is based on the
+          assumption that all side-effects of statements that write to
+          the union are completed before the serialization takes
+          place.</para></footnote>: the library serializes the value
+          of the first member.
+        </para>
+        
+        <para>
+          So then, having the declaration like this:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_unions.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          You may expect the following output on GCC, regardless of
+          what member was most recently written:
+          
+          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
+<fl>
+  <ar>
+    <ar>195</ar>
+    <ar>245</ar>
+    <ar>72</ar>
+    <ar>64</ar>
+  </ar>
+</fl> ]]></programlisting>
+          
+          This, of course, also depends on the language
+          implementation. For example, there may be more
+          <code>char</code>s in a <code>float</code>.
+        </para>
       </section>
       
       <section>
