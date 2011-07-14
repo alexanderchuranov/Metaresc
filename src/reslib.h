@@ -138,41 +138,34 @@
 #define RL_FOR(NAME, N, OP, FUNC, ...) RL_PASTE2 (RL_FOR, N) (NAME, OP, FUNC, __VA_ARGS__)
 
 /*
-  Next group of macroses detects empty argument list. Implementation is GNU specific.
-  For non-GNU systems more tricky detection required.
+  Next group of macroses detects empty argument list.
  */
-#define _RL_IS_EMPTY(...) RL_PASTE2 (RL_IS_EMPTY, RL_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
-#define RL_IS_EMPTY1(...) 0
-#define RL_IS_EMPTY0(...) RL_IS_EMPTY_(0, ## __VA_ARGS__)
-#define RL_IS_EMPTY_(...) RL_IS_EMPTY__ (__VA_ARGS__, 0, 1)
-#define RL_IS_EMPTY__(_0, _1, _2, ...) _2
-
-#define RL_IS_EMPTY(...)						\
-  RL_HAS_COMMA (RL_PASTE2 (P00_IS_EMPTY_CASE_, RL_PASTE4 (		\
-							  /* test if there is just one argument, eventually an empty one */ \
-							  RL_HAS_COMMA (__VA_ARGS__), \
-							  /* test if P99_IS__EQ__ together with the argument adds a comma */ \
-							  RL_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__), \
-							  /* test if the argument together with a parenthesis adds a comma */ \
-							  RL_HAS_COMMA (__VA_ARGS__ (~)), \
-							  /* test if placing it between P99_IS__EQ__ and the parenthesis adds a comma */ \
-							  RL_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ (~)) \
-									)))
-
 #define P00_IS__EQ__(...) ,
 #define P00_IS_EMPTY_CASE_0001 ,
 
+#define RL_IS_EMPTY(...)						\
+  RL_HAS_COMMA								\
+  (RL_PASTE2								\
+   (P00_IS_EMPTY_CASE_,							\
+    RL_PASTE4 (								\
+	       /* test if there is just one argument, eventually an empty one */ \
+	       RL_HAS_COMMA (__VA_ARGS__),				\
+	       /* test if P99_IS__EQ__ together with the argument adds a comma */ \
+	       RL_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__),			\
+	       /* test if the argument together with a parenthesis adds a comma */ \
+	       RL_HAS_COMMA (__VA_ARGS__ (~)),				\
+	       /* test if placing it between P99_IS__EQ__ and the parenthesis adds a comma */ \
+	       RL_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ (~))		\
+									)))
+
 /* Next group of macroses checks that it has only one argument and it is 0 */
 #define RL_IS_0_EQ_0 ,
+#define RL_IS_0_EQ_0_CASE_11 ,
 #define RL_IS_EQ_0(...) RL_PASTE2 (RL_IS_EQ_0_ARG, RL_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
-#define RL_IS_EQ_0_ARG0(X) RL_IS_EQ_0_ARG0_ (RL_PASTE2 (RL_IS_0_EQ_, X))
 #define RL_IS_EQ_0_ARG1(...) 0
+#define RL_IS_EQ_0_ARG0(X) RL_IS_EQ_0_ARG0_ (RL_PASTE2 (RL_IS_0_EQ_, X))
 #define RL_IS_EQ_0_ARG0_(...) RL_IS_EQ_0_ARG0__ (__VA_ARGS__)
-#define RL_IS_EQ_0_ARG0__(X, ...) RL_PASTE3 (RL_IS_EQ_0_ARG0__, RL_IS_EMPTY (X), RL_IS_EMPTY (__VA_ARGS__))
-#define RL_IS_EQ_0_ARG0__00 0
-#define RL_IS_EQ_0_ARG0__01 0
-#define RL_IS_EQ_0_ARG0__10 0
-#define RL_IS_EQ_0_ARG0__11 1
+#define RL_IS_EQ_0_ARG0__(X, ...) RL_HAS_COMMA (RL_PASTE3 (RL_IS_0_EQ_0_CASE_, RL_IS_EMPTY (X), RL_IS_EMPTY (__VA_ARGS__)))
 
 /* If clause implementation. Usage RL_IF_ELSE (test_value) (expand_if_nonzero) (expand_if_zero) */
 #define RL_IGNORE(...)
