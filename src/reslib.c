@@ -469,12 +469,11 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 	  ptrs.ra.data[i].idx = -1;
 	break;
       case RL_TYPE_EXT_RARRAY:
-	if (NULL == ((rl_rarray_t*)ptrs.ra.data[i].data)->data)
+	if ((NULL == ((rl_rarray_t*)ptrs.ra.data[i].data)->data) || (ptrs.ra.data[i].ref_idx >= 0))
 	  ptrs.ra.data[i].idx = -1;
 	break;
       default:
-	if ((RL_TYPE_STRING != ptrs.ra.data[i].fd.rl_type) ||
-	    (NULL == *(char**)ptrs.ra.data[i].data))
+	if ((RL_TYPE_STRING != ptrs.ra.data[i].fd.rl_type) || (NULL == *(char**)ptrs.ra.data[i].data))
 	  ptrs.ra.data[i].idx = -1;
 	break;
       }
