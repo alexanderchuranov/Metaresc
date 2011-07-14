@@ -59,7 +59,17 @@ rl_set_crossrefs (rl_ra_rl_ptrdes_t * ptrs)
 	if (idx < 0)
 	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNDEFINED_REF_IDX, RL_REF_IDX, ptrs->ra.data[i].ref_idx);
 	else
-	  *(void**)ptrs->ra.data[i].data = ptrs->ra.data[idx].data;
+	  switch (ptrs->ra.data[i].fd.rl_type_ext)
+	    {
+	    case RL_TYPE_EXT_POINTER:
+	      *(void**)ptrs->ra.data[i].data = ptrs->ra.data[idx].data;
+	      break;
+	    case RL_TYPE_EXT_RARRAY:
+	      ((rl_rarray_t*)(ptrs->ra.data[i].data))->data = ptrs->ra.data[idx].data;
+	      break;
+	    default:
+	      break;
+	    }
       }
   RL_FREE (table);
   return (!0);
@@ -560,6 +570,7 @@ rl_load_rarray (int idx, rl_load_data_t * load_data)
 {
   rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   rl_rarray_t * ra = ptrs->ra.data[idx].data;
+  int ref_idx = ptrs->ra.data[idx].ref_idx;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
   char * name = NULL;
   int count = 0;
@@ -595,26 +606,32 @@ rl_load_rarray (int idx, rl_load_data_t * load_data)
 
   for (idx_ = ptrs->ra.data[idx].first_child; idx_ >= 0; idx_ = ptrs->ra.data[idx_].next)
     ++count;
+
   if (count > 0)
     {
-      ra->size = count * fd_.size;
-      ra->data = RL_MALLOC (ra->size);
-      if (NULL == ra->data)
+      if (ref_idx >= 0)
+	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNEXPECTED_DATA);
+      else
 	{
-	  ra->size = 0;
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	  return (0);
-	}
-      memset (ra->data, 0, ra->size);
-      count = 0;
-      /* prepare copy of filed descriptor for array elements loading */
-      fd_.rl_type_ext = RL_TYPE_EXT_NONE;
+	  ra->size = count * fd_.size;
+	  ra->data = RL_MALLOC (ra->size);
+	  if (NULL == ra->data)
+	    {
+	      ra->size = 0;
+	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	      return (0);
+	    }
+	  memset (ra->data, 0, ra->size);
+	  count = 0;
+	  /* prepare copy of filed descriptor for array elements loading */
+	  fd_.rl_type_ext = RL_TYPE_EXT_NONE;
       
-      for (idx = ptrs->ra.data[idx].first_child; idx >= 0; idx = ptrs->ra.data[idx].next) /* loop on subnodes */
-	{
-	  if (!rl_load (((char*)ra->data) + count * fd_.size, &fd_, idx, load_data))
-	    return (0);
-	  ++count;
+	  for (idx = ptrs->ra.data[idx].first_child; idx >= 0; idx = ptrs->ra.data[idx].next) /* loop on subnodes */
+	    {
+	      if (!rl_load (((char*)ra->data) + count * fd_.size, &fd_, idx, load_data))
+		return (0);
+	      ++count;
+	    }
 	}
     }
   return (!0);
@@ -773,13 +790,10 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_load_data_t * load_data)
   if ((NULL == ptrs->ra.data[idx].fd.type) && (fdp->type))
     ptrs->ra.data[idx].fd.type = RL_STRDUP (fdp->type);
   ptrs->ra.data[idx].fd.size = fdp->size;
-  ptrs->ra.data[idx].fd.param.array_param.count = fdp->param.array_param.count;
-  ptrs->ra.data[idx].fd.param.array_param.row_count = fdp->param.array_param.row_count;
   ptrs->ra.data[idx].fd.rl_type = fdp->rl_type;
   ptrs->ra.data[idx].fd.rl_type_aux = fdp->rl_type_aux;
   ptrs->ra.data[idx].fd.rl_type_ext = fdp->rl_type_ext;
-  ptrs->ra.data[idx].fd.param.bitfield_param.width = fdp->param.bitfield_param.width;
-  ptrs->ra.data[idx].fd.param.bitfield_param.shift = fdp->param.bitfield_param.shift;
+  ptrs->ra.data[idx].fd.param = fdp->param;
   
   /* route loading */
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
