@@ -423,15 +423,25 @@ rl_save_rarray (rl_save_data_t * rl_save_data)
   int i;
   /* set extended type property to RL_NONE in copy of field descriptor */
   fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-  count = rl_save_data->ptrs.ra.data[idx].fd.param.array_param.count = ra->size / fd_.size;
+  count = ra->size / fd_.size;
   /* do nothing if rarray is empty */
-  if (NULL == ra->data)
-    return;
-  /* add each array element to this node */
-  rl_save_data->parent = idx;
-  for (i = 0; i < count; ++i)
-    rl_save_inner (&((char*)ra->data)[i * fd_.size], &fd_, rl_save_data);
-  rl_save_data->parent = rl_save_data->ptrs.ra.data[rl_save_data->parent].parent;
+  if (ra->data)
+    {
+      int ref_idx = rl_check_ptr_in_list (rl_save_data, idx);
+      if (ref_idx >= 0)
+	{
+	  rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
+	  rl_save_data->ptrs.ra.data[ref_idx].flags |= RL_PDF_IS_REFERENCED;
+	}
+      else
+	{
+	  /* add each array element to this node */
+	  rl_save_data->parent = idx;
+	  for (i = 0; i < count; ++i)
+	    rl_save_inner (&((char*)ra->data)[i * fd_.size], &fd_, rl_save_data);
+	  rl_save_data->parent = rl_save_data->ptrs.ra.data[rl_save_data->parent].parent;
+	}
+    }
 }
 
 static void

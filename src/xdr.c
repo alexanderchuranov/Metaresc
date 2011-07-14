@@ -158,7 +158,17 @@ rl_set_crossrefs (rl_ra_rl_ptrdes_t * ptrs)
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
     if ((ptrs->ra.data[i].ref_idx >= 0) && (ptrs->ra.data[i].ref_idx <= count))
-      *(void**)ptrs->ra.data[i].data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
+      switch (ptrs->ra.data[i].fd.rl_type_ext)
+	{
+	case RL_TYPE_EXT_POINTER:
+	  *(void**)ptrs->ra.data[i].data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
+	  break;
+	case RL_TYPE_EXT_RARRAY:
+	  ((rl_rarray_t*)(ptrs->ra.data[i].data))->data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
+	  break;
+	default:
+	  break;
+	}
   return (!0);
 }
 
@@ -427,9 +437,12 @@ static int
 xdr_save_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   rl_rarray_t * ra = ptrs->ra.data[idx].data;
-  if (!xdr_int (xdrs, &ra->size))
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    return (xdr_int (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
+
+  if (!xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
-  return (!0);
+  return (xdr_int (xdrs, &ra->size));
 }
 
 static int
@@ -441,20 +454,26 @@ xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 
   /* prepare copy of filed descriptor for array elements loading */
   fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-  if (!xdr_int (xdrs, &ra->size))
-    return (0);
   ra->data = NULL;
-  if (ra->size > 0)
+  
+  if (!xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx))
+    return (0);
+  if (ptrs->ra.data[idx].ref_idx < 0)
     {
-      ra->data = RL_MALLOC (ra->size);
-      if (NULL == ra->data)
+      if (!xdr_int (xdrs, &ra->size))
+	return (0);
+      if (ra->size > 0)
 	{
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	  return (0);
+	  ra->data = RL_MALLOC (ra->size);
+	  if (NULL == ra->data)
+	    {
+	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	      return (0);
+	    }
+	  for (i = 0; i < ra->size / fd_.size; ++i)
+	    if (!xdr_load (&(((char*)ra->data)[i * fd_.size]), &fd_, xdrs, ptrs))
+	      return (0);
 	}
-      for (i = 0; i < ra->size / fd_.size; ++i)
-	if (!xdr_load (&(((char*)ra->data)[i * fd_.size]), &fd_, xdrs, ptrs))
-	  return (0);
     }
   return (!0);
 }
