@@ -306,8 +306,16 @@ cinit_save_anon_union (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * 
 static int
 cinit_save_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
-  data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = (" RL_CINIT_TYPE_TYPE_TEMPLATE "[]){\n";
-  data->suffix = "}}";
+  if ((ptrs->ra.data[idx].flags & RL_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
+    {
+      data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = " RL_CINIT_NULL ",";
+      data->suffix = "}";
+    }
+  else
+    {
+      data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = (" RL_CINIT_TYPE_TYPE_TEMPLATE "[]){\n";
+      data->suffix = "}}";
+    }
   return (0);
 }
 
