@@ -415,6 +415,7 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   ptrdes->prev = -1;
   ptrdes->next = -1;
   ptrdes->flags = RL_PDF_NONE;
+  ptrdes->rarray_size = 0;
   ptrdes->union_field_idx = 0;
   ptrdes->value = NULL;
   ptrdes->ext.ptr = NULL;

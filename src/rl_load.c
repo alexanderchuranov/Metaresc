@@ -332,7 +332,7 @@ rl_load_bitmask (int idx, rl_load_data_t * load_data)
   static int								\
   rl_load_ ## TYPE (int idx, rl_load_data_t * load_data)		\
   {									\
-    rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;				\
+    rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;			\
     char * str = ptrs->ra.data[idx].value;				\
     int offset;								\
     if (NULL == str)							\
@@ -574,12 +574,14 @@ rl_load_rarray (int idx, rl_load_data_t * load_data)
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
   char * name = NULL;
   int count = 0;
+  int offset;
+  char * str;
   int idx_;
 
   /* initialize resizeable array */
   ra->ext.ptr = rl_get_td_by_name (fd_.name);
   ra->ptr_type = "rl_td_t";
-  ra->size = ra->alloc_size = 0;
+  ra->size = ra->alloc_size = -1;
   ra->data = NULL;
 
   /* check that all childs has one and the same name */
@@ -593,6 +595,30 @@ rl_load_rarray (int idx, rl_load_data_t * load_data)
 
   if (idx_ >= 0) /* cinit style rl_rarray_t - some nodes have different names */
     {
+      int32_t rarray_size = 0;
+      for (idx_ = ptrs->ra.data[idx].first_child; idx_ >= 0; idx_ = ptrs->ra.data[idx_].next)
+	if (!strcmp (ptrs->ra.data[idx_].fd.name, "size"))
+	  break;
+      if (idx_ < 0)
+	{
+	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RARRAY_LOAD_FAILED);
+	  return (0);
+	}
+      str = ptrs->ra.data[idx_].value;
+      if ((NULL == str) || (1 != sscanf (str, "%" SCNd32 "%n", &rarray_size, &offset)))
+	{
+	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RARRAY_LOAD_FAILED);
+	  return (0);
+	}
+      str += offset;
+      while (isspace (*str))
+	++str;
+      if (*str != 0)
+	{
+	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, ptrs->ra.data[idx].value);
+	  return (0);
+	}
+      
       for (idx_ = ptrs->ra.data[idx].first_child; idx_ >= 0; idx_ = ptrs->ra.data[idx_].next)
 	if (!strcmp (ptrs->ra.data[idx_].fd.name, "data"))
 	  break;
@@ -600,14 +626,17 @@ rl_load_rarray (int idx, rl_load_data_t * load_data)
 	{
 	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RARRAY_LOAD_FAILED);
 	  return (0);
-	}
+	}      
       idx = idx_;
+      ptrs->ra.data[idx].rarray_size = rarray_size;
     }
 
   for (idx_ = ptrs->ra.data[idx].first_child; idx_ >= 0; idx_ = ptrs->ra.data[idx_].next)
     ++count;
 
-  if (count > 0)
+  if (0 == count)
+    ra->size = ptrs->ra.data[idx].rarray_size;
+  else
     {
       if (ref_idx >= 0)
 	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNEXPECTED_DATA);

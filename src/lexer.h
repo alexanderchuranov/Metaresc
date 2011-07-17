@@ -28,6 +28,24 @@ static inline void rl_calc_lloc (rl_load_t * rl_load, char * ptr)
 	++rl_load->lloc.column;
 }
 
+static inline char * rl_get_id (char * start)
+{
+  int size;
+  char * id;
+  char * stop;
+  while (isspace (*start)) ++start;
+  stop = start;
+  while (isalnum (*stop) || ('_' == *stop)) ++stop;
+  size = stop - start;
+  id = RL_MALLOC (size + 1);
+  if (id)
+    {
+      memcpy (id, start, size);
+      id[size] = 0;
+    }
+  return (id);
+}
+
 #define YY_USER_ACTION ({			\
       rl_load_t * rl_load = yyextra;		\
       rl_calc_lloc (rl_load, yy_bp);		\

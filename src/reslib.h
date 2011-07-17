@@ -47,6 +47,7 @@
 #define RL_REF_IDX "ref_idx"
 /* references on already saved structures will be replaced with nodes that have only REF index property */
 #define RL_REF "ref"
+#define RL_RARRAY_SIZE "size"
 /* XML attribute for zero length strings */
 #define RL_ISNULL "isnull"
 

@@ -81,6 +81,14 @@ scm_save (rl_ra_rl_ptrdes_t * ptrs)
 	  else
 	    in_comment = !0;
 	}
+      if (ptrs->ra.data[idx].flags & RL_PDF_RARRAY_SIZE)
+	{
+	  if (rl_ra_printf (&rl_ra_str, RL_SCM_INDENT_TEMPLATE RL_SCM_ATTR_INT,
+			    level * RL_SCM_INDENT_SPACES, "", RL_RARRAY_SIZE, ptrs->ra.data[idx].rarray_size) < 0)
+	    return (NULL);
+	  else
+	    in_comment = !0;
+	}
 	    
       if (ptrs->ra.data[idx].first_child < 0)
 	{

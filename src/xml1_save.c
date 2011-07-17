@@ -69,6 +69,9 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
 	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	      return (NULL);
+	  if (ptrs->ra.data[idx].flags & RL_PDF_RARRAY_SIZE)
+	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_RARRAY_SIZE, ptrs->ra.data[idx].rarray_size) < 0)
+	      return (NULL);
 	  if (empty_tag)
 	    {
 	      if (rl_ra_printf (&rl_ra_str, RL_XML1_OPEN_EMPTY_TAG_END) < 0)

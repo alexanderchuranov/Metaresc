@@ -17,7 +17,6 @@
 
    static char * unquote (char*);
    static char * unquote_char (char*);
-   static char * get_id (char*);
    static char * get_type (char*);
 %}
 
@@ -29,39 +28,35 @@ INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER (0x|0X)[[:xdigit:]]+
 NUMBER ({INT_NUMBER}|{HEX_NUMBER})
 NUMBER_OR_ID {NUMBER}|{ID}
-RL_REF "ref"
-RL_REF_IDX "ref_idx"
 %%
 
 {WS}  { /* eat up whitespace */ }
 
-{NUMBER} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_IVALUE); }
+{NUMBER} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
 
 [+-]?[Nn][Aa][Nn] |
 [+-]?[Ii][Nn][Ff] |
 [+-]?[[:digit:]]+"."[[:digit:]]*  |
 [+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
-[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_DVALUE); }
+[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
 
 "NULL" { return (TOK_CINIT_NULL); }
 
-{ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_ID); }
+{ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
 
-"."{WS}{ID}{WS}"=" { yylval->string = get_id (&yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
+"."{WS}{ID}{WS}"=" { yylval->string = rl_get_id (&yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
-{ID}{WS}":" { yylval->string = get_id (yytext); return (TOK_CINIT_FIELD_PREFIX); }
+{ID}{WS}":" { yylval->string = rl_get_id (yytext); return (TOK_CINIT_FIELD_PREFIX); }
 
 "("({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"  { yylval->string = get_type (&yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
-({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_BITMASK); }
+({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
 
-"\""([^\"\\]|\\.)*"\"" { yylval->string = unquote (yytext); return (TOK_CINIT_STRING); }
+"\""([^\"\\]|\\.)*"\"" { yylval->string = unquote (yytext); return (TOK_CINIT_VALUE); }
 
-"\'"([^\'\\]|\\.)*"\'" { yylval->string = unquote_char (yytext); return (TOK_CINIT_CHAR); }
+"\'"([^\'\\]|\\.)*"\'" { yylval->string = unquote_char (yytext); return (TOK_CINIT_VALUE); }
 
-"/*"{WS}{RL_REF}{WS}"="{WS}[[:digit:]]+{WS}"*/" { sscanf (yytext, "/* " RL_REF " = %d */", &yylval->ivalue); return (TOK_CINIT_RL_REF); }
-
-"/*"{WS}{RL_REF_IDX}{WS}"="{WS}[[:digit:]]+{WS}"*/" { sscanf (yytext, "/* " RL_REF_IDX " = %d */", &yylval->ivalue); return (TOK_CINIT_RL_REF_IDX); }
+"/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { yylval->id_ivalue.id = rl_get_id (&yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
 
 "/*"			  { BEGIN(in_comment); }
 <in_comment>[^*\n]*        /* eat anything that's not a '*' */
@@ -168,24 +163,6 @@ static char * unquote_char (char * str)
   return (str_);
 }
 
-static char * get_id (char * start)
-{
-  int size;
-  char * id;
-  char * stop;
-  while (isspace (*start)) ++start;
-  stop = start;
-  while (isalnum (*stop) || ('_' == *stop)) ++stop;
-  size = stop - start;
-  id = RL_MALLOC (size + 1);
-  if (id)
-    {
-      memcpy (id, start, size);
-      id[size] = 0;
-    }
-  return (id);
-}
-
 static char * get_type (char * start)
 {
   int size;
@@ -193,7 +170,10 @@ static char * get_type (char * start)
   char * stop;
   while (isspace (*start)) ++start;
   stop = strchr (start, '[');
-  while (isspace (stop[-1])) --stop;
+  if (stop)
+    while (isspace (stop[-1])) --stop;
+  else
+    stop = strchr (start, 0);
   size = stop - start;
   id = RL_MALLOC (size + 1);
   if (id)

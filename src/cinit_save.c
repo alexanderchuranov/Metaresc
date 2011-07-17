@@ -13,7 +13,7 @@
 #define RL_CINIT_INDENT_TEMPLATE "%*s"
 #define RL_CINIT_INDENT "  "
 
-#define RL_CINIT_TYPE_SIZE_TEMPLATE "%1$d"
+#define RL_CINIT_TYPE_SIZE_TEMPLATE "%1$" SCNd32
 #define RL_CINIT_TYPE_TYPE_TEMPLATE "%2$s"
 #define RL_CINIT_FIELDS_DELIMITER ",\n"
 #define RL_CINIT_NAMED_FIELD_TEMPLATE ".%s = "
@@ -74,7 +74,7 @@ cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*no
 	    if (rl_ra_printf (&rl_ra_str, RL_CINIT_ATTR_INT, RL_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	      return (NULL);
 	  if (save_data.prefix)
-	    if (rl_ra_printf (&rl_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.size * ptrs->ra.data[idx].fd.param.array_param.count, ptrs->ra.data[idx].fd.type) < 0)
+	    if (rl_ra_printf (&rl_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.size, ptrs->ra.data[idx].fd.type) < 0)
 	      return (NULL);
 	  if (save_data.content)
 	    {
@@ -306,6 +306,7 @@ cinit_save_anon_union (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * 
 static int
 cinit_save_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
+  ptrs->ra.data[idx].fd.size = ptrs->ra.data[idx].rarray_size;
   if ((ptrs->ra.data[idx].flags & RL_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
     {
       data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = " RL_CINIT_NULL ",";
@@ -342,6 +343,20 @@ static int
 json_save_array (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
   data->prefix = "[\n";
+  data->suffix = "]";
+  return (0);
+}
+
+static int
+json_save_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
+{
+  if (ptrs->ra.data[idx].flags & RL_PDF_RARRAY_SIZE)
+    {
+      ptrs->ra.data[idx].fd.size = ptrs->ra.data[idx].rarray_size;
+      data->prefix = "/* " RL_RARRAY_SIZE " = " RL_CINIT_TYPE_SIZE_TEMPLATE " */ [";
+    }
+  else
+    data->prefix = "[\n";
   data->suffix = "]";
   return (0);
 }
@@ -422,6 +437,6 @@ static void __attribute__((constructor)) rl_init_save_json (void)
   rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.json = cinit_save_anon_union;
 
   rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.json = json_save_array;
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.json = json_save_array;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.json = json_save_rarray;
   rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.json = json_save_pointer;
 }

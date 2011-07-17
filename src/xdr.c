@@ -437,12 +437,13 @@ static int
 xdr_save_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   rl_rarray_t * ra = ptrs->ra.data[idx].data;
+  if (!xdr_int (xdrs, &ra->size))
+    return (0);
+  
   if (ptrs->ra.data[idx].ref_idx >= 0)
     return (xdr_int (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
-
-  if (!xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx))
-    return (0);
-  return (xdr_int (xdrs, &ra->size));
+  else
+    return (xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx));
 }
 
 static int
@@ -456,12 +457,15 @@ xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   fd_.rl_type_ext = RL_TYPE_EXT_NONE;
   ra->data = NULL;
   
+  if (!xdr_int (xdrs, &ra->size))
+    return (0);
   if (!xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
-  if (ptrs->ra.data[idx].ref_idx < 0)
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    ra->alloc_size = -1;
+  else
     {
-      if (!xdr_int (xdrs, &ra->size))
-	return (0);
+      ra->alloc_size = ra->size;
       if (ra->size > 0)
 	{
 	  ra->data = RL_MALLOC (ra->size);

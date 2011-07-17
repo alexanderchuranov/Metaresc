@@ -26,19 +26,17 @@
 
  /* a more advanced semantic type */
 %union {
-  int ivalue;
   char * string;
+  struct {
+    char * id;
+    int ivalue;
+  } id_ivalue;
 }
 
 /* Bison declarations.  */
-%token <string> TOK_SCM_IVALUE
-%token <string> TOK_SCM_DVALUE
+%token <string> TOK_SCM_VALUE
 %token <string> TOK_SCM_ID
-%token <string> TOK_SCM_BITMASK
-%token <string> TOK_SCM_STRING
-%token <string> TOK_SCM_CHAR
-%token <ivalue> TOK_SCM_RL_REF
-%token <ivalue> TOK_SCM_RL_REF_IDX
+%token <id_ivalue> TOK_SCM_ID_IVALUE
 %token TOK_SCM_WS
 %token TOK_SCM_FALSE
 %token TOK_SCM_TRUE
@@ -58,21 +56,28 @@ scm: start_node scm_stmt { rl_load_t * rl_load = RL_LOAD; rl_load->parent = rl_l
 start_node: { rl_load_t * rl_load = RL_LOAD; rl_load->parent = rl_parse_add_node (rl_load); }
 
 scm_stmt:
-value 
-| TOK_SCM_RL_REF scm_stmt { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1; }
-| TOK_SCM_RL_REF_IDX scm_stmt { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].idx = $1; }
+value
+| TOK_SCM_ID_IVALUE scm_stmt {
+  rl_load_t * rl_load = RL_LOAD;
+  if ($1.id)
+    {
+      if (0 == strcmp (RL_REF, $1.id))
+	rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
+      else if (0 == strcmp (RL_REF_IDX, $1.id))
+	rl_load->ptrs->ra.data[rl_load->parent].idx = $1.ivalue;
+      else if (0 == strcmp (RL_RARRAY_SIZE, $1.id))
+	rl_load->ptrs->ra.data[rl_load->parent].rarray_size = $1.ivalue;
+      RL_FREE ($1.id);
+    }
+}
 
 value:
 compaund
 | named_node 
 | TOK_SCM_HASH compaund 
-| TOK_SCM_IVALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_SCM_DVALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; } 
-| TOK_SCM_STRING { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_SCM_CHAR { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_SCM_FALSE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = NULL; }
-| TOK_SCM_BITMASK { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
+| TOK_SCM_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
 | TOK_SCM_ID { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
+| TOK_SCM_FALSE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = NULL; }
 
 compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS
 

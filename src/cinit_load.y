@@ -26,19 +26,16 @@
 
  /* a more advanced semantic type */
 %union {
-  int ivalue;
   char * string;
+  struct {
+    char * id;
+    int ivalue;
+  } id_ivalue;
 }
 
 /* Bison declarations.  */
-%token <string> TOK_CINIT_IVALUE
-%token <string> TOK_CINIT_DVALUE
-%token <string> TOK_CINIT_ID
-%token <string> TOK_CINIT_BITMASK
-%token <string> TOK_CINIT_STRING
-%token <string> TOK_CINIT_CHAR
-%token <ivalue> TOK_CINIT_RL_REF
-%token <ivalue> TOK_CINIT_RL_REF_IDX
+%token <id_ivalue> TOK_CINIT_ID_IVALUE
+%token <string> TOK_CINIT_VALUE
 %token <string> TOK_CINIT_FIELD_PREFIX
 %token <string> TOK_CINIT_FIELD_CAST
 %token TOK_CINIT_NULL
@@ -58,19 +55,25 @@ start_node: { rl_load_t * rl_load = RL_LOAD; rl_load->parent = rl_parse_add_node
 
 cinit_stmt:
 value
-| TOK_CINIT_RL_REF cinit_stmt { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1; }
-| TOK_CINIT_RL_REF_IDX cinit_stmt { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].idx = $1; }
+| TOK_CINIT_ID_IVALUE cinit_stmt {
+  rl_load_t * rl_load = RL_LOAD;
+  if ($1.id)
+    {
+      if (0 == strcmp (RL_REF, $1.id))
+	rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
+      else if (0 == strcmp (RL_REF_IDX, $1.id))
+	rl_load->ptrs->ra.data[rl_load->parent].idx = $1.ivalue;
+      else if (0 == strcmp (RL_RARRAY_SIZE, $1.id))
+	rl_load->ptrs->ra.data[rl_load->parent].rarray_size = $1.ivalue;
+      RL_FREE ($1.id);
+    }
+}
 
 value:
 compaund
 | TOK_CINIT_FIELD_CAST compaund { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].fd.type = $1; }
-| TOK_CINIT_IVALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_CINIT_DVALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_CINIT_STRING { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_CINIT_CHAR { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
+| TOK_CINIT_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
 | TOK_CINIT_NULL { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = NULL; }
-| TOK_CINIT_BITMASK { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; } 
-| TOK_CINIT_ID { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
 
 compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE 
 | TOK_CINIT_LBRACKET list TOK_CINIT_RBRACKET
