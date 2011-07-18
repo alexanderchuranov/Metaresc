@@ -39,6 +39,7 @@
 %token TOK_XML_DOC_OPEN_TAG
 %token TOK_XML_DOC_CLOSE_TAG
 %token TOK_XML_WS
+%token TOK_XML_ASSIGN
 
 %start xml
 
@@ -46,9 +47,9 @@
 
 xml: TOK_XML_DOC_OPEN_TAG doc_properties TOK_XML_DOC_CLOSE_TAG tag
 
-doc_properties: | doc_properties TOK_XML_WS TOK_XML_ID TOK_XML_PROP_VALUE {
+doc_properties: | doc_properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE {
   char * prop_name = $3;
-  char * prop_value = $4;
+  char * prop_value = $5;
   if (prop_name)
     RL_FREE (prop_name);
   if (prop_value)
@@ -132,26 +133,26 @@ start_tag: { RL_LOAD->parent = rl_parse_add_node (RL_LOAD); }
 
 nested_tags: | nested_tags tag
 
-properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_PROP_VALUE {
+properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE {
   rl_load_t * rl_load = RL_LOAD;
   char * prop_name = $3;
-  char * prop_value = $4;
+  char * prop_value = $5;
   char * error = NULL;
   if (prop_name && prop_value)
     {
       if (0 == strcmp (prop_name, RL_REF_IDX))
 	{
-	  if (1 != sscanf (prop_value, " = \"%" SCNd32 "\"", &rl_load->ptrs->ra.data[rl_load->parent].idx))
+	  if (1 != sscanf (prop_value, "%" SCNd32, &rl_load->ptrs->ra.data[rl_load->parent].idx))
 	    error = "Can't read " RL_REF_IDX " property.";
 	}
       else if (0 == strcmp (prop_name, RL_REF))
 	{
-	  if (1 != sscanf (prop_value, " = \"%" SCNd32 "\"", &rl_load->ptrs->ra.data[rl_load->parent].ref_idx))
+	  if (1 != sscanf (prop_value, "%" SCNd32, &rl_load->ptrs->ra.data[rl_load->parent].ref_idx))
 	    error = "Can't read " RL_REF " property.";
 	}
       else if (0 == strcmp (prop_name, RL_RARRAY_SIZE))
 	{
-	  if (1 != sscanf (prop_value, " = \"%" SCNd32 "\"", &rl_load->ptrs->ra.data[rl_load->parent].rarray_size))
+	  if (1 != sscanf (prop_value, "%" SCNd32, &rl_load->ptrs->ra.data[rl_load->parent].rarray_size))
 	    error = "Can't read " RL_RARRAY_SIZE " property.";
 	}
       else if (0 == strcmp (prop_name, RL_ISNULL))

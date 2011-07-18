@@ -38,7 +38,6 @@
 %token <string> TOK_CINIT_VALUE
 %token <string> TOK_CINIT_FIELD_PREFIX
 %token <string> TOK_CINIT_FIELD_CAST
-%token TOK_CINIT_NULL
 %token TOK_CINIT_LBRACE
 %token TOK_CINIT_RBRACE
 %token TOK_CINIT_LBRACKET
@@ -73,7 +72,6 @@ value:
 compaund
 | TOK_CINIT_FIELD_CAST compaund { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].fd.type = $1; }
 | TOK_CINIT_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_CINIT_NULL { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = NULL; }
 
 compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE 
 | TOK_CINIT_LBRACKET list TOK_CINIT_RBRACKET

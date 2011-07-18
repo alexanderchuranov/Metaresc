@@ -40,7 +40,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 [+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
 [+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
 
-"NULL" { return (TOK_CINIT_NULL); }
+"NULL" { yylval->string = NULL; return (TOK_CINIT_VALUE); }
 
 {ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
 

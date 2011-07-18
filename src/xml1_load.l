@@ -25,7 +25,9 @@ ID	[_[:alpha:]][_[:alnum:]]*(:[_[:alpha:]][_[:alnum:]]*)?
 
 {ID} { yylval->string = RL_STRDUP (yytext); return (TOK_XML_ID); }
 
-[[:space:]]*"="[[:space:]]*"\""[^\"]*"\""      { yylval->string = RL_STRDUP (yytext); return (TOK_XML_PROP_VALUE); }
+[[:space:]]*"="[[:space:]]* { return (TOK_XML_ASSIGN); }
+
+"\""[^\"]*"\"" { yylval->string = RL_STRDUP (&yytext[1]); yylval->string[strlen (yylval->string) - 1] = 0; return (TOK_XML_PROP_VALUE); }
 
 "<?xml"  { return (TOK_XML_DOC_OPEN_TAG); }
 [[:space:]]*"?>"[^<]* { return (TOK_XML_DOC_CLOSE_TAG); }

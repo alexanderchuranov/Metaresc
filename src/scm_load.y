@@ -38,8 +38,6 @@
 %token <string> TOK_SCM_ID
 %token <id_ivalue> TOK_SCM_ID_IVALUE
 %token TOK_SCM_WS
-%token TOK_SCM_FALSE
-%token TOK_SCM_TRUE
 %token TOK_SCM_LPARENTHESIS
 %token TOK_SCM_RPARENTHESIS
 %token TOK_SCM_DOT
@@ -77,7 +75,6 @@ compaund
 | TOK_SCM_HASH compaund 
 | TOK_SCM_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
 | TOK_SCM_ID { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_SCM_FALSE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = NULL; }
 
 compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS
 
