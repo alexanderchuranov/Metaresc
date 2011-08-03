@@ -15,7 +15,7 @@ int main()
     .second = 31
   };
   
-  char const* xml = RL_SAVE_SCM( event_coordinates_t, &coords );
+  char const* xml = RL_SAVE_XML( event_coordinates_t, &coords );
   puts(xml);
   RL_FREE( xml );
   

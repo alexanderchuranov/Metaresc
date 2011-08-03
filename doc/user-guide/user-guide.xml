@@ -419,7 +419,7 @@
          </para>
 
          <para>
-           If this is concern, you have to optimize the program. To
+           If this is a concern, you have to optimize the program. To
            assist in that, METARESC provides type registration
            optimization and a way to generate declarations separately
            from metadata stuff.
@@ -507,7 +507,7 @@
                <code>RL_MODE</code> as <code>PROTO</code>, then include
                the "naked" header file. If you have functions that
                "implement" a serializable type, this header file is a
-               natural place to put their definitions into.
+               natural place to put their declarations into.
              </para></listitem>
 
              <listitem><para>
@@ -685,7 +685,7 @@
          the library as opaque data. It may point to any statically
          allocated object with external linkage (a global variable, for
          example). The alternative is simply using the user-data field
-         for a second coment field.
+         for a second comment field.
        </para>
 
        <para>
@@ -748,7 +748,8 @@
         fields of the enumeration type present in a structure, then
         when the instance of the structure is serialized the output
         may contain readable enumeration member name for the field
-        value instead of a silent number.
+        value instead of a silent number. For example, see <xref
+        linkend="marsh-enums"/>.
       </para>
       
       <para>
@@ -790,7 +791,8 @@
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
          
-         <!-- TODO: verify that arrays and type prefixes are compatible -->
+         <!-- TODO: verify that arrays and type prefixes are compatible,
+              give a clue on how to declare multi-dimensional arrays -->
        </para>
     </section>
     
@@ -1009,7 +1011,7 @@
         </para>
       </section>
       
-      <section>
+      <section xml:id="marsh-enums">
         <title>Marshalling enumerations</title>
         <para>
           If the field of the structure has enumerated type, then when
@@ -1120,17 +1122,175 @@
       
       <section>
         <title>Marshalling pointers</title>
-        <para />
+        <para>
+          Pointers differ from numeric types in that the value a
+          pointer holds is rarely interesting per se. You rather use a
+          pointer to access a pointed-to object and the value of the
+          pointer is typically a memory address of that object. Memory
+          addresses are meaningless from the serialization perspective
+          — when objects are de-serialized in other program
+          invocation the saved address may point to the memory of an
+          unrelated object or to the location where there is no object
+          at all.
+        </para>
+        
+        <para>
+          That's why METARESC takes a specific approach for pointers,
+          called "deep pointer serialization": when a structure field
+          of pointer type is encountered, the library examines the
+          value and if it points to an object of metadata-enabled
+          type, then this pointed-to object is also serialized. This
+          process is recursive.
+        </para>
+        
+        <para>
+          During de-serialization of a field of pointer type METARESC
+          allocates memory for a pointed-to object and recursively
+          restores it. That is pointer values are not preserved when
+          objects are saved and restored, but their meaning is.
+        </para>
+        
+        <para>
+          The special cases for deep pointer serialization are
+          duplicate pointers, that is more than one pointer to the
+          same object, and cycles in chains of pointers. The library
+          keeps a track of already visited objects during
+          serialization. In presence of multiple pointers to the same
+          object the latter is serialized only once and assigned an
+          id, which is used to serialize other pointers to that
+          object. For the same reason pointer loops are never an
+          issue.
+        </para>
+        
+        <para>
+          Note, that uniqueness of objects is only examined for a
+          single serialization session. If you have two structures,
+          containing pointers to the same third object, and serialize
+          them independently, METARESC will create four distinct
+          objects on de-serialization. The recommended way of
+          preserving the uniqueness is gathering all the data into a
+          single structure and serializing it in a single step.
+        </para>
+        
+        <para>
+          Deep pointer serialization is only possible if the
+          pointed-to object is of serializable type, i.e. declared
+          using METARESC grammar. If the field of the structure points
+          to the object which is not serializable, then pointer value
+          is not serialized at all.
+        </para>
+        
+        <para>
+          The following is an example of deep pointer serialization
+          with duplicate pointers and a pointer to type lacking
+          metadata. Given the declarations like this:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_pointers.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          And the program, which uses them:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_pointers.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          The serialized data may look like this:
+          
+          <programlisting language="c"><![CDATA[
+<?xml version="1.0"?>
+<p>
+  <server_a>
+    <server_a>
+      <id>3</id>
+      <address>305402420</address>
+      <port>80</port>
+    </server_a>
+  </server_a>
+  <server_b ref="9"/>
+  <f/>
+  <fallback>
+    <fallback ref_idx="9">
+      <id>11</id>
+      <address>1126253345</address>
+      <port>443</port>
+    </fallback>
+  </fallback>
+</p>]]></programlisting>
+          
+          Note that the field <code>f</code> is not assigned a value
+          and fields <code>server_b</code> and <code>fallback</code>
+          both point to the same object.
+        </para>
       </section>
       
       <section>
         <title>Marshalling pointers to functions</title>
-        <para />
+        <para>
+          Unlike instances of structures, functions are not tracked by
+          the library. That's why pointers to functions are always
+          excluded from serialization. Given the following
+          declarations:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_pointers_to_functions.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          You may expect output like this:
+          
+          <programlisting language="c"><![CDATA[
+<?xml version="1.0"?>
+<s>
+  <value>7</value>
+</s> ]]></programlisting>
+          
+          The field <code>func</code> is not present in the XML file
+          and the intended usage of pointers-to-functions metadata is
+          reading the data programmatically.
+        </para>
       </section>
       
       <section>
         <title>Marshalling bit-fields</title>
-        <para />
+        <para>
+          The sole purpose of using bit-fields is to minimize the
+          memory occupied by small integers. Serialization formats are
+          often verbose and the product of serialization is better
+          compressed by archiving the entire stream. Based on that,
+          bit-fields are serialized by METARESC as if they were
+          distinct variables.
+        </para>
+        
+        <para>
+          This is exemplified by following declarations:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/marshalling_bit_fields.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          The serialization may produce the following XML output:
+          
+          <programlisting language="xml"><![CDATA[
+<?xml version="1.0"?>
+<coords>
+  <longitude>51.5000000</longitude>
+  <latitude>46.0000000</latitude>
+  <year>2011</year>
+  <month>6</month>
+  <day>29</day>
+  <hour>10</hour>
+  <minute>25</minute>
+  <second>31</second>
+</coords> ]]></programlisting>
+        </para>
       </section>
       
       <section>
