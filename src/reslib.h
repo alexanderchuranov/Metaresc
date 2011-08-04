@@ -162,6 +162,7 @@
 /* Next group of macroses checks that it has only one argument and it is 0 */
 #define RL_IS_0_EQ_0 ,
 #define RL_IS_0_EQ_0_CASE_11 ,
+
 #define RL_IS_EQ_0(...) RL_PASTE2 (RL_IS_EQ_0_ARG, RL_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
 #define RL_IS_EQ_0_ARG1(...) 0
 #define RL_IS_EQ_0_ARG0(X) RL_IS_EQ_0_ARG0_ (RL_PASTE2 (RL_IS_0_EQ_, X))
@@ -336,6 +337,16 @@
 #define P00_COMMA_POINTER_STRUCT POINTER_STRUCT,
 #define P00_COMMA_RARRAY RARRAY,
 #define P00_COMMA_FUNC FUNC,
+
+#define P00_COMMA_char AUTO, char,
+#define P00_COMMA_short AUTO, short,
+#define P00_COMMA_int AUTO, int,
+#define P00_COMMA_unsigned AUTO, unsigned,
+#define P00_COMMA_signed AUTO, signed,
+#define P00_COMMA_long AUTO, long,
+#define P00_COMMA_float AUTO, float,
+#define P00_COMMA_double AUTO, double,
+
 /* NB! for p99 mode only one anonymous union in struct is possible and it has default name */
 #define P00_COMMA_ANON_UNION ANON_UNION_DEF,
 #define P00_COMMA_NAMED_ANON_UNION NAMED_ANON_UNION,
@@ -594,7 +605,7 @@
 
 #define RL_TYPEDEF_ENUM_DESC(RL_TYPE_NAME, /* ATTR */ ...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_ENUM, __VA_ARGS__)
 #define RL_ENUM_DEF_DESC(RL_TYPE_NAME, NAME, ...) RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, __VA_ARGS__)
-#define RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, RHS, ...) {		\
+#define RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, RHS, /* COMMENTS */ ...) {		\
     .type = RL_STRINGIFY (RL_TYPE_NAME),				\
       .name = #NAME,							\
       .rl_type = RL_TYPE_ENUM_VALUE,					\
