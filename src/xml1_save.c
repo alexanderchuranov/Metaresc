@@ -60,9 +60,6 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 	  empty_tag = (ptrs->ra.data[idx].first_child < 0) && (0 == content[0]);
 	  if (rl_ra_printf (&rl_ra_str, RL_XML1_INDENT_TEMPLATE RL_XML1_OPEN_TAG_START, level * RL_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.name) < 0)
 	    return (NULL);
-	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
-	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_CHARP, RL_ISNULL, "true") < 0)
-	      return (NULL);
 	  if (ptrs->ra.data[idx].ref_idx >= 0)
 	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_REF, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	      return (NULL);
@@ -71,6 +68,9 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 	      return (NULL);
 	  if (ptrs->ra.data[idx].flags & RL_PDF_RARRAY_SIZE)
 	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_RARRAY_SIZE, ptrs->ra.data[idx].rarray_size) < 0)
+	      return (NULL);
+	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
+	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_CHARP, RL_ISNULL, "true") < 0)
 	      return (NULL);
 	  if (empty_tag)
 	    {
