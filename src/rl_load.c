@@ -634,33 +634,33 @@ rl_load_rarray (int idx, rl_load_data_t * load_data)
   for (idx_ = ptrs->ra.data[idx].first_child; idx_ >= 0; idx_ = ptrs->ra.data[idx_].next)
     ++count;
 
-  if (0 == count)
-    ra->size = ptrs->ra.data[idx].rarray_size;
+  if (ref_idx >= 0)
+    {
+      ra->size = ptrs->ra.data[idx].rarray_size;
+      printf ("XXX size %d\n", ra->size);
+      if (0 != count)
+	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNEXPECTED_DATA);
+    }
   else
     {
-      if (ref_idx >= 0)
-	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNEXPECTED_DATA);
-      else
+      ra->size = count * fd_.size;
+      ra->data = RL_MALLOC (ra->size);
+      if (NULL == ra->data)
 	{
-	  ra->size = count * fd_.size;
-	  ra->data = RL_MALLOC (ra->size);
-	  if (NULL == ra->data)
-	    {
-	      ra->size = 0;
-	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	      return (0);
-	    }
-	  memset (ra->data, 0, ra->size);
-	  count = 0;
-	  /* prepare copy of filed descriptor for array elements loading */
-	  fd_.rl_type_ext = RL_TYPE_EXT_NONE;
+	  ra->size = 0;
+	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  return (0);
+	}
+      memset (ra->data, 0, ra->size);
+      count = 0;
+      /* prepare copy of filed descriptor for array elements loading */
+      fd_.rl_type_ext = RL_TYPE_EXT_NONE;
       
-	  for (idx = ptrs->ra.data[idx].first_child; idx >= 0; idx = ptrs->ra.data[idx].next) /* loop on subnodes */
-	    {
-	      if (!rl_load (((char*)ra->data) + count * fd_.size, &fd_, idx, load_data))
-		return (0);
-	      ++count;
-	    }
+      for (idx = ptrs->ra.data[idx].first_child; idx >= 0; idx = ptrs->ra.data[idx].next) /* loop on subnodes */
+	{
+	  if (!rl_load (((char*)ra->data) + count * fd_.size, &fd_, idx, load_data))
+	    return (0);
+	  ++count;
 	}
     }
   return (!0);
