@@ -338,14 +338,34 @@
 #define P00_COMMA_RARRAY RARRAY,
 #define P00_COMMA_FUNC FUNC,
 
-#define P00_COMMA_char AUTO, char,
-#define P00_COMMA_short AUTO, short,
-#define P00_COMMA_int AUTO, int,
-#define P00_COMMA_unsigned AUTO, unsigned,
-#define P00_COMMA_signed AUTO, signed,
-#define P00_COMMA_long AUTO, long,
-#define P00_COMMA_float AUTO, float,
-#define P00_COMMA_double AUTO, double,
+#define P00_COMMA_char AUTO_BI, char,
+#define P00_COMMA_short AUTO_BI, short,
+#define P00_COMMA_int AUTO_BI, int,
+#define P00_COMMA_unsigned AUTO_BI, unsigned,
+#define P00_COMMA_signed AUTO_BI, signed,
+#define P00_COMMA_long AUTO_BI, long,
+#define P00_COMMA_float AUTO_BI, float,
+#define P00_COMMA_double AUTO_BI, double,
+
+#define RL_AUTO_BI_PROTO(...) RL_AUTO_BI_0 (PROTO, __VA_ARGS__)
+#define RL_AUTO_BI_DESC(...) RL_AUTO_BI_0 (DESC, __VA_ARGS__)
+
+#define RL_AUTO_BI_0(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_IF_ELSE (RL_HAS_COMMA (RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_AUTO_BI_1_ (P00_MODE, RL_TYPE_NAME, TYPE RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME))
+#define RL_AUTO_BI_1_(...) RL_AUTO_BI_1 (__VA_ARGS__)
+#define RL_AUTO_BI_1(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_IF_ELSE (RL_HAS_COMMA (RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_AUTO_BI_2_ (P00_MODE, RL_TYPE_NAME, TYPE RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME))
+#define RL_AUTO_BI_2_(...) RL_AUTO_BI_2 (__VA_ARGS__)
+#define RL_AUTO_BI_2(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_IF_ELSE (RL_HAS_COMMA (RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_AUTO_BI_3_ (P00_MODE, RL_TYPE_NAME, TYPE RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME))
+#define RL_AUTO_BI_3_(...) RL_AUTO_BI_3 (__VA_ARGS__)
+#define RL_AUTO_BI_3(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME)
+
+#define RL_IS_BUILTIN_char char,
+#define RL_IS_BUILTIN_short short,
+#define RL_IS_BUILTIN_int int,
+#define RL_IS_BUILTIN_unsigned unsigned,
+#define RL_IS_BUILTIN_signed signed,
+#define RL_IS_BUILTIN_long long,
+#define RL_IS_BUILTIN_float float,
+#define RL_IS_BUILTIN_double double,
 
 /* NB! for p99 mode only one anonymous union in struct is possible and it has default name */
 #define P00_COMMA_ANON_UNION ANON_UNION_DEF,
