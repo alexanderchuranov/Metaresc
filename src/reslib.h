@@ -346,6 +346,12 @@
 #define P00_COMMA_long AUTO_BI, long,
 #define P00_COMMA_float AUTO_BI, float,
 #define P00_COMMA_double AUTO_BI, double,
+#define P00_COMMA_volatile AUTO_BI, volatile,
+#define P00_COMMA___volatile AUTO_BI, __volatile,
+#define P00_COMMA___volatile__ AUTO_BI, __volatile__,
+#define P00_COMMA_const AUTO_BI, const,
+#define P00_COMMA___const AUTO_BI, __const,
+#define P00_COMMA___const__ AUTO_BI, __const__,
 
 #define RL_AUTO_BI_PROTO(...) RL_AUTO_BI_0 (PROTO, __VA_ARGS__)
 #define RL_AUTO_BI_DESC(...) RL_AUTO_BI_0 (DESC, __VA_ARGS__)
@@ -356,7 +362,11 @@
 #define RL_AUTO_BI_2_(...) RL_AUTO_BI_2 (__VA_ARGS__)
 #define RL_AUTO_BI_2(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_IF_ELSE (RL_HAS_COMMA (RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_AUTO_BI_3_ (P00_MODE, RL_TYPE_NAME, TYPE RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME))
 #define RL_AUTO_BI_3_(...) RL_AUTO_BI_3 (__VA_ARGS__)
-#define RL_AUTO_BI_3(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME)
+#define RL_AUTO_BI_3(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_IF_ELSE (RL_HAS_COMMA (RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_AUTO_BI_4_ (P00_MODE, RL_TYPE_NAME, TYPE RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME))
+#define RL_AUTO_BI_4_(...) RL_AUTO_BI_4 (__VA_ARGS__)
+#define RL_AUTO_BI_4(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_IF_ELSE (RL_HAS_COMMA (RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_AUTO_BI_5_ (P00_MODE, RL_TYPE_NAME, TYPE RL_PASTE2 (RL_IS_BUILTIN_, NAME))) (RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME))
+#define RL_AUTO_BI_5_(...) RL_AUTO_BI_5 (__VA_ARGS__)
+#define RL_AUTO_BI_5(P00_MODE, RL_TYPE_NAME, TYPE, NAME) RL_PASTE2 (RL_AUTO_, P00_MODE) (RL_TYPE_NAME, TYPE, NAME)
 
 #define RL_IS_BUILTIN_char char,
 #define RL_IS_BUILTIN_short short,
@@ -366,6 +376,12 @@
 #define RL_IS_BUILTIN_long long,
 #define RL_IS_BUILTIN_float float,
 #define RL_IS_BUILTIN_double double,
+#define RL_IS_BUILTIN_volatile volatile,
+#define RL_IS_BUILTIN___volatile __volatile,
+#define RL_IS_BUILTIN___volatile__ __volatile__,
+#define RL_IS_BUILTIN_const const,
+#define RL_IS_BUILTIN___const __const,
+#define RL_IS_BUILTIN___const__ __const__,
 
 /* NB! for p99 mode only one anonymous union in struct is possible and it has default name */
 #define P00_COMMA_ANON_UNION ANON_UNION_DEF,
