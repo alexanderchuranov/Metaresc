@@ -1305,12 +1305,145 @@
       
       <section>
         <title>XML format</title>
-        <para />
+        <para>
+          METARESC supports the XML format as defined in <link
+          xlink:href="http://www.w3.org/TR/2008/REC-xml-20081126/">W3C
+          XML 1.0 specification</link>. The <code>RL_SAVE_XML</code>
+          macro is used for serializing into XML. It accepts two
+          arguments: the name of the type and the pointer to the
+          variable. First argument specifies the type of the variable
+          to be serialized. The returned value is a dynamically
+          allocated character string, containing the XML
+          representation of your data. The string is
+          zero-terminated. If serialization fails, the library returns
+          NULL. The following code sample saves data in XML format:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/basic.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
+        
+        <para>
+          There are two macros for de-serializing data from XML. Both
+          are named <code>RL_LOAD_XML</code>; the library
+          distinguishes one from another by the number of
+          arguments. First version accepts two arguments: the name of
+          the type to be loaded and the text string representing the
+          data in XML. The loaded data is returned by value, the value
+          may be assigned to the variable of the specified type. The
+          following code sample uses this form of macro:
+          <!-- TODO: Error handling! -->
+          <programlisting language="c"><xi:include
+            href="../../examples/deserializing_xml.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
+        
+        <para>
+          De-serialization usually deals with data external to the
+          application. For this reason the process may fail if the
+          data is corrupted. To simplify error handling, the library
+          provides the second form of macro, having three
+          arguments. The additional argument points to the variable
+          that will receive the loaded data. The returned value is a
+          number: zero for failure and non-zero for success. The usage
+          is exemplified in the following code:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/deserialization_3_args.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
+        
+        <para>
+          When loading data, METARESC have to parse the external
+          representation and fill your data structure with values. Of
+          course, an arbitrary XML document may not be used for this,
+          because it has to match your C data structures. Naturally,
+          any document serialized by the library is loadable. If the
+          document to be read is generated externally or the document
+          produced by METARESC is to be processed by another software,
+          it is helpful to know how C data structures map to XML. The
+          following is a list of rules, used by the library:
+          
+          <itemizedlist>
+            <listitem><para> The root element is named after the
+            variable that was serialized. When de-serializing the data
+            the name of the root element is ignored.
+            </para></listitem>
+            
+            <listitem><para> If the element represents a structure (as
+            the root element does), it has a child element for each
+            field<footnote><para>Function pointers being a notable
+            exception</para></footnote>. These sub-elements are named
+            after the fields of the structure. </para></listitem>
+            
+            <listitem><para> Values of basic types, enumerated types
+            and bit-fields are represented by element text.
+            </para></listitem>
+            
+            <listitem><para> Fields of array type have sub-elements,
+            one for each array element. The sub-elements have the same
+            name as the array variable.
+            </para></listitem>
+            
+            <listitem><para> Unions are serialized like structures,
+            however only the first union member is serialized.
+            </para></listitem>
+            
+            <listitem><para> Pointer field is represented by the
+            element, which may have a child element. The child element
+            has the same name as the pointer field and represents the
+            value of the pointed-to element. In presence of duplicate
+            pointers the child element may have a <code>ref_idx</code>
+            attribute. In this case some pointer field may be
+            represented by an empty element with a <code>link</code>
+            attribute. This is used to preserve object uniqueness and
+            tie duplicate pointers together.
+            </para></listitem>
+          </itemizedlist>
+        </para>
       </section>
       
       <section>
         <title>JSON format</title>
-        <para />
+        <para>
+          The JSON textual data format is formally defined in <link
+          xlink:href="http://www.ietf.org/rfc/rfc4627.txt">RFC
+          4627</link>. METARESC supports saving to and loading from
+          this format. Serialization is performed by the
+          <code>RL_SAVE_JSON</code> macro. It's arguments are the name
+          of the type and a pointer to the variable of that type. The
+          macro is used in the following code sample:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/save_json.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
+        
+        <para>
+          There is the <code>RL_LOAD_JSON</code> macro for
+          de-serializing JSON data. The version with two arguments
+          accepts the name of the type and the character string with
+          JSON data. The returned value may be used to initialize
+          variable of the specified type. The version with three
+          arguments additionally accepts a pointer to the variable,
+          where the loaded data is to be written. <!-- TODO: what
+          about return value? --> The following code sample
+          exemplifies this:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/load_json.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
       </section>
       
       <section>
