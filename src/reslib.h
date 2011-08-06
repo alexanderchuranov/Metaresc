@@ -354,6 +354,8 @@
 #define P00_COMMA_uint32_t AUTO_BI, uint32_t,
 #define P00_COMMA_int64_t AUTO_BI, int64_t,
 #define P00_COMMA_uint64_t AUTO_BI, uint64_t,
+#define P00_COMMA_long_double_t AUTO_BI, long_double_t,
+#define P00_COMMA_string_t AUTO_BI, string_t,
 #define P00_COMMA_volatile AUTO_BI, volatile,
 #define P00_COMMA___volatile AUTO_BI, __volatile,
 #define P00_COMMA___volatile__ AUTO_BI, __volatile__,
@@ -384,6 +386,16 @@
 #define RL_IS_BUILTIN_long long,
 #define RL_IS_BUILTIN_float float,
 #define RL_IS_BUILTIN_double double,
+#define RL_IS_BUILTIN_int8_t int8_t,
+#define RL_IS_BUILTIN_uint8_t uint8_t,
+#define RL_IS_BUILTIN_int16_t int16_t,
+#define RL_IS_BUILTIN_uint16_t uint16_t,
+#define RL_IS_BUILTIN_int32_t int32_t,
+#define RL_IS_BUILTIN_uint32_t uint32_t,
+#define RL_IS_BUILTIN_int64_t int64_t,
+#define RL_IS_BUILTIN_uint64_t uint64_t,
+#define RL_IS_BUILTIN_long_double_t long_double_t,
+#define RL_IS_BUILTIN_string_t string_t,
 #define RL_IS_BUILTIN_volatile volatile,
 #define RL_IS_BUILTIN___volatile __volatile,
 #define RL_IS_BUILTIN___volatile__ __volatile__,
@@ -1121,6 +1133,7 @@
 #endif
 
 typedef long double long_double_t;
+typedef char * string_t;
 
 extern rl_conf_t rl_conf;
 
