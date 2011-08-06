@@ -8,9 +8,7 @@
 
 #include <reslib.h>
 
-TYPEDEF_STRUCT (project_t,
-		(int, ID)
-		)
+TYPEDEF_STRUCT (project_t, int ID) // typedef struct project_t { int ID } project_t;
 
 TYPEDEF_ENUM (status_t,
 	      Open,
@@ -18,37 +16,36 @@ TYPEDEF_ENUM (status_t,
 	      )
 
 TYPEDEF_STRUCT (update_t,
-	       (status_t, Status),
-	       (char *, Modified),
-	       (char *, Salary),
-	       )
+		(status_t, Status),
+		string_t Modified,
+		string_t Salary,
+		)
      
 TYPEDEF_STRUCT (person_t,
-		(char *, Person),
-		(char *, Email),
-		(char *, Company),
-		(char *, Organisation),
-		(char *, Webpage),
-		(char *, Snailmail),
-		(char *, Phone),
+		string_t Person,
+		string_t Email,
+		string_t Company,
+		string_t Organisation,
+		string_t Webpage,
+		string_t Snailmail,
+		string_t Phone,
 		)
 
 TYPEDEF_STRUCT (job_t,
 		(project_t, Project),
-		(char *, Application),
-		(char *, Category),
+		string_t Application,
+		string_t Category,
 		(update_t, Update),
 		RARRAY (person_t, Developers),
 		(person_t, Contact),
-		(char *, Requirements),
-		(char *, Skills),
-		(char *, Details),
+		string_t Requirements,
+		string_t Skills,
+		string_t Details,
 		)
 
 TYPEDEF_STRUCT (helping_t,
 		RARRAY (job_t, Jobs),
 		)
-
 
 static void
 print_person (person_t * person)
