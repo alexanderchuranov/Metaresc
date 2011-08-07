@@ -632,13 +632,18 @@
          declarations for standard and user-defined types have
          following form:
 
-         <programlisting language="c">( type, name, suffix<subscript>opt</subscript>, comment<subscript>opt</subscript>, user-data<subscript>opt</subscript> )</programlisting>
+         <programlisting language="c">( type, name,
+         suffix<subscript>opt</subscript>,
+         comment<subscript>opt</subscript>,
+         { pointer-on-user-data }<subscript>opt</subscript>,
+         user-data-type<subscript>opt</subscript>
+	   )</programlisting>
 
          The first two arguments specify field type and name. Other
-         three arguments are optional. If any of optional arguments is
-         used in a declaration, then the previous optional argument
-         must be specified too. That is to have a comment you need to
-         specify type suffix as well:
+         four arguments are optional. If any of optional arguments is
+         used in a declaration, then the previous optional arguments
+         must be specified too, but they could be empty. That is to
+         have a comment you need to specify type suffix as well: 
          
          <programlisting language="c"><xi:include
            href="../../examples/suffixes_comments_userdata.h"
@@ -677,15 +682,37 @@
        </para>
        
        <para>
-         The comment and user-data fields are useful if you are
-         accessing metadata for yor types programmatically at
+         The comment and pointer-on-user-data fields are useful if you
+         are accessing metadata for yor types programmatically at
          run-time. The comment argument of field declaration is any
          text you may find useful to "attach" to the field. The
-         user-data argument is a <code>void*</code> pointer, treated by
-         the library as opaque data. It may point to any statically
-         allocated object with external linkage (a global variable, for
+         pointer-on-user-data argument is a <code>void*</code>
+         pointer. user-data-type is a string which defines type of the
+         pointer-on-user-data. It could be any type declared within
+         Metaresc library. Built-in types are not supported. If
+         user-data-type unspecified or meaningless
+         pointer-on-user-data is treated by the library as opaque
+         data. It may point to any statically allocated object with
+         external linkage (a global variable, for
          example). The alternative is simply using the user-data field
-         for a second comment field.
+         for a second text field. In this case user-data-type should
+         be declared as "rl_char_array_t".
+
+	 For declaration of built-in types without any metadata simplifed
+	 grammar could be used. The following key words are supported
+	 <code>char</code>,
+	 <code>short</code>,
+	 <code>int</code>,
+	 <code>unsigned</code>,
+	 <code>signed</code>,
+	 <code>long</code>,
+	 <code>float</code>,
+	 <code>double</code>,
+	 <code>[u]int[X]_t</code>,
+	 <code>[__]volatile[__]</code>,
+	 <code>[__]const[__]</code>,
+	 <code>string_t</code>. Last keyword reffers to type declared
+	 in Metaresc which is equivalent to char *.
        </para>
 
        <para>
@@ -703,6 +730,7 @@
        <para>
          METARESC supports basic types, defined in the Standard. The
          supported types are listed in the following code sample:
+	 <!-- _Bool, _Complex, _Decimal128 are not supported yet -->
 
          <programlisting language="c"><xi:include
            href="../../examples/builtins.h"
@@ -734,6 +762,8 @@
          exactly 8 bits, types having width of 8, 16, 32 and 64 should
          be safe on Linux and other UNIX-like platforms in this
          respect.
+	 <!-- [u]int[XX]_t maps into built-in types accoring
+         inttypes.h declarations -->
       </para>
     </section>
     
@@ -748,7 +778,7 @@
         fields of the enumeration type present in a structure, then
         when the instance of the structure is serialized the output
         may contain readable enumeration member name for the field
-        value instead of a silent number. For example, see <xref
+        value instead of a number. For example, see <xref
         linkend="marsh-enums"/>.
       </para>
       
@@ -758,11 +788,18 @@
         enumerated type and the rest is the list of member
         declarations. Member declarations have the following form:
         
-        <programlisting language="c">( name, =value<subscript>opt</subscript> )</programlisting>
+        <programlisting language="c">( name,
+	  = value<subscript>opt</subscript>,
+          comment<subscript>opt</subscript>,
+          { pointer-on-user-data }<subscript>opt</subscript>,
+	  user-data-type<subscript>opt</subscript>
+	  )</programlisting>
         
         Each member declaration should at least specify the name of
-        the member. The second argument is optional and, if present,
-        may specify the exact value. Enumeration member values obey
+        the member. If declaration has only name then parents are
+        optional. The second argument is optional and, if present,
+        may specify the exact value preceded with assign
+        sign. Enumeration member values obey
         usual C rules: if the value is not specified, it recieves the
         incremented value of the previos member; the first member
         recives the value zero if it is not specified explicitly. The
@@ -774,6 +811,9 @@
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
       </para>
+
+      Comment, pointer-on-user-data and user-data-type have the
+      meaning and usage as for structures memebers declarations.
     </section>
     
     <section xml:id="decl-arrays">
@@ -782,15 +822,17 @@
          To declare a structure field as an array with fixed number of
          elements you may use the third — type suffix — argument of a
          declaration. METARESC is able to recognize one- and two-
-         dimensional arrays. A two-dimensional array of pointers to
-         pointers to int looks like this:
+         dimensional arrays. A two-dimensional array of integers looks
+         like this:
          
          <programlisting language="c"><xi:include
            href="../../examples/arrays.h"
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
-         
+
+	 3+ dimensional arrays are also supported, but they will be
+         serialized as 2-dimensional.
          <!-- TODO: verify that arrays and type prefixes are compatible,
               give a clue on how to declare multi-dimensional arrays -->
        </para>
