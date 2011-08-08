@@ -697,7 +697,7 @@
          example). The alternative is simply using the user-data field
          for a second text field. In this case user-data-type should
          be declared as "rl_char_array_t".
-
+         
 	 For declaration of built-in types without any metadata simplifed
 	 grammar could be used. The following key words are supported
 	 <code>char</code>,
@@ -810,10 +810,10 @@
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
+        
+        Comment, pointer-on-user-data and user-data-type have the
+        meaning and usage as for structures memebers declarations.
       </para>
-
-      Comment, pointer-on-user-data and user-data-type have the
-      meaning and usage as for structures memebers declarations.
     </section>
     
     <section xml:id="decl-arrays">
