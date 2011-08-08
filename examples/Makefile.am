@@ -2,7 +2,7 @@
 
 AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
 
-noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions marshalling_bit_fields deserialization_3_args deserializing_xml save_json load_json
+noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions marshalling_bit_fields deserialization_3_args deserializing_xml save_json load_json simplified_grammar
 
 gjobs_SOURCES = gjobs.c
 gjobs_LDADD = ../src/libreslib.la
@@ -84,3 +84,6 @@ save_json_LDADD = ../src/libreslib.la
 
 load_json_SOURCES = load_json.c
 load_json_LDADD = ../src/libreslib.la
+
+simplified_grammar_SOURCES = simplified_grammar.c
+simplified_grammar_LDADD = ../src/libreslib.la

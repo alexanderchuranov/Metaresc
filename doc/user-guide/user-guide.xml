@@ -631,25 +631,28 @@
          user-defined types and types, specific to METARESC. Field
          declarations for standard and user-defined types have
          following form:
-
-         <programlisting language="c">( type, name,
-         suffix<subscript>opt</subscript>,
-         comment<subscript>opt</subscript>,
-         { pointer-on-user-data }<subscript>opt</subscript>,
-         user-data-type<subscript>opt</subscript>
-	   )</programlisting>
-
-         The first two arguments specify field type and name. Other
-         four arguments are optional. If any of optional arguments is
-         used in a declaration, then the previous optional arguments
-         must be specified too, but they could be empty. That is to
-         have a comment you need to specify type suffix as well: 
          
-         <programlisting language="c"><xi:include
-           href="../../examples/suffixes_comments_userdata.h"
-           parse="text"
-           xmlns:xi="http://www.w3.org/2003/XInclude"
-         /></programlisting>
+         <programlisting language="c">
+( type, name,
+        suffix<subscript>opt</subscript>,
+        comment<subscript>opt</subscript>,
+        { pointer-on-user-data }<subscript>opt</subscript>,
+        user-data-type<subscript>opt</subscript>
+        )</programlisting>
+        
+        The first two arguments specify field type and name. Other
+        four arguments are optional. If any of optional arguments is
+        used in a declaration, then the previous optional arguments
+        must be specified too. That is to have a comment you need to
+        specify type suffix as well. To make declaring structures more
+        convenient the library allows empty type suffixes and
+        comments:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/suffixes_comments_userdata.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
        </para>
        
        <para>
@@ -686,35 +689,85 @@
          are accessing metadata for yor types programmatically at
          run-time. The comment argument of field declaration is any
          text you may find useful to "attach" to the field. The
-         pointer-on-user-data argument is a <code>void*</code>
-         pointer. user-data-type is a string which defines type of the
-         pointer-on-user-data. It could be any type declared within
-         Metaresc library. Built-in types are not supported. If
-         user-data-type unspecified or meaningless
-         pointer-on-user-data is treated by the library as opaque
-         data. It may point to any statically allocated object with
-         external linkage (a global variable, for
-         example). The alternative is simply using the user-data field
-         for a second text field. In this case user-data-type should
-         be declared as "rl_char_array_t".
-
-	 For declaration of built-in types without any metadata simplifed
-	 grammar could be used. The following key words are supported
-	 <code>char</code>,
-	 <code>short</code>,
-	 <code>int</code>,
-	 <code>unsigned</code>,
-	 <code>signed</code>,
-	 <code>long</code>,
-	 <code>float</code>,
-	 <code>double</code>,
-	 <code>[u]int[X]_t</code>,
-	 <code>[__]volatile[__]</code>,
-	 <code>[__]const[__]</code>,
-	 <code>string_t</code>. Last keyword reffers to type declared
-	 in Metaresc which is equivalent to char *.
+         pointer-on-user-data argument is of <code>void*</code>
+         type. It is used together with the user-data-type
+         argument. There are several options for using
+         pointer-on-user-data and user-data-type:
+         
+         <itemizedlist>
+           <listitem><para> Pointer-on-user-data points to statically
+           allocated object with external linkage (a global variable,
+           for example). In this case user-data-type should be a text string,
+           specifying the type of the pointed-to value. Any type
+           declared using METARESC grammar is allowed, built-in types
+           are not supported.
+           </para></listitem>
+           <listitem><para>The user-data-type argument is unspecified.
+           <!-- TODO: or meaningless: how "meaningful" is defined? -->
+           In this case pointer-on-user-data is treated by the library
+           as an opaque value.
+           </para></listitem>
+           <listitem><para>The pointer-on-user-data is used for a
+           second text field. In this case user-data-type should be
+           specified as "rl_char_array_t".
+           </para></listitem>
+         </itemizedlist>
        </para>
-
+       
+       <para>
+         The library provides a convenient way to declare fields of
+         built-in types: the simplified grammar. It may be used if the
+         field is of basic type (without any type prefixes and
+         suffixes) and no comments or user-provided meta-data for the
+         field are necessary. The following example contains a
+         simplified structure declaration:
+         
+         <programlisting language="c"><xi:include
+           href="../../examples/simplified_grammar.h"
+           parse="text"
+           xmlns:xi="http://www.w3.org/2003/XInclude"
+         /></programlisting>
+         
+         The simplified declaration is always a set of keywords
+         followed by the field name. This is a list keywords, which
+         are recognized in simplified declarations:
+         
+         <itemizedlist>
+           <listitem><para> <code>char</code> </para></listitem>
+           <listitem><para> <code>int</code> </para></listitem>
+           <listitem><para> <code>unsigned</code> </para></listitem>
+           <listitem><para> <code>signed</code> </para></listitem>
+           <listitem><para> <code>short</code> </para></listitem>
+           <listitem><para> <code>long</code> </para></listitem>
+           <listitem><para> <code>float</code> </para></listitem>
+           <listitem><para> <code>double</code> </para></listitem>
+           
+           <listitem><para>
+             <code>int</code>N<code>_t</code> ( where N is one of 8,
+             16, 32, 64 )
+           </para></listitem>
+           
+           <listitem><para>
+             <code>uint</code>N<code>_t</code> ( where N is one of 8,
+             16, 32, 64 )
+           </para></listitem>
+           <!-- TODO: support other integer types, like least, fast,
+           max, etc. -->
+           <listitem><para> <code>volatile</code> </para></listitem>
+           <listitem><para> <code>const</code> </para></listitem>
+           
+           <listitem><para> <code>__volatile__</code> ( GCC-specific ) </para></listitem>
+           <listitem><para> <code>__const__</code> ( GCC-specific ) </para></listitem>
+           
+           <listitem><para> <code>string_t</code> ( METARESC-specific ) </para></listitem>
+         </itemizedlist>
+         
+         The <code>string_t</code> is a <code>typedef</code> for
+         <code>char*</code>. It is necessary to make possible
+         declaring a pointer to character string when using simplified
+         grammar.
+       </para>
+       
        <para>
          For some field types the field declaration grammar is more
          involved. Most notable are anonymous unions and bit-fields.
@@ -810,10 +863,10 @@
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
+        
+        Comment, pointer-on-user-data and user-data-type have the
+        meaning and usage as for structures memebers declarations.
       </para>
-
-      Comment, pointer-on-user-data and user-data-type have the
-      meaning and usage as for structures memebers declarations.
     </section>
     
     <section xml:id="decl-arrays">
