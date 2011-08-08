@@ -631,25 +631,28 @@
          user-defined types and types, specific to METARESC. Field
          declarations for standard and user-defined types have
          following form:
-
-         <programlisting language="c">( type, name,
-         suffix<subscript>opt</subscript>,
-         comment<subscript>opt</subscript>,
-         { pointer-on-user-data }<subscript>opt</subscript>,
-         user-data-type<subscript>opt</subscript>
-	   )</programlisting>
-
-         The first two arguments specify field type and name. Other
-         four arguments are optional. If any of optional arguments is
-         used in a declaration, then the previous optional arguments
-         must be specified too, but they could be empty. That is to
-         have a comment you need to specify type suffix as well: 
          
-         <programlisting language="c"><xi:include
-           href="../../examples/suffixes_comments_userdata.h"
-           parse="text"
-           xmlns:xi="http://www.w3.org/2003/XInclude"
-         /></programlisting>
+         <programlisting language="c">
+( type, name,
+        suffix<subscript>opt</subscript>,
+        comment<subscript>opt</subscript>,
+        { pointer-on-user-data }<subscript>opt</subscript>,
+        user-data-type<subscript>opt</subscript>
+        )</programlisting>
+        
+        The first two arguments specify field type and name. Other
+        four arguments are optional. If any of optional arguments is
+        used in a declaration, then the previous optional arguments
+        must be specified too. That is to have a comment you need to
+        specify type suffix as well. To make declaring structures more
+        convenient the library allows empty type suffixes and
+        comments:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/suffixes_comments_userdata.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
        </para>
        
        <para>
