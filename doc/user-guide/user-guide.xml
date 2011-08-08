@@ -689,17 +689,29 @@
          are accessing metadata for yor types programmatically at
          run-time. The comment argument of field declaration is any
          text you may find useful to "attach" to the field. The
-         pointer-on-user-data argument is a <code>void*</code>
-         pointer. user-data-type is a string which defines type of the
-         pointer-on-user-data. It could be any type declared within
-         Metaresc library. Built-in types are not supported. If
-         user-data-type unspecified or meaningless
-         pointer-on-user-data is treated by the library as opaque
-         data. It may point to any statically allocated object with
-         external linkage (a global variable, for
-         example). The alternative is simply using the user-data field
-         for a second text field. In this case user-data-type should
-         be declared as "rl_char_array_t".
+         pointer-on-user-data argument is of <code>void*</code>
+         type. It is used together with the user-data-type
+         argument. There are several options for using
+         pointer-on-user-data and user-data-type:
+         
+         <itemizedlist>
+           <listitem><para> Pointer-on-user-data points to statically
+           allocated object with external linkage (a global variable,
+           for example). In this case user-data-type should be a text string,
+           specifying the type of the pointed-to value. Any type
+           declared using METARESC grammar is allowed, built-in types
+           are not supported.
+           </para></listitem>
+           <listitem><para>The user-data-type argument is unspecified.
+           <!-- TODO: or meaningless: how "meaningful" is defined? -->
+           In this case pointer-on-user-data is treated by the library
+           as an opaque value.
+           </para></listitem>
+           <listitem><para>The pointer-on-user-data is used for a
+           second text field. In this case user-data-type should be
+           specified as "rl_char_array_t".
+           </para></listitem>
+         </itemizedlist>
          
 	 For declaration of built-in types without any metadata simplifed
 	 grammar could be used. The following key words are supported
