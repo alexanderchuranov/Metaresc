@@ -712,24 +712,62 @@
            specified as "rl_char_array_t".
            </para></listitem>
          </itemizedlist>
-         
-	 For declaration of built-in types without any metadata simplifed
-	 grammar could be used. The following key words are supported
-	 <code>char</code>,
-	 <code>short</code>,
-	 <code>int</code>,
-	 <code>unsigned</code>,
-	 <code>signed</code>,
-	 <code>long</code>,
-	 <code>float</code>,
-	 <code>double</code>,
-	 <code>[u]int[X]_t</code>,
-	 <code>[__]volatile[__]</code>,
-	 <code>[__]const[__]</code>,
-	 <code>string_t</code>. Last keyword reffers to type declared
-	 in Metaresc which is equivalent to char *.
        </para>
-
+       
+       <para>
+         The library provides a convenient way to declare fields of
+         built-in types: the simplified grammar. It may be used if the
+         field is of basic type (without any type prefixes and
+         suffixes) and no comments or user-provided meta-data for the
+         field are necessary. The following example contains a
+         simplified structure declaration:
+         
+         <programlisting language="c"><xi:include
+           href="../../examples/simplified_grammar.h"
+           parse="text"
+           xmlns:xi="http://www.w3.org/2003/XInclude"
+         /></programlisting>
+         
+         The simplified declaration is always a set of keywords
+         followed by the field name. This is a list keywords, which
+         are recognized in simplified declarations:
+         
+         <itemizedlist>
+           <listitem><para> <code>char</code> </para></listitem>
+           <listitem><para> <code>int</code> </para></listitem>
+           <listitem><para> <code>unsigned</code> </para></listitem>
+           <listitem><para> <code>signed</code> </para></listitem>
+           <listitem><para> <code>short</code> </para></listitem>
+           <listitem><para> <code>long</code> </para></listitem>
+           <listitem><para> <code>float</code> </para></listitem>
+           <listitem><para> <code>double</code> </para></listitem>
+           
+           <listitem><para>
+             <code>int</code>N<code>_t</code> ( where N is one of 8,
+             16, 32, 64 )
+           </para></listitem>
+           
+           <listitem><para>
+             <code>uint</code>N<code>_t</code> ( where N is one of 8,
+             16, 32, 64 )
+           </para></listitem>
+           <!-- TODO: support other integer types, like least, fast,
+           max, etc. -->
+           <listitem><para> <code>volatile</code> </para></listitem>
+           <listitem><para> <code>const</code> </para></listitem>
+           
+           <listitem><para> <code>__volatile__</code> ( GCC-specific ) </para></listitem>
+           <listitem><para> <code>__const__</code> ( GCC-specific ) </para></listitem>
+           
+           <listitem><para> <code>string_t</code> ( METARESC-specific ) </para></listitem>
+         </itemizedlist>
+         
+         The <code>string_t</code> is a <code>typedef</code> for
+         <code>char*</code>. It is necessary to make possible
+         declaring a pointer to character string when using simplified
+         grammar.
+       </para>
+       
        <para>
          For some field types the field declaration grammar is more
          involved. Most notable are anonymous unions and bit-fields.
