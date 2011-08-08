@@ -1028,7 +1028,7 @@
 	    .ptrs = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }, \
 	    .rl_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, }; \
 	  _status_ = METHOD (_str_, &_load_data_.ptrs);			\
-	  if (0 == _status_)						\
+	  if (_status_)							\
 	    {								\
 	      rl_fd_t _fd_ = {						\
 		.type = #RL_TYPE_NAME,					\

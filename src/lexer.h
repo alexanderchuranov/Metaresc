@@ -84,7 +84,7 @@ static inline char * rl_get_id (char * start)
   rl_load_t rl_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \
   rl_ ## METHOD ## _lex_init_extra (&rl_load, &scanner);		\
   rl_ ## METHOD ## __scan_string (str, scanner);			\
-  status = rl_ ## METHOD ## _parse (scanner);				\
+  status = !rl_ ## METHOD ## _parse (scanner);				\
   rl_ ## METHOD ## _lex_destroy (scanner);				\
   return (status);							\
 }
