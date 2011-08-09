@@ -584,7 +584,36 @@
      </section>
 
    </section>
-
+   
+   <section xml:id="mem-mgmt">
+     <title>Memory management</title>
+     
+     <para>
+       The METARESC library may allocate memory on behalf of your
+       application for many reasons. Loading variable-sized structures
+       is the most obvious one. Since different applications have
+       different requirements for memory management, METARESC is
+       configurable in this respect and allows specifying memory
+       management functions to use. If you don't explicitly configure
+       the library, then the standard <code>malloc</code>,
+       <code>realloc</code> and <code>free</code> are used.
+     </para>
+     
+     <para>
+       To make switching memory managers easier, METARESC provides
+       three memory management macros: <code>RL_MALLOC</code>,
+       <code>RL_REALLOC</code> and <code>RL_FREE</code>. They are used
+       as drop-in replacements for the <code>malloc</code>,
+       <code>realloc</code> and <code>free</code> respectively. These
+       macros always call memory management functions, which
+       the library is configured to use. Using them in the code that
+       works with serializable data structures is the recommended way
+       to achieve consistency in managing memory.
+     </para>
+     
+     <!-- TODO: how to configure memory management? -->
+   </section>
+   
    <section xml:id="type-declaration">
      <title>Declaring Types</title>
 
@@ -728,9 +757,9 @@
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
          
-         The simplified declaration is always a set of keywords
-         followed by the field name. This is a list keywords, which
-         are recognized in simplified declarations:
+         The simplified structure field declaration is a set of
+         keywords followed by the field name. The recognized keywords
+         are:
          
          <itemizedlist>
            <listitem><para> <code>char</code> </para></listitem>
@@ -774,7 +803,7 @@
          Structures may also have fields of METARESC-specific
          types. For more information see <xref
          linkend="decl-unions"/>, <xref linkend="decl-bfields"/> and
-         <xref linkend="lib-specific-types"/>.
+         <xref linkend="decl-rarrays"/>.
        </para>
      </section>
 
@@ -807,16 +836,6 @@
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
-         
-         The only condition for this to succeed is that if you
-         declare, say, an <code>uint64_t</code>, then it should be the
-         same as, for example, <code>unsigned long int</code> on your
-         platform. Since POSIX requires that <code>char</code> is
-         exactly 8 bits, types having width of 8, 16, 32 and 64 should
-         be safe on Linux and other UNIX-like platforms in this
-         respect.
-	 <!-- [u]int[XX]_t maps into built-in types accoring
-         inttypes.h declarations -->
       </para>
     </section>
     
@@ -830,7 +849,7 @@
         the enumeration is declared using the library language and the
         fields of the enumeration type present in a structure, then
         when the instance of the structure is serialized the output
-        may contain readable enumeration member name for the field
+        may contain readable enumeration constant name for the field
         value instead of a number. For example, see <xref
         linkend="marsh-enums"/>.
       </para>
@@ -838,25 +857,25 @@
       <para>
         Enumerations are declared using the <code>TYPEDEF_ENUM</code>
         variadic macro. The first argument is the name of the
-        enumerated type and the rest is the list of member
-        declarations. Member declarations have the following form:
+        enumerated type and the rest is the list of enumerator
+        declarations. Declarations have the following form:
         
-        <programlisting language="c">( name,
-	  = value<subscript>opt</subscript>,
+        <programlisting language="c">
+( name, = value<subscript>opt</subscript>,
           comment<subscript>opt</subscript>,
           { pointer-on-user-data }<subscript>opt</subscript>,
-	  user-data-type<subscript>opt</subscript>
-	  )</programlisting>
+          user-data-type<subscript>opt</subscript>
+          ) </programlisting>
         
-        Each member declaration should at least specify the name of
-        the member. If declaration has only name then parents are
-        optional. The second argument is optional and, if present,
-        may specify the exact value preceded with assign
-        sign. Enumeration member values obey
-        usual C rules: if the value is not specified, it recieves the
-        incremented value of the previos member; the first member
-        recives the value zero if it is not specified explicitly. The
-        following code exemplifies this:
+        Each enumerator declaration should at least specify the name
+        of the constant. If the declaration only specifies a name,
+        then parentheses may be omitted. The second argument is
+        optional and, if present, specifies the value preceded with
+        equals sign. Enumeration constant values obey usual C rules:
+        if the value is not specified, it recieves the incremented
+        value of the previous constant; the first constant recives the
+        value zero if it is not specified explicitly. The following
+        code exemplifies this:
         
         <programlisting language="c"><xi:include
            href="../../examples/enums.h"
@@ -864,8 +883,8 @@
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
         
-        Comment, pointer-on-user-data and user-data-type have the
-        meaning and usage as for structures memebers declarations.
+        Comment, pointer-on-user-data and user-data-type arguments
+        have the same meaning as in structure member declarations.
       </para>
     </section>
     
@@ -883,11 +902,19 @@
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
-
-	 3+ dimensional arrays are also supported, but they will be
-         serialized as 2-dimensional.
-         <!-- TODO: verify that arrays and type prefixes are compatible,
-              give a clue on how to declare multi-dimensional arrays -->
+         
+         Array type suffixes are not compatible with type prefixes. In
+         other words, declaring arrays of pointers is not allowed.
+         The recommended way to deal with arrays of pointers and
+         multidimensional arrays is to declare helper structure types,
+         then use them as a type for array items, as in the following
+         code sample:
+        
+        <programlisting language="c"><xi:include
+           href="../../examples/multidimensional_arrays.c"
+           parse="text"
+           xmlns:xi="http://www.w3.org/2003/XInclude"
+         /></programlisting>
        </para>
     </section>
     
@@ -987,13 +1014,58 @@
       </para>
     </section>
     
-    <section xml:id="lib-specific-types">
-      <title>Data types, provided by the library</title>
+    <section xml:id="decl-rarrays">
+      <title>Declaring RARRAYs</title>
       <para>
         In addition to the usual types found in C language, the
         library allows declaring a structure field to be of
-        METARESC-specific RARRAY or CHAR_ARRAY types.
-        <!-- TODO: write about RARRAY and CHAR_ARRAY -->
+        METARESC-specific RARRAY type. There is no widely-accepted
+        idea on how to declare a resizable array in C; most
+        applications use their own patterns and naming
+        conventions. The RARRAY is a resizable array provided by the
+        library. A structure field of RARRAY type may de declared as
+        follows:
+        
+        <programlisting language="c"><xi:include
+          href="../../examples/decl_rarray.h"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
+        
+        The first declaration argument specifies the type of array
+        items, the second — the name of the field. If the first
+        argument is <code>employee_t</code>, as shown in example, then
+        the <code>employees</code> member of the structure is a
+        structure itself and has at least the following fields:
+        
+        <programlisting language="c"><![CDATA[
+employee_t* data;   // pointer to array items
+int32_t size;       // used space in bytes
+int32_t alloc_size; // allocated space in bytes
+rl_ptr_t ext;       // per-instance user data
+char* ptr_type;     // the name of the pointed-to object type
+]]></programlisting>
+        
+        The <code>ext</code> field is intended for additional data you
+        may need to attach to the instance of resizable array. Usage
+        of <code>ext</code> and <code>ptr_type</code> fields is
+        optional. You may safely zeroize the fields. However, to
+        serialize the <code>ext</code> field correctly (if it is
+        non-null), set <code>ptr_type</code> to character string,
+        containing the name of the type of the object the
+        <code>ext</code> field points to.
+      </para>
+      
+      <para>
+        Since RARRAY keyword produces ordinary data structure, you may
+        use its fileds as you see fit. The library, however, will
+        always assume that the memory pointed to by the
+        <code>data</code> field is allocated using the
+        <code>RL_MALLOC</code> macro. When loading data from external
+        source, you must use <code>RL_FREE</code> to free the memory,
+        occupied by resizable array items ( which the
+        <code>data</code> member points to ), when the array is no
+        longer necessary.
       </para>
     </section>
     
@@ -1389,8 +1461,52 @@
       </section>
       
       <section>
-        <title>Marshalling data types, provided by the library</title>
-        <para />
+        <title>Marshalling RARRAYs</title>
+        <para>
+          The resizable arrays, provided by the library, are
+          serialized just like the fixed-width arrays: the field
+          contents is all array items serialized. The traversal starts
+          form zero index. So that, having a declaration like this:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/decl_rarray.h"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          You may expect the following output:
+          
+          <programlisting language="xml"><![CDATA[
+<?xml version="1.0"?>
+<firm>
+  <name>Gen-sys</name>
+  <employees>
+    <employees>
+      <firstname>Will</firstname>
+      <lastname>Rodman</lastname>
+      <salary>200000</salary>
+    </employees>
+    <employees>
+      <firstname>Steven</firstname>
+      <lastname>Jacobs</lastname>
+      <salary>630000</salary>
+    </employees>
+    <employees>
+      <firstname>Robert</firstname>
+      <lastname>Franklin</lastname>
+      <salary>170000</salary>
+    </employees>
+  </employees>
+</firm>
+]]></programlisting>
+          
+          The only trick here is to remember that the
+          <code>size</code> and <code>alloc_size</code> fields of a
+          resizable array are in bytes. To correctly serialize the
+          variable in the example above the program set the
+          <code>size</code> member to <code>3 *
+          sizeof(employee_t)</code>.
+        </para>
       </section>
       
     </section>
