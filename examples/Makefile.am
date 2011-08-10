@@ -2,7 +2,7 @@
 
 AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
 
-noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions marshalling_bit_fields deserialization_3_args deserializing_xml save_json load_json simplified_grammar multidimensional_arrays decl_rarray
+noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions marshalling_bit_fields deserialization_3_args deserializing_xml save_json load_json simplified_grammar multidimensional_arrays decl_rarray save_cinit load_cinit save_scm load_scm
 
 gjobs_SOURCES = gjobs.c
 gjobs_LDADD = ../src/libreslib.la
@@ -93,3 +93,15 @@ multidimensional_arrays_LDADD = ../src/libreslib.la
 
 decl_rarray_SOURCES = decl_rarray.c
 decl_rarray_LDADD = ../src/libreslib.la
+
+save_cinit_SOURCES = save_cinit.c
+save_cinit_LDADD = ../src/libreslib.la
+
+load_cinit_SOURCES = load_cinit.c
+load_cinit_LDADD = ../src/libreslib.la
+
+save_scm_SOURCES = save_scm.c
+save_scm_LDADD = ../src/libreslib.la
+
+load_scm_SOURCES = load_scm.c
+load_scm_LDADD = ../src/libreslib.la
