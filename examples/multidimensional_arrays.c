@@ -24,11 +24,11 @@ TYPEDEF_STRUCT (space_t,
 int main()
 {
   space_t space;
+  box_t box = { .name = "some name", .creation_time = time (NULL) };
 
   memset(&space, 0, sizeof(space));
   
-  space.planes[3].points[2][5].pbox = RL_MALLOC(sizeof(box_t));
-  space.planes[3].points[2][5].pbox->creation_time = time(NULL);
+  space.planes[3].points[2][5].pbox = &box;
   
   // here goes the rest of the code
   puts(RL_SAVE_JSON(space_t, &space));
