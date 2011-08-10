@@ -17,7 +17,7 @@
 #define RL_CINIT_TYPE_TYPE_TEMPLATE "%2$s"
 #define RL_CINIT_FIELDS_DELIMITER ",\n"
 #define RL_CINIT_NAMED_FIELD_TEMPLATE ".%s = "
-#define RL_JSON_NAMED_FIELD_TEMPLATE "%s : "
+#define RL_JSON_NAMED_FIELD_TEMPLATE "\"%s\" : "
 #define RL_CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
 
 #define RL_CINIT_UNNAMED_FIELDS (0)

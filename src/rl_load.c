@@ -637,7 +637,6 @@ rl_load_rarray (int idx, rl_load_data_t * load_data)
   if (ref_idx >= 0)
     {
       ra->size = ptrs->ra.data[idx].rarray_size;
-      printf ("XXX size %d\n", ra->size);
       if (0 != count)
 	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNEXPECTED_DATA);
     }

@@ -46,7 +46,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 "."{WS}{ID}{WS}"=" { yylval->string = rl_get_id (&yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
-{ID}{WS}":" { yylval->string = rl_get_id (yytext); return (TOK_CINIT_FIELD_PREFIX); }
+"\""{ID}"\""{WS}":" { yylval->string = rl_get_id (&yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
 "("({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"  { yylval->string = get_type (&yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 

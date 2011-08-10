@@ -31,13 +31,13 @@ int main (int argc, char * argv[])
   print_info(&e);
   
   char corrupted[] = "this is not a json text";
-  
+
   if (RL_LOAD_JSON (employee_t, corrupted, &e))
   {
     print_info(&e);
   }
   else {
-    fprintf(stderr, "JSON parsing error!");
+    fprintf(stderr, "JSON parsing error!\n");
     return EXIT_FAILURE;
   }
   
