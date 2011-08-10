@@ -19,25 +19,25 @@ void print_info(employee_t const* e)
 
 int main (int argc, char * argv[])
 {
-  char json[] =
-    "{"                       "\n"
-    "  firstname : \"John\"," "\n"
-    "  lastname : \"Doe\","   "\n"
-    "  salary : 123456,"      "\n"
-    "}"                       "\n";
+  char scm[] =
+    "(                        \n"
+    "  (\"John\" . firstname) \n"
+    "  (\"Doe\" . lastname)   \n"
+    "  (123456 . salary))     \n"
+    ;
   
-  employee_t e = RL_LOAD_JSON (employee_t, json);
+  employee_t e = RL_LOAD_SCM (employee_t, scm );
   
   print_info(&e);
   
-  char corrupted[] = "this is not a json text";
+  char corrupted[] = "this is not a Scheme language text";
   
-  if (RL_LOAD_JSON (employee_t, corrupted, &e))
+  if (RL_LOAD_SCM (employee_t, corrupted, &e))
   {
     print_info(&e);
   }
   else {
-    fprintf(stderr, "JSON parsing error!\n");
+    fprintf(stderr, "SCM parsing error!\n");
     return EXIT_FAILURE;
   }
   

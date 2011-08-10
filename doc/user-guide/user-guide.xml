@@ -1645,9 +1645,9 @@ char* ptr_type;     // the name of the pointed-to object type
           JSON data. The returned value may be used to initialize
           variable of the specified type. The version with three
           arguments additionally accepts a pointer to the variable,
-          where the loaded data is to be written. <!-- TODO: what
-          about return value? --> The following code sample
-          exemplifies this:
+          where the loaded data is to be written. The returned value
+          is non-zero for success and zero for failure. The following
+          code sample exemplifies this:
           
           <programlisting language="c"><xi:include
             href="../../examples/load_json.c"
@@ -1655,16 +1655,130 @@ char* ptr_type;     // the name of the pointed-to object type
             xmlns:xi="http://www.w3.org/2003/XInclude"
           /></programlisting>
         </para>
+        
+        <para>
+          METARESC uses following rules to map C language objects
+          to JSON:
+          
+          <itemizedlist>
+            <listitem><para>
+              Structures are represented by JSON objects.
+            </para></listitem>
+            <listitem><para>
+              Integer and floating-point types are represented by JSON
+              numbers. <!-- TODO: what about 'char'? -->
+            </para></listitem>
+            <listitem><para>
+              Enumeration constant values are represented by JSON strings.
+            </para></listitem>
+            <listitem><para>
+              Arrays are represented by JSON arrays.
+            </para></listitem>
+            <listitem><para>
+              Pointers to characters are represented by JSON strings.
+            </para></listitem>
+            <listitem><para>
+              Bit-fields are represented by JSON numbers.
+            </para></listitem>
+            <listitem><para>
+              RARRAYs are represented by JSON arrays.
+            </para></listitem>
+          </itemizedlist>
+        </para>
       </section>
       
       <section>
         <title>C-init format</title>
-        <para />
+        <para>
+          The C-init format is a METARESC-specific data format, which
+          has the same grammar as initializer-lists in C language
+          <footnote><para>see ISO/IEC 9899:1999 §6.7.8 for formal
+          grammar definition</para></footnote>. You may need this
+          format for two reasons. First, it may feel more readable if
+          you are used to the C language. Second, the text produced by
+          serialization may be pasted right into the source code of
+          the program and used as initializer for a variable. This is
+          a handy way to pre-calculate some data and compile it into
+          the executable file to provide faster application start-up.
+        </para>
+        
+        <para>
+          The serialization is performed by the
+          <code>RL_SAVE_CINIT</code> macro. It accepts the name of the
+          type and a pointer to the variable of that type. The
+          returned value is a pointer to the character string in the
+          case of success and <code>NULL</code> in the case of
+          failure. The macro is used in the following code sample:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/save_cinit.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
+        
+        <para>
+          De-serialization is performed by the
+          <code>RL_LOAD_CINIT</code> macro, which has two forms. The
+          first accepts the name of the type and pointer to the
+          character string. The returned value has the specified type
+          and may be used to directly initialize a variable of that
+          type. The second form takes additional argument — pointer to
+          the variable that receives the de-serialized value. The
+          returned value is non-zero in case of success and zero in
+          the case of failure. The following example invokes both
+          forms of the macro:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/load_cinit.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+          
+          The representation for this format is not described here,
+          because serialization into C-init produces the same text as
+          you would write to initialize the structure in C source
+          code.
+        </para>
       </section>
       
       <section>
         <title>SCM format</title>
-        <para />
+        <para>
+          The SCM is also a METARESC-specific data representation format. It
+          is intended for programs written in Scheme language as it
+          has compatible grammar. Serialization is performed by the
+          <code>RL_SAVE_SCM</code> macro, which accepts the name of
+          the type to be serialized and the pointer to the variable,
+          which provides the data:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/save_scm.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
+        
+        <para>
+          There is a macro <code>RL_LOAD_SCM</code> for loading data
+          in SCM format. It has two forms: with two and three
+          arguments. The two-argument form accepts a name of the type
+          and a pointer to the character string with SCM text. The
+          returned value has the type, specified by the first
+          argument, and may be used to initialize a variable of that
+          type. The second form accepts an extra argument, which
+          points to the variable that is to receive the loaded
+          value. The return value indicates success or failure and may
+          be non-zero and zero, respectively. The usage is exemplified
+          by the following code:
+          
+          <programlisting language="c"><xi:include
+            href="../../examples/load_scm.c"
+            parse="text"
+            xmlns:xi="http://www.w3.org/2003/XInclude"
+          /></programlisting>
+        </para>
+        <!-- TODO: rules for mapping from C to SCM -->
       </section>
       
       <section>
