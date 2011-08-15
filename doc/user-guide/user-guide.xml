@@ -1791,10 +1791,35 @@ char* ptr_type;     // the name of the pointed-to object type
   </section>
   
   <section xml:id="metadata-tech">
-    <title>Metadata and their applications</title>
+    <title>Accessing metadata</title>
     
     <section>
-      <title>Understanding type and field descriptors</title>
+      <title>Type descriptors</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Obtaining field types</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Getting and setting field values</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Type information for pointers to functions</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Type information for arrays</title>
+      <para />
+    </section>
+    
+    <section>
+      <title>Type information for enumerated types</title>
       <para />
     </section>
     

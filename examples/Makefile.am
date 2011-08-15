@@ -2,7 +2,7 @@
 
 AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
 
-noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions marshalling_bit_fields deserialization_3_args deserializing_xml save_json load_json simplified_grammar multidimensional_arrays decl_rarray save_cinit load_cinit save_scm load_scm
+noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixes_comments_userdata arrays simple_structure specified_width enums named_union anonymous_unions type_prefixes function_pointers bitfields marshalling_structures_basic_types marshalling_enumerations marshalling_arrays marshalling_unions marshalling_pointers marshalling_pointers_to_functions marshalling_bit_fields deserialization_3_args deserializing_xml save_json load_json simplified_grammar multidimensional_arrays decl_rarray save_cinit load_cinit save_scm load_scm type_descriptors field_types get_set_field function_pointer_metadata array_metadata enums_metadata
 
 gjobs_SOURCES = gjobs.c
 gjobs_LDADD = ../src/libreslib.la
@@ -105,3 +105,21 @@ save_scm_LDADD = ../src/libreslib.la
 
 load_scm_SOURCES = load_scm.c
 load_scm_LDADD = ../src/libreslib.la
+
+type_descriptors_SOURCES = type_descriptors.c
+type_descriptors_LDADD = ../src/libreslib.la
+
+field_types_SOURCES = field_types.c
+field_types_LDADD = ../src/libreslib.la
+
+get_set_field_SOURCES = get_set_field.c
+get_set_field_LDADD = ../src/libreslib.la
+
+function_pointer_metadata_SOURCES = function_pointer_metadata.c
+function_pointer_metadata_LDADD = ../src/libreslib.la
+
+array_metadata_SOURCES = array_metadata.c
+array_metadata_LDADD = ../src/libreslib.la
+
+enums_metadata_SOURCES = enums_metadata.c
+enums_metadata_LDADD = ../src/libreslib.la
