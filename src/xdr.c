@@ -378,10 +378,16 @@ xdr_load_struct (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   return (!0);
 }
 
+/*
+  Union rl_ptr_t might be different on source and destination computer. That's why union branch could be identified only by name, not index.
+ */
 static int
 xdr_save_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  return (xdr_int (xdrs, &ptrs->ra.data[idx].union_field_idx));
+  /* save union branch field name as string */
+  rl_ptrdes_t ptrdes = { .data = &ptrs->ra.data[idx].union_field_name, }; /* temporary pointer descriptor for this string */
+  rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
+  return (xdr_save_string (xdrs, 0, &_ptrs_));
 }
 
 static int
@@ -389,7 +395,8 @@ xdr_load_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   rl_td_t * tdp = rl_get_td_by_name (ptrs->ra.data[idx].fd.type); /* look up for type descriptor */
   char * data = ptrs->ra.data[idx].data;
-  int field_idx = -1;
+  rl_ptrdes_t ptrdes = { .data = &ptrs->ra.data[idx].union_field_name, }; /* temporary pointer descriptor for union discriminator string */
+  rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
 
   /* get pointer on structure descriptor */
   if (NULL == tdp)
@@ -402,10 +409,15 @@ xdr_load_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_NOT_A_UNION, tdp->type);
       return (0);
     }    
-  if (!xdr_int (xdrs, &field_idx))
+  if (!xdr_load_string (xdrs, 0, &_ptrs_))
     return (0);
-  if ((field_idx >= 0) && (field_idx < tdp->fields.size / sizeof (tdp->fields.data[0])))
-    return (xdr_load (data + tdp->fields.data[field_idx].offset, &tdp->fields.data[field_idx], xdrs, ptrs));
+  if (ptrs->ra.data[idx].union_field_name)
+    {
+      rl_fd_t * fdp = rl_get_fd_by_name (tdp, ptrs->ra.data[idx].union_field_name);
+      RL_FREE (ptrs->ra.data[idx].union_field_name);
+      if (fdp)
+	return (xdr_load (data + fdp->offset, fdp, xdrs, ptrs));
+    }
   
   return (!0);
 }

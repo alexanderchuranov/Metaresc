@@ -229,7 +229,7 @@ TYPEDEF_STRUCT (rl_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, next, , "next sibling index"),
 		BITMASK (rl_ptrdes_flags_t, flags),
 		(int32_t, rarray_size, , "size of resizable array"),
-		(int, union_field_idx, , "field descriptor for unions"),
+		(char *, union_field_name, , "field descriptor for unions"),
 		(char *, value, , "stringified value"),
 		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
