@@ -85,7 +85,7 @@ cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*no
 	      RL_FREE (save_data.content);
 	    }
 	  ptrs->ra.data[idx].ext.ptr = save_data.suffix;
-	  ptrs->ra.data[idx].ptr_type = "rl_char_array_t";
+	  ptrs->ra.data[idx].ptr_type = "string_t";
 	}
       
       if (ptrs->ra.data[idx].first_child >= 0)

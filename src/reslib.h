@@ -1134,7 +1134,6 @@
 #endif
 
 typedef long double long_double_t;
-typedef char * string_t;
 
 extern rl_conf_t rl_conf;
 

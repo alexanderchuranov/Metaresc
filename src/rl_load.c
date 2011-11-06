@@ -450,7 +450,7 @@ rl_load_char_array (int idx, rl_load_data_t * load_data)
   if (str)
     {
       int str_len = strlen (str);
-      if ((0 == strcmp (ptrs->ra.data[idx].fd.type, "rl_char_array_t")) &&
+      if ((0 == strcmp (ptrs->ra.data[idx].fd.type, "string_t")) &&
 	  (ptrs->ra.data[idx].parent >= 0) &&
 	  (RL_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.rl_type_ext))
 	{

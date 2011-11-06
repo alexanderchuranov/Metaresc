@@ -8,7 +8,7 @@ TYPEDEF_UNION (rl_ptr_t, ATTRIBUTES ( , "pointer on any type"),
 		(void *, ptr, , "default void pointer"),
 		)
 
-TYPEDEF_CHAR_ARRAY (rl_char_array_t, 1)
+TYPEDEF_FUNC (string_t, char, , "tricky way to declare type equivalent to char *", .rl_type = RL_TYPE_CHAR_ARRAY)
 
 TYPEDEF_ENUM (rl_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      (RL_LL_ALL, = 0),
@@ -167,7 +167,7 @@ TYPEDEF_STRUCT (rl_fd_t, ATTRIBUTES ( , "ResLib field descriptor"),
 		  or
 		  RL_NONE (void*, ext, , "user extended info", { (ext_info_t[]){ {.field = XXX}, {.field = YYY} } }, "ext_info_t")
 		  or
-		  RL_NONE (void*, ext, , "user extended info", { "one more extra string" }, "rl_char_array_t")
+		  RL_NONE (void*, ext, , "user extended info", { "one more extra string" }, "string_t")
 		*/
 		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
