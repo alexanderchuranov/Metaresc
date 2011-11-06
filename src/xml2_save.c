@@ -54,7 +54,9 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 		{
 		  /* set REF_IDX property */
 		  sprintf (number, "%" SCNd32, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
-		  xmlSetProp (node, (unsigned char*)RL_REF, (unsigned char*)number);
+		  xmlSetProp (node,
+			      (unsigned char*)((ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF),
+			      (unsigned char*)number);
 		}
 	      if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
 		{

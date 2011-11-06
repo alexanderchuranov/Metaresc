@@ -61,6 +61,11 @@ value
     {
       if (0 == strcmp (RL_REF, $1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
+      else if (0 == strcmp (RL_REF_CONTENT, $1.id))
+	{
+	  rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
+	  rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_CONTENT_REFERENCE;
+	}
       else if (0 == strcmp (RL_REF_IDX, $1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].idx = $1.ivalue;
       else if (0 == strcmp (RL_RARRAY_SIZE, $1.id))

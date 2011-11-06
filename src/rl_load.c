@@ -59,17 +59,27 @@ rl_set_crossrefs (rl_ra_rl_ptrdes_t * ptrs)
 	if (idx < 0)
 	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNDEFINED_REF_IDX, RL_REF_IDX, ptrs->ra.data[i].ref_idx);
 	else
-	  switch (ptrs->ra.data[i].fd.rl_type_ext)
-	    {
-	    case RL_TYPE_EXT_POINTER:
-	      *(void**)ptrs->ra.data[i].data = ptrs->ra.data[idx].data;
-	      break;
-	    case RL_TYPE_EXT_RARRAY:
-	      ((rl_rarray_t*)(ptrs->ra.data[i].data))->data = ptrs->ra.data[idx].data;
-	      break;
-	    default:
-	      break;
-	    }
+	  {
+	    void * data;
+	    if (ptrs->ra.data[i].flags & RL_PDF_CONTENT_REFERENCE)
+	      data = *(void**)(ptrs->ra.data[idx].data);
+	    else
+	      data = ptrs->ra.data[idx].data;
+	    
+	    switch (ptrs->ra.data[i].fd.rl_type_ext)
+	      {
+	      case RL_TYPE_EXT_POINTER:
+		*(void**)ptrs->ra.data[i].data = data;
+		break;
+	      case RL_TYPE_EXT_RARRAY:
+		((rl_rarray_t*)(ptrs->ra.data[i].data))->data = data;
+		break;
+	      default:
+		if (RL_TYPE_STRING == ptrs->ra.data[i].fd.rl_type)
+		  *(void**)ptrs->ra.data[i].data = data;
+		break;
+	      }
+	  }
       }
   RL_FREE (table);
   return (!0);
@@ -417,7 +427,7 @@ rl_load_string (int idx, rl_load_data_t * load_data)
 {
   rl_ra_rl_ptrdes_t * ptrs = &load_data->ptrs;
   char * str = ptrs->ra.data[idx].value;
-  if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
+  if ((ptrs->ra.data[idx].flags & RL_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
     *(char**)ptrs->ra.data[idx].data = NULL;
   else
     *(char**)ptrs->ra.data[idx].data = str ? RL_STRDUP (str) : NULL;

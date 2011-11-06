@@ -30,13 +30,16 @@ TYPEDEF_STRUCT (point_t,
 		POINTER_STRUCT (sample_t, sample),
 		)
 
-TYPEDEF_STRUCT (char_t, CHAR (c))
+TYPEDEF_STRUCT (char_t, char c)
 
 TYPEDEF_STRUCT
 (empty_t,
  (int, _x_, (int, __volatile__ __const__ char*, __volatile __const char * *, volatile const int*, void *, void**,  char*, char**, struct sample_t *, int (*) (struct sample_t*))),
  (str_t, p),
  INT32 _int,
+ volatile const unsigned long long int _int_,
+ long double _ld_,
+ string_t str,
  ANON_UNION (__attribute__((__transparent_union__))),
    INT32 (x),
    (float, y),
@@ -53,7 +56,25 @@ TYPEDEF_STRUCT
  (long double *, w, , "comment"),
  BITFIELD (short, b1, 12),
  BITFIELD (long int, b2, 24),
+ (_Decimal128, d128)
  )
+
+TYPEDEF_ENUM (rl_type_class_t,
+	      (no_type_class, = -1),			
+	      void_type_class, integer_type_class, char_type_class,
+	      enumeral_type_class, boolean_type_class,
+	      pointer_type_class, reference_type_class, offset_type_class,
+	      real_type_class, complex_type_class,
+	      function_type_class, method_type_class,
+	      record_type_class, union_type_class,
+	      array_type_class, string_type_class,
+	      lang_type_class
+	      )
+
+TYPEDEF_STRUCT (rarray_test_t,
+		RARRAY (char, x1),
+		RARRAY (char, x2),
+		)
 
 TYPEDEF_STRUCT
 (ieee_float_t,
@@ -70,8 +91,8 @@ TYPEDEF_UNION
 
 TYPEDEF_UNION (union_t,
 	       ATTRIBUTES (__attribute__((__transparent_union__)), "comment"),
-	       UINT32 (union_uint32),
-	       FLOAT (union_float),
+	       uint32_t union_uint32,
+	       float union_float,
 	       )
 
 TYPEDEF_ENUM (union_enum_discriminator_t,
@@ -130,6 +151,7 @@ RL_TYPEDEF_STRUCT ()
   RL_ENUM (boolean_t, _bool)
   RL_BITMASK (mask_t, mask)
   RL_STRING (string)
+  RL_STRING (string1)
   RL_STRING (string_empty)
   RL_STRING (string_zero)
   RL_STRING (string_full)

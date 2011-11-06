@@ -72,7 +72,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 .         { return (yytext[0]); }
 %%
 
-#define ESC_CHAR_MAP_SIZE (256)
+#define ESC_CHAR_MAP_SIZE (1 << 8)
 static int map[ESC_CHAR_MAP_SIZE] = {
   [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
   [(unsigned char)'f'] = (unsigned char)'\f',

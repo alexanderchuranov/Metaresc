@@ -33,6 +33,16 @@ xml2_load (xmlNodePtr node, rl_ra_rl_ptrdes_t * ptrs)
 	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_READ_REF, property);
       xmlFree (property);
     }
+  /* handle REF_CONTENT property */
+  property = (char*)xmlGetProp (node, (unsigned char*)RL_REF_CONTENT);
+  if (property)
+    {
+      if (1 != sscanf (property, "%" SCNd32, &ptrs->ra.data[idx].ref_idx))
+	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_READ_REF, property);
+      else
+	ptrs->ra.data[idx].flags |= RL_PDF_CONTENT_REFERENCE;
+      xmlFree (property);
+    }
   property = (char*)xmlGetProp (node, (unsigned char*)RL_RARRAY_SIZE);
   if (property)
     {

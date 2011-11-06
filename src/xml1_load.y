@@ -150,6 +150,13 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
 	  if (1 != sscanf (prop_value, "%" SCNd32, &rl_load->ptrs->ra.data[rl_load->parent].ref_idx))
 	    error = "Can't read " RL_REF " property.";
 	}
+      else if (0 == strcmp (prop_name, RL_REF_CONTENT))
+	{
+	  if (1 != sscanf (prop_value, "%" SCNd32, &rl_load->ptrs->ra.data[rl_load->parent].ref_idx))
+	    error = "Can't read " RL_REF " property.";
+	  else
+	    rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_CONTENT_REFERENCE;
+	}
       else if (0 == strcmp (prop_name, RL_RARRAY_SIZE))
 	{
 	  if (1 != sscanf (prop_value, "%" SCNd32, &rl_load->ptrs->ra.data[rl_load->parent].rarray_size))

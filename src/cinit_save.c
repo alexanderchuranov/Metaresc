@@ -68,7 +68,9 @@ cinit_json_save (rl_ra_rl_ptrdes_t * ptrs, char * named_field_template, int (*no
 	    if (rl_ra_printf (&rl_ra_str, named_field_template, ptrs->ra.data[idx].fd.name) < 0)
 	      return (NULL);
 	  if (ptrs->ra.data[idx].ref_idx >= 0)
-	    if (rl_ra_printf (&rl_ra_str, RL_CINIT_ATTR_INT, RL_REF, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
+	    if (rl_ra_printf (&rl_ra_str, RL_CINIT_ATTR_INT,
+			      (ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF,
+			      ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	      return (NULL);
 	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
 	    if (rl_ra_printf (&rl_ra_str, RL_CINIT_ATTR_INT, RL_REF_IDX, ptrs->ra.data[idx].idx) < 0)
@@ -193,6 +195,17 @@ CINIT_SAVE_TYPE (long_double_t);
 CINIT_SAVE_TYPE (bitfield);
 CINIT_SAVE_TYPE (bitmask, , RL_BITMASK_OR_DELIMITER);
 
+#define ESC_CHAR_MAP_SIZE (1 << 8)
+static int map[ESC_CHAR_MAP_SIZE] = {
+  [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
+  [(unsigned char)'\f'] = (unsigned char)'f',
+  [(unsigned char)'\n'] = (unsigned char)'n',
+  [(unsigned char)'\r'] = (unsigned char)'r',
+  [(unsigned char)'\t'] = (unsigned char)'t',
+  [(unsigned char)'\v'] = (unsigned char)'v',
+  [(unsigned char)'\\'] = (unsigned char)'\\',
+};
+
 /**
  * Quote string.
  * @param str string pointer
@@ -207,11 +220,12 @@ cinit_quote_string (char * str, char quote)
   
   for (ptr = str; *ptr; ++ptr)
     {
-      if ((quote == *ptr) || ('\\' == *ptr))
-	++length;
-      if (!isprint (*ptr))
-	length += 3;
-      ++length;
+      if ((quote == *ptr) || (map[(unsigned char)*ptr] >= 0))
+	length += 2;
+      else if (isprint (*ptr))
+	length += 1;
+      else
+	length += 4;
     }
   str_ = RL_MALLOC (length + 3);
   if (NULL == str_)
@@ -223,9 +237,17 @@ cinit_quote_string (char * str, char quote)
   str_[length++] = quote;
   for (ptr = str; *ptr; ++ptr)
     {
-      if ((quote == *ptr) || ('\\' == *ptr))
-	str_[length++] = '\\';
-      if (isprint (*ptr))
+      if (quote == *ptr)
+	{
+	  str_[length++] = '\\';
+	  str_[length++] = *ptr;
+	}
+      else if (map[(unsigned char)*ptr] >= 0)
+	{
+	  str_[length++] = '\\';
+	  str_[length++] = map[(unsigned char)*ptr];
+	}      
+      else if (isprint (*ptr))
 	str_[length++] = *ptr;
       else
 	{
@@ -280,7 +302,7 @@ static int
 cinit_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
   char * str = *(char**)ptrs->ra.data[idx].data;
-  if (NULL == str)
+  if ((NULL == str) || (ptrs->ra.data[idx].ref_idx >= 0))
     data->content = RL_STRDUP (RL_CINIT_NULL);
   else
     data->content = cinit_quote_string (str, '"');

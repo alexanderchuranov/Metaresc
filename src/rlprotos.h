@@ -36,8 +36,8 @@ TYPEDEF_ENUM (rl_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (RL_MESSAGE_NOT_A_UNION, , "Type '%s' is not a union."),
 	      (RL_MESSAGE_STRING_IS_NULL, , "Input string is NULL."),
 	      (RL_MESSAGE_NULL_POINTER, , "Can't save/load to/from NULL pointer."),
-	      (RL_MESSAGE_IDS_COLLISION, , "Two XML nodes have the same %s=%" SCNd32 "."),
-	      (RL_MESSAGE_UNDEFINED_REF_IDX, , "Reference on a node with %s=%" SCNd32 " could not be found."),
+	      (RL_MESSAGE_IDS_COLLISION, , "Two XML nodes have the same %s = %" SCNd32 "."),
+	      (RL_MESSAGE_UNDEFINED_REF_IDX, , "Reference on a node with %s = %" SCNd32 " could not be found."),
 	      (RL_MESSAGE_UNKNOWN_ENUM, , "Unknown enum value '%s'."),
 	      (RL_MESSAGE_READ_INT, , "Can't read integer value from string `%s`."),
 	      (RL_MESSAGE_READ_ENUM, , "Can't read enum value from string `%s`."),
@@ -118,7 +118,7 @@ TYPEDEF_STRUCT (rl_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable arr
 		(char *, ptr_type, , "union discriminator"),
 		)
 
-TYPEDEF_ENUM (rl_red_black_t, ATTRIBUTES (__attribute__ ((packed,aligned(sizeof (unsigned char)))), "Red/Black enum"),
+TYPEDEF_ENUM (rl_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (unsigned char)))), "Red/Black enum"),
 	      (RL_BLACK, = 0),
 	      (RL_RED, = 1),
 	      )
@@ -209,11 +209,12 @@ TYPEDEF_STRUCT (rl_ra_rl_td_ptr_t,
 		RARRAY (rl_td_ptr_t, ra, "non-collision hash table"),
 		)
 
-TYPEDEF_ENUM (rl_ptrdes_flags_t, ATTRIBUTES ( , "bitmask values"),
+TYPEDEF_ENUM (rl_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (int32_t)))), "bitmask values"),
 	      (RL_PDF_NONE, = 0),
 	      (RL_PDF_IS_NULL, = (1 << 0)),
 	      (RL_PDF_IS_REFERENCED, = (1 << 1)),
-	      (RL_PDF_RARRAY_SIZE, = (1 << 2)),
+	      (RL_PDF_CONTENT_REFERENCE, = (1 << 2)),
+	      (RL_PDF_RARRAY_SIZE, = (1 << 3)),
 	      )
 
 TYPEDEF_STRUCT (rl_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),

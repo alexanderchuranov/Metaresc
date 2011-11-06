@@ -35,6 +35,7 @@ rl_cmp_ptrdes (rl_ptrdes_t * x, rl_ptrdes_t * y)
     case RL_TYPE_STRING:
     case RL_TYPE_CHAR_ARRAY:
     case RL_TYPE_CHAR:
+    case RL_TYPE_NONE:
     case RL_TYPE_VOID:
     case RL_TYPE_INT8:
     case RL_TYPE_UINT8:
@@ -155,10 +156,9 @@ rl_resolve_untyped_forward_ref (rl_save_data_t * rl_save_data)
  * @return an index of node in ptrs
  */
 static int
-rl_check_ptr_in_list (rl_save_data_t * rl_save_data, int idx)
+rl_check_ptr_in_list (rl_save_data_t * rl_save_data, void * data, rl_fd_t * fdp)
 {
   rl_ra_rl_ptrdes_t * ptrs = &rl_save_data->ptrs;
-  void * data = *(void**)ptrs->ra.data[idx].data;
   void * tree_find_result;
   long idx_;
 
@@ -167,10 +167,9 @@ rl_check_ptr_in_list (rl_save_data_t * rl_save_data, int idx)
   
   idx_ = rl_add_ptr_to_list (ptrs);
   if (idx_ < 0)
-    return (idx); /* memory allocation error occured */
+    return (idx_); /* memory allocation error occured */
   ptrs->ra.data[idx_].data = data;
-  ptrs->ra.data[idx_].fd = ptrs->ra.data[idx].fd;
-  ptrs->ra.data[idx_].fd.rl_type_ext = RL_TYPE_EXT_NONE;
+  ptrs->ra.data[idx_].fd = *fdp;
   
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
   tree_find_result = tfind ((void*)idx_, (void*)&rl_save_data->typed_ptrs_tree, cmp_typed_ptrdes);
@@ -180,15 +179,6 @@ rl_check_ptr_in_list (rl_save_data_t * rl_save_data, int idx)
   if (tree_find_result)
     return (*(long*)tree_find_result);
   return (-1);
-}
-
-static void
-rl_save_string (rl_save_data_t * rl_save_data)
-{
-  int idx = rl_save_data->ptrs.ra.size / sizeof (rl_save_data->ptrs.ra.data[0]) - 1;
-  char * str = *(char**)rl_save_data->ptrs.ra.data[idx].data;
-  if (NULL == str)
-    rl_save_data->ptrs.ra.data[idx].flags |= RL_PDF_IS_NULL;
 }
 
 /**
@@ -234,6 +224,34 @@ rl_save_inner (void * data, rl_fd_t * fdp, rl_save_data_t * rl_save_data)
   else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
 	   && rl_conf.io_handlers[fdp->rl_type].save.rl)
     rl_conf.io_handlers[fdp->rl_type].save.rl (rl_save_data);
+}
+
+static void
+rl_save_string (rl_save_data_t * rl_save_data)
+{
+  int idx = rl_save_data->ptrs.ra.size / sizeof (rl_save_data->ptrs.ra.data[0]) - 1;
+  char * str = *(char**)rl_save_data->ptrs.ra.data[idx].data;
+  if (NULL == str)
+    rl_save_data->ptrs.ra.data[idx].flags |= RL_PDF_IS_NULL;
+  else
+    {
+      static rl_fd_t fd_ = {
+	.rl_type = RL_TYPE_CHAR_ARRAY,
+	.rl_type_ext = RL_TYPE_EXT_NONE,
+      };
+      int ref_idx = rl_check_ptr_in_list (rl_save_data, str, &fd_);
+      if (ref_idx >= 0)
+	{
+	  rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
+	  rl_save_data->ptrs.ra.data[ref_idx].flags |= RL_PDF_IS_REFERENCED;
+	}
+      else
+	{
+	  rl_save_data->parent = idx;
+	  rl_save_inner (str, &fd_, rl_save_data);
+	  rl_save_data->parent = rl_save_data->ptrs.ra.data[rl_save_data->parent].parent;
+	}
+    }
 }
 
 /**
@@ -421,11 +439,9 @@ rl_save_rarray (rl_save_data_t * rl_save_data)
   int idx = rl_save_data->ptrs.ra.size / sizeof (rl_save_data->ptrs.ra.data[0]) - 1;
   rl_rarray_t * ra = rl_save_data->ptrs.ra.data[idx].data;
   rl_fd_t fd_ = rl_save_data->ptrs.ra.data[idx].fd;
-  int count;
-  int i;
   /* set extended type property to RL_NONE in copy of field descriptor */
   fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-  count = ra->size / fd_.size;
+  
   /* do nothing if rarray is empty */
   if (NULL == ra->data)
     {
@@ -434,7 +450,7 @@ rl_save_rarray (rl_save_data_t * rl_save_data)
     }
   else
     {
-      int ref_idx = rl_check_ptr_in_list (rl_save_data, idx);
+      int ref_idx = rl_check_ptr_in_list (rl_save_data, ra->data, &fd_);
       if (ref_idx >= 0)
 	{
 	  rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
@@ -443,6 +459,8 @@ rl_save_rarray (rl_save_data_t * rl_save_data)
 	}
       else
 	{
+	  int i;
+	  int count = ra->size / fd_.size;
 	  /* add each array element to this node */
 	  rl_save_data->parent = idx;
 	  for (i = 0; i < count; ++i)
@@ -466,7 +484,7 @@ rl_save_pointer_postponed (int postpone, int idx, rl_save_data_t * rl_save_data)
   if (NULL == *data)
     return;
   /* check if this pointer is already saved */
-  ref_idx = rl_check_ptr_in_list (rl_save_data, idx);
+  ref_idx = rl_check_ptr_in_list (rl_save_data, *data, &fd_);
   if (ref_idx >= 0)
     {
       rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
@@ -506,21 +524,40 @@ rl_post_process (rl_save_data_t * rl_save_data)
   
   while (idx >= 0)
     {
+      int parent = rl_save_data->ptrs.ra.data[idx].parent;
       rl_save_data->ptrs.ra.data[idx].idx = idx_++;
-      rl_save_data->ptrs.ra.data[idx].level = rl_save_data->ptrs.ra.data[rl_save_data->ptrs.ra.data[idx].parent].level + 1;
-      
+      rl_save_data->ptrs.ra.data[idx].level = rl_save_data->ptrs.ra.data[parent].level + 1;
+
       if ((RL_TYPE_EXT_POINTER == rl_save_data->ptrs.ra.data[idx].fd.rl_type_ext) &&
 	  ((RL_TYPE_NONE == rl_save_data->ptrs.ra.data[idx].fd.rl_type) || (RL_TYPE_VOID == rl_save_data->ptrs.ra.data[idx].fd.rl_type)) &&
 	  (rl_save_data->ptrs.ra.data[idx].ref_idx < 0) &&
 	  (NULL != *(void**)rl_save_data->ptrs.ra.data[idx].data))
 	{
-	  int ref_idx = rl_check_ptr_in_list (rl_save_data, idx);
+	  static rl_fd_t fd_ = {
+	    .rl_type = RL_TYPE_NONE,
+	    .rl_type_ext = RL_TYPE_EXT_NONE,
+	  };
+	  int ref_idx = rl_check_ptr_in_list (rl_save_data, *(void**)rl_save_data->ptrs.ra.data[idx].data, &fd_);
 	  if (ref_idx >= 0)
 	    {
 	      rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
 	      rl_save_data->ptrs.ra.data[ref_idx].flags |= RL_PDF_IS_REFERENCED;
 	    }
 	}
+
+      if (rl_save_data->ptrs.ra.data[idx].ref_idx >= 0)
+	{
+	  int ref_parent = rl_save_data->ptrs.ra.data[rl_save_data->ptrs.ra.data[idx].ref_idx].parent;
+	  if ((ref_parent >= 0) && (RL_TYPE_STRING == rl_save_data->ptrs.ra.data[ref_parent].fd.rl_type))
+	    {
+	      rl_save_data->ptrs.ra.data[idx].ref_idx = ref_parent;
+	      rl_save_data->ptrs.ra.data[idx].flags |= RL_PDF_CONTENT_REFERENCE;
+	      rl_save_data->ptrs.ra.data[ref_parent].flags |= RL_PDF_IS_REFERENCED;
+	    }
+	}
+
+      if (RL_TYPE_STRING == rl_save_data->ptrs.ra.data[idx].fd.rl_type)
+	rl_save_data->ptrs.ra.data[idx].first_child = rl_save_data->ptrs.ra.data[idx].last_child = -1;
 
       if (rl_save_data->ptrs.ra.data[idx].first_child >= 0)
 	idx = rl_save_data->ptrs.ra.data[idx].first_child;

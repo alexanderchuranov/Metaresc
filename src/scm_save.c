@@ -68,7 +68,9 @@ scm_save (rl_ra_rl_ptrdes_t * ptrs)
       if (ptrs->ra.data[idx].ref_idx >= 0)
 	{
 	  if (rl_ra_printf (&rl_ra_str, RL_SCM_INDENT_TEMPLATE RL_SCM_ATTR_INT,
-			    level * RL_SCM_INDENT_SPACES, "", RL_REF, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
+			    level * RL_SCM_INDENT_SPACES, "",
+			    (ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF,
+			    ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	    return (NULL);
 	  else
 	    in_comment = !0;
@@ -314,7 +316,7 @@ static char *
 scm_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   char * str = *(char**)ptrs->ra.data[idx].data;
-  if (NULL == str)
+  if ((NULL == str) || (ptrs->ra.data[idx].ref_idx >= 0))
     return (RL_STRDUP (RL_SCM_FALSE));
   else
     return (scm_quote_string (str, '"'));

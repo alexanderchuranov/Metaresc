@@ -158,17 +158,27 @@ rl_set_crossrefs (rl_ra_rl_ptrdes_t * ptrs)
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
     if ((ptrs->ra.data[i].ref_idx >= 0) && (ptrs->ra.data[i].ref_idx <= count))
-      switch (ptrs->ra.data[i].fd.rl_type_ext)
-	{
-	case RL_TYPE_EXT_POINTER:
-	  *(void**)ptrs->ra.data[i].data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
-	  break;
-	case RL_TYPE_EXT_RARRAY:
-	  ((rl_rarray_t*)(ptrs->ra.data[i].data))->data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
-	  break;
-	default:
-	  break;
-	}
+      {
+	void * data;
+	if (ptrs->ra.data[i].flags & RL_PDF_CONTENT_REFERENCE)
+	  data = *(void**)(ptrs->ra.data[ptrs->ra.data[i].ref_idx].data);
+	else
+	  data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
+	
+	switch (ptrs->ra.data[i].fd.rl_type_ext)
+	  {
+	  case RL_TYPE_EXT_POINTER:
+	    *(void**)ptrs->ra.data[i].data = data;
+	    break;
+	  case RL_TYPE_EXT_RARRAY:
+	    ((rl_rarray_t*)(ptrs->ra.data[i].data))->data = data;
+	    break;
+	  default:
+	    if (RL_TYPE_STRING == ptrs->ra.data[i].fd.rl_type)
+	      *(char**)ptrs->ra.data[i].data = data;
+	    break;
+	  }
+      }
   return (!0);
 }
 
@@ -201,7 +211,7 @@ bool_t xdr_char (xdrs, cp)
 static int __attribute__((unused))
 xdr_char_ (XDR * xdrs, char * cp)
 {
-  int x = 0;
+  int32_t x = 0;
   if (XDR_ENCODE == xdrs->x_op)
     x = *cp;
   if (!xdr_int (xdrs, &x))
@@ -325,35 +335,53 @@ xdr_load_bitfield (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 static int
 xdr_save_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  void ** str = ptrs->ra.data[idx].data;
-  int size = -1;
-  if (NULL != *str)
-    size = strlen (*str);
-  if (!xdr_int (xdrs, &size))
-    return (0);
-  if (size < 0)
-    return (!0);
-  return (xdr_bytes (xdrs, (char**)str, (unsigned int*)&size, RL_MAX_STRING_LENGTH));
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    {
+      if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
+	return (0);
+      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+    }
+  else
+    {
+      void ** str = ptrs->ra.data[idx].data;
+      int32_t size = -1;
+      if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
+	return (0);
+      if (NULL != *str)
+	size = strlen (*str);
+      if (!xdr_int32_t (xdrs, &size))
+	return (0);
+      if (size < 0)
+	return (!0);
+      return (xdr_bytes (xdrs, (char**)str, (unsigned int*)&size, RL_MAX_STRING_LENGTH));
+    }
 }
 
 static int
 xdr_load_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  void ** str = ptrs->ra.data[idx].data;
-  int size = -1;
-  *str = NULL;
-  if (!xdr_int (xdrs, &size))
+  if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
-  if (size < 0)
-    return (!0);
-  *str = RL_MALLOC (size + 1);
-  if (NULL == *str)
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+  else
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-      return (0);
-    }    
-  memset (*str, 0, size + 1);
-  return (xdr_bytes (xdrs, (char**)str, (unsigned int*)&size, RL_MAX_STRING_LENGTH));
+      void ** str = ptrs->ra.data[idx].data;
+      int32_t size = -1;
+      *str = NULL;
+      if (!xdr_int32_t (xdrs, &size))
+	return (0);
+      if (size < 0)
+	return (!0);
+      *str = RL_MALLOC (size + 1);
+      if (NULL == *str)
+	{
+	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  return (0);
+	}    
+      memset (*str, 0, size + 1);
+      return (xdr_bytes (xdrs, (char**)str, (unsigned int*)&size, RL_MAX_STRING_LENGTH));
+    }
 }
 
 static int
@@ -385,7 +413,7 @@ static int
 xdr_save_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   /* save union branch field name as string */
-  rl_ptrdes_t ptrdes = { .data = &ptrs->ra.data[idx].union_field_name, }; /* temporary pointer descriptor for this string */
+  rl_ptrdes_t ptrdes = { .data = &ptrs->ra.data[idx].union_field_name, .ref_idx = -1, .flags = 0, }; /* temporary pointer descriptor for this string */
   rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_save_string (xdrs, 0, &_ptrs_));
 }
@@ -449,13 +477,17 @@ static int
 xdr_save_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   rl_rarray_t * ra = ptrs->ra.data[idx].data;
-  if (!xdr_int (xdrs, &ra->size))
+  if (!xdr_int32_t (xdrs, &ra->size))
     return (0);
   
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_int (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
+    {
+      if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
+	return (0);
+      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+    }
   else
-    return (xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx));
+    return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
 }
 
 static int
@@ -469,12 +501,15 @@ xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   fd_.rl_type_ext = RL_TYPE_EXT_NONE;
   ra->data = NULL;
   
-  if (!xdr_int (xdrs, &ra->size))
+  if (!xdr_int32_t (xdrs, &ra->size))
     return (0);
-  if (!xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx))
+  if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    ra->alloc_size = -1;
+    {
+      ra->alloc_size = -1;
+      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+    }
   else
     {
       ra->alloc_size = ra->size;
@@ -511,9 +546,13 @@ xdr_save_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   if (!not_null)
     return (!0);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_int (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
+    {
+      if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
+	return (0);
+      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+    }
   else
-    return (xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx));
+    return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
 }
 
 static int
@@ -527,10 +566,10 @@ xdr_load_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     return (0);
   if (not_null)
     {
-      if (!xdr_int (xdrs, &ptrs->ra.data[idx].ref_idx))
+      if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
 	return (0);
       if (ptrs->ra.data[idx].ref_idx >= 0)
-	return (!0);
+	return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
       *data = RL_MALLOC (fd_.size);
       if (NULL == *data)
 	{

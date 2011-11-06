@@ -220,9 +220,10 @@ main (void)
 
 #if 1
   point.sample = &sample;
+  sample.string1 = sample.string;
   memcpy (&sample.rarray_2, &sample.rarray_1, sizeof (sample.rarray_1));
   sample.ptr_char_ = &sample.rarray_1.data[3];
-  sample._void = &sample.string_empty;
+  sample._void = sample.string;
   
 #ifdef HAVE_LIBXML2
   LIBXML_TEST_VERSION;
@@ -249,7 +250,7 @@ main (void)
       return (EXIT_FAILURE);
     }
   xdr_orig_size = XDR_GETPOS (&xdrs);
-  
+
 #define TEST_LOAD_METHOD(METHOD, ACTION) ({				\
   sample_ = sample;							\
   memset (&sample, 0, sizeof (sample));					\
@@ -302,7 +303,7 @@ main (void)
 #endif /* HAVE_BISON_FLEX */
       RL_FREE (str);
     }
-
+  
   str = RL_SAVE_JSON (sample_t, &sample);
   if (NULL == str)
     printf ("JSON save failed.\n");
@@ -328,7 +329,7 @@ main (void)
 #endif /* HAVE_BISON_FLEX */
       RL_FREE (str);
     }
-  
+
   sample_ = sample;
   memset (&sample, 0, sizeof (sample));
   xdrmem_create (&xdrs, xdr_orig, sizeof (xdr_orig), XDR_DECODE);
@@ -443,7 +444,7 @@ main (void)
   (int)sizeof(struct { int:-!!(0); });
 #endif
   
-#if 1
+#if 0
   str = RL_SAVE_CINIT (rl_conf_t, &rl_conf);
   if (str)
     {
@@ -486,6 +487,8 @@ main (void)
       RL_FREE (str);
     }
 
+  _Bool tc = 1;
+  printf ("%d\n", tc);
 #ifdef HAVE_LIBXML2 
   /* Clean up everything else before quitting. */
   xmlCleanupParser();

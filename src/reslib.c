@@ -461,41 +461,42 @@ int
 rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 {
   int i;
+  int to_free = 0;
+  int count = ptrs.ra.size / sizeof (ptrs.ra.data[0]);
+  
   /* set idx property to -1 for all nodes which are not dynamically allocated */
-  for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
+  for (i = 0; i < count; ++i)
     switch (ptrs.ra.data[i].fd.rl_type_ext)
       {
       case RL_TYPE_EXT_POINTER:
-	if ((NULL == *(void**)ptrs.ra.data[i].data) || (ptrs.ra.data[i].ref_idx >= 0))
-	  ptrs.ra.data[i].idx = -1;
+	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
+	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
       case RL_TYPE_EXT_RARRAY:
-	if ((NULL == ((rl_rarray_t*)ptrs.ra.data[i].data)->data) || (ptrs.ra.data[i].ref_idx >= 0))
-	  ptrs.ra.data[i].idx = -1;
+	if ((NULL != ((rl_rarray_t*)ptrs.ra.data[i].data)->data) && (ptrs.ra.data[i].ref_idx < 0))
+	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
       default:
-	if ((RL_TYPE_STRING != ptrs.ra.data[i].fd.rl_type) || (NULL == *(char**)ptrs.ra.data[i].data))
-	  ptrs.ra.data[i].idx = -1;
+	if ((RL_TYPE_STRING == ptrs.ra.data[i].fd.rl_type) &&
+	    (NULL != *(char**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
+	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
       }
   /* sort out nodes to the end of the array */
-  qsort (ptrs.ra.data, ptrs.ra.size / sizeof (ptrs.ra.data[0]), sizeof (ptrs.ra.data[0]), rl_cmp_idx);
-  for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
-    if (ptrs.ra.data[i].idx < 0)
-      break;
-    else
-      switch (ptrs.ra.data[i].fd.rl_type_ext)
-	{
-	case RL_TYPE_EXT_POINTER:
-	  RL_FREE (*(void**)ptrs.ra.data[i].data);
-	  break;
-	case RL_TYPE_EXT_RARRAY:
-	  RL_FREE (((rl_rarray_t*)ptrs.ra.data[i].data)->data);
-	  break;
-	default:
-	  RL_FREE (*(char**)ptrs.ra.data[i].data);
-	  break;
-	}
+  qsort (ptrs.ra.data, to_free, sizeof (ptrs.ra.data[0]), rl_cmp_idx);
+  for (i = to_free - 1; i >= 0; --i)
+    switch (ptrs.ra.data[i].fd.rl_type_ext)
+      {
+      case RL_TYPE_EXT_POINTER:
+	RL_FREE (*(void**)ptrs.ra.data[i].data);
+	break;
+      case RL_TYPE_EXT_RARRAY:
+	RL_FREE (((rl_rarray_t*)ptrs.ra.data[i].data)->data);
+	break;
+      default:
+	RL_FREE (*(char**)ptrs.ra.data[i].data);
+	break;
+      }
   if (ptrs.ra.data)
     RL_FREE (ptrs.ra.data);
   return (EXIT_SUCCESS);

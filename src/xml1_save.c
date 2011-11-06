@@ -61,7 +61,9 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 	  if (rl_ra_printf (&rl_ra_str, RL_XML1_INDENT_TEMPLATE RL_XML1_OPEN_TAG_START, level * RL_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.name) < 0)
 	    return (NULL);
 	  if (ptrs->ra.data[idx].ref_idx >= 0)
-	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_REF, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
+	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT,
+			      (ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF,
+			      ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	      return (NULL);
 	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
 	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_REF_IDX, ptrs->ra.data[idx].idx) < 0)
@@ -181,7 +183,10 @@ static char *
 xml_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   char * str = *(char**)ptrs->ra.data[idx].data;
-  return (NULL == str) ? RL_STRDUP ("") : xml_quote_string (str);
+  if ((NULL == str) || (ptrs->ra.data[idx].ref_idx >= 0))
+    return (RL_STRDUP (""));
+  else 
+    return (xml_quote_string (str));
 }
 
 static char *
