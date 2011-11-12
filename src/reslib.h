@@ -434,7 +434,6 @@
 
 #define RL_UNFOLD(NODE, ...) RL_PASTE3 (NODE, _, RL_MODE) (RL_TYPE_NAME, __VA_ARGS__)
 
-/* next macro adds empty 5th argument if it was missed. Required for RL_AUTO, RL_NONE, RL_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */
 #define RL_TYPEDEF_STRUCT(...) RL_UNFOLD (RL_TYPEDEF_STRUCT, __VA_ARGS__)
 
 #define RL_AUTO(...) RL_UNFOLD (RL_AUTO, __VA_ARGS__)
@@ -482,6 +481,7 @@
 /* Macroses for prototypes generation mode */
 #define RL_TYPEDEF_STRUCT_PROTO(RL_TYPE_NAME, /* ATTR */ ...) typedef struct RL_TYPEDEF_PREFIX (RL_TYPE_NAME) RL_TYPE_NAME; struct __VA_ARGS__ RL_TYPEDEF_PREFIX (RL_TYPE_NAME) {
 
+/* next macro adds empty argument. Required for RL_AUTO, RL_NONE, RL_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */
 #define RL_AUTO_PROTO(...) RL_FIELD_PROTO (__VA_ARGS__, )
 #define RL_NONE_PROTO(...) RL_FIELD_PROTO (__VA_ARGS__, )
 #define RL_CHAR_ARRAY_PROTO(...) RL_FIELD_PROTO (__VA_ARGS__, )
