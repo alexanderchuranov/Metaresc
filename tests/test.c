@@ -214,6 +214,8 @@ main (void)
     .ptr_char = "z",
     .ptr_null = NULL,
     .arr = {2, 3},
+    .ext = { "test string_t" },
+    .ptr_type = "string_t",
   };
 
   //test_hash ();
@@ -443,7 +445,7 @@ main (void)
 
   (int)sizeof(struct { int:-!!(0); });
 #endif
-  
+
 #if 0
   str = RL_SAVE_CINIT (rl_conf_t, &rl_conf);
   if (str)
@@ -456,7 +458,7 @@ main (void)
   printf ("XDR size = %d\n", XDR_GETPOS (&xdrs));
 #endif
 
-  rl_type_t x = RL_TYPE_DETECT (typeof (.0));
+  rl_type_t x = RL_TYPE_DETECT (typeof (.0f));
   str = RL_SAVE_CINIT (rl_type_t, &x);
   if (str)
     {
