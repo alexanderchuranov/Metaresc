@@ -131,7 +131,7 @@ xdrra_create (XDR * xdrs, rl_rarray_t * ra, enum xdr_op op)
       .x_putlong = xdrra_putlong,
       .x_getbytes = xdrra_getbytes,
       .x_putbytes = xdrra_putbytes,
-      .x_getpostn = xdrra_getpostn,
+      .x_getpostn = (typeof (xdrra_ops.x_getpostn))xdrra_getpostn,
       .x_setpostn = xdrra_setpostn,
       .x_inline = xdrra_inline,
       .x_destroy = xdrra_destroy,
@@ -283,9 +283,33 @@ xdr_long_double (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 static int
 xdr_char_array_ (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  unsigned int size = ptrs->ra.data[idx].fd.size * ptrs->ra.data[idx].fd.param.array_param.count;
-  void ** char_array = &ptrs->ra.data[idx].data;
-  return (xdr_bytes (xdrs, (char**)char_array, &size, RL_MAX_STRING_LENGTH));
+  uint32_t str_len;
+  uint32_t max_size = ptrs->ra.data[idx].fd.size * ptrs->ra.data[idx].fd.param.array_param.count;
+
+  if (XDR_ENCODE == xdrs->x_op)
+    {
+      str_len = strlen (ptrs->ra.data[idx].data) + 1;
+      if ((str_len > max_size) && (0 != strcmp (ptrs->ra.data[idx].fd.type, "string_t")))
+	str_len = max_size;
+    }
+  
+  xdr_uint32_t (xdrs, &str_len);
+  
+  if (XDR_DECODE == xdrs->x_op)
+    {
+      if (0 == strcmp (ptrs->ra.data[idx].fd.type, "string_t"))
+	{
+	  void * data = RL_REALLOC (ptrs->ra.data[idx].data, str_len);
+	  ptrs->ra.data[idx].data = data;
+	  *(void**)ptrs->ra.data[idx - 1].data = data;
+	  if (NULL == data)
+	    {
+	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	      return (0);
+	    }
+	}
+      }
+  return (xdr_opaque (xdrs, ptrs->ra.data[idx].data, str_len));
 }
 
 static int
@@ -339,7 +363,7 @@ xdr_save_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
     }
   else
     {
@@ -353,7 +377,7 @@ xdr_save_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 	return (0);
       if (size < 0)
 	return (!0);
-      return (xdr_bytes (xdrs, (char**)str, (unsigned int*)&size, RL_MAX_STRING_LENGTH));
+      return (xdr_opaque (xdrs, *str, size));
     }
 }
 
@@ -363,10 +387,10 @@ xdr_load_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+    return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
   else
     {
-      void ** str = ptrs->ra.data[idx].data;
+      char ** str = ptrs->ra.data[idx].data;
       int32_t size = -1;
       *str = NULL;
       if (!xdr_int32_t (xdrs, &size))
@@ -380,7 +404,7 @@ xdr_load_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 	  return (0);
 	}    
       memset (*str, 0, size + 1);
-      return (xdr_bytes (xdrs, (char**)str, (unsigned int*)&size, RL_MAX_STRING_LENGTH));
+      return (xdr_opaque (xdrs, *str, size));
     }
 }
 
@@ -484,7 +508,7 @@ xdr_save_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
     }
   else
     return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
@@ -508,7 +532,7 @@ xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   if (ptrs->ra.data[idx].ref_idx >= 0)
     {
       ra->alloc_size = -1;
-      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
     }
   else
     {
@@ -549,7 +573,7 @@ xdr_save_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
     }
   else
     return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
@@ -569,7 +593,7 @@ xdr_load_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
 	return (0);
       if (ptrs->ra.data[idx].ref_idx >= 0)
-	return (xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags));
+	return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
       *data = RL_MALLOC (fd_.size);
       if (NULL == *data)
 	{
