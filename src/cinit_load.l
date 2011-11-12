@@ -50,6 +50,8 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 "("({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"  { yylval->string = get_type (&yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
+"/*"{WS}"("({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"{WS}"*/"  { yylval->string = get_type (strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
+
 ({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
 
 "\""([^\"\\]|\\.)*"\"" { yylval->string = unquote (yytext); return (TOK_CINIT_VALUE); }

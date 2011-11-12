@@ -14,7 +14,8 @@
 #define RL_CINIT_INDENT "  "
 
 #define RL_CINIT_TYPE_SIZE_TEMPLATE "%1$" SCNd32
-#define RL_CINIT_TYPE_TYPE_TEMPLATE "%2$s"
+#define RL_CINIT_TYPE_NAME_TEMPLATE "%2$s"
+#define RL_JSON_TYPE_NAME_TEMPLATE RL_CINIT_TYPE_NAME_TEMPLATE
 #define RL_CINIT_FIELDS_DELIMITER ",\n"
 #define RL_CINIT_NAMED_FIELD_TEMPLATE ".%s = "
 #define RL_JSON_NAMED_FIELD_TEMPLATE "\"%s\" : "
@@ -336,7 +337,7 @@ cinit_save_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data
     }
   else
     {
-      data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = (" RL_CINIT_TYPE_TYPE_TEMPLATE "[]){\n";
+      data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = (" RL_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
       data->suffix = "}}";
     }
   return (0);
@@ -355,7 +356,7 @@ cinit_save_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * dat
     data->content = RL_STRDUP (RL_CINIT_NULL);
   else
     {
-      data->prefix = "(" RL_CINIT_TYPE_TYPE_TEMPLATE "[]){\n";
+      data->prefix = "(" RL_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
       data->suffix = "}";
     }
   return (0);
@@ -390,7 +391,7 @@ json_save_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data
     data->content = RL_STRDUP (RL_CINIT_NULL);
   else
     {
-      data->prefix = "[\n";
+      data->prefix = "/* (" RL_JSON_TYPE_NAME_TEMPLATE "[]) */ [\n";
       data->suffix = "]";
     }
   return (0);
