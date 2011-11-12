@@ -16,11 +16,8 @@
 #include <stdarg.h>
 
 #include <tsearch.h>
-
-#define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 
-#undef RL_MODE
 #define RL_MODE DESC /* we'll need descriptors of our own types */
 #include <rlprotos.h>
 

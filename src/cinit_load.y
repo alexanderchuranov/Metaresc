@@ -5,7 +5,6 @@
 %{
 #include <stdio.h>
 
-#define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 #include <lexer.h>
 #include <cinit_load.tab.h>

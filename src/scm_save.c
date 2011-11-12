@@ -2,7 +2,6 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of ResLib project */
 
-#define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 
 #define RL_SCM_EMPTY "()"

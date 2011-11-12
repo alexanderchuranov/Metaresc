@@ -74,7 +74,6 @@ extern void tdestroy (void *__root, __free_fn_t __freefct);
 #define internal_function	/* empty */
 #endif
 
-#define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 
 #define node_t RL_TYPEDEF_PREFIX(rl_red_black_tree_node_t)

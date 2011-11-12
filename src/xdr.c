@@ -9,7 +9,6 @@
 #include <netinet/in.h>
 
 #include <rlconfig.h>
-#define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 
 static bool_t

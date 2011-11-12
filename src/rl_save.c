@@ -15,7 +15,6 @@
 # include <rlconfig.h>
 #endif /* HAVE_CONFIG_H */
 
-#define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 
 static void dummy_free_func (void * nodep) {};

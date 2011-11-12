@@ -4,8 +4,6 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-
-#define RL_MODE PROTO /* explicitly set type of inclusion */
 #include <reslib.h>
 
 #define RL_CINIT_NULL "NULL"

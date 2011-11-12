@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#define RL_MODE PROTO /* explicitly set type of inclusion */
+
 #include <reslib.h>
 
 #ifdef HAVE_CONFIG_H
