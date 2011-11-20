@@ -32,32 +32,29 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 [[:space:]]+  { return (TOK_SCM_WS); }
 
-{NUMBER} { yylval->string = RL_STRDUP (yytext); return (TOK_SCM_VALUE); }
+{NUMBER} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
 
 [+-]?[Nn][Aa][Nn] |
 [+-]?[Ii][Nn][Ff] |
 [+-]?[[:digit:]]+"."[[:digit:]]*  |
 [+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
-[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { yylval->string = RL_STRDUP (yytext); return (TOK_SCM_VALUE); }
+[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
 
-#f { yylval->string = NULL; return (TOK_SCM_VALUE); }
+#f { rl_set_lval (&yylval->string, NULL, NULL); return (TOK_SCM_VALUE); }
 
-{ID} { yylval->string = RL_STRDUP (yytext); return (TOK_SCM_ID); }
+{ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_ID); }
 
-"("{WS}"bit-or"{WS}{NUMBER_OR_ID}([[:space:]]+{NUMBER_OR_ID})*{WS}")" { yylval->string = encode_bitmask (yytext); return (TOK_SCM_VALUE); }
+"("{WS}"bit-or"{WS}{NUMBER_OR_ID}([[:space:]]+{NUMBER_OR_ID})*{WS}")" { rl_set_lval (&yylval->string, yytext, encode_bitmask); return (TOK_SCM_VALUE); }
 
-"\""([^\"\\]|\\.)*"\"" { yylval->string = unquote (yytext); return (TOK_SCM_VALUE); }
+"\""([^\"\\]|\\.)*"\"" { rl_set_lval (&yylval->string, yytext, unquote); return (TOK_SCM_VALUE); }
 
-"#\\". { yylval->string = RL_STRDUP (&yytext[2]); return (TOK_SCM_VALUE); }
+"#\\". { rl_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_SCM_VALUE); }
 
-"#\\x"[[:digit:]]{2} { yylval->string = encode_char (&yytext[3]); return (TOK_SCM_VALUE); }
+"#\\x"[[:digit:]]{2} { rl_set_lval (&yylval->string, &yytext[3], encode_char); return (TOK_SCM_VALUE); }
 
 ";"+{WS}"("{WS}{ID}[[:space:]]+[[:digit:]]+{WS}")"{WS} {
-  char * ptr = strchr (yytext, '(') + 1;
-  yylval->id_ivalue.id = rl_get_id (ptr);
-  while (isspace (*ptr)) ++ptr;
-  while (isalnum (*ptr) || ('_' == *ptr)) ++ptr;
-  sscanf (ptr, "%d", &yylval->id_ivalue.ivalue);
+  rl_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
+  sscanf (&yylval->id_ivalue.id.substr.data[yylval->id_ivalue.id.substr.size], "%d", &yylval->id_ivalue.ivalue);
   return (TOK_SCM_ID_IVALUE); }
 
 ";"[^\n]*{WS}			  { }
@@ -70,7 +67,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 [[:space:]]+"."[[:space:]]+         { return (TOK_SCM_DOT); }
 
-.             { return (yytext[0]); }
+.             { return (TOK_SCM_ERROR); }
 
 %%
 

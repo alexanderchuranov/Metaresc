@@ -25,9 +25,9 @@
 
  /* a more advanced semantic type */
 %union {
-  char * string;
+  rl_substr_t string;
   struct {
-    char * id;
+    rl_substr_t id;
     int ivalue;
   } id_ivalue;
 }
@@ -41,6 +41,7 @@
 %token TOK_SCM_RPARENTHESIS
 %token TOK_SCM_DOT
 %token TOK_SCM_HASH
+%token TOK_SCM_ERROR
 
 %start ws_scm_ws
 
@@ -56,20 +57,19 @@ scm_stmt:
 value
 | TOK_SCM_ID_IVALUE scm_stmt {
   rl_load_t * rl_load = RL_LOAD;
-  if ($1.id)
+  if ($1.id.substr.data && $1.id.substr.size)
     {
-      if (0 == strcmp (RL_REF, $1.id))
+      if (0 == rl_substrcmp (RL_REF, &$1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
-      else if (0 == strcmp (RL_REF_CONTENT, $1.id))
+      else if (0 == rl_substrcmp (RL_REF_CONTENT, &$1.id))
 	{
 	  rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
 	  rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_CONTENT_REFERENCE;
 	}
-      else if (0 == strcmp (RL_REF_IDX, $1.id))
+      else if (0 == rl_substrcmp (RL_REF_IDX, &$1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].idx = $1.ivalue;
-      else if (0 == strcmp (RL_RARRAY_SIZE, $1.id))
+      else if (0 == rl_substrcmp (RL_RARRAY_SIZE, &$1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].rarray_size = $1.ivalue;
-      RL_FREE ($1.id);
     }
 }
 
@@ -77,8 +77,8 @@ value:
 compaund
 | named_node 
 | TOK_SCM_HASH compaund 
-| TOK_SCM_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
-| TOK_SCM_ID { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
+| TOK_SCM_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = rl_unquote (&$1); }
+| TOK_SCM_ID { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = rl_unquote (&$1); }
 
 compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS
 
@@ -88,7 +88,7 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   int parent = rl_load->ptrs->ra.data[self].parent;
   int prev = rl_load->ptrs->ra.data[self].prev;
   int child = rl_load->ptrs->ra.data[self].first_child;
-  char * name = $4;
+  char * name = rl_unquote (&$4);
   if (parent >= 0)
     {
       if (rl_load->ptrs->ra.data[parent].first_child == self)

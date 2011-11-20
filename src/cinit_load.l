@@ -16,7 +16,8 @@
 
    static char * unquote (char*);
    static char * unquote_char (char*);
-   static char * get_type (char*);
+   static void get_type (rl_substr_t*, char*);
+
 %}
 
 %x in_comment
@@ -31,33 +32,33 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 {WS}  { /* eat up whitespace */ }
 
-{NUMBER} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
+{NUMBER} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
 [+-]?[Nn][Aa][Nn] |
 [+-]?[Ii][Nn][Ff] |
 [+-]?[[:digit:]]+"."[[:digit:]]*  |
 [+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
-[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
+[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
-"NULL" { yylval->string = NULL; return (TOK_CINIT_VALUE); }
+"NULL" { rl_set_lval (&yylval->string, NULL, NULL); return (TOK_CINIT_VALUE); }
 
-{ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
+{ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
-"."{WS}{ID}{WS}"=" { yylval->string = rl_get_id (&yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
+"."{WS}{ID}{WS}"=" { rl_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
-"\""{ID}"\""{WS}":" { yylval->string = rl_get_id (&yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
+"\""{ID}"\""{WS}":" { rl_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
-"("({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"  { yylval->string = get_type (&yytext[1]); return (TOK_CINIT_FIELD_CAST); }
+"("{WS}({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
-"/*"{WS}"("({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"{WS}"*/"  { yylval->string = get_type (strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
+"/*"{WS}"("{WS}({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"{WS}"*/" { get_type (&yylval->string, strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
 
-({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { yylval->string = RL_STRDUP (yytext); return (TOK_CINIT_VALUE); }
+({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
-"\""([^\"\\]|\\.)*"\"" { yylval->string = unquote (yytext); return (TOK_CINIT_VALUE); }
+"\""([^\"\\]|\\.)*"\"" { rl_set_lval (&yylval->string, yytext, unquote); return (TOK_CINIT_VALUE); }
 
-"\'"([^\'\\]|\\.)*"\'" { yylval->string = unquote_char (yytext); return (TOK_CINIT_VALUE); }
+"\'"([^\'\\]|\\.)*"\'" { rl_set_lval (&yylval->string, yytext, unquote_char); return (TOK_CINIT_VALUE); }
 
-"/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { yylval->id_ivalue.id = rl_get_id (&yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
+"/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { rl_get_id (&yylval->id_ivalue.id, &yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
 
 "/*"			  { BEGIN(in_comment); }
 <in_comment>[^*\n]*        /* eat anything that's not a '*' */
@@ -70,7 +71,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 "["       { return (TOK_CINIT_LBRACKET); }
 "]"       { return (TOK_CINIT_RBRACKET); }
 ","       { return (TOK_CINIT_COMMA); }
-.         { return (yytext[0]); }
+.         { return (TOK_CINIT_ERROR); }
 %%
 
 #define ESC_CHAR_MAP_SIZE (1 << 8)
@@ -164,23 +165,19 @@ static char * unquote_char (char * str)
   return (str_);
 }
 
-static char * get_type (char * start)
+static void get_type (rl_substr_t * substr, char * start)
 {
-  int size;
-  char * id;
   char * stop;
-  while (isspace (*start)) ++start;
+  while (isspace (*start))
+    ++start;
   stop = strchr (start, '[');
   if (stop)
-    while (isspace (stop[-1])) --stop;
+    while (isspace (stop[-1]))
+      --stop;
   else
     stop = strchr (start, 0);
-  size = stop - start;
-  id = RL_MALLOC (size + 1);
-  if (id)
-    {
-      memcpy (id, start, size);
-      id[size] = 0;
-    }
-  return (id);
+  substr->substr.data = start;
+  substr->substr.size = stop - start;
+  substr->unquote = NULL;
 }
+

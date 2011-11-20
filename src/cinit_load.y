@@ -15,6 +15,7 @@
 #define YYLEX_PARAM YYPARSE_PARAM
 #define RL_LOAD (rl_cinit_get_extra (YYPARSE_PARAM))
 #define rl_cinit_error(ERROR) RL_PARSE_ERROR (ERROR, YYPARSE_PARAM, cinit)
+
 %}
 
 %name-prefix="rl_cinit_"
@@ -25,9 +26,9 @@
 
  /* a more advanced semantic type */
 %union {
-  char * string;
+  rl_substr_t string;
   struct {
-    char * id;
+    rl_substr_t id;
     int ivalue;
   } id_ivalue;
 }
@@ -42,6 +43,7 @@
 %token TOK_CINIT_LBRACKET
 %token TOK_CINIT_RBRACKET
 %token TOK_CINIT_COMMA
+%token TOK_CINIT_ERROR
 
 %start cinit
 
@@ -55,27 +57,26 @@ cinit_stmt:
 value
 | TOK_CINIT_ID_IVALUE cinit_stmt {
   rl_load_t * rl_load = RL_LOAD;
-  if ($1.id)
+  if ($1.id.substr.data && $1.id.substr.size)
     {
-      if (0 == strcmp (RL_REF, $1.id))
+      if (0 == rl_substrcmp (RL_REF, &$1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
-      else if (0 == strcmp (RL_REF_CONTENT, $1.id))
+      else if (0 == rl_substrcmp (RL_REF_CONTENT, &$1.id))
 	{
 	  rl_load->ptrs->ra.data[rl_load->parent].ref_idx = $1.ivalue;
 	  rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_CONTENT_REFERENCE;
 	}
-      else if (0 == strcmp (RL_REF_IDX, $1.id))
+      else if (0 == rl_substrcmp (RL_REF_IDX, &$1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].idx = $1.ivalue;
-      else if (0 == strcmp (RL_RARRAY_SIZE, $1.id))
+      else if (0 == rl_substrcmp (RL_RARRAY_SIZE, &$1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].rarray_size = $1.ivalue;
-      RL_FREE ($1.id);
     }
 }
 
 value:
 compaund
-| TOK_CINIT_FIELD_CAST compaund { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].fd.type = $1; }
-| TOK_CINIT_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = $1; }
+| TOK_CINIT_FIELD_CAST compaund { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].fd.type = rl_unquote (&$1); }
+| TOK_CINIT_VALUE { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->parent].value = rl_unquote (&$1); }
 
 compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE 
 | TOK_CINIT_LBRACKET list TOK_CINIT_RBRACKET
@@ -85,7 +86,7 @@ list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
 nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->ptrs->ra.data[rl_load->parent].last_child].fd.name = $1; }
+| TOK_CINIT_FIELD_PREFIX cinit { rl_load_t * rl_load = RL_LOAD; rl_load->ptrs->ra.data[rl_load->ptrs->ra.data[rl_load->parent].last_child].fd.name = rl_unquote (&$1); }
 
 %%
 

@@ -265,6 +265,11 @@ TYPEDEF_STRUCT (rl_load_t, ATTRIBUTES ( , "ResLib load parser data"),
 		(rl_ra_rl_ptrdes_t *, ptrs, , "resizable array with rl_ptrdes_t"),
 		)
 
+TYPEDEF_STRUCT (rl_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
+		RARRAY (char, substr, "substring descriptor"),
+		(char *, unquote, (char*), "unquote handler"),
+		)
+
 TYPEDEF_STRUCT (rl_load_data_t,
 		(rl_ra_rl_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
 		RARRAY (int, rl_ra_idx, "indexes of postponed nodes"),

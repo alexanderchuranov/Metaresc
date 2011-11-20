@@ -28,22 +28,45 @@ static inline void rl_calc_lloc (rl_load_t * rl_load, char * ptr)
 	++rl_load->lloc.column;
 }
 
-static inline char * rl_get_id (char * start)
+static inline int rl_substrcmp (char * str, rl_substr_t * substr)
 {
-  int size;
-  char * id;
-  char * stop;
-  while (isspace (*start)) ++start;
-  stop = start;
-  while (isalnum (*stop) || ('_' == *stop)) ++stop;
-  size = stop - start;
-  id = RL_MALLOC (size + 1);
-  if (id)
+  int str_len = strlen (str);
+  if (str_len != substr->substr.size)
+    return (str_len - substr->substr.size);
+  return (strncmp (str, substr->substr.data, str_len));
+}
+
+static inline char * rl_unquote (rl_substr_t * substr)
+{
+  if (NULL == substr->substr.data)
+    return (NULL);
+  else
     {
-      memcpy (id, start, size);
-      id[size] = 0;
+      if (substr->unquote)
+	return (substr->unquote (substr->substr.data));
+      else
+	return (strndup (substr->substr.data, substr->substr.size));
     }
-  return (id);
+}
+  
+static inline void rl_get_id (rl_substr_t * substr, char * start)
+{
+  char * stop;
+  while (isspace (*start))
+    ++start;
+  stop = start;
+  while (isalnum (*stop) || ('_' == *stop))
+    ++stop;
+  substr->substr.data = start;
+  substr->substr.size = stop - start;
+  substr->unquote = NULL;
+}
+
+static inline void rl_set_lval (rl_substr_t * substr, char * str, char * (*unquote_func) (char*))
+{
+  substr->substr.data = str;
+  substr->substr.size = (str ? strlen (str) : -1);
+  substr->unquote = unquote_func;
 }
 
 #define YY_USER_ACTION ({			\

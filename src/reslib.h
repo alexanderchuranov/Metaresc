@@ -98,7 +98,7 @@
 /*
   Help macro for internal type detection. It compares variable with all known builin types.
   Compaund types are detected in runtime.
- */
+*/
 #define RL_TYPE_DETECT_INNER(PREFIX, TYPE, SUFFIX, PAREN_SUFFIX)	\
   (0 /* RL_TYPE_NONE */							\
    | (__builtin_types_compatible_p (PREFIX void SUFFIX, TYPE) ? RL_TYPE_VOID : 0) \
@@ -141,7 +141,7 @@
 
 /*
   Next group of macroses detects empty argument list.
- */
+*/
 #define P00_IS__EQ__(...) ,
 #define P00_IS_EMPTY_CASE_0001 ,
 
@@ -197,7 +197,7 @@
 /*
   Checks if RL_MODE was defined. If it was undefined automtically produce prototypes and descriptors.
   Library could be unintrusively extended for other modes. Defined RL_MODE transparently passed to lower level.
- */
+*/
 #define RL_IS_RL_MODE_EQ_RL_MODE 0
 #define P00_TYPEDEF(...)						\
   RL_IF_ELSE (RL_PASTE2 (RL_IS_RL_MODE_EQ_, RL_MODE))			\
@@ -207,7 +207,7 @@
 /*
   Here is switch on definition type.
   CHAR_ARRAY and FUNC should be directly expanded to RL_TYPEDEF_CHAR_ARRAY and RL_TYPEDEF_FUNC respectively.
- */
+*/
 #define P00_TYPEDEF_MODE(P00_MODE, P00_TYPE, ...) RL_PASTE2 (P00_TYPEDEF_, P00_TYPE) (P00_MODE, P00_TYPE, __VA_ARGS__)
 #define P00_TYPEDEF_STRUCT P00_TYPEDEF_COMPAUND
 #define P00_TYPEDEF_UNION P00_TYPEDEF_COMPAUND
@@ -219,7 +219,7 @@
   TYPEDEF_{STRUCT|UNION|ENUM} have first agrument type name.
   Second argument might be ATTRIBUTES(...) with typedef attributes, comments and extended meta information. The rest is list of fields/enums declarations.
   Next macro checks that ATTRIBUTES are presented.
- */
+*/
 #define P00_TYPEDEF_COMPAUND(P00_MODE, P00_TYPE, P00_TYPE_NAME, ...)	\
   RL_IF_ELSE (RL_IS_EMPTY (__VA_ARGS__))				\
   (TYPEDEF_ATTR (P00_MODE, P00_TYPE, P00_TYPE_NAME, ATTRIBUTES (), ))	\
@@ -241,7 +241,7 @@
   Prolog is RL_TYPEDEF_{STRUCT|UNION|ENUM}_{PROTO|DESC} (P00_TYPE_NAME, ATTR...)
   Body is a list of fields or enums definition. Structs and union fields are handled with P00_FIELD. Enums definitions are handled with P00_ENUM_DEF.
   Epilog is RL_END_{STRUCT|UNION|ENUM}_{PROTO|DESC} (P00_TYPE_NAME, COM...)
- */
+*/
 #define RL_SER(NAME, I, REC, X) REC X
 
 #define TYPEDEF_ATTR(P00_MODE, P00_TYPE, P00_TYPE_NAME, ATTR_COM_EXT, ...) \
@@ -259,7 +259,7 @@
   field descritions might be in two forms.
   1. RL_TYPE_MACRO (ARGS) for type scpecific declarations like INT32 (x)
   2. (TYPE, NAME, SUFFIX..., COMMENT..., EXT...) for auto detection declarations.
- */
+*/
 #define P00_FIELD_(P00_MODE_TYPE_NAME, FIELD)				\
   RL_IF_ELSE (RL_HAS_NO_PAREN (FIELD))					\
   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FIELD))			\
@@ -269,15 +269,15 @@
 #define RL_GET_SUFFIX_(_0, _1, _2, ...) _2
 /*
   There are 3 options for auto-detection:
-    a. Suffix with parentheses goes to FUNC as function.
-    b. Non-empty suffix without parentheses goes to ARRAY as array.
-    c. Everything else goes to AUTO.
- */
-#define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)		\
-  RL_IF_ELSE (RL_HAS_NO_PAREN (SUFFIX))					\
-  (RL_IF_ELSE (RL_IS_EMPTY (SUFFIX))					\
-   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))			\
-   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY FIELD)))		\
+  a. Suffix with parentheses goes to FUNC as function.
+  b. Non-empty suffix without parentheses goes to ARRAY as array.
+  c. Everything else goes to AUTO.
+*/
+#define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)	\
+  RL_IF_ELSE (RL_HAS_NO_PAREN (SUFFIX))				\
+  (RL_IF_ELSE (RL_IS_EMPTY (SUFFIX))				\
+   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))		\
+   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY FIELD)))	\
   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FUNC FIELD))
 
 #define P00_GET_MODE(P00_MODE, P00_TYPE_NAME) P00_MODE
@@ -286,7 +286,7 @@
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted RL_ type prefix.
   The 3rd macro unfolds to RL_{AUTO|INT32|...}_{PROTO|DESC} (P00_TYPE_NAME, ARGS...)
   Last one detects unkown field qualifiers.
- */
+*/
 #define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, RL_PASTE2 (P00_COMMA_, FIELD))
 #define P00_FIELD_UNFOLD_(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA) P00_FIELD_UNFOLD__ (P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA)
 #define P00_FIELD_UNFOLD__(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA, ...) \
@@ -415,7 +415,7 @@
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
   Usage: RL_COMPARE_COMPAUND_TYPES (system_type, metaresc_type, commonly_named_field, (field_for_system_type, field_for_metaresc_type), ...)
   Macro evaluates to 0 at compile time if all fields are compatible. Otherwise it is non-zero.
- */
+*/
 #define RL_BOR(NAME, I, REC, X) ((REC) | (X))
 #define RL_COMPARE_COMPAUND_TYPES(TYPE1, TYPE2, ...) ((sizeof (TYPE1) != sizeof (TYPE2)) | RL_FOR ((TYPE1, TYPE2), RL_NARG (__VA_ARGS__), RL_BOR, P00_COMPARE_FIELDS, __VA_ARGS__))
 #define P00_GET_FIRST(_1, _2) _1
@@ -428,7 +428,7 @@
   if your types contains only builtin types then you can do more precies comparation.
   #undef RL_COMPARE_FIELDS_EXT
   #define RL_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) !__builtin_types_compatible_p (typeof (((TYPE1*)NULL)->NAME1), typeof (((TYPE2*)NULL)->NAME2))
- */
+*/
 #endif /* RL_COMPARE_FIELDS_EXT */
 #define RL_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) != offsetof (TYPE2, NAME2)) | (sizeof (((TYPE1*)NULL)->NAME1) != sizeof (((TYPE2*)NULL)->NAME2)) | RL_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
 
@@ -549,7 +549,7 @@
 	},								\
       },								\
       .comment = "" __VA_ARGS__,					\
-      },
+	 },
 
 #define RL_POINTER_STRUCT_DESC(RL_TYPE_NAME, TYPE, NAME, /* COMMENT */ ...)  { \
     .type = RL_STRINGIFY (TYPE),					\
@@ -595,7 +595,7 @@
       .rl_type = RL_TYPE_BITFIELD,					\
       .rl_type_aux = RL_TYPE_DETECT (TYPE),				\
       .rl_type_ext = RL_TYPE_EXT_NONE,					\
-      .param = {								\
+      .param = {							\
       .bitfield_param = {						\
 	.width = SUFFIX,						\
 	.bitfield = {							\
@@ -652,17 +652,17 @@
       .comment = #__VA_ARGS__,						\
       .ext = {(rl_td_t[]){ { .type = (char []) {RL_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, } }}, \
       .ptr_type = "rl_td_t",						\
-      },
+	 },
 #define RL_END_ANON_UNION_DESC(RL_TYPE_NAME, /* COMMENTS */ ...) {	\
-    .type = "",						\
-      .rl_type = RL_TYPE_END_ANON_UNION,		\
-      .rl_type_ext = RL_TYPE_EXT_NONE,			\
-      .comment = "" __VA_ARGS__,			\
+    .type = "",								\
+      .rl_type = RL_TYPE_END_ANON_UNION,				\
+      .rl_type_ext = RL_TYPE_EXT_NONE,					\
+      .comment = "" __VA_ARGS__,					\
       },
 
 #define RL_TYPEDEF_ENUM_DESC(RL_TYPE_NAME, /* ATTR */ ...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_ENUM, __VA_ARGS__)
 #define RL_ENUM_DEF_DESC(RL_TYPE_NAME, NAME, ...) RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, __VA_ARGS__)
-#define RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, RHS, /* COMMENTS */ ...) {		\
+#define RL_ENUM_DEF_DESC_(RL_TYPE_NAME, NAME, RHS, /* COMMENTS */ ...) { \
     .type = RL_STRINGIFY (RL_TYPE_NAME),				\
       .name = #NAME,							\
       .rl_type = RL_TYPE_ENUM_VALUE,					\
@@ -676,7 +676,7 @@
 #define RL_END_ENUM_DESC(RL_TYPE_NAME, /* COMMENTS */ ...) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, __VA_ARGS__)
 
 #define RL_TYPEDEF_CHAR_ARRAY_DESC(RL_TYPE_NAME, SIZE, /* COMMENTS */ ...) RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_CHAR_ARRAY) RL_TYPEDEF_END_DESC (RL_TYPE_NAME, __VA_ARGS__)
-#define RL_TYPEDEF_FUNC_DESC(RL_TYPE_NAME, RET_TYPE, ARGS, /* COMMENTS */ ...)	\
+#define RL_TYPEDEF_FUNC_DESC(RL_TYPE_NAME, RET_TYPE, ARGS, /* COMMENTS */ ...) \
   RL_TYPEDEF_DESC (RL_TYPE_NAME, RL_TYPE_FUNC_TYPE)			\
   RL_FUNC_ARG (RET_TYPE, "return value")				\
   RL_FOREACH (RL_FUNC_ARG, RL_REMOVE_PAREN (ARGS))			\
@@ -742,7 +742,7 @@
 	  .parent = -1,							\
 	  .typed_ptrs_tree = NULL,					\
 	  .untyped_ptrs_tree = NULL,					\
-	  .rl_ra_idx = { .data = NULL, .size = 0, .alloc_size = 0, }, \
+	  .rl_ra_idx = { .data = NULL, .size = 0, .alloc_size = 0, },	\
 	  .ptrs = { .ra = { .data = NULL, .size = 0, .alloc_size = 0, } } \
 	};								\
       char * __ptr__ = strchr (__name__, '[');				\
@@ -1085,11 +1085,11 @@
 
 #else /* ! HAVE_BISON_FLEX */
 
-#define RL_ZERO_RESULT(RL_TYPE_NAME) ({					\
-      RL_TYPE_NAME __result__;						\
-      memset (&__result__, 0, sizeof (__result__));			\
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_LOAD_METHOD_MISSED);		\
-      __result__;							\
+#define RL_ZERO_RESULT(RL_TYPE_NAME) ({				\
+      RL_TYPE_NAME __result__;					\
+      memset (&__result__, 0, sizeof (__result__));		\
+      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_LOAD_METHOD_MISSED);	\
+      __result__;						\
     })
 
 #define RL_LOAD_STUB(RL_TYPE_NAME, ...) RL_LOAD_STUB_ARGN (RL_TYPE_NAME, __VA_ARGS__, 3, 2)
