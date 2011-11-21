@@ -1199,6 +1199,6 @@ extern char * rl_stringify_double (rl_ptrdes_t*);
 extern char * rl_stringify_long_double_t (rl_ptrdes_t*);
 
 extern char * xml_quote_string (char*);
-extern char * xml_unquote_string (char*);
+extern char * xml_unquote_string (char*, int);
 
 #endif /* _RESLIB_H_ */

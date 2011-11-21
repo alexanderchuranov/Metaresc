@@ -267,7 +267,7 @@ TYPEDEF_STRUCT (rl_load_t, ATTRIBUTES ( , "ResLib load parser data"),
 
 TYPEDEF_STRUCT (rl_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
 		RARRAY (char, substr, "substring descriptor"),
-		(char *, unquote, (char*), "unquote handler"),
+		(char *, unquote, (char*, int), "unquote handler"),
 		)
 
 TYPEDEF_STRUCT (rl_load_data_t,

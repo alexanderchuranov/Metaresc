@@ -17,9 +17,9 @@
 
 #define RL_SCM_BIT_OR "bit-or"
    
-   static char * unquote (char*);
-   static char * encode_char (char*);
-   static char * encode_bitmask (char*);
+   static char * unquote (char*, int);
+   static char * encode_char (char*, int);
+   static char * encode_bitmask (char*, int);
 %}
 
 WS	[[:space:]]*
@@ -71,26 +71,25 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 %%
 
-static char * unquote (char * str)
+static char * unquote (char * str, int length)
 {
-  int length = strlen (str) - 1;
   int length_ = 0;
   char * str_;
   int i;
 #define ESC_CHAR_MAP_SIZE (256)
-static int map[ESC_CHAR_MAP_SIZE] = {
-  [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
-  [(unsigned char)'f'] = (unsigned char)'\f',
-  [(unsigned char)'n'] = (unsigned char)'\n',
-  [(unsigned char)'r'] = (unsigned char)'\r',
-  [(unsigned char)'t'] = (unsigned char)'\t',
-  [(unsigned char)'v'] = (unsigned char)'\v',
-  [(unsigned char)'\''] = (unsigned char)'\'',
-  [(unsigned char)'\"'] = (unsigned char)'\"',
-  [(unsigned char)'\\'] = (unsigned char)'\\',
-};
+  static int map[ESC_CHAR_MAP_SIZE] = {
+    [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
+    [(unsigned char)'f'] = (unsigned char)'\f',
+    [(unsigned char)'n'] = (unsigned char)'\n',
+    [(unsigned char)'r'] = (unsigned char)'\r',
+    [(unsigned char)'t'] = (unsigned char)'\t',
+    [(unsigned char)'v'] = (unsigned char)'\v',
+    [(unsigned char)'\''] = (unsigned char)'\'',
+    [(unsigned char)'\"'] = (unsigned char)'\"',
+    [(unsigned char)'\\'] = (unsigned char)'\\',
+  };
 
-  for (i = 1; i < length; ++i)
+  for (i = 1; i < length - 1; ++i) /* we need to skip quotes at the begging and end */
     {
       if ('\\' == str[i])
 	{
@@ -107,7 +106,7 @@ static int map[ESC_CHAR_MAP_SIZE] = {
       return (NULL);
     }
   length_ = 0;
-  for (i = 1; i < length; ++i)
+  for (i = 1; i < length - 1; ++i)
     {
       if ('\\' == str[i])
 	{
@@ -130,11 +129,11 @@ static int map[ESC_CHAR_MAP_SIZE] = {
 }
 
 static void
-tokenize (char * str, void (*handler) (char*, int))
+tokenize (char * str, void (*handler) (char*, int), int length)
 {
   char * end = strchr (str, ')');
   if (NULL == end)
-    end = &str[strlen (str)];
+    end = &str[length];
   while (str < end)
     {
       char * tok;
@@ -150,7 +149,7 @@ tokenize (char * str, void (*handler) (char*, int))
 }
 
 static char *
-encode_bitmask (char * str)
+encode_bitmask (char * str, int length)
 {
   int size = 0;
   int tok_count = 0;
@@ -174,7 +173,7 @@ encode_bitmask (char * str)
     return (NULL);
   str += sizeof (RL_SCM_BIT_OR) - 1;
 
-  tokenize (str, calc_size);
+  tokenize (str, calc_size, length);
 
   bitmask = RL_MALLOC (size + (tok_count - 1) * (sizeof (RL_BITMASK_OR_DELIMITER) - 1) + 1);
   if (NULL == bitmask)
@@ -185,13 +184,13 @@ encode_bitmask (char * str)
   end = bitmask;
   tok_count = 0;
   
-  tokenize (str, append);
+  tokenize (str, append, length);
   *end = 0;
   return (bitmask);
 }
 
 static char *
-encode_char (char * str)
+encode_char (char * str, int length)
 {
   char str_[] = "\\000";
   int code;

@@ -112,7 +112,6 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.substr.data += i + 1;
     }
   rl_load->ptrs->ra.data[rl_load->parent].fd.name = rl_unquote (&$2);
-  $4.substr.data[$4.substr.size] = 0;
   rl_load->ptrs->ra.data[rl_load->parent].value = rl_unquote (&$4);;
   rl_load->parent = rl_load->ptrs->ra.data[rl_load->parent].parent;
  }

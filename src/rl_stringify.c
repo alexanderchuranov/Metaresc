@@ -329,11 +329,11 @@ xml_quote_string (char * str)
 }
 
 char *
-xml_unquote_string (char * str)
+xml_unquote_string (char * str, int length)
 {
-  char * str_ = RL_MALLOC (strlen (str) + 1);
-  int length = 0;
-  int i;
+  char * str_ = RL_MALLOC (length + 1);
+  int length_ = 0;
+  int i, j;
 
   static int inited = 0;
   static char map_c[ESC_CHAR_MAP_SIZE];
@@ -364,41 +364,41 @@ xml_unquote_string (char * str)
       return (NULL);
     }
   
-  while (*str)
-    if (*str != '&')
-      str_[length++] = *str++;
+  for (j = 0; j < length; ++j)
+    if (str[j] != '&')
+      str_[length_++] = str[j];
     else
       {
 	char esc[ESC_SIZE];
-	strncpy (esc, str, sizeof (esc) - 1);
-	if ('#' == str[1])
+	strncpy (esc, &str[j], sizeof (esc) - 1);
+	if ('#' == str[j + 1])
 	  {
 	    int32_t code = 0;
 	    int size = 0;
-	    if (1 != sscanf (str, XML_NONPRINT_ESC "%n", &code, &size))
+	    if (1 != sscanf (&str[j + 2], XML_NONPRINT_ESC "%n", &code, &size))
 	      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_WRONG_XML_ESC, esc);
 	    else
 	      {
-		str += size;
-		str_[length++] = code;
+		j += size + 1; /* need to test this */
+		str_[length_++] = code;
 	      }
 	  }
 	else
 	  {
 	    for (i = 0; i < map_size; ++i)
-	      if (0 == strncasecmp (str, map_cp[i], map_s[i]))
+	      if (0 == strncasecmp (&str[j], map_cp[i], map_s[i]))
 		{
-		  str_[length++] = map_c[i];
-		  str += map_s[i];
+		  str_[length_++] = map_c[i];
+		  j += map_s[i] - 1; /* one more increase in the loop */
 		  break;
 		}
 	    if (i >= map_size)
 	      {
 		RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNKNOWN_XML_ESC, esc);
-		str_[length++] = *str++;
+		str_[length_++] = str[j];
 	      }
 	  }
       }
-  str_[length] = 0;
+  str_[length_] = 0;
   return (str_);
 }  

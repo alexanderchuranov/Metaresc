@@ -14,8 +14,8 @@
 #include <lexer.h>
 #include <cinit_load.tab.h>
 
-   static char * unquote (char*);
-   static char * unquote_char (char*);
+   static char * unquote (char*, int);
+   static char * unquote_char (char*, int);
    static void get_type (rl_substr_t*, char*);
 
 %}
@@ -87,14 +87,13 @@ static int map[ESC_CHAR_MAP_SIZE] = {
   [(unsigned char)'\\'] = (unsigned char)'\\',
 };
 
-static char * unquote (char * str)
+static char * unquote (char * str, int length)
 {
-  int length = strlen (str) - 1;
   int length_ = 0;
   char * str_;
   int i;
 
-  for (i = 1; i < length;)
+  for (i = 1; i < length - 1;)
     {
       if ('\\' == str[i++])
 	{
@@ -118,7 +117,7 @@ static char * unquote (char * str)
     }
 
   length_ = 0;
-  for (i = 1; i < length; ++i)
+  for (i = 1; i < length - 1; ++i)
     {
       if ('\\' == str[i])
 	{
@@ -143,25 +142,26 @@ static char * unquote (char * str)
   return (str_);
 }
 
-static char * unquote_char (char * str)
+static char * unquote_char (char * str, int length)
 {
-  int length;
-  char * str_;
-  ++str;
-  if (('\\' == str[0]) && (map[(unsigned char)str[1]] > 0))
-    {
-      str[1] = map[(unsigned char)str[1]];
-      ++str;
-    }
-  length = strlen (str);
-  str_ = (char*)RL_MALLOC (length);
+  char * str_ = (char*)RL_MALLOC (length - 1);
+
   if (NULL == str_)
     {
       RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
-  memcpy (str_, str, length - 1);
-  str_[length - 1] = 0;
+  ++str;
+  if (('\\' == str[0]) && (map[(unsigned char)str[1]] > 0))
+    {
+      str_[0] = map[(unsigned char)str[1]];
+      str_[1] = 0;
+    }
+  else
+    {
+      memcpy (str_, str, length - 2);
+      str_[length - 2] = 0;
+    }
   return (str_);
 }
 

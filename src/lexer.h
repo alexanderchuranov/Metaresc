@@ -43,7 +43,7 @@ static inline char * rl_unquote (rl_substr_t * substr)
   else
     {
       if (substr->unquote)
-	return (substr->unquote (substr->substr.data));
+	return (substr->unquote (substr->substr.data, substr->substr.size));
       else
 	return (strndup (substr->substr.data, substr->substr.size));
     }
@@ -62,7 +62,7 @@ static inline void rl_get_id (rl_substr_t * substr, char * start)
   substr->unquote = NULL;
 }
 
-static inline void rl_set_lval (rl_substr_t * substr, char * str, char * (*unquote_func) (char*))
+static inline void rl_set_lval (rl_substr_t * substr, char * str, char * (*unquote_func) (char*, int))
 {
   substr->substr.data = str;
   substr->substr.size = (str ? strlen (str) : -1);
