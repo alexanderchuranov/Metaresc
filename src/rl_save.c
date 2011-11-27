@@ -547,7 +547,8 @@ rl_post_process (rl_save_data_t * rl_save_data)
       if (rl_save_data->ptrs.ra.data[idx].ref_idx >= 0)
 	{
 	  int ref_parent = rl_save_data->ptrs.ra.data[rl_save_data->ptrs.ra.data[idx].ref_idx].parent;
-	  if ((ref_parent >= 0) && (RL_TYPE_STRING == rl_save_data->ptrs.ra.data[ref_parent].fd.rl_type))
+	  if ((ref_parent >= 0) && (RL_TYPE_STRING == rl_save_data->ptrs.ra.data[ref_parent].fd.rl_type)
+	      && (RL_TYPE_EXT_NONE == rl_save_data->ptrs.ra.data[ref_parent].fd.rl_type_ext))
 	    {
 	      rl_save_data->ptrs.ra.data[idx].ref_idx = ref_parent;
 	      rl_save_data->ptrs.ra.data[idx].flags |= RL_PDF_CONTENT_REFERENCE;
@@ -555,7 +556,8 @@ rl_post_process (rl_save_data_t * rl_save_data)
 	    }
 	}
 
-      if (RL_TYPE_STRING == rl_save_data->ptrs.ra.data[idx].fd.rl_type)
+      if ((RL_TYPE_STRING == rl_save_data->ptrs.ra.data[idx].fd.rl_type) &&
+	  (RL_TYPE_EXT_NONE == rl_save_data->ptrs.ra.data[idx].fd.rl_type_ext))
 	rl_save_data->ptrs.ra.data[idx].first_child = rl_save_data->ptrs.ra.data[idx].last_child = -1;
 
       if (rl_save_data->ptrs.ra.data[idx].first_child >= 0)

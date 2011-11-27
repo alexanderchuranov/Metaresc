@@ -535,7 +535,7 @@
 
 #define RL_FIELD_DESC(RL_TYPE_NAME, TYPE, NAME, SUFFIX, RL_TYPE, RL_TYPE_EXT, /* COMMENT */ ...)  { \
     .type = RL_STRINGIFY (TYPE),					\
-      .name = #NAME,							\
+      .name = RL_STRINGIFY (NAME),					\
       .size = sizeof (TYPE),						\
       .offset = offsetof (RL_TYPE_NAME, NAME),				\
       .rl_type = RL_TYPE,						\
