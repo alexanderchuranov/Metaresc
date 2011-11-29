@@ -50,7 +50,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 "("{WS}({ID}{WS})*{ID}{WS}\*?{WS}"["{WS}"]"{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
-"/*"{WS}"("{WS}({ID}{WS})*{ID}{WS}"["{WS}"]"{WS}")"{WS}"*/" { get_type (&yylval->string, strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
+"/*"{WS}"("{WS}({ID}{WS})*{ID}{WS}\*?{WS}"["{WS}"]"{WS}")"{WS}"*/" { get_type (&yylval->string, strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
 
 ({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
