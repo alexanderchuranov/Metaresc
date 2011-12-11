@@ -48,7 +48,7 @@
 /* references on already saved structures will be replaced with nodes that have only REF index property */
 #define RL_REF "ref"
 #define RL_REF_CONTENT "ref_content"
-#define RL_RARRAY_SIZE "size"
+#define RL_RARRAY_SIZE "rarray_size"
 /* XML attribute for zero length strings */
 #define RL_ISNULL "isnull"
 
@@ -121,10 +121,11 @@
    | (__builtin_types_compatible_p (PREFIX long double SUFFIX, TYPE) ? RL_TYPE_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX char SUFFIX, TYPE) ? RL_TYPE_CHAR : 0) \
    | (__builtin_types_compatible_p (PREFIX char RL_IF_ELSE (RL_IS_EMPTY (SUFFIX)) () ((SUFFIX)) [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
-   | (__builtin_types_compatible_p (PREFIX char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
-   | (__builtin_types_compatible_p (const char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
-   | (__builtin_types_compatible_p (volatile char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
-   | (__builtin_types_compatible_p (const volatile char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
+   | ((__builtin_types_compatible_p (PREFIX char * SUFFIX, TYPE)	\
+       RL_IF_ELSE (RL_IS_EMPTY (PREFIX)) (				\
+       | __builtin_types_compatible_p (const char * SUFFIX, TYPE) 	\
+       | __builtin_types_compatible_p (volatile char * SUFFIX, TYPE)	\
+       | __builtin_types_compatible_p (const volatile char * SUFFIX, TYPE)) ()) ? RL_TYPE_STRING : 0) \
    )
 #define RL_TYPE_DETECT_PTR(TYPE) (RL_TYPE_DETECT (TYPE, *) | RL_TYPE_DETECT (TYPE, *, const) | RL_TYPE_DETECT (TYPE, *, volatile) | RL_TYPE_DETECT (TYPE, *, const volatile))
 /* Help macro for arrays auto-detection */
