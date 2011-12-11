@@ -180,7 +180,7 @@ TYPEDEF_STRUCT (rl_fd_ptr_t, ATTRIBUTES ( , "rl_fd_t pointer wrapper"),
 TYPEDEF_STRUCT (rl_td_t, ATTRIBUTES ( , "ResLib type descriptor"),
 		(rl_type_t, rl_type, , "ResLib type"), /* possible variants RL_TYPE_ENUM, RL_TYPE_STRUCT, RL_TYPE_UNION */
 		(char *, type, , "stringified type name"),
-		(rl_red_black_tree_node_t *, lookup_by_value, , "B-tree for enums values lookup"),
+		(rl_red_black_tree_node_t *, lookup_by_value, , "RB-tree for enums values lookup"),
 		RARRAY (rl_fd_ptr_t, lookup_by_name, "hash for lookup by field name"),
 #ifndef RL_TREE_LOOKUP
 		(uint64_t, hash_value, , "type name hash value"),
@@ -229,7 +229,7 @@ TYPEDEF_STRUCT (rl_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, prev, , "previous sibling index"),
 		(int, next, , "next sibling index"),
 		BITMASK (rl_ptrdes_flags_t, flags),
-		(int32_t, rarray_size, , "size of resizable array"),
+		(typeof (((rl_rarray_t*)NULL)->size), rarray_size, , "size of resizable array"),
 		(char *, union_field_name, , "field descriptor for unions"),
 		(char *, value, , "stringified value"),
 		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
@@ -278,8 +278,8 @@ TYPEDEF_STRUCT (rl_load_data_t,
 TYPEDEF_STRUCT (rl_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(rl_ra_rl_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(int, parent, , "index of current parent"),
-		(rl_red_black_tree_node_t *, typed_ptrs_tree, , "B-tree with typed nodes"),
-		(rl_red_black_tree_node_t *, untyped_ptrs_tree, , "B-tree with untyped nodes"),
+		(rl_red_black_tree_node_t *, typed_ptrs_tree, , "RB-tree with typed nodes"),
+		(rl_red_black_tree_node_t *, untyped_ptrs_tree, , "RB-tree with untyped nodes"),
 		RARRAY (int, rl_ra_idx, "indexes of postponed nodes"),
 		)
 
@@ -311,10 +311,10 @@ TYPEDEF_STRUCT (rl_conf_t, ATTRIBUTES ( , "ResLib configuration"),
 #ifndef RL_TREE_LOOKUP
 		(rl_ra_rl_td_ptr_t, hash, , "hash for type descriptors lookup"),
 #else /* RL_TREE_LOOKUP */
-		(rl_red_black_tree_node_t *, tree, , "B-tree for type descriptors lookup"),
+		(rl_red_black_tree_node_t *, tree, , "RB-tree for type descriptors lookup"),
 #endif /* RL_TREE_LOOKUP */
 		RARRAY (rl_td_ptr_t, des, "types descriptors"),
-		(rl_red_black_tree_node_t *, enum_by_name, , "B-tree with enums mapping"),
+		(rl_red_black_tree_node_t *, enum_by_name, , "RB-tree with enums mapping"),
 		(rl_output_format_t, output_format, [RL_MAX_TYPES], "formaters"),
 		(rl_io_handler_t, io_handlers, [RL_MAX_TYPES], "io handlers"),
 		(rl_io_handler_t, io_ext_handlers, [RL_MAX_TYPES], "io handlers"),

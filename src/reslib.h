@@ -99,7 +99,11 @@
   Help macro for internal type detection. It compares variable with all known builin types.
   Compaund types are detected in runtime.
 */
-#define RL_TYPE_DETECT_INNER(PREFIX, TYPE, SUFFIX, PAREN_SUFFIX)	\
+#define RL_TYPE_DETECT(TYPE, ...) RL_TYPE_DETECT1 (TYPE, __VA_ARGS__)
+#define RL_TYPE_DETECT1(TYPE, SUFFIX, ...) RL_TYPE_DETECT2 (TYPE, SUFFIX, __VA_ARGS__)
+#define RL_TYPE_DETECT2(TYPE, SUFFIX, PREFIX) RL_TYPE_DETECT3 (PREFIX, TYPE, SUFFIX)
+
+#define RL_TYPE_DETECT3(PREFIX, TYPE, SUFFIX)				\
   (0 /* RL_TYPE_NONE */							\
    | (__builtin_types_compatible_p (PREFIX void SUFFIX, TYPE) ? RL_TYPE_VOID : 0) \
    | (__builtin_types_compatible_p (PREFIX int8_t SUFFIX, TYPE) ? RL_TYPE_INT8 : 0) \
@@ -116,14 +120,13 @@
    | (__builtin_types_compatible_p (PREFIX double SUFFIX, TYPE) ? RL_TYPE_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX long double SUFFIX, TYPE) ? RL_TYPE_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX char SUFFIX, TYPE) ? RL_TYPE_CHAR : 0) \
-   | (__builtin_types_compatible_p (PREFIX char PAREN_SUFFIX [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
+   | (__builtin_types_compatible_p (PREFIX char RL_IF_ELSE (RL_IS_EMPTY (SUFFIX)) () ((SUFFIX)) [], TYPE) ? RL_TYPE_CHAR_ARRAY : 0) \
    | (__builtin_types_compatible_p (PREFIX char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
    | (__builtin_types_compatible_p (const char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
    | (__builtin_types_compatible_p (volatile char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
    | (__builtin_types_compatible_p (const volatile char * SUFFIX, TYPE) ? RL_TYPE_STRING : 0) \
    )
-#define RL_TYPE_DETECT(TYPE) RL_TYPE_DETECT_INNER ( , TYPE, ,)
-#define RL_TYPE_DETECT_PTR(TYPE) (RL_TYPE_DETECT_INNER ( , TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const, TYPE, *, (*)) | RL_TYPE_DETECT_INNER (volatile, TYPE, *, (*)) | RL_TYPE_DETECT_INNER (const volatile, TYPE, *, (*)))
+#define RL_TYPE_DETECT_PTR(TYPE) (RL_TYPE_DETECT (TYPE, *) | RL_TYPE_DETECT (TYPE, *, const) | RL_TYPE_DETECT (TYPE, *, volatile) | RL_TYPE_DETECT (TYPE, *, const volatile))
 /* Help macro for arrays auto-detection */
 #define RL_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE [], typeof (S_PTR)) ? RL_TYPE_EXT_ARRAY : RL_TYPE_EXT_NONE)
 
@@ -1177,7 +1180,7 @@ extern int rl_load_bitfield_value (rl_ptrdes_t*, uint64_t*);
 extern int rl_save_bitfield_value (rl_ptrdes_t*, uint64_t*);
 extern int rl_td_foreach (int (*func) (rl_td_t*, void*), void*);
 extern rl_td_t * rl_get_td_by_name (char*);
-extern void rl_message_format (void (*output_handler) (char*), rl_message_id_t, va_list);
+extern char * rl_message_format (rl_message_id_t, va_list);
 extern void rl_message (const char*, const char*, int, rl_log_level_t, rl_message_id_t, ...);
 extern void rl_message_unsupported_node_type (rl_fd_t*);
 extern void * rl_rarray_append (rl_rarray_t*, int);

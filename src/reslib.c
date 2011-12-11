@@ -141,13 +141,19 @@ static void __attribute__((destructor)) rl_cleanup (void)
   rl_conf.des.size = rl_conf.des.alloc_size = 0;
 }
 
-void
-rl_message_format (void (*output_handler) (char*), rl_message_id_t message_id, va_list args)
+/**
+ * Format message. Allocates memory for message that need to be freed.
+ * @param message_id message template string ID
+ * @param args variadic agruments
+ * @return message string allocated by standard malloc. Need to be freed outside.
+ */
+char *
+rl_message_format (rl_message_id_t message_id, va_list args)
 {
   static const char * messages[RL_MESSAGE_LAST + 1] = { [0 ... RL_MESSAGE_LAST] = NULL };
   static int messages_inited = 0;
   const char * format = "Unknown RL_MESSAGE_ID.";
-  char * str = NULL;
+  char * message = NULL;
 
   if (!messages_inited)
     {
@@ -165,13 +171,9 @@ rl_message_format (void (*output_handler) (char*), rl_message_id_t message_id, v
   if ((message_id >= 0) && (message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
     format = messages[message_id];
 
-  vasprintf (&str, format, args);
+  vasprintf (&message, format, args);
 
-  if (str)
-    {
-      output_handler (str);
-      free (str);
-    }
+  return (message);
 }
 
 /**
@@ -185,6 +187,7 @@ rl_message_format (void (*output_handler) (char*), rl_message_id_t message_id, v
 void
 rl_message (const char * file_name, const char * func_name, int line, rl_log_level_t log_level, rl_message_id_t message_id, ...)
 {
+  char * message;
   va_list args;
    
   va_start (args, message_id);
@@ -198,16 +201,16 @@ rl_message (const char * file_name, const char * func_name, int line, rl_log_lev
       static const char * log_level_str[] =
 	{ LL_INIT (ALL), LL_INIT (TRACE), LL_INIT (DEBUG), LL_INIT (INFO), LL_INIT (WARN), LL_INIT (ERROR), LL_INIT (FATAL), LL_INIT (OFF) };
 
-
-      void message_output (char * message)
-      {
-	fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
-	fflush (stderr);
-      }
-      
       if ((log_level >= 0) && (log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])) && log_level_str[log_level])
 	log_level_str_ = log_level_str[log_level];
-      rl_message_format (message_output, message_id, args);
+      
+      message = rl_message_format (message_id, args);
+      if (message)
+	{
+	  fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
+	  fflush (stderr);
+	  free (message);
+	}
     }
   va_end (args);
 }
@@ -243,7 +246,7 @@ strndup (const char * str, size_t size)
  * Extract bits of bit-field, extend sign bits if needed.
  * @param ptrdes pointer descriptor
  * @param value pointer on variable for bit-field value
- * @return status
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 int
 rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
@@ -271,6 +274,12 @@ rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Saves bit-field into memory
+ * @param ptrdes pointer descriptor
+ * @param value pointer on a memory for a bit-field store
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 int
 rl_load_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
 {
@@ -298,7 +307,7 @@ rl_load_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
  * Rarray memory allocation/reallocation
  * @param rarray a pointer on resizable array
  * @param size size of array elements
- * @return Pointer on new element of rarray;
+ * @return Pointer on a new element of rarray
  */
 void *
 rl_rarray_append (rl_rarray_t * rarray, int size)
@@ -342,6 +351,12 @@ rl_rarray_append (rl_rarray_t * rarray, int size)
   return (&((char*)rarray->data)[rarray->size - size]);
 }
 
+/**
+ * printf into resizable array
+ * @param rarray a pointer on resizable array
+ * @param format standard printf format string
+ * @return length of added content and -1 in case of memory allocation failure
+ */
 int __attribute__ ((format (printf, 2, 3))) 
 rl_ra_printf (rl_rarray_t * rl_ra_str, const char * format, ...)
 {
@@ -376,8 +391,8 @@ rl_ra_printf (rl_rarray_t * rl_ra_str, const char * format, ...)
 }
 
 /**
- * Add pointer to list
- * @param ptrs resizable array with pointers on already save structures
+ * Allocate element for pointer descriptor in resizable array.
+ * @param ptrs resizable array with pointers on already saved structures
  * @return Index of pointer in the list or -1 in case of memory operation error.
  * On higher level we need index because array is always reallocating and
  * pointer on element is changing (index remains constant).
@@ -420,6 +435,12 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   return (ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1);
 }
 
+/**
+ * Setup referencies between parent and child node in serialization tree
+ * @param parent index of parent node
+ * @param child index of child node
+ * @param ptrs resizable array with pointers descriptors
+ */
 void
 rl_add_child (int parent, int child, rl_ra_rl_ptrdes_t * ptrs)
 {
@@ -444,6 +465,12 @@ rl_add_child (int parent, int child, rl_ra_rl_ptrdes_t * ptrs)
   ptrs->ra.data[parent].last_child = child;
 }
 
+/**
+ * Comparator for rl_ra_rl_ptrdes_t sorting by idx field
+ * @param a pointer on one rl_ptrdes_t
+ * @param b pointer on another rl_ptrdes_t
+ * @return comparation sign
+ */
 static int rl_cmp_idx (const void * a, const void * b)
 {
   return (((const rl_ptrdes_t*)a)->idx - ((const rl_ptrdes_t*)b)->idx);
@@ -461,7 +488,6 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
   int to_free = 0;
   int count = ptrs.ra.size / sizeof (ptrs.ra.data[0]);
   
-  /* set idx property to -1 for all nodes which are not dynamically allocated */
   for (i = 0; i < count; ++i)
     switch (ptrs.ra.data[i].fd.rl_type_ext)
       {
@@ -511,7 +537,7 @@ hash_str (char * str)
   if (NULL == str)
     return (hash_value);
   while (*str)
-    hash_value = (hash_value + (unsigned char)*str++) * 0xFEDCBA987654321LL;
+    hash_value = (hash_value + (unsigned char)*str++) * 0xDeadBeef;
   return (hash_value);
 }
 
@@ -638,12 +664,23 @@ rl_update_td_hash (rl_td_t * tdp, rl_ra_rl_td_ptr_t * hash)
 
 #else /* RL_TREE_LOOKUP */
 
+/**
+ * Comparator for rl_td_t sorting by type field
+ * @param a pointer on one rl_td_t
+ * @param b pointer on another rl_td_t
+ * @return comparation sign
+ */
 static int
 cmp_tdp (const void * x, const void * y)
 {
   return (strcmp (((const rl_td_t *) x)->type, ((const rl_td_t *) y)->type));
 }
 
+/**
+ * Addition of a new type descriptor to lookup structure. Implementation as a RB-tree.
+ * @param tdp new type descriptor
+ * @param tree pointer on a root pointer of the lookup tree
+ */
 static void
 rl_update_td_tree (rl_td_t * tdp, rl_red_black_tree_node_t ** tree)
 {
@@ -654,7 +691,7 @@ rl_update_td_tree (rl_td_t * tdp, rl_red_black_tree_node_t ** tree)
 #endif /* RL_TREE_LOOKUP */
 
 /**
- * Type descriptor lookup function.
+ * Type descriptor lookup function. Lookup by type name.
  * @param type stringified type name
  * @return pointer on type descriptor
  */
@@ -698,6 +735,11 @@ rl_get_td_by_name (char * type)
   return (NULL);
 }
 
+/**
+ * Preprocessign of a new type. Anonymous unions should be extracted into new independant types.
+ * @param tdp pointer on a new type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_anon_unions_extract (rl_td_t * tdp)
 {
@@ -758,18 +800,35 @@ rl_anon_unions_extract (rl_td_t * tdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * comparator for rl_fd_t sorting by enum value
+ * @param a pointer on one rl_fd_t
+ * @param b pointer on another rl_fd_t
+ * @return comparation sign
+ */
 static int
 cmp_enums_by_value (const void * x, const void * y)
 {
   return ((((const rl_fd_t *) x)->param.enum_value > ((const rl_fd_t *) y)->param.enum_value) - (((const rl_fd_t *) x)->param.enum_value < ((const rl_fd_t *) y)->param.enum_value));
 }
 
+/**
+ * comparator for rl_dd_t sorting by enum name
+ * @param a pointer on one rl_fd_t
+ * @param b pointer on another rl_fd_t
+ * @return comparation sign
+ */
 static int
 cmp_enums_by_name (const void * x, const void * y)
 {
   return (strcmp (((const rl_fd_t *) x)->name, ((const rl_fd_t *) y)->name));
 }
 
+/**
+ * New enum descriptor preprocessing. Enum literal values should be added to global lookup table and enum type descriptor should have a lookup by enum values.
+ * @param tdp pointer on a new enum type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_add_enum (rl_td_t * tdp)
 {
@@ -778,6 +837,7 @@ rl_add_enum (rl_td_t * tdp)
   tdp->lookup_by_value = NULL;
   for (i = 0; i < count; ++i)
     {
+      /* adding to global lookup table by enum literal names */
       rl_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&rl_conf.enum_by_name, cmp_enums_by_name);  
       if (NULL == fdpp)
 	{
@@ -789,6 +849,7 @@ rl_add_enum (rl_td_t * tdp)
 	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->name, tdp->type);
 	  return (EXIT_FAILURE);
 	}
+      /* adding to local lookup table by enum values */
       fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value, cmp_enums_by_value);  
       if (NULL == fdpp)
 	{
@@ -809,6 +870,12 @@ rl_get_enum_by_value (rl_td_t * tdp, int64_t value)
   return (NULL);
 }
 
+/**
+ * Enum literal name lookup function.
+ * @param value address for enum value to store
+ * @param name literal name of enum to lookup
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 int
 rl_get_enum_by_name (uint64_t * value, char * name)
 {
@@ -816,9 +883,14 @@ rl_get_enum_by_name (uint64_t * value, char * name)
   rl_fd_t ** fdpp = tfind (&fd, (void*)&rl_conf.enum_by_name, cmp_enums_by_name);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
-  return (!!fdpp);
+  return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
+/**
+ * Type name clean up. We need to drop all key words.
+ * @param tdp pointer on a type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_normalize_type (rl_fd_t * fdp)
 {
@@ -860,7 +932,7 @@ rl_normalize_type (rl_fd_t * fdp)
 	    break;
 	  if (isdelimiter[(uint8_t)found[length]] && ((found == fdp->type) || isdelimiter[(uint8_t)found[-1]]))
 	    {
-	      memset (found, ' ', length); /* delete all keywords */
+	      memset (found, ' ', length); /* replaced all keywords on spaces */
 	      modified = !0;
 	    }
 	  ++ptr; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
@@ -886,6 +958,11 @@ rl_normalize_type (rl_fd_t * fdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Bitfield initialization. We need to calculate offset and shift. Width was initialized by macro.
+ * @param tdp pointer on a type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_init_bitfield (rl_fd_t * fdp)
 {
@@ -901,6 +978,11 @@ rl_init_bitfield (rl_fd_t * fdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * New type descriptor preprocessing. Check fields names duplocation, nornalize types name, initialize bitfields. Called once for each type.
+ * @param tdp pointer on a type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_check_fields (rl_td_t * tdp)
 {
@@ -933,6 +1015,11 @@ rl_check_fields (rl_td_t * tdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Initialize non-collision hash table for fields lookup by fields name.
+ * @param tdp pointer on a type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_build_field_names_hash (rl_td_t * tdp)
 {
@@ -944,6 +1031,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
   for (i = 0; i < fields_count; ++i)
     tdp->fields.data[i].hash_value = hash_str (tdp->fields.data[i].name);
 
+  /* sanity check for hash value collision */
   for (i = 0; i < fields_count; ++i)
     for (j = i + 1; j < fields_count; ++j)
       if (tdp->fields.data[i].hash_value == tdp->fields.data[j].hash_value)
@@ -990,6 +1078,11 @@ rl_build_field_names_hash (rl_td_t * tdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Initialize AUTO fields. Detect type, size, pointers etc.
+ * @param tdp pointer on a type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_auto_field_detect (rl_fd_t * fdp)
 {
@@ -1017,7 +1110,7 @@ rl_auto_field_detect (rl_fd_t * fdp)
       [RL_TYPE_ANON_UNION] = sizeof (void),
     };
   rl_td_t * tdp = rl_get_td_by_name (fdp->type);
-  
+  /* check if type is in registery */
   if (tdp)
     {
       fdp->rl_type = tdp->rl_type;
@@ -1072,6 +1165,11 @@ rl_auto_field_detect (rl_fd_t * fdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Initialize fields that a pointers on functions. We need to detect types of arguments.
+ * @param tdp pointer on a type descriptor
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_func_field_detect (rl_fd_t * fdp)
 {
@@ -1100,6 +1198,13 @@ rl_func_field_detect (rl_fd_t * fdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
+ * Called on each new type registration for all already registered types.
+ * @param tdp pointer on a type descriptor
+ * @param args auxiliary arguments
+ * @return status EXIT_SUCCESS or EXIT_FAILURE
+ */
 static int
 rl_detect_fields_types (rl_td_t * tdp, void * args)
 {
@@ -1156,6 +1261,12 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Lookup field descriptor by field name
+ * @param tdp a pointer on a type descriptor
+ * @param name name of the field
+ * @return pointer on field descriptor or NULL
+ */
 rl_fd_t *
 rl_get_fd_by_name (rl_td_t * tdp, char * name)
 {
@@ -1283,6 +1394,11 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Helper function for building tree within parsing.
+ * @param rl_load structure with current parsing context
+ * @return index of newly allocated element in rl_load->ptrs resizeable array
+ */
 int
 rl_parse_add_node (rl_load_t * rl_load)
 {

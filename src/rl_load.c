@@ -110,11 +110,8 @@ rl_get_enum (uint64_t * data, char * str)
     int enum2int (rl_td_t * tdp, void * args)
     {
       int i;
-      int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
-      char * name_ = args;
-
       if (RL_TYPE_ENUM == tdp->rl_type)
-	for (i = 0; i < count; ++i)
+	for (i = tdp->fields.size / sizeof (tdp->fields.data[0]) - 1; i >= 0; --i)
 	  if (0 == strcmp (tdp->fields.data[i].name, name_))
 	    {
 	      *data = tdp->fields.data[i].value;
@@ -124,15 +121,14 @@ rl_get_enum (uint64_t * data, char * str)
     }
 
     if (rl_td_foreach (enum2int, name_))
+      return (str);
 #else /* ! RL_LINEAR_SEARCH */
-      if (rl_get_enum_by_name (data, name_))
+    if (EXIT_SUCCESS == rl_get_enum_by_name (data, name_))
+      return (str);
 #endif /* RL_LINEAR_SEARCH */
-	return (str);
-      else
-	{
-	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNKNOWN_ENUM, name);
-	  return (NULL);
-	}
+
+    RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNKNOWN_ENUM, name);
+    return (NULL);
   }
 }
 
