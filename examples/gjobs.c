@@ -43,9 +43,7 @@ TYPEDEF_STRUCT (job_t,
 		string_t Details,
 		)
 
-TYPEDEF_STRUCT (helping_t,
-		RARRAY (job_t, Jobs),
-		)
+TYPEDEF_STRUCT (helping_t, RARRAY (job_t, Jobs))
 
 static void
 print_person (person_t * person)
@@ -70,12 +68,12 @@ print_job (job_t * job)
 
   if (job == NULL) return;
   printf ("=======  Job\n");
-  printf ("projectID: %" SCNd32 "\n", job->Project.ID);
+  printf ("projectID: %d\n", job->Project.ID);
   if (job->Application != NULL) printf ("application: %s\n", job->Application);
   if (job->Category != NULL) printf ("category: %s\n", job->Category);
   print_person (&job->Contact);
   developers = job->Developers.size / sizeof (job->Developers.data[0]);
-  printf ("%" SCNd32 " developers\n", developers);
+  printf ("%d developers\n", developers);
 
   for (i = 0; i < developers; ++i)
     print_person (&job->Developers.data[i]);
@@ -87,7 +85,7 @@ print_helping (helping_t * helping)
 {
   int i;
   int jobs = helping->Jobs.size / sizeof (helping->Jobs.data[0]);
-  printf ("%" SCNd32 " Jobs registered\n", jobs);
+  printf ("%d Jobs registered\n", jobs);
   for (i = 0; i < jobs; ++i)
     print_job (&helping->Jobs.data[i]);
 }
