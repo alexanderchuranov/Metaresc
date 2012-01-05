@@ -21,8 +21,9 @@ int main()
 {
   with_f_pointers_t s = { .pfunc = even_odd };
   int numbers[] = { 1, 4, 7 };
+  int i;
   
-  for (int i = 0; i < sizeof(numbers)/sizeof(numbers[0]); ++i)
+  for (i = 0; i < sizeof (numbers)/sizeof(numbers[0]); ++i)
     printf("%i is %s\n", numbers[i], s.pfunc(numbers[i]));
   
   return 0;

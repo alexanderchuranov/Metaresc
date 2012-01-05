@@ -9,9 +9,9 @@ int main()
     .func = puts
   };
   
-  char const* xml = RL_SAVE_XML( with_functions_t, &s );
-  puts(xml);
-  RL_FREE( xml );
+  char * xml = RL_SAVE_XML (with_functions_t, &s);
+  puts (xml);
+  RL_FREE (xml);
   
   return 0;
 }

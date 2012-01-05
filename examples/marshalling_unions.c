@@ -1,14 +1,15 @@
 
 #include <stdio.h>
+#include <math.h>
 #include "marshalling_unions.h"
 
 int main()
 {
-  floating_t fl = { .f = 3.14 };
+  floating_t fl = { .f = M_PI };
   
-  char const* xml = RL_SAVE_XML( floating_t, &fl );
-  puts(xml);
-  RL_FREE( xml );
+  char * xml = RL_SAVE_XML (floating_t, &fl);
+  puts (xml);
+  RL_FREE (xml);
   
-  return 0;
+  return (EXIT_SUCCESS);
 }

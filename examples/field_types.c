@@ -11,8 +11,9 @@ TYPEDEF_STRUCT (employee_t,
 
 int main()
 {
-  char const name[] = "employee_t";
-  rl_td_t const* td = rl_get_td_by_name(name);
+  char name[] = "employee_t";
+  rl_td_t * td = rl_get_td_by_name(name);
+  int i;
   
   if (!td)
   {
@@ -20,11 +21,11 @@ int main()
     return EXIT_FAILURE;
   }
   
-  size_t const num_fields = td->fields.size / sizeof(td->fields.data[0]);
+  int const num_fields = td->fields.size / sizeof(td->fields.data[0]);
   
   printf("the '%s' structure has %u fields:\n", name, num_fields);
   
-  for (size_t i = 0; i < num_fields; ++i)
+  for (i = 0; i < num_fields; ++i)
   {
     rl_fd_t const* fd = &td->fields.data[i];
     

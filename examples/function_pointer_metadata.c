@@ -12,6 +12,8 @@ TYPEDEF_STRUCT (ops,
 
 int print_func_field_signature(rl_fd_t const* fd)
 {
+  int i;
+  
   if (fd->rl_type != RL_TYPE_FUNC)
   {
     fprintf(stderr,
@@ -25,7 +27,7 @@ int print_func_field_signature(rl_fd_t const* fd)
   
   printf("%s (*) (", fd->param.func_param.data[0].type);
   
-  for (size_t i = 1; i < num_args; ++i)
+  for (i = 1; i < num_args; ++i)
   {
     if (i > 1)
       printf(", ");
@@ -40,10 +42,10 @@ int print_func_field_signature(rl_fd_t const* fd)
 
 int main()
 {
-  char const type_name[] = "ops";
-  char const field_name[] = "subtract";
+  char type_name[] = "ops";
+  char field_name[] = "subtract";
   
-  rl_td_t const* td = rl_get_td_by_name(type_name);
+  rl_td_t * td = rl_get_td_by_name(type_name);
   
   if (!td)
   {

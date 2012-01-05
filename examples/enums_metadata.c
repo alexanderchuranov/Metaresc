@@ -16,8 +16,9 @@ TYPEDEF_ENUM (color_t,
 
 int main()
 {
-  char const name[] = "color_t";
-  rl_td_t const* td = rl_get_td_by_name(name);
+  char name[] = "color_t";
+  rl_td_t * td = rl_get_td_by_name (name);
+  int i;
   
   if (!td)
   {
@@ -29,10 +30,10 @@ int main()
   
   size_t const num_constants = td->fields.size / sizeof(td->fields.data[0]);
   
-  for (size_t i = 0; i < num_constants; ++i)
+  for (i = 0; i < num_constants; ++i)
   {
     rl_fd_t const* fd = &td->fields.data[i];
-    printf("%u: %s = %lli\n", i, fd->name, fd->param.enum_value);
+    printf("%d: %s = %" PRId64 "\n", i, fd->name, fd->param.enum_value);
   }
   
   return EXIT_SUCCESS;

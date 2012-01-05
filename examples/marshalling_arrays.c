@@ -6,7 +6,7 @@ int main()
 {
   with_array_t wa = { .a = { 11, 17, 23 } };
   
-  char const* xml = RL_SAVE_XML( with_array_t, &wa );
+  char * xml = RL_SAVE_XML( with_array_t, &wa );
   puts(xml);
   RL_FREE(xml);
   

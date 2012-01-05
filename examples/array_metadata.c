@@ -10,7 +10,7 @@ TYPEDEF_STRUCT (example_t,
                 (double, a3, [5][2][9])
                 )
 
-int print_array_field_info(rl_td_t const* td, char const name[])
+int print_array_field_info(rl_td_t * td, char name[])
 {
   rl_fd_t const* fd = rl_get_fd_by_name(td, name);
   
@@ -37,10 +37,10 @@ int print_array_field_info(rl_td_t const* td, char const name[])
   
   if (rows == 1) // 1-dimensional
   {
-    printf("[%u]\n", total_items);
+    printf("[%zd]\n", total_items);
   }
   else { // 2- or more dimensional
-    printf("[%u][%u]\n", total_items / rows, rows);
+    printf("[%zd][%zd]\n", total_items / rows, rows);
   }
   
   return EXIT_SUCCESS;
@@ -48,8 +48,8 @@ int print_array_field_info(rl_td_t const* td, char const name[])
 
 int main()
 {
-  char const type_name[] = "example_t";
-  rl_td_t const* td = rl_get_td_by_name(type_name);
+  char type_name[] = "example_t";
+  rl_td_t * td = rl_get_td_by_name(type_name);
   
   if (!td)
   {

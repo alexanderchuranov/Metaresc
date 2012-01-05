@@ -26,9 +26,9 @@ int main()
     .fallback = &server2
   };
   
-  char const* xml = RL_SAVE_XML( policy, &p );
-  puts(xml);
-  RL_FREE(xml);
+  char * xml = RL_SAVE_XML (policy, &p);
+  puts (xml);
+  RL_FREE (xml);
   
   (void)filter2;
   

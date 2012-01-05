@@ -13,7 +13,7 @@ TYPEDEF_STRUCT (employee_t,
 int
 main (int argc, char * argv[])
 {
-  char const source[] = "<?xml version=\"1.0\"?>"
+  char source[] = "<?xml version=\"1.0\"?>"
                         "<employee>"
                           "<firstname>John</firstname>"
                           "<lastname>Doe</lastname>"

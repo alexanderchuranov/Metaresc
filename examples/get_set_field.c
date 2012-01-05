@@ -23,10 +23,10 @@ int main()
 {
   employee_t e = { "John", "Smith", 7350 };
   
-  char const type_name[] = "employee_t";
-  char const field_name[] = "salary";
+  char type_name[] = "employee_t";
+  char field_name[] = "salary";
   
-  rl_td_t const* td = rl_get_td_by_name(type_name);
+  rl_td_t * td = rl_get_td_by_name(type_name);
   
   if (!td)
   {

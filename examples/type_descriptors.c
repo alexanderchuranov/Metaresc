@@ -11,7 +11,7 @@ TYPEDEF_STRUCT (employee_t,
 
 int main()
 {
-  char const name[] = "employee_t";
+  char name[] = "employee_t";
   rl_td_t const* td = rl_get_td_by_name(name);
   
   if (td)
