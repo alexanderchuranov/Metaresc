@@ -265,18 +265,33 @@ xdr_double_ (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   return (xdr_double (xdrs, ptrs->ra.data[idx].data));
 }
 
+/*
+  need to substract double from long double, but agruments should be strictly casted to their types.
+  that's why we pass them as pointers and make a public function for optimization workaround.
+*/
+double sub_doubles (long double * ldp, double * dp) { return (*ldp - *dp); }
+
 static int
 xdr_long_double (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   long double * ldp = ptrs->ra.data[idx].data;
-  double x = 0;
-  if (XDR_ENCODE == xdrs->x_op)
-    x = *ldp;
-  if (!xdr_double (xdrs, &x))
-    return (0);
-  if (XDR_DECODE == xdrs->x_op)
-    *ldp = x;
-  return (!0);
+  if (xdrs->x_op == XDR_ENCODE)
+    {
+      double high = *ldp;
+      double low = sub_doubles (ldp, &high); /* we can't substract with inline code because compiler will optimize this operation and result will be 0 */
+      return (xdr_double (xdrs, &high) && xdr_double (xdrs, &low));
+    }
+  else if (xdrs->x_op == XDR_DECODE)
+    {
+      double high;
+      double low;
+      int retval = xdr_double (xdrs, &high) && xdr_double (xdrs, &low);
+      *ldp = (long_double_t)low + (long_double_t)high;
+      return (retval);
+    }
+  else if (xdrs->x_op == XDR_FREE)
+    return (!0);
+  return (0);
 }
 
 static int

@@ -27,8 +27,8 @@ RL_OUTPUT_FORMAT_TYPE (int32_t, "%" SCNi32);
 RL_OUTPUT_FORMAT_TYPE (uint32_t, "%" SCNu32);
 RL_OUTPUT_FORMAT_TYPE (int64_t, "%" SCNi64);
 RL_OUTPUT_FORMAT_TYPE (uint64_t, "%" SCNu64);
-RL_OUTPUT_FORMAT_TYPE (float, "%.7f");
-RL_OUTPUT_FORMAT_TYPE (double, "%.16g");
+RL_OUTPUT_FORMAT_TYPE (float, "%.8g");
+RL_OUTPUT_FORMAT_TYPE (double, "%.17g");
 RL_OUTPUT_FORMAT_TYPE (long_double_t, "%.20Lg");
 
 /**
@@ -76,8 +76,7 @@ RL_STRINGIFY_INT (uint64, RL_TYPE_UINT64);
  * @return stringified float value
  */
 #define RL_STRINGIFY_TYPE(TYPE, RL_TYPE) char * rl_stringify_ ## TYPE (rl_ptrdes_t * ptrdes) { \
-    TYPE value = *(TYPE*)ptrdes->data;					\
-    if (!isnan (value) && !isinf (value) && (rl_conf.output_format[RL_TYPE])) \
+    if ((rl_conf.output_format[RL_TYPE]))				\
       return (rl_conf.output_format[RL_TYPE](ptrdes));			\
     return (RL_STRDUP ("0"));						\
   }
