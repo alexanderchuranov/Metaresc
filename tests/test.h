@@ -76,11 +76,27 @@ TYPEDEF_STRUCT (rarray_test_t,
 		RARRAY (char, x2),
 		)
 
+TYPEDEF_STRUCT (string_ptr_t,
+		(char**, str_ptr),
+		(char, char_array1, [1]),
+		CHAR_ARRAY (char, char_array2 [1]),
+		(char*, char_array3, [1]),
+		(char*, char_array4 [1]),
+		(str_t, char_array5),
+		(str_t*, char_array6),
+		(char*, char_ptr)
+		)
+
+TYPEDEF_ENUM (sign_t,
+	      (PLUS, = 0),
+	      (MINUS, = 1),
+	      )
+
 TYPEDEF_STRUCT
 (ieee_float_t,
  BITFIELD (unsigned int, mantissa, 23),
- BITFIELD (int, exponent, 8),
- BITFIELD (unsigned int, negative, 1),
+ BITFIELD (unsigned int, exponent, 8),
+ BITFIELD (sign_t, sign, 1),
  )
 
 TYPEDEF_UNION
@@ -177,6 +193,7 @@ RL_TYPEDEF_STRUCT ()
   RL_AUTO (int, arr, [2], "comment")
   RL_AUTO (rl_ptr_t, ext, , "ptr_type")
   RL_AUTO (char *, ptr_type)
+  RL_AUTO (char **, string_ptr)
   RL_NONE (void*, ext_info, , "user extended info", { "one more extra string" })
   RL_NONE (int , res1[0], , "test of memory cleanup")
   RL_NONE (int , res2, [0])

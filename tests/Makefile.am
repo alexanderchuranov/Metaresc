@@ -1,26 +1,22 @@
 # -*- makefile -*-
 
-AM_CFLAGS = --fast-math -g -O2 -Wall -std=gnu99
+AM_CFLAGS = --fast-math -g -O2 -Wall -Werror
+LIBS += ../src/libreslib.la $(CHECK_LIBS)
+VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
+
+check_PROGRAMS = xdr
+TESTS=$(check_PROGRAMS)
+
+valgrind:
+	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"
 
 noinst_PROGRAMS = test stackoverflow highload ptr_ext rb_tree
-test_SOURCES = test.c
-test_LDADD = ../src/libreslib.la
-stackoverflow_SOURCES = stackoverflow.c
-stackoverflow_LDADD = ../src/libreslib.la
-highload_SOURCES = highload.c
-highload_LDADD = ../src/libreslib.la
-ptr_ext_SOURCES = ptr_ext.c
-ptr_ext_LDADD = ../src/libreslib.la
-rb_tree_SOURCES = rb_tree.c
 
-valgrind_test: ./test
-	$(CC) -o test test.o ../src/.libs/libreslib.a $(LDFLAGS) $(LIBS)
-	valgrind ./test
+valgrind_test: test
+	$(LIBTOOL) --mode=execute valgrind $<
 
-stackoverflow_test: ./stackoverflow
-	$(CC) -o stackoverflow stackoverflow.o ../src/.libs/libreslib.a $(LDFLAGS) $(LIBS)
-	valgrind ./stackoverflow
+stackoverflow_test: stackoverflow
+	$(LIBTOOL) --mode=execute valgrind $<
 
-highload_test: ./highload
-	$(CC) -o highload highload.o ../src/.libs/libreslib.a $(LDFLAGS) $(LIBS)
-	time ./highload
+highload_test: highload
+	$(LIBTOOL) --mode=execute time $<

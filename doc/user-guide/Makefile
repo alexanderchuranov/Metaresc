@@ -10,7 +10,7 @@ STYLESHEET = ./customization.xsl
 SCHEMA = ${DOCBOOK_ROOT}/xsd/docbook.xsd
 
 all: ${SOURCE}
-	xsltproc --xinclude ${XSLT_PARAMS} ${STYLESHEET} ${.ALLSRC}
+	xsltproc --xinclude ${XSLT_PARAMS} ${STYLESHEET} $<
 
 test: ${SOURCE}
 	xmllint --xinclude --noout --schema ${SCHEMA} ${.ALLSRC}

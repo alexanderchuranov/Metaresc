@@ -516,7 +516,6 @@ xdr_save_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 static int
 xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  int i;
   rl_rarray_t * ra = ptrs->ra.data[idx].data;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
 
@@ -538,6 +537,7 @@ xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       ra->alloc_size = ra->size;
       if (ra->size > 0)
 	{
+	  int i;
 	  ra->data = RL_MALLOC (ra->size);
 	  if (NULL == ra->data)
 	    {
