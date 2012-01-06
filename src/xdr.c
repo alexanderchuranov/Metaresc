@@ -7,6 +7,7 @@
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <netinet/in.h>
+#include <ieee754.h>
 
 #include <rlconfig.h>
 #include <reslib.h>
@@ -269,16 +270,16 @@ xdr_double_ (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   need to substract double from long double, but agruments should be strictly casted to their types.
   that's why we pass them as pointers and make a public function for optimization workaround.
 */
-double sub_doubles (long double * ldp, double * dp) { return (*ldp - *dp); }
+double xdr_sub_doubles (long double * ldp, double * dp) { return (*ldp - *dp); }
 
 static int
-xdr_long_double (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+ __attribute__ ((unused)) xdr_long_double_ (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   long double * ldp = ptrs->ra.data[idx].data;
   if (xdrs->x_op == XDR_ENCODE)
     {
       double high = *ldp;
-      double low = sub_doubles (ldp, &high); /* we can't substract with inline code because compiler will optimize this operation and result will be 0 */
+      double low = xdr_sub_doubles (ldp, &high); /* we can't substract with inline code because compiler will optimize this operation and result will be 0 */
       return (xdr_double (xdrs, &high) && xdr_double (xdrs, &low));
     }
   else if (xdrs->x_op == XDR_DECODE)
@@ -292,6 +293,12 @@ xdr_long_double (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   else if (xdrs->x_op == XDR_FREE)
     return (!0);
   return (0);
+}
+
+static int
+__attribute__ ((unused)) xdr_long_double (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  return xdr_opaque (xdrs, ptrs->ra.data[idx].data, sizeof (((union ieee854_long_double*)NULL)->ieee));
 }
 
 static int
@@ -472,7 +479,7 @@ xdr_load_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     }
   if ((tdp->rl_type != RL_TYPE_UNION) && (tdp->rl_type != RL_TYPE_ANON_UNION))
     {
-      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_NOT_A_UNION, tdp->type);
+      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_TYPE_NOT_UNION, tdp->type);
       return (0);
     }    
   if (!xdr_load_string (xdrs, 0, &_ptrs_))
@@ -484,6 +491,60 @@ xdr_load_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       if (fdp)
 	return (xdr_load (data + fdp->offset, fdp, xdrs, ptrs));
     }
+  
+  return (!0);
+}
+
+static int
+xdr_save_enum (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  int status = 0;
+  char * enum_name = rl_stringify_enum (&ptrs->ra.data[idx]);
+  if (NULL != enum_name)
+    {
+      /* save enum name as string */
+      rl_ptrdes_t ptrdes = { .data = &enum_name, .ref_idx = -1, .flags = 0, }; /* temporary pointer descriptor for this string */
+      rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
+      status = xdr_save_string (xdrs, 0, &_ptrs_);
+      RL_FREE (enum_name);
+    }
+  return (status);
+}
+
+static int
+xdr_load_enum (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  rl_fd_t * fdp;
+  char * enum_name;
+  int64_t value = 0;
+  int64_t * value_ptr = &value;
+  rl_td_t * tdp = rl_get_td_by_name (ptrs->ra.data[idx].fd.type); /* look up for type descriptor */
+  rl_ptrdes_t ptrdes = { .data = &enum_name, }; /* temporary pointer descriptor for union discriminator string */
+  rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
+
+  /* get pointer on structure descriptor */
+  if (NULL == tdp)
+    {
+      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
+      return (0);
+    }
+  if (tdp->rl_type != RL_TYPE_ENUM)
+    {
+      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_TYPE_NOT_ENUM, tdp->type);
+      return (0);
+    }    
+  if (!xdr_load_string (xdrs, 0, &_ptrs_))
+    return (0);
+  if (NULL == enum_name)
+    return (0);
+
+  fdp = rl_get_fd_by_name (tdp, enum_name);
+  if (fdp)
+    value_ptr = &fdp->param.enum_value;
+  else
+    sscanf (enum_name, "%" SCNu64, &value);
+  memcpy (ptrs->ra.data[idx].data, value_ptr, ptrs->ra.data[idx].fd.size);
+  RL_FREE (enum_name);
   
   return (!0);
 }
@@ -706,7 +767,7 @@ static void __attribute__((constructor)) rl_init_save_xdr (void)
 {
   rl_conf.io_handlers[RL_TYPE_NONE].save.xdr = xdr_none; 
   rl_conf.io_handlers[RL_TYPE_VOID].save.xdr = xdr_none; 
-  rl_conf.io_handlers[RL_TYPE_ENUM].save.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_ENUM].save.xdr = xdr_save_enum;
   rl_conf.io_handlers[RL_TYPE_BITFIELD].save.xdr = xdr_save_bitfield;
   rl_conf.io_handlers[RL_TYPE_BITMASK].save.xdr = xdr_uint_;
   rl_conf.io_handlers[RL_TYPE_INT8].save.xdr = xdr_int_;
@@ -741,7 +802,7 @@ static void __attribute__((constructor)) rl_init_load_xdr (void)
 {
   rl_conf.io_handlers[RL_TYPE_NONE].load.xdr = xdr_none; 
   rl_conf.io_handlers[RL_TYPE_VOID].load.xdr = xdr_none; 
-  rl_conf.io_handlers[RL_TYPE_ENUM].load.xdr = xdr_uint_;
+  rl_conf.io_handlers[RL_TYPE_ENUM].load.xdr = xdr_load_enum;
   rl_conf.io_handlers[RL_TYPE_BITFIELD].load.xdr = xdr_load_bitfield;
   rl_conf.io_handlers[RL_TYPE_BITMASK].load.xdr = xdr_uint_;
   rl_conf.io_handlers[RL_TYPE_INT8].load.xdr = xdr_int_;

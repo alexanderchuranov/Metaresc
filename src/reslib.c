@@ -1078,6 +1078,30 @@ rl_build_field_names_hash (rl_td_t * tdp)
   return (EXIT_SUCCESS);
 }
 
+static size_t types_sizes[] =
+  {
+    [0 ... RL_MAX_TYPES - 1] = 0,
+    [RL_TYPE_NONE] = 0,
+    [RL_TYPE_VOID] = sizeof (void),
+    [RL_TYPE_INT8] = sizeof (int8_t),
+    [RL_TYPE_UINT8] = sizeof (uint8_t),
+    [RL_TYPE_INT16] = sizeof (int16_t),
+    [RL_TYPE_UINT16] = sizeof (uint16_t),
+    [RL_TYPE_INT32] = sizeof (int32_t),
+    [RL_TYPE_UINT32] = sizeof (uint32_t),
+    [RL_TYPE_INT64] = sizeof (int64_t),
+    [RL_TYPE_UINT64] = sizeof (uint64_t),
+    [RL_TYPE_FLOAT] = sizeof (float),
+    [RL_TYPE_DOUBLE] = sizeof (double),
+    [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
+    [RL_TYPE_CHAR] = sizeof (char),
+    [RL_TYPE_CHAR_ARRAY] = sizeof (char),
+    [RL_TYPE_STRING] = sizeof (char*),
+    [RL_TYPE_STRUCT] = sizeof (void),
+    [RL_TYPE_UNION] = sizeof (void),
+    [RL_TYPE_ANON_UNION] = sizeof (void),
+  };
+
 /**
  * Initialize AUTO fields. Detect type, size, pointers etc.
  * @param tdp pointer on a type descriptor
@@ -1086,29 +1110,6 @@ rl_build_field_names_hash (rl_td_t * tdp)
 static int
 rl_auto_field_detect (rl_fd_t * fdp)
 {
-  static size_t sizes[] =
-    {
-      [0 ... RL_MAX_TYPES - 1] = 0,
-      [RL_TYPE_NONE] = 0,
-      [RL_TYPE_VOID] = sizeof (void),
-      [RL_TYPE_INT8] = sizeof (int8_t),
-      [RL_TYPE_UINT8] = sizeof (uint8_t),
-      [RL_TYPE_INT16] = sizeof (int16_t),
-      [RL_TYPE_UINT16] = sizeof (uint16_t),
-      [RL_TYPE_INT32] = sizeof (int32_t),
-      [RL_TYPE_UINT32] = sizeof (uint32_t),
-      [RL_TYPE_INT64] = sizeof (int64_t),
-      [RL_TYPE_UINT64] = sizeof (uint64_t),
-      [RL_TYPE_FLOAT] = sizeof (float),
-      [RL_TYPE_DOUBLE] = sizeof (double),
-      [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
-      [RL_TYPE_CHAR] = sizeof (char),
-      [RL_TYPE_CHAR_ARRAY] = sizeof (char),
-      [RL_TYPE_STRING] = sizeof (char*),
-      [RL_TYPE_STRUCT] = sizeof (void),
-      [RL_TYPE_UNION] = sizeof (void),
-      [RL_TYPE_ANON_UNION] = sizeof (void),
-    };
   rl_td_t * tdp = rl_get_td_by_name (fdp->type);
   /* check if type is in registery */
   if (tdp)
@@ -1135,7 +1136,7 @@ rl_auto_field_detect (rl_fd_t * fdp)
 	  *end = 0; /* trancate type name */
 	  fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
 	  fdp->rl_type = fdp->rl_type_aux;
-	  fdp->size = sizes[fdp->rl_type];
+	  fdp->size = types_sizes[fdp->rl_type];
 	  /* autodetect structures and enums */
 	  switch (fdp->rl_type)
 	    {
@@ -1224,6 +1225,11 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
       case RL_TYPE_UINT32:
       case RL_TYPE_INT64:
       case RL_TYPE_UINT64:
+	/*
+	  Enums with __attribute__((packed, aligned (XXX))) generates size according alignment, but not real size which is 1 byte due to packing.
+	  Here we do hard adjustment of the type size.
+	 */
+	tdp->fields.data[i].size = types_sizes[tdp->fields.data[i].rl_type];
 	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
 	if (tdp_)
 	  tdp->fields.data[i].rl_type = tdp_->rl_type;

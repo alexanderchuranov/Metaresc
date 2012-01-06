@@ -751,6 +751,18 @@
 	};								\
       char * __ptr__ = strchr (__name__, '[');				\
       rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
+      switch (__fd__.rl_type)						\
+	{								\
+	case RL_TYPE_UINT8: __fd__.size = sizeof (uint8_t); break;	\
+	case RL_TYPE_INT8: __fd__.size = sizeof (int8_t); break;	\
+	case RL_TYPE_UINT16: __fd__.size = sizeof (uint16_t); break;	\
+	case RL_TYPE_INT16: __fd__.size = sizeof (int16_t); break;	\
+	case RL_TYPE_UINT32: __fd__.size = sizeof (uint32_t); break;	\
+	case RL_TYPE_INT32: __fd__.size = sizeof (int32_t); break;	\
+	case RL_TYPE_UINT64: __fd__.size = sizeof (uint64_t); break;	\
+	case RL_TYPE_INT64: __fd__.size = sizeof (int64_t); break;	\
+	default: break;							\
+	}								\
       if (__tdp__)							\
 	__fd__.rl_type = __tdp__->rl_type;				\
       if (NULL == __ptr__)						\

@@ -54,33 +54,27 @@ void __attribute__((constructor)) rl_init_output_format (void)
  * @param ptrdes pointer descriptor
  * @return stringified int value
  */
-#define RL_STRINGIFY_INT(TYPE, RL_TYPE)					\
+#define RL_STRINGIFY_TYPE(TYPE, RL_TYPE)				\
   char * rl_stringify_ ## TYPE (rl_ptrdes_t * ptrdes) {			\
     if (rl_conf.output_format[RL_TYPE])					\
       return (rl_conf.output_format[RL_TYPE](ptrdes));			\
     return (RL_STRDUP ("0"));						\
   }
 
-RL_STRINGIFY_INT (int8, RL_TYPE_INT8);
-RL_STRINGIFY_INT (uint8, RL_TYPE_UINT8);
-RL_STRINGIFY_INT (int16, RL_TYPE_INT16);
-RL_STRINGIFY_INT (uint16, RL_TYPE_UINT16);
-RL_STRINGIFY_INT (int32, RL_TYPE_INT32);
-RL_STRINGIFY_INT (uint32, RL_TYPE_UINT32);
-RL_STRINGIFY_INT (int64, RL_TYPE_INT64);
-RL_STRINGIFY_INT (uint64, RL_TYPE_UINT64);
+RL_STRINGIFY_TYPE (int8, RL_TYPE_INT8);
+RL_STRINGIFY_TYPE (uint8, RL_TYPE_UINT8);
+RL_STRINGIFY_TYPE (int16, RL_TYPE_INT16);
+RL_STRINGIFY_TYPE (uint16, RL_TYPE_UINT16);
+RL_STRINGIFY_TYPE (int32, RL_TYPE_INT32);
+RL_STRINGIFY_TYPE (uint32, RL_TYPE_UINT32);
+RL_STRINGIFY_TYPE (int64, RL_TYPE_INT64);
+RL_STRINGIFY_TYPE (uint64, RL_TYPE_UINT64);
 
 /**
  * RL_FLOAT type saving handler. Stringify float value.
  * @param ptrs resizeable array with pointers descriptors 
  * @return stringified float value
  */
-#define RL_STRINGIFY_TYPE(TYPE, RL_TYPE) char * rl_stringify_ ## TYPE (rl_ptrdes_t * ptrdes) { \
-    if ((rl_conf.output_format[RL_TYPE]))				\
-      return (rl_conf.output_format[RL_TYPE](ptrdes));			\
-    return (RL_STRDUP ("0"));						\
-  }
-
 RL_STRINGIFY_TYPE (float, RL_TYPE_FLOAT);
 RL_STRINGIFY_TYPE (double, RL_TYPE_DOUBLE);
 RL_STRINGIFY_TYPE (long_double_t, RL_TYPE_LONG_DOUBLE);
@@ -123,7 +117,7 @@ rl_get_int_value (rl_ptrdes_t * ptrdes)
 #endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
       break;
     }
-  value &= (2LL << (8 * ptrdes->fd.size - 1)) - 1; /* Somehow (1 << 32) == 1, that's why we need this trick */ 
+  value &= (2LL << (8 * ptrdes->fd.size - 1)) - 1; /* Somehow (1 << 32) == 1, that's why we need this trick */
   return (value);
 }
 

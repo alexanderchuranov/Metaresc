@@ -299,7 +299,7 @@ rl_save_union (rl_save_data_t * rl_save_data)
     }
   if ((tdp->rl_type != RL_TYPE_UNION) && (tdp->rl_type != RL_TYPE_ANON_UNION))
     {
-      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_NOT_A_UNION, tdp->type);
+      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_TYPE_NOT_UNION, tdp->type);
       return;
     }
 
