@@ -38,11 +38,11 @@ TYPEDEF_STRUCT (struct_rl_enum_uint64_t, (rl_enum_uint64_t, x));
     })
 
 #define ASSERT_SAVE_LOAD_STRUCT_ENUM(METHOD, VALUE, ...) ({		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_t, { VALUE }, __VA_ARGS__);	\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint8_t, { VALUE }, __VA_ARGS__); \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint16_t, { VALUE }, __VA_ARGS__); \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint32_t, { VALUE }, __VA_ARGS__); \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint64_t, { VALUE }, __VA_ARGS__); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_t, VALUE, __VA_ARGS__);	\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint8_t, VALUE, __VA_ARGS__); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint16_t, VALUE, __VA_ARGS__); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint32_t, VALUE, __VA_ARGS__); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_rl_enum_uint64_t, VALUE, __VA_ARGS__); \
     })
 
 /*

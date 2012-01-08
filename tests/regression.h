@@ -50,7 +50,10 @@ extern Suite * suite;
 
 #define RL_IS__EQ__ 0
 
-#define ASSERT_SAVE_LOAD(METHOD, TYPE, X, ...) ASSERT_SAVE_LOAD_(METHOD, TYPE, X, __VA_ARGS__)
+#define ASSERT_SAVE_LOAD(METHOD, TYPE, X, ...)		\
+  RL_IF_ELSE (RL_PASTE2 (SKIP_METHOD_, METHOD))		\
+  (ASSERT_SAVE_LOAD_(METHOD, TYPE, X, __VA_ARGS__)) (X != X)
+
 #define ASSERT_SAVE_LOAD_(METHOD, TYPE, X, TYPE_CMP, ...)		\
   RL_IF_ELSE (RL_PASTE3 (RL_IS__EQ_, TYPE_CMP, _))			\
   (ASSERT_SAVE_LOAD__ (METHOD, TYPE, X, TYPE_CMP, __VA_ARGS__))		\
@@ -59,20 +62,20 @@ extern Suite * suite;
 #define ASSERT_SAVE_LOAD__(METHOD, TYPE, X, TYPE_CMP, ...) ({		\
       rl_rarray_t serialized = RL_SAVE_ ## METHOD ## _RA (TYPE, X);	\
       int orig_eq_restored;						\
-      TYPE restored;							\
-      if (0 == RL_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &restored)) \
-	ck_abort_msg ("load for method " #METHOD " on type " #TYPE " failed"); \
+      TYPE RL_PASTE2(METHOD, _restored);				\
       if (0) printf ("%s\n", (char*)serialized.data);			\
+      if (0 == RL_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &RL_PASTE2(METHOD, _restored))) \
+	ck_abort_msg ("load for method " #METHOD " on type " #TYPE " failed"); \
       if (serialized.data)						\
 	RL_FREE (serialized.data);					\
-      orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &restored, __VA_ARGS__)); \
+      orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &RL_PASTE2(METHOD, _restored), __VA_ARGS__)); \
       ck_assert_msg (orig_eq_restored,					\
 		     "restored value mismatched original for method " #METHOD " on type " #TYPE); \
-      RL_FREE_RECURSIVELY (TYPE, &restored);				\
+      RL_FREE_RECURSIVELY (TYPE, &RL_PASTE2(METHOD, _restored));	\
     })
 
 #define ASSERT_SAVE_LOAD_TYPE(METHOD, TYPE, VALUE, ...) ({		\
-      TYPE x = VALUE;							\
+      TYPE x = { VALUE };						\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 

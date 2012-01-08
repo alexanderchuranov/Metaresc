@@ -7,7 +7,7 @@
 
 #define ASSERT_SAVE_LOAD_LONG_DOUBLE(METHOD, VALUE) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, long double, VALUE, CMP_SCALAR);	\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, { VALUE }, CMP_STRUCT_X); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, VALUE, CMP_STRUCT_X); \
     })
 
 TYPEDEF_STRUCT (struct_long_double, long_double_t x);

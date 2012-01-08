@@ -7,7 +7,7 @@ VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --
 check_PROGRAMS = regression
 TESTS=$(check_PROGRAMS)
 
-regression_SOURCES = regression.c int8.c int16.c int32.c int64.c float.c double.c long_double.c enum.c rarray.c
+regression_SOURCES = regression.c char.c int8.c int16.c int32.c int64.c float.c double.c long_double.c enum.c rarray.c
 
 valgrind:
 	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"

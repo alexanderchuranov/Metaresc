@@ -15,5 +15,5 @@ RL_START_TEST(rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\""
       .ptr_type = "string_t",
     },
   };
-  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_rarray_t, orig);
+  ALL_METHODS (ASSERT_SAVE_LOAD, struct_rarray_t, &orig);
 } END_TEST
