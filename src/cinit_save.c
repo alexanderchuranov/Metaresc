@@ -301,7 +301,7 @@ static int
 cinit_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
   char * str = *(char**)ptrs->ra.data[idx].data;
-  if ((NULL == str) || (ptrs->ra.data[idx].ref_idx >= 0))
+  if ((ptrs->ra.data[idx].flags & RL_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
     data->content = RL_STRDUP (RL_CINIT_NULL);
   else
     data->content = cinit_quote_string (str, '"');
@@ -325,18 +325,14 @@ cinit_save_anon_union (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * 
 }
 
 static int
-cinit_save_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
+cinit_save_rarray_data (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
-  ptrs->ra.data[idx].fd.size = ptrs->ra.data[idx].rarray_size;
   if ((ptrs->ra.data[idx].flags & RL_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
-    {
-      data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = " RL_CINIT_NULL ",";
-      data->suffix = "}";
-    }
+    data->content = RL_STRDUP (RL_CINIT_NULL);
   else
     {
-      data->prefix = "{ .size = " RL_CINIT_TYPE_SIZE_TEMPLATE ", .alloc_size = -1, .data = (" RL_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
-      data->suffix = "}}";
+      data->prefix = "(" RL_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
+      data->suffix = "}";
     }
   return (0);
 }
@@ -369,16 +365,15 @@ json_save_array (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 }
 
 static int
-json_save_rarray (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
+json_save_rarray_data (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
-  if (ptrs->ra.data[idx].flags & RL_PDF_RARRAY_SIZE)
-    {
-      ptrs->ra.data[idx].fd.size = ptrs->ra.data[idx].rarray_size;
-      data->prefix = "/* " RL_RARRAY_SIZE " = " RL_CINIT_TYPE_SIZE_TEMPLATE " */ [";
-    }
+  if ((ptrs->ra.data[idx].ref_idx >= 0) || (NULL == *(void**)ptrs->ra.data[idx].data))
+    data->content = RL_STRDUP (RL_CINIT_NULL);
   else
-    data->prefix = "[\n";
-  data->suffix = "]";
+    {
+      data->prefix = "[\n";
+      data->suffix = "]";
+    }
   return (0);
 }
 
@@ -426,7 +421,7 @@ static void __attribute__((constructor)) rl_init_save_cinit (void)
   rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.cinit = cinit_save_anon_union;
 
   rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.cinit = cinit_save_struct;
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.cinit = cinit_save_rarray;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY_DATA].save.cinit = cinit_save_rarray_data;
   rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.cinit = cinit_save_pointer;
 }
 
@@ -458,6 +453,6 @@ static void __attribute__((constructor)) rl_init_save_json (void)
   rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.json = cinit_save_anon_union;
 
   rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.json = json_save_array;
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.json = json_save_rarray;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY_DATA].save.json = json_save_rarray_data;
   rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.json = json_save_pointer;
 }

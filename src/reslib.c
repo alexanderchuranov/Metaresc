@@ -427,7 +427,6 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   ptrdes->prev = -1;
   ptrdes->next = -1;
   ptrdes->flags = RL_PDF_NONE;
-  ptrdes->rarray_size = 0;
   ptrdes->union_field_name = NULL;
   ptrdes->value = NULL;
   ptrdes->ext.ptr = NULL;
@@ -495,8 +494,8 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
 	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
-      case RL_TYPE_EXT_RARRAY:
-	if ((NULL != ((rl_rarray_t*)ptrs.ra.data[i].data)->data) && (ptrs.ra.data[i].ref_idx < 0))
+      case RL_TYPE_EXT_RARRAY_DATA:
+	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
 	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
       default:
@@ -514,7 +513,7 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 	RL_FREE (*(void**)ptrs.ra.data[i].data);
 	break;
       case RL_TYPE_EXT_RARRAY:
-	RL_FREE (((rl_rarray_t*)ptrs.ra.data[i].data)->data);
+	RL_FREE (*(void**)ptrs.ra.data[i].data);
 	break;
       default:
 	RL_FREE (*(char**)ptrs.ra.data[i].data);
@@ -531,7 +530,7 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
  * @return Hash function value.
  */
 static uint64_t
-hash_str (char * str)
+rl_hash_str (char * str)
 {
   uint64_t hash_value = 0;
   if (NULL == str)
@@ -589,7 +588,7 @@ rl_update_td_hash (rl_td_t * tdp, rl_ra_rl_td_ptr_t * hash)
   int size;
   rl_td_ptr_t * x;
 
-  tdp->hash_value = hash_str (tdp->type);
+  tdp->hash_value = rl_hash_str (tdp->type);
 
   if (NULL == hash->ra.data)
     hash->ra.alloc_size = hash->ra.size = 0;
@@ -713,7 +712,7 @@ rl_get_td_by_name (char * type)
 #ifndef RL_TREE_LOOKUP
   if (rl_conf.hash.ra.data && rl_conf.hash.ra.size)
     {
-      uint64_t hash_value = hash_str (type);
+      uint64_t hash_value = rl_hash_str (type);
       tdp = rl_conf.hash.ra.data[hash_value % (rl_conf.hash.ra.size / sizeof (rl_conf.hash.ra.data[0]))].tdp;
       if (tdp && (hash_value == tdp->hash_value) && (0 == strcmp (type, tdp->type)))
 	return (tdp);
@@ -1029,7 +1028,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
   tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
   tdp->lookup_by_name.data = NULL;
   for (i = 0; i < fields_count; ++i)
-    tdp->fields.data[i].hash_value = hash_str (tdp->fields.data[i].name);
+    tdp->fields.data[i].hash_value = rl_hash_str (tdp->fields.data[i].name);
 
   /* sanity check for hash value collision */
   for (i = 0; i < fields_count; ++i)
@@ -1278,7 +1277,7 @@ rl_get_fd_by_name (rl_td_t * tdp, char * name)
 {
   if (tdp->lookup_by_name.data)
     {
-      uint64_t hash_value = hash_str (name);
+      uint64_t hash_value = rl_hash_str (name);
       rl_fd_t * fdp = tdp->lookup_by_name.data[hash_value % (tdp->lookup_by_name.size / sizeof (tdp->lookup_by_name.data[0]))].fdp;
       if (fdp && (hash_value == fdp->hash_value) && (0 == strcmp (name, fdp->name)))
 	return (fdp);

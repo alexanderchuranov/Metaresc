@@ -436,37 +436,46 @@ static void
 rl_save_rarray (rl_save_data_t * rl_save_data)
 {
   int idx = rl_save_data->ptrs.ra.size / sizeof (rl_save_data->ptrs.ra.data[0]) - 1;
-  rl_rarray_t * ra = rl_save_data->ptrs.ra.data[idx].data;
+  int data_idx;
   rl_fd_t fd_ = rl_save_data->ptrs.ra.data[idx].fd;
-  /* set extended type property to RL_NONE in copy of field descriptor */
-  fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-  
-  /* do nothing if rarray is empty */
-  if (NULL == ra->data)
-    {
-      rl_save_data->ptrs.ra.data[idx].flags |= RL_PDF_IS_NULL;
-      rl_save_data->ptrs.ra.data[idx].fd.size = 0;
-    }
+  rl_rarray_t * ra = rl_save_data->ptrs.ra.data[idx].data;
+  int count = ra->size / fd_.size;
+
+  /* save as rl_rarray_t */
+  rl_save_data->ptrs.ra.data[idx].fd.type = "rl_rarray_t";
+  rl_save_data->ptrs.ra.data[idx].fd.rl_type = RL_TYPE_STRUCT;
+  rl_save_data->ptrs.ra.data[idx].fd.rl_type_ext = RL_TYPE_EXT_NONE;
+  rl_save_struct (rl_save_data);
+
+  /* lookup for subnode .data */
+  for (data_idx = rl_save_data->ptrs.ra.data[idx].first_child; data_idx >= 0; data_idx = rl_save_data->ptrs.ra.data[data_idx].next)
+    if (0 == strcmp ("data", rl_save_data->ptrs.ra.data[data_idx].fd.name))
+      break;
+
+  if (data_idx < 0)
+    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RARRAY_FAILED);
   else
     {
-      int ref_idx = rl_check_ptr_in_list (rl_save_data, ra->data, &fd_);
-      if (ref_idx >= 0)
+      /* change void * on appropriate type */
+      rl_save_data->ptrs.ra.data[data_idx].fd.type = fd_.type;
+      rl_save_data->ptrs.ra.data[data_idx].fd.rl_type_ext = RL_TYPE_EXT_RARRAY_DATA;
+
+      if (rl_save_data->ptrs.ra.data[data_idx].ref_idx < 0)
 	{
-	  rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	  rl_save_data->ptrs.ra.data[idx].flags |= RL_PDF_RARRAY_SIZE;
-	  rl_save_data->ptrs.ra.data[ref_idx].flags |= RL_PDF_IS_REFERENCED;
+	  if ((NULL == ra->data) || (0 == count))
+	    rl_save_data->ptrs.ra.data[data_idx].flags |= RL_PDF_IS_NULL;
+	  else
+	    {
+	      int i;
+	      fd_.rl_type_ext = RL_TYPE_EXT_NONE;
+      
+	      /* add each array element to this node */
+	      rl_save_data->parent = data_idx;
+	      for (i = 0; i < count; ++i)
+		rl_save_inner (&((char*)ra->data)[i * fd_.size], &fd_, rl_save_data);
+	      rl_save_data->parent = rl_save_data->ptrs.ra.data[idx].parent;
+	    }
 	}
-      else
-	{
-	  int i;
-	  int count = ra->size / fd_.size;
-	  /* add each array element to this node */
-	  rl_save_data->parent = idx;
-	  for (i = 0; i < count; ++i)
-	    rl_save_inner (&((char*)ra->data)[i * fd_.size], &fd_, rl_save_data);
-	  rl_save_data->parent = rl_save_data->ptrs.ra.data[rl_save_data->parent].parent;
-	}
-      rl_save_data->ptrs.ra.data[idx].rarray_size = ra->size;
     }
 }
 
@@ -477,32 +486,35 @@ rl_save_pointer_postponed (int postpone, int idx, rl_save_data_t * rl_save_data)
   rl_fd_t fd_ = rl_save_data->ptrs.ra.data[idx].fd;
   int ref_idx;
   
-  /* set extended type property to NONE in copy of field descriptor */
-  fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-  /* return empty node if pointer is NULL */
   if (NULL == *data)
-    return;
-  /* check if this pointer is already saved */
-  ref_idx = rl_check_ptr_in_list (rl_save_data, *data, &fd_);
-  if (ref_idx >= 0)
+    rl_save_data->ptrs.ra.data[idx].flags |= RL_PDF_IS_NULL; /* return empty node if pointer is NULL */
+  else
     {
-      rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-      rl_save_data->ptrs.ra.data[ref_idx].flags |= RL_PDF_IS_REFERENCED;
-    }
-  else if ((fd_.rl_type != RL_TYPE_NONE) && (fd_.rl_type != RL_TYPE_VOID))
-    {
-      if (postpone)
+      /* set extended type property to NONE in copy of field descriptor */
+      fd_.rl_type_ext = RL_TYPE_EXT_NONE;
+  
+      /* check if this pointer is already saved */
+      ref_idx = rl_check_ptr_in_list (rl_save_data, *data, &fd_);
+      if (ref_idx >= 0)
 	{
-	  int * idx_ = rl_rarray_append ((void*)&rl_save_data->rl_ra_idx, sizeof (rl_save_data->rl_ra_idx.data[0]));
-	  if (NULL == idx_)
-	    return;
-	  *idx_ = idx;
+	  rl_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
+	  rl_save_data->ptrs.ra.data[ref_idx].flags |= RL_PDF_IS_REFERENCED;
 	}
-      else
+      else if ((fd_.rl_type != RL_TYPE_NONE) && (fd_.rl_type != RL_TYPE_VOID))
 	{
-	  rl_save_data->parent = idx;
-	  rl_save_inner (*data, &fd_, rl_save_data); /* save referenced content */
-	  rl_save_data->parent = rl_save_data->ptrs.ra.data[rl_save_data->parent].parent;
+	  if (postpone)
+	    {
+	      int * idx_ = rl_rarray_append ((void*)&rl_save_data->rl_ra_idx, sizeof (rl_save_data->rl_ra_idx.data[0]));
+	      if (NULL == idx_)
+		return;
+	      *idx_ = idx;
+	    }
+	  else
+	    {
+	      rl_save_data->parent = idx;
+	      rl_save_inner (*data, &fd_, rl_save_data); /* save referenced content */
+	      rl_save_data->parent = rl_save_data->ptrs.ra.data[rl_save_data->parent].parent;
+	    }
 	}
     }
 }

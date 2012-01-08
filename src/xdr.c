@@ -12,6 +12,8 @@
 #include <rlconfig.h>
 #include <reslib.h>
 
+#include <rl_load.h>
+
 static bool_t
 xdrra_getlong (XDR * xdrs, long * lp)
 {
@@ -170,7 +172,7 @@ rl_set_crossrefs (rl_ra_rl_ptrdes_t * ptrs)
 	  case RL_TYPE_EXT_POINTER:
 	    *(void**)ptrs->ra.data[i].data = data;
 	    break;
-	  case RL_TYPE_EXT_RARRAY:
+	  case RL_TYPE_EXT_RARRAY_DATA:
 	    ((rl_rarray_t*)(ptrs->ra.data[i].data))->data = data;
 	    break;
 	  default:
@@ -384,7 +386,7 @@ xdr_save_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
+      return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
     }
   else
     {
@@ -408,7 +410,7 @@ xdr_load_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
+    return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
   else
     {
       char ** str = ptrs->ra.data[idx].data;
@@ -430,14 +432,12 @@ xdr_load_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 }
 
 static int
-xdr_load_struct (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+xdr_load_struct_inner (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs, rl_td_t * tdp)
 {
-  int i;
-  int count;
-  rl_td_t * tdp = rl_get_td_by_name (ptrs->ra.data[idx].fd.type); /* look up for type descriptor */
   char * data = ptrs->ra.data[idx].data;
+  int count;
+  int i;
 
-  /* get pointer on structure descriptor */
   if (NULL == tdp)
     {
       RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
@@ -449,6 +449,12 @@ xdr_load_struct (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       return (0);
   
   return (!0);
+}
+
+static int
+xdr_load_struct (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  return xdr_load_struct_inner (xdrs, idx, ptrs, rl_get_td_by_name (ptrs->ra.data[idx].fd.type));
 }
 
 /*
@@ -572,62 +578,6 @@ xdr_load_array (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   return (!0);
 }
 
-static int
-xdr_save_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
-{
-  rl_rarray_t * ra = ptrs->ra.data[idx].data;
-  if (!xdr_int32_t (xdrs, &ra->size))
-    return (0);
-  
-  if (ptrs->ra.data[idx].ref_idx >= 0)
-    {
-      if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
-	return (0);
-      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
-    }
-  else
-    return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
-}
-
-static int
-xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
-{
-  rl_rarray_t * ra = ptrs->ra.data[idx].data;
-  rl_fd_t fd_ = ptrs->ra.data[idx].fd;
-
-  /* prepare copy of filed descriptor for array elements loading */
-  fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-  ra->data = NULL;
-  
-  if (!xdr_int32_t (xdrs, &ra->size))
-    return (0);
-  if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
-    return (0);
-  if (ptrs->ra.data[idx].ref_idx >= 0)
-    {
-      ra->alloc_size = -1;
-      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
-    }
-  else
-    {
-      ra->alloc_size = ra->size;
-      if (ra->size > 0)
-	{
-	  int i;
-	  ra->data = RL_MALLOC (ra->size);
-	  if (NULL == ra->data)
-	    {
-	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	      return (0);
-	    }
-	  for (i = 0; i < ra->size / fd_.size; ++i)
-	    if (!xdr_load (&(((char*)ra->data)[i * fd_.size]), &fd_, xdrs, ptrs))
-	      return (0);
-	}
-    }
-  return (!0);
-}
-
 /**
  * Saves/loads pointer into/from binary XDR stream. First goes flag that pointer is not NULL,
  * and if pointer is not NULL, strucure goes after flag.
@@ -648,7 +598,7 @@ xdr_save_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
+      return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
     }
   else
     return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
@@ -668,7 +618,7 @@ xdr_load_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
 	return (0);
       if (ptrs->ra.data[idx].ref_idx >= 0)
-	return (xdr_int32_t (xdrs, (int32_t*)(void*)&ptrs->ra.data[idx].flags));
+	return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
       *data = RL_MALLOC (fd_.size);
       if (NULL == *data)
 	{
@@ -683,6 +633,88 @@ xdr_load_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   return (!0);
 }
 
+static int
+xdr_save_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  uint32_t childs = 0;
+  int idx_;
+  
+  for (idx_ = ptrs->ra.data[idx].first_child; idx_ >= 0; idx_ = ptrs->ra.data[idx_].next)
+    ++childs;
+
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    {
+      if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
+	return (0);
+      return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+    }
+  else
+    {
+      if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
+	return (0);
+      return (xdr_uint32_t (xdrs, &childs));
+    }
+}
+
+static int
+xdr_load_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  char * data = ptrs->ra.data[idx].data;
+  rl_rarray_t * ra = (rl_rarray_t*)&data[-offsetof (rl_rarray_t, data)];
+  rl_fd_t fd_ = ptrs->ra.data[idx].fd;
+  uint32_t childs = 0;
+
+  if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
+    return (0);
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+  else
+    {
+      if (!xdr_uint32_t (xdrs, &childs))
+	return (0);
+
+      fd_.rl_type_ext = RL_TYPE_EXT_NONE;
+      ra->data = NULL;
+      
+      ra->alloc_size = ra->size = childs * fd_.size;
+      if (ra->size > 0)
+	{
+	  int i;
+	  ra->data = RL_MALLOC (ra->size);
+	  if (NULL == ra->data)
+	    {
+	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	      return (0);
+	    }
+	  for (i = 0; i < childs; ++i)
+	    if (!xdr_load (&(((char*)ra->data)[i * fd_.size]), &fd_, xdrs, ptrs))
+	      return (0);
+	}
+    }
+  return (!0);
+}
+
+static int
+xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+#define XDR_LOAD_RARRAY_ACTION(TD) ({					\
+      int __status = 0;							\
+      rl_fd_t * fdp = rl_get_fd_by_name (&TD, "data");			\
+      if (NULL == fdp)							\
+	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RARRAY_FAILED);		\
+      else								\
+	{								\
+	  fdp->type = ptrs->ra.data[idx].fd.type;			\
+	  fdp->rl_type = ptrs->ra.data[idx].fd.rl_type;			\
+	  fdp->rl_type_ext = RL_TYPE_EXT_RARRAY_DATA;			\
+	  __status = xdr_load_struct_inner (xdrs, idx, ptrs, &TD);	\
+	}								\
+      __status;								\
+    })
+  
+  return (RL_LOAD_RARRAY (XDR_LOAD_RARRAY_ACTION));
+}
+
 /**
  * Public function. Save scheduler. Save any object as XML node.
  * @param data a pointer on data
@@ -694,6 +726,7 @@ int
 xdr_save (XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
 {
   int idx = 0;
+
   while (idx >= 0)
     {
       rl_fd_t * fdp = &ptrs->ra.data[idx].fd;
@@ -742,7 +775,7 @@ xdr_load (void * data, rl_fd_t * fdp, XDR * xdrs, rl_ra_rl_ptrdes_t * ptrs)
     return (idx);
   ptrs->ra.data[idx].data = data;
   ptrs->ra.data[idx].fd = *fdp;
-
+  
   if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
       && rl_conf.io_ext_handlers[fdp->rl_type_ext].load.xdr)
     status = rl_conf.io_ext_handlers[fdp->rl_type_ext].load.xdr (xdrs, idx, ptrs);
@@ -791,7 +824,7 @@ static void __attribute__((constructor)) rl_init_save_xdr (void)
   rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.xdr = xdr_save_union; 
      
   rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.xdr = xdr_none;
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.xdr = xdr_save_rarray; 
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY_DATA].save.xdr = xdr_save_rarray_data; 
   rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.xdr = xdr_save_pointer; 
 }
 
@@ -827,5 +860,6 @@ static void __attribute__((constructor)) rl_init_load_xdr (void)
      
   rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].load.xdr = xdr_load_array;
   rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].load.xdr = xdr_load_rarray; 
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY_DATA].load.xdr = xdr_load_rarray_data; 
   rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].load.xdr = xdr_load_pointer; 
 }

@@ -66,7 +66,7 @@ TYPEDEF_ENUM (rl_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (RL_MESSAGE_UNKNOWN_XML_ESC, , "Unknown XML escape sequence '%s'."),
 	      (RL_MESSAGE_WRONG_XML_ESC, , "Wrong XML escape sequence '%s'."),
 	      (RL_MESSAGE_TYPES_HASHES_MATCHED, , "For types '%s' and '%s' hashes matched. Last type is not available."),
-	      (RL_MESSAGE_RARRAY_LOAD_FAILED, , "Failed to find field .data in C-style data."),
+	      (RL_MESSAGE_RARRAY_FAILED, , "Failed to find field .data."),
 	      (RL_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -105,6 +105,7 @@ TYPEDEF_ENUM (rl_type_ext_t, ATTRIBUTES ( , "ResLib types extension"),
 	      RL_TYPE_EXT_NONE,
 	      RL_TYPE_EXT_ARRAY,
 	      RL_TYPE_EXT_RARRAY,
+	      RL_TYPE_EXT_RARRAY_DATA,
 	      RL_TYPE_EXT_POINTER,
 	      RL_TYPE_EXT_LAST,  /* keep it last */
 	      )
@@ -214,7 +215,6 @@ TYPEDEF_ENUM (rl_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (si
 	      (RL_PDF_IS_NULL, = (1 << 0)),
 	      (RL_PDF_IS_REFERENCED, = (1 << 1)),
 	      (RL_PDF_CONTENT_REFERENCE, = (1 << 2)),
-	      (RL_PDF_RARRAY_SIZE, = (1 << 3)),
 	      )
 
 TYPEDEF_STRUCT (rl_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
@@ -229,7 +229,6 @@ TYPEDEF_STRUCT (rl_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, prev, , "previous sibling index"),
 		(int, next, , "next sibling index"),
 		BITMASK (rl_ptrdes_flags_t, flags),
-		(typeof (((rl_rarray_t*)NULL)->size), rarray_size, , "size of resizable array"),
 		(char *, union_field_name, , "field descriptor for unions"),
 		(char *, value, , "stringified value"),
 		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */

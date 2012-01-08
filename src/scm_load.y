@@ -68,8 +68,6 @@ value
 	}
       else if (0 == rl_substrcmp (RL_REF_IDX, &$1.id))
 	rl_load->ptrs->ra.data[rl_load->parent].idx = $1.ivalue;
-      else if (0 == rl_substrcmp (RL_RARRAY_SIZE, &$1.id))
-	rl_load->ptrs->ra.data[rl_load->parent].rarray_size = $1.ivalue;
     }
 }
 

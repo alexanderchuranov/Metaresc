@@ -63,12 +63,6 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 		  sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
 		  xmlSetProp (node, (unsigned char*)RL_REF_IDX, (unsigned char*)number);
 		}
-	      if (ptrs->ra.data[idx].flags & RL_PDF_RARRAY_SIZE)
-		{
-		  /* set SIZE property */
-		  sprintf (number, "%" SCNd32, ptrs->ra.data[idx].rarray_size);
-		  xmlSetProp (node, (unsigned char*)RL_RARRAY_SIZE, (unsigned char*)number);
-		}
 	      if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
 		xmlSetProp (node, (unsigned char*)RL_ISNULL, (unsigned char*)"true");      
 

@@ -42,13 +42,6 @@ xml2_load (xmlNodePtr node, rl_ra_rl_ptrdes_t * ptrs)
 	ptrs->ra.data[idx].flags |= RL_PDF_CONTENT_REFERENCE;
       xmlFree (property);
     }
-  property = (char*)xmlGetProp (node, (unsigned char*)RL_RARRAY_SIZE);
-  if (property)
-    {
-      if (1 != sscanf (property, "%" SCNd32, &ptrs->ra.data[idx].rarray_size))
-	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_READ_RARRAY_SIZE, property);
-      xmlFree (property);
-    }
   property = (char*)xmlGetProp (node, (unsigned char*)RL_ISNULL);
   if (property)
     {

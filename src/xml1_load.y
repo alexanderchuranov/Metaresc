@@ -142,11 +142,6 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
       else
 	rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_CONTENT_REFERENCE;
     }
-  else if (0 == rl_substrcmp (RL_RARRAY_SIZE, &$3))
-    {
-      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &rl_load->ptrs->ra.data[rl_load->parent].rarray_size, &offset)) || tail_is_not_blank (&$5, offset))
-	error = "Can't read " RL_RARRAY_SIZE " property.";
-    }
   else if (0 == rl_substrcmp (RL_ISNULL, &$3))
     {
       rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_IS_NULL;

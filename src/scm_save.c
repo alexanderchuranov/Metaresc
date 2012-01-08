@@ -82,14 +82,6 @@ scm_save (rl_ra_rl_ptrdes_t * ptrs)
 	  else
 	    in_comment = !0;
 	}
-      if (ptrs->ra.data[idx].flags & RL_PDF_RARRAY_SIZE)
-	{
-	  if (rl_ra_printf (&rl_ra_str, RL_SCM_INDENT_TEMPLATE RL_SCM_ATTR_INT,
-			    level * RL_SCM_INDENT_SPACES, "", RL_RARRAY_SIZE, ptrs->ra.data[idx].rarray_size) < 0)
-	    return (NULL);
-	  else
-	    in_comment = !0;
-	}
 	    
       if (ptrs->ra.data[idx].first_child < 0)
 	{
@@ -370,6 +362,6 @@ static void __attribute__((constructor)) rl_init_save_scm (void)
   rl_conf.io_handlers[RL_TYPE_ANON_UNION].save.scm = scm_save_empty;
 
   rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.scm = scm_save_empty;
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].save.scm = scm_save_empty;
+  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY_DATA].save.scm = scm_save_pointer;
   rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.scm = scm_save_pointer;
 }
