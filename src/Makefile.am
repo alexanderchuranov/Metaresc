@@ -41,3 +41,6 @@ scm_load.tab.c: scm_load.y scm_load.lex.h
 scm_load.lex.c: scm_load.l scm_load.tab.h
 rlpp.h: rlpp.sh
 	./rlpp.sh `grep RL_PP_DEPTH rlexport.h | cut -d " " -f 3` > rlpp.h
+
+valgrind:
+	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"
