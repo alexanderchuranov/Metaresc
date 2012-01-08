@@ -6,8 +6,8 @@
 #include <regression.h>
 
 #define ASSERT_SAVE_LOAD_FLOAT(METHOD, VALUE) ({			\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE, FDLD_CMP);		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float, { VALUE }, STRUCT_FDLD_CMP); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE, CMP_SCALAR);		\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float, { VALUE }, CMP_STRUCT_X); \
     })
 
 TYPEDEF_STRUCT (struct_float, float x);

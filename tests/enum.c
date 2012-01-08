@@ -47,14 +47,12 @@ TYPEDEF_STRUCT (struct_rl_enum_uint64_t, (rl_enum_uint64_t, x));
 
 /*
   sizeof (rl_enum_uintXX_t) is determined by alignment attribute, but real size if sizeof (uint8_t) due to attribute packed.
-  That's why we can't compare results by MEMCMP macro, which uses object size.
+  That's why we can't compare results by MEM_CMP macro, which uses object size.
  */
-#define CMP_ENUMS(X, ...) (*(X) != *(__VA_ARGS__))
-#define CMP_STRUCT_ENUMS(X, ...) ((X)->x != (__VA_ARGS__)->x)
   
 RL_START_TEST(zero_rl_enum_t, "zero as number enum") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, CMP_ENUMS);
-  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, CMP_STRUCT_ENUMS);
+  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, CMP_SCALAR);
+  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, CMP_STRUCT_X);
 } END_TEST
 
 RL_START_TEST(invalid_rl_enum_t, "invalid enum") {
@@ -68,12 +66,12 @@ RL_START_TEST(invalid_rl_enum_t, "invalid enum") {
       ++warnings;
   }
 
-#define CMP_ENUMS_(X, ...) ({ ++checked; CMP_ENUMS (X, __VA_ARGS__);})
-#define CMP_STRUCT_ENUMS_(X, ...) ({ ++checked; CMP_STRUCT_ENUMS (X, __VA_ARGS__);})
+#define CMP_ENUMS(...) ({ ++checked; CMP_SCALAR (__VA_ARGS__);})
+#define CMP_STRUCT_ENUMS(...) ({ ++checked; CMP_STRUCT_X (__VA_ARGS__);})
   
   rl_conf.msg_handler = msg_handler;
-  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, -1, CMP_ENUMS_);
-  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, -1, CMP_STRUCT_ENUMS_);
+  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, -1, CMP_ENUMS);
+  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, -1, CMP_STRUCT_ENUMS);
   rl_conf.msg_handler = save_msg_handler;
   
   ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
