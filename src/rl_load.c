@@ -581,6 +581,7 @@ rl_load_rarray (int idx, rl_load_data_t * rl_load_data)
       else								\
 	{								\
 	  fdp->type = rl_load_data->ptrs.ra.data[idx].fd.type;		\
+	  fdp->size = rl_load_data->ptrs.ra.data[idx].fd.size;		\
 	  __status = rl_load_struct_inner (idx, rl_load_data, &TD);	\
 	}								\
       __status;								\

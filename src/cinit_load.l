@@ -167,14 +167,17 @@ static char * unquote_char (char * str, int length)
 
 static void get_type (rl_substr_t * substr, char * start)
 {
-  int size;
+  char * stop;
   while (isspace (*start))
     ++start;
-  size = strlen (start);
-  while (isspace (start[size - 1]) || (')' == start[size - 1]) || ('[' == start[size - 1]) || (']' == start[size - 1]))
-      --size;
+  stop = strchr (start, ')');
+  if (stop)
+    while (isspace (stop[-1]) || ('[' == stop[-1]) || (']' == stop[-1]))
+      --stop;
+  else
+    stop = strchr (start, 0);
   substr->substr.data = start;
-  substr->substr.size = size;
+  substr->substr.size = stop - start;
   substr->unquote = NULL;
 }
 

@@ -67,6 +67,7 @@ TYPEDEF_ENUM (rl_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (RL_MESSAGE_WRONG_XML_ESC, , "Wrong XML escape sequence '%s'."),
 	      (RL_MESSAGE_TYPES_HASHES_MATCHED, , "For types '%s' and '%s' hashes matched. Last type is not available."),
 	      (RL_MESSAGE_RARRAY_FAILED, , "Failed to find field .data."),
+	      (RL_MESSAGE_UNION_DISCRIMINATOR_ERROR, , "Union failed to find field by discriminator '%s'."),
 	      (RL_MESSAGE_LAST, , "Last message ID."),
 	      )
 

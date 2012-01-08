@@ -474,31 +474,32 @@ xdr_load_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   rl_td_t * tdp = rl_get_td_by_name (ptrs->ra.data[idx].fd.type); /* look up for type descriptor */
   char * data = ptrs->ra.data[idx].data;
-  rl_ptrdes_t ptrdes = { .data = &ptrs->ra.data[idx].union_field_name, }; /* temporary pointer descriptor for union discriminator string */
+  char * discriminator = NULL;
+  rl_fd_t * fdp;
+  int status = 0;
+  rl_ptrdes_t ptrdes = { .data = &discriminator, }; /* temporary pointer descriptor for union discriminator string */
   rl_ra_rl_ptrdes_t _ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
 
   /* get pointer on structure descriptor */
   if (NULL == tdp)
-    {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
-      return (0);
-    }
-  if ((tdp->rl_type != RL_TYPE_UNION) && (tdp->rl_type != RL_TYPE_ANON_UNION))
-    {
-      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_TYPE_NOT_UNION, tdp->type);
-      return (0);
-    }    
-  if (!xdr_load_string (xdrs, 0, &_ptrs_))
-    return (0);
-  if (ptrs->ra.data[idx].union_field_name)
-    {
-      rl_fd_t * fdp = rl_get_fd_by_name (tdp, ptrs->ra.data[idx].union_field_name);
-      RL_FREE (ptrs->ra.data[idx].union_field_name);
-      if (fdp)
-	return (xdr_load (data + fdp->offset, fdp, xdrs, ptrs));
+    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
+  else if ((tdp->rl_type != RL_TYPE_UNION) && (tdp->rl_type != RL_TYPE_ANON_UNION))
+    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_TYPE_NOT_UNION, tdp->type);
+  else if (!xdr_load_string (xdrs, 0, &_ptrs_))
+    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+  else if (NULL == discriminator)
+    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+  else
+    {  
+      fdp = rl_get_fd_by_name (tdp, discriminator);
+      if (NULL == fdp)
+	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+      else
+	status = xdr_load (data + fdp->offset, fdp, xdrs, ptrs); 
+      RL_FREE (discriminator);
     }
   
-  return (!0);
+  return (status);
 }
 
 static int
@@ -659,10 +660,10 @@ xdr_save_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 static int
 xdr_load_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  char * data = ptrs->ra.data[idx].data;
-  rl_rarray_t * ra = (rl_rarray_t*)&data[-offsetof (rl_rarray_t, data)];
+  void ** data = ptrs->ra.data[idx].data;
   rl_fd_t fd_ = ptrs->ra.data[idx].fd;
   uint32_t childs = 0;
+  int size;
 
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
@@ -673,21 +674,21 @@ xdr_load_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       if (!xdr_uint32_t (xdrs, &childs))
 	return (0);
 
+      /* .size and .alloc_size will be loaded directly from XDRS */
       fd_.rl_type_ext = RL_TYPE_EXT_NONE;
-      ra->data = NULL;
-      
-      ra->alloc_size = ra->size = childs * fd_.size;
-      if (ra->size > 0)
+      *data = NULL;
+      size = childs * fd_.size;
+      if (size > 0)
 	{
 	  int i;
-	  ra->data = RL_MALLOC (ra->size);
-	  if (NULL == ra->data)
+	  *data = RL_MALLOC (size);
+	  if (NULL == *data)
 	    {
 	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
 	      return (0);
 	    }
 	  for (i = 0; i < childs; ++i)
-	    if (!xdr_load (&(((char*)ra->data)[i * fd_.size]), &fd_, xdrs, ptrs))
+	    if (!xdr_load (((char*)*data) + i * fd_.size, &fd_, xdrs, ptrs))
 	      return (0);
 	}
     }
@@ -705,6 +706,7 @@ xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       else								\
 	{								\
 	  fdp->type = ptrs->ra.data[idx].fd.type;			\
+	  fdp->size = ptrs->ra.data[idx].fd.size;			\
 	  fdp->rl_type = ptrs->ra.data[idx].fd.rl_type;			\
 	  fdp->rl_type_ext = RL_TYPE_EXT_RARRAY_DATA;			\
 	  __status = xdr_load_struct_inner (xdrs, idx, ptrs, &TD);	\
