@@ -363,39 +363,36 @@ static int
 rl_load_char (int idx, rl_load_data_t * rl_load_data)
 {
   char * str = rl_load_data->ptrs.ra.data[idx].value;
-  int status = !0;
   
   if (NULL == str)
     {
       RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
-      status = 0;
+      return (0);
     }
-  if (*str != '\\')
+  else if ((0 == *str) || (0 == str[1]))
+    *(char*)rl_load_data->ptrs.ra.data[idx].data = str[0];
+  else if ('\\' != *str)
     {
-      if (strlen (str) != 1)
-	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
-	  status = 0;
-	}
-      *(char*)rl_load_data->ptrs.ra.data[idx].data = str[0];
+      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
+      return (0);
     }
-  else 
+  else
     {
       int offset;
       int val = 0;
       if (1 != sscanf (str + 1, "%o%n", &val, &offset))
 	{
 	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
-	  status = 0;
+	  return (0);
 	}
       else if (str[offset + 1] != 0)
 	{
 	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
-	  status = 0;
+	  return (0);
 	}
       *(char*)rl_load_data->ptrs.ra.data[idx].data = val;
     }
-  return (status);
+  return (!0);
 }     
 
 /**

@@ -50,7 +50,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 "#\\". { rl_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_SCM_VALUE); }
 
-"#\\x"[[:digit:]]{2} { rl_set_lval (&yylval->string, &yytext[3], encode_char); return (TOK_SCM_VALUE); }
+"#\\x"[[:xdigit:]]{2} { rl_set_lval (&yylval->string, &yytext[3], encode_char); return (TOK_SCM_VALUE); }
 
 ";"+{WS}"("{WS}{ID}[[:space:]]+[[:digit:]]+{WS}")"{WS} {
   rl_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
@@ -192,10 +192,14 @@ encode_bitmask (char * str, int length)
 static char *
 encode_char (char * str, int length)
 {
-  char str_[] = "\\000";
+  char * str_ = RL_MALLOC (2);
   int code;
   sscanf (str, "%x", &code);
-  sprintf (str_, "\\%03o", code);
-  return (RL_STRDUP (str_));
+  if (str_)
+    {
+      str_[0] = code;
+      str_[1] = 0;
+    }
+  return (str_);
 }
 

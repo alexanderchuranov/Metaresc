@@ -368,7 +368,7 @@ xml_unquote_string (char * str, int length)
 	  {
 	    int32_t code = 0;
 	    int size = 0;
-	    if (1 != sscanf (&str[j + 2], XML_NONPRINT_ESC "%n", &code, &size))
+	    if (1 != sscanf (&str[j], XML_NONPRINT_ESC "%n", &code, &size))
 	      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_WRONG_XML_ESC, esc);
 	    else
 	      {
