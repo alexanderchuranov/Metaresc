@@ -48,7 +48,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 "\""{ID}"\""{WS}":" { rl_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
-"("{WS}({ID}{WS})*{ID}{WS}\*?{WS}"["{WS}"]"{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
+"("{WS}({ID}{WS})*{ID}{WS}\*?{WS}("["{WS}"]")?{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
 "/*"{WS}"("{WS}({ID}{WS})*{ID}{WS}\*?{WS}"["{WS}"]"{WS}")"{WS}"*/" { get_type (&yylval->string, strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
 
@@ -167,17 +167,14 @@ static char * unquote_char (char * str, int length)
 
 static void get_type (rl_substr_t * substr, char * start)
 {
-  char * stop;
+  int size;
   while (isspace (*start))
     ++start;
-  stop = strchr (start, '[');
-  if (stop)
-    while (isspace (stop[-1]))
-      --stop;
-  else
-    stop = strchr (start, 0);
+  size = strlen (start);
+  while (isspace (start[size - 1]) || (')' == start[size - 1]) || ('[' == start[size - 1]) || (']' == start[size - 1]))
+      --size;
   substr->substr.data = start;
-  substr->substr.size = stop - start;
+  substr->substr.size = size;
   substr->unquote = NULL;
 }
 

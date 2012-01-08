@@ -348,6 +348,11 @@ cinit_save_pointer (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * dat
 {
   if (ptrs->ra.data[idx].first_child < 0)
     data->content = RL_STRDUP (RL_CINIT_NULL);
+  else if (0 == strcmp ("string_t", ptrs->ra.data[idx].fd.type))
+    {
+      data->prefix = "(" RL_CINIT_TYPE_NAME_TEMPLATE "){\n";
+      data->suffix = "}";
+    }    
   else
     {
       data->prefix = "(" RL_CINIT_TYPE_NAME_TEMPLATE "[]){\n";

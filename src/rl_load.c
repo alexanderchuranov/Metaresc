@@ -469,10 +469,15 @@ rl_load_struct_inner (int idx, rl_load_data_t * rl_load_data, rl_td_t * tdp)
       return (0);
     }
 
-  if ((0 == strcmp (tdp->type, "rl_ptr_t")) && (first_child >= 0) && rl_load_data->ptrs.ra.data[first_child].fd.type)
-    fdp = rl_get_fd_by_name (tdp, rl_load_data->ptrs.ra.data[first_child].fd.type);
-  else
-    fdp = tdp->fields.data;
+  /* for C init style we can get union descriptor only from type cast */
+  if ((0 == strcmp (tdp->type, "rl_ptr_t")) && (first_child >= 0) &&
+      rl_load_data->ptrs.ra.data[first_child].fd.type && (NULL == rl_load_data->ptrs.ra.data[first_child].fd.name))
+    {
+      rl_load_data->ptrs.ra.data[first_child].fd.name = rl_load_data->ptrs.ra.data[first_child].fd.type;
+      rl_load_data->ptrs.ra.data[first_child].fd.type = NULL;
+    }
+
+  fdp = tdp->fields.data;
   
   /* loop on all subnodes */
   for (idx = first_child; idx >= 0; idx = rl_load_data->ptrs.ra.data[idx].next)

@@ -5,8 +5,8 @@
 #include <reslib.h>
 
 TYPEDEF_UNION (rl_ptr_t, ATTRIBUTES ( , "pointer on any type"),
-		(void *, ptr, , "default void pointer"),
-		)
+	       (void *, ptr, , "default void pointer")
+	       )
 
 TYPEDEF_FUNC (string_t, char, , "tricky way to declare type equivalent to char *", .rl_type = RL_TYPE_CHAR_ARRAY)
 
