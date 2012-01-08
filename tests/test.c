@@ -20,7 +20,7 @@ typedef char str_t[16];
 #define RL_MODE DESC
 #include "test.h"
 
-#include <tsearch.h>
+TYPEDEF_STRUCT (ra_char_t, RARRAY (char, c));
 
 static void
 free_sample (sample_t * sample_)
@@ -78,6 +78,7 @@ main (void)
   point_t point = {-M_PI, M_E};
   sample_t sample_;
   sample_t sample = {
+    .marked = 0x1234567890,
     .ptr_fwd = &sample.point,
     .ptr_fwd_mismatch = (point_t*)&sample.point.y,
     .point = {.x = M_PI, .y = -M_E},
@@ -131,9 +132,9 @@ main (void)
     .array_ = {{'c'}, {'d'}},
     .array2d = {{1 ,2 }, {3, 4}, {5, 6}},
     .array_none = {{'e'}, {'f'}},
-    .rarray = { .data = (char_t[]){{'g'}, {'h'}}, .size = 2 },
-    .rarray_1 = { .data = "ijk", .size = 4 },
-    .rarray_empty = { .data = NULL, .size = 0 },
+    .rarray = { .data = (char_t[]){{'g'}, {'h'}}, .size = 2, .alloc_size = 2, },
+    .rarray_1 = { .data = "ijk", .size = 4, .alloc_size = 4 },
+    .rarray_empty = { .data = NULL, .size = 0, .alloc_size = 0 },
     ._void = NULL,
     .next = &sample,
     .prev = &sample,
@@ -146,8 +147,6 @@ main (void)
     .ptr_type = "string_t",
     .string_ptr = (char*[]){ "string_t" }, // &sample.ptr_type
   };
-
-  //test_hash ();
 
 #if 1
   point.sample = &sample;
@@ -286,8 +285,20 @@ main (void)
   free_sample (&sample);
   sample = sample_;
 
+#if 0
+  ra_char_t ra_char = { .c = { .data = xdr_orig, .size = xdr_orig_size, } };
+  char * dump = RL_SAVE_CINIT (ra_char_t, &ra_char);
+  printf ("dump_orig = %s\n", dump);
+  RL_FREE (dump);
+  ra_char.c.data = xdr_xml2;
+  ra_char.c.size = xdr_xml2_size;
+  dump = RL_SAVE_CINIT (ra_char_t, &ra_char);
+  printf ("dump_xml2 = %s\n", dump);
+  RL_FREE (dump);
+#endif
+  
 #ifdef HAVE_LIBXML2
-  printf ("XML2 (size %d) save/load matched original dump: %s\n", xml2_size,
+  printf ("XML2 (size %d) (%d vs %d) save/load matched original dump: %s\n", xml2_size, xdr_xml2_size, xdr_orig_size,
 	  (xdr_xml2_size == xdr_orig_size) && (0 == memcmp (xdr_orig, xdr_xml2, xdr_orig_size)) ? "PASSED" : "FAILED");
 #endif /* HAVE_LIBXML2 */
   printf ("XML1 (size %d) save/load matched original dump: %s\n", xml1_size,
@@ -387,7 +398,7 @@ main (void)
   (int)sizeof(struct { int:-!!(0); });
 #endif
 
-#if 0
+#if 1
   str = RL_SAVE_CINIT (rl_conf_t, &rl_conf);
   if (str)
     {
@@ -396,7 +407,8 @@ main (void)
     }
 #endif
 
-  rl_type_t x = RL_TYPE_DETECT (typeof (.0f));
+  //rl_type_t x = RL_TYPE_DETECT (typeof (.0f));
+  rl_type_t x = RL_TYPE_DETECT (mask_t);
   str = RL_SAVE_CINIT (rl_type_t, &x);
   if (str)
     {

@@ -197,6 +197,7 @@ RL_TYPEDEF_STRUCT ()
   RL_NONE (void*, ext_info, , "user extended info", { "one more extra string" })
   RL_NONE (int , res1[0], , "test of memory cleanup")
   RL_NONE (int , res2, [0])
+  RL_AUTO (uint64_t, marked)
   RL_NONE (int , res3, [], "array with flexible number of elements")
 RL_END_STRUCT ("Comment", { "One more comment" }, "string_t")
 
