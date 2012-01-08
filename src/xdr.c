@@ -698,6 +698,8 @@ xdr_load_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 static int
 xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
+  rl_rarray_t * ra = ptrs->ra.data[idx].data;
+  
 #define XDR_LOAD_RARRAY_ACTION(TD) ({					\
       int __status = 0;							\
       rl_fd_t * fdp = rl_get_fd_by_name (&TD, "data");			\
@@ -713,8 +715,12 @@ xdr_load_rarray (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 	}								\
       __status;								\
     })
+
+  int status = RL_LOAD_RARRAY (XDR_LOAD_RARRAY_ACTION);
+  /* alloc_size is loaded from XDRS, but it should reflect amount of memory really allocated for data */
+  ra->alloc_size = ra->size;
   
-  return (RL_LOAD_RARRAY (XDR_LOAD_RARRAY_ACTION));
+  return (status);
 }
 
 /**
