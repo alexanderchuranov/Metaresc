@@ -395,7 +395,7 @@ main (void)
   printf ("XDR doubles load/save (dx = %g dy = %g): %s\n\n",
 	  point_.x - point.x, point_.y - point.y, memcmp (&point, &point_, sizeof (point_t)) ? "FAILED" : "PASSED");
 
-  (int)sizeof(struct { int:-!!(0); });
+  //(int)sizeof(struct { int:-!!(0); });
 #endif
 
 #if 1
