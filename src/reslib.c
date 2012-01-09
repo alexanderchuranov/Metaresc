@@ -93,6 +93,30 @@ rl_conf_t rl_conf = {
   },
 };
 
+static size_t types_sizes[] =
+  {
+    [0 ... RL_MAX_TYPES - 1] = 0,
+    [RL_TYPE_NONE] = 0,
+    [RL_TYPE_VOID] = sizeof (void),
+    [RL_TYPE_INT8] = sizeof (int8_t),
+    [RL_TYPE_UINT8] = sizeof (uint8_t),
+    [RL_TYPE_INT16] = sizeof (int16_t),
+    [RL_TYPE_UINT16] = sizeof (uint16_t),
+    [RL_TYPE_INT32] = sizeof (int32_t),
+    [RL_TYPE_UINT32] = sizeof (uint32_t),
+    [RL_TYPE_INT64] = sizeof (int64_t),
+    [RL_TYPE_UINT64] = sizeof (uint64_t),
+    [RL_TYPE_FLOAT] = sizeof (float),
+    [RL_TYPE_DOUBLE] = sizeof (double),
+    [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
+    [RL_TYPE_CHAR] = sizeof (char),
+    [RL_TYPE_CHAR_ARRAY] = sizeof (char),
+    [RL_TYPE_STRING] = sizeof (char*),
+    [RL_TYPE_STRUCT] = sizeof (void),
+    [RL_TYPE_UNION] = sizeof (void),
+    [RL_TYPE_ANON_UNION] = sizeof (void),
+  };
+
 RL_MEM_INIT ( , __attribute__((constructor,weak)));
 
 /**
@@ -213,6 +237,46 @@ rl_message (const char * file_name, const char * func_name, int line, rl_log_lev
 	}
     }
   va_end (args);
+}
+
+void
+rl_detect_type (rl_fd_t * fdp)
+{
+  rl_td_t * tdp;
+  switch (fdp->rl_type)						
+    {								
+    case RL_TYPE_UINT8:						
+    case RL_TYPE_INT8:						
+    case RL_TYPE_UINT16:						
+    case RL_TYPE_INT16:						
+    case RL_TYPE_UINT32:						
+    case RL_TYPE_INT32:						
+    case RL_TYPE_UINT64:						
+    case RL_TYPE_INT64:
+      fdp->size = types_sizes[fdp->rl_type];
+    case RL_TYPE_NONE:
+      tdp = rl_get_td_by_name (fdp->type);		
+      if (tdp)							
+	fdp->rl_type = tdp->rl_type;				
+      break;							
+    default: break;							
+    }								
+}
+
+char *
+rl_normalize_name (char * name)
+{
+  char * ptr;
+  ptr = strchr (name, '[');				
+  if (NULL == ptr)						
+    ptr = strchr (name, 0);					
+  --ptr;							
+  while ((ptr >= name) && !(isalnum (*ptr) || ('_' == *ptr))) 
+    --ptr;							
+  *(ptr + 1) = 0;						
+  while ((ptr >= name) && (isalnum (*ptr) || ('_' == *ptr))) 
+    --ptr;							
+  return (++ptr);
 }
 
 #ifndef HAVE_STRNDUP
@@ -1076,30 +1140,6 @@ rl_build_field_names_hash (rl_td_t * tdp)
   
   return (EXIT_SUCCESS);
 }
-
-static size_t types_sizes[] =
-  {
-    [0 ... RL_MAX_TYPES - 1] = 0,
-    [RL_TYPE_NONE] = 0,
-    [RL_TYPE_VOID] = sizeof (void),
-    [RL_TYPE_INT8] = sizeof (int8_t),
-    [RL_TYPE_UINT8] = sizeof (uint8_t),
-    [RL_TYPE_INT16] = sizeof (int16_t),
-    [RL_TYPE_UINT16] = sizeof (uint16_t),
-    [RL_TYPE_INT32] = sizeof (int32_t),
-    [RL_TYPE_UINT32] = sizeof (uint32_t),
-    [RL_TYPE_INT64] = sizeof (int64_t),
-    [RL_TYPE_UINT64] = sizeof (uint64_t),
-    [RL_TYPE_FLOAT] = sizeof (float),
-    [RL_TYPE_DOUBLE] = sizeof (double),
-    [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
-    [RL_TYPE_CHAR] = sizeof (char),
-    [RL_TYPE_CHAR_ARRAY] = sizeof (char),
-    [RL_TYPE_STRING] = sizeof (char*),
-    [RL_TYPE_STRUCT] = sizeof (void),
-    [RL_TYPE_UNION] = sizeof (void),
-    [RL_TYPE_ANON_UNION] = sizeof (void),
-  };
 
 /**
  * Initialize AUTO fields. Detect type, size, pointers etc.

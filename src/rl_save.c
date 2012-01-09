@@ -528,16 +528,15 @@ rl_post_process (rl_save_data_t * rl_save_data)
 {
   int idx = 0;
   int idx_ = 0;
-
-  rl_save_data->ptrs.ra.data[idx].idx = idx_++;
-  rl_save_data->ptrs.ra.data[idx].level = 0;
-  idx = rl_save_data->ptrs.ra.data[idx].first_child;
   
   while (idx >= 0)
     {
       int parent = rl_save_data->ptrs.ra.data[idx].parent;
       rl_save_data->ptrs.ra.data[idx].idx = idx_++;
-      rl_save_data->ptrs.ra.data[idx].level = rl_save_data->ptrs.ra.data[parent].level + 1;
+      if (parent < 0)
+	rl_save_data->ptrs.ra.data[idx].level = 0;
+      else
+	rl_save_data->ptrs.ra.data[idx].level = rl_save_data->ptrs.ra.data[parent].level + 1;
 
       if ((RL_TYPE_EXT_POINTER == rl_save_data->ptrs.ra.data[idx].fd.rl_type_ext) &&
 	  ((RL_TYPE_NONE == rl_save_data->ptrs.ra.data[idx].fd.rl_type) || (RL_TYPE_VOID == rl_save_data->ptrs.ra.data[idx].fd.rl_type)) &&

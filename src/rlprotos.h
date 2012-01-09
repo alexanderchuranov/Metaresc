@@ -211,7 +211,7 @@ TYPEDEF_STRUCT (rl_ra_rl_td_ptr_t,
 		RARRAY (rl_td_ptr_t, ra, "non-collision hash table"),
 		)
 
-TYPEDEF_ENUM (rl_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (int32_t)))), "bitmask values"),
+TYPEDEF_ENUM (rl_ptrdes_flags_t, ATTRIBUTES ( , "ponter descriptor flag bitmask values"),
 	      (RL_PDF_NONE, = 0),
 	      (RL_PDF_IS_NULL, = (1 << 0)),
 	      (RL_PDF_IS_REFERENCED, = (1 << 1)),

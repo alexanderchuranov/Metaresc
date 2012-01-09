@@ -722,10 +722,9 @@
 #define RL_FREE_RECURSIVELY(RL_TYPE_NAME, S_PTR) rl_free_recursively (RL_SAVE_RL (RL_TYPE_NAME, S_PTR))
 
 #define RL_SAVE_RL(RL_TYPE_NAME, S_PTR) ({				\
-      char * __name__ = RL_STRINGIFY (S_PTR);				\
       rl_fd_t __fd__ =							\
 	{								\
-	  .name = __name__,						\
+	  .name = RL_STRINGIFY (S_PTR),					\
 	  .type = #RL_TYPE_NAME,					\
 	  .rl_type = RL_TYPE_DETECT (RL_TYPE_NAME),			\
 	  .rl_type_ext = RL_TYPE_EXT_DETECT (RL_TYPE_NAME, S_PTR),	\
@@ -748,31 +747,8 @@
 	  .rl_ra_idx = { .data = NULL, .size = 0, .alloc_size = 0, },	\
 	  .ptrs = { .ra = { .data = NULL, .size = 0, .alloc_size = 0, } } \
 	};								\
-      char * __ptr__ = strchr (__name__, '[');				\
-      rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
-      switch (__fd__.rl_type)						\
-	{								\
-	case RL_TYPE_UINT8: __fd__.size = sizeof (uint8_t); break;	\
-	case RL_TYPE_INT8: __fd__.size = sizeof (int8_t); break;	\
-	case RL_TYPE_UINT16: __fd__.size = sizeof (uint16_t); break;	\
-	case RL_TYPE_INT16: __fd__.size = sizeof (int16_t); break;	\
-	case RL_TYPE_UINT32: __fd__.size = sizeof (uint32_t); break;	\
-	case RL_TYPE_INT32: __fd__.size = sizeof (int32_t); break;	\
-	case RL_TYPE_UINT64: __fd__.size = sizeof (uint64_t); break;	\
-	case RL_TYPE_INT64: __fd__.size = sizeof (int64_t); break;	\
-	default: break;							\
-	}								\
-      if (__tdp__)							\
-	__fd__.rl_type = __tdp__->rl_type;				\
-      if (NULL == __ptr__)						\
-	__ptr__ = strchr (__name__, 0);					\
-      --__ptr__;							\
-      while ((__ptr__ >= __name__) && !(isalnum (*__ptr__) || ('_' == *__ptr__))) \
-	--__ptr__;							\
-      *(__ptr__ + 1) = 0;						\
-      while ((__ptr__ >= __name__) && (isalnum (*__ptr__) || ('_' == *__ptr__))) \
-	--__ptr__;							\
-      __fd__.name = ++__ptr__;						\
+      rl_detect_type (&__fd__);						\
+      __fd__.name = rl_normalize_name (__fd__.name);			\
       RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
       if (check_type == NULL)						\
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
@@ -859,9 +835,7 @@
 	    },								\
 	  };								\
 	  RL_TYPE_NAME * __check_type__ = S_PTR + 0;			\
-	  rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
-	  if (__tdp__)							\
-	    __fd__.rl_type = __tdp__->rl_type;				\
+	  rl_detect_type (&__fd__);					\
 	  RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
 	  if (__check_type__ != NULL)					\
 	    __status__ = xdr_load (__check_type__, &__fd__, __xdrs__, NULL); \
@@ -952,15 +926,13 @@
 	},								\
       };								\
       RL_TYPE_NAME * __check_type__ = S_PTR + 0;			\
-      rl_td_t * __tdp__ = rl_get_td_by_name (__fd__.type);		\
       xmlNodePtr __xml__ = (XML);					\
       if (NULL == __xml__)						\
 	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NULL_POINTER);		\
       else								\
 	{								\
-	  if (__tdp__)							\
-	    __fd__.rl_type = __tdp__->rl_type;				\
 	  RL_CHECK_TYPES (RL_TYPE_NAME, S_PTR);				\
+	  rl_detect_type (&__fd__);					\
 	  if (NULL != __check_type__) 					\
 	    __idx__ = xml2_load (__xml__, &__load_data__.ptrs);		\
 	  else								\
@@ -1061,9 +1033,7 @@
 		  },							\
 		},							\
 	      };							\
-	      rl_td_t * _tdp_ = rl_get_td_by_name (_fd_.type);		\
-	      if (_tdp_)						\
-		_fd_.rl_type = _tdp_->rl_type;				\
+	      rl_detect_type (&_fd_);					\
 	      _status_ = rl_load (_check_type_, &_fd_, 0, &_load_data_); \
 	    }								\
 	  rl_free_ptrs (_load_data_.ptrs);				\
@@ -1182,6 +1152,8 @@ extern int scm_load (char*, rl_ra_rl_ptrdes_t*);
 
 extern int rl_add_ptr_to_list (rl_ra_rl_ptrdes_t*);
 extern void rl_add_child (int, int, rl_ra_rl_ptrdes_t*);
+extern void rl_detect_type (rl_fd_t*);
+extern char * rl_normalize_name (char*);
 extern int rl_free_recursively (rl_ra_rl_ptrdes_t);
 extern int rl_free_ptrs (rl_ra_rl_ptrdes_t);
 extern rl_fd_t * rl_get_fd_by_name (rl_td_t*, char*);
