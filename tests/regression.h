@@ -6,9 +6,19 @@
 
 #include <reslib.h>
 
-#define TEST_METHODS XDR, SCM, CINIT, JSON, XML1, XML2
-//#define TEST_METHODS XDR
-//#define TEST_METHODS CINIT
+#ifdef HAVE_BISON_FLEX
+#define BISON_FLEX_METHODS SCM, CINIT, JSON, XML1,
+#else /* HAVE_BISON_FLEX */
+#define BISON_FLEX_METHODS
+#endif /* HAVE_BISON_FLEX */
+
+#ifdef HAVE_LIBXML2
+#define LIBXML2_METHODS XML2,
+#else /* HAVE_LIBXML2 */
+#define LIBXML2_METHODS
+#endif /* HAVE_LIBXML2 */
+
+#define TEST_METHODS LIBXML2_METHODS BISON_FLEX_METHODS XDR
 
 extern Suite * suite;
 
@@ -28,7 +38,7 @@ extern Suite * suite;
 	  }								\
       }									\
   };									\
-  START_TEST(NAME)
+  START_TEST (NAME)
 
 #define MEM_CMP(TYPE, X, Y, ...) memcmp (X, Y, sizeof (TYPE))
 #define CINIT_CMP(TYPE, X, Y, ...) ({					\
@@ -38,8 +48,9 @@ extern Suite * suite;
       if (x_ && y_)							\
 	{								\
 	  xy_cmp = strcmp (x_, y_);					\
-	  if (xy_cmp)							\
-	    printf ("orig = %s;\nrest = %s;\n", x_, y_);		\
+	  if (~xy_cmp)							\
+	    printf (#TYPE " %s = %s;\n"					\
+		    #TYPE " %s = %s;\n", &#X[1], x_, &#Y[1], y_);	\
 	}								\
       if (x_)								\
 	RL_FREE (x_);							\
@@ -52,7 +63,7 @@ extern Suite * suite;
 
 #define ASSERT_SAVE_LOAD(METHOD, TYPE, X, ...)		\
   RL_IF_ELSE (RL_PASTE2 (SKIP_METHOD_, METHOD))		\
-  (ASSERT_SAVE_LOAD_(METHOD, TYPE, X, __VA_ARGS__)) (X != X)
+  (ASSERT_SAVE_LOAD_(METHOD, TYPE, X, __VA_ARGS__)) (memcmp (X, X, 1))
 
 #define ASSERT_SAVE_LOAD_(METHOD, TYPE, X, TYPE_CMP, ...)		\
   RL_IF_ELSE (RL_PASTE3 (RL_IS__EQ_, TYPE_CMP, _))			\
@@ -62,16 +73,15 @@ extern Suite * suite;
 #define ASSERT_SAVE_LOAD__(METHOD, TYPE, X, TYPE_CMP, ...) ({		\
       rl_rarray_t serialized = RL_SAVE_ ## METHOD ## _RA (TYPE, X);	\
       int orig_eq_restored;						\
-      TYPE RL_PASTE2(METHOD, _restored);				\
-      if (0) printf ("%s\n", (char*)serialized.data);			\
-      if (0 == RL_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &RL_PASTE2(METHOD, _restored))) \
+      TYPE METHOD ## _restored;						\
+      if (0 == RL_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)) \
 	ck_abort_msg ("load for method " #METHOD " on type " #TYPE " failed"); \
       if (serialized.data)						\
 	RL_FREE (serialized.data);					\
-      orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &RL_PASTE2(METHOD, _restored), __VA_ARGS__)); \
+      orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &METHOD ## _restored, __VA_ARGS__)); \
       ck_assert_msg (orig_eq_restored,					\
 		     "restored value mismatched original for method " #METHOD " on type " #TYPE); \
-      RL_FREE_RECURSIVELY (TYPE, &RL_PASTE2(METHOD, _restored));	\
+      RL_FREE_RECURSIVELY (TYPE, &METHOD ## _restored);			\
     })
 
 #define ASSERT_SAVE_LOAD_TYPE(METHOD, TYPE, VALUE, ...) ({		\
@@ -86,7 +96,20 @@ extern Suite * suite;
 #define SERIAL(NAME, I, REC, X) REC; X
 #define ALL_METHODS(...) RL_FOR ((__VA_ARGS__), RL_NARG (TEST_METHODS), SERIAL, ASSERT_ITERATOR, TEST_METHODS)
 
-#define CMP_SCALAR(TYPE, X, Y, ...) (*(X) != *(Y))
-#define CMP_STRUCT_X(TYPE, X, Y, ...) ((X)->x != (Y)->x)
+#define SCALAR_CMP(TYPE, X, Y, ...) (*(X) != *(Y))
+#define STRUCT_X_CMP(TYPE, X, Y, ...) ((X)->x != (Y)->x)
 
+#define MAIN(...)							\
+  Suite * suite = NULL;							\
+  int main (int argc, char * argv[])					\
+  {									\
+    int number_failed;							\
+    SRunner * srunner = srunner_create (suite);				\
+    __VA_ARGS__;							\
+    srunner_run_all (srunner, CK_ENV);					\
+    number_failed = srunner_ntests_failed (srunner);			\
+    srunner_free (srunner);						\
+    return ((number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE);	\
+  }									\
+  
 #endif /* _REGRESSION_H_ */

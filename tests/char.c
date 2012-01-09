@@ -6,12 +6,14 @@ TYPEDEF_STRUCT (struct_char_t, char x)
 
 #define SKIP_METHOD_XML2 0
 
-RL_START_TEST(all_chars, "run whole charset") {
+RL_START_TEST (all_chars, "run whole charset") {
   int i;
   for (i = 0; i < (1 << 8); ++i)
     {
       char c = i;
-      ALL_METHODS (ASSERT_SAVE_LOAD, char, &c, CMP_SCALAR);
-      ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c, CMP_STRUCT_X);
+      ALL_METHODS (ASSERT_SAVE_LOAD, char, &c, SCALAR_CMP);
+      ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c, STRUCT_X_CMP);
     }
 } END_TEST
+
+MAIN ();

@@ -50,12 +50,12 @@ TYPEDEF_STRUCT (struct_rl_enum_uint64_t, (rl_enum_uint64_t, x));
   That's why we can't compare results by MEM_CMP macro, which uses object size.
  */
   
-RL_START_TEST(zero_rl_enum_t, "zero as number enum") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, CMP_SCALAR);
-  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, CMP_STRUCT_X);
+RL_START_TEST (zero_rl_enum_t, "zero as number enum") {
+  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, SCALAR_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, STRUCT_X_CMP);
 } END_TEST
 
-RL_START_TEST(invalid_rl_enum_t, "invalid enum") {
+RL_START_TEST (invalid_rl_enum_t, "invalid enum") {
   int checked = 0;
   int warnings = 0;
   void (*save_msg_handler) (const char*, const char*, int, rl_log_level_t, rl_message_id_t, va_list) = rl_conf.msg_handler;
@@ -66,8 +66,8 @@ RL_START_TEST(invalid_rl_enum_t, "invalid enum") {
       ++warnings;
   }
 
-#define CMP_ENUMS(...) ({ ++checked; CMP_SCALAR (__VA_ARGS__);})
-#define CMP_STRUCT_ENUMS(...) ({ ++checked; CMP_STRUCT_X (__VA_ARGS__);})
+#define CMP_ENUMS(...) ({ ++checked; SCALAR_CMP (__VA_ARGS__);})
+#define CMP_STRUCT_ENUMS(...) ({ ++checked; STRUCT_X_CMP (__VA_ARGS__);})
   
   rl_conf.msg_handler = msg_handler;
   ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, -1, CMP_ENUMS);
@@ -76,3 +76,5 @@ RL_START_TEST(invalid_rl_enum_t, "invalid enum") {
   
   ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
 } END_TEST
+
+MAIN ();
