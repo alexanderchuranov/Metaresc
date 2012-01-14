@@ -7,7 +7,7 @@
 #include <reslib.h>
 
 #ifdef HAVE_BISON_FLEX
-#define BISON_FLEX_METHODS SCM, CINIT, JSON, XML1,
+#define BISON_FLEX_METHODS XML1, SCM, CINIT, JSON,
 #else /* HAVE_BISON_FLEX */
 #define BISON_FLEX_METHODS
 #endif /* HAVE_BISON_FLEX */
@@ -48,7 +48,7 @@ extern Suite * suite;
       if (x_ && y_)							\
 	{								\
 	  xy_cmp = strcmp (x_, y_);					\
-	  if (~xy_cmp)							\
+	  if (xy_cmp)							\
 	    printf (#TYPE " %s = %s;\n"					\
 		    #TYPE " %s = %s;\n", &#X[1], x_, &#Y[1], y_);	\
 	}								\
