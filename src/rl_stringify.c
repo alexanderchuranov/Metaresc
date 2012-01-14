@@ -266,14 +266,13 @@ rl_stringify_bitmask (rl_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
   return (str);
 }
 
-#define XML_NONPRINT_ESC "&#x%02x;"
+#define XML_NONPRINT_ESC "&#x%X;"
 #define ESC_SIZE (sizeof (XML_NONPRINT_ESC))
 #define ESC_CHAR_MAP_SIZE (256)
 static char * map[ESC_CHAR_MAP_SIZE] = {
   [0 ... ESC_CHAR_MAP_SIZE - 1] = NULL,
   [(unsigned char)'\t'] = "\t",
   [(unsigned char)'\n'] = "\n",
-  [(unsigned char)'\r'] = "\r",
   [(unsigned char)'&'] = "&amp;",
   [(unsigned char)'<'] = "&lt;",
   [(unsigned char)'>'] = "&gt;",
@@ -287,14 +286,14 @@ xml_quote_string (char * str)
 
   if (NULL == str)
     return (NULL);
-  
+
   for (str_ = str; *str_; ++str_)
     if (map[(unsigned char)*str_])
       length += strlen (map[(unsigned char)*str_]);
     else if (isprint (*str_))
       ++length;
     else
-      length += sizeof (XML_NONPRINT_ESC) + 2 - 5;
+      length += sizeof (XML_NONPRINT_ESC) - 1;
 
   str_ = RL_MALLOC (length + 1);
   if (NULL == str)
@@ -308,14 +307,14 @@ xml_quote_string (char * str)
     if (map[(unsigned char)*str])
       {
 	strcpy (&str_[length], map[(unsigned char)*str]);
-	length += strlen (map[(unsigned char)*str]);
+	length += strlen (&str_[length]);
       }
     else if (isprint (*str))
       str_[length++] = *str;
     else
       {
 	sprintf (&str_[length], XML_NONPRINT_ESC, (int)(unsigned char)*str);
-	length += sizeof (XML_NONPRINT_ESC) + 2 - 5;
+	length += strlen (&str_[length]);
       }
   str_[length] = 0;
   return (str_);
@@ -372,7 +371,7 @@ xml_unquote_string (char * str, int length)
 	      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_WRONG_XML_ESC, esc);
 	    else
 	      {
-		j += size + 1; /* need to test this */
+		j += size - 1; /* one more +1 in the loop */
 		str_[length_++] = code;
 	      }
 	  }

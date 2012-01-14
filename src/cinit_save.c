@@ -272,7 +272,7 @@ cinit_save_char (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
   char str[] = " ";
   str[0] = *(char*)ptrs->ra.data[idx].data;
   if (0 == str[0])
-    data->content = RL_STRDUP ("'\\0'");
+    data->content = RL_STRDUP ("'\\000'");
   else
     data->content = cinit_quote_string (str, '\'');
   return (0);

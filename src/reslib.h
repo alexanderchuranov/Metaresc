@@ -866,35 +866,22 @@
 
 #ifdef HAVE_LIBXML2
 
-#define RL_SAVE_XML2_NODE(RL_TYPE_NAME, S_PTR) ({			\
-      xmlNodePtr __node__ = NULL;					\
-      rl_ra_rl_ptrdes_t __ptrs__ = RL_SAVE_RL (RL_TYPE_NAME, S_PTR);	\
-      if (__ptrs__.ra.data)						\
-	{								\
-	  __node__ = xml2_save (&__ptrs__);				\
-	  RL_FREE (__ptrs__.ra.data);					\
-	}								\
-      __node__;								\
-    })
-
 #define RL_SAVE_XML2_RA(RL_TYPE_NAME, S_PTR) RL_SAVE_METHOD_RA (RL_SAVE_XML2, RL_TYPE_NAME, S_PTR)
 
 #define RL_SAVE_XML2(RL_TYPE_NAME, S_PTR) ({				\
       int __size__;							\
       char * __str__ = NULL;						\
-      xmlChar * __xml_str__;						\
-      xmlDocPtr __doc__ = xmlNewDoc ((unsigned char*)"1.0");		\
-      if (NULL == __doc__)						\
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_XML_SAVE_FAILED);		\
-      else								\
+      xmlChar * __xml_str__ = NULL;					\
+      rl_ra_rl_ptrdes_t __ptrs__ = RL_SAVE_RL (RL_TYPE_NAME, S_PTR);	\
+      if (__ptrs__.ra.data)						\
 	{								\
-	  xmlNodePtr _node_ = RL_SAVE_XML2_NODE(RL_TYPE_NAME, S_PTR);	\
-	  if (NULL == _node_)						\
-	    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_XML_SAVE_FAILED);	\
-	  else								\
-	    xmlDocSetRootElement (__doc__, _node_);			\
-	  xmlDocDumpFormatMemory (__doc__, &__xml_str__, &__size__, 1);	\
-	  xmlFreeDoc (__doc__);						\
+	  xmlDocPtr __doc__ = xml2_save (&__ptrs__);			\
+	  RL_FREE (__ptrs__.ra.data);					\
+	  if (__doc__)							\
+	    {								\
+	      xmlDocDumpFormatMemory (__doc__, &__xml_str__, &__size__, 1); \
+	      xmlFreeDoc (__doc__);					\
+	    }								\
 	  if (__xml_str__)						\
 	    {								\
 	      __str__ = RL_STRDUP ((char*)__xml_str__);			\
@@ -1128,7 +1115,7 @@ extern char * rl_read_xml_doc (FILE*);
 extern void rl_save (void*, rl_fd_t*, rl_save_data_t*);
 extern int rl_load (void*, rl_fd_t*, int, rl_load_data_t*);
 #ifdef HAVE_LIBXML2
-extern xmlNodePtr xml2_save (rl_ra_rl_ptrdes_t*);
+extern xmlDocPtr xml2_save (rl_ra_rl_ptrdes_t*);
 extern int xml2_load (xmlNodePtr, rl_ra_rl_ptrdes_t*);
 #endif /* HAVE_LIBXML2 */
 extern int xdr_save (XDR*, rl_ra_rl_ptrdes_t*);
@@ -1187,5 +1174,6 @@ extern char * rl_stringify_long_double_t (rl_ptrdes_t*);
 
 extern char * xml_quote_string (char*);
 extern char * xml_unquote_string (char*, int);
+extern void rl_init_save_xml (void);
 
 #endif /* _RESLIB_H_ */
