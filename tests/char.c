@@ -4,8 +4,6 @@
 
 TYPEDEF_STRUCT (struct_char_t, char x)
 
-#define SKIP_METHOD_XML2 0
-
 RL_START_TEST (all_chars, "run whole charset") {
   int i;
   for (i = 0; i < (1 << 8); ++i)

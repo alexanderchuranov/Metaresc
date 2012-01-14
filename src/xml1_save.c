@@ -45,11 +45,11 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
 
       /* route saving handler */
       if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-	  && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml)
-	content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml (idx, ptrs);
+	  && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml1)
+	content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml1 (idx, ptrs);
       else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	       && rl_conf.io_handlers[fdp->rl_type].save.xml)
-	content = rl_conf.io_handlers[fdp->rl_type].save.xml (idx, ptrs);
+	       && rl_conf.io_handlers[fdp->rl_type].save.xml1)
+	content = rl_conf.io_handlers[fdp->rl_type].save.xml1 (idx, ptrs);
       else
 	RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
@@ -123,7 +123,11 @@ xml_save_none (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
  */
-#define XML_SAVE_TYPE(TYPE, EXT...) static char * xml_save_ ## TYPE (int idx, rl_ra_rl_ptrdes_t * ptrs) { return (rl_stringify_ ## TYPE (&ptrs->ra.data[idx] EXT)); }
+#define XML_SAVE_TYPE(TYPE, ...)				      \
+  static char * xml_save_ ## TYPE (int idx, rl_ra_rl_ptrdes_t * ptrs) \
+  {								      \
+    return (rl_stringify_ ## TYPE (&ptrs->ra.data[idx] __VA_ARGS__)); \
+  }
 
 XML_SAVE_TYPE (int8);
 XML_SAVE_TYPE (uint8);
@@ -148,12 +152,17 @@ XML_SAVE_TYPE (bitmask, , RL_BITMASK_OR_DELIMITER);
 static char *
 xml_save_char (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
+  char str[RL_CHAR_TO_STRING_BUF_SIZE];
+  sprintf (str, "\\%03o", *(char*)ptrs->ra.data[idx].data);
+  return (RL_STRDUP (str));
+#if 0
   char str[2] = " ";
   str[0] = *(char*)ptrs->ra.data[idx].data;
   if (str[0])
     return (xml_quote_string (str));
   else
-    return (RL_STRDUP ("&#x00;"));
+    return (RL_STRDUP ("&#x0;"));
+#endif
 }
 
 /**
@@ -175,7 +184,7 @@ xml_save_char_array (int idx, rl_ra_rl_ptrdes_t * ptrs)
  * @param ptrs resizeable array with pointers descriptors 
  */
 static char *
-xml_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
+xml1_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   char * str = *(char**)ptrs->ra.data[idx].data;
   if ((NULL == str) || (ptrs->ra.data[idx].ref_idx >= 0))
@@ -193,8 +202,15 @@ xml_save_empty (int idx, rl_ra_rl_ptrdes_t * ptrs)
 /**
  * Init IO handlers Table
  */
-void __attribute__((constructor)) rl_init_save_xml1 (void)
+void rl_init_save_xml (void)
 {
+  int i;
+  for (i = 0; i < RL_MAX_TYPES; ++i)
+    {
+      rl_conf.io_handlers[i].save.xml = NULL;
+      rl_conf.io_ext_handlers[i].save.xml = NULL;
+    }
+  
   rl_conf.io_handlers[RL_TYPE_NONE].save.xml = xml_save_none;
   rl_conf.io_handlers[RL_TYPE_VOID].save.xml = xml_save_none;
   rl_conf.io_handlers[RL_TYPE_ENUM].save.xml = xml_save_enum;
@@ -213,7 +229,6 @@ void __attribute__((constructor)) rl_init_save_xml1 (void)
   rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].save.xml = xml_save_long_double_t;
   rl_conf.io_handlers[RL_TYPE_CHAR].save.xml = xml_save_char;
   rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].save.xml = xml_save_char_array;
-  rl_conf.io_handlers[RL_TYPE_STRING].save.xml = xml_save_string;
   rl_conf.io_handlers[RL_TYPE_STRUCT].save.xml = xml_save_empty;
   rl_conf.io_handlers[RL_TYPE_FUNC].save.xml = xml_save_none;
   rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].save.xml = xml_save_none;
@@ -223,4 +238,19 @@ void __attribute__((constructor)) rl_init_save_xml1 (void)
   rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].save.xml = xml_save_empty;
   rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY_DATA].save.xml = xml_save_empty;
   rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].save.xml = xml_save_empty;
+}
+
+void __attribute__((constructor))
+rl_init_save_xml1 (void)
+{
+  int i;
+  
+  rl_init_save_xml ();
+  for (i = 0; i < RL_MAX_TYPES; ++i)
+    {
+      rl_conf.io_handlers[i].save.xml1 = rl_conf.io_handlers[i].save.xml;
+      rl_conf.io_ext_handlers[i].save.xml1 = rl_conf.io_ext_handlers[i].save.xml;
+    }
+    
+  rl_conf.io_handlers[RL_TYPE_STRING].save.xml1 = xml1_save_string;
 }
