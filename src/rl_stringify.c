@@ -99,8 +99,30 @@ rl_stringify_uint (rl_ptrdes_t * ptrdes)
     }
 }
 
+static int
+rl_get_enum_size (rl_td_t * tdp)
+{
+  switch (tdp->rl_type_detected)
+    {
+    case RL_TYPE_INT8:
+    case RL_TYPE_UINT8:
+      return (sizeof (uint8_t));
+    case RL_TYPE_INT16:
+    case RL_TYPE_UINT16:
+      return (sizeof (uint16_t));
+    case RL_TYPE_INT32:
+    case RL_TYPE_UINT32:
+      return (sizeof (uint32_t));
+    case RL_TYPE_INT64:
+    case RL_TYPE_UINT64:
+      return (sizeof (uint64_t));
+    default:
+      return (tdp->size);
+    }  
+}
+
 static uint64_t
-rl_get_int_value (rl_ptrdes_t * ptrdes)
+rl_get_enum_value (rl_ptrdes_t * ptrdes)
 {
   uint64_t value = 0;
   switch (ptrdes->fd.size)
@@ -117,7 +139,6 @@ rl_get_int_value (rl_ptrdes_t * ptrdes)
 #endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
       break;
     }
-  value &= (2LL << (8 * ptrdes->fd.size - 1)) - 1; /* Somehow (1 << 32) == 1, that's why we need this trick */
   return (value);
 }
 
@@ -131,7 +152,6 @@ char *
 rl_stringify_enum (rl_ptrdes_t * ptrdes)
 {
   rl_td_t * tdp = rl_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
-
   /* check whether type descriptor was found */
   if (NULL == tdp)
     RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->fd.type);
@@ -139,11 +159,14 @@ rl_stringify_enum (rl_ptrdes_t * ptrdes)
     RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
   else
     {
-      uint64_t value = rl_get_int_value (ptrdes);
-      rl_fd_t * fdp = rl_get_enum_by_value (tdp, value);
-      if (fdp && fdp->name)
-	return (RL_STRDUP (fdp->name));
-      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_SAVE_ENUM, value, tdp->type);
+      ptrdes->fd.size = rl_get_enum_size (tdp);
+      {
+	uint64_t value = rl_get_enum_value (ptrdes);
+	rl_fd_t * fdp = rl_get_enum_by_value (tdp, value);
+	if (fdp && fdp->name)
+	  return (RL_STRDUP (fdp->name));
+	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_SAVE_ENUM, value, tdp->type);
+      }
     }
   /* save as integer otherwise */
   return (rl_stringify_uint (ptrdes));
@@ -209,7 +232,7 @@ rl_stringify_bitmask (rl_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
       return (rl_stringify_uint (ptrdes));
     }
 
-  value = rl_get_int_value (ptrdes);
+  value = rl_get_enum_value (ptrdes);
   
   count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   if (0 == value)

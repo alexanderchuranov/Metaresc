@@ -93,30 +93,6 @@ rl_conf_t rl_conf = {
   },
 };
 
-static size_t types_sizes[] =
-  {
-    [0 ... RL_MAX_TYPES - 1] = 0,
-    [RL_TYPE_NONE] = 0,
-    [RL_TYPE_VOID] = sizeof (void),
-    [RL_TYPE_INT8] = sizeof (int8_t),
-    [RL_TYPE_UINT8] = sizeof (uint8_t),
-    [RL_TYPE_INT16] = sizeof (int16_t),
-    [RL_TYPE_UINT16] = sizeof (uint16_t),
-    [RL_TYPE_INT32] = sizeof (int32_t),
-    [RL_TYPE_UINT32] = sizeof (uint32_t),
-    [RL_TYPE_INT64] = sizeof (int64_t),
-    [RL_TYPE_UINT64] = sizeof (uint64_t),
-    [RL_TYPE_FLOAT] = sizeof (float),
-    [RL_TYPE_DOUBLE] = sizeof (double),
-    [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
-    [RL_TYPE_CHAR] = sizeof (char),
-    [RL_TYPE_CHAR_ARRAY] = sizeof (char),
-    [RL_TYPE_STRING] = sizeof (char*),
-    [RL_TYPE_STRUCT] = sizeof (void),
-    [RL_TYPE_UNION] = sizeof (void),
-    [RL_TYPE_ANON_UNION] = sizeof (void),
-  };
-
 RL_MEM_INIT ( , __attribute__((constructor,weak)));
 
 /**
@@ -253,8 +229,8 @@ rl_detect_type (rl_fd_t * fdp)
     case RL_TYPE_INT32:						
     case RL_TYPE_UINT64:						
     case RL_TYPE_INT64:
-      fdp->size = types_sizes[fdp->rl_type];
     case RL_TYPE_NONE:
+      /* we need to detect only enums, structs and unions. string_t is declared as RL_TYPE_CHAR_ARRAY, but detected as RL_TYPE_STRING */
       tdp = rl_get_td_by_name (fdp->type);		
       if (tdp)							
 	fdp->rl_type = tdp->rl_type;				
@@ -550,7 +526,7 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
   int i;
   int to_free = 0;
   int count = ptrs.ra.size / sizeof (ptrs.ra.data[0]);
-  
+      
   for (i = 0; i < count; ++i)
     switch (ptrs.ra.data[i].fd.rl_type_ext)
       {
@@ -562,10 +538,12 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
 	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
-      default:
+      case RL_TYPE_EXT_NONE:
 	if ((RL_TYPE_STRING == ptrs.ra.data[i].fd.rl_type) &&
 	    (NULL != *(char**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
 	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
+	break;
+      default:
 	break;
       }
   /* sort out nodes to the end of the array */
@@ -576,11 +554,13 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
       case RL_TYPE_EXT_POINTER:
 	RL_FREE (*(void**)ptrs.ra.data[i].data);
 	break;
-      case RL_TYPE_EXT_RARRAY:
+      case RL_TYPE_EXT_RARRAY_DATA:
 	RL_FREE (*(void**)ptrs.ra.data[i].data);
 	break;
-      default:
+      case RL_TYPE_EXT_NONE:
 	RL_FREE (*(char**)ptrs.ra.data[i].data);
+	break;
+      default:
 	break;
       }
   if (ptrs.ra.data)
@@ -1149,6 +1129,30 @@ rl_build_field_names_hash (rl_td_t * tdp)
 static int
 rl_auto_field_detect (rl_fd_t * fdp)
 {
+  static size_t types_sizes[] =
+    {
+      [0 ... RL_MAX_TYPES - 1] = 0,
+      [RL_TYPE_NONE] = 0,
+      [RL_TYPE_VOID] = sizeof (void),
+      [RL_TYPE_INT8] = sizeof (int8_t),
+      [RL_TYPE_UINT8] = sizeof (uint8_t),
+      [RL_TYPE_INT16] = sizeof (int16_t),
+      [RL_TYPE_UINT16] = sizeof (uint16_t),
+      [RL_TYPE_INT32] = sizeof (int32_t),
+      [RL_TYPE_UINT32] = sizeof (uint32_t),
+      [RL_TYPE_INT64] = sizeof (int64_t),
+      [RL_TYPE_UINT64] = sizeof (uint64_t),
+      [RL_TYPE_FLOAT] = sizeof (float),
+      [RL_TYPE_DOUBLE] = sizeof (double),
+      [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
+      [RL_TYPE_CHAR] = sizeof (char),
+      [RL_TYPE_CHAR_ARRAY] = sizeof (char),
+      [RL_TYPE_STRING] = sizeof (char*),
+      [RL_TYPE_STRUCT] = sizeof (void),
+      [RL_TYPE_UNION] = sizeof (void),
+      [RL_TYPE_ANON_UNION] = sizeof (void),
+    };
+  
   rl_td_t * tdp = rl_get_td_by_name (fdp->type);
   /* check if type is in registery */
   if (tdp)
@@ -1268,7 +1272,6 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
 	  Enums with __attribute__((packed, aligned (XXX))) generates size according alignment, but not real size which is 1 byte due to packing.
 	  Here we do hard adjustment of the type size.
 	 */
-	tdp->fields.data[i].size = types_sizes[tdp->fields.data[i].rl_type];
 	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
 	if (tdp_)
 	  tdp->fields.data[i].rl_type = tdp_->rl_type;

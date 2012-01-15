@@ -413,7 +413,7 @@ rl_save_array (rl_save_data_t * rl_save_data)
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
   int i;
-  
+
   if (1 == fd_.param.array_param.row_count)
     fd_.rl_type_ext = RL_TYPE_EXT_NONE; /* set extended type property to RL_NONE in copy of field descriptor */
   else

@@ -182,6 +182,7 @@ TYPEDEF_STRUCT (rl_fd_ptr_t, ATTRIBUTES ( , "rl_fd_t pointer wrapper"),
 
 TYPEDEF_STRUCT (rl_td_t, ATTRIBUTES ( , "ResLib type descriptor"),
 		(rl_type_t, rl_type, , "ResLib type"), /* possible variants RL_TYPE_ENUM, RL_TYPE_STRUCT, RL_TYPE_UNION */
+		(rl_type_t, rl_type_detected, , "Automatically detected type. Required for enums."),
 		(char *, type, , "stringified type name"),
 		(rl_red_black_tree_node_t *, lookup_by_value, , "RB-tree for enums values lookup"),
 		RARRAY (rl_fd_ptr_t, lookup_by_name, "hash for lookup by field name"),
