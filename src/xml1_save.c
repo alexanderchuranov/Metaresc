@@ -152,17 +152,13 @@ XML_SAVE_TYPE (bitmask, , RL_BITMASK_OR_DELIMITER);
 static char *
 xml_save_char (int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
-  char str[RL_CHAR_TO_STRING_BUF_SIZE];
-  sprintf (str, "\\%03o", *(char*)ptrs->ra.data[idx].data);
-  return (RL_STRDUP (str));
-#if 0
-  char str[2] = " ";
-  str[0] = *(char*)ptrs->ra.data[idx].data;
-  if (str[0])
-    return (xml_quote_string (str));
+  char str[RL_CHAR_TO_STRING_BUF_SIZE] = " ";
+  unsigned char c = *(char*)ptrs->ra.data[idx].data;
+  if (isprint (c))
+    str[0] = c;
   else
-    return (RL_STRDUP ("&#x0;"));
-#endif
+    sprintf (str, "\\%03o", c);
+  return (xml_quote_string (str));
 }
 
 /**
