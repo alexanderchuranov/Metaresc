@@ -55,6 +55,11 @@ RL_START_TEST (zero_rl_enum_t, "zero as number enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, STRUCT_X_CMP);
 } END_TEST
 
+RL_START_TEST (two_rl_enum_t, "two as enum") {
+  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, TWO, SCALAR_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, TWO, STRUCT_X_CMP);
+} END_TEST
+
 RL_START_TEST (invalid_rl_enum_t, "invalid enum") {
   int checked = 0;
   int warnings = 0;

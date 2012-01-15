@@ -2,6 +2,8 @@
 #include <reslib.h>
 #include <regression.h>
 
+TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed, aligned(sizeof (uint16_t))))), ZERO, ONE, TWO)
+TYPEDEF_STRUCT (packed_enum_rarray_t, RARRAY (packed_enum_t, x))
 TYPEDEF_STRUCT (string_rarray_t, RARRAY (string_t, x))
 TYPEDEF_STRUCT (emb_rarray_t, RARRAY (emb_rarray_t, x))
 
@@ -82,6 +84,18 @@ RL_START_TEST (rarray_referenced_elements, "referenced elements") {
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
   orig.x.ext.ptr = &orig.x.data[0];
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
+} END_TEST
+
+RL_START_TEST (rarray_packed_enum, "packed enum - sizeof != used bytes") {
+  packed_enum_rarray_t orig = {
+    .x =
+    {
+      .data = (packed_enum_t[]){ ONE, TWO, },
+      .size = 2 * sizeof (packed_enum_t),
+      .alloc_size = 2 * sizeof (packed_enum_t),
+    },
+  };
+  ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_rarray_t, &orig);
 } END_TEST
 
 MAIN ();

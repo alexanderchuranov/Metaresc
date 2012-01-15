@@ -5,7 +5,8 @@ AM_CFLAGS = --fast-math -g -O2 -Wall -Werror
 LIBS += ../src/libreslib.la $(CHECK_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
 
-check_PROGRAMS = int8 int16 int32 int64 float double long_double char enum rarray string
+check_PROGRAMS = long_double double float rarray string int8 int16 int32 int64 enum char array
+
 TESTS=$(check_PROGRAMS)
 
 valgrind:
