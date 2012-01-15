@@ -40,10 +40,12 @@ extern Suite * suite;
   };									\
   START_TEST (NAME)
 
+#define SERIALIZE_METHOD RL_SAVE_CINIT
+
 #define MEM_CMP(TYPE, X, Y, ...) memcmp (X, Y, sizeof (TYPE))
-#define CINIT_CMP(TYPE, X, Y, ...) ({					\
-      char * x_ = RL_SAVE_CINIT (TYPE, X);				\
-      char * y_ = RL_SAVE_CINIT (TYPE, Y);				\
+#define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
+      char * x_ = SERIALIZE_METHOD (TYPE, X);				\
+      char * y_ = SERIALIZE_METHOD (TYPE, Y);				\
       int xy_cmp = !0;							\
       if (x_ && y_)							\
 	{								\
@@ -68,7 +70,7 @@ extern Suite * suite;
 #define ASSERT_SAVE_LOAD_(METHOD, TYPE, X, TYPE_CMP, ...)		\
   RL_IF_ELSE (RL_PASTE3 (RL_IS__EQ_, TYPE_CMP, _))			\
   (ASSERT_SAVE_LOAD__ (METHOD, TYPE, X, TYPE_CMP, __VA_ARGS__))		\
-  (ASSERT_SAVE_LOAD__ (METHOD, TYPE, X, CINIT_CMP, __VA_ARGS__))
+  (ASSERT_SAVE_LOAD__ (METHOD, TYPE, X, CMP_SERIALIAZED, __VA_ARGS__))
 
 #define ASSERT_SAVE_LOAD__(METHOD, TYPE, X, TYPE_CMP, ...) ({		\
       rl_rarray_t serialized = RL_SAVE_ ## METHOD ## _RA (TYPE, X);	\

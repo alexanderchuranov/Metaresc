@@ -531,9 +531,6 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
     switch (ptrs.ra.data[i].fd.rl_type_ext)
       {
       case RL_TYPE_EXT_POINTER:
-	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
-	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
-	break;
       case RL_TYPE_EXT_RARRAY_DATA:
 	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
 	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
@@ -552,8 +549,6 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
     switch (ptrs.ra.data[i].fd.rl_type_ext)
       {
       case RL_TYPE_EXT_POINTER:
-	RL_FREE (*(void**)ptrs.ra.data[i].data);
-	break;
       case RL_TYPE_EXT_RARRAY_DATA:
 	RL_FREE (*(void**)ptrs.ra.data[i].data);
 	break;
