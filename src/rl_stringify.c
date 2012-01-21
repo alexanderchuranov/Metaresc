@@ -99,28 +99,6 @@ rl_stringify_uint (rl_ptrdes_t * ptrdes)
     }
 }
 
-static int
-rl_get_enum_size (rl_td_t * tdp)
-{
-  switch (tdp->rl_type_detected)
-    {
-    case RL_TYPE_INT8:
-    case RL_TYPE_UINT8:
-      return (sizeof (uint8_t));
-    case RL_TYPE_INT16:
-    case RL_TYPE_UINT16:
-      return (sizeof (uint16_t));
-    case RL_TYPE_INT32:
-    case RL_TYPE_UINT32:
-      return (sizeof (uint32_t));
-    case RL_TYPE_INT64:
-    case RL_TYPE_UINT64:
-      return (sizeof (uint64_t));
-    default:
-      return (tdp->size);
-    }  
-}
-
 static uint64_t
 rl_get_enum_value (rl_ptrdes_t * ptrdes)
 {
@@ -159,7 +137,7 @@ rl_stringify_enum (rl_ptrdes_t * ptrdes)
     RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
   else
     {
-      ptrdes->fd.size = rl_get_enum_size (tdp);
+      ptrdes->fd.size = tdp->size_effective;
       {
 	uint64_t value = rl_get_enum_value (ptrdes);
 	rl_fd_t * fdp = rl_get_enum_by_value (tdp, value);

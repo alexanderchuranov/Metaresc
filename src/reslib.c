@@ -872,6 +872,30 @@ rl_add_enum (rl_td_t * tdp)
 {
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   int i;
+
+  switch (tdp->rl_type_effective)
+    {
+    case RL_TYPE_INT8:
+    case RL_TYPE_UINT8:
+      tdp->size_effective = sizeof (uint8_t);
+      break;
+    case RL_TYPE_INT16:
+    case RL_TYPE_UINT16:
+      tdp->size_effective = sizeof (uint16_t);
+      break;
+    case RL_TYPE_INT32:
+    case RL_TYPE_UINT32:
+      tdp->size_effective = sizeof (uint32_t);
+      break;
+    case RL_TYPE_INT64:
+    case RL_TYPE_UINT64:
+      tdp->size_effective = sizeof (uint64_t);
+      break;
+    default:
+      tdp->size_effective = tdp->size;
+      break;
+    }  
+  
   tdp->lookup_by_value = NULL;
   for (i = 0; i < count; ++i)
     {

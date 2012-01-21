@@ -688,7 +688,7 @@
 #define RL_TYPEDEF_DESC(RL_TYPE_NAME, RL_TYPE, /* ATTR */ ...)		\
   RL_DESCRIPTOR_ATTR rl_td_t RL_DESCRIPTOR_PREFIX (RL_TYPE_NAME) = {	\
     .rl_type = RL_TYPE,							\
-    .rl_type_detected = RL_TYPE_DETECT (RL_TYPE_NAME),			\
+    .rl_type_effective = RL_TYPE_DETECT (RL_TYPE_NAME),			\
     .type = #RL_TYPE_NAME,						\
     .size = sizeof (RL_TYPE_NAME),					\
     .attr = #__VA_ARGS__,						\
