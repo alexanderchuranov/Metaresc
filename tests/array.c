@@ -2,7 +2,7 @@
 #include <reslib.h>
 #include <regression.h>
 
-TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint16_t))))), ZERO, ONE, TWO)
+TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint16_t))))), ZERO, ONE, TWO, THREE)
 TYPEDEF_STRUCT (char_array_t, (char, x, [2]))
 TYPEDEF_STRUCT (packed_enum_array_t, (packed_enum_t, x, [2]))
 TYPEDEF_STRUCT (int8_array_t, (int8_t, x, [2]))
@@ -13,6 +13,9 @@ TYPEDEF_STRUCT (float_array_t, (float, x, [2]))
 TYPEDEF_STRUCT (double_array_t, (double, x, [2]))
 TYPEDEF_STRUCT (ld_array_t, (long double, x, [2]))
 TYPEDEF_STRUCT (string_array_t, (string_t, x, [2]))
+TYPEDEF_STRUCT (packed_enum_array2d_t, (packed_enum_t, x, [2][2]))
+TYPEDEF_STRUCT (string_array2d_t, (string_t, x, [2][2]))
+TYPEDEF_STRUCT (int_array2d_t, (int, x, [2][2]))
 
 #define ASSERT_SAVE_LOAD_ARRAY(METHOD, TYPE, ...) ({	\
       TYPE x = { { 1, 2 } };				\
@@ -42,6 +45,17 @@ RL_START_TEST (numeric_array, "array of numerics") {
   ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, float_array_t);
   ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, double_array_t);
   ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, ld_array_t);
+} END_TEST
+
+RL_START_TEST (two_dimensional_array, "array2d") {
+  packed_enum_array2d_t packed_enum_array2d = { { { ZERO, ONE, }, { TWO, THREE, }, } };
+  string_array2d_t string_array2d = { { { "ZERO", "ONE", }, { "TWO", "THREE", }, } };
+  string_array2d_t string_array2d_duplicate = { { { "ZERO", "ONE", }, { "ZERO", "ONE", }, } };
+  int_array2d_t int_array2d = { { { 0, 1, }, { 2, 3, }, } };
+  ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_array2d_t, &packed_enum_array2d);
+  ALL_METHODS (ASSERT_SAVE_LOAD, string_array2d_t, &string_array2d);
+  ALL_METHODS (ASSERT_SAVE_LOAD, string_array2d_t, &string_array2d_duplicate);
+  ALL_METHODS (ASSERT_SAVE_LOAD, int_array2d_t, &int_array2d);
 } END_TEST
 
 MAIN ();
