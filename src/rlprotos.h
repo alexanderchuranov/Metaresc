@@ -166,11 +166,11 @@ TYPEDEF_STRUCT (rl_fd_t, ATTRIBUTES ( , "ResLib field descriptor"),
 		  ext field can be used by user for extended information
 		  placed after comments for tricky intialization
 		  sample:
-		  RL_NONE (void*, ext, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
+		  RL_NONE (void *, ext, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
 		  or
-		  RL_NONE (void*, ext, , "user extended info", { (ext_info_t[]){ {.field = XXX}, {.field = YYY} } }, "ext_info_t")
+		  RL_NONE (void *, ext, , "user extended info", { (ext_info_t[]){ {.field = XXX}, {.field = YYY} } }, "ext_info_t")
 		  or
-		  RL_NONE (void*, ext, , "user extended info", { "one more extra string" }, "string_t")
+		  RL_NONE (void *, ext, , "user extended info", { "one more extra string" }, "string_t")
 		*/
 		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
@@ -208,9 +208,9 @@ TYPEDEF_STRUCT (rl_td_ptr_t, ATTRIBUTES ( , "rl_td_t pointer wrapper"),
 TYPEDEF_STRUCT (rl_mem_t, ATTRIBUTES ( , "ResLib memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
 		(void *, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
-		(void *, realloc, (const char *, const char *, int, void*, size_t), "pointer on realloc() function"),
-		(char *, strdup, (const char *, const char *, int, const char*), "pointer on strdup() function"),
-		(void, free, (const char *, const char *, int, void*), "pointer on free() function"),
+		(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
+		(char *, strdup, (const char *, const char *, int, const char *), "pointer on strdup() function"),
+		(void, free, (const char *, const char *, int, void *), "pointer on free() function"),
 		)
 
 TYPEDEF_STRUCT (rl_ra_rl_td_ptr_t,
@@ -273,7 +273,7 @@ TYPEDEF_STRUCT (rl_load_t, ATTRIBUTES ( , "ResLib load parser data"),
 
 TYPEDEF_STRUCT (rl_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
 		RARRAY (char, substr, "substring descriptor"),
-		(char *, unquote, (char*, int), "unquote handler"),
+		(char *, unquote, (char *, int), "unquote handler"),
 		)
 
 TYPEDEF_STRUCT (rl_load_data_t,
@@ -290,19 +290,19 @@ TYPEDEF_STRUCT (rl_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		)
 
 TYPEDEF_STRUCT (rl_load_io_t, ATTRIBUTES ( , "load handlers"),
-		(int, rl, (int, rl_load_data_t*), "handler for internal format parsing"),
-		(int, xdr, (XDR*, int, rl_ra_rl_ptrdes_t*), "handler for XDR parsing"),
+		(int, rl, (int, rl_load_data_t *), "handler for internal format parsing"),
+		(int, xdr, (XDR *, int, rl_ra_rl_ptrdes_t *), "handler for XDR parsing"),
 		)
 
 TYPEDEF_STRUCT (rl_save_io_t, ATTRIBUTES ( , "save handlers"),
-		(void, rl, (rl_save_data_t*), "handler for internal format"),
-		(int, xdr, (XDR*, int, rl_ra_rl_ptrdes_t*), "handler for XDR"),
-		(char *, xml, (int, rl_ra_rl_ptrdes_t*), "handler for XML"),
-		(char *, xml1, (int, rl_ra_rl_ptrdes_t*), "handler for internaml XML implementation"),
-		(char *, xml2, (int, rl_ra_rl_ptrdes_t*), "handler for XML implementation based on libxml2"),
-		(int, cinit, (int, rl_ra_rl_ptrdes_t*, rl_save_type_data_t*), "handler for CINIT"),
-		(int, json, (int, rl_ra_rl_ptrdes_t*, rl_save_type_data_t*), "handler for JSON"),
-		(char *, scm, (int, rl_ra_rl_ptrdes_t*), "handler for SCHEME"),
+		(void, rl, (rl_save_data_t *), "handler for internal format"),
+		(int, xdr, (XDR *, int, rl_ra_rl_ptrdes_t *), "handler for XDR"),
+		(char *, xml, (int, rl_ra_rl_ptrdes_t *), "handler for XML"),
+		(char *, xml1, (int, rl_ra_rl_ptrdes_t *), "handler for internaml XML implementation"),
+		(char *, xml2, (int, rl_ra_rl_ptrdes_t *), "handler for XML implementation based on libxml2"),
+		(int, cinit, (int, rl_ra_rl_ptrdes_t *, rl_save_type_data_t *), "handler for CINIT"),
+		(int, json, (int, rl_ra_rl_ptrdes_t *, rl_save_type_data_t *), "handler for JSON"),
+		(char *, scm, (int, rl_ra_rl_ptrdes_t *), "handler for SCHEME"),
 		)
 
 TYPEDEF_STRUCT (rl_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
@@ -310,12 +310,12 @@ TYPEDEF_STRUCT (rl_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
 		(rl_save_io_t, save, , "save handlers"),
 		)
 
-TYPEDEF_FUNC (rl_output_format_t, char*, (rl_ptrdes_t*), "formater handler")
+TYPEDEF_FUNC (rl_output_format_t, char *, (rl_ptrdes_t *), "formater handler")
 
 TYPEDEF_STRUCT (rl_conf_t, ATTRIBUTES ( , "ResLib configuration"),
 		(rl_mem_t, rl_mem, , "memory operations"),
 		(rl_log_level_t, log_level),
-		(void, msg_handler, (const char*, const char*, int, rl_log_level_t, rl_message_id_t, va_list), "handler for error messages"),
+		(void, msg_handler, (const char *, const char *, int, rl_log_level_t, rl_message_id_t, va_list), "handler for error messages"),
 #ifndef RL_TREE_LOOKUP
 		(rl_ra_rl_td_ptr_t, hash, , "hash for type descriptors lookup"),
 #else /* RL_TREE_LOOKUP */

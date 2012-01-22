@@ -31,12 +31,12 @@ TYPEDEF_ENUM (rl_enum_uint32_t, ATTRIBUTES (__attribute__ ((packed, aligned (siz
 TYPEDEF_ENUM (rl_enum_uint64_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint64_t))))),
 	      UINT64_ZERO, UINT64_ONE, (UINT64_TWO, = 2), (UINT64_THREE, = 3))
 
-TYPEDEF_STRUCT (struct_rl_enum_t, (rl_enum_t, x));
-TYPEDEF_STRUCT (struct_rl_enum_uint8_t, (rl_enum_uint8_t, x));
-TYPEDEF_STRUCT (struct_rl_enum_uint16_t, (rl_enum_uint16_t, x));
-TYPEDEF_STRUCT (struct_rl_enum_uint32_t, (rl_enum_uint32_t, x));
-TYPEDEF_STRUCT (struct_rl_enum_uint64_t, (rl_enum_uint64_t, x));
-TYPEDEF_STRUCT (struct_rl_bitmask_t, BITMASK (rl_bitmask_t, x));
+TYPEDEF_STRUCT (struct_rl_enum_t, (rl_enum_t, x))
+TYPEDEF_STRUCT (struct_rl_enum_uint8_t, (rl_enum_uint8_t, x))
+TYPEDEF_STRUCT (struct_rl_enum_uint16_t, (rl_enum_uint16_t, x))
+TYPEDEF_STRUCT (struct_rl_enum_uint32_t, (rl_enum_uint32_t, x))
+TYPEDEF_STRUCT (struct_rl_enum_uint64_t, (rl_enum_uint64_t, x))
+TYPEDEF_STRUCT (struct_rl_bitmask_t, BITMASK (rl_bitmask_t, x))
 
 #define ASSERT_SAVE_LOAD_ENUM(METHOD, VALUE, ...) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, rl_enum_t, VALUE, __VA_ARGS__);	\

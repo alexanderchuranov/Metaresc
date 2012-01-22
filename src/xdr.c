@@ -336,50 +336,6 @@ xdr_char_array_ (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 }
 
 static int
-xdr_rl_typed_int (XDR * xdrs, rl_type_t rl_type, int size, void * value)
-{
-  switch (rl_type)
-    {
-    case RL_TYPE_INT8: return (xdr_int8_t (xdrs, value));
-    case RL_TYPE_UINT8: return (xdr_uint8_t (xdrs, value));
-    case RL_TYPE_INT16: return (xdr_int16_t (xdrs, value));
-    case RL_TYPE_UINT16: return (xdr_uint16_t (xdrs, value));
-    case RL_TYPE_INT32: return (xdr_int32_t (xdrs, value));
-    case RL_TYPE_UINT32: return (xdr_uint32_t (xdrs, value));
-    case RL_TYPE_INT64: return (xdr_int64_t (xdrs, value));
-    case RL_TYPE_UINT64: return (xdr_uint64_t (xdrs, value));
-    case RL_TYPE_ENUM:
-      switch (size)
-	{
-	case sizeof (uint8_t): return (xdr_uint8_t (xdrs, value));
-	case sizeof (uint16_t): return (xdr_uint16_t (xdrs, value));
-	case sizeof (uint32_t): return (xdr_uint32_t (xdrs, value));
-	case sizeof (uint64_t): return (xdr_uint64_t (xdrs, value));
-	default: return (xdr_uint64_t (xdrs, value));
-	}
-    default: return (xdr_uint64_t (xdrs, value));
-    }  
-}
-
-static int
-xdr_save_bitfield (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
-{
-  uint64_t value;
-  if (EXIT_SUCCESS != rl_save_bitfield_value (&ptrs->ra.data[idx], &value))
-    return (0);
-  return (xdr_rl_typed_int (xdrs, ptrs->ra.data[idx].fd.rl_type_aux, ptrs->ra.data[idx].fd.size, &value));
-}
-
-static int
-xdr_load_bitfield (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
-{
-  uint64_t value;
-  if (!xdr_rl_typed_int (xdrs, ptrs->ra.data[idx].fd.rl_type_aux, ptrs->ra.data[idx].fd.size, &value))
-    return (0);
-  return (EXIT_SUCCESS == rl_load_bitfield_value (&ptrs->ra.data[idx], &value));
-}
-
-static int
 xdr_save_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   if (ptrs->ra.data[idx].ref_idx >= 0)
@@ -555,6 +511,38 @@ xdr_load_enum_bitmask (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   RL_FREE (ptrdes.value);
   
   return (status);
+}
+
+static int
+xdr_bitfield_value (XDR * xdrs, rl_fd_t * fdp, void * data)
+{
+  rl_ptrdes_t ptrdes = { .fd = *fdp, .data = data, };
+  rl_ra_rl_ptrdes_t ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, } };
+  ptrdes.fd.rl_type = ptrdes.fd.rl_type_aux;
+  if (XDR_ENCODE == xdrs->x_op)
+    return (rl_conf.io_handlers[ptrdes.fd.rl_type].save.xdr (xdrs, 0, &ptrs));
+  else if (XDR_DECODE == xdrs->x_op)
+    return (rl_conf.io_handlers[ptrdes.fd.rl_type].load.xdr (xdrs, 0, &ptrs));
+  else
+    return (!0);
+}
+
+static int
+xdr_save_bitfield (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  uint64_t value;
+  if (EXIT_SUCCESS != rl_save_bitfield_value (&ptrs->ra.data[idx], &value))
+    return (0);
+  return (xdr_bitfield_value (xdrs, &ptrs->ra.data[idx].fd, &value));
+}
+
+static int
+xdr_load_bitfield (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
+{
+  uint64_t value;
+  if (!xdr_bitfield_value (xdrs, &ptrs->ra.data[idx].fd, &value))
+    return (0);
+  return (EXIT_SUCCESS == rl_load_bitfield_value (&ptrs->ra.data[idx], &value));
 }
 
 static int
