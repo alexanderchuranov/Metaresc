@@ -259,7 +259,7 @@
 /* field handler checks for trailing empty field */
 #define P00_FIELD(P00_MODE_TYPE_NAME, FIELD, I) RL_IF_ELSE (RL_IS_EMPTY (FIELD)) () (P00_FIELD_ (P00_MODE_TYPE_NAME, FIELD))
 /*
-  field descritions might be in two forms.
+  field descriptions might be in two forms.
   1. RL_TYPE_MACRO (ARGS) for type scpecific declarations like INT32 (x)
   2. (TYPE, NAME, SUFFIX..., COMMENT..., EXT...) for auto detection declarations.
 */

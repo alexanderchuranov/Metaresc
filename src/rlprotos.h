@@ -92,7 +92,7 @@ TYPEDEF_ENUM (rl_type_t, ATTRIBUTES ( , "ResLib types"),
 	      RL_TYPE_STRUCT,
 	      RL_TYPE_ENUM,
 	      RL_TYPE_FUNC_TYPE,
-	      (RL_TYPE_ENUM_VALUE, , "enum_value"), /* comment refers to union member in rl_param_t */
+	      (RL_TYPE_ENUM_VALUE, , "enum_value"), /* comment refers to union member in rl_fd_param_t */
 	      (RL_TYPE_FUNC, , "func_param"),
 	      (RL_TYPE_BITFIELD, , "bitfield_param"),
 	      RL_TYPE_BITMASK,
@@ -144,7 +144,7 @@ TYPEDEF_STRUCT (rl_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		RARRAY (uint8_t, bitfield, "zero-struct with flagged bit-fields"),
 		)
 
-TYPEDEF_UNION (rl_param_t, ATTRIBUTES ( , "optional parameters for different types"),
+TYPEDEF_UNION (rl_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       (rl_array_param_t, array_param, , "array parameters - default for serialization"),
 	       (int64_t, enum_value, , "enum value"),
 	       (rl_bitfield_param_t, bitfield_param, , "bit-field parameters"),
@@ -155,12 +155,12 @@ TYPEDEF_STRUCT (rl_fd_t, ATTRIBUTES ( , "ResLib field descriptor"),
 		(char *, type, , "stringified type name"),
 		(char *, name, , "name of the field"),
 		(uint64_t, hash_value, , "hash of the name"),
-		(int, size, , "size of field"),
 		(int, offset, , "offset in structure"),
+		(int, size, , "size of field"),
 		(rl_type_t, rl_type, , "ResLib type"),
 		(rl_type_t, rl_type_aux, , "ResLib type if field is a pointer on builtin types or bit-field"),
 		(rl_type_ext_t, rl_type_ext, , "ResLib type extension"),
-		(rl_param_t, param, , "rl_type"),
+		(rl_fd_param_t, param, , "rl_type"),
 		(char *, comment, , "field comments"),
 		/*
 		  ext field can be used by user for extended information
@@ -180,18 +180,21 @@ TYPEDEF_STRUCT (rl_fd_ptr_t, ATTRIBUTES ( , "rl_fd_t pointer wrapper"),
 		(rl_fd_t *, fdp, , "pointer on field descriptor"),
 		)
 
+TYPEDEF_STRUCT (rl_enum_param_t, ATTRIBUTES ( , "enum parameters"),
+		)
+  
 TYPEDEF_STRUCT (rl_td_t, ATTRIBUTES ( , "ResLib type descriptor"),
 		(rl_type_t, rl_type, , "ResLib type"), /* possible variants RL_TYPE_ENUM, RL_TYPE_STRUCT, RL_TYPE_UNION */
-		(rl_type_t, rl_type_effective, , "Automatically detected type. Required for enums."),
-		(int, size_effective, , "Effective size. Required for enums."),
+		(int, size, , "size of type"),
 		(char *, type, , "stringified type name"),
+		(char *, attr, , "stringified typedef attributes"),
+		(rl_type_t, rl_type_effective, , "automatic type detection is required for enums size adjustment"),
+		(int, size_effective, , "effective size"),
 		(rl_red_black_tree_node_t *, lookup_by_value, , "RB-tree for enums values lookup"),
-		RARRAY (rl_fd_ptr_t, lookup_by_name, "hash for lookup by field name"),
 #ifndef RL_TREE_LOOKUP
 		(uint64_t, hash_value, , "type name hash value"),
 #endif /* RL_TREE_LOOKUP */
-		(char *, attr, , "stringified typedef attributes"),
-		(int, size, , "size of type"),
+		RARRAY (rl_fd_ptr_t, lookup_by_name, "hash for lookup by field name"),
 		RARRAY (rl_fd_t, fields, "fields or enums descriptors"),
 		(char *, comment, , "type comments"),
 		(rl_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
@@ -204,9 +207,9 @@ TYPEDEF_STRUCT (rl_td_ptr_t, ATTRIBUTES ( , "rl_td_t pointer wrapper"),
 
 TYPEDEF_STRUCT (rl_mem_t, ATTRIBUTES ( , "ResLib memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
-		(void*, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
-		(void*, realloc, (const char *, const char *, int, void*, size_t), "pointer on realloc() function"),
-		(char*, strdup, (const char *, const char *, int, const char*), "pointer on strdup() function"),
+		(void *, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
+		(void *, realloc, (const char *, const char *, int, void*, size_t), "pointer on realloc() function"),
+		(char *, strdup, (const char *, const char *, int, const char*), "pointer on strdup() function"),
 		(void, free, (const char *, const char *, int, void*), "pointer on free() function"),
 		)
 

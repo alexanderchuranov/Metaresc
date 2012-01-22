@@ -357,7 +357,7 @@ rl_save_union (rl_save_data_t * rl_save_data)
 			
 			if (enum_tdp && (RL_TYPE_ENUM == enum_tdp->rl_type))
 			  {
-			    switch (parent_fdp->size)
+			    switch (enum_tdp->size_effective)
 			      {
 			      case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
 			      case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
@@ -365,7 +365,7 @@ rl_save_union (rl_save_data_t * rl_save_data)
 			      case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
 			      default:
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-				memcpy (&enum_value, discriminator, RL_MIN (parent_fdp->size, sizeof (enum_value)));
+				memcpy (&enum_value, discriminator, RL_MIN (enum_tdp->size_effective, sizeof (enum_value)));
 #else
 #error Support for non little endian architectures to be implemented
 #endif /*__BYTE_ORDER == __LITTLE_ENDIAN */

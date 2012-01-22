@@ -1,0 +1,127 @@
+#include <reslib.h>
+
+TYPEDEF_UNION (union_int32_float_t, float x, int32_t y)
+
+TYPEDEF_ENUM (enum_discriminator_t, (UD_FLOAT, , "x"), (UD_INT32, , "y"))
+TYPEDEF_ENUM (enum8_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t))))), (U8D_FLOAT, , "x"), (U8D_INT32, , "y"))
+TYPEDEF_ENUM (enum16_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint16_t))))), (U16D_FLOAT, , "x"), (U16D_INT32, , "y"))
+TYPEDEF_ENUM (enum32_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint32_t))))), (U32D_FLOAT, , "x"), (U32D_INT32, , "y"))
+TYPEDEF_ENUM (enum64_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint64_t))))), (U64D_FLOAT, , "x"), (U64D_INT32, , "y"))
+
+TYPEDEF_STRUCT (struct_anon_union_enum_t,
+		ANON_UNION (),
+		float x,
+		int32_t y,
+		END_ANON_UNION ("discriminator"),
+		(enum_discriminator_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_named_anon_union_enum_t,
+		NAMED_ANON_UNION (xy),
+		float x,
+		int32_t y,
+		END_ANON_UNION ("discriminator"),
+		(enum_discriminator_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_enum8_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(enum8_discriminator_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_enum16_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(enum16_discriminator_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_enum32_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(enum32_discriminator_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_enum64_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(enum64_discriminator_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_enum_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(enum_discriminator_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_enum_ptr_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(enum_discriminator_t *, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int8_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int8_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int8_ptr_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int8_t *, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int16_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int16_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int16_ptr_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int16_t *, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int32_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int32_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int32_ptr_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int32_t *, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int64_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int64_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_int64_ptr_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(int64_t *, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_bitfield_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		BITFIELD (enum_discriminator_t, discriminator, 1),
+		)
+
+TYPEDEF_STRUCT (struct_union_string_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(string_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_string_ptr_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(string_t *, discriminator),
+		)
+
+TYPEDEF_CHAR_ARRAY (ca2_t, 2)
+
+TYPEDEF_STRUCT (struct_union_ca_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(ca2_t, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_ca_ptr_t,
+		(union_int32_float_t, xy, , "discriminator"),
+		(ca2_t *, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_rl_ptr_t,
+		(rl_ptr_t, ptr, , "discriminator"),
+		string_t discriminator
+		)

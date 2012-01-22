@@ -873,6 +873,10 @@ rl_add_enum (rl_td_t * tdp)
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   int i;
 
+  /*
+    Enums with __attribute__((packed, aligned (XXX))) generates size according alignment, but not real size which is 1 byte due to packing.
+    Here we determine effective type size.
+  */
   switch (tdp->rl_type_effective)
     {
     case RL_TYPE_INT8:
@@ -1287,10 +1291,6 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
       case RL_TYPE_UINT32:
       case RL_TYPE_INT64:
       case RL_TYPE_UINT64:
-	/*
-	  Enums with __attribute__((packed, aligned (XXX))) generates size according alignment, but not real size which is 1 byte due to packing.
-	  Here we do hard adjustment of the type size.
-	 */
 	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
 	if (tdp_)
 	  tdp->fields.data[i].rl_type = tdp_->rl_type;
@@ -1306,6 +1306,7 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
 	  RL_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
 	 */
       case RL_TYPE_STRUCT:
+      case RL_TYPE_CHAR_ARRAY:
 	if (RL_TYPE_EXT_POINTER == tdp->fields.data[i].rl_type_ext)
 	  {
 	    tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);

@@ -44,7 +44,8 @@ RL_START_TEST (pointer_match_content, "strings points on another field") {
 } END_TEST
 
 RL_START_TEST (pointer_match_another_pointer, "two strings points on the same content") {
-  struct_str_str_t orig = { "string_t", "string_t" };
+  struct_str_str_t orig = { .x = "string_t", };
+  orig.y = orig.x;
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_str_t, &orig);
 } END_TEST
 
