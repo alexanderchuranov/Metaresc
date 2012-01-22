@@ -5,13 +5,14 @@
 
 /*
   Test is doing the following:
-  1. for all resizeable array in rl_conf set ra.alloc_size to ra.size. Required for further compare with another serialized rl_conf
+  1. for all resizeable arrays in rl_conf set ra.alloc_size to ra.size. Required for further compare with another serialized rl_conf
   2. serialize rl_conf - library config structure
   3. load back config from serialized representation into another variable
   4. replace global variable with the main rl_conf on a loaded one
   5. serialize rl_conf once again
   6. match it with the first dump
-  7. free up all allocated memory
+  7. restore rl_conf from saved copy
+  8. free up all allocated memory
 */
 
 #define SMOKE_METHOD(METHOD, ...) START_TEST (rl_conf_save_load) {	\
