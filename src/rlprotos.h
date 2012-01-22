@@ -180,9 +180,6 @@ TYPEDEF_STRUCT (rl_fd_ptr_t, ATTRIBUTES ( , "rl_fd_t pointer wrapper"),
 		(rl_fd_t *, fdp, , "pointer on field descriptor"),
 		)
 
-TYPEDEF_STRUCT (rl_enum_param_t, ATTRIBUTES ( , "enum parameters"),
-		)
-  
 TYPEDEF_STRUCT (rl_td_t, ATTRIBUTES ( , "ResLib type descriptor"),
 		(rl_type_t, rl_type, , "ResLib type"), /* possible variants RL_TYPE_ENUM, RL_TYPE_STRUCT, RL_TYPE_UNION */
 		(int, size, , "size of type"),

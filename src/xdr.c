@@ -170,10 +170,8 @@ rl_set_crossrefs (rl_ra_rl_ptrdes_t * ptrs)
 	switch (ptrs->ra.data[i].fd.rl_type_ext)
 	  {
 	  case RL_TYPE_EXT_POINTER:
-	    *(void**)ptrs->ra.data[i].data = data;
-	    break;
 	  case RL_TYPE_EXT_RARRAY_DATA:
-	    ((rl_rarray_t*)(ptrs->ra.data[i].data))->data = data;
+	    *(void**)ptrs->ra.data[i].data = data;
 	    break;
 	  default:
 	    if (RL_TYPE_STRING == ptrs->ra.data[i].fd.rl_type)

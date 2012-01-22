@@ -372,7 +372,7 @@ json_save_array (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 static int
 json_save_rarray_data (int idx, rl_ra_rl_ptrdes_t * ptrs, rl_save_type_data_t * data)
 {
-  if ((ptrs->ra.data[idx].ref_idx >= 0) || (NULL == *(void**)ptrs->ra.data[idx].data))
+  if ((ptrs->ra.data[idx].flags & RL_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
     data->content = RL_STRDUP (RL_CINIT_NULL);
   else
     {
