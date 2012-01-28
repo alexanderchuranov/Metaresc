@@ -2,7 +2,7 @@
 #include <reslib.h>
 #include <regression.h>
 
-TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed, aligned(sizeof (uint16_t))))), ZERO, ONE, TWO)
+TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint16_t))))), ZERO, ONE, TWO)
 TYPEDEF_STRUCT (packed_enum_rarray_t, RARRAY (packed_enum_t, x))
 TYPEDEF_STRUCT (string_rarray_t, RARRAY (string_t, x))
 TYPEDEF_STRUCT (emb_rarray_t, RARRAY (emb_rarray_t, x))

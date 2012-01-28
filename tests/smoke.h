@@ -45,6 +45,7 @@
     RL_FREE_RECURSIVELY (rl_conf_t, &rl_conf_loaded);			\
   } END_TEST								\
   TYPEDEF_STRUCT (rl_empty_t);						\
+  TYPEDEF_STRUCT (rl_incomplete_t, int x, NONE (int, y, []));		\
   int main (int argc, char * argv[])					\
   {									\
     int number_failed;							\
