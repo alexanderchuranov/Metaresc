@@ -159,9 +159,9 @@
 	       /* test if P99_IS__EQ__ together with the argument adds a comma */ \
 	       RL_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__),			\
 	       /* test if the argument together with a parenthesis adds a comma */ \
-	       RL_HAS_COMMA (__VA_ARGS__ (~)),				\
+	       RL_HAS_COMMA (__VA_ARGS__ ()),				\
 	       /* test if placing it between P99_IS__EQ__ and the parenthesis adds a comma */ \
-	       RL_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ (~))		\
+	       RL_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ ())		\
 									)))
 
 /* Next group of macroses checks that it has only one argument and it is 0 */
