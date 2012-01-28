@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stddef.h>
+#include <sys/times.h>
 #include <check.h>
 #include <reslib.h>
 
@@ -13,7 +14,13 @@
   6. match it with the first dump
   7. restore rl_conf from saved copy
   8. free up all allocated memory
+
+  One more tests checks that complexity of save/load is not O(n * n). It should be O(n * log (n))
+  Methods that have limitation of structure depth due to recursive implementation should define
+  SKIP_PERFORMANCE_TEST_{METHOD} to 0
 */
+
+#define MULTIPLE (256)
 
 #define SMOKE_METHOD(METHOD, ...) START_TEST (rl_conf_save_load) {	\
     rl_conf_t rl_conf_saved = rl_conf;					\
@@ -46,6 +53,54 @@
   } END_TEST								\
   TYPEDEF_STRUCT (rl_empty_t);						\
   TYPEDEF_STRUCT (rl_incomplete_t, int x, NONE (int, y, []));		\
+  TYPEDEF_STRUCT (list_t, (list_t *, next));				\
+  TYPEDEF_STRUCT (array_t, RARRAY (list_t, ra));			\
+  int test_run (int count)						\
+  {									\
+    array_t array;							\
+    rl_rarray_t ra;							\
+    struct tms start, end;						\
+    times (&start);							\
+    memset (&array, 0, sizeof (array));					\
+    array.ra.size = count * sizeof (array.ra.data[0]);			\
+    array.ra.data = RL_MALLOC (array.ra.size);				\
+    if (array.ra.data)							\
+      {									\
+	int i;								\
+	int count_ = array.ra.size / sizeof (array.ra.data[0]);		\
+	for (i = 1; i < count_; ++i)					\
+	  array.ra.data[i - 1].next = &array.ra.data[i];		\
+	array.ra.data[count_ - 1].next = &array.ra.data[0];		\
+	ra = RL_SAVE_ ## METHOD ## _RA (list_t, array.ra.data);		\
+	if ((ra.size > 0) && (ra.data != NULL))				\
+	  {								\
+	    list_t list_;						\
+	    if (RL_LOAD_ ## METHOD ## _RA (list_t, &ra, &list_))	\
+	      RL_FREE_RECURSIVELY (list_t, &list_);			\
+	    RL_FREE (ra.data);						\
+	  }								\
+	ra = RL_SAVE_ ## METHOD ## _RA (array_t, &array);		\
+	if ((ra.size > 0) && (ra.data != NULL))				\
+	  {								\
+	    array_t array_;						\
+	    if (RL_LOAD_ ## METHOD ## _RA (array_t, &ra, &array_))	\
+	      RL_FREE_RECURSIVELY (array_t, &array_);			\
+	    RL_FREE (ra.data);						\
+	  }								\
+	RL_FREE (array.ra.data);					\
+      }									\
+    times (&end);							\
+    return ((int)((end.tms_utime - start.tms_utime)));			\
+  }									\
+  START_TEST (test_performance) {					\
+    RL_IF_ELSE (RL_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
+    int size = 2;							\
+    do size += size >> 1; while (0 == test_run (size));			\
+    int x1 = test_run (size * MULTIPLE);				\
+    int x2 = test_run (size * MULTIPLE * 4);				\
+    if ((double)x2 / (double)x1 > 5)					\
+      ck_abort_msg ("performance issue for method " #METHOD);		\
+  } END_TEST								\
   int main (int argc, char * argv[])					\
   {									\
     int number_failed;							\
@@ -60,6 +115,7 @@
       return (EXIT_FAILURE);						\
     tcase_set_timeout (tcase, 0);					\
     tcase_add_test (tcase, rl_conf_save_load);				\
+    tcase_add_test (tcase, test_performance);				\
     suite_add_tcase (suite, tcase);					\
     srunner_run_all (srunner, CK_ENV);					\
     number_failed = srunner_ntests_failed (srunner);			\
