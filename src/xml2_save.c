@@ -25,56 +25,57 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
   ptrs->ra.ext.ptr = doc;
   while (idx >= 0)
     {
-      int parent = ptrs->ra.data[idx].parent;
       rl_fd_t * fdp = &ptrs->ra.data[idx].fd;
-      char * content = NULL;
+      xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name);
       
-      /* route saving handler */
-      if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-	  && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml2)
-	content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml2 (idx, ptrs);
-      else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	       && rl_conf.io_handlers[fdp->rl_type].save.xml2)
-	content = rl_conf.io_handlers[fdp->rl_type].save.xml2 (idx, ptrs);
+      ptrs->ra.data[idx].ext.ptr = node;
+
+      if (NULL == node)
+	RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
       else
-	RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
-
-      if (content)
 	{
+	  int parent = ptrs->ra.data[idx].parent;
 	  char number[RL_INT_TO_STRING_BUF_SIZE];
-	  xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name);
-	  ptrs->ra.data[idx].ext.ptr = node;
+	  char * content = NULL;
+	  
+	  node->_private = (void*)idx;
 
-	  if (NULL == node)
-	    RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  /* route saving handler */
+	  if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
+	      && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml2)
+	    content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml2 (idx, ptrs);
+	  else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
+		   && rl_conf.io_handlers[fdp->rl_type].save.xml2)
+	    content = rl_conf.io_handlers[fdp->rl_type].save.xml2 (idx, ptrs);
 	  else
-	    {
-	      node->_private = (void*)idx;
+	    RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
+	  if (content)
+	    {
 	      if (content[0])
 		xmlNodeSetContent (node, BAD_CAST content);
-
-	      if (ptrs->ra.data[idx].ref_idx >= 0)
-		{
-		  /* set REF_IDX property */
-		  sprintf (number, "%" SCNd32, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
-		  xmlSetProp (node,
-			      BAD_CAST ((ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF),
-			      BAD_CAST number);
-		}
-	      if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
-		{
-		  /* set IDX property */
-		  sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
-		  xmlSetProp (node, BAD_CAST RL_REF_IDX, BAD_CAST number);
-		}
-	      if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
-		xmlSetProp (node, BAD_CAST RL_ISNULL, BAD_CAST "true");      
-
-	      if (parent >= 0)
-		xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
+	      RL_FREE (content);
 	    }
-	  RL_FREE (content);
+
+	  if (ptrs->ra.data[idx].ref_idx >= 0)
+	    {
+	      /* set REF_IDX property */
+	      sprintf (number, "%" SCNd32, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
+	      xmlSetProp (node,
+			  BAD_CAST ((ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF),
+			  BAD_CAST number);
+	    }
+	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
+	    {
+	      /* set IDX property */
+	      sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
+	      xmlSetProp (node, BAD_CAST RL_REF_IDX, BAD_CAST number);
+	    }
+	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
+	    xmlSetProp (node, BAD_CAST RL_ISNULL, BAD_CAST RL_ISNULL_VALUE);
+
+	  if (parent >= 0)
+	    xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
 	}
 
       if (ptrs->ra.data[idx].first_child >= 0)

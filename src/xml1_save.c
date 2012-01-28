@@ -53,35 +53,34 @@ xml1_save (rl_ra_rl_ptrdes_t * ptrs)
       else
 	RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
-      if (content)
+      level = RL_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+      empty_tag = (ptrs->ra.data[idx].first_child < 0) && ((NULL == content) || (0 == content[0]));
+      if (rl_ra_printf (&rl_ra_str, RL_XML1_INDENT_TEMPLATE RL_XML1_OPEN_TAG_START, level * RL_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.name) < 0)
+	return (NULL);
+      if (ptrs->ra.data[idx].ref_idx >= 0)
+	if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT,
+			  (ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF,
+			  ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
+	  return (NULL);
+      if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
+	if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_REF_IDX, ptrs->ra.data[idx].idx) < 0)
+	  return (NULL);
+      if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
+	if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_CHARP, RL_ISNULL, RL_ISNULL_VALUE) < 0)
+	  return (NULL);
+	  
+      if (empty_tag)
 	{
-	  level = RL_LIMIT_LEVEL (ptrs->ra.data[idx].level);
-	  empty_tag = (ptrs->ra.data[idx].first_child < 0) && (0 == content[0]);
-	  if (rl_ra_printf (&rl_ra_str, RL_XML1_INDENT_TEMPLATE RL_XML1_OPEN_TAG_START, level * RL_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.name) < 0)
+	  if (rl_ra_printf (&rl_ra_str, RL_XML1_OPEN_EMPTY_TAG_END) < 0)
 	    return (NULL);
-	  if (ptrs->ra.data[idx].ref_idx >= 0)
-	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT,
-			      (ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF,
-			      ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
-	      return (NULL);
-	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
-	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_INT, RL_REF_IDX, ptrs->ra.data[idx].idx) < 0)
-	      return (NULL);
-	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
-	    if (rl_ra_printf (&rl_ra_str, RL_XML1_ATTR_CHARP, RL_ISNULL, "true") < 0)
-	      return (NULL);
-	  if (empty_tag)
-	    {
-	      if (rl_ra_printf (&rl_ra_str, RL_XML1_OPEN_EMPTY_TAG_END) < 0)
-		return (NULL);
-	    }
-	  else
-	    {
-	      if (rl_ra_printf (&rl_ra_str, RL_XML1_OPEN_TAG_END, content) < 0)
-		return (NULL);
-	    }
-	  RL_FREE (content);
 	}
+      else
+	{
+	  if (rl_ra_printf (&rl_ra_str, RL_XML1_OPEN_TAG_END, content ? content : "") < 0)
+	    return (NULL);
+	}
+      if (content)
+	RL_FREE (content);
       
       if (ptrs->ra.data[idx].first_child >= 0)
 	idx = ptrs->ra.data[idx].first_child;

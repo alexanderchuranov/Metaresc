@@ -50,6 +50,7 @@
 #define RL_REF_CONTENT "ref_content"
 /* XML attribute for zero length strings */
 #define RL_ISNULL "isnull"
+#define RL_ISNULL_VALUE "true"
 
 #define RL_BITMASK_OR_DELIMITER " | "
 
