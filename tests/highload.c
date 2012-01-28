@@ -5,9 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <highload.h>
+#include <reslib.h>
 
-#define ARRAY_SIZE (160 * 1024)
+TYPEDEF_STRUCT (list_t,	(list_t *, next))
+TYPEDEF_STRUCT (array_t, RARRAY (list_t, rarray))
+
+#define ARRAY_SIZE (2 * 160 * 1024)
 
 static array_t data = {
   .rarray = {
@@ -31,18 +34,8 @@ main (void)
   if (str)
     {
       list_t list = RL_LOAD_XML1 (list_t, str);
-      list_t * next;
+      RL_FREE_RECURSIVELY (list_t, &list);
       RL_FREE (str);
-      next = list.next;
-      if (next)
-	for (;;)
-	  {
-	    list_t * next_ = next->next;
-	    RL_FREE (next);
-	    if (next == next_)
-	      break;
-	    next = next_;
-	  }
     }
 
   for (i = 1; i < ARRAY_SIZE; ++i)

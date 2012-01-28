@@ -12,13 +12,7 @@ TESTS=$(check_PROGRAMS)
 valgrind:
 	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"
 
-noinst_PROGRAMS = test stackoverflow highload ptr_ext rb_tree
-
-valgrind_test: test
-	$(LIBTOOL) --mode=execute valgrind $<
-
-stackoverflow_test: stackoverflow
-	$(LIBTOOL) --mode=execute valgrind $<
+noinst_PROGRAMS = highload
 
 highload_test: highload
 	$(LIBTOOL) --mode=execute time $<
