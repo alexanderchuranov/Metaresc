@@ -27,15 +27,31 @@ RL_START_TEST (ld_ptr, "pointer on lonf double (type name with spaces)") {
 RL_START_TEST (enum_ptr, "pointer on enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, (_enum_t[]){ ZERO });
-  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, (_enum_t[]){ -1 });
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, (_enum_t[]){ ONE });
-} END_TEST
-
-RL_START_TEST (packed_enum_ptr, "pointer on packed enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, packed_enum_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, packed_enum_ptr_t, (packed_enum_t[]){ PE_ZERO });
-  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, packed_enum_ptr_t, (packed_enum_t[]){ -1 });
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, packed_enum_ptr_t, (packed_enum_t[]){ PE_ONE });
+} END_TEST
+
+RL_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
+  int checked = 0;
+  int warnings = 0;
+  void (*save_msg_handler) (const char*, const char*, int, rl_log_level_t, rl_message_id_t, va_list) = rl_conf.msg_handler;
+
+  void msg_handler (const char * file_name, const char * func_name, int line, rl_log_level_t log_level, rl_message_id_t message_id, va_list args)
+  {
+    if ((RL_MESSAGE_SAVE_ENUM == message_id) || (RL_MESSAGE_SAVE_BITMASK == message_id))
+      ++warnings;
+  }
+
+#define CMP_ENUMS(TYPE, X, Y, ...) ({ ++checked; (*((X)->x) != *((Y)->x));})
+
+  rl_conf.msg_handler = msg_handler;
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, (_enum_t[]){ -1 }, CMP_ENUMS);
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, packed_enum_ptr_t, (packed_enum_t[]){ -1 }, CMP_ENUMS);
+  rl_conf.msg_handler = save_msg_handler;
+  
+  ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
 } END_TEST
 
 RL_START_TEST (char_ptr, "pointer on char") {

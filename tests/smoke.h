@@ -20,7 +20,7 @@
   SKIP_PERFORMANCE_TEST_{METHOD} to 0
 */
 
-#define MULTIPLE (256)
+#define MULTIPLE (64)
 
 #define SMOKE_METHOD(METHOD, ...) START_TEST (rl_conf_save_load) {	\
     rl_conf_t rl_conf_saved = rl_conf;					\
