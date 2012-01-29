@@ -784,9 +784,6 @@ rl_anon_unions_extract (rl_td_t * tdp)
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   int i, j;
   
-  if (NULL == tdp)
-    return (EXIT_FAILURE);
-  
   for (i = 0; i < count; ++i)
     if (RL_TYPE_ANON_UNION == tdp->fields.data[i].rl_type)
       {

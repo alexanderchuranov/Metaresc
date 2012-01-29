@@ -3,7 +3,7 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
   
   <!-- TODO: The location of docbook-xsl should not be hardcoded -->
-  <xsl:import href="/usr/local/share/xsl/docbook/xhtml/chunk.xsl"/>
+  <xsl:import href="/usr/share/sgml/docbook/xsl-stylesheets/xhtml-1_1/chunk.xsl"/>
   
   <xsl:param name="use.id.as.filename" select="1"/>
   <xsl:param name="html.stylesheet">/css/metaresc/screen.css</xsl:param>
