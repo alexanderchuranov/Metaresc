@@ -74,9 +74,9 @@ TYPEDEF_ENUM (rl_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 
 TYPEDEF_ENUM (rl_type_t, ATTRIBUTES ( , "ResLib types"),
 	      (RL_TYPE_NONE, = 0),
-	      (RL_TYPE_STRING, = 1),
-	      (RL_TYPE_CHAR_ARRAY, = 2),
-	      (RL_TYPE_CHAR, = 3, "RL_TYPE_CHAR | RL_TYPE_STRING should be the same as RL_TYPE_CHAR for proper char* auto-detection"),
+	      RL_TYPE_STRING,
+	      RL_TYPE_CHAR_ARRAY,
+	      RL_TYPE_CHAR,
 	      RL_TYPE_VOID,
 	      RL_TYPE_INT8,
 	      RL_TYPE_UINT8,

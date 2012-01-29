@@ -4,4 +4,4 @@ make -j check
 
 cd src
 
-gcov -a -o .libs ../../src/*.c *.c
+gcov -b -o .libs ../../src/*.c *.c

@@ -1185,16 +1185,9 @@ rl_auto_field_detect (rl_fd_t * fdp)
     }
   else if (RL_TYPE_EXT_NONE == fdp->rl_type_ext)
     {
-      /* auto detect functions and pointers */
+      /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
-      if (')' == *end)
-	{
-	  fdp->rl_type = RL_TYPE_FUNC;
-	  fdp->param.func_param.size = 0;
-	  fdp->param.func_param.alloc_size = 0;
-	  fdp->param.func_param.data = NULL;
-	}
-      else if ('*' == *end)
+      if ('*' == *end)
 	{
 	  /* remove whitespaces before * */
 	  while (isspace (end[-1]))
@@ -1362,7 +1355,7 @@ rl_get_fd_by_name (rl_td_t * tdp, char * name)
  * @return status, EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_register_type_pointer (rl_td_t * tdp)
+rl_register_type_pointer (rl_td_t * tdp, void * arg)
 {
   rl_fd_t * fdp;
   rl_td_t * union_tdp = rl_get_td_by_name ("rl_ptr_t");
@@ -1458,7 +1451,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
     rl_add_enum (tdp);
 
   rl_td_foreach (rl_detect_fields_types, tdp);
-  rl_register_type_pointer (tdp);
+  rl_td_foreach (rl_register_type_pointer, tdp);
   return (EXIT_SUCCESS);
 }
 

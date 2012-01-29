@@ -391,12 +391,12 @@ rl_save_union (rl_save_data_t * rl_save_data)
 	}
     }
   
+  if ((field_idx < 0) || (field_idx >= tdp->fields.size / sizeof (tdp->fields.data[0])))
+    field_idx = 0;
+
   rl_save_data->parent = idx;
-  if ((field_idx >= 0) && (field_idx < tdp->fields.size / sizeof (tdp->fields.data[0])))
-    {
-      rl_save_data->ptrs.ra.data[idx].union_field_name = tdp->fields.data[field_idx].name; /* field name is required for XDR serialization */
-      rl_save_inner (data + tdp->fields.data[field_idx].offset, &tdp->fields.data[field_idx], rl_save_data);
-    }
+  rl_save_data->ptrs.ra.data[idx].union_field_name = tdp->fields.data[field_idx].name; /* field name is required for XDR serialization */
+  rl_save_inner (data + tdp->fields.data[field_idx].offset, &tdp->fields.data[field_idx], rl_save_data);
   rl_save_data->parent = rl_save_data->ptrs.ra.data[rl_save_data->parent].parent;
 }
 

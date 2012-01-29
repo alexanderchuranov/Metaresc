@@ -483,7 +483,7 @@ rl_load_struct_inner (int idx, rl_load_data_t * rl_load_data, rl_td_t * tdp)
 	fdp = rl_get_fd_by_name (tdp, rl_load_data->ptrs.ra.data[idx].fd.name);
       if (NULL == fdp)
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNKNOWN_SUBNODE, rl_load_data->ptrs.ra.data[idx].fd.type, rl_load_data->ptrs.ra.data[idx].fd.name);
+	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNKNOWN_SUBNODE, tdp->type, rl_load_data->ptrs.ra.data[idx].fd.name);
 	  return (0);
 	}
       
@@ -565,8 +565,8 @@ static int
 rl_load_rarray (int idx, rl_load_data_t * rl_load_data)
 {
   rl_rarray_t * ra = rl_load_data->ptrs.ra.data[idx].data;
-  int data_idx;
-  int count;
+  int data_idx, idx_;
+  int count = 0;
 
   memset (ra, 0, sizeof (*ra));
   
@@ -598,7 +598,8 @@ rl_load_rarray (int idx, rl_load_data_t * rl_load_data)
     }
 
   /* initialize resizeable array */
-  count = ra->size / rl_load_data->ptrs.ra.data[idx].fd.size;
+  for (idx_ = rl_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = rl_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
+    ++count;
   ra->size = count * rl_load_data->ptrs.ra.data[idx].fd.size;
   
   if ((rl_load_data->ptrs.ra.data[data_idx].ref_idx < 0) && (ra->size > 0))
@@ -618,9 +619,9 @@ rl_load_rarray (int idx, rl_load_data_t * rl_load_data)
       memset (ra->data, 0, ra->size);
       ra->alloc_size = ra->size;
       
-      for (idx = rl_load_data->ptrs.ra.data[data_idx].first_child; idx >= 0; idx = rl_load_data->ptrs.ra.data[idx].next) /* loop on subnodes */
+      for (idx_ = rl_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = rl_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
 	{
-	  if (!rl_load (((char*)ra->data) + i * fd_.size, &fd_, idx, rl_load_data))
+	  if (!rl_load (((char*)ra->data) + i * fd_.size, &fd_, idx_, rl_load_data))
 	    return (0);
 	  if (++i > count)
 	    {

@@ -6,7 +6,7 @@
 #include <union.h>
 
 #define ASSERT_SAVE_LOAD_ANON_UNION(METHOD, TYPE, VALUE, ...) ({	\
-      TYPE x = { "", { M_PI }, VALUE };					\
+      TYPE x = { 0, "", { M_PI }, VALUE };				\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
@@ -64,18 +64,18 @@ RL_START_TEST (union_int_1, "union discriminated by int") {
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int64_t, 1, STRUCT_XY_X_CMP);
 } END_TEST
 
-RL_START_TEST (union_int_ptr_0, "union discriminated by pointer on int") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int8_ptr_t, (int8_t[]) { 0 }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int16_ptr_t, (int16_t[]) { 0 }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int32_ptr_t, (int32_t[]) { 0 }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int64_ptr_t, (int64_t[]) { 0 }, STRUCT_XY_X_CMP);
+RL_START_TEST (union_uint_0, "union discriminated by unsigned int") {
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint8_t, 0, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint16_t, 0, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint32_t, 0, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint64_t, 0, STRUCT_XY_X_CMP);
 } END_TEST
 
-RL_START_TEST (union_int_ptr_1, "union discriminated by pointer on int") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int8_ptr_t, (int8_t[]) { 1 }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int16_ptr_t, (int16_t[]) { 1 }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int32_ptr_t, (int32_t[]) { 1 }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_int64_ptr_t, (int64_t[]) { 1 }, STRUCT_XY_X_CMP);
+RL_START_TEST (union_uint_1, "union discriminated by unsigned int") {
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint8_t, 1, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint16_t, 1, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint32_t, 1, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_uint64_t, 1, STRUCT_XY_X_CMP);
 } END_TEST
 
 RL_START_TEST (union_str, "union discriminated by string") {

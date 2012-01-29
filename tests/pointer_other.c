@@ -98,4 +98,19 @@ RL_START_TEST (self_ref_string, "self referenced strings") {
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
 } END_TEST
 
+TYPEDEF_STRUCT (rtfr_struct_t,
+		int x,
+		int y);
+  
+TYPEDEF_STRUCT (resolve_typed_forward_ref_t,
+		(rtfr_struct_t *, x),
+		(int *, y) /* pointers are loaded via stack, so one level ponters will be loaded in a reverse order */
+		);
+
+RL_START_TEST (resolve_typed_forward_ref, "test of forvard reference resolution") {
+  resolve_typed_forward_ref_t x = { (rtfr_struct_t[]){ {0, 1} } };
+  x.y = &x.x->y;
+  ALL_METHODS (ASSERT_SAVE_LOAD, resolve_typed_forward_ref_t, &x);
+} END_TEST
+
 MAIN ();

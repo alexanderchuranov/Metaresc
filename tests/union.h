@@ -9,6 +9,7 @@ TYPEDEF_ENUM (enum32_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligne
 TYPEDEF_ENUM (enum64_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint64_t))))), (U64D_FLOAT, , "x"), (U64D_INT32, , "y"))
 
 TYPEDEF_STRUCT (struct_anon_union_enum_t,
+		int dummy,
 		ANON_UNION (),
 		float x,
 		int32_t y,
@@ -17,6 +18,7 @@ TYPEDEF_STRUCT (struct_anon_union_enum_t,
 		)
 
 TYPEDEF_STRUCT (struct_named_anon_union_enum_t,
+		int dummy,
 		NAMED_ANON_UNION (xy),
 		float x,
 		int32_t y,
@@ -59,9 +61,9 @@ TYPEDEF_STRUCT (struct_union_int8_t,
 		(int8_t, discriminator),
 		)
 
-TYPEDEF_STRUCT (struct_union_int8_ptr_t,
+TYPEDEF_STRUCT (struct_union_uint8_t,
 		(union_int32_float_t, xy, , "discriminator"),
-		(int8_t *, discriminator),
+		(uint8_t, discriminator),
 		)
 
 TYPEDEF_STRUCT (struct_union_int16_t,
@@ -69,9 +71,9 @@ TYPEDEF_STRUCT (struct_union_int16_t,
 		(int16_t, discriminator),
 		)
 
-TYPEDEF_STRUCT (struct_union_int16_ptr_t,
+TYPEDEF_STRUCT (struct_union_uint16_t,
 		(union_int32_float_t, xy, , "discriminator"),
-		(int16_t *, discriminator),
+		(uint16_t, discriminator),
 		)
 
 TYPEDEF_STRUCT (struct_union_int32_t,
@@ -79,9 +81,9 @@ TYPEDEF_STRUCT (struct_union_int32_t,
 		(int32_t, discriminator),
 		)
 
-TYPEDEF_STRUCT (struct_union_int32_ptr_t,
+TYPEDEF_STRUCT (struct_union_uint32_t,
 		(union_int32_float_t, xy, , "discriminator"),
-		(int32_t *, discriminator),
+		(uint32_t, discriminator),
 		)
 
 TYPEDEF_STRUCT (struct_union_int64_t,
@@ -89,9 +91,9 @@ TYPEDEF_STRUCT (struct_union_int64_t,
 		(int64_t, discriminator),
 		)
 
-TYPEDEF_STRUCT (struct_union_int64_ptr_t,
+TYPEDEF_STRUCT (struct_union_uint64_t,
 		(union_int32_float_t, xy, , "discriminator"),
-		(int64_t *, discriminator),
+		(uint64_t, discriminator),
 		)
 
 TYPEDEF_STRUCT (struct_union_bitfield_t,
