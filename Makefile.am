@@ -7,4 +7,5 @@ SUBDIRS = src tests examples
 docs: Doxyfile
 	doxygen $<
 
-
+distclean-local:
+	find "(" -name '*.gcda' -o -name '*.gcno' -o -name '*.gcov' ")" -delete

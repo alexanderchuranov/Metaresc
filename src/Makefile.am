@@ -1,6 +1,9 @@
 # -*- makefile -*-
 
-AM_CFLAGS = --fast-math -g -O2 -Wall -Werror
+AM_CFLAGS = --fast-math -Wall -Werror
+
+DISTCLEANFILES = rlpp.h
+MOSTLYCLEANFILES = *.tab.[ch] *.lex.[ch]
 
 SUFFIXES = .y .l .lex.h .tab.h .lex.c .tab.c
 
@@ -30,17 +33,15 @@ endif
 
 pkginclude_HEADERS = reslib.h rlprotos.h rlexport.h rlpp.h
 
-clean-local:
-	rm -f *.tab.[ch] *.lex.[ch]
-
 xml1_load.tab.c: xml1_load.y xml1_load.lex.h
 xml1_load.lex.c: xml1_load.l xml1_load.tab.h
 cinit_load.tab.c: cinit_load.y cinit_load.lex.h
 cinit_load.lex.c: cinit_load.l cinit_load.tab.h
 scm_load.tab.c: scm_load.y scm_load.lex.h
 scm_load.lex.c: scm_load.l scm_load.tab.h
+$(libreslib_la_OBJECTS): rlpp.h
 rlpp.h: rlpp.sh
-	./rlpp.sh `grep RL_PP_DEPTH rlexport.h | cut -d " " -f 3` > rlpp.h
+	$(srcdir)/rlpp.sh `grep RL_PP_DEPTH rlexport.h | cut -d " " -f 3` > rlpp.h
 
 valgrind:
 	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"
