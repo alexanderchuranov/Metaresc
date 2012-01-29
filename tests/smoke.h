@@ -52,7 +52,7 @@
     RL_FREE_RECURSIVELY (rl_conf_t, &rl_conf_loaded);			\
   } END_TEST								\
   TYPEDEF_STRUCT (rl_empty_t);						\
-  TYPEDEF_STRUCT (rl_incomplete_t, int x, NONE (int, y, []));		\
+  TYPEDEF_STRUCT (rl_incomplete_t, (int, x, [0]), NONE (int, y, []));	\
   TYPEDEF_STRUCT (list_t, (list_t *, next));				\
   TYPEDEF_STRUCT (array_t, RARRAY (list_t, ra));			\
   int test_run (int count)						\
