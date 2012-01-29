@@ -2,7 +2,8 @@
 #include <reslib.h>
 
 typedef struct {
-  int x, *p;
+  int x;
+  int * p;
 } s1_t;
 
 TYPEDEF_STRUCT (s2_t,

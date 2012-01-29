@@ -1,5 +1,7 @@
 
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "enums.h"
 
 TYPEDEF_STRUCT (character_place_t,
@@ -8,14 +10,24 @@ TYPEDEF_STRUCT (character_place_t,
                 (color_t, bg)
                 )
 
-int main()
+int main ()
 {
-  printf("color_t enum desciptor\n%s\n", RL_SAVE_CINIT (rl_td_t, &RL_DESCRIPTOR_PREFIX (color_t)));
+  char * serialized = RL_SAVE_CINIT (rl_td_t, &RL_DESCRIPTOR_PREFIX (color_t));
+  if (serialized)
+    {
+      printf ("color_t enum desciptor\n%s\n", serialized);
+      RL_FREE (serialized);
+    }
+  
   printf("BLACK: %i\nRED: %i\nGREEN: %i\nYELLOW: %i\nBLUE: %i\nMAGENTA: %i\nCYAN: %i\nWHITE: %i\n",
          BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE);
-  puts("");
   
   character_place_t place = { 'A', WHITE, BLUE };
-  puts(RL_SAVE_JSON(character_place_t, &place));
-  return 0;
+  serialized = RL_SAVE_CINIT (character_place_t, &place);
+  if (serialized)
+    {
+      printf ("place = %s;\n", serialized);
+      RL_FREE (serialized);
+    }
+  return (EXIT_SUCCESS);
 }

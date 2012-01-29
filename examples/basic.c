@@ -13,22 +13,16 @@ TYPEDEF_STRUCT (employee_t,
 int
 main (int argc, char * argv[])
 {
-  employee_t employee;
+  employee_t employee = { "John", "Doe", 123456 };
+  char * xml = RL_SAVE_XML (employee_t, &employee);
+
+  if (NULL == xml)
+    printf ("Serialization failed\n");
+  else
+    {
+      printf ("%s", xml);
+      RL_FREE (xml);
+    }
   
-  employee.firstname = "John";
-  employee.lastname  = "Doe";
-  employee.salary    = 123456;
-  
-  char * str = RL_SAVE_XML (employee_t, &employee);
-  
-  if (str)
-  {
-    printf ("%s", str);
-    RL_FREE (str);
-    return (EXIT_SUCCESS);
-  }
-  else {
-    fprintf(stderr, "Serialization error has occurred.\n");
-    return (EXIT_FAILURE);
-  }
+  return (EXIT_SUCCESS);
 }

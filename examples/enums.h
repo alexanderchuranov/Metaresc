@@ -17,7 +17,7 @@ TYPEDEF_ENUM (color_t,
               
               (CYAN,    /* auto-enumerated */,
                         /* no comment      */,
-                        { (color_t[]){ 6 } },
+                        { (color_t[]){ CYAN } },
                         "color_t"
               ),
               

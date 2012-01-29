@@ -1,7 +1,8 @@
+#include <stdlib.h>
 
 #include "simple_structure.h"
 
-int main()
+int main ()
 {
-  return 0;
+  return (EXIT_SUCCESS);
 }

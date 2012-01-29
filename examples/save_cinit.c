@@ -13,22 +13,15 @@ TYPEDEF_STRUCT (employee_t,
 int
 main (int argc, char * argv[])
 {
-  employee_t employee;
+  employee_t employee = { "John", "Doe", 123456 };
+  char * employee_serialized = RL_SAVE_CINIT (employee_t, &employee);
   
-  employee.firstname = "John";
-  employee.lastname  = "Doe";
-  employee.salary    = 123456;
-  
-  char * str = RL_SAVE_CINIT (employee_t, &employee);
-  
-  if (str)
-  {
-    printf ("%s\n", str);
-    RL_FREE (str);
-    return (EXIT_SUCCESS);
-  }
-  else {
-    fprintf(stderr, "Serialization error has occurred.\n");
-    return (EXIT_FAILURE);
-  }
+  if (NULL == employee_serialized)
+      printf("Serialization error has occurred.\n");
+  else
+    {
+      printf ("%s\n", employee_serialized);
+      RL_FREE (employee_serialized);
+    }
+  return (employee_serialized ? EXIT_SUCCESS : EXIT_FAILURE);
 }

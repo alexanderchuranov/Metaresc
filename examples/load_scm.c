@@ -10,36 +10,32 @@ TYPEDEF_STRUCT (employee_t,
 		(int, salary),
 		)
 
-void print_info(employee_t const* e)
+void print_info (employee_t const * e)
 {
-  printf(
-    "First name: %s\nLast name: %s\nSalary: %u\n",
-    e->firstname, e->lastname, e->salary);
+  printf ("First name: %s\nLast name: %s\nSalary: %u\n",
+	  e->firstname, e->lastname, e->salary);
 }
 
 int main (int argc, char * argv[])
 {
-  char scm[] =
+  char serialized[] =
     "(                        \n"
     "  (\"John\" . firstname) \n"
     "  (\"Doe\" . lastname)   \n"
     "  (123456 . salary))     \n"
     ;
   
-  employee_t e = RL_LOAD_SCM (employee_t, scm );
+  employee_t employee = RL_LOAD_SCM (employee_t, serialized);
   
-  print_info(&e);
+  print_info (&employee);
+  RL_FREE_RECURSIVELY (employee_t, &employee);
   
   char corrupted[] = "this is not a Scheme language text";
   
-  if (RL_LOAD_SCM (employee_t, corrupted, &e))
-  {
-    print_info(&e);
-  }
-  else {
-    fprintf(stderr, "SCM parsing error!\n");
-    return EXIT_FAILURE;
-  }
+  if (RL_LOAD_SCM (employee_t, corrupted, &employee))
+    printf ("Parsing successfull (unexpected behavior)\n");
+  else 
+    printf ("Parsing error (expected behavior)\n");
   
-  return EXIT_SUCCESS;
+  return (EXIT_SUCCESS);
 }

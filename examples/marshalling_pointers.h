@@ -1,7 +1,7 @@
 
 #include <reslib.h>
 
-TYPEDEF_STRUCT (back_end_server,
+TYPEDEF_STRUCT (back_end_server_t,
                 (int, id),
                 (unsigned long int, address),
                 (unsigned short int, port)
@@ -9,11 +9,11 @@ TYPEDEF_STRUCT (back_end_server,
 
 typedef struct {
   int data;
-} filter;
+} filter_t;
 
-TYPEDEF_STRUCT (policy,
-                (back_end_server*, server_a),
-                (back_end_server*, server_b),
-                (filter*, f),
-                (back_end_server*, fallback)
+TYPEDEF_STRUCT (policy_t,
+                (back_end_server_t *, server_a),
+                (back_end_server_t *, server_b),
+                (filter_t *, f),
+                (back_end_server_t *, fallback)
                 )

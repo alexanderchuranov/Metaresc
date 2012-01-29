@@ -3,7 +3,6 @@
 #include <reslib.h>
 
 TYPEDEF_STRUCT (specified_width_t,
-                
                 (int16_t, si16),
                 (uint64_t, ui64),
                 (int_least32_t, sil32),

@@ -1,8 +1,10 @@
 
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "marshalling_bit_fields.h"
 
-int main()
+int main ()
 {
   event_coordinates_t coords = {
     .longitude = 51.5,
@@ -15,9 +17,15 @@ int main()
     .second = 31
   };
   
-  char * xml = RL_SAVE_XML( event_coordinates_t, &coords );
-  puts (xml);
-  RL_FREE (xml);
+  char * xml = RL_SAVE_XML (event_coordinates_t, &coords);
+
+  if (NULL == xml)
+    printf ("Serialization failed\n");
+  else
+    {
+      printf ("%s", xml);
+      RL_FREE (xml);
+    }
   
-  return 0;
+  return (EXIT_SUCCESS);
 }

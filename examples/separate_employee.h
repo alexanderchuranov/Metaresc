@@ -5,9 +5,9 @@
 #define RL_MODE PROTO
 #include "separate_employee_decl.h"
 
-employee_t create_employee(
+employee_t create_employee (
   char const * firstname,
   char const * lastname,
   int salary);
 
-#endif // guardian
+#endif /* _METARESC_EXAMPLES_SEPARATE_EMPLOYEE_H_INCLUDED_ */

@@ -1,7 +1,8 @@
+#include <stdlib.h>
 
 #include "marshalling_structures_basic_types.h"
 
-int main()
+int main ()
 {
   basics_t b = {
     .c = 'Z',
@@ -12,8 +13,14 @@ int main()
       .dc = 7.42
     }
   };
+  char * xml = RL_SAVE_XML (basics_t, &b);
   
-  char const* xml = RL_SAVE_XML( basics_t, &b);
-  puts(xml);
-  return 0;
+  if (NULL == xml)
+    printf ("Serialization failed\n");
+  else
+    {
+      printf ("%s", xml);
+      RL_FREE (xml);
+    }
+  return (EXIT_SUCCESS);
 }

@@ -8,12 +8,14 @@ int
 main (int argc, char * argv[])
 {
   int x = 5;
-  
-  char * str = RL_SAVE_XML (int, &x);
-  if (str)
+  char * xml = RL_SAVE_XML (int, &x);
+
+  if (NULL == xml)
+    printf ("Serialization failed\n");
+  else
     {
-      puts (str);
-      RL_FREE (str);
+      printf ("%s", xml);
+      RL_FREE (xml);
     }
   
   return (EXIT_SUCCESS);

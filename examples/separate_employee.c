@@ -5,7 +5,7 @@
 #define RL_MODE DESC
 #include "separate_employee_decl.h"
 
-employee_t create_employee(
+employee_t create_employee (
   char const * firstname,
   char const * lastname,
   int salary)
@@ -16,5 +16,5 @@ employee_t create_employee(
   employee.lastname  = lastname;
   employee.salary    = salary;
   
-  return employee;
+  return (employee);
 }

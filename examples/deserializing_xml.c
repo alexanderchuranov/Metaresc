@@ -21,11 +21,11 @@ main (int argc, char * argv[])
       "<salary>123456</salary>"
     "</employee>";
   
-  employee_t e = RL_LOAD_XML (employee_t, xml);
+  employee_t employee = RL_LOAD_XML (employee_t, xml);
   
-  printf(
-    "First name: %s\nLast name: %s\nSalary: %u\n",
-    e.firstname, e.lastname, e.salary);
+  printf (
+	  "First name: %s\nLast name: %s\nSalary: %u\n",
+	  employee.firstname, employee.lastname, employee.salary);
   
-  return EXIT_SUCCESS;
+  return (EXIT_SUCCESS);
 }

@@ -9,32 +9,39 @@ TYPEDEF_STRUCT (employee_t,
 		(int, salary),
 		)
 
-int main()
+int main ()
 {
-  char name[] = "employee_t";
-  rl_td_t const* td = rl_get_td_by_name(name);
+  char type[] = "employee_t";
+  rl_td_t const * td = rl_get_td_by_name (type);
   
   if (td)
-  {
-    printf("information for '%s':\n", name);
-    char const* type = 0;
-    
-    switch (td->rl_type)
     {
-      case RL_TYPE_STRUCT: type = "a struct"; break;
-      case RL_TYPE_ENUM:   type = "an enumeration"; break;
-      case RL_TYPE_UNION:  type = "a union"; break;
-      default:
-        type = "an unknown type";
-    }
+      printf ("information for '%s':\n", type);
+      char const * type_class = NULL;
     
-    printf("\t%s is %s\n", name, type);
-    printf("\tit's declared name is '%s'\n", td->type);
-    printf("\tvariables of this type occupy %i bytes of memory\n", td->size);
-  }
-  else {
-    printf("error: can't obtain type information for '%s'\n", name);
-  }
+      switch (td->rl_type)
+	{
+	case RL_TYPE_STRUCT:
+	  type_class = "a struct";
+	  break;
+	case RL_TYPE_ENUM:
+	  type_class = "an enumeration";
+	  break;
+	case RL_TYPE_UNION:
+	  type_class = "a union";
+	  break;
+	default:
+	  type_class = "an unknown type";
+	}
+    
+      printf ("\t%s is %s\n", type, type_class);
+      printf ("\tit's declared name is '%s'\n", td->type);
+      printf ("\tvariables of this type occupy %i bytes of memory\n", td->size);
+    }
+  else
+    {
+      printf ("error: can't obtain type information for type '%s'\n", type);
+    }
   
-  return EXIT_SUCCESS;
+  return (EXIT_SUCCESS);
 }

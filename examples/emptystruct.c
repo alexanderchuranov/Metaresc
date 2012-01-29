@@ -12,8 +12,8 @@ main (int argc, char * argv[])
 {
   empty_t empty;
   
-  char * str = RL_SAVE_CINIT (empty_t, &empty);
   memset (&empty, 0, sizeof (empty));
+  char * str = RL_SAVE_CINIT (empty_t, &empty);
   RL_LOAD_CINIT (empty_t, str, &empty);
   if (str)
     RL_FREE (str);

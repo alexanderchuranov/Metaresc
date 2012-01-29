@@ -4,17 +4,16 @@
 
 #include "simplified_grammar.h"
 
-int main()
+int main ()
 {
   event_t ev = { .x = 11, .y = 17, .z = 31 };
+  char * ev_serialized = RL_SAVE_CINIT (event_t, &ev);
   
-  char * str = RL_SAVE_XML (event_t, &ev);
-  
-  if (str)
-  {
-    puts (str);
-    RL_FREE (str);
-  }
+  if (ev_serialized)
+    {
+      printf ("event_t ev = %s;\n", ev_serialized);
+      RL_FREE (ev_serialized);
+    }
   
   return (EXIT_SUCCESS);
 }
