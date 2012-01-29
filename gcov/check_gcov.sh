@@ -1,7 +1,5 @@
 #!/bin/bash
 
-../configure CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
-
 make -j check
 
 cd src
