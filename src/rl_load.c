@@ -600,15 +600,15 @@ rl_load_rarray (int idx, rl_load_data_t * rl_load_data)
   /* initialize resizeable array */
   for (idx_ = rl_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = rl_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
     ++count;
-  ra->size = count * rl_load_data->ptrs.ra.data[idx].fd.size;
   
-  if ((rl_load_data->ptrs.ra.data[data_idx].ref_idx < 0) && (ra->size > 0))
+  if ((rl_load_data->ptrs.ra.data[data_idx].ref_idx < 0) && (count > 0))
     {
       int i = 0;
       rl_fd_t fd_ = rl_load_data->ptrs.ra.data[idx].fd;
 
       fd_.rl_type_ext = RL_TYPE_EXT_NONE;
 
+      ra->size = count * rl_load_data->ptrs.ra.data[idx].fd.size;
       ra->data = RL_MALLOC (ra->size);
       if (NULL == ra->data)
 	{
