@@ -1316,7 +1316,7 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
       default:
 	break;
       }
-  return (EXIT_SUCCESS);
+  return (0);
 }
 
 /**
@@ -1352,7 +1352,7 @@ rl_get_fd_by_name (rl_td_t * tdp, char * name)
  * @return status, EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_register_type_pointer (rl_td_t * tdp, void * arg)
+rl_register_type_pointer (rl_td_t * tdp)
 {
   rl_fd_t * fdp;
   rl_td_t * union_tdp = rl_get_td_by_name ("rl_ptr_t");
@@ -1387,6 +1387,13 @@ rl_register_type_pointer (rl_td_t * tdp, void * arg)
   union_tdp->lookup_by_name.data = NULL;
   /* we need to rebuild hash table each time because array with fields descriptors might be reallocated */
   return (rl_build_field_names_hash (union_tdp));
+}
+
+static int
+rl_register_type_pointer_ (rl_td_t * tdp, void * arg)
+{
+  rl_register_type_pointer (tdp);
+  return (0);
 }
 
 /**
@@ -1448,7 +1455,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
     rl_add_enum (tdp);
 
   rl_td_foreach (rl_detect_fields_types, tdp);
-  rl_td_foreach (rl_register_type_pointer, tdp);
+  rl_td_foreach (rl_register_type_pointer_, tdp);
   return (EXIT_SUCCESS);
 }
 
