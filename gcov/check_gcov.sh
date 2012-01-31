@@ -4,4 +4,4 @@ make -j check
 
 cd src
 
-gcov -b -o .libs ../../src/*.c *.c | tee ../gcov.log
+gcov -b -o .libs ../../src/*.c | tee ../gcov.log

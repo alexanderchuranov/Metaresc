@@ -1390,7 +1390,7 @@ rl_register_type_pointer (rl_td_t * tdp)
 }
 
 static int
-rl_register_type_pointer_ (rl_td_t * tdp, void * arg)
+rl_register_type_pointer_wrapper (rl_td_t * tdp, void * arg)
 {
   rl_register_type_pointer (tdp);
   return (0);
@@ -1455,7 +1455,7 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
     rl_add_enum (tdp);
 
   rl_td_foreach (rl_detect_fields_types, tdp);
-  rl_td_foreach (rl_register_type_pointer_, tdp);
+  rl_td_foreach (rl_register_type_pointer_wrapper, tdp);
   return (EXIT_SUCCESS);
 }
 
