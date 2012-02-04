@@ -344,7 +344,7 @@ xdr_save_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+      return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
     }
   else
     {
@@ -368,7 +368,7 @@ xdr_load_string (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+    return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
   else
     {
       char ** str = ptrs->ra.data[idx].data;
@@ -422,7 +422,7 @@ static int
 xdr_save_union (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
 {
   /* save union branch field name as string */
-  rl_ptrdes_t ptrdes = { .data = &ptrs->ra.data[idx].union_field_name, .ref_idx = -1, .flags = 0, }; /* temporary pointer descriptor for this string */
+  rl_ptrdes_t ptrdes = { .data = &ptrs->ra.data[idx].union_field_name, .ref_idx = -1, .flags = RL_PDF_NONE, }; /* temporary pointer descriptor for this string */
   rl_ra_rl_ptrdes_t ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_save_string (xdrs, 0, &ptrs_));
 }
@@ -466,7 +466,7 @@ xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
   int status = 0;
   if (NULL != str)
     {
-      rl_ptrdes_t ptrdes = { .data = str, .ref_idx = -1, .flags = 0, }; /* temporary pointer descriptor for this string */
+      rl_ptrdes_t ptrdes = { .data = str, .ref_idx = -1, .flags = RL_PDF_NONE, }; /* temporary pointer descriptor for this string */
       rl_ra_rl_ptrdes_t ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
       status = xdr_save_string (xdrs, 0, &ptrs);
       RL_FREE (*str);
@@ -590,7 +590,7 @@ xdr_save_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+      return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
     }
   else
     return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
@@ -610,7 +610,7 @@ xdr_load_pointer (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
 	return (0);
       if (ptrs->ra.data[idx].ref_idx >= 0)
-	return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+	return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
       *data = RL_MALLOC (fd_.size);
       if (NULL == *data)
 	{
@@ -638,7 +638,7 @@ xdr_save_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
 	return (0);
-      return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+      return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
     }
   else
     {
@@ -659,7 +659,7 @@ xdr_load_rarray_data (XDR * xdrs, int idx, rl_ra_rl_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_uint32_t (xdrs, (uint32_t*)&ptrs->ra.data[idx].flags));
+    return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
   else
     {
       if (!xdr_uint32_t (xdrs, &childs))
