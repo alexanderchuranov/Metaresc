@@ -7,7 +7,11 @@
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <netinet/in.h>
+#if HAVE_IEEE754_H
 #include <ieee754.h>
+#else /* ! HAVE_IEEE754_H */
+union ieee854_long_double { char ieee[12]; };
+#endif /* HAVE_IEEE754_H */ 
 
 #include <rlconfig.h>
 #include <reslib.h>

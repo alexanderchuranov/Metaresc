@@ -66,7 +66,7 @@ AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#
 # Checks for header files.
 AC_FUNC_ALLOCA
 AC_HEADER_STDC
-AC_CHECK_HEADERS([inttypes.h libintl.h malloc.h stddef.h stdlib.h string.h unistd.h endian.h machine/endian.h])
+AC_CHECK_HEADERS([inttypes.h malloc.h stddef.h stdlib.h string.h unistd.h endian.h ieee754.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
