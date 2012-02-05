@@ -1,8 +1,8 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
-#include <reslib.h>
+#include <metaresc.h>
 
 #define MR_SCM_EMPTY "()"
 #define MR_SCM_FALSE "#f"

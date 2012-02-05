@@ -1,7 +1,7 @@
 
 #include <stdlib.h>
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (struct1_t,
                 (char *, name),

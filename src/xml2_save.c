@@ -1,8 +1,8 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
-#include <reslib.h>
+#include <metaresc.h>
 
 /**
  * Public function. Save scheduler. Save any object as XML node.

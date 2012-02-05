@@ -1,6 +1,6 @@
 #include <math.h>
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 #include <union.h>

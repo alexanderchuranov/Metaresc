@@ -1,9 +1,11 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
 #include <tsearch.h>
-#include <rlconfig.h>
+#ifdef HAVE_CONFIG_H
+# include <mr_config.h>
+#endif /* HAVE_CONFIG_H */
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
 #endif /* HAVE_ENDIAN_H */
@@ -11,11 +13,7 @@
 #include <machine/endian.h>
 #endif /* HAVE_MACHINE_ENDIAN_H */
 
-#ifdef HAVE_CONFIG_H
-# include <rlconfig.h>
-#endif /* HAVE_CONFIG_H */
-
-#include <reslib.h>
+#include <metaresc.h>
 
 static void dummy_free_func (void * nodep) {};
 

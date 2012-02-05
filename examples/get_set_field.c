@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (employee_t,
 		(char *, firstname),

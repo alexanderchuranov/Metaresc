@@ -1,5 +1,5 @@
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 TYPEDEF_STRUCT (struct_char_t, char x)

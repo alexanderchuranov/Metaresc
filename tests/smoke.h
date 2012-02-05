@@ -2,7 +2,7 @@
 #include <stddef.h>
 #include <sys/times.h>
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 
 /*
   Test is doing the following:

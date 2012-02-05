@@ -1,6 +1,6 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
 #include <stdio.h>
 #include <string.h>
@@ -12,11 +12,13 @@
 #else /* ! HAVE_IEEE754_H */
 union ieee854_long_double { char ieee[12]; };
 #endif /* HAVE_IEEE754_H */ 
+#ifdef HAVE_CONFIG_H
+# include <mr_config.h>
+#endif /* HAVE_CONFIG_H */
 
-#include <rlconfig.h>
-#include <reslib.h>
+#include <metaresc.h>
 
-#include <rl_load.h>
+#include <mr_load.h>
 
 static bool_t
 xdrra_getlong (XDR * xdrs, long * lp)

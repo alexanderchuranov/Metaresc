@@ -3,7 +3,7 @@
 AUTOMAKE_OPTIONS = parallel-tests
 AM_CFLAGS = --fast-math -Wall -Werror
 INCLUDES = -I$(top_srcdir)/src
-LIBS += ../src/libreslib.la $(CHECK_LIBS)
+LIBS += ../src/libmetaresc.la $(CHECK_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 

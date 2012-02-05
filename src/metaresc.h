@@ -1,13 +1,13 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
-/* ResLib prototypes */
-#ifndef _RESLIB_H_
-#define _RESLIB_H_
+/* Metaresc prototypes */
+#ifndef _METARESC_H_
+#define _METARESC_H_
 
-#include <rlpp.h>
-#include <rlexport.h>
+#include <mr_pp.h>
+#include <mr_export.h>
 
 #ifndef __USE_GNU
 #define __USE_GNU
@@ -76,7 +76,7 @@
 #define MR_FREE(PTR) (mr_conf.mr_mem.free)(__FILE__, __FUNCTION__, __LINE__, PTR)
 
 /*
-  you can redefine this prefixes from outside before first include of reslib.h
+  you can redefine this prefixes from outside before first include of metaresc.h
 */
 #ifndef MR_DESCRIPTOR_PREFIX
 #define MR_DESCRIPTOR_PREFIX(MR_TYPE_NAME) mr_td_ ## MR_TYPE_NAME
@@ -139,7 +139,7 @@
 #define MR_PASTE4(...) MR_PASTE4_ (__VA_ARGS__)
 #define MR_PASTE4_(_0, _1, _2, _3) _0 ## _1 ## _2 ## _3
 
-/* Interface macros for unrolled loops from rlpp.h */
+/* Interface macros for unrolled loops from mr_pp.h */
 #define MR_FOREACH(X, ...) MR_PASTE2 (MR_FOREACH, MR_NARG (__VA_ARGS__)) (X, __VA_ARGS__)
 #define MR_FOR(NAME, N, OP, FUNC, ...) MR_PASTE2 (MR_FOR, N) (NAME, OP, FUNC, __VA_ARGS__)
 
@@ -713,7 +713,7 @@
 #define MR_ADD_TYPE(MR_TYPE_NAME, /* COMMENTS */ ...) mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME), "" __VA_ARGS__, NULL)
 
 /*
-  User can turn off strict types checking for ResLib macroses, so compilation will produce only warnings.
+  User can turn off strict types checking for Metaresc macroses, so compilation will produce only warnings.
   MR_CHECK_TYPES macro should be predefined as
   #define MR_CHECK_TYPES(...)
 */
@@ -1101,7 +1101,7 @@
 #define MR_MODE_UNDEFINED
 #define MR_MODE PROTO
 #endif
-#include <rlprotos.h>
+#include <mr_protos.h>
 #ifdef MR_MODE_UNDEFINED
 #undef MR_MODE_UNDEFINED
 #undef MR_MODE
@@ -1178,4 +1178,4 @@ extern char * xml_quote_string (char*);
 extern char * xml_unquote_string (char*, int);
 extern void mr_init_save_xml (void);
 
-#endif /* _RESLIB_H_ */
+#endif /* _METARESC_H_ */

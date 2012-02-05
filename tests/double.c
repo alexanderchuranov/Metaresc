@@ -2,7 +2,7 @@
 #include <math.h>
 #include <values.h>
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 #define ASSERT_SAVE_LOAD_DOUBLE(METHOD, VALUE) ({			\

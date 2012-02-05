@@ -4,7 +4,7 @@ NUMFILES  ?= 100
 BINARY = huge_enterprise_app
 
 CFLAGS += -Wall -I../src `xml2-config --cflags`
-LDADD += ../src/.libs/libreslib.a `xml2-config --libs`
+LDADD += ../src/.libs/libmetaresc.a `xml2-config --libs`
 
 all: ${BINARY}
 

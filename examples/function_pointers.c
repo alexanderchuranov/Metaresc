@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (with_f_pointers_t,
                 (char *, pfunc, (int))

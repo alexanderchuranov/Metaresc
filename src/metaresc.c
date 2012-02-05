@@ -1,9 +1,9 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
 #ifdef HAVE_CONFIG_H
-# include <rlconfig.h>
+# include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
 
 #define __USE_GNU
@@ -16,17 +16,17 @@
 #include <stdarg.h>
 
 #include <tsearch.h>
-#include <reslib.h>
+#include <metaresc.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
-#include <rlprotos.h>
+#include <mr_protos.h>
 
 static void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
 static void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
 static char * mr_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
 static void mr_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
 
-/** ResLib configuration structure */
+/** Metaresc configuration structure */
 mr_conf_t mr_conf = {
   .mr_mem = { /**< all memory functions may be replaced on user defined */
     .mem_alloc_strategy = 2, /**< Memory allocation strategy. Default is to double buffer every time. */

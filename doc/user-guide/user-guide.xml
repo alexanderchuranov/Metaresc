@@ -287,7 +287,7 @@
          <title>Using the library in a simple way</title>
          <para>
            The easiest way to use a library is to include the
-           <filename>reslib.h</filename> header file and start
+           <filename>metaresc.h</filename> header file and start
            declaring metadata-enabled types. You may include this
            header in a header file of your project, where the
            serializable data type is to be declared. Or you may include
@@ -307,7 +307,7 @@
 
            <screen><![CDATA[
  cc -std=gnu99 -Ipath/to/metaresc/headers -I/usr/include/libxml2 -c -o basic.o basic.c
- cc -Lpath/to/metaresc/libs -lreslib -o basic basic.o ]]></screen>
+ cc -Lpath/to/metaresc/libs -lmetaresc -o basic basic.o ]]></screen>
 
            If the METARESC library is installed in /usr, as when
            installing from a pre-built package, then paths to the
@@ -317,7 +317,7 @@
 
            <screen><![CDATA[
  cc -std=gnu99 -I/usr/include/libxml2 -c -o basic.o basic.c
- cc -lreslib -o basic basic.o ]]></screen>
+ cc -lmetaresc -o basic basic.o ]]></screen>
 
            Note, that in both cases paths to libxml2 header files are
            also specified. This is only necessary if METARESC was built
@@ -338,7 +338,7 @@
 
            <screen><![CDATA[
  cc -std=gnu99 -I/usr/local/include/libxml2 -I/usr/local/include -c -o basic.o basic.c
- cc -L/usr/local/lib -lreslib -o basic basic.o ]]></screen>
+ cc -L/usr/local/lib -lmetaresc -o basic basic.o ]]></screen>
          </para>
          <!-- TODO: verify all command lines for Linuxen -->
          <para>
@@ -364,7 +364,7 @@
          </para>
 
          <para>
-           When the <filename>reslib.h</filename> header file is
+           When the <filename>metaresc.h</filename> header file is
            included into a client program, METARESC has to generate the
            following for each serializable type, declared within the
            translation unit:
@@ -449,7 +449,7 @@
            declarations or metadata and related functions. For
            exploiting this, you need to define (or re-define) the
            <code>RL_MODE</code> macro right <emphasis>before</emphasis>
-           including the <filename>reslib.h</filename> header. The
+           including the <filename>metaresc.h</filename> header. The
            macro may have following values:
 
            <informaltable>
@@ -497,7 +497,7 @@
 
              <listitem><para>
                In the "naked header file" include the
-               <filename>reslib.h</filename> library header and declare
+               <filename>metaresc.h</filename> library header and declare
                types using METARESC grammar. This file should not have
                any protection from incluing it multiple times.
              </para></listitem>

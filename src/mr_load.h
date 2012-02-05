@@ -2,7 +2,7 @@
 #define _RL_LOAD_H_
 
 #include <string.h>
-#include <reslib.h>
+#include <metaresc.h>
 
 #define MR_LOAD_RARRAY(ACTION)						\
   ({									\

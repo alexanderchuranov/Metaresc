@@ -1,5 +1,5 @@
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 TYPEDEF_ENUM (_enum_t, ZERO, ONE, (TWO, = 2), (THREE, = 3))

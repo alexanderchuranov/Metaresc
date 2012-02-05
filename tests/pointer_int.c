@@ -1,5 +1,5 @@
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 TYPEDEF_STRUCT (int8_ptr_t, (int8_t *, x))

@@ -1,8 +1,8 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES ( , "pointer on any type"),
 	       (void *, ptr, , "default void pointer")
@@ -72,7 +72,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
-TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "ResLib types"),
+TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      (MR_TYPE_NONE, = 0),
 	      MR_TYPE_STRING,
 	      MR_TYPE_CHAR_ARRAY,
@@ -103,7 +103,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "ResLib types"),
 	      MR_TYPE_LAST, /* keep it last */
 	      )
 
-TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "ResLib types extension"),
+TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 	      MR_TYPE_EXT_NONE,
 	      MR_TYPE_EXT_ARRAY,
 	      MR_TYPE_EXT_RARRAY,
@@ -151,15 +151,15 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 	       RARRAY (struct mr_fd_t, func_param, "function arguments descriptors"),
 	       )
 
-TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "ResLib field descriptor"),
+TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(char *, type, , "stringified type name"),
 		(char *, name, , "name of the field"),
 		(uint64_t, hash_value, , "hash of the name"),
 		(int, offset, , "offset in structure"),
 		(int, size, , "size of field"),
-		(mr_type_t, mr_type, , "ResLib type"),
-		(mr_type_t, mr_type_aux, , "ResLib type if field is a pointer on builtin types or bit-field"),
-		(mr_type_ext_t, mr_type_ext, , "ResLib type extension"),
+		(mr_type_t, mr_type, , "Metaresc type"),
+		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
+		(mr_type_ext_t, mr_type_ext, , "Metaresc type extension"),
 		(mr_fd_param_t, param, , "mr_type"),
 		(char *, comment, , "field comments"),
 		/*
@@ -180,8 +180,8 @@ TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "mr_fd_t pointer wrapper"),
 		(mr_fd_t *, fdp, , "pointer on field descriptor"),
 		)
 
-TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "ResLib type descriptor"),
-		(mr_type_t, mr_type, , "ResLib type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
+TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
+		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(int, size, , "size of type"),
 		(char *, type, , "stringified type name"),
 		(char *, attr, , "stringified typedef attributes"),
@@ -202,7 +202,7 @@ TYPEDEF_STRUCT (mr_td_ptr_t, ATTRIBUTES ( , "mr_td_t pointer wrapper"),
 		(mr_td_t *, tdp, , "pointer on type descriptor"),
 		)
 
-TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "ResLib memory operations"),
+TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
 		(void *, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
 		(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
@@ -260,7 +260,7 @@ TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
 		(mr_lloc_t, end, , "end of the token"),
 		)
 
-TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "ResLib load parser data"),
+TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_lloc_t, lloc, , "current location of parser"),
 		(char *, str, , "string to parse"),
 		(char *, buf, , "parser internal buffer"),
@@ -309,7 +309,7 @@ TYPEDEF_STRUCT (mr_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
 
 TYPEDEF_FUNC (mr_output_format_t, char *, (mr_ptrdes_t *), "formater handler")
 
-TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "ResLib configuration"),
+TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(void, msg_handler, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), "handler for error messages"),

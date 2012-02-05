@@ -1,5 +1,5 @@
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (builtins_t,
                 

@@ -4,7 +4,7 @@
 #include <check.h>
 #include <string.h>
 
-#include <reslib.h>
+#include <metaresc.h>
 
 #ifdef HAVE_BISON_FLEX
 #define BISON_FLEX_METHODS XML1, SCM, CINIT, JSON,

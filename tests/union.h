@@ -1,4 +1,4 @@
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_UNION (union_int32_float_t, float x, int32_t y)
 

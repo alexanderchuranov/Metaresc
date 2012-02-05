@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (box_t,
                 (char *, name),

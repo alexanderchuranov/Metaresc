@@ -1,10 +1,10 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <reslib.h>
+#include <metaresc.h>
 
 #define MR_CINIT_NULL "NULL"
 #define MR_CINIT_INDENT_SPACES (2)

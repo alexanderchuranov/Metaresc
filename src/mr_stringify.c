@@ -1,10 +1,12 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
-#include <reslib.h>
-#include <rlconfig.h>
+#include <metaresc.h>
 #include <math.h>
+#ifdef HAVE_CONFIG_H
+# include <mr_config.h>
+#endif /* HAVE_CONFIG_H */
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
 #endif /* HAVE_ENDIAN_H */

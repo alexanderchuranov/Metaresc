@@ -1,6 +1,6 @@
 #include <stdarg.h>
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 TYPEDEF_ENUM (mr_enum_t,

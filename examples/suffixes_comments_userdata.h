@@ -1,5 +1,5 @@
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (example_t,
 		/* optionaly second argument could be an attributes for the type */

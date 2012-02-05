@@ -1,5 +1,5 @@
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_UNION (named_union_t,
                (int, a),

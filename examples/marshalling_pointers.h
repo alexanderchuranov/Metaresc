@@ -1,5 +1,5 @@
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (back_end_server_t,
                 (int, id),

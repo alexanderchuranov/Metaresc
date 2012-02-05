@@ -1,5 +1,5 @@
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 TYPEDEF_STRUCT (ld_ptr_t, (const volatile long double *, x));

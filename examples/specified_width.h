@@ -1,6 +1,6 @@
 
 #include <stdint.h>
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (specified_width_t,
                 (int16_t, si16),

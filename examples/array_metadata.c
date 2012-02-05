@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <reslib.h>
+#include <metaresc.h>
 
 TYPEDEF_STRUCT (example_t,
                 (char*, str),

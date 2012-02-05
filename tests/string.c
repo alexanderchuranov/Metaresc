@@ -1,6 +1,6 @@
 #include <stdarg.h>
 #include <check.h>
-#include <reslib.h>
+#include <metaresc.h>
 #include <regression.h>
 
 TYPEDEF_CHAR_ARRAY (char_array_t, 256)

@@ -2,7 +2,7 @@
 
 AM_CFLAGS = --fast-math -Wall -Werror
 
-DISTCLEANFILES = rlpp.h
+DISTCLEANFILES = mr_pp.h
 MOSTLYCLEANFILES = *.tab.[ch] *.lex.[ch]
 
 SUFFIXES = .y .l .lex.h .tab.h .lex.c .tab.c
@@ -21,17 +21,17 @@ SUFFIXES = .y .l .lex.h .tab.h .lex.c .tab.c
 
 pkgincludedir = $(includedir)
 
-lib_LTLIBRARIES = libreslib.la 
+lib_LTLIBRARIES = libmetaresc.la 
 
-libreslib_la_SOURCES = reslib.c rl_stringify.c rl_save.c rl_load.c xdr.c xml1_save.c cinit_save.c scm_save.c tsearch.c
+libmetaresc_la_SOURCES = metaresc.c mr_stringify.c mr_save.c mr_load.c xdr.c xml1_save.c cinit_save.c scm_save.c tsearch.c
 if HAVE_BISON_FLEX
-  libreslib_la_SOURCES += xml1_load.tab.c xml1_load.lex.c cinit_load.tab.c cinit_load.lex.c scm_load.tab.c scm_load.lex.c
+  libmetaresc_la_SOURCES += xml1_load.tab.c xml1_load.lex.c cinit_load.tab.c cinit_load.lex.c scm_load.tab.c scm_load.lex.c
 endif
 if HAVE_LIBXML2
-  libreslib_la_SOURCES += xml2_save.c xml2_load.c
+  libmetaresc_la_SOURCES += xml2_save.c xml2_load.c
 endif
 
-pkginclude_HEADERS = reslib.h rlprotos.h rlexport.h rlpp.h
+pkginclude_HEADERS = metaresc.h mr_protos.h mr_export.h mr_pp.h
 
 xml1_load.tab.c: xml1_load.y xml1_load.lex.h
 xml1_load.lex.c: xml1_load.l xml1_load.tab.h
@@ -39,9 +39,9 @@ cinit_load.tab.c: cinit_load.y cinit_load.lex.h
 cinit_load.lex.c: cinit_load.l cinit_load.tab.h
 scm_load.tab.c: scm_load.y scm_load.lex.h
 scm_load.lex.c: scm_load.l scm_load.tab.h
-$(libreslib_la_OBJECTS): rlpp.h
-rlpp.h: rlpp.sh
-	$(srcdir)/rlpp.sh `grep MR_PP_DEPTH rlexport.h | cut -d " " -f 3` > rlpp.h
+$(libmetaresc_la_OBJECTS): mr_pp.h
+mr_pp.h: mr_pp.sh
+	$(srcdir)/mr_pp.sh `grep MR_PP_DEPTH mr_export.h | cut -d " " -f 3` > mr_pp.h
 
 valgrind:
 	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"

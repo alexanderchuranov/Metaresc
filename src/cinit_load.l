@@ -1,6 +1,6 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of ResLib project */
+/* This file is part of Metaresc project */
 
 %option 8bit reentrant bison-bridge bison-locations 
 %option warn nounput never-interactive noyywrap
@@ -10,7 +10,7 @@
 #include <string.h>
 #include <ctype.h>
    
-#include <reslib.h>
+#include <metaresc.h>
 #include <lexer.h>
 #include <cinit_load.tab.h>
 

@@ -2,10 +2,10 @@
 # Process this file with autoconf to produce a configure script.
 
 #AC_PREREQ(2.63)
-AC_INIT([Metadata for C], [1.0], [hnarkaytis@gmail.com])
-AM_INIT_AUTOMAKE([reslib], [1.0])
-AC_CONFIG_SRCDIR([src/rlprotos.h])
-AC_CONFIG_HEADERS([src/rlconfig.h src/rlexport.h])
+AC_INIT([META data and RESource library for C language], [1.0], [hnarkaytis@gmail.com])
+AM_INIT_AUTOMAKE([metaresc], [1.0])
+AC_CONFIG_SRCDIR([src/mr_protos.h])
+AC_CONFIG_HEADERS([src/mr_config.h src/mr_export.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_LANG(C)
 
