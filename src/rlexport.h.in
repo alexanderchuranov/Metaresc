@@ -6,15 +6,15 @@
 #undef HAVE_LIBXML2
 
 /* Preprocessor routines depth */
-#undef RL_PP_DEPTH
+#undef MR_PP_DEPTH
 
 /* sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t,
    uint64_t */
-#undef RL_SIZEOF_UNCOVERED_TYPE
+#undef MR_SIZEOF_UNCOVERED_TYPE
 
 /* Red-black tree lookup is enabled */
-#undef RL_TREE_LOOKUP
+#undef MR_TREE_LOOKUP
 
 /* int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t
    */
-#undef RL_UNCOVERED_TYPE
+#undef MR_UNCOVERED_TYPE

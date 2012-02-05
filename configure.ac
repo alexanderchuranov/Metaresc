@@ -91,11 +91,11 @@ AC_CHECK_FUNCS([memset strchr strndup strdup strncasecmp strstr xdr_int8_t xdr_u
 
 AC_ARG_ENABLE(tree-lookup,
 	[  --enable-tree-lookup		enables red-black tree lookup for type descriptor search instead of non-collision hash],
-	AC_DEFINE(RL_TREE_LOOKUP, [], [Red-black tree lookup is enabled]))
+	AC_DEFINE(MR_TREE_LOOKUP, [], [Red-black tree lookup is enabled]))
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=128)
 AC_MSG_CHECKING(preprocessor routines depth)
 AC_MSG_RESULT(${PP_DEPTH})
-AC_DEFINE_UNQUOTED(RL_PP_DEPTH, ${PP_DEPTH}, [Preprocessor routines depth])
+AC_DEFINE_UNQUOTED(MR_PP_DEPTH, ${PP_DEPTH}, [Preprocessor routines depth])
 
 UNCOVERED_TYPE="long long"
 SIZEOF_UNCOVERED_TYPE=64
@@ -130,8 +130,8 @@ AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[#include <stdint.h>]], [[ (int)sizeof (st
 AC_MSG_CHECKING(size of uncovered int type)
 AC_MSG_RESULT(${SIZEOF_UNCOVERED_TYPE})
 
-AC_DEFINE_UNQUOTED(RL_UNCOVERED_TYPE, ${UNCOVERED_TYPE}, [int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
-AC_DEFINE_UNQUOTED(RL_SIZEOF_UNCOVERED_TYPE, ${SIZEOF_UNCOVERED_TYPE}, [sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
+AC_DEFINE_UNQUOTED(MR_UNCOVERED_TYPE, ${UNCOVERED_TYPE}, [int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
+AC_DEFINE_UNQUOTED(MR_SIZEOF_UNCOVERED_TYPE, ${SIZEOF_UNCOVERED_TYPE}, [sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile examples/Makefile])
 AC_OUTPUT

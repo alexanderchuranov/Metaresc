@@ -4,7 +4,7 @@
 
 TYPEDEF_STRUCT (struct_char_t, char x)
 
-RL_START_TEST (all_chars, "run whole charset") {
+MR_START_TEST (all_chars, "run whole charset") {
   int i;
   for (i = 0; i < (1 << 8); ++i)
     {

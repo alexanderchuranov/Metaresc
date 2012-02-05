@@ -25,7 +25,7 @@ int main ()
   char type_name[] = "employee_t";
   char field_name[] = "salary";
   
-  rl_td_t * td = rl_get_td_by_name (type_name);
+  mr_td_t * td = mr_get_td_by_name (type_name);
   
   if (NULL == td)
     {
@@ -33,7 +33,7 @@ int main ()
       return (EXIT_FAILURE);
     }
   
-  rl_fd_t * fd = rl_get_fd_by_name (td, field_name);
+  mr_fd_t * fd = mr_get_fd_by_name (td, field_name);
   
   if (NULL == fd)
     {

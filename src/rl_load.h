@@ -4,19 +4,19 @@
 #include <string.h>
 #include <reslib.h>
 
-#define RL_LOAD_RARRAY(ACTION)						\
+#define MR_LOAD_RARRAY(ACTION)						\
   ({									\
-    rl_td_t * _tdp_ = rl_get_td_by_name ("rl_rarray_t");		\
+    mr_td_t * _tdp_ = mr_get_td_by_name ("mr_rarray_t");		\
     int _status_ = 0;							\
     if (NULL == _tdp_)							\
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NO_TYPE_DESCRIPTOR, "rl_rarray_t"); \
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, "mr_rarray_t"); \
     else								\
       {									\
-	rl_td_t _td_ = *_tdp_;						\
+	mr_td_t _td_ = *_tdp_;						\
 	int fields_count = _td_.fields.size / sizeof (_td_.fields.data[0]); \
 	int lookup_by_name_count = _td_.lookup_by_name.size / sizeof (_td_.lookup_by_name.data[0]); \
-	rl_fd_t fields[fields_count];					\
-	rl_fd_ptr_t lookup_by_name[lookup_by_name_count];		\
+	mr_fd_t fields[fields_count];					\
+	mr_fd_ptr_t lookup_by_name[lookup_by_name_count];		\
 	int _i_;							\
 	memcpy (fields, _td_.fields.data, _td_.fields.size);		\
 	memset (lookup_by_name, 0, _td_.lookup_by_name.size);		\
@@ -29,4 +29,4 @@
     _status_;								\
   })
 
-#endif /* _RL_LOAD_H_ */
+#endif /* _MR_LOAD_H_ */

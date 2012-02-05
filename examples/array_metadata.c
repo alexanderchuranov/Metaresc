@@ -11,9 +11,9 @@ TYPEDEF_STRUCT (example_t,
                 (double, a3, [5][2][9])
                 )
 
-int print_array_field_info (rl_td_t * td, char name[])
+int print_array_field_info (mr_td_t * td, char name[])
 {
-  rl_fd_t const * fd = rl_get_fd_by_name (td, name);
+  mr_fd_t const * fd = mr_get_fd_by_name (td, name);
   
   if (NULL == fd)
     {
@@ -23,7 +23,7 @@ int print_array_field_info (rl_td_t * td, char name[])
       return (EXIT_FAILURE);
     }
   
-  if (fd->rl_type_ext != RL_TYPE_EXT_ARRAY)
+  if (fd->mr_type_ext != MR_TYPE_EXT_ARRAY)
     {
       fprintf (stderr,
 	       "error: the '%s' field is not an array\n",
@@ -47,7 +47,7 @@ int print_array_field_info (rl_td_t * td, char name[])
 int main ()
 {
   char type_name[] = "example_t";
-  rl_td_t * td = rl_get_td_by_name (type_name);
+  mr_td_t * td = mr_get_td_by_name (type_name);
   
   if (NULL == td)
     {

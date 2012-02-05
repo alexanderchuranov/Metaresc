@@ -13,7 +13,7 @@ TYPEDEF_STRUCT (employee_t,
 int main ()
 {
   char name[] = "employee_t";
-  rl_td_t * td = rl_get_td_by_name(name);
+  mr_td_t * td = mr_get_td_by_name(name);
   int i;
   
   if (NULL == td)
@@ -28,7 +28,7 @@ int main ()
   
   for (i = 0; i < num_fields; ++i)
     {
-      rl_fd_t const * fd = &td->fields.data[i];
+      mr_fd_t const * fd = &td->fields.data[i];
     
       printf("\t%u: name = %s, type = %s, size = %u bytes\n",
 	     i, fd->name, fd->type, fd->size);

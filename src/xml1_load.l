@@ -4,8 +4,8 @@
 
 %option 8bit reentrant bison-bridge bison-locations 
 %option warn nounput never-interactive noyywrap
-%option extra-type="rl_load_t*"
-%option prefix="rl_xml1_"
+%option extra-type="mr_load_t*"
+%option prefix="mr_xml1_"
 %{
 #define __USE_GNU
 #include <string.h>
@@ -22,7 +22,7 @@ ID	[_[:alpha:]][_[:alnum:]]*(:[_[:alpha:]][_[:alnum:]]*)?
 
 [[:space:]]+  { return (TOK_XML_WS); }
 
-{ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_XML_ID); }
+{ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_XML_ID); }
 
 [[:space:]]*"="[[:space:]]* { return (TOK_XML_ASSIGN); }
 
@@ -36,10 +36,10 @@ ID	[_[:alpha:]][_[:alnum:]]*(:[_[:alpha:]][_[:alnum:]]*)?
 "<?xml"  { return (TOK_XML_DOC_OPEN_TAG); }
 [[:space:]]*"?>"[^<]* { return (TOK_XML_DOC_CLOSE_TAG); }
 
-"<"{ID}  { rl_set_lval (&yylval->string, &yytext[1], NULL); return (TOK_XML_OPEN_TAG); }
-"</"{ID} { rl_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_XML_CLOSE_TAG); }
-[[:space:]]*"/>"[^<]* { rl_set_lval (&yylval->string, strchr (yytext, '>') + 1, NULL); return (TOK_XML_CLOSE_EMPTY_TAG); }
-[[:space:]]*">"[^<]* { rl_set_lval (&yylval->string, strchr (yytext, '>') + 1, xml_unquote_string); return (TOK_XML_CONTENT); }
+"<"{ID}  { mr_set_lval (&yylval->string, &yytext[1], NULL); return (TOK_XML_OPEN_TAG); }
+"</"{ID} { mr_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_XML_CLOSE_TAG); }
+[[:space:]]*"/>"[^<]* { mr_set_lval (&yylval->string, strchr (yytext, '>') + 1, NULL); return (TOK_XML_CLOSE_EMPTY_TAG); }
+[[:space:]]*">"[^<]* { mr_set_lval (&yylval->string, strchr (yytext, '>') + 1, xml_unquote_string); return (TOK_XML_CONTENT); }
 
 .         { return (TOK_XML_ERROR); }
 %%

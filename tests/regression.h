@@ -22,7 +22,7 @@
 
 extern Suite * suite;
 
-#define RL_START_TEST(NAME, ...)					\
+#define MR_START_TEST(NAME, ...)					\
   static void NAME (int);						\
   static inline void __attribute__ ((constructor)) init_ ## NAME (void) \
   {									\
@@ -40,7 +40,7 @@ extern Suite * suite;
   };									\
   START_TEST (NAME)
 
-#define SERIALIZE_METHOD RL_SAVE_CINIT
+#define SERIALIZE_METHOD MR_SAVE_CINIT
 
 #define MEM_CMP(TYPE, X, Y, ...) memcmp (X, Y, sizeof (TYPE))
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
@@ -55,35 +55,35 @@ extern Suite * suite;
 		    #TYPE " %s = %s;\n", &#X[1], x_, &#Y[1], y_);	\
 	}								\
       if (x_)								\
-	RL_FREE (x_);							\
+	MR_FREE (x_);							\
       if (y_)								\
-	RL_FREE (y_);							\
+	MR_FREE (y_);							\
       xy_cmp;								\
     })
 
-#define RL_IS__EQ__ 0
+#define MR_IS__EQ__ 0
 
 #define ASSERT_SAVE_LOAD(METHOD, TYPE, X, ...)		\
-  RL_IF_ELSE (RL_PASTE2 (SKIP_METHOD_, METHOD))		\
+  MR_IF_ELSE (MR_PASTE2 (SKIP_METHOD_, METHOD))		\
   (ASSERT_SAVE_LOAD_(METHOD, TYPE, X, __VA_ARGS__)) (memcmp (X, X, 1))
 
 #define ASSERT_SAVE_LOAD_(METHOD, TYPE, X, TYPE_CMP, ...)		\
-  RL_IF_ELSE (RL_PASTE3 (RL_IS__EQ_, TYPE_CMP, _))			\
+  MR_IF_ELSE (MR_PASTE3 (MR_IS__EQ_, TYPE_CMP, _))			\
   (ASSERT_SAVE_LOAD__ (METHOD, TYPE, X, TYPE_CMP, __VA_ARGS__))		\
   (ASSERT_SAVE_LOAD__ (METHOD, TYPE, X, CMP_SERIALIAZED, __VA_ARGS__))
 
 #define ASSERT_SAVE_LOAD__(METHOD, TYPE, X, TYPE_CMP, ...) ({		\
-      rl_rarray_t serialized = RL_SAVE_ ## METHOD ## _RA (TYPE, X);	\
+      mr_rarray_t serialized = MR_SAVE_ ## METHOD ## _RA (TYPE, X);	\
       int orig_eq_restored;						\
       TYPE METHOD ## _restored;						\
-      if (0 == RL_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)) \
+      if (0 == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)) \
 	ck_abort_msg ("load for method " #METHOD " on type " #TYPE " failed"); \
       if (serialized.data)						\
-	RL_FREE (serialized.data);					\
+	MR_FREE (serialized.data);					\
       orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &METHOD ## _restored, __VA_ARGS__)); \
       ck_assert_msg (orig_eq_restored,					\
 		     "restored value mismatched original for method " #METHOD " on type " #TYPE); \
-      RL_FREE_RECURSIVELY (TYPE, &METHOD ## _restored);			\
+      MR_FREE_RECURSIVELY (TYPE, &METHOD ## _restored);			\
     })
 
 #define ASSERT_SAVE_LOAD_TYPE(METHOD, TYPE, VALUE, ...) ({		\
@@ -96,7 +96,7 @@ extern Suite * suite;
 #define ASSERT_ITERATOR(ARGS, METHOD, I) ASSERT_ITERATOR_ (ASSERT_GET_TEST ARGS, METHOD, ASSERT_GET_ARGS ARGS)
 #define ASSERT_ITERATOR_(TEST, METHOD, ...) TEST (METHOD, __VA_ARGS__)
 #define SERIAL(NAME, I, REC, X) REC; X
-#define ALL_METHODS(...) RL_FOR ((__VA_ARGS__), RL_NARG (TEST_METHODS), SERIAL, ASSERT_ITERATOR, TEST_METHODS)
+#define ALL_METHODS(...) MR_FOR ((__VA_ARGS__), MR_NARG (TEST_METHODS), SERIAL, ASSERT_ITERATOR, TEST_METHODS)
 
 #define SCALAR_CMP(TYPE, X, Y, ...) (*(X) != *(Y))
 #define STRUCT_X_CMP(TYPE, X, Y, ...) ((X)->x != (Y)->x)

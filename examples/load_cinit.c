@@ -25,14 +25,14 @@ int main (int argc, char * argv[])
     "  .salary    = 123456,   " "\n"
     "}"                         "\n";
   
-  employee_t employee = RL_LOAD_CINIT (employee_t, serialized);
+  employee_t employee = MR_LOAD_CINIT (employee_t, serialized);
   
   print_info (&employee);
-  RL_FREE_RECURSIVELY (employee_t, &employee);
+  MR_FREE_RECURSIVELY (employee_t, &employee);
   
   char corrupted[] = "this is not a Scheme language text";
   
-  if (RL_LOAD_CINIT (employee_t, corrupted, &employee))
+  if (MR_LOAD_CINIT (employee_t, corrupted, &employee))
     printf ("Parsing successfull (unexpected behavior)\n");
   else 
     printf ("Parsing error (expected behavior)\n");

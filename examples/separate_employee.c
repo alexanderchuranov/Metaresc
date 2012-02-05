@@ -1,8 +1,8 @@
 
 #include "separate_employee.h"
 
-#undef RL_MODE
-#define RL_MODE DESC
+#undef MR_MODE
+#define MR_MODE DESC
 #include "separate_employee_decl.h"
 
 employee_t create_employee (

@@ -13,14 +13,14 @@ int main ()
     .fg = WHITE
   };
   
-  char * xml = RL_SAVE_XML (screen_t, &screen);
+  char * xml = MR_SAVE_XML (screen_t, &screen);
 
   if (NULL == xml)
     printf ("Serialization failed\n");
   else
     {
       printf ("%s", xml);
-      RL_FREE (xml);
+      MR_FREE (xml);
     }
   
   // TODO: loading unmatched enum value

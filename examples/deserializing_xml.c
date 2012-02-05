@@ -21,7 +21,7 @@ main (int argc, char * argv[])
       "<salary>123456</salary>"
     "</employee>";
   
-  employee_t employee = RL_LOAD_XML (employee_t, xml);
+  employee_t employee = MR_LOAD_XML (employee_t, xml);
   
   printf (
 	  "First name: %s\nLast name: %s\nSalary: %u\n",

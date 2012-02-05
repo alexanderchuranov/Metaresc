@@ -123,7 +123,7 @@ TYPEDEF_STRUCT (struct_union_ca_ptr_t,
 		(ca2_t *, discriminator),
 		)
 
-TYPEDEF_STRUCT (struct_rl_ptr_t,
-		(rl_ptr_t, ptr, , "discriminator"),
+TYPEDEF_STRUCT (struct_mr_ptr_t,
+		(mr_ptr_t, ptr, , "discriminator"),
 		string_t discriminator
 		)

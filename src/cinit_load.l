@@ -4,8 +4,8 @@
 
 %option 8bit reentrant bison-bridge bison-locations 
 %option warn nounput never-interactive noyywrap
-%option extra-type="rl_load_t*"
-%option prefix="rl_cinit_"
+%option extra-type="mr_load_t*"
+%option prefix="mr_cinit_"
 %{
 #include <string.h>
 #include <ctype.h>
@@ -16,7 +16,7 @@
 
    static char * unquote (char*, int);
    static char * unquote_char (char*, int);
-   static void get_type (rl_substr_t*, char*);
+   static void get_type (mr_substr_t*, char*);
 
 %}
 
@@ -32,33 +32,33 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 {WS}  { /* eat up whitespace */ }
 
-{NUMBER} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
+{NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
 [+-]?[Nn][Aa][Nn] |
 [+-]?[Ii][Nn][Ff] |
 [+-]?[[:digit:]]+"."[[:digit:]]*  |
 [+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
-[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
+[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
-"NULL" { rl_set_lval (&yylval->string, NULL, NULL); return (TOK_CINIT_VALUE); }
+"NULL" { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_CINIT_VALUE); }
 
-{ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
+{ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
-"."{WS}{ID}{WS}"=" { rl_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
+"."{WS}{ID}{WS}"=" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
-"\""{ID}"\""{WS}":" { rl_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
+"\""{ID}"\""{WS}":" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
 "("{WS}({ID}{WS})*{ID}{WS}\*?{WS}("["{WS}"]")?{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
 "/*"{WS}"("{WS}({ID}{WS})*{ID}{WS}\*?{WS}"["{WS}"]"{WS}")"{WS}"*/" { get_type (&yylval->string, strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
 
-({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
+({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
 
-"\""([^\"\\]|\\.)*"\"" { rl_set_lval (&yylval->string, yytext, unquote); return (TOK_CINIT_VALUE); }
+"\""([^\"\\]|\\.)*"\"" { mr_set_lval (&yylval->string, yytext, unquote); return (TOK_CINIT_VALUE); }
 
-"\'"([^\'\\]|\\.)*"\'" { rl_set_lval (&yylval->string, yytext, unquote_char); return (TOK_CINIT_VALUE); }
+"\'"([^\'\\]|\\.)*"\'" { mr_set_lval (&yylval->string, yytext, unquote_char); return (TOK_CINIT_VALUE); }
 
-"/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { rl_get_id (&yylval->id_ivalue.id, &yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
+"/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { mr_get_id (&yylval->id_ivalue.id, &yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
 
 "/*"			  { BEGIN(in_comment); }
 <in_comment>[^*\n]*        /* eat anything that's not a '*' */
@@ -109,10 +109,10 @@ static char * unquote (char * str, int length)
 	}
       ++length_;
     }
-  str_ = RL_MALLOC (length_ + 1);
+  str_ = MR_MALLOC (length_ + 1);
   if (NULL == str_)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
 
@@ -144,11 +144,11 @@ static char * unquote (char * str, int length)
 
 static char * unquote_char (char * str, int length)
 {
-  char * str_ = (char*)RL_MALLOC (length - 1);
+  char * str_ = (char*)MR_MALLOC (length - 1);
 
   if (NULL == str_)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
   ++str;
@@ -165,7 +165,7 @@ static char * unquote_char (char * str, int length)
   return (str_);
 }
 
-static void get_type (rl_substr_t * substr, char * start)
+static void get_type (mr_substr_t * substr, char * start)
 {
   char * stop;
   while (isspace (*start))

@@ -100,18 +100,18 @@ main (int argc, char * argv[])
   xmlKeepBlanksDefault (0);
 #endif /* HAVE_LIBXML2 */
 
-  char * xml = rl_read_xml_doc (stdin);
+  char * xml = mr_read_xml_doc (stdin);
   if (NULL == xml)
-    printf ("rl_read_xml_doc failed\n");
+    printf ("mr_read_xml_doc failed\n");
   else
     {
       memset (&helping, 0, sizeof (helping));
-      if (0 == RL_LOAD_XML (helping_t, xml, &helping))
+      if (0 == MR_LOAD_XML (helping_t, xml, &helping))
 	printf ("Load failed\n");
       else
 	print_helping (&helping);
-      RL_FREE_RECURSIVELY (helping_t, &helping);
-      RL_FREE (xml);
+      MR_FREE_RECURSIVELY (helping_t, &helping);
+      MR_FREE (xml);
     }
 
   /* Clean up everything else before quitting. */

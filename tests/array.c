@@ -22,22 +22,22 @@ TYPEDEF_STRUCT (int_array2d_t, (int, x, [2][2]))
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);	\
     })
 
-RL_START_TEST (char_array, "array of chars") {
+MR_START_TEST (char_array, "array of chars") {
   char_array_t orig = { { 'a', 'b' }, };
   ALL_METHODS (ASSERT_SAVE_LOAD, char_array_t, &orig);
 } END_TEST
 
-RL_START_TEST (enum_array, "array of enums") {
+MR_START_TEST (enum_array, "array of enums") {
   packed_enum_array_t orig = { { ONE, TWO }, };
   ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_array_t, &orig);
 } END_TEST
 
-RL_START_TEST (string_array, "array of strings") {
+MR_START_TEST (string_array, "array of strings") {
   string_array_t orig = { { "ONE", "TWO" }, };
   ALL_METHODS (ASSERT_SAVE_LOAD, string_array_t, &orig);
 } END_TEST
 
-RL_START_TEST (numeric_array, "array of numerics") {
+MR_START_TEST (numeric_array, "array of numerics") {
   ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, int8_array_t);
   ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, int16_array_t);
   ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, int32_array_t);
@@ -47,7 +47,7 @@ RL_START_TEST (numeric_array, "array of numerics") {
   ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, ld_array_t);
 } END_TEST
 
-RL_START_TEST (two_dimensional_array, "array2d") {
+MR_START_TEST (two_dimensional_array, "array2d") {
   packed_enum_array2d_t packed_enum_array2d = { { { ZERO, ONE, }, { TWO, THREE, }, } };
   string_array2d_t string_array2d = { { { "ZERO", "ONE", }, { "TWO", "THREE", }, } };
   string_array2d_t string_array2d_duplicate = { { { "ZERO", "ONE", }, { "ZERO", "ONE", }, } };

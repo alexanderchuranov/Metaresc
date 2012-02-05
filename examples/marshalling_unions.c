@@ -8,14 +8,14 @@
 int main ()
 {
   floating_t fl = { .f = M_PI };
-  char * xml = RL_SAVE_XML (floating_t, &fl);
+  char * xml = MR_SAVE_XML (floating_t, &fl);
 
   if (NULL == xml)
     printf ("Serialization failed\n");
   else
     {
       printf ("%s", xml);
-      RL_FREE (xml);
+      MR_FREE (xml);
     }
   
   return (EXIT_SUCCESS);

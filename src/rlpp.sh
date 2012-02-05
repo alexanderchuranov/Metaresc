@@ -6,28 +6,28 @@ echo "#ifndef _RLPP_H_"
 echo "#define _RLPP_H_" 
 echo 
 
-echo "#define RL_FOREACH0(...)" 
+echo "#define MR_FOREACH0(...)" 
 I=0
 while [ $I -lt $PP_DEPTH ]
 do
   NEXT=$(( $I + 1 ))
-  echo "#define RL_FOREACH$NEXT(X, _0, ...) X (_0) RL_FOREACH$I (X, __VA_ARGS__)" 
+  echo "#define MR_FOREACH$NEXT(X, _0, ...) X (_0) MR_FOREACH$I (X, __VA_ARGS__)" 
   I=$(( $I + 1 ))
 done
 echo 
 
-echo "#define RL_FOR0(NAME, OP, FUNC, X, ...) " 
-echo "#define RL_FOR1(NAME, OP, FUNC, X, ...) FUNC (NAME, X, 1)" 
+echo "#define MR_FOR0(NAME, OP, FUNC, X, ...) " 
+echo "#define MR_FOR1(NAME, OP, FUNC, X, ...) FUNC (NAME, X, 1)" 
 I=1
 while [ $I -lt $PP_DEPTH ]
 do
   NEXT=$(( $I + 1 ))
-  echo "#define RL_FOR$NEXT(NAME, OP, FUNC, X, ...) OP (NAME, $I, FUNC (NAME, X, $NEXT), RL_FOR$I (NAME, OP, FUNC, __VA_ARGS__))" 
+  echo "#define MR_FOR$NEXT(NAME, OP, FUNC, X, ...) OP (NAME, $I, FUNC (NAME, X, $NEXT), MR_FOR$I (NAME, OP, FUNC, __VA_ARGS__))" 
   I=$(( $I + 1 ))
 done
 echo 
 
-echo -n "#define RL_ARG"$PP_DEPTH"(" 
+echo -n "#define MR_ARG"$PP_DEPTH"(" 
 I=1
 while [ $I -le $PP_DEPTH ]
 do
@@ -37,9 +37,9 @@ done
 echo "...) _"$PP_DEPTH 
 echo 
 
-echo "#define RL_NARG(...) RL_NARG_ (0, ##__VA_ARGS__)" 
+echo "#define MR_NARG(...) MR_NARG_ (0, ##__VA_ARGS__)" 
 
-echo -n "#define RL_NARG_(...) RL_ARG$PP_DEPTH (__VA_ARGS__, " 
+echo -n "#define MR_NARG_(...) MR_ARG$PP_DEPTH (__VA_ARGS__, " 
 I=$(( $PP_DEPTH - 2 ))
 while [ $I -ge 0 ]
 do
@@ -49,7 +49,7 @@ done
 echo ")" 
 echo 
 
-echo -n "#define RL_HAS_COMMA(...) RL_ARG"$PP_DEPTH "(__VA_ARGS__, " 
+echo -n "#define MR_HAS_COMMA(...) MR_ARG"$PP_DEPTH "(__VA_ARGS__, " 
 I=2
 while [ $I -lt $PP_DEPTH ]
 do

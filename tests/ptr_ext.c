@@ -25,18 +25,18 @@ int main ()
   main_data.shifted_data3 = (void*)&static_data.data[1];
   main_data.shifted_data4 = (void*)&static_data.data[2];
   
-  str = RL_SAVE_XML (x_t, &x);
+  str = MR_SAVE_XML (x_t, &x);
   if (str)
     {
       printf ("%s\n", str);
-      RL_FREE (str);
+      MR_FREE (str);
     }
 
-  str = RL_SAVE_XML (main_data_t, &main_data);
+  str = MR_SAVE_XML (main_data_t, &main_data);
   if (str)
     {
       printf ("%s\n", str);
-      RL_FREE (str);
+      MR_FREE (str);
     }
 
 #ifdef HAVE_LIBXML2 

@@ -11,11 +11,11 @@ TYPEDEF_STRUCT (ops,
 		(double, divide, (float, int))
 		)
 
-int print_func_field_signature (rl_fd_t const * fd)
+int print_func_field_signature (mr_fd_t const * fd)
 {
   int i;
   
-  if (fd->rl_type != RL_TYPE_FUNC)
+  if (fd->mr_type != MR_TYPE_FUNC)
     {
       fprintf(stderr,
 	      "error: the field '%s' is not a pointer to function\n",
@@ -32,7 +32,7 @@ int print_func_field_signature (rl_fd_t const * fd)
       if (i > 1)
 	printf(", ");
     
-      rl_fd_t const* arg_type = &fd->param.func_param.data[i];
+      mr_fd_t const* arg_type = &fd->param.func_param.data[i];
       printf ("%s", arg_type->type);
     }
   
@@ -45,7 +45,7 @@ int main ()
   char type_name[] = "ops";
   char field_name[] = "subtract";
   
-  rl_td_t * td = rl_get_td_by_name (type_name);
+  mr_td_t * td = mr_get_td_by_name (type_name);
   
   if (NULL == td)
     {
@@ -55,7 +55,7 @@ int main ()
       return (EXIT_FAILURE);
     }
   
-  rl_fd_t const * fd = rl_get_fd_by_name (td, field_name);
+  mr_fd_t const * fd = mr_get_fd_by_name (td, field_name);
   
   if (NULL == fd)
     {

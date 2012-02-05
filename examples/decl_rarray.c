@@ -18,14 +18,14 @@ static organization_t firm = {
 
 int main ()
 {
-  char * xml = RL_SAVE_XML (organization_t, &firm);
+  char * xml = MR_SAVE_XML (organization_t, &firm);
 
   if (NULL == xml)
     printf ("Serialization failed\n");
   else
     {
       printf ("%s", xml);
-      RL_FREE (xml);
+      MR_FREE (xml);
     }
   
   return (EXIT_SUCCESS);

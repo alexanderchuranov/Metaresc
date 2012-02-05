@@ -7,7 +7,7 @@ TYPEDEF_STRUCT (packed_enum_rarray_t, RARRAY (packed_enum_t, x))
 TYPEDEF_STRUCT (string_rarray_t, RARRAY (string_t, x))
 TYPEDEF_STRUCT (emb_rarray_t, RARRAY (emb_rarray_t, x))
 
-RL_START_TEST (rarray_empty, "rarray empty") {
+MR_START_TEST (rarray_empty, "rarray empty") {
   string_rarray_t orig = {
     .x =
     {
@@ -19,7 +19,7 @@ RL_START_TEST (rarray_empty, "rarray empty") {
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
 } END_TEST
 
-RL_START_TEST (rarray_embeded, "slef embeded rarray") {
+MR_START_TEST (rarray_embeded, "slef embeded rarray") {
   emb_rarray_t orig = {
     .x =
     {
@@ -43,7 +43,7 @@ RL_START_TEST (rarray_embeded, "slef embeded rarray") {
   ALL_METHODS (ASSERT_SAVE_LOAD, emb_rarray_t, &orig);
 } END_TEST
 
-RL_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"") {
+MR_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"") {
   string_rarray_t orig = {
     .x =
     {
@@ -57,7 +57,7 @@ RL_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
 } END_TEST
 
-RL_START_TEST (rarray_referenced_content, "referenced content") {
+MR_START_TEST (rarray_referenced_content, "referenced content") {
   string_rarray_t orig = {
     .x =
     {
@@ -71,7 +71,7 @@ RL_START_TEST (rarray_referenced_content, "referenced content") {
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
 } END_TEST
 
-RL_START_TEST (rarray_referenced_elements, "referenced elements") {
+MR_START_TEST (rarray_referenced_elements, "referenced elements") {
   string_rarray_t orig = {
     .x =
     {
@@ -86,7 +86,7 @@ RL_START_TEST (rarray_referenced_elements, "referenced elements") {
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
 } END_TEST
 
-RL_START_TEST (rarray_packed_enum, "packed enum - sizeof != used bytes") {
+MR_START_TEST (rarray_packed_enum, "packed enum - sizeof != used bytes") {
   packed_enum_rarray_t orig = {
     .x =
     {

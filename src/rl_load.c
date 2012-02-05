@@ -21,64 +21,64 @@
  * @return Status. !0 - ok. 0 - rl nodes indexes colision
  */
 static int
-rl_set_crossrefs (rl_load_data_t * rl_load_data)
+mr_set_crossrefs (mr_load_data_t * mr_load_data)
 {
   int i;
-  int count = rl_load_data->ptrs.ra.size / sizeof (rl_load_data->ptrs.ra.data[0]);
+  int count = mr_load_data->ptrs.ra.size / sizeof (mr_load_data->ptrs.ra.data[0]);
   int max_idx = -1;
   int * table;
 
   for (i = 0; i < count; ++i)
-    if (rl_load_data->ptrs.ra.data[i].idx > max_idx)
-      max_idx = rl_load_data->ptrs.ra.data[i].idx;
+    if (mr_load_data->ptrs.ra.data[i].idx > max_idx)
+      max_idx = mr_load_data->ptrs.ra.data[i].idx;
 
   if (max_idx < 0)
     return (!0);
 
-  table = (int*)RL_MALLOC (sizeof (int) * (max_idx + 1));
+  table = (int*)MR_MALLOC (sizeof (int) * (max_idx + 1));
   if (NULL == table)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (0);
     }
 
   for (i = 0; i <= max_idx; ++i)
     table[i] = -1;
   for (i = 0; i < count; ++i)
-    if (rl_load_data->ptrs.ra.data[i].idx >= 0)
+    if (mr_load_data->ptrs.ra.data[i].idx >= 0)
       {
 	/* checking indexes collision */
-	if (table[rl_load_data->ptrs.ra.data[i].idx] >= 0)
-	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_IDS_COLLISION, RL_REF_IDX, rl_load_data->ptrs.ra.data[i].idx);
-	table[rl_load_data->ptrs.ra.data[i].idx] = i;
+	if (table[mr_load_data->ptrs.ra.data[i].idx] >= 0)
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, mr_load_data->ptrs.ra.data[i].idx);
+	table[mr_load_data->ptrs.ra.data[i].idx] = i;
       }
 
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
-    if (rl_load_data->ptrs.ra.data[i].ref_idx >= 0)
+    if (mr_load_data->ptrs.ra.data[i].ref_idx >= 0)
       {
-	int idx = table[rl_load_data->ptrs.ra.data[i].ref_idx];
+	int idx = table[mr_load_data->ptrs.ra.data[i].ref_idx];
 	if (idx < 0)
-	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNDEFINED_REF_IDX, RL_REF_IDX, rl_load_data->ptrs.ra.data[i].ref_idx);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, mr_load_data->ptrs.ra.data[i].ref_idx);
 	else
 	  {
 	    void * data;
-	    if (rl_load_data->ptrs.ra.data[i].flags & RL_PDF_CONTENT_REFERENCE)
-	      data = *(void**)(rl_load_data->ptrs.ra.data[idx].data);
+	    if (mr_load_data->ptrs.ra.data[i].flags & MR_PDF_CONTENT_REFERENCE)
+	      data = *(void**)(mr_load_data->ptrs.ra.data[idx].data);
 	    else
-	      data = rl_load_data->ptrs.ra.data[idx].data;
+	      data = mr_load_data->ptrs.ra.data[idx].data;
 	    
-	    if ((RL_TYPE_EXT_POINTER == rl_load_data->ptrs.ra.data[i].fd.rl_type_ext) ||
-		(RL_TYPE_STRING == rl_load_data->ptrs.ra.data[i].fd.rl_type))
-	      *(void**)rl_load_data->ptrs.ra.data[i].data = data;
+	    if ((MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[i].fd.mr_type_ext) ||
+		(MR_TYPE_STRING == mr_load_data->ptrs.ra.data[i].fd.mr_type))
+	      *(void**)mr_load_data->ptrs.ra.data[i].data = data;
 	  }
       }
-  RL_FREE (table);
+  MR_FREE (table);
   return (!0);
 }
 
 static char *
-rl_get_enum (uint64_t * data, char * str)  
+mr_get_enum (uint64_t * data, char * str)  
 {
   char * name = str;
   int size;
@@ -92,17 +92,17 @@ rl_get_enum (uint64_t * data, char * str)
     memcpy (name_, name, size);
     name_[size] = 0;
     
-#ifdef RL_LINEAR_SEARCH
+#ifdef MR_LINEAR_SEARCH
     /**
      * Type descriptor iterator. Finds enum descriptors and value for enum name.
      * @param tdp type descriptor pointer
      * @param args enum symantic value
      * @return Flag that enum was found
      */
-    int enum2int (rl_td_t * tdp, void * args)
+    int enum2int (mr_td_t * tdp, void * args)
     {
       int i;
-      if (RL_TYPE_ENUM == tdp->rl_type)
+      if (MR_TYPE_ENUM == tdp->mr_type)
 	for (i = tdp->fields.size / sizeof (tdp->fields.data[0]) - 1; i >= 0; --i)
 	  if (0 == strcmp (tdp->fields.data[i].name, name_))
 	    {
@@ -112,14 +112,14 @@ rl_get_enum (uint64_t * data, char * str)
       return (0);
     }
 
-    if (rl_td_foreach (enum2int, name_))
+    if (mr_td_foreach (enum2int, name_))
       return (str);
-#else /* ! RL_LINEAR_SEARCH */
-    if (EXIT_SUCCESS == rl_get_enum_by_name (data, name_))
+#else /* ! MR_LINEAR_SEARCH */
+    if (EXIT_SUCCESS == mr_get_enum_by_name (data, name_))
       return (str);
-#endif /* RL_LINEAR_SEARCH */
+#endif /* MR_LINEAR_SEARCH */
 
-    RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_UNKNOWN_ENUM, name);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name);
     return (NULL);
   }
 }
@@ -131,20 +131,20 @@ rl_get_enum (uint64_t * data, char * str)
  * @return A pointer rest of parsed string
  */
 static char *
-rl_get_int (uint64_t * data, char * str)
+mr_get_int (uint64_t * data, char * str)
 {
   int offset;
   while (isspace (*str))
     ++str;
   if (isalpha (*str))
-    str = rl_get_enum (data, str);
+    str = mr_get_enum (data, str);
   else if ('0' == *str)
     {
       if ('x' == str[1])
 	{
 	  if (1 != sscanf (str, "%" SCNx64 "%n", data, &offset))
 	    {
-	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, str);
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
 	      return (NULL);
 	    }
 	}
@@ -152,7 +152,7 @@ rl_get_int (uint64_t * data, char * str)
 	{
 	  if (1 != sscanf (str, "%" SCNo64 "%n", data, &offset))
 	    {
-	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, str);
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
 	      return (NULL);
 	    }
 	}	
@@ -164,7 +164,7 @@ rl_get_int (uint64_t * data, char * str)
 	str += offset;
       else 
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, str);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
 	  return (NULL);
 	}
     }
@@ -172,35 +172,35 @@ rl_get_int (uint64_t * data, char * str)
 }
 
 /**
- * RL_NONE load handler (dummy)
+ * MR_NONE load handler (dummy)
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_none (int idx, rl_load_data_t * rl_load_data)
+mr_load_none (int idx, mr_load_data_t * mr_load_data)
 {
   return (!0);
 }
 
 /**
- * RL_INTEGER load handler
+ * MR_INTEGER load handler
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_integer (int idx, rl_load_data_t * rl_load_data)
+mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = rl_load_data->ptrs.ra.data[idx].value;
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
   uint64_t value;
   
   if (NULL == str)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, rl_load_data->ptrs.ra.data[idx].value);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, mr_load_data->ptrs.ra.data[idx].value);
       return (0);
     }
-  str = rl_get_int (&value, str);
+  str = mr_get_int (&value, str);
   if (str)
     {
       while (isspace (*str))
@@ -209,30 +209,30 @@ rl_load_integer (int idx, rl_load_data_t * rl_load_data)
   if ((NULL == str) || (*str != 0))
     {
       if (str)
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, rl_load_data->ptrs.ra.data[idx].value);
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, mr_load_data->ptrs.ra.data[idx].value);
       return (0);
     }
-  memcpy (rl_load_data->ptrs.ra.data[idx].data, &value, rl_load_data->ptrs.ra.data[idx].fd.size);
+  memcpy (mr_load_data->ptrs.ra.data[idx].data, &value, mr_load_data->ptrs.ra.data[idx].fd.size);
   return (!0);
 }
 
 /**
- * RL_ENUM load handler
+ * MR_ENUM load handler
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_enum (int idx, rl_load_data_t * rl_load_data)
+mr_load_enum (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = rl_load_data->ptrs.ra.data[idx].value;
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
   char * tail;
-  rl_td_t * tdp = rl_get_td_by_name (rl_load_data->ptrs.ra.data[idx].fd.type);
-  rl_fd_t * fdp;
+  mr_td_t * tdp = mr_get_td_by_name (mr_load_data->ptrs.ra.data[idx].fd.type);
+  mr_fd_t * fdp;
 
   if (NULL == str)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_ENUM, rl_load_data->ptrs.ra.data[idx].value);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_ENUM, mr_load_data->ptrs.ra.data[idx].value);
       return (0);
     }
   if (tdp)
@@ -243,61 +243,61 @@ rl_load_enum (int idx, rl_load_data_t * rl_load_data)
       while ((tail > str) && isspace (*tail))
 	--tail;
       *++tail = 0;
-      fdp = rl_get_fd_by_name (tdp, str);
+      fdp = mr_get_fd_by_name (tdp, str);
       if (fdp)
 	{
-	  memcpy (rl_load_data->ptrs.ra.data[idx].data, &fdp->param.enum_value, rl_load_data->ptrs.ra.data[idx].fd.size);
+	  memcpy (mr_load_data->ptrs.ra.data[idx].data, &fdp->param.enum_value, mr_load_data->ptrs.ra.data[idx].fd.size);
 	  return (!0);
 	}
     }
-  return (rl_load_integer (idx, rl_load_data));
+  return (mr_load_integer (idx, mr_load_data));
 }
 
 /**
- * RL_BITFIELD load handler. Load int from string and save it to
+ * MR_BITFIELD load handler. Load int from string and save it to
  * bit shifted field.
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_bitfield (int idx, rl_load_data_t * rl_load_data)
+mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
 {
-  rl_ptrdes_t * ptrdes = &rl_load_data->ptrs.ra.data[idx];
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
   uint64_t value = 0;
-  char * str = rl_get_int (&value, ptrdes->value);
+  char * str = mr_get_int (&value, ptrdes->value);
 
   if ((NULL == str) || (*str != 0))
     {
       if (str)
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_INT, ptrdes->value);
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, ptrdes->value);
       return (0);
     }
 
-  return (EXIT_SUCCESS == rl_load_bitfield_value (ptrdes, &value));
+  return (EXIT_SUCCESS == mr_load_bitfield_value (ptrdes, &value));
 }
 
 /**
- * RL_BITMASK load handler. Handles logical OR operation.
+ * MR_BITMASK load handler. Handles logical OR operation.
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_bitmask (int idx, rl_load_data_t * rl_load_data)
+mr_load_bitmask (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = rl_load_data->ptrs.ra.data[idx].value;
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
   int64_t value = 0;
   
   if (NULL == str)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_BITMASK, rl_load_data->ptrs.ra.data[idx].value);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_BITMASK, mr_load_data->ptrs.ra.data[idx].value);
       return (0);
     }
   for (;;)
     {
       uint64_t bit;
-      str = rl_get_int (&bit, str);
+      str = mr_get_int (&bit, str);
       if (NULL == str)
 	return (0);
       value |= bit;
@@ -309,33 +309,33 @@ rl_load_bitmask (int idx, rl_load_data_t * rl_load_data)
     }
   if (*str != 0)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_BITMASK, rl_load_data->ptrs.ra.data[idx].value);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_BITMASK, mr_load_data->ptrs.ra.data[idx].value);
       return (0);
     }
-  memcpy (rl_load_data->ptrs.ra.data[idx].data, &value, rl_load_data->ptrs.ra.data[idx].fd.size);
+  memcpy (mr_load_data->ptrs.ra.data[idx].data, &value, mr_load_data->ptrs.ra.data[idx].fd.size);
   return (!0);
 }
 
 /**
- * RL_FLOAT, RL_DOUBLE, RL_LONG_DOUBLE load handler.
+ * MR_FLOAT, MR_DOUBLE, MR_LONG_DOUBLE load handler.
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
-#define RL_LOAD_FLOAT_TYPE(TYPE, FORMAT, ERROR_ENUM)			\
+#define MR_LOAD_FLOAT_TYPE(TYPE, FORMAT, ERROR_ENUM)			\
   static int								\
-  rl_load_ ## TYPE (int idx, rl_load_data_t * rl_load_data)		\
+  mr_load_ ## TYPE (int idx, mr_load_data_t * mr_load_data)		\
   {									\
-    char * str = rl_load_data->ptrs.ra.data[idx].value;			\
+    char * str = mr_load_data->ptrs.ra.data[idx].value;			\
     int offset;								\
     if (NULL == str)							\
       {									\
-	RL_MESSAGE (RL_LL_ERROR, ERROR_ENUM, rl_load_data->ptrs.ra.data[idx].value); \
+	MR_MESSAGE (MR_LL_ERROR, ERROR_ENUM, mr_load_data->ptrs.ra.data[idx].value); \
 	return (0);							\
       }									\
-    if (1 != sscanf (str, FORMAT "%n", (TYPE*)rl_load_data->ptrs.ra.data[idx].data, &offset)) \
+    if (1 != sscanf (str, FORMAT "%n", (TYPE*)mr_load_data->ptrs.ra.data[idx].data, &offset)) \
       {									\
-	RL_MESSAGE (RL_LL_ERROR, ERROR_ENUM, rl_load_data->ptrs.ra.data[idx].value); \
+	MR_MESSAGE (MR_LL_ERROR, ERROR_ENUM, mr_load_data->ptrs.ra.data[idx].value); \
 	return (0);							\
       }									\
     str += offset;							\
@@ -343,37 +343,37 @@ rl_load_bitmask (int idx, rl_load_data_t * rl_load_data)
       ++str;								\
     if (*str != 0)							\
       {									\
-	RL_MESSAGE (RL_LL_ERROR, ERROR_ENUM, rl_load_data->ptrs.ra.data[idx].value); \
+	MR_MESSAGE (MR_LL_ERROR, ERROR_ENUM, mr_load_data->ptrs.ra.data[idx].value); \
 	return (0);							\
       }									\
     return (!0);							\
   }
 
-RL_LOAD_FLOAT_TYPE (float, "%f", RL_MESSAGE_READ_FLOAT)
-RL_LOAD_FLOAT_TYPE (double, "%lg", RL_MESSAGE_READ_DOUBLE)
-RL_LOAD_FLOAT_TYPE (long_double_t, "%Lg", RL_MESSAGE_READ_LONG_DOUBLE)
+MR_LOAD_FLOAT_TYPE (float, "%f", MR_MESSAGE_READ_FLOAT)
+MR_LOAD_FLOAT_TYPE (double, "%lg", MR_MESSAGE_READ_DOUBLE)
+MR_LOAD_FLOAT_TYPE (long_double_t, "%Lg", MR_MESSAGE_READ_LONG_DOUBLE)
 
 /**
- * RL_CHAR load handler. Handles nonprint characters in octal format.
+ * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_char (int idx, rl_load_data_t * rl_load_data)
+mr_load_char (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = rl_load_data->ptrs.ra.data[idx].value;
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
   
   if (NULL == str)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
       return (0);
     }
   else if ((0 == *str) || (0 == str[1]))
-    *(char*)rl_load_data->ptrs.ra.data[idx].data = str[0];
+    *(char*)mr_load_data->ptrs.ra.data[idx].data = str[0];
   else if ('\\' != *str)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
       return (0);
     }
   else
@@ -382,124 +382,124 @@ rl_load_char (int idx, rl_load_data_t * rl_load_data)
       int val = 0;
       if (1 != sscanf (str + 1, "%o%n", &val, &offset))
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
 	  return (0);
 	}
       else if (str[offset + 1] != 0)
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_READ_CHAR, str);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
 	  return (0);
 	}
-      *(char*)rl_load_data->ptrs.ra.data[idx].data = val;
+      *(char*)mr_load_data->ptrs.ra.data[idx].data = val;
     }
   return (!0);
 }     
 
 /**
- * RL_STRING load handler. Allocate memory for a string.
+ * MR_STRING load handler. Allocate memory for a string.
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_string (int idx, rl_load_data_t * rl_load_data)
+mr_load_string (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = rl_load_data->ptrs.ra.data[idx].value;
-  if ((rl_load_data->ptrs.ra.data[idx].flags & RL_PDF_IS_NULL) || (rl_load_data->ptrs.ra.data[idx].ref_idx >= 0))
-    *(char**)rl_load_data->ptrs.ra.data[idx].data = NULL;
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
+  if ((mr_load_data->ptrs.ra.data[idx].flags & MR_PDF_IS_NULL) || (mr_load_data->ptrs.ra.data[idx].ref_idx >= 0))
+    *(char**)mr_load_data->ptrs.ra.data[idx].data = NULL;
   else
-    *(char**)rl_load_data->ptrs.ra.data[idx].data = str ? RL_STRDUP (str) : NULL;
+    *(char**)mr_load_data->ptrs.ra.data[idx].data = str ? MR_STRDUP (str) : NULL;
   return (!0);
 }
 
 /**
- * RL_CHAR_ARRAY load handler.
+ * MR_CHAR_ARRAY load handler.
  * Save string in place (truncate string if needed).
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_char_array (int idx, rl_load_data_t * rl_load_data)
+mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = rl_load_data->ptrs.ra.data[idx].value;
-  int max_size = rl_load_data->ptrs.ra.data[idx].fd.param.array_param.count * rl_load_data->ptrs.ra.data[idx].fd.size;
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
+  int max_size = mr_load_data->ptrs.ra.data[idx].fd.param.array_param.count * mr_load_data->ptrs.ra.data[idx].fd.size;
   if (str)
     {
       int str_len = strlen (str);
-      if ((0 == strcmp (rl_load_data->ptrs.ra.data[idx].fd.type, "string_t")) &&
-	  (rl_load_data->ptrs.ra.data[idx].parent >= 0) &&
-	  (RL_TYPE_EXT_POINTER == rl_load_data->ptrs.ra.data[rl_load_data->ptrs.ra.data[idx].parent].fd.rl_type_ext))
+      if ((0 == strcmp (mr_load_data->ptrs.ra.data[idx].fd.type, "string_t")) &&
+	  (mr_load_data->ptrs.ra.data[idx].parent >= 0) &&
+	  (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].fd.mr_type_ext))
 	{
-	  void * data = RL_REALLOC (rl_load_data->ptrs.ra.data[idx].data, str_len + 1);
-	  rl_load_data->ptrs.ra.data[idx].data = data;
-	  *(void**)rl_load_data->ptrs.ra.data[rl_load_data->ptrs.ra.data[idx].parent].data = data;
+	  void * data = MR_REALLOC (mr_load_data->ptrs.ra.data[idx].data, str_len + 1);
+	  mr_load_data->ptrs.ra.data[idx].data = data;
+	  *(void**)mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].data = data;
 	  if (NULL == data)
 	    {
-	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	      return (0);
 	    }
 	}
       else if (str_len >= max_size)
 	{
 	  str[max_size - 1] = 0;
-	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_STRING_TRUNCATED);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
 	}
-      strcpy (rl_load_data->ptrs.ra.data[idx].data, str);
+      strcpy (mr_load_data->ptrs.ra.data[idx].data, str);
     }
   else
-    *(char*)rl_load_data->ptrs.ra.data[idx].data = 0;
+    *(char*)mr_load_data->ptrs.ra.data[idx].data = 0;
   return (!0);
 }
 
 static int
-rl_load_struct_inner (int idx, rl_load_data_t * rl_load_data, rl_td_t * tdp)
+mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
 {
-  char * data = rl_load_data->ptrs.ra.data[idx].data;
-  int first_child = rl_load_data->ptrs.ra.data[idx].first_child;
-  rl_fd_t * fdp;
+  char * data = mr_load_data->ptrs.ra.data[idx].data;
+  int first_child = mr_load_data->ptrs.ra.data[idx].first_child;
+  mr_fd_t * fdp;
   
   /* get pointer on structure descriptor */
   if (NULL == tdp)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NO_TYPE_DESCRIPTOR, rl_load_data->ptrs.ra.data[idx].fd.type);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_load_data->ptrs.ra.data[idx].fd.type);
       return (0);
     }
 
   /* for C init style we can get union descriptor only from type cast */
-  if ((0 == strcmp (tdp->type, "rl_ptr_t")) && (first_child >= 0) &&
-      rl_load_data->ptrs.ra.data[first_child].fd.type && (NULL == rl_load_data->ptrs.ra.data[first_child].fd.name))
+  if ((0 == strcmp (tdp->type, "mr_ptr_t")) && (first_child >= 0) &&
+      mr_load_data->ptrs.ra.data[first_child].fd.type && (NULL == mr_load_data->ptrs.ra.data[first_child].fd.name))
     {
-      rl_load_data->ptrs.ra.data[first_child].fd.name = rl_load_data->ptrs.ra.data[first_child].fd.type;
-      rl_load_data->ptrs.ra.data[first_child].fd.type = NULL;
+      mr_load_data->ptrs.ra.data[first_child].fd.name = mr_load_data->ptrs.ra.data[first_child].fd.type;
+      mr_load_data->ptrs.ra.data[first_child].fd.type = NULL;
     }
 
   fdp = tdp->fields.data;
   
   /* loop on all subnodes */
-  for (idx = first_child; idx >= 0; idx = rl_load_data->ptrs.ra.data[idx].next)
+  for (idx = first_child; idx >= 0; idx = mr_load_data->ptrs.ra.data[idx].next)
     {
-      if (rl_load_data->ptrs.ra.data[idx].fd.name)
-	fdp = rl_get_fd_by_name (tdp, rl_load_data->ptrs.ra.data[idx].fd.name);
+      if (mr_load_data->ptrs.ra.data[idx].fd.name)
+	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra.data[idx].fd.name);
       if (NULL == fdp)
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNKNOWN_SUBNODE, tdp->type, rl_load_data->ptrs.ra.data[idx].fd.name);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type, mr_load_data->ptrs.ra.data[idx].fd.name);
 	  return (0);
 	}
       
       /* recursively load subnode */
-      if (!rl_load (&data[fdp->offset], fdp, idx, rl_load_data))
+      if (!mr_load (&data[fdp->offset], fdp, idx, mr_load_data))
 	return (0);
       
       ++fdp;
-      if (RL_TYPE_TRAILING_RECORD == fdp->rl_type)
+      if (MR_TYPE_TRAILING_RECORD == fdp->mr_type)
 	fdp = NULL;
     }
   return (!0);
 }
 
 /**
- * RL_STRUCT load handler.
+ * MR_STRUCT load handler.
  * Save content of subnodes to struct fileds.
  * Save string in place (truncate string if needed).
  * @param idx node index
@@ -507,29 +507,29 @@ rl_load_struct_inner (int idx, rl_load_data_t * rl_load_data, rl_td_t * tdp)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_struct (int idx, rl_load_data_t * rl_load_data)
+mr_load_struct (int idx, mr_load_data_t * mr_load_data)
 {
-  return (rl_load_struct_inner (idx, rl_load_data, rl_get_td_by_name (rl_load_data->ptrs.ra.data[idx].fd.type)));
+  return (mr_load_struct_inner (idx, mr_load_data, mr_get_td_by_name (mr_load_data->ptrs.ra.data[idx].fd.type)));
 }
 
 /**
- * RL_ARRAY load handler.
+ * MR_ARRAY load handler.
  * Save content of subnodes to array elements.
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_array (int idx, rl_load_data_t * rl_load_data)
+mr_load_array (int idx, mr_load_data_t * mr_load_data)
 {
-  char * data = rl_load_data->ptrs.ra.data[idx].data;
-  rl_fd_t fd_ = rl_load_data->ptrs.ra.data[idx].fd;
+  char * data = mr_load_data->ptrs.ra.data[idx].data;
+  mr_fd_t fd_ = mr_load_data->ptrs.ra.data[idx].fd;
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
   int i = 0;
   
   if (1 == fd_.param.array_param.row_count)
-    fd_.rl_type_ext = RL_TYPE_EXT_NONE; /* prepare copy of filed descriptor for array elements loading */
+    fd_.mr_type_ext = MR_TYPE_EXT_NONE; /* prepare copy of filed descriptor for array elements loading */
   else
     {
       fd_.param.array_param.count = row_count;
@@ -537,16 +537,16 @@ rl_load_array (int idx, rl_load_data_t * rl_load_data)
     }
   
   /* loop on subnodes */
-  for (idx = rl_load_data->ptrs.ra.data[idx].first_child; idx >= 0; idx = rl_load_data->ptrs.ra.data[idx].next)
+  for (idx = mr_load_data->ptrs.ra.data[idx].first_child; idx >= 0; idx = mr_load_data->ptrs.ra.data[idx].next)
     {
       /* check if array index is in range */
       if ((i < 0) || (i >= count))
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RANGE_CHECK, fd_.name);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RANGE_CHECK, fd_.name);
 	  return (0);
 	}
       /* load recursively */
-      if (!rl_load (&data[i * fd_.size], &fd_, idx, rl_load_data))
+      if (!mr_load (&data[i * fd_.size], &fd_, idx, mr_load_data))
 	return (0);
       i += row_count;
     }
@@ -554,7 +554,7 @@ rl_load_array (int idx, rl_load_data_t * rl_load_data)
 }
 
 /**
- * RL_RARRAY load handler.
+ * MR_RARRAY load handler.
  * Save content of subnodes to resizeable array elements
  * (allocate/reallocate required memory).
  * @param idx node index
@@ -562,70 +562,70 @@ rl_load_array (int idx, rl_load_data_t * rl_load_data)
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_rarray (int idx, rl_load_data_t * rl_load_data)
+mr_load_rarray (int idx, mr_load_data_t * mr_load_data)
 {
-  rl_rarray_t * ra = rl_load_data->ptrs.ra.data[idx].data;
+  mr_rarray_t * ra = mr_load_data->ptrs.ra.data[idx].data;
   int data_idx, idx_;
   int count = 0;
 
   memset (ra, 0, sizeof (*ra));
   
-#define RL_LOAD_RARRAY_ACTION(TD) ({					\
+#define MR_LOAD_RARRAY_ACTION(TD) ({					\
       int __status = 0;							\
-      rl_fd_t * fdp = rl_get_fd_by_name (&TD, "data");			\
+      mr_fd_t * fdp = mr_get_fd_by_name (&TD, "data");			\
       if (NULL == fdp)							\
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RARRAY_FAILED);		\
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);		\
       else								\
 	{								\
-	  fdp->type = rl_load_data->ptrs.ra.data[idx].fd.type;		\
-	  fdp->size = rl_load_data->ptrs.ra.data[idx].fd.size;		\
-	  __status = rl_load_struct_inner (idx, rl_load_data, &TD);	\
+	  fdp->type = mr_load_data->ptrs.ra.data[idx].fd.type;		\
+	  fdp->size = mr_load_data->ptrs.ra.data[idx].fd.size;		\
+	  __status = mr_load_struct_inner (idx, mr_load_data, &TD);	\
 	}								\
       __status;								\
     })
   
-  if (!RL_LOAD_RARRAY (RL_LOAD_RARRAY_ACTION))
+  if (!MR_LOAD_RARRAY (MR_LOAD_RARRAY_ACTION))
     return (0);
 
-  for (data_idx = rl_load_data->ptrs.ra.data[idx].first_child; data_idx >= 0; data_idx = rl_load_data->ptrs.ra.data[data_idx].next)
-    if (0 == strcmp ("data", rl_load_data->ptrs.ra.data[data_idx].fd.name))
+  for (data_idx = mr_load_data->ptrs.ra.data[idx].first_child; data_idx >= 0; data_idx = mr_load_data->ptrs.ra.data[data_idx].next)
+    if (0 == strcmp ("data", mr_load_data->ptrs.ra.data[data_idx].fd.name))
       break;
 
   if (data_idx < 0)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_RARRAY_FAILED);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);
       return (0);
     }
 
   /* initialize resizeable array */
-  for (idx_ = rl_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = rl_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
+  for (idx_ = mr_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = mr_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
     ++count;
   
-  if ((rl_load_data->ptrs.ra.data[data_idx].ref_idx < 0) && (count > 0))
+  if ((mr_load_data->ptrs.ra.data[data_idx].ref_idx < 0) && (count > 0))
     {
       int i = 0;
-      rl_fd_t fd_ = rl_load_data->ptrs.ra.data[idx].fd;
+      mr_fd_t fd_ = mr_load_data->ptrs.ra.data[idx].fd;
 
-      fd_.rl_type_ext = RL_TYPE_EXT_NONE;
+      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
 
-      ra->size = count * rl_load_data->ptrs.ra.data[idx].fd.size;
-      ra->data = RL_MALLOC (ra->size);
+      ra->size = count * mr_load_data->ptrs.ra.data[idx].fd.size;
+      ra->data = MR_MALLOC (ra->size);
       if (NULL == ra->data)
 	{
 	  ra->alloc_size = ra->size = 0;
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (0);
 	}
       memset (ra->data, 0, ra->size);
       ra->alloc_size = ra->size;
       
-      for (idx_ = rl_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = rl_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
+      for (idx_ = mr_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = mr_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
 	{
-	  if (!rl_load (((char*)ra->data) + i * fd_.size, &fd_, idx_, rl_load_data))
+	  if (!mr_load (((char*)ra->data) + i * fd_.size, &fd_, idx_, mr_load_data))
 	    return (0);
 	  if (++i > count)
 	    {
-	      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_RANGE_CHECK, fd_.name);
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name);
 	      break;
 	    }
 	}
@@ -634,44 +634,44 @@ rl_load_rarray (int idx, rl_load_data_t * rl_load_data)
 }
 
 static int
-rl_load_pointer_postponed (int idx, rl_load_data_t * rl_load_data)
+mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 {
-  void ** data = rl_load_data->ptrs.ra.data[idx].data;
-  rl_fd_t fd_ = rl_load_data->ptrs.ra.data[idx].fd;
-  fd_.rl_type_ext = RL_TYPE_EXT_NONE;
+  void ** data = mr_load_data->ptrs.ra.data[idx].data;
+  mr_fd_t fd_ = mr_load_data->ptrs.ra.data[idx].fd;
+  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
   /* allocate memory */
-  *data = RL_MALLOC (fd_.size);
+  *data = MR_MALLOC (fd_.size);
   if (NULL == *data)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (0);
     }
   memset (*data, 0, fd_.size);
   /* load recursively */
-  return (rl_load (*data, &fd_, rl_load_data->ptrs.ra.data[idx].first_child, rl_load_data));
+  return (mr_load (*data, &fd_, mr_load_data->ptrs.ra.data[idx].first_child, mr_load_data));
 }
 
 /**
- * RL_POINTER_STRUCT load handler.
+ * MR_POINTER_STRUCT load handler.
  * Loads structure into newly allocate memory.
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_pointer (int idx, rl_load_data_t * rl_load_data)
+mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
 {
-  void ** data = rl_load_data->ptrs.ra.data[idx].data;
+  void ** data = mr_load_data->ptrs.ra.data[idx].data;
   /* default initializer */
   *data = NULL;
-  if (rl_load_data->ptrs.ra.data[idx].ref_idx >= 0)
+  if (mr_load_data->ptrs.ra.data[idx].ref_idx >= 0)
     return (!0);
-  if (rl_load_data->ptrs.ra.data[idx].first_child < 0)
+  if (mr_load_data->ptrs.ra.data[idx].first_child < 0)
     return (!0);
   /* check whether pointer should have offsprings or not */
-  if ((RL_TYPE_NONE != rl_load_data->ptrs.ra.data[idx].fd.rl_type) && (RL_TYPE_VOID != rl_load_data->ptrs.ra.data[idx].fd.rl_type))
+  if ((MR_TYPE_NONE != mr_load_data->ptrs.ra.data[idx].fd.mr_type) && (MR_TYPE_VOID != mr_load_data->ptrs.ra.data[idx].fd.mr_type))
     {
-      int * idx_ = rl_rarray_append ((void*)&rl_load_data->rl_ra_idx, sizeof (rl_load_data->rl_ra_idx.data[0]));
+      int * idx_ = mr_rarray_append ((void*)&mr_load_data->mr_ra_idx, sizeof (mr_load_data->mr_ra_idx.data[0]));
       if (NULL == idx_)
 	return (0);
       *idx_ = idx;
@@ -682,14 +682,14 @@ rl_load_pointer (int idx, rl_load_data_t * rl_load_data)
 }
 
 /**
- * RL_ANON_UNION load handler.
+ * MR_ANON_UNION load handler.
  * Load anonymous union
  * @param idx node index
  * @param ptrs pointers descriptors resizeable array
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
-rl_load_anon_union (int idx, rl_load_data_t * rl_load_data)
+mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
 {
   /*
     Anonimous unions in C init style saved as named field folowed by union itself. Named field has type of zero length static string and must be inited by empty string. Here is an example.
@@ -697,20 +697,20 @@ rl_load_anon_union (int idx, rl_load_data_t * rl_load_data)
     .union_float = 3.1415927410,
     },
   */
-  int next = rl_load_data->ptrs.ra.data[idx].next;
-  if ((rl_load_data->ptrs.ra.data[idx].first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
-      rl_load_data->ptrs.ra.data[idx].value && (0 == rl_load_data->ptrs.ra.data[idx].value[0]) && /* content must be an empty string */
-      (next >= 0) && (NULL == rl_load_data->ptrs.ra.data[next].fd.name)) /* there should be a next node without name */
+  int next = mr_load_data->ptrs.ra.data[idx].next;
+  if ((mr_load_data->ptrs.ra.data[idx].first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
+      mr_load_data->ptrs.ra.data[idx].value && (0 == mr_load_data->ptrs.ra.data[idx].value[0]) && /* content must be an empty string */
+      (next >= 0) && (NULL == mr_load_data->ptrs.ra.data[next].fd.name)) /* there should be a next node without name */
     {
-      if (rl_load_data->ptrs.ra.data[idx].fd.name) /* sainity check - this field can't be NULL */
-	rl_load_data->ptrs.ra.data[next].fd.name = RL_STRDUP (rl_load_data->ptrs.ra.data[idx].fd.name);
+      if (mr_load_data->ptrs.ra.data[idx].fd.name) /* sainity check - this field can't be NULL */
+	mr_load_data->ptrs.ra.data[next].fd.name = MR_STRDUP (mr_load_data->ptrs.ra.data[idx].fd.name);
       return (!0); /* now next node has a name and will be loaded by top level procedure */
     }
-  return (rl_load_struct (idx, rl_load_data));
+  return (mr_load_struct (idx, mr_load_data));
 }
 
 int
-rl_free_ptrs (rl_ra_rl_ptrdes_t ptrs)
+mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
 {
   if (ptrs.ra.data)
     {
@@ -719,16 +719,16 @@ rl_free_ptrs (rl_ra_rl_ptrdes_t ptrs)
       for (i = 0; i < count; ++i)
 	{
 	  if (ptrs.ra.data[i].value)
-	    RL_FREE (ptrs.ra.data[i].value);
+	    MR_FREE (ptrs.ra.data[i].value);
 	  ptrs.ra.data[i].value = NULL;
 	  if (ptrs.ra.data[i].fd.type)
-	    RL_FREE (ptrs.ra.data[i].fd.type);
+	    MR_FREE (ptrs.ra.data[i].fd.type);
 	  ptrs.ra.data[i].fd.type = NULL;
 	  if (ptrs.ra.data[i].fd.name)
-	    RL_FREE (ptrs.ra.data[i].fd.name);
+	    MR_FREE (ptrs.ra.data[i].fd.name);
 	  ptrs.ra.data[i].fd.name = NULL;
 	}
-      RL_FREE (ptrs.ra.data);
+      MR_FREE (ptrs.ra.data);
       ptrs.ra.data = NULL;
       ptrs.ra.size = ptrs.ra.alloc_size = 0;
     }
@@ -744,74 +744,74 @@ rl_free_ptrs (rl_ra_rl_ptrdes_t ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 int
-rl_load (void * data, rl_fd_t * fdp, int idx, rl_load_data_t * rl_load_data)
+mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 {
   int status = 0;
 
   if (0 == idx)
     {
-      rl_load_data->rl_ra_idx.data = NULL;
-      rl_load_data->rl_ra_idx.size = 0;
-      rl_load_data->rl_ra_idx.alloc_size = 0;
+      mr_load_data->mr_ra_idx.data = NULL;
+      mr_load_data->mr_ra_idx.size = 0;
+      mr_load_data->mr_ra_idx.alloc_size = 0;
     }
   
-  if ((idx < 0) || (idx >= rl_load_data->ptrs.ra.size / sizeof (rl_load_data->ptrs.ra.data[0])))
+  if ((idx < 0) || (idx >= mr_load_data->ptrs.ra.size / sizeof (mr_load_data->ptrs.ra.data[0])))
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_SAVE_IDX_RANGE_CHECK);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SAVE_IDX_RANGE_CHECK);
       return (0);
     }
   
-  rl_load_data->ptrs.ra.data[idx].data = data;
-  if (rl_load_data->ptrs.ra.data[idx].fd.name && fdp->name)
-    if (strcmp (fdp->name, rl_load_data->ptrs.ra.data[idx].fd.name))
+  mr_load_data->ptrs.ra.data[idx].data = data;
+  if (mr_load_data->ptrs.ra.data[idx].fd.name && fdp->name)
+    if (strcmp (fdp->name, mr_load_data->ptrs.ra.data[idx].fd.name))
       {
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NODE_NAME_MISSMATCH, fdp->name, rl_load_data->ptrs.ra.data[idx].fd.name);
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name, mr_load_data->ptrs.ra.data[idx].fd.name);
 	return (0);
       }
 
-  if (rl_load_data->ptrs.ra.data[idx].fd.type && fdp->type)
-    if (strcmp (fdp->type, rl_load_data->ptrs.ra.data[idx].fd.type))
+  if (mr_load_data->ptrs.ra.data[idx].fd.type && fdp->type)
+    if (strcmp (fdp->type, mr_load_data->ptrs.ra.data[idx].fd.type))
       {
-	RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_NODE_TYPE_MISSMATCH, fdp->type, rl_load_data->ptrs.ra.data[idx].fd.type);
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->type, mr_load_data->ptrs.ra.data[idx].fd.type);
 	return (0);
       }
   
-  if ((NULL == rl_load_data->ptrs.ra.data[idx].fd.name) && (fdp->name))
-    rl_load_data->ptrs.ra.data[idx].fd.name = RL_STRDUP (fdp->name);
-  if ((NULL == rl_load_data->ptrs.ra.data[idx].fd.type) && (fdp->type))
-    rl_load_data->ptrs.ra.data[idx].fd.type = RL_STRDUP (fdp->type);
-  rl_load_data->ptrs.ra.data[idx].fd.size = fdp->size;
-  rl_load_data->ptrs.ra.data[idx].fd.rl_type = fdp->rl_type;
-  rl_load_data->ptrs.ra.data[idx].fd.rl_type_aux = fdp->rl_type_aux;
-  rl_load_data->ptrs.ra.data[idx].fd.rl_type_ext = fdp->rl_type_ext;
-  rl_load_data->ptrs.ra.data[idx].fd.param = fdp->param;
+  if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.name) && (fdp->name))
+    mr_load_data->ptrs.ra.data[idx].fd.name = MR_STRDUP (fdp->name);
+  if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.type) && (fdp->type))
+    mr_load_data->ptrs.ra.data[idx].fd.type = MR_STRDUP (fdp->type);
+  mr_load_data->ptrs.ra.data[idx].fd.size = fdp->size;
+  mr_load_data->ptrs.ra.data[idx].fd.mr_type = fdp->mr_type;
+  mr_load_data->ptrs.ra.data[idx].fd.mr_type_aux = fdp->mr_type_aux;
+  mr_load_data->ptrs.ra.data[idx].fd.mr_type_ext = fdp->mr_type_ext;
+  mr_load_data->ptrs.ra.data[idx].fd.param = fdp->param;
   
   /* route loading */
-  if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-      && rl_conf.io_ext_handlers[fdp->rl_type_ext].load.rl)
-    status = rl_conf.io_ext_handlers[fdp->rl_type_ext].load.rl (idx, rl_load_data);
-  else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-	   && rl_conf.io_handlers[fdp->rl_type].load.rl)
-    status = rl_conf.io_handlers[fdp->rl_type].load.rl (idx, rl_load_data);
+  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES)
+      && mr_conf.io_ext_handlers[fdp->mr_type_ext].load.rl)
+    status = mr_conf.io_ext_handlers[fdp->mr_type_ext].load.rl (idx, mr_load_data);
+  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES)
+	   && mr_conf.io_handlers[fdp->mr_type].load.rl)
+    status = mr_conf.io_handlers[fdp->mr_type].load.rl (idx, mr_load_data);
   else
-    RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
 
   /* set cross references at the upper level */
   if (0 == idx)
     {
-      while (rl_load_data->rl_ra_idx.size > 0)
+      while (mr_load_data->mr_ra_idx.size > 0)
 	{
-	  rl_load_data->rl_ra_idx.size -= sizeof (rl_load_data->rl_ra_idx.data[0]);
-	  rl_load_pointer_postponed (rl_load_data->rl_ra_idx.data[rl_load_data->rl_ra_idx.size / sizeof (rl_load_data->rl_ra_idx.data[0])], rl_load_data);
+	  mr_load_data->mr_ra_idx.size -= sizeof (mr_load_data->mr_ra_idx.data[0]);
+	  mr_load_pointer_postponed (mr_load_data->mr_ra_idx.data[mr_load_data->mr_ra_idx.size / sizeof (mr_load_data->mr_ra_idx.data[0])], mr_load_data);
 	}
       if (status)
-	status = rl_set_crossrefs (rl_load_data);
-      if (rl_load_data->rl_ra_idx.data)
+	status = mr_set_crossrefs (mr_load_data);
+      if (mr_load_data->mr_ra_idx.data)
 	{
-	  RL_FREE (rl_load_data->rl_ra_idx.data);
-	  rl_load_data->rl_ra_idx.data = NULL;
-	  rl_load_data->rl_ra_idx.size = 0;
-	  rl_load_data->rl_ra_idx.alloc_size = 0;
+	  MR_FREE (mr_load_data->mr_ra_idx.data);
+	  mr_load_data->mr_ra_idx.data = NULL;
+	  mr_load_data->mr_ra_idx.size = 0;
+	  mr_load_data->mr_ra_idx.alloc_size = 0;
 	}
     }
   
@@ -821,34 +821,34 @@ rl_load (void * data, rl_fd_t * fdp, int idx, rl_load_data_t * rl_load_data)
 /**
  * Init IO handlers Table
  */
-static void __attribute__((constructor)) rl_init_load_rl (void)
+static void __attribute__((constructor)) mr_init_load_rl (void)
 {
-  rl_conf.io_handlers[RL_TYPE_NONE].load.rl = rl_load_none;
-  rl_conf.io_handlers[RL_TYPE_VOID].load.rl = rl_load_none;
-  rl_conf.io_handlers[RL_TYPE_ENUM].load.rl = rl_load_enum;
-  rl_conf.io_handlers[RL_TYPE_BITFIELD].load.rl = rl_load_bitfield;
-  rl_conf.io_handlers[RL_TYPE_BITMASK].load.rl = rl_load_bitmask;
-  rl_conf.io_handlers[RL_TYPE_INT8].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_UINT8].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_INT16].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_UINT16].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_INT32].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_UINT32].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_INT64].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_UINT64].load.rl = rl_load_integer;
-  rl_conf.io_handlers[RL_TYPE_FLOAT].load.rl = rl_load_float;
-  rl_conf.io_handlers[RL_TYPE_DOUBLE].load.rl = rl_load_double;
-  rl_conf.io_handlers[RL_TYPE_LONG_DOUBLE].load.rl = rl_load_long_double_t;
-  rl_conf.io_handlers[RL_TYPE_CHAR].load.rl = rl_load_char;
-  rl_conf.io_handlers[RL_TYPE_CHAR_ARRAY].load.rl = rl_load_char_array;
-  rl_conf.io_handlers[RL_TYPE_STRING].load.rl = rl_load_string;
-  rl_conf.io_handlers[RL_TYPE_STRUCT].load.rl = rl_load_struct;
-  rl_conf.io_handlers[RL_TYPE_FUNC].load.rl = rl_load_none;
-  rl_conf.io_handlers[RL_TYPE_FUNC_TYPE].load.rl = rl_load_none;
-  rl_conf.io_handlers[RL_TYPE_UNION].load.rl = rl_load_struct;
-  rl_conf.io_handlers[RL_TYPE_ANON_UNION].load.rl = rl_load_anon_union;
+  mr_conf.io_handlers[MR_TYPE_NONE].load.rl = mr_load_none;
+  mr_conf.io_handlers[MR_TYPE_VOID].load.rl = mr_load_none;
+  mr_conf.io_handlers[MR_TYPE_ENUM].load.rl = mr_load_enum;
+  mr_conf.io_handlers[MR_TYPE_BITFIELD].load.rl = mr_load_bitfield;
+  mr_conf.io_handlers[MR_TYPE_BITMASK].load.rl = mr_load_bitmask;
+  mr_conf.io_handlers[MR_TYPE_INT8].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_UINT8].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_INT16].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_UINT16].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_INT32].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_UINT32].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_INT64].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_UINT64].load.rl = mr_load_integer;
+  mr_conf.io_handlers[MR_TYPE_FLOAT].load.rl = mr_load_float;
+  mr_conf.io_handlers[MR_TYPE_DOUBLE].load.rl = mr_load_double;
+  mr_conf.io_handlers[MR_TYPE_LONG_DOUBLE].load.rl = mr_load_long_double_t;
+  mr_conf.io_handlers[MR_TYPE_CHAR].load.rl = mr_load_char;
+  mr_conf.io_handlers[MR_TYPE_CHAR_ARRAY].load.rl = mr_load_char_array;
+  mr_conf.io_handlers[MR_TYPE_STRING].load.rl = mr_load_string;
+  mr_conf.io_handlers[MR_TYPE_STRUCT].load.rl = mr_load_struct;
+  mr_conf.io_handlers[MR_TYPE_FUNC].load.rl = mr_load_none;
+  mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].load.rl = mr_load_none;
+  mr_conf.io_handlers[MR_TYPE_UNION].load.rl = mr_load_struct;
+  mr_conf.io_handlers[MR_TYPE_ANON_UNION].load.rl = mr_load_anon_union;
 
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_ARRAY].load.rl = rl_load_array;
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_RARRAY].load.rl = rl_load_rarray;
-  rl_conf.io_ext_handlers[RL_TYPE_EXT_POINTER].load.rl = rl_load_pointer;
+  mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].load.rl = mr_load_array;
+  mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY].load.rl = mr_load_rarray;
+  mr_conf.io_ext_handlers[MR_TYPE_EXT_POINTER].load.rl = mr_load_pointer;
 };

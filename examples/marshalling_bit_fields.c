@@ -17,14 +17,14 @@ int main ()
     .second = 31
   };
   
-  char * xml = RL_SAVE_XML (event_coordinates_t, &coords);
+  char * xml = MR_SAVE_XML (event_coordinates_t, &coords);
 
   if (NULL == xml)
     printf ("Serialization failed\n");
   else
     {
       printf ("%s", xml);
-      RL_FREE (xml);
+      MR_FREE (xml);
     }
   
   return (EXIT_SUCCESS);

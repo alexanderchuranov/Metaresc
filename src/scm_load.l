@@ -5,8 +5,8 @@
 %option 8bit reentrant bison-bridge bison-locations
 %option warn nounput never-interactive noyywrap
 %option yylineno
-%option extra-type="rl_load_t*"
-%option prefix="rl_scm_"
+%option extra-type="mr_load_t*"
+%option prefix="mr_scm_"
 %{
 #include <string.h>
 #include <ctype.h>
@@ -15,7 +15,7 @@
 #include <lexer.h>  
 #include <scm_load.tab.h>
 
-#define RL_SCM_BIT_OR "bit-or"
+#define MR_SCM_BIT_OR "bit-or"
    
    static char * unquote (char*, int);
    static char * encode_char (char*, int);
@@ -32,28 +32,28 @@ NUMBER_OR_ID {NUMBER}|{ID}
 
 [[:space:]]+  { return (TOK_SCM_WS); }
 
-{NUMBER} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
+{NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
 
 [+-]?[Nn][Aa][Nn] |
 [+-]?[Ii][Nn][Ff] |
 [+-]?[[:digit:]]+"."[[:digit:]]*  |
 [+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
-[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
+[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
 
-#f { rl_set_lval (&yylval->string, NULL, NULL); return (TOK_SCM_VALUE); }
+#f { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_SCM_VALUE); }
 
-{ID} { rl_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_ID); }
+{ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_ID); }
 
-"("{WS}"bit-or"{WS}{NUMBER_OR_ID}([[:space:]]+{NUMBER_OR_ID})*{WS}")" { rl_set_lval (&yylval->string, yytext, encode_bitmask); return (TOK_SCM_VALUE); }
+"("{WS}"bit-or"{WS}{NUMBER_OR_ID}([[:space:]]+{NUMBER_OR_ID})*{WS}")" { mr_set_lval (&yylval->string, yytext, encode_bitmask); return (TOK_SCM_VALUE); }
 
-"\""([^\"\\]|\\.)*"\"" { rl_set_lval (&yylval->string, yytext, unquote); return (TOK_SCM_VALUE); }
+"\""([^\"\\]|\\.)*"\"" { mr_set_lval (&yylval->string, yytext, unquote); return (TOK_SCM_VALUE); }
 
-"#\\". { rl_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_SCM_VALUE); }
+"#\\". { mr_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_SCM_VALUE); }
 
-"#\\x"[[:xdigit:]]{2} { rl_set_lval (&yylval->string, &yytext[3], encode_char); return (TOK_SCM_VALUE); }
+"#\\x"[[:xdigit:]]{2} { mr_set_lval (&yylval->string, &yytext[3], encode_char); return (TOK_SCM_VALUE); }
 
 ";"+{WS}"("{WS}{ID}[[:space:]]+[[:digit:]]+{WS}")"{WS} {
-  rl_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
+  mr_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
   sscanf (&yylval->id_ivalue.id.substr.data[yylval->id_ivalue.id.substr.size], "%d", &yylval->id_ivalue.ivalue);
   return (TOK_SCM_ID_IVALUE); }
 
@@ -99,10 +99,10 @@ static char * unquote (char * str, int length)
 	}
       ++length_;
     }
-  str_ = RL_MALLOC (length_ + 1);
+  str_ = MR_MALLOC (length_ + 1);
   if (NULL == str_)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
   length_ = 0;
@@ -161,24 +161,24 @@ encode_bitmask (char * str, int length)
   {
     if (tok_count++)
       {
-	memcpy (end, RL_BITMASK_OR_DELIMITER, sizeof (RL_BITMASK_OR_DELIMITER) - 1);
-	end += sizeof (RL_BITMASK_OR_DELIMITER) - 1;
+	memcpy (end, MR_BITMASK_OR_DELIMITER, sizeof (MR_BITMASK_OR_DELIMITER) - 1);
+	end += sizeof (MR_BITMASK_OR_DELIMITER) - 1;
       }
     memcpy (end, tok, tok_size);
     end += tok_size;
   }
   
-  str = strstr (str, RL_SCM_BIT_OR);
+  str = strstr (str, MR_SCM_BIT_OR);
   if (NULL == str)
     return (NULL);
-  str += sizeof (RL_SCM_BIT_OR) - 1;
+  str += sizeof (MR_SCM_BIT_OR) - 1;
 
   tokenize (str, calc_size, length);
 
-  bitmask = RL_MALLOC (size + (tok_count - 1) * (sizeof (RL_BITMASK_OR_DELIMITER) - 1) + 1);
+  bitmask = MR_MALLOC (size + (tok_count - 1) * (sizeof (MR_BITMASK_OR_DELIMITER) - 1) + 1);
   if (NULL == bitmask)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
   end = bitmask;
@@ -192,7 +192,7 @@ encode_bitmask (char * str, int length)
 static char *
 encode_char (char * str, int length)
 {
-  char * str_ = RL_MALLOC (2);
+  char * str_ = MR_MALLOC (2);
   int code;
   sscanf (str, "%x", &code);
   if (str_)

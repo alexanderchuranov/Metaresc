@@ -5,30 +5,30 @@
 #ifndef _LEXER_H_
 #define _LEXER_H_
 
-#define RL_PARSE_ERROR(ERROR_MSG, SCANNER, LANG) ({			\
-      YYLTYPE * lloc = rl_## LANG ## _get_lloc (SCANNER);		\
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_PARSE_ERROR, ERROR_MSG,	\
+#define MR_PARSE_ERROR(ERROR_MSG, SCANNER, LANG) ({			\
+      YYLTYPE * lloc = mr_## LANG ## _get_lloc (SCANNER);		\
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,	\
 		  lloc->start.lineno, lloc->start.column, lloc->end.lineno, lloc->end.column); \
     })
 
-#define YYLTYPE rl_token_lloc_t
+#define YYLTYPE mr_token_lloc_t
 
-static inline void rl_calc_lloc (rl_load_t * rl_load, char * ptr)
+static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
 {
-  if (NULL == rl_load->buf)
-    rl_load->buf = ptr;
+  if (NULL == mr_load->buf)
+    mr_load->buf = ptr;
   else
-    for ( ; &rl_load->buf[rl_load->lloc.offset] < ptr; ++rl_load->lloc.offset)
-      if ('\n' == rl_load->buf[rl_load->lloc.offset])
+    for ( ; &mr_load->buf[mr_load->lloc.offset] < ptr; ++mr_load->lloc.offset)
+      if ('\n' == mr_load->buf[mr_load->lloc.offset])
 	{
-	  ++rl_load->lloc.lineno;
-	  rl_load->lloc.column = 0;
+	  ++mr_load->lloc.lineno;
+	  mr_load->lloc.column = 0;
 	}
       else
-	++rl_load->lloc.column;
+	++mr_load->lloc.column;
 }
 
-static inline int rl_substrcmp (char * str, rl_substr_t * substr)
+static inline int mr_substrcmp (char * str, mr_substr_t * substr)
 {
   int str_len = strlen (str);
   if (str_len != substr->substr.size)
@@ -36,7 +36,7 @@ static inline int rl_substrcmp (char * str, rl_substr_t * substr)
   return (strncmp (str, substr->substr.data, str_len));
 }
 
-static inline char * rl_unquote (rl_substr_t * substr)
+static inline char * mr_unquote (mr_substr_t * substr)
 {
   if (NULL == substr->substr.data)
     return (NULL);
@@ -49,7 +49,7 @@ static inline char * rl_unquote (rl_substr_t * substr)
     }
 }
   
-static inline void rl_get_id (rl_substr_t * substr, char * start)
+static inline void mr_get_id (mr_substr_t * substr, char * start)
 {
   char * stop;
   while (isspace (*start))
@@ -62,7 +62,7 @@ static inline void rl_get_id (rl_substr_t * substr, char * start)
   substr->unquote = NULL;
 }
 
-static inline void rl_set_lval (rl_substr_t * substr, char * str, char * (*unquote_func) (char*, int))
+static inline void mr_set_lval (mr_substr_t * substr, char * str, char * (*unquote_func) (char*, int))
 {
   substr->substr.data = str;
   substr->substr.size = (str ? strlen (str) : -1);
@@ -70,11 +70,11 @@ static inline void rl_set_lval (rl_substr_t * substr, char * str, char * (*unquo
 }
 
 #define YY_USER_ACTION ({			\
-      rl_load_t * rl_load = yyextra;		\
-      rl_calc_lloc (rl_load, yy_bp);		\
-      yylloc->start = rl_load->lloc;		\
-      rl_calc_lloc (rl_load, yy_cp);		\
-      yylloc->end = rl_load->lloc;		\
+      mr_load_t * mr_load = yyextra;		\
+      mr_calc_lloc (mr_load, yy_bp);		\
+      yylloc->start = mr_load->lloc;		\
+      mr_calc_lloc (mr_load, yy_cp);		\
+      yylloc->end = mr_load->lloc;		\
     });
 
 #define YYLLOC_DEFAULT(Current, Rhs, N)					\
@@ -100,15 +100,15 @@ static inline void rl_set_lval (rl_substr_t * substr, char * str, char * (*unquo
 #define YYINITDEPTH 256
 #define YYMAXDEPTH (1 << 31)
 
-#define RL_LOAD_FUNC(METHOD)						\
-  int METHOD ## _load (char * str, rl_ra_rl_ptrdes_t * ptrs) {		\
+#define MR_LOAD_FUNC(METHOD)						\
+  int METHOD ## _load (char * str, mr_ra_mr_ptrdes_t * ptrs) {		\
   int status;								\
   yyscan_t scanner;							\
-  rl_load_t rl_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \
-  rl_ ## METHOD ## _lex_init_extra (&rl_load, &scanner);		\
-  rl_ ## METHOD ## __scan_string (str, scanner);			\
-  status = !rl_ ## METHOD ## _parse (scanner);				\
-  rl_ ## METHOD ## _lex_destroy (scanner);				\
+  mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \
+  mr_ ## METHOD ## _lex_init_extra (&mr_load, &scanner);		\
+  mr_ ## METHOD ## __scan_string (str, scanner);			\
+  status = !mr_ ## METHOD ## _parse (scanner);				\
+  mr_ ## METHOD ## _lex_destroy (scanner);				\
   return (status);							\
 }
 

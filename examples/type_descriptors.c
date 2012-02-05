@@ -12,22 +12,22 @@ TYPEDEF_STRUCT (employee_t,
 int main ()
 {
   char type[] = "employee_t";
-  rl_td_t const * td = rl_get_td_by_name (type);
+  mr_td_t const * td = mr_get_td_by_name (type);
   
   if (td)
     {
       printf ("information for '%s':\n", type);
       char const * type_class = NULL;
     
-      switch (td->rl_type)
+      switch (td->mr_type)
 	{
-	case RL_TYPE_STRUCT:
+	case MR_TYPE_STRUCT:
 	  type_class = "a struct";
 	  break;
-	case RL_TYPE_ENUM:
+	case MR_TYPE_ENUM:
 	  type_class = "an enumeration";
 	  break;
-	case RL_TYPE_UNION:
+	case MR_TYPE_UNION:
 	  type_class = "a union";
 	  break;
 	default:

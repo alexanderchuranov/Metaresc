@@ -18,45 +18,45 @@
 #include <tsearch.h>
 #include <reslib.h>
 
-#define RL_MODE DESC /* we'll need descriptors of our own types */
+#define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <rlprotos.h>
 
-static void * rl_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
-static void * rl_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
-static char * rl_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
-static void rl_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
+static void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
+static void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
+static char * mr_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
+static void mr_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
 
 /** ResLib configuration structure */
-rl_conf_t rl_conf = {
-  .rl_mem = { /**< all memory functions may be replaced on user defined */
+mr_conf_t mr_conf = {
+  .mr_mem = { /**< all memory functions may be replaced on user defined */
     .mem_alloc_strategy = 2, /**< Memory allocation strategy. Default is to double buffer every time. */
-    .malloc = rl_malloc, /**< Pointer to malloc function. */
-    .realloc = rl_realloc, /**< Pointer to realloc function. */
-    .strdup = rl_strdup, /**< Pointer to strdup function. */
-    .free = rl_free, /**< Pointer to free function. */
+    .malloc = mr_malloc, /**< Pointer to malloc function. */
+    .realloc = mr_realloc, /**< Pointer to realloc function. */
+    .strdup = mr_strdup, /**< Pointer to strdup function. */
+    .free = mr_free, /**< Pointer to free function. */
   },
-  .log_level = RL_LL_ALL, /**< default log level ALL */
+  .log_level = MR_LL_ALL, /**< default log level ALL */
   .msg_handler = NULL, /**< pointer on user defined message handler */
   .des = {
     .data = NULL,
     .size = 0,
     .alloc_size = 0,
   },
-#ifndef RL_TREE_LOOKUP
+#ifndef MR_TREE_LOOKUP
   .hash = {
     .ra = { /**< resizable array with hash for type descriptors */
-      .data = NULL, /* descriptors rl_rarray_t */
+      .data = NULL, /* descriptors mr_rarray_t */
       .size = 0,
       .alloc_size = 0,
     },
   },
-#else /* RL_TREE_LOOKUP */
+#else /* MR_TREE_LOOKUP */
   .tree = NULL,
-#endif /* RL_TREE_LOOKUP */
+#endif /* MR_TREE_LOOKUP */
   .enum_by_name = NULL,
-  .output_format = { [0 ... RL_MAX_TYPES - 1] = NULL, },
+  .output_format = { [0 ... MR_MAX_TYPES - 1] = NULL, },
   .io_handlers =
-  { [0 ... RL_MAX_TYPES - 1] =
+  { [0 ... MR_MAX_TYPES - 1] =
     {
       .load =
       {
@@ -74,7 +74,7 @@ rl_conf_t rl_conf = {
     }
   },  
   .io_ext_handlers =
-  { [0 ... RL_MAX_TYPES - 1] =
+  { [0 ... MR_MAX_TYPES - 1] =
     {
       .load =
       {
@@ -93,23 +93,23 @@ rl_conf_t rl_conf = {
   },
 };
 
-RL_MEM_INIT ( , __attribute__((constructor,weak)));
+MR_MEM_INIT ( , __attribute__((constructor,weak)));
 
 /**
  * Memory cleanp handler.
  */
-static void __attribute__((destructor)) rl_cleanup (void)
+static void __attribute__((destructor)) mr_cleanup (void)
 {
-  rl_td_t * void_ptr_tdp = rl_get_td_by_name ("rl_ptr_t");
+  mr_td_t * void_ptr_tdp = mr_get_td_by_name ("mr_ptr_t");
   
   void dummy_free_func (void * nodep) {}
   
-  int free_lookup_tree (rl_td_t * tdp, void * arg)
+  int free_lookup_tree (mr_td_t * tdp, void * arg)
   {
     tdestroy (tdp->lookup_by_value, dummy_free_func);
     tdp->lookup_by_value = NULL;
     if (tdp->lookup_by_name.data)
-      RL_FREE (tdp->lookup_by_name.data);
+      MR_FREE (tdp->lookup_by_name.data);
     tdp->lookup_by_name.data = NULL;
     tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
     return (0);
@@ -117,28 +117,28 @@ static void __attribute__((destructor)) rl_cleanup (void)
 
   if ((void_ptr_tdp) && (void_ptr_tdp->fields.alloc_size > 0) && (void_ptr_tdp->fields.data))
     {
-      RL_FREE (void_ptr_tdp->fields.data);
+      MR_FREE (void_ptr_tdp->fields.data);
       void_ptr_tdp->fields.data = NULL;
     }
   
-  tdestroy (rl_conf.enum_by_name, dummy_free_func);
-  rl_conf.enum_by_name = NULL;
-  rl_td_foreach (free_lookup_tree, NULL);
+  tdestroy (mr_conf.enum_by_name, dummy_free_func);
+  mr_conf.enum_by_name = NULL;
+  mr_td_foreach (free_lookup_tree, NULL);
   
-#ifndef RL_TREE_LOOKUP
-  if (rl_conf.hash.ra.data)
-    RL_FREE (rl_conf.hash.ra.data);
-  rl_conf.hash.ra.data = NULL;
-  rl_conf.hash.ra.size = rl_conf.hash.ra.alloc_size = 0;
-#else /* RL_TREE_LOOKUP */
-  tdestroy (rl_conf.tree, dummy_free_func);
-  rl_conf.tree = NULL;
-#endif /* RL_TREE_LOOKUP */
+#ifndef MR_TREE_LOOKUP
+  if (mr_conf.hash.ra.data)
+    MR_FREE (mr_conf.hash.ra.data);
+  mr_conf.hash.ra.data = NULL;
+  mr_conf.hash.ra.size = mr_conf.hash.ra.alloc_size = 0;
+#else /* MR_TREE_LOOKUP */
+  tdestroy (mr_conf.tree, dummy_free_func);
+  mr_conf.tree = NULL;
+#endif /* MR_TREE_LOOKUP */
 
-  if (rl_conf.des.data)
-    RL_FREE (rl_conf.des.data);
-  rl_conf.des.data = NULL;
-  rl_conf.des.size = rl_conf.des.alloc_size = 0;
+  if (mr_conf.des.data)
+    MR_FREE (mr_conf.des.data);
+  mr_conf.des.data = NULL;
+  mr_conf.des.size = mr_conf.des.alloc_size = 0;
 }
 
 /**
@@ -148,21 +148,21 @@ static void __attribute__((destructor)) rl_cleanup (void)
  * @return message string allocated by standard malloc. Need to be freed outside.
  */
 char *
-rl_message_format (rl_message_id_t message_id, va_list args)
+mr_message_format (mr_message_id_t message_id, va_list args)
 {
-  static const char * messages[RL_MESSAGE_LAST + 1] = { [0 ... RL_MESSAGE_LAST] = NULL };
+  static const char * messages[MR_MESSAGE_LAST + 1] = { [0 ... MR_MESSAGE_LAST] = NULL };
   static int messages_inited = 0;
-  const char * format = "Unknown RL_MESSAGE_ID.";
+  const char * format = "Unknown MR_MESSAGE_ID.";
   char * message = NULL;
 
   if (!messages_inited)
     {
-      rl_td_t * tdp = rl_get_td_by_name ("rl_message_id_t");
+      mr_td_t * tdp = mr_get_td_by_name ("mr_message_id_t");
       if (tdp)
 	{
 	  int i;
-	  rl_fd_t * fdp = tdp->fields.data;
-	  for (i = 0; fdp[i].rl_type != RL_TYPE_TRAILING_RECORD; ++i)
+	  mr_fd_t * fdp = tdp->fields.data;
+	  for (i = 0; fdp[i].mr_type != MR_TYPE_TRAILING_RECORD; ++i)
 	    messages[fdp[i].param.enum_value] = fdp[i].comment;
 	}
       messages_inited = !0;
@@ -185,26 +185,26 @@ rl_message_format (rl_message_id_t message_id, va_list args)
  * @param message_id message template string ID
  */
 void
-rl_message (const char * file_name, const char * func_name, int line, rl_log_level_t log_level, rl_message_id_t message_id, ...)
+mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, ...)
 {
   char * message;
   va_list args;
    
   va_start (args, message_id);
   /* if we have user defined message handler then pass error to it */
-  if (rl_conf.msg_handler)
-    rl_conf.msg_handler (file_name, func_name, line, log_level, message_id, args);
-  else if (log_level > rl_conf.log_level)
+  if (mr_conf.msg_handler)
+    mr_conf.msg_handler (file_name, func_name, line, log_level, message_id, args);
+  else if (log_level > mr_conf.log_level)
     {
       const char * log_level_str_ = "Unknown";
-#define LL_INIT(LEVEL) [RL_LL_##LEVEL] = #LEVEL
+#define LL_INIT(LEVEL) [MR_LL_##LEVEL] = #LEVEL
       static const char * log_level_str[] =
 	{ LL_INIT (ALL), LL_INIT (TRACE), LL_INIT (DEBUG), LL_INIT (INFO), LL_INIT (WARN), LL_INIT (ERROR), LL_INIT (FATAL), LL_INIT (OFF) };
 
       if ((log_level >= 0) && (log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])) && log_level_str[log_level])
 	log_level_str_ = log_level_str[log_level];
       
-      message = rl_message_format (message_id, args);
+      message = mr_message_format (message_id, args);
       if (message)
 	{
 	  fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
@@ -216,31 +216,31 @@ rl_message (const char * file_name, const char * func_name, int line, rl_log_lev
 }
 
 void
-rl_detect_type (rl_fd_t * fdp)
+mr_detect_type (mr_fd_t * fdp)
 {
-  rl_td_t * tdp;
-  switch (fdp->rl_type)						
+  mr_td_t * tdp;
+  switch (fdp->mr_type)						
     {								
-    case RL_TYPE_UINT8:						
-    case RL_TYPE_INT8:						
-    case RL_TYPE_UINT16:						
-    case RL_TYPE_INT16:						
-    case RL_TYPE_UINT32:						
-    case RL_TYPE_INT32:						
-    case RL_TYPE_UINT64:						
-    case RL_TYPE_INT64:
-    case RL_TYPE_NONE:
-      /* we need to detect only enums, structs and unions. string_t is declared as RL_TYPE_CHAR_ARRAY, but detected as RL_TYPE_STRING */
-      tdp = rl_get_td_by_name (fdp->type);		
+    case MR_TYPE_UINT8:						
+    case MR_TYPE_INT8:						
+    case MR_TYPE_UINT16:						
+    case MR_TYPE_INT16:						
+    case MR_TYPE_UINT32:						
+    case MR_TYPE_INT32:						
+    case MR_TYPE_UINT64:						
+    case MR_TYPE_INT64:
+    case MR_TYPE_NONE:
+      /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
+      tdp = mr_get_td_by_name (fdp->type);		
       if (tdp)							
-	fdp->rl_type = tdp->rl_type;				
+	fdp->mr_type = tdp->mr_type;				
       break;							
     default: break;							
     }								
 }
 
 char *
-rl_normalize_name (char * name)
+mr_normalize_name (char * name)
 {
   char * ptr;
   ptr = strchr (name, '[');				
@@ -270,10 +270,10 @@ strndup (const char * str, size_t size)
   char * copy;
   if (strlen (str) < size)
     size = strlen (str);
-  copy = (char*)RL_MALLOC (size + 1);
+  copy = (char*)MR_MALLOC (size + 1);
   if (NULL == copy)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }    
   memcpy (copy, str, size);
@@ -289,7 +289,7 @@ strndup (const char * str, size_t size)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 int
-rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
+mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
   uint8_t * ptr = ptrdes->data;
   int i;
@@ -298,12 +298,12 @@ rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
   for (i = 8 - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += 8)
     *value |= ((uint64_t)*ptr++) << i;
   *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
-  switch (ptrdes->fd.rl_type_aux)
+  switch (ptrdes->fd.mr_type_aux)
     {
-    case RL_TYPE_INT8:
-    case RL_TYPE_INT16:
-    case RL_TYPE_INT32:
-    case RL_TYPE_INT64:
+    case MR_TYPE_INT8:
+    case MR_TYPE_INT16:
+    case MR_TYPE_INT32:
+    case MR_TYPE_INT64:
       /* extend sign bit */
       if (*value & (1 << (ptrdes->fd.param.bitfield_param.width - 1)))
 	*value |= -1 - ((2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1);
@@ -321,7 +321,7 @@ rl_save_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 int
-rl_load_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
+mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
   uint8_t * ptr = ptrdes->data;
   int i;
@@ -350,14 +350,14 @@ rl_load_bitfield_value (rl_ptrdes_t * ptrdes, uint64_t * value)
  * @return Pointer on a new element of rarray
  */
 void *
-rl_rarray_append (rl_rarray_t * rarray, int size)
+mr_rarray_append (mr_rarray_t * rarray, int size)
 {
   if (NULL == rarray->data)
     {
       rarray->alloc_size = rarray->size = 0;
-      rarray->data = RL_MALLOC (size);
+      rarray->data = MR_MALLOC (size);
       if (NULL == rarray->data)
-	RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       else
 	{
 	  memset (rarray->data, 0, size);
@@ -369,7 +369,7 @@ rl_rarray_append (rl_rarray_t * rarray, int size)
   rarray->size += size;
   if (rarray->size > rarray->alloc_size)
     {
-      float mas = rl_conf.rl_mem.mem_alloc_strategy;
+      float mas = mr_conf.mr_mem.mem_alloc_strategy;
       int alloc_size;
       void * data;
       if (mas < 1)
@@ -379,10 +379,10 @@ rl_rarray_append (rl_rarray_t * rarray, int size)
       alloc_size = (((int)((rarray->alloc_size + 1) * mas) + size - 1) / size) * size;
       if (rarray->size > alloc_size)
 	alloc_size = rarray->size;
-      data = RL_REALLOC (rarray->data, alloc_size);
+      data = MR_REALLOC (rarray->data, alloc_size);
       if (NULL == data)
 	{
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (NULL);
 	}
       rarray->alloc_size = alloc_size;
@@ -398,7 +398,7 @@ rl_rarray_append (rl_rarray_t * rarray, int size)
  * @return length of added content and -1 in case of memory allocation failure
  */
 int __attribute__ ((format (printf, 2, 3))) 
-rl_ra_printf (rl_rarray_t * rl_ra_str, const char * format, ...)
+mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 {
   va_list args;
   int length;
@@ -410,21 +410,21 @@ rl_ra_printf (rl_rarray_t * rl_ra_str, const char * format, ...)
   va_end (args);
   if (NULL == str)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-      if (rl_ra_str->data)
-	RL_FREE (rl_ra_str->data);
-      rl_ra_str->data = NULL;
-      rl_ra_str->size = rl_ra_str->alloc_size = 0;
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      if (mr_ra_str->data)
+	MR_FREE (mr_ra_str->data);
+      mr_ra_str->data = NULL;
+      mr_ra_str->size = mr_ra_str->alloc_size = 0;
       return (-1);
     }
-  tail = rl_rarray_append (rl_ra_str, length);
+  tail = mr_rarray_append (mr_ra_str, length);
   if (tail)
     strcat (--tail, str);
-  else if (rl_ra_str->data)
+  else if (mr_ra_str->data)
     {
-      RL_FREE (rl_ra_str->data);
-      rl_ra_str->data = NULL;
-      rl_ra_str->size = rl_ra_str->alloc_size = 0;
+      MR_FREE (mr_ra_str->data);
+      mr_ra_str->data = NULL;
+      mr_ra_str->size = mr_ra_str->alloc_size = 0;
     }
   free (str);
   return (tail ? length : -1);
@@ -438,9 +438,9 @@ rl_ra_printf (rl_rarray_t * rl_ra_str, const char * format, ...)
  * pointer on element is changing (index remains constant).
  */
 int
-rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
+mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
 {
-  rl_ptrdes_t * ptrdes = rl_rarray_append ((rl_rarray_t*)ptrs, sizeof (ptrs->ra.data[0]));
+  mr_ptrdes_t * ptrdes = mr_rarray_append ((mr_rarray_t*)ptrs, sizeof (ptrs->ra.data[0]));
   if (NULL == ptrdes)
     return (-1);
   memset (ptrdes, 0, sizeof (*ptrdes));
@@ -450,8 +450,8 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   ptrdes->fd.hash_value = 0;
   ptrdes->fd.size = 0;
   ptrdes->fd.offset = 0;
-  ptrdes->fd.rl_type = RL_TYPE_VOID;
-  ptrdes->fd.rl_type_ext = RL_TYPE_EXT_NONE;
+  ptrdes->fd.mr_type = MR_TYPE_VOID;
+  ptrdes->fd.mr_type_ext = MR_TYPE_EXT_NONE;
   ptrdes->fd.param.array_param.count = 0;
   ptrdes->fd.param.array_param.row_count = 0;
   ptrdes->fd.param.enum_value = 0;
@@ -459,14 +459,14 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
   ptrdes->fd.ext.ptr = NULL;
   ptrdes->fd.ptr_type = NULL;
   ptrdes->level = 0;
-  ptrdes->idx = -1; /* NB! To be initialized in depth search in rl_save */
+  ptrdes->idx = -1; /* NB! To be initialized in depth search in mr_save */
   ptrdes->ref_idx = -1;
   ptrdes->parent = -1;
   ptrdes->first_child = -1;
   ptrdes->last_child = -1;
   ptrdes->prev = -1;
   ptrdes->next = -1;
-  ptrdes->flags = RL_PDF_NONE;
+  ptrdes->flags = MR_PDF_NONE;
   ptrdes->union_field_name = NULL;
   ptrdes->value = NULL;
   ptrdes->ext.ptr = NULL;
@@ -481,7 +481,7 @@ rl_add_ptr_to_list (rl_ra_rl_ptrdes_t * ptrs)
  * @param ptrs resizable array with pointers descriptors
  */
 void
-rl_add_child (int parent, int child, rl_ra_rl_ptrdes_t * ptrs)
+mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs)
 {
   int last_child;
 
@@ -505,14 +505,14 @@ rl_add_child (int parent, int child, rl_ra_rl_ptrdes_t * ptrs)
 }
 
 /**
- * Comparator for rl_ra_rl_ptrdes_t sorting by idx field
- * @param a pointer on one rl_ptrdes_t
- * @param b pointer on another rl_ptrdes_t
+ * Comparator for mr_ra_mr_ptrdes_t sorting by idx field
+ * @param a pointer on one mr_ptrdes_t
+ * @param b pointer on another mr_ptrdes_t
  * @return comparation sign
  */
-static int rl_cmp_idx (const void * a, const void * b)
+static int mr_cmp_idx (const void * a, const void * b)
 {
-  return (((const rl_ptrdes_t*)a)->idx - ((const rl_ptrdes_t*)b)->idx);
+  return (((const mr_ptrdes_t*)a)->idx - ((const mr_ptrdes_t*)b)->idx);
 }
 
 /**
@@ -521,22 +521,22 @@ static int rl_cmp_idx (const void * a, const void * b)
  * @return status, EXIT_SUCCESS or EXIT_FAILURE
  */
 int
-rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
+mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 {
   int i;
   int to_free = 0;
   int count = ptrs.ra.size / sizeof (ptrs.ra.data[0]);
       
   for (i = 0; i < count; ++i)
-    switch (ptrs.ra.data[i].fd.rl_type_ext)
+    switch (ptrs.ra.data[i].fd.mr_type_ext)
       {
-      case RL_TYPE_EXT_POINTER:
-      case RL_TYPE_EXT_RARRAY_DATA:
+      case MR_TYPE_EXT_POINTER:
+      case MR_TYPE_EXT_RARRAY_DATA:
 	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
 	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
-      case RL_TYPE_EXT_NONE:
-	if ((RL_TYPE_STRING == ptrs.ra.data[i].fd.rl_type) &&
+      case MR_TYPE_EXT_NONE:
+	if ((MR_TYPE_STRING == ptrs.ra.data[i].fd.mr_type) &&
 	    (NULL != *(char**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
 	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
 	break;
@@ -544,22 +544,22 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
 	break;
       }
   /* sort out nodes to the end of the array */
-  qsort (ptrs.ra.data, to_free, sizeof (ptrs.ra.data[0]), rl_cmp_idx);
+  qsort (ptrs.ra.data, to_free, sizeof (ptrs.ra.data[0]), mr_cmp_idx);
   for (i = to_free - 1; i >= 0; --i)
-    switch (ptrs.ra.data[i].fd.rl_type_ext)
+    switch (ptrs.ra.data[i].fd.mr_type_ext)
       {
-      case RL_TYPE_EXT_POINTER:
-      case RL_TYPE_EXT_RARRAY_DATA:
-	RL_FREE (*(void**)ptrs.ra.data[i].data);
+      case MR_TYPE_EXT_POINTER:
+      case MR_TYPE_EXT_RARRAY_DATA:
+	MR_FREE (*(void**)ptrs.ra.data[i].data);
 	break;
-      case RL_TYPE_EXT_NONE:
-	RL_FREE (*(char**)ptrs.ra.data[i].data);
+      case MR_TYPE_EXT_NONE:
+	MR_FREE (*(char**)ptrs.ra.data[i].data);
 	break;
       default:
 	break;
       }
   if (ptrs.ra.data)
-    RL_FREE (ptrs.ra.data);
+    MR_FREE (ptrs.ra.data);
   return (EXIT_SUCCESS);
 }
 
@@ -569,7 +569,7 @@ rl_free_recursively (rl_ra_rl_ptrdes_t ptrs)
  * @return Hash function value.
  */
 static uint64_t
-rl_hash_str (char * str)
+mr_hash_str (char * str)
 {
   uint64_t hash_value = 0;
   if (NULL == str)
@@ -603,31 +603,31 @@ is_prime (int x)
  * @return flag that cycle was not completed
  */
 int
-rl_td_foreach (int (*func) (rl_td_t*, void*), void * args)
+mr_td_foreach (int (*func) (mr_td_t*, void*), void * args)
 {
-  int count = rl_conf.des.size / sizeof (rl_conf.des.data[0]);
+  int count = mr_conf.des.size / sizeof (mr_conf.des.data[0]);
   int i;
 
   for (i = 0; i < count; ++i)
-    if (func (rl_conf.des.data[i].tdp, args))
+    if (func (mr_conf.des.data[i].tdp, args))
       return (!0);
   return (0);
 }
 
-#ifndef RL_TREE_LOOKUP
+#ifndef MR_TREE_LOOKUP
 /**
  * Update hash with type descriptors
  * @param tdp root of linked list with type descriptors
- * @param hash rl_rarray_t with hash table for type descriptors
+ * @param hash mr_rarray_t with hash table for type descriptors
  * @return void
  */
 static void
-rl_update_td_hash (rl_td_t * tdp, rl_ra_rl_td_ptr_t * hash)
+mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
 {
   int size;
-  rl_td_ptr_t * x;
+  mr_td_ptr_t * x;
 
-  tdp->hash_value = rl_hash_str (tdp->type);
+  tdp->hash_value = mr_hash_str (tdp->type);
 
   if (NULL == hash->ra.data)
     hash->ra.alloc_size = hash->ra.size = 0;
@@ -636,11 +636,11 @@ rl_update_td_hash (rl_td_t * tdp, rl_ra_rl_td_ptr_t * hash)
     {
       /* hash size is not defined. Let it be doubled number of elements in the list */
       size = 0;
-      int td_count (rl_td_t * tdp, void * args) { ++size; return (0); }
-      rl_td_foreach (td_count, NULL);
+      int td_count (mr_td_t * tdp, void * args) { ++size; return (0); }
+      mr_td_foreach (td_count, NULL);
       hash->ra.size = 2 * size * sizeof (hash->ra.data[0]);
       if (hash->ra.data)
-	RL_FREE (hash->ra.data);
+	MR_FREE (hash->ra.data);
       hash->ra.data = NULL;
     }
   else
@@ -653,11 +653,11 @@ rl_update_td_hash (rl_td_t * tdp, rl_ra_rl_td_ptr_t * hash)
 	{
 	  if (x->tdp->hash_value == tdp->hash_value) /* hashes matched and non-collision hash table is not possible */
 	    {
-	      RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_TYPES_HASHES_MATCHED, x->tdp->type, tdp->type);
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPES_HASHES_MATCHED, x->tdp->type, tdp->type);
 	      return;
 	    }
 	  /* we have a collision, so we will need to find new hash size to avoid collisions */ 
-	  RL_FREE (hash->ra.data);
+	  MR_FREE (hash->ra.data);
 	  hash->ra.data = NULL;
 	  hash->ra.size = hash->ra.alloc_size = 0;
 	}
@@ -665,27 +665,27 @@ rl_update_td_hash (rl_td_t * tdp, rl_ra_rl_td_ptr_t * hash)
 
   while (NULL == hash->ra.data)
     {
-      rl_td_ptr_t * array;
+      mr_td_ptr_t * array;
       int i;
       /* we need to find next prime number greater then hash->ra.size */ 
       size = ((hash->ra.size / sizeof (hash->ra.data[0])) | 1) + 2;
       while (!is_prime (size))
 	size += 2;
       hash->ra.alloc_size = hash->ra.size = size * sizeof (hash->ra.data[0]);
-      array = RL_MALLOC (hash->ra.alloc_size);
+      array = MR_MALLOC (hash->ra.alloc_size);
       /* check memory allocation */
       if (NULL == array)
 	{
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  hash->ra.alloc_size = hash->ra.size = 0;
 	  return;
 	}
       for (i = 0; i < size; ++i)
 	array[i].tdp = NULL;
       /* populate list elements into hash table */
-      int td_populate (rl_td_t * tdp, void * args)
+      int td_populate (mr_td_t * tdp, void * args)
       {
-	rl_td_ptr_t * x = &array[tdp->hash_value % size];
+	mr_td_ptr_t * x = &array[tdp->hash_value % size];
 	/* check for collision */
 	if (x->tdp)
 	  return (!0);
@@ -693,25 +693,25 @@ rl_update_td_hash (rl_td_t * tdp, rl_ra_rl_td_ptr_t * hash)
 	return (0);
       }
       /* check that all elements were successfully populated into the hash table */
-      if (rl_td_foreach (td_populate, NULL))
-	RL_FREE (array); /* otherwise try to find new hash size */
+      if (mr_td_foreach (td_populate, NULL))
+	MR_FREE (array); /* otherwise try to find new hash size */
       else
 	hash->ra.data = array;
     }
 }
 
-#else /* RL_TREE_LOOKUP */
+#else /* MR_TREE_LOOKUP */
 
 /**
- * Comparator for rl_td_t sorting by type field
- * @param a pointer on one rl_td_t
- * @param b pointer on another rl_td_t
+ * Comparator for mr_td_t sorting by type field
+ * @param a pointer on one mr_td_t
+ * @param b pointer on another mr_td_t
  * @return comparation sign
  */
 static int
 cmp_tdp (const void * x, const void * y)
 {
-  return (strcmp (((const rl_td_t *) x)->type, ((const rl_td_t *) y)->type));
+  return (strcmp (((const mr_td_t *) x)->type, ((const mr_td_t *) y)->type));
 }
 
 /**
@@ -720,55 +720,55 @@ cmp_tdp (const void * x, const void * y)
  * @param tree pointer on a root pointer of the lookup tree
  */
 static void
-rl_update_td_tree (rl_td_t * tdp, rl_red_black_tree_node_t ** tree)
+mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 {
-  rl_td_t ** tdpp = tsearch (tdp, (void*)tree, cmp_tdp);
+  mr_td_t ** tdpp = tsearch (tdp, (void*)tree, cmp_tdp);
   if (NULL == tdpp)
-    RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 }
-#endif /* RL_TREE_LOOKUP */
+#endif /* MR_TREE_LOOKUP */
 
 /**
  * Type descriptor lookup function. Lookup by type name.
  * @param type stringified type name
  * @return pointer on type descriptor
  */
-rl_td_t *
-rl_get_td_by_name (char * type)
+mr_td_t *
+mr_get_td_by_name (char * type)
 {
-  rl_td_t * tdp;
+  mr_td_t * tdp;
 
-  int td_cmp (rl_td_t * tdp_, void * args)
+  int td_cmp (mr_td_t * tdp_, void * args)
     {
       if (0 == strcmp (type, tdp_->type))
 	{
-	  *(rl_td_t**)args = tdp_;
+	  *(mr_td_t**)args = tdp_;
 	  return (!0);
 	}
       return (0);
     }
   
-#ifndef RL_TREE_LOOKUP
-  if (rl_conf.hash.ra.data && rl_conf.hash.ra.size)
+#ifndef MR_TREE_LOOKUP
+  if (mr_conf.hash.ra.data && mr_conf.hash.ra.size)
     {
-      uint64_t hash_value = rl_hash_str (type);
-      tdp = rl_conf.hash.ra.data[hash_value % (rl_conf.hash.ra.size / sizeof (rl_conf.hash.ra.data[0]))].tdp;
+      uint64_t hash_value = mr_hash_str (type);
+      tdp = mr_conf.hash.ra.data[hash_value % (mr_conf.hash.ra.size / sizeof (mr_conf.hash.ra.data[0]))].tdp;
       if (tdp && (hash_value == tdp->hash_value) && (0 == strcmp (type, tdp->type)))
 	return (tdp);
       return (NULL);
     }
-#else /* RL_TREE_LOOKUP */
-  if (rl_conf.tree)
+#else /* MR_TREE_LOOKUP */
+  if (mr_conf.tree)
     {
-      rl_td_t td = { .type = type };
-      rl_td_t ** tdpp = tfind (&td, (void*)&rl_conf.tree, cmp_tdp);
+      mr_td_t td = { .type = type };
+      mr_td_t ** tdpp = tfind (&td, (void*)&mr_conf.tree, cmp_tdp);
       if (tdpp)
 	return (*tdpp);
       else
 	return (NULL);
     }
-#endif /* RL_TREE_LOOKUP */
-  if (rl_td_foreach (td_cmp, &tdp))
+#endif /* MR_TREE_LOOKUP */
+  if (mr_td_foreach (td_cmp, &tdp))
     return (tdp);
   return (NULL);
 }
@@ -779,55 +779,55 @@ rl_get_td_by_name (char * type)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_anon_unions_extract (rl_td_t * tdp)
+mr_anon_unions_extract (mr_td_t * tdp)
 {
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   int i, j;
   
   for (i = 0; i < count; ++i)
-    if (RL_TYPE_ANON_UNION == tdp->fields.data[i].rl_type)
+    if (MR_TYPE_ANON_UNION == tdp->fields.data[i].mr_type)
       {
 	for (j = i + 1; j < count; ++j)
-	  if (RL_TYPE_END_ANON_UNION == tdp->fields.data[j].rl_type)
+	  if (MR_TYPE_END_ANON_UNION == tdp->fields.data[j].mr_type)
 	    break;
 	if (j >= count)
 	  return (EXIT_FAILURE);
 	{
-	  int fields_count = j - i; /* additional trailing element with rl_type = RL_TYPE_TRAILING_RECORD */
-	  static int rl_type_anonymous_union_cnt = 0;
-	  rl_td_t * tdp_ = tdp->fields.data[i].ext.ptr; /* statically allocated memory for new type descriptor */
-	  rl_fd_t * first = &tdp->fields.data[i + 1];
+	  int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_TRAILING_RECORD */
+	  static int mr_type_anonymous_union_cnt = 0;
+	  mr_td_t * tdp_ = tdp->fields.data[i].ext.ptr; /* statically allocated memory for new type descriptor */
+	  mr_fd_t * first = &tdp->fields.data[i + 1];
 
 	  tdp_->size = 0;
 	  /* rotate fields until all union fields will be shifted to the end of the array */
 	  for (j = 0; j < fields_count; ++j)
 	    {
-	      rl_fd_t fd = *first;
+	      mr_fd_t fd = *first;
 	      memmove (first, &first[1], (count - i - 1) * sizeof (*first));
 	      /* offset of union memebers may differ from offset of anonymous unionplace holder */
-	      if (fd.offset != 0) /* RL_NONE and RL_END_ANON_UNION has zero offset */
+	      if (fd.offset != 0) /* MR_NONE and MR_END_ANON_UNION has zero offset */
 		tdp->fields.data[i].offset = fd.offset;
 	      fd.offset = 0; /* reset offset to zero */
 	      tdp->fields.data[count] = fd;
 	      if (fd.size > tdp_->size)
 		tdp_->size = fd.size; /* find union max size member */
 	    }
-	  tdp->fields.data[count].rl_type = RL_TYPE_TRAILING_RECORD; /* trailing record */
-	  tdp_->rl_type = RL_TYPE_ANON_UNION;
-	  sprintf (tdp_->type, RL_TYPE_ANONYMOUS_UNION_TEMPLATE, rl_type_anonymous_union_cnt++);
+	  tdp->fields.data[count].mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
+	  tdp_->mr_type = MR_TYPE_ANON_UNION;
+	  sprintf (tdp_->type, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	  tdp_->attr = tdp->fields.data[i].comment; /* anonymous union stringified attributes are saved into comments field */
-	  tdp_->comment = tdp->fields.data[count].comment; /* copy comment from RL_END_ANON_UNION record */
+	  tdp_->comment = tdp->fields.data[count].comment; /* copy comment from MR_END_ANON_UNION record */
 	  tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
 
-	  tdp->fields.data[i].comment = tdp->fields.data[count].comment; /* copy comment from RL_END_ANON_UNION record */
+	  tdp->fields.data[i].comment = tdp->fields.data[count].comment; /* copy comment from MR_END_ANON_UNION record */
 	  tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
 	  count -= fields_count;
 	  tdp->fields.data[i].type = tdp_->type;
 	  tdp->fields.data[i].size = tdp_->size;
 
-	  if (rl_add_type (tdp_, NULL, NULL))
+	  if (mr_add_type (tdp_, NULL, NULL))
 	    {
-	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->type);
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->type);
 	      return (EXIT_SUCCESS);
 	    }
 	}
@@ -836,27 +836,27 @@ rl_anon_unions_extract (rl_td_t * tdp)
 }
 
 /**
- * comparator for rl_fd_t sorting by enum value
- * @param a pointer on one rl_fd_t
- * @param b pointer on another rl_fd_t
+ * comparator for mr_fd_t sorting by enum value
+ * @param a pointer on one mr_fd_t
+ * @param b pointer on another mr_fd_t
  * @return comparation sign
  */
 static int
 cmp_enums_by_value (const void * x, const void * y)
 {
-  return ((((const rl_fd_t *) x)->param.enum_value > ((const rl_fd_t *) y)->param.enum_value) - (((const rl_fd_t *) x)->param.enum_value < ((const rl_fd_t *) y)->param.enum_value));
+  return ((((const mr_fd_t *) x)->param.enum_value > ((const mr_fd_t *) y)->param.enum_value) - (((const mr_fd_t *) x)->param.enum_value < ((const mr_fd_t *) y)->param.enum_value));
 }
 
 /**
- * comparator for rl_dd_t sorting by enum name
- * @param a pointer on one rl_fd_t
- * @param b pointer on another rl_fd_t
+ * comparator for mr_dd_t sorting by enum name
+ * @param a pointer on one mr_fd_t
+ * @param b pointer on another mr_fd_t
  * @return comparation sign
  */
 static int
 cmp_enums_by_name (const void * x, const void * y)
 {
-  return (strcmp (((const rl_fd_t *) x)->name, ((const rl_fd_t *) y)->name));
+  return (strcmp (((const mr_fd_t *) x)->name, ((const mr_fd_t *) y)->name));
 }
 
 /**
@@ -865,7 +865,7 @@ cmp_enums_by_name (const void * x, const void * y)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_add_enum (rl_td_t * tdp)
+mr_add_enum (mr_td_t * tdp)
 {
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   int i;
@@ -874,22 +874,22 @@ rl_add_enum (rl_td_t * tdp)
     Enums with __attribute__((packed, aligned (XXX))) generates size according alignment, but not real size which is 1 byte due to packing.
     Here we determine effective type size.
   */
-  switch (tdp->rl_type_effective)
+  switch (tdp->mr_type_effective)
     {
-    case RL_TYPE_INT8:
-    case RL_TYPE_UINT8:
+    case MR_TYPE_INT8:
+    case MR_TYPE_UINT8:
       tdp->size_effective = sizeof (uint8_t);
       break;
-    case RL_TYPE_INT16:
-    case RL_TYPE_UINT16:
+    case MR_TYPE_INT16:
+    case MR_TYPE_UINT16:
       tdp->size_effective = sizeof (uint16_t);
       break;
-    case RL_TYPE_INT32:
-    case RL_TYPE_UINT32:
+    case MR_TYPE_INT32:
+    case MR_TYPE_UINT32:
       tdp->size_effective = sizeof (uint32_t);
       break;
-    case RL_TYPE_INT64:
-    case RL_TYPE_UINT64:
+    case MR_TYPE_INT64:
+    case MR_TYPE_UINT64:
       tdp->size_effective = sizeof (uint64_t);
       break;
     default:
@@ -901,33 +901,33 @@ rl_add_enum (rl_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      rl_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&rl_conf.enum_by_name, cmp_enums_by_name);  
+      mr_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name, cmp_enums_by_name);  
       if (NULL == fdpp)
 	{
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (EXIT_FAILURE);
 	}
       if (*fdpp != &tdp->fields.data[i])
 	{
-	  RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->name, tdp->type);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->name, tdp->type);
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
       fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value, cmp_enums_by_value);  
       if (NULL == fdpp)
 	{
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (EXIT_FAILURE);
 	}
     }
   return (EXIT_SUCCESS);
 }
 
-rl_fd_t *
-rl_get_enum_by_value (rl_td_t * tdp, int64_t value)
+mr_fd_t *
+mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
-  rl_fd_t fd = { .param = { .enum_value = value, }, };
-  rl_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value, cmp_enums_by_value);
+  mr_fd_t fd = { .param = { .enum_value = value, }, };
+  mr_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value, cmp_enums_by_value);
   if (fdpp)
     return (*fdpp);
   return (NULL);
@@ -940,10 +940,10 @@ rl_get_enum_by_value (rl_td_t * tdp, int64_t value)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 int
-rl_get_enum_by_name (uint64_t * value, char * name)
+mr_get_enum_by_name (uint64_t * value, char * name)
 {
-  rl_fd_t fd = { .name = name };
-  rl_fd_t ** fdpp = tfind (&fd, (void*)&rl_conf.enum_by_name, cmp_enums_by_name);
+  mr_fd_t fd = { .name = name };
+  mr_fd_t ** fdpp = tfind (&fd, (void*)&mr_conf.enum_by_name, cmp_enums_by_name);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
   return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -955,7 +955,7 @@ rl_get_enum_by_name (uint64_t * value, char * name)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_normalize_type (rl_fd_t * fdp)
+mr_normalize_type (mr_fd_t * fdp)
 {
   static char * keywords[] =
     {
@@ -1027,7 +1027,7 @@ rl_normalize_type (rl_fd_t * fdp)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_init_bitfield (rl_fd_t * fdp)
+mr_init_bitfield (mr_fd_t * fdp)
 {
   int i;
   for (i = 0; i < fdp->param.bitfield_param.bitfield.size; ++i)
@@ -1047,33 +1047,33 @@ rl_init_bitfield (rl_fd_t * fdp)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_check_fields (rl_td_t * tdp)
+mr_check_fields (mr_td_t * tdp)
 {
   int i, j;
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
     {
-      rl_fd_t * fdp = &tdp->fields.data[i];
+      mr_fd_t * fdp = &tdp->fields.data[i];
       /*
 	Check names of the fileds.
-	RL_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
+	MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
       */
       char * name = fdp->name;
       if (name)
 	{
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
-	  if (*name) /* strings with field names might be in read-only memory. For RL_NONE names are saved in writable memory. */
+	  if (*name) /* strings with field names might be in read-only memory. For MR_NONE names are saved in writable memory. */
 	    *name = 0; /* truncate on first invalid charecter */
 	}
-      rl_normalize_type (fdp);
-      if (RL_TYPE_BITFIELD == fdp->rl_type)
-	rl_init_bitfield (fdp);
+      mr_normalize_type (fdp);
+      if (MR_TYPE_BITFIELD == fdp->mr_type)
+	mr_init_bitfield (fdp);
     }
   /* check for name duplicates */
   for (i = 0; i < count; ++i)
     for (j = i + 1; j < count; ++j)
       if (tdp->fields.data[i].name && tdp->fields.data[j].name && (0 == strcmp (tdp->fields.data[i].name, tdp->fields.data[j].name)))
-	RL_MESSAGE (RL_LL_WARN, RL_MESSAGE_DUPLICATED_FIELDS, tdp->fields.data[i].name, tdp->type);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_FIELDS, tdp->fields.data[i].name, tdp->type);
   
   return (EXIT_SUCCESS);
 }
@@ -1084,7 +1084,7 @@ rl_check_fields (rl_td_t * tdp)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_build_field_names_hash (rl_td_t * tdp)
+mr_build_field_names_hash (mr_td_t * tdp)
 {
   int i, j;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
@@ -1092,7 +1092,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
   tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
   tdp->lookup_by_name.data = NULL;
   for (i = 0; i < fields_count; ++i)
-    tdp->fields.data[i].hash_value = rl_hash_str (tdp->fields.data[i].name);
+    tdp->fields.data[i].hash_value = mr_hash_str (tdp->fields.data[i].name);
 
   /* sanity check for hash value collision */
   for (i = 0; i < fields_count; ++i)
@@ -1105,17 +1105,17 @@ rl_build_field_names_hash (rl_td_t * tdp)
   
   while (NULL == tdp->lookup_by_name.data)
     {
-      rl_fd_ptr_t * array;
+      mr_fd_ptr_t * array;
       int size = ((tdp->lookup_by_name.size / sizeof (tdp->lookup_by_name.data[0])) | 1) + 2;
       /* we need to find next prime number greater then current hash table size */ 
       while (!is_prime (size))
 	size += 2;
       tdp->lookup_by_name.alloc_size = tdp->lookup_by_name.size = size * sizeof (tdp->lookup_by_name.data[0]);
-      array = RL_MALLOC (tdp->lookup_by_name.alloc_size);
+      array = MR_MALLOC (tdp->lookup_by_name.alloc_size);
       /* check memory allocation */
       if (NULL == array)
 	{
-	  RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  tdp->lookup_by_name.alloc_size = tdp->lookup_by_name.size = 0;
 	  return (EXIT_FAILURE);
 	}
@@ -1124,7 +1124,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
       /* populate list elements into hash table */
       for (i = 0; i < fields_count; ++i)
 	{
-	  rl_fd_ptr_t * x = &array[tdp->fields.data[i].hash_value % size];
+	  mr_fd_ptr_t * x = &array[tdp->fields.data[i].hash_value % size];
 	  /* check for collision */
 	  if (x->fdp)
 	    break;
@@ -1135,7 +1135,7 @@ rl_build_field_names_hash (rl_td_t * tdp)
       if (i >= fields_count)
 	tdp->lookup_by_name.data = array;
       else
-	RL_FREE (array); /* otherwise try to find new hash size */
+	MR_FREE (array); /* otherwise try to find new hash size */
     }
   
   return (EXIT_SUCCESS);
@@ -1147,40 +1147,40 @@ rl_build_field_names_hash (rl_td_t * tdp)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_auto_field_detect (rl_fd_t * fdp)
+mr_auto_field_detect (mr_fd_t * fdp)
 {
   static size_t types_sizes[] =
     {
-      [0 ... RL_MAX_TYPES - 1] = 0,
-      [RL_TYPE_NONE] = 0,
-      [RL_TYPE_VOID] = sizeof (void),
-      [RL_TYPE_INT8] = sizeof (int8_t),
-      [RL_TYPE_UINT8] = sizeof (uint8_t),
-      [RL_TYPE_INT16] = sizeof (int16_t),
-      [RL_TYPE_UINT16] = sizeof (uint16_t),
-      [RL_TYPE_INT32] = sizeof (int32_t),
-      [RL_TYPE_UINT32] = sizeof (uint32_t),
-      [RL_TYPE_INT64] = sizeof (int64_t),
-      [RL_TYPE_UINT64] = sizeof (uint64_t),
-      [RL_TYPE_FLOAT] = sizeof (float),
-      [RL_TYPE_DOUBLE] = sizeof (double),
-      [RL_TYPE_LONG_DOUBLE] = sizeof (long double),
-      [RL_TYPE_CHAR] = sizeof (char),
-      [RL_TYPE_CHAR_ARRAY] = sizeof (char),
-      [RL_TYPE_STRING] = sizeof (char*),
-      [RL_TYPE_STRUCT] = sizeof (void),
-      [RL_TYPE_UNION] = sizeof (void),
-      [RL_TYPE_ANON_UNION] = sizeof (void),
+      [0 ... MR_MAX_TYPES - 1] = 0,
+      [MR_TYPE_NONE] = 0,
+      [MR_TYPE_VOID] = sizeof (void),
+      [MR_TYPE_INT8] = sizeof (int8_t),
+      [MR_TYPE_UINT8] = sizeof (uint8_t),
+      [MR_TYPE_INT16] = sizeof (int16_t),
+      [MR_TYPE_UINT16] = sizeof (uint16_t),
+      [MR_TYPE_INT32] = sizeof (int32_t),
+      [MR_TYPE_UINT32] = sizeof (uint32_t),
+      [MR_TYPE_INT64] = sizeof (int64_t),
+      [MR_TYPE_UINT64] = sizeof (uint64_t),
+      [MR_TYPE_FLOAT] = sizeof (float),
+      [MR_TYPE_DOUBLE] = sizeof (double),
+      [MR_TYPE_LONG_DOUBLE] = sizeof (long double),
+      [MR_TYPE_CHAR] = sizeof (char),
+      [MR_TYPE_CHAR_ARRAY] = sizeof (char),
+      [MR_TYPE_STRING] = sizeof (char*),
+      [MR_TYPE_STRUCT] = sizeof (void),
+      [MR_TYPE_UNION] = sizeof (void),
+      [MR_TYPE_ANON_UNION] = sizeof (void),
     };
   
-  rl_td_t * tdp = rl_get_td_by_name (fdp->type);
+  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
   /* check if type is in registery */
   if (tdp)
     {
-      fdp->rl_type = tdp->rl_type;
+      fdp->mr_type = tdp->mr_type;
       fdp->size = tdp->size; /* size of forward pointers could be resolved only at the time of type registration */
     }
-  else if (RL_TYPE_EXT_NONE == fdp->rl_type_ext)
+  else if (MR_TYPE_EXT_NONE == fdp->mr_type_ext)
     {
       /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
@@ -1190,26 +1190,26 @@ rl_auto_field_detect (rl_fd_t * fdp)
 	  while (isspace (end[-1]))
 	    --end;
 	  *end = 0; /* trancate type name */
-	  fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
-	  fdp->rl_type = fdp->rl_type_aux;
-	  fdp->size = types_sizes[fdp->rl_type];
+	  fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
+	  fdp->mr_type = fdp->mr_type_aux;
+	  fdp->size = types_sizes[fdp->mr_type];
 	  /* autodetect structures and enums */
-	  switch (fdp->rl_type)
+	  switch (fdp->mr_type)
 	    {
-	    case RL_TYPE_NONE:
-	    case RL_TYPE_INT8:
-	    case RL_TYPE_UINT8:
-	    case RL_TYPE_INT16:
-	    case RL_TYPE_UINT16:
-	    case RL_TYPE_INT32:
-	    case RL_TYPE_UINT32:
-	    case RL_TYPE_INT64:
-	    case RL_TYPE_UINT64:
-	    case RL_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
-	      tdp = rl_get_td_by_name (fdp->type);
+	    case MR_TYPE_NONE:
+	    case MR_TYPE_INT8:
+	    case MR_TYPE_UINT8:
+	    case MR_TYPE_INT16:
+	    case MR_TYPE_UINT16:
+	    case MR_TYPE_INT32:
+	    case MR_TYPE_UINT32:
+	    case MR_TYPE_INT64:
+	    case MR_TYPE_UINT64:
+	    case MR_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
+	      tdp = mr_get_td_by_name (fdp->type);
 	      if (tdp)
 		{
-		  fdp->rl_type = tdp->rl_type;
+		  fdp->mr_type = tdp->mr_type;
 		  fdp->size = tdp->size;
 		}
 	      break;
@@ -1228,24 +1228,24 @@ rl_auto_field_detect (rl_fd_t * fdp)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_func_field_detect (rl_fd_t * fdp)
+mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
-  for (i = 0; fdp->param.func_param.data[i].rl_type != RL_TYPE_TRAILING_RECORD; ++i)
+  for (i = 0; fdp->param.func_param.data[i].mr_type != MR_TYPE_TRAILING_RECORD; ++i)
     {
-      rl_normalize_type (&fdp->param.func_param.data[i]);
-      switch (fdp->param.func_param.data[i].rl_type)
+      mr_normalize_type (&fdp->param.func_param.data[i]);
+      switch (fdp->param.func_param.data[i].mr_type)
 	{
-	case RL_TYPE_NONE:
-	case RL_TYPE_INT8:
-	case RL_TYPE_UINT8:
-	case RL_TYPE_INT16:
-	case RL_TYPE_UINT16:
-	case RL_TYPE_INT32:
-	case RL_TYPE_UINT32:
-	case RL_TYPE_INT64:
-	case RL_TYPE_UINT64:
-	  rl_auto_field_detect (&fdp->param.func_param.data[i]);
+	case MR_TYPE_NONE:
+	case MR_TYPE_INT8:
+	case MR_TYPE_UINT8:
+	case MR_TYPE_INT16:
+	case MR_TYPE_UINT16:
+	case MR_TYPE_INT32:
+	case MR_TYPE_UINT32:
+	case MR_TYPE_INT64:
+	case MR_TYPE_UINT64:
+	  mr_auto_field_detect (&fdp->param.func_param.data[i]);
 	  break;
 	default:
 	  break;
@@ -1263,54 +1263,54 @@ rl_func_field_detect (rl_fd_t * fdp)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_detect_fields_types (rl_td_t * tdp, void * args)
+mr_detect_fields_types (mr_td_t * tdp, void * args)
 {
   int i;
-  rl_td_t * tdp_;
+  mr_td_t * tdp_;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
 
   for (i = 0; i < fields_count; ++i)
-    switch (tdp->fields.data[i].rl_type)
+    switch (tdp->fields.data[i].mr_type)
       {
 	/* Enum detection */
-      case RL_TYPE_INT8:
-      case RL_TYPE_UINT8:
-      case RL_TYPE_INT16:
-      case RL_TYPE_UINT16:
-      case RL_TYPE_INT32:
-      case RL_TYPE_UINT32:
-      case RL_TYPE_INT64:
-      case RL_TYPE_UINT64:
-	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
+      case MR_TYPE_INT8:
+      case MR_TYPE_UINT8:
+      case MR_TYPE_INT16:
+      case MR_TYPE_UINT16:
+      case MR_TYPE_INT32:
+      case MR_TYPE_UINT32:
+      case MR_TYPE_INT64:
+      case MR_TYPE_UINT64:
+	tdp_ = mr_get_td_by_name (tdp->fields.data[i].type);
 	if (tdp_)
-	  tdp->fields.data[i].rl_type = tdp_->rl_type;
+	  tdp->fields.data[i].mr_type = tdp_->mr_type;
 	break;
 
-      case RL_TYPE_BITFIELD:
-	tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
+      case MR_TYPE_BITFIELD:
+	tdp_ = mr_get_td_by_name (tdp->fields.data[i].type);
 	if (tdp_)
-	  tdp->fields.data[i].rl_type_aux = tdp_->rl_type;
+	  tdp->fields.data[i].mr_type_aux = tdp_->mr_type;
 	break;
 
 	/*
-	  RL_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
+	  MR_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
 	 */
-      case RL_TYPE_STRUCT:
-      case RL_TYPE_CHAR_ARRAY:
-	if (RL_TYPE_EXT_POINTER == tdp->fields.data[i].rl_type_ext)
+      case MR_TYPE_STRUCT:
+      case MR_TYPE_CHAR_ARRAY:
+	if (MR_TYPE_EXT_POINTER == tdp->fields.data[i].mr_type_ext)
 	  {
-	    tdp_ = rl_get_td_by_name (tdp->fields.data[i].type);
+	    tdp_ = mr_get_td_by_name (tdp->fields.data[i].type);
 	    if (tdp_)
 	      tdp->fields.data[i].size = tdp_->size;
 	  }
 	break;
 	
-      case RL_TYPE_NONE: /* RL_AUTO type resolution */
-	rl_auto_field_detect (&tdp->fields.data[i]);
+      case MR_TYPE_NONE: /* MR_AUTO type resolution */
+	mr_auto_field_detect (&tdp->fields.data[i]);
 	break;
 	  
-      case RL_TYPE_FUNC:
-	rl_func_field_detect (&tdp->fields.data[i]);
+      case MR_TYPE_FUNC:
+	mr_func_field_detect (&tdp->fields.data[i]);
 	break;
 	  
       default:
@@ -1325,13 +1325,13 @@ rl_detect_fields_types (rl_td_t * tdp, void * args)
  * @param name name of the field
  * @return pointer on field descriptor or NULL
  */
-rl_fd_t *
-rl_get_fd_by_name (rl_td_t * tdp, char * name)
+mr_fd_t *
+mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
   if (tdp->lookup_by_name.data)
     {
-      uint64_t hash_value = rl_hash_str (name);
-      rl_fd_t * fdp = tdp->lookup_by_name.data[hash_value % (tdp->lookup_by_name.size / sizeof (tdp->lookup_by_name.data[0]))].fdp;
+      uint64_t hash_value = mr_hash_str (name);
+      mr_fd_t * fdp = tdp->lookup_by_name.data[hash_value % (tdp->lookup_by_name.size / sizeof (tdp->lookup_by_name.data[0]))].fdp;
       if (fdp && (hash_value == fdp->hash_value) && (0 == strcmp (name, fdp->name)))
 	return (fdp);
     }
@@ -1347,31 +1347,31 @@ rl_get_fd_by_name (rl_td_t * tdp, char * name)
 }
 
 /**
- * Add type to union rl_void_ptr_t.
+ * Add type to union mr_void_ptr_t.
  * @param tdp a pointer on statically initialized type descriptor
  * @return status, EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-rl_register_type_pointer (rl_td_t * tdp)
+mr_register_type_pointer (mr_td_t * tdp)
 {
-  rl_fd_t * fdp;
-  rl_td_t * union_tdp = rl_get_td_by_name ("rl_ptr_t");
+  mr_fd_t * fdp;
+  mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
   if (NULL == union_tdp)
     return (EXIT_FAILURE);
-  if (rl_get_fd_by_name (union_tdp, tdp->type))
+  if (mr_get_fd_by_name (union_tdp, tdp->type))
     return (EXIT_FAILURE);
   if (union_tdp->fields.alloc_size < 0)
     {
       /* reallocate descriptors of union fields into heap */
       int alloc_size = sizeof (union_tdp->fields.data[0]) + union_tdp->fields.size; /* allocate one additional slot */
-      rl_fd_t * fields_data = RL_MALLOC (alloc_size);
+      mr_fd_t * fields_data = MR_MALLOC (alloc_size);
       if (NULL == fields_data)
 	return (EXIT_FAILURE);
       memcpy (fields_data, union_tdp->fields.data, union_tdp->fields.size);
       union_tdp->fields.data = fields_data;
       union_tdp->fields.alloc_size = alloc_size;
     }
-  fdp = rl_rarray_append ((void*)&union_tdp->fields, sizeof (union_tdp->fields.data[0]));
+  fdp = mr_rarray_append ((void*)&union_tdp->fields, sizeof (union_tdp->fields.data[0]));
   if (NULL == fdp)
     return (EXIT_FAILURE);
   memset (fdp, 0, sizeof (*fdp));
@@ -1379,20 +1379,20 @@ rl_register_type_pointer (rl_td_t * tdp)
   fdp->name = tdp->type;
   fdp->size = tdp->size;
   fdp->offset = 0;
-  fdp->rl_type = tdp->rl_type;
-  fdp->rl_type_aux = RL_TYPE_VOID;
-  fdp->rl_type_ext = RL_TYPE_EXT_POINTER;
+  fdp->mr_type = tdp->mr_type;
+  fdp->mr_type_aux = MR_TYPE_VOID;
+  fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
   if (union_tdp->lookup_by_name.data)
-    RL_FREE (union_tdp->lookup_by_name.data);
+    MR_FREE (union_tdp->lookup_by_name.data);
   union_tdp->lookup_by_name.data = NULL;
   /* we need to rebuild hash table each time because array with fields descriptors might be reallocated */
-  return (rl_build_field_names_hash (union_tdp));
+  return (mr_build_field_names_hash (union_tdp));
 }
 
 static int
-rl_register_type_pointer_wrapper (rl_td_t * tdp, void * arg)
+mr_register_type_pointer_wrapper (mr_td_t * tdp, void * arg)
 {
-  rl_register_type_pointer (tdp);
+  mr_register_type_pointer (tdp);
   return (0);
 }
 
@@ -1404,7 +1404,7 @@ rl_register_type_pointer_wrapper (rl_td_t * tdp, void * arg)
  * @return status, 0 - new type was added, !0 - type was already registered
  */
 int __attribute__ ((sentinel(0)))
-rl_add_type (rl_td_t * tdp, char * comment, ...)
+mr_add_type (mr_td_t * tdp, char * comment, ...)
 {
   va_list args;
   void * ext;
@@ -1413,14 +1413,14 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   if (NULL == tdp)
     return (EXIT_FAILURE); /* assert */
   /* check whether this type is already in the list */
-  if (rl_get_td_by_name (tdp->type))
+  if (mr_get_td_by_name (tdp->type))
     return (EXIT_SUCCESS); /* this type is already registered */
 
   va_start (args, comment);
   ext = va_arg (args, void*);
   va_end (args);
 
-  for (count = 0; RL_TYPE_TRAILING_RECORD != tdp->fields.data[count].rl_type; ++count);
+  for (count = 0; MR_TYPE_TRAILING_RECORD != tdp->fields.data[count].mr_type; ++count);
   tdp->fields.size = count * sizeof (tdp->fields.data[0]);
   tdp->fields.alloc_size = -1;
   tdp->fields.ext.ptr = NULL;
@@ -1431,46 +1431,46 @@ rl_add_type (rl_td_t * tdp, char * comment, ...)
   if (NULL != ext)
     tdp->ext.ptr = ext;
 
-  rl_anon_unions_extract (tdp);
-  rl_check_fields (tdp);
-  rl_build_field_names_hash (tdp);
+  mr_anon_unions_extract (tdp);
+  mr_check_fields (tdp);
+  mr_build_field_names_hash (tdp);
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
   {
-    rl_td_t ** tdpp = rl_rarray_append ((void*)&rl_conf.des, sizeof (rl_conf.des.data[0]));
+    mr_td_t ** tdpp = mr_rarray_append ((void*)&mr_conf.des, sizeof (mr_conf.des.data[0]));
     if (NULL == tdpp)
       {
-	RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	return (EXIT_FAILURE);
       }
     *tdpp = tdp;
   }
-#ifndef RL_TREE_LOOKUP
-  rl_update_td_hash (tdp, &rl_conf.hash);
-#else /* RL_TREE_LOOKUP */
-  rl_update_td_tree (tdp, &rl_conf.tree);
-#endif /*  RL_TREE_LOOKUP */
-  tdp->lookup_by_value = NULL; /* should be in rl_add_enum, but produces warning for non-enum types due to uninitialized memory */
-  if (RL_TYPE_ENUM == tdp->rl_type)
-    rl_add_enum (tdp);
+#ifndef MR_TREE_LOOKUP
+  mr_update_td_hash (tdp, &mr_conf.hash);
+#else /* MR_TREE_LOOKUP */
+  mr_update_td_tree (tdp, &mr_conf.tree);
+#endif /*  MR_TREE_LOOKUP */
+  tdp->lookup_by_value = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
+  if (MR_TYPE_ENUM == tdp->mr_type)
+    mr_add_enum (tdp);
 
-  rl_td_foreach (rl_detect_fields_types, tdp);
-  rl_td_foreach (rl_register_type_pointer_wrapper, tdp);
+  mr_td_foreach (mr_detect_fields_types, tdp);
+  mr_td_foreach (mr_register_type_pointer_wrapper, tdp);
   return (EXIT_SUCCESS);
 }
 
 /**
  * Helper function for building tree within parsing.
- * @param rl_load structure with current parsing context
- * @return index of newly allocated element in rl_load->ptrs resizeable array
+ * @param mr_load structure with current parsing context
+ * @return index of newly allocated element in mr_load->ptrs resizeable array
  */
 int
-rl_parse_add_node (rl_load_t * rl_load)
+mr_parse_add_node (mr_load_t * mr_load)
 {
-  int idx = rl_add_ptr_to_list ((rl_ra_rl_ptrdes_t*)rl_load->ptrs);
+  int idx = mr_add_ptr_to_list ((mr_ra_mr_ptrdes_t*)mr_load->ptrs);
   if (idx < 0)
     return (idx);
-  rl_add_child (rl_load->parent, idx, (rl_ra_rl_ptrdes_t*)rl_load->ptrs);
+  mr_add_child (mr_load->parent, idx, (mr_ra_mr_ptrdes_t*)mr_load->ptrs);
   return (idx);
 }
 
@@ -1480,7 +1480,7 @@ rl_parse_add_node (rl_load_t * rl_load)
  * @return Newly allocated string with xml or NULL in case of any errors
  */
 char *
-rl_read_xml_doc (FILE * fd)
+mr_read_xml_doc (FILE * fd)
 {
   int size, max_size;
   char * str;
@@ -1490,10 +1490,10 @@ rl_read_xml_doc (FILE * fd)
   int count = 2;
 
   max_size = 2 * 1024; /* initial string size */
-  str = (char*)RL_MALLOC (max_size);
+  str = (char*)MR_MALLOC (max_size);
   if (NULL == str)
     {
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
   size = -1;
@@ -1503,8 +1503,8 @@ rl_read_xml_doc (FILE * fd)
       int c = fgetc (fd);
       if ((c == EOF) || (c == 0))
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNEXPECTED_END);
-	  RL_FREE (str);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_END);
+	  MR_FREE (str);
 	  return (NULL);
 	}
       
@@ -1513,11 +1513,11 @@ rl_read_xml_doc (FILE * fd)
 	{
 	  void * str_;
 	  max_size <<= 1; /* double input bufer size */
-	  str_ = RL_REALLOC (str, max_size);
+	  str_ = MR_REALLOC (str, max_size);
 	  if (NULL == str_)
 	    {
-	      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
-	      RL_FREE (str);
+	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	      MR_FREE (str);
 	      return (NULL);
 	    }
 	  str = (char*) str_;
@@ -1525,8 +1525,8 @@ rl_read_xml_doc (FILE * fd)
 
       if ((0 == opened_tags) && !(('<' == c) || isspace (c)))
 	{
-	  RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNEXPECTED_DATA);
-	  RL_FREE (str);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA);
+	  MR_FREE (str);
 	  return (NULL);
 	}
 
@@ -1544,8 +1544,8 @@ rl_read_xml_doc (FILE * fd)
 	  tags_to_close = -1;
 	  if (opened_tags < 0)
 	    {
-	      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_UNBALANCED_TAGS);
-	      RL_FREE (str);
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNBALANCED_TAGS);
+	      MR_FREE (str);
 	      return (NULL);
 	    }
 	  if (0 == opened_tags)

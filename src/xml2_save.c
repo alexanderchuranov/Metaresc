@@ -11,50 +11,50 @@
  * @param ptrs resizeable array with pointers descriptors 
  */
 xmlDocPtr
-xml2_save (rl_ra_rl_ptrdes_t * ptrs)
+xml2_save (mr_ra_mr_ptrdes_t * ptrs)
 {
   long idx = 0;
   xmlDocPtr doc = xmlNewDoc (BAD_CAST "1.0");
   
   if (NULL == doc)
     {
-      RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_XML_SAVE_FAILED);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XML_SAVE_FAILED);
       return (NULL);
     }
 
   ptrs->ra.ext.ptr = doc;
   while (idx >= 0)
     {
-      rl_fd_t * fdp = &ptrs->ra.data[idx].fd;
+      mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
       xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name);
       
       ptrs->ra.data[idx].ext.ptr = node;
 
       if (NULL == node)
-	RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_OUT_OF_MEMORY);
+	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       else
 	{
 	  int parent = ptrs->ra.data[idx].parent;
-	  char number[RL_INT_TO_STRING_BUF_SIZE];
+	  char number[MR_INT_TO_STRING_BUF_SIZE];
 	  char * content = NULL;
 	  
 	  node->_private = (void*)idx;
 
 	  /* route saving handler */
-	  if ((fdp->rl_type_ext >= 0) && (fdp->rl_type_ext < RL_MAX_TYPES)
-	      && rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml2)
-	    content = rl_conf.io_ext_handlers[fdp->rl_type_ext].save.xml2 (idx, ptrs);
-	  else if ((fdp->rl_type >= 0) && (fdp->rl_type < RL_MAX_TYPES)
-		   && rl_conf.io_handlers[fdp->rl_type].save.xml2)
-	    content = rl_conf.io_handlers[fdp->rl_type].save.xml2 (idx, ptrs);
+	  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES)
+	      && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.xml2)
+	    content = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.xml2 (idx, ptrs);
+	  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES)
+		   && mr_conf.io_handlers[fdp->mr_type].save.xml2)
+	    content = mr_conf.io_handlers[fdp->mr_type].save.xml2 (idx, ptrs);
 	  else
-	    RL_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
+	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
 
 	  if (content)
 	    {
 	      if (content[0])
 		xmlNodeSetContent (node, BAD_CAST content);
-	      RL_FREE (content);
+	      MR_FREE (content);
 	    }
 
 	  if (ptrs->ra.data[idx].ref_idx >= 0)
@@ -62,17 +62,17 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 	      /* set REF_IDX property */
 	      sprintf (number, "%" SCNd32, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
 	      xmlSetProp (node,
-			  BAD_CAST ((ptrs->ra.data[idx].flags & RL_PDF_CONTENT_REFERENCE) ? RL_REF_CONTENT : RL_REF),
+			  BAD_CAST ((ptrs->ra.data[idx].flags & MR_PDF_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF),
 			  BAD_CAST number);
 	    }
-	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_REFERENCED)
+	  if (ptrs->ra.data[idx].flags & MR_PDF_IS_REFERENCED)
 	    {
 	      /* set IDX property */
 	      sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
-	      xmlSetProp (node, BAD_CAST RL_REF_IDX, BAD_CAST number);
+	      xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
 	    }
-	  if (ptrs->ra.data[idx].flags & RL_PDF_IS_NULL)
-	    xmlSetProp (node, BAD_CAST RL_ISNULL, BAD_CAST RL_ISNULL_VALUE);
+	  if (ptrs->ra.data[idx].flags & MR_PDF_IS_NULL)
+	    xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
 	  if (parent >= 0)
 	    xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
@@ -89,7 +89,7 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
     }
   
   if (NULL == ptrs->ra.data[0].ext.ptr)
-    RL_MESSAGE (RL_LL_ERROR, RL_MESSAGE_XML_SAVE_FAILED);
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XML_SAVE_FAILED);
   else
     xmlDocSetRootElement (doc, ptrs->ra.data[0].ext.ptr);
   
@@ -97,7 +97,7 @@ xml2_save (rl_ra_rl_ptrdes_t * ptrs)
 }
 
 static char *
-xml2_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
+xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   xmlDocPtr doc = ptrs->ra.ext.ptr;
   xmlChar * encoded_content;
@@ -108,28 +108,28 @@ xml2_save_string (int idx, rl_ra_rl_ptrdes_t * ptrs)
   encoded_content = xmlEncodeEntitiesReentrant (doc, BAD_CAST content);
   if (NULL == encoded_content)
     {
-      content = RL_STRDUP ("");
-      RL_MESSAGE (RL_LL_FATAL, RL_MESSAGE_XML_STRING_ENCODING_FAILED, content);
+      content = MR_STRDUP ("");
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_XML_STRING_ENCODING_FAILED, content);
     }
   else
     {
-      content = RL_STRDUP ((char*)encoded_content);
+      content = MR_STRDUP ((char*)encoded_content);
       xmlFree (encoded_content);
     }
   return (content);
 }
 
 static void __attribute__((constructor))
-rl_init_save_xml2 (void)
+mr_init_save_xml2 (void)
 {
   int i;
   
-  rl_init_save_xml ();
-  for (i = 0; i < RL_MAX_TYPES; ++i)
+  mr_init_save_xml ();
+  for (i = 0; i < MR_MAX_TYPES; ++i)
     {
-      rl_conf.io_handlers[i].save.xml2 = rl_conf.io_handlers[i].save.xml;
-      rl_conf.io_ext_handlers[i].save.xml2 = rl_conf.io_ext_handlers[i].save.xml;
+      mr_conf.io_handlers[i].save.xml2 = mr_conf.io_handlers[i].save.xml;
+      mr_conf.io_ext_handlers[i].save.xml2 = mr_conf.io_ext_handlers[i].save.xml;
     }
     
-  rl_conf.io_handlers[RL_TYPE_STRING].save.xml2 = xml2_save_string;
+  mr_conf.io_handlers[MR_TYPE_STRING].save.xml2 = xml2_save_string;
 }

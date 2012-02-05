@@ -13,10 +13,10 @@
 /* Pass the argument to yyparse through to yylex. */
 #define YYPARSE_PARAM scanner
 #define YYLEX_PARAM YYPARSE_PARAM
-#define RL_LOAD (rl_xml1_get_extra (YYPARSE_PARAM))
-#define rl_xml1_error(ERROR) RL_PARSE_ERROR (ERROR, YYPARSE_PARAM, xml1)
+#define MR_LOAD (mr_xml1_get_extra (YYPARSE_PARAM))
+#define mr_xml1_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, xml1)
   
-  static inline int tail_is_not_blank (rl_substr_t * substr, int offset)
+  static inline int tail_is_not_blank (mr_substr_t * substr, int offset)
   {
     if (offset > substr->substr.size)
       return (!0);
@@ -27,7 +27,7 @@
   }
 %}
 
-%name-prefix="rl_xml1_"
+%name-prefix="mr_xml1_"
 %pure-parser
 %locations
  /* generate include-file with symbols and types */
@@ -35,7 +35,7 @@
 
  /* a more advanced semantic type */
 %union {
-  rl_substr_t string;
+  mr_substr_t string;
 }
 
 /* Bison declarations.  */
@@ -60,7 +60,7 @@ xml: TOK_XML_DOC_OPEN_TAG doc_properties TOK_XML_DOC_CLOSE_TAG tag
 doc_properties: | doc_properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE 
 
 tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
-  rl_load_t * rl_load = RL_LOAD;
+  mr_load_t * mr_load = MR_LOAD;
   int i;
   
   for (i = 0; i < $4.substr.size; ++i)
@@ -68,7 +68,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $4.substr.size)
     {
-      rl_xml1_error ("Unexpected charecters after closing tag!");
+      mr_xml1_error ("Unexpected charecters after closing tag!");
       YYERROR;
     }  
 
@@ -80,17 +80,17 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.substr.size -= i + 1;
       $2.substr.data += i + 1;
     }
-  rl_load->ptrs->ra.data[rl_load->parent].fd.name = rl_unquote (&$2);
-  rl_load->ptrs->ra.data[rl_load->parent].value = RL_STRDUP ("");
-  rl_load->parent = rl_load->ptrs->ra.data[rl_load->parent].parent;
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name = mr_unquote (&$2);
+  mr_load->ptrs->ra.data[mr_load->parent].value = MR_STRDUP ("");
+  mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
 }
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {
-  rl_load_t * rl_load = RL_LOAD;
+  mr_load_t * mr_load = MR_LOAD;
   int i;
   
   if (($2.substr.size != $6.substr.size) || (0 != strncmp ($2.substr.data, $6.substr.data, $2.substr.size)))
     {
-      rl_xml1_error ("Open and close tags names do not match!");
+      mr_xml1_error ("Open and close tags names do not match!");
       YYERROR;
     }
 
@@ -99,7 +99,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $7.substr.size)
     {
-      rl_xml1_error ("Unexpected charecters after closing tag!");
+      mr_xml1_error ("Unexpected charecters after closing tag!");
       YYERROR;
     }  
 
@@ -111,49 +111,49 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.substr.size -= i + 1;
       $2.substr.data += i + 1;
     }
-  rl_load->ptrs->ra.data[rl_load->parent].fd.name = rl_unquote (&$2);
-  rl_load->ptrs->ra.data[rl_load->parent].value = rl_unquote (&$4);;
-  rl_load->parent = rl_load->ptrs->ra.data[rl_load->parent].parent;
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name = mr_unquote (&$2);
+  mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$4);;
+  mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
  }
 
-start_tag: { RL_LOAD->parent = rl_parse_add_node (RL_LOAD); }
+start_tag: { MR_LOAD->parent = mr_parse_add_node (MR_LOAD); }
 
 nested_tags: | nested_tags tag
 
 properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE {
-  rl_load_t * rl_load = RL_LOAD;
+  mr_load_t * mr_load = MR_LOAD;
   char * error = NULL;
   int offset = 0;
   
-  if (0 == rl_substrcmp (RL_REF_IDX, &$3))
+  if (0 == mr_substrcmp (MR_REF_IDX, &$3))
     {
-      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &rl_load->ptrs->ra.data[rl_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
-	error = "Can't read " RL_REF_IDX " property.";
+      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
+	error = "Can't read " MR_REF_IDX " property.";
     }
-  else if (0 == rl_substrcmp (RL_REF, &$3))
+  else if (0 == mr_substrcmp (MR_REF, &$3))
     {
-      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &rl_load->ptrs->ra.data[rl_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
-	error = "Can't read " RL_REF " property.";
+      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
+	error = "Can't read " MR_REF " property.";
     }
-  else if (0 == rl_substrcmp (RL_REF_CONTENT, &$3))
+  else if (0 == mr_substrcmp (MR_REF_CONTENT, &$3))
     {
-      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &rl_load->ptrs->ra.data[rl_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
-	error = "Can't read " RL_REF " property.";
+      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
+	error = "Can't read " MR_REF " property.";
       else
-	rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_CONTENT_REFERENCE;
+	mr_load->ptrs->ra.data[mr_load->parent].flags |= MR_PDF_CONTENT_REFERENCE;
     }
-  else if (0 == rl_substrcmp (RL_ISNULL, &$3))
+  else if (0 == mr_substrcmp (MR_ISNULL, &$3))
     {
-      rl_load->ptrs->ra.data[rl_load->parent].flags |= RL_PDF_IS_NULL;
+      mr_load->ptrs->ra.data[mr_load->parent].flags |= MR_PDF_IS_NULL;
     }
 
   if (error)
     {
-      rl_xml1_error (error);
+      mr_xml1_error (error);
       YYERROR;
     }
  }
 
 %%
 
-RL_LOAD_FUNC (xml1);
+MR_LOAD_FUNC (xml1);
