@@ -40,9 +40,10 @@ extern Suite * suite;
   };									\
   START_TEST (NAME)
 
-#define SERIALIZE_METHOD MR_SAVE_CINIT
-
 #define MEM_CMP(TYPE, X, Y, ...) memcmp (X, Y, sizeof (TYPE))
+
+#ifdef HAVE_BISON_FLEX
+#define SERIALIZE_METHOD MR_SAVE_CINIT
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
       char * x_ = SERIALIZE_METHOD (TYPE, X);				\
       char * y_ = SERIALIZE_METHOD (TYPE, Y);				\
@@ -60,6 +61,19 @@ extern Suite * suite;
 	MR_FREE (y_);							\
       xy_cmp;								\
     })
+#else /* ! HAVE_BISON_FLEX */
+#define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
+      mr_rarray_t x_ = MR_SAVE_XDR_RA (TYPE, X);			\
+      mr_rarray_t y_ = MR_SAVE_XDR_RA (TYPE, Y);			\
+      int xy_cmp = (x_.size != y_.size) ||				\
+	memcmp (x_.data, y_.data, x_.size);				\
+      if (x_.data)							\
+	MR_FREE (x_.data);						\
+      if (y_.data)							\
+	MR_FREE (y_.data);						\
+      xy_cmp;								\
+    })
+#endif /* HAVE_BISON_FLEX */
 
 #define MR_IS__EQ__ 0
 

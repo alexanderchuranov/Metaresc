@@ -551,6 +551,8 @@ mr_post_process (mr_save_data_t * mr_save_data)
 	      mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
 	      mr_save_data->ptrs.ra.data[ref_idx].flags |= MR_PDF_IS_REFERENCED;
 	    }
+	  else
+	    mr_save_data->ptrs.ra.data[idx].flags |= MR_PDF_IS_NULL; /* unresolved void pointers are saved as NULL */
 	}
 
       if (mr_save_data->ptrs.ra.data[idx].ref_idx >= 0)

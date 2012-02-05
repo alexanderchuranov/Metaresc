@@ -89,12 +89,14 @@ TYPEDEF_STRUCT (self_ref_string_t,
 		(void *, v));
 
 MR_START_TEST (self_ref_string, "self referenced strings") {
-  self_ref_string_t x = { "x", "y", (string_t[]){ "z" } };
-  x.v = x.y;
+  self_ref_string_t x = { "x", "y", (string_t[]){ "z" }};
+  x.v = &x.z; /* resolved not-NULL void pointer */
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
   x.z = &x.y;
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
   x.y = x.x;
+  ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
+  x.v = "z"; /* unresolved not-NULL void pointer */
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
 } END_TEST
 

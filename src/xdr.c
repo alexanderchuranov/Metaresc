@@ -583,17 +583,12 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static int
 xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  int32_t not_null = (*(void**)ptrs->ra.data[idx].data != NULL);
-  if (!xdr_int32_t (xdrs, &not_null))
+  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
     return (0);
-  if (!not_null)
+  if (ptrs->ra.data[idx].flags & MR_PDF_IS_NULL)
     return (!0);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    {
-      if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
-	return (0);
-      return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
-    }
+    return (xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
   else
     return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
 }
@@ -603,27 +598,29 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   void ** data = ptrs->ra.data[idx].data;
   mr_fd_t fd_ = ptrs->ra.data[idx].fd;
-  int32_t not_null = 0;
 
-  if (!xdr_int32_t (xdrs, &not_null))
+  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
     return (0);
-  if (not_null)
+  
+  if (ptrs->ra.data[idx].flags & MR_PDF_IS_NULL)
+    *data = NULL;
+  else
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
 	return (0);
-      if (ptrs->ra.data[idx].ref_idx >= 0)
-	return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
-      *data = MR_MALLOC (fd_.size);
-      if (NULL == *data)
+      if (ptrs->ra.data[idx].ref_idx < 0)
 	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (0);
+	  *data = MR_MALLOC (fd_.size);
+	  if (NULL == *data)
+	    {
+	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	      return (0);
+	    }
+	  memset (*data, 0, fd_.size);
+	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+	  return (xdr_load (*data, &fd_, xdrs, ptrs));
 	}
-      memset (*data, 0, fd_.size);
-      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-      return (xdr_load (*data, &fd_, xdrs, ptrs));
     }
-  *data = NULL;
   return (!0);
 }
 
