@@ -3,6 +3,7 @@
 *.lo
 *.o
 *.tab.[ch]
+/Makefile
 /Makefile.in
 COPYING
 INSTALL
@@ -14,12 +15,12 @@ config.status
 config.sub
 configure
 depcomp
+examples/Makefile.in
 install-sh
 libtool
 ltmain.sh
 m4/*
 missing
-examples/Makefile.in
 src/.deps/*
 src/.libs/*
 src/rlpp.h

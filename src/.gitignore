@@ -1,6 +1,11 @@
 /.emacs.desktop
 /.emacs.desktop.lock
+/Makefile
 /Makefile.in
+/mr_config.h
+/mr_config.h.in
+/mr_export.h
+/mr_pp.h
 /rlconfig.h
 /rlconfig.h.in
 /rlexport.h
