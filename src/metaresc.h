@@ -721,9 +721,9 @@
 #define MR_CHECK_TYPES(MR_TYPE_NAME, ...) ({ (void) ((MR_TYPE_NAME*)0 - (typeof (__VA_ARGS__ + 0))0); })
 #endif /* MR_CHECK_TYPES */
 
-#define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) mr_free_recursively (MR_SAVE_RL (MR_TYPE_NAME, S_PTR))
+#define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) mr_free_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR))
 
-#define MR_SAVE_RL(MR_TYPE_NAME, S_PTR) ({				\
+#define MR_SAVE(MR_TYPE_NAME, S_PTR) ({				\
       mr_fd_t __fd__ =							\
 	{								\
 	  .name = MR_STRINGIFY (S_PTR),					\
@@ -766,7 +766,7 @@
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
-	  mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE_RL (MR_TYPE_NAME, S_PTR); \
+	  mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR); \
 	  if (__ptrs__.ra.data)						\
 	    {								\
 	      __status__ = xdr_save (__xdrs__, &__ptrs__);		\
@@ -786,7 +786,7 @@
     })
 
 #define MR_SAVE_METHOD(METHOD, MR_TYPE_NAME, S_PTR) ({			\
-      mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE_RL (MR_TYPE_NAME, S_PTR);	\
+      mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       char * __str__ = NULL;						\
       if (__ptrs__.ra.data)						\
 	{								\
@@ -874,7 +874,7 @@
       int __size__;							\
       char * __str__ = NULL;						\
       xmlChar * __xml_str__ = NULL;					\
-      mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE_RL (MR_TYPE_NAME, S_PTR);	\
+      mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       if (__ptrs__.ra.data)						\
 	{								\
 	  xmlDocPtr __doc__ = xml2_save (&__ptrs__);			\

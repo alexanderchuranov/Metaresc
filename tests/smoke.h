@@ -24,7 +24,7 @@
 
 #define SMOKE_METHOD(METHOD, ...) START_TEST (mr_conf_save_load) {	\
     mr_conf_t mr_conf_saved = mr_conf;					\
-    mr_ra_mr_ptrdes_t ptrs = MR_SAVE_RL (mr_conf_t, &mr_conf);		\
+    mr_ra_mr_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);		\
     int i;								\
     if ((0 == ptrs.ra.size) || (NULL == ptrs.ra.data))			\
       ck_abort_msg ("save into internal representation failed");	\
