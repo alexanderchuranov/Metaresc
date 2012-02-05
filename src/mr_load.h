@@ -1,5 +1,5 @@
-#ifndef _RL_LOAD_H_
-#define _RL_LOAD_H_
+#ifndef _MR_LOAD_H_
+#define _MR_LOAD_H_
 
 #include <string.h>
 #include <metaresc.h>

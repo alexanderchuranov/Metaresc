@@ -12,7 +12,7 @@ perform_test()
     local filesize='N/A'
     local starttime='N/A'
     
-    [ "$variant" = "optimized" ] && CFLAGS="-DRL_MODE=PROTO" || CFLAGS=""
+    [ "$variant" = "optimized" ] && CFLAGS="-DMR_MODE=PROTO" || CFLAGS=""
     
     make distclean
     buildtime=$( (time -p CFLAGS=${CFLAGS} make -j NUMFILES=${numfiles} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')

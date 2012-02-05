@@ -7,7 +7,7 @@ LIBS += ../src/libmetaresc.la $(CHECK_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
-check_PROGRAMS = smoke_xdr smoke_cinit smoke_json smoke_scm smoke_xml1 smoke_xml2 long_double double float rarray string int8 int16 int32 int64 enum char array union rl_ptr bitfield pointer_int pointer_other
+check_PROGRAMS = smoke_xdr smoke_cinit smoke_json smoke_scm smoke_xml1 smoke_xml2 long_double double float rarray string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other
 
 TESTS=$(check_PROGRAMS)
 
