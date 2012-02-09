@@ -1,9 +1,9 @@
 #define __USE_GNU
 #include <math.h>
-#include <values.h>
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
+#include <flt_values.h>
 
 #define ASSERT_SAVE_LOAD_DOUBLE(METHOD, VALUE) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, double, VALUE, SCALAR_CMP);	\
