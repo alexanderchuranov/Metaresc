@@ -413,7 +413,7 @@
 #define P00_COMMA_NAMED_ANON_UNION NAMED_ANON_UNION,
 #define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
-#define MR_COMPILETIME_ASSERT(X) (int)sizeof (struct { int:-!!(X); });
+#define MR_COMPILETIME_ASSERT(X) while (sizeof (struct { int:-!!(X); }));
 /*
   For types defined using standard language approach you will need to create analog types with metaresc.
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
