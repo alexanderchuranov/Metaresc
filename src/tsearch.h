@@ -63,9 +63,12 @@ typedef void (*__free_fn_t) (void *__nodep);
 /* Destroy the whole tree, call FREEFCT for each node or leaf.  */
 extern void tdestroy (void *__root, __free_fn_t __freefct);
 
-#define weak_alias(name, aliasname) _weak_alias (name, aliasname)
-#define _weak_alias(name, aliasname) \
-  extern __typeof (name) aliasname __attribute__ ((weak, alias (#name)));
+#define weak_alias(...)
+#define __tsearch tsearch
+#define __tfind tfind
+#define __tdelete tdelete
+#define __twalk twalk
+#define __tdestroy tdestroy
 
 /* On some platforms we can make internal function calls (i.e., calls of
    functions not exported) a bit faster by using a different calling
