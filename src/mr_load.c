@@ -17,7 +17,7 @@
  * Post load references setting. If node was marked as references
  * it should be substitude with actual pointer. This substition
  * can't be made during structure loading because of forward references.
- * @param ptrs list of pointers descriptors of loaded stuctures
+ * @param mr_load_data structures that holds context of loading
  * @return Status. !0 - ok. 0 - rl nodes indexes colision
  */
 static int
@@ -77,6 +77,12 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
   return (!0);
 }
 
+/**
+ * Read enum value from string
+ * @param data pointer on place to save value
+ * @param str string with enum
+ * @return A pointer on the rest of parsed string
+ */
 static char *
 mr_get_enum (uint64_t * data, char * str)  
 {
@@ -128,7 +134,7 @@ mr_get_enum (uint64_t * data, char * str)
  * Read int value from string (may be as ENUM)
  * @param data pointer on place to save int
  * @param str string with int
- * @return A pointer rest of parsed string
+ * @return A pointer on the rest of parsed string
  */
 static char *
 mr_get_int (uint64_t * data, char * str)
@@ -174,7 +180,7 @@ mr_get_int (uint64_t * data, char * str)
 /**
  * MR_NONE load handler (dummy)
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -186,7 +192,7 @@ mr_load_none (int idx, mr_load_data_t * mr_load_data)
 /**
  * MR_INTEGER load handler
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -219,7 +225,7 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 /**
  * MR_ENUM load handler
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -257,7 +263,7 @@ mr_load_enum (int idx, mr_load_data_t * mr_load_data)
  * MR_BITFIELD load handler. Load int from string and save it to
  * bit shifted field.
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -280,7 +286,7 @@ mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
 /**
  * MR_BITMASK load handler. Handles logical OR operation.
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -318,9 +324,6 @@ mr_load_bitmask (int idx, mr_load_data_t * mr_load_data)
 
 /**
  * MR_FLOAT, MR_DOUBLE, MR_LONG_DOUBLE load handler.
- * @param idx node index
- * @param ptrs pointers descriptors resizeable array
- * @return Status of read (0 - failure, !0 - success)
  */
 #define MR_LOAD_FLOAT_TYPE(TYPE, FORMAT, ERROR_ENUM)			\
   static int								\
@@ -356,7 +359,7 @@ MR_LOAD_FLOAT_TYPE (long_double_t, "%Lg", MR_MESSAGE_READ_LONG_DOUBLE)
 /**
  * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -398,7 +401,7 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
 /**
  * MR_STRING load handler. Allocate memory for a string.
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -416,7 +419,7 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
  * MR_CHAR_ARRAY load handler.
  * Save string in place (truncate string if needed).
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -452,6 +455,14 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
+/**
+ * MR_STRUCT load handler.
+ * Save content of subnodes to structure fileds.
+ * @param idx node index
+ * @param mr_load_data structures that holds context of loading
+ * @param tdp type descriptor
+ * @return Status of read (0 - failure, !0 - success)
+ */
 static int
 mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
 {
@@ -499,11 +510,9 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
 }
 
 /**
- * MR_STRUCT load handler.
- * Save content of subnodes to struct fileds.
- * Save string in place (truncate string if needed).
+ * MR_STRUCT load handler. Wrapper over mr_load_struct_inner.
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -516,7 +525,7 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
  * MR_ARRAY load handler.
  * Save content of subnodes to array elements.
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -558,7 +567,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
  * Save content of subnodes to resizeable array elements
  * (allocate/reallocate required memory).
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -633,6 +642,13 @@ mr_load_rarray (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
+/**
+ * MR_TYPE_EXT_POINTER load handler. Initiated as postponed call thru mr_load_pointer via stack.
+ * Loads element into newly allocate memory.
+ * @param idx node index
+ * @param mr_load_data structures that holds context of loading
+ * @return Status of read (0 - failure, !0 - success)
+ */
 static int
 mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 {
@@ -652,10 +668,9 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 }
 
 /**
- * MR_POINTER_STRUCT load handler.
- * Loads structure into newly allocate memory.
+ * MR_POINTER_STRUCT load handler. Schedule element postponed loading via stack.
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -685,7 +700,7 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
  * MR_ANON_UNION load handler.
  * Load anonymous union
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static int
@@ -709,6 +724,11 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
   return (mr_load_struct (idx, mr_load_data));
 }
 
+/**
+ * Cleanup helper. Deallocates all dynamically allocated resources.
+ * @param ptrs resizeable array with pointers descriptors
+ * @return Status of read (0 - failure, !0 - success)
+ */
 int
 mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
 {
@@ -736,11 +756,11 @@ mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
 }
 
 /**
- * Public function. Load router. Load any object from RL nodes.
- * @param data pointer on place to save int
- * @param fdp pointer on filed descriptor
+ * Public function. Load router. Load any object from internal representation graph.
+ * @param data pointer on place to save data
+ * @param fdp filed descriptor
  * @param idx node index
- * @param ptrs pointers descriptors resizeable array
+ * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 int

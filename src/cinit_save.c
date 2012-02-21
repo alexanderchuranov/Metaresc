@@ -30,10 +30,12 @@ static int cinit_named_node[MR_MAX_TYPES] = {
 };
 
 /**
- * Public function. Save scheduler. Save any object as a string.
- * @param idx an index of node in ptrs
+ * Public function. Save scheduler. Saves any object as a string.
+ * Code common for c-init and json.
  * @param ptrs resizeable array with pointers descriptors
- * @return stringified representation of object
+ * @param named_field_template template for named field (c-init or json)
+ * @param node_handler hook for node serialization
+ * @return stringified representation of the object
  */
 static char *
 cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, char * named_field_template, int (*node_handler) (mr_fd_t*, int, mr_ra_mr_ptrdes_t*, mr_save_type_data_t*))
@@ -164,7 +166,8 @@ json_save (mr_ra_mr_ptrdes_t * _ptrs_)
  * MR_NONE type saving handler.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
- * @return stringified int value
+ * @param data structure that argregates evrything required for saving
+ * @return status 
  */
 static int
 cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -174,8 +177,10 @@ cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 
 /**
  * MR_XXX type saving handler. Make a string from *(XXX_t*)data.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * \@param idx an index of node in ptrs
+ * \@param ptrs resizeable array with pointers descriptors 
+ * \@param data structure that argregates evrything required for saving
+ * \@return status 
  */
 #define CINIT_SAVE_TYPE(TYPE, EXT...) static int cinit_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data) { data->content = mr_stringify_ ## TYPE (&ptrs->ra.data[idx] EXT); return (0); }
 
@@ -208,6 +213,7 @@ static int map[ESC_CHAR_MAP_SIZE] = {
 /**
  * Quote string.
  * @param str string pointer
+ * @param quote character for quote
  * @return quoted string
  */
 static char *
@@ -264,7 +270,8 @@ cinit_quote_string (char * str, char quote)
  * MR_CHAR type saving handler. Stringify char.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
- * @return stringified float value
+ * @param data structure that argregates evrything required for saving
+ * @return status 
  */
 static int
 cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -279,10 +286,11 @@ cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 }
 
 /**
- * MR_CHAR_ARRAY type saving handler. Save char array.
+ * MR_CHAR_ARRAY type saving handler. Saves char array.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
- * @return char array value
+ * @param data structure that argregates evrything required for saving
+ * @return status 
  */
 static int
 cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -292,10 +300,11 @@ cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 }
 
 /**
- * MR_STRING type saving handler. Save string.
+ * MR_STRING type saving handler. Saves string.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
- * @return string value
+ * @param data structure that argregates evrything required for saving
+ * @return status 
  */
 static int
 cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -308,6 +317,13 @@ cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data
   return (0);
 }
 
+/**
+ * MR_STRUCT type saving handler. Saves struct.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @param data structure that argregates evrything required for saving
+ * @return status 
+ */
 static int
 cinit_save_struct (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
@@ -316,6 +332,13 @@ cinit_save_struct (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data
   return (0);
 }
 
+/**
+ * MR_ANON_UNION type saving handler. Saves anonymous unions.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @param data structure that argregates evrything required for saving
+ * @return status 
+ */
 static int
 cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
@@ -324,6 +347,13 @@ cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
   return (0);
 }
 
+/**
+ * MR_TYPE_EXT_RARRAY_DATA type saving handler. Saves resizeable array content.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @param data structure that argregates evrything required for saving
+ * @return status 
+ */
 static int
 cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
@@ -338,10 +368,11 @@ cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t *
 }
 
 /**
- * MR_POINTER type saving handler. Save pointer as a string.
+ * MR_TYPE_EXT_POINTER type saving handler. Save pointer as a string.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
- * @return stringified pointer
+ * @param data structure that argregates evrything required for saving
+ * @return status 
  */
 static int
 cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -361,6 +392,13 @@ cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * dat
   return (0);
 }
 
+/**
+ * MR_TYPE_EXT_ARRAY type saving handler. Saves arrays content in JSON.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @param data structure that argregates evrything required for saving
+ * @return status 
+ */
 static int
 json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
@@ -369,6 +407,13 @@ json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
   return (0);
 }
 
+/**
+ * MR_TYPE_EXT_RARRAY_DATA type saving handler. Saves resizeable array content in JSON.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @param data structure that argregates evrything required for saving
+ * @return status 
+ */
 static int
 json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
@@ -382,6 +427,13 @@ json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
   return (0);
 }
 
+/**
+ * MR_TYPE_EXT_POINTER type saving handler. Saves pointer in JSON.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @param data structure that argregates evrything required for saving
+ * @return status 
+ */
 static int
 json_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {

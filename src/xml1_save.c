@@ -23,7 +23,6 @@
 
 /**
  * Public function. Save scheduler. Save any object as a string.
- * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
  * @return stringified representation of object
  */
@@ -106,9 +105,9 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 
 /**
  * MR_NONE type saving handler.
- * @param node a pointer on XML node
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
+ * @return stringified representation of object
  */
 static char *
 xml_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
@@ -118,9 +117,9 @@ xml_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 /**
  * MR_XXX type saving handler. Saves ptrs->ra.data[idx] as string into newly allocaeted XML node.
- * @param node a pointer on XML node
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * \@param idx an index of node in ptrs
+ * \@param ptrs resizeable array with pointers descriptors 
+ * \@return stringified representation of object
  */
 #define XML_SAVE_TYPE(TYPE, ...)				      \
   static char * xml_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) \
@@ -145,8 +144,9 @@ XML_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
 
 /**
  * MR_CHAR type saving handler. Stringify char.
+ * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
- * @return stringified float value
+ * @return stringified character value
  */
 static char *
 xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
@@ -162,9 +162,9 @@ xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 /**
  * MR_CHAR_ARRAY type saving handler. Save char array as XML node.
- * @param node a pointer on XML node
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
+ * @return XML escaped string content
  */
 static char *
 xml_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
@@ -174,9 +174,9 @@ xml_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 /**
  * MR_STRING type saving handler. Save string as XML node.
- * @param node a pointer on XML node
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
+ * @return XML escaped string content
  */
 static char *
 xml1_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
@@ -188,6 +188,12 @@ xml1_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
     return (xml_quote_string (str));
 }
 
+/**
+ * dummy stub for compaund types
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @return empty string
+ */
 static char *
 xml_save_empty (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -235,6 +241,9 @@ void mr_init_save_xml (void)
   mr_conf.io_ext_handlers[MR_TYPE_EXT_POINTER].save.xml = xml_save_empty;
 }
 
+/**
+ * builtin XML serialization init. Copy handlers common with libxml implementation and replace string handler.
+ */
 void __attribute__((constructor))
 mr_init_save_xml1 (void)
 {

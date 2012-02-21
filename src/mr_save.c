@@ -15,8 +15,18 @@
 
 #include <metaresc.h>
 
+/**
+ * Dummy stub for tree delete function
+ * @param nodep pointer on a tree node
+ */
 static void dummy_free_func (void * nodep) {};
 
+/**
+ * Comparator for mr_ptrdes_t.
+ * @param x value to compare
+ * @param y value to compare
+ * @return comparation sign
+ */
 static int
 mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 {
@@ -65,10 +75,11 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 #define CMP_UNTYPED_PTRDES(PTRS) int cmp_untyped_ptrdes (const void * x, const void * y) { return (PTRS->ra.data[(long)x].data - PTRS->ra.data[(long)y].data); }
 
 /**
+ * Typed lookup for a pointer (last element in collection) in collection of already saved pointers.
  * If node is a plain structure and previously it was saved as a pointer
  * then we need to exchange nodes in the tree
- * @param ptrs resizable array with pointers on already save structures
- * @return an index of node in ptrs
+ * @param mr_save_data save routines data and lookup structures
+ * @return an index of node in collection of already saved nodes
  */
 static int
 mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
@@ -94,10 +105,9 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
 }
 
 /**
- * If node is a plain structure and previously it was saved as a pointer
- * then we need to exchange nodes in the tree
+ * Untyped lookup for a pointer (last element in collection) in collection of already saved pointers.
  * @param mr_save_data save routines data and lookup structures
- * @return an index of node in ptrs
+ * @return an index of node in collection of already saved nodes
  */
 static int
 mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
@@ -147,10 +157,11 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
 }
 
 /**
- * Check whether pointer is presented in the list.
+ * Check whether pointer is presented in the collection of already saved pointers.
  * @param mr_save_data save routines data and lookup structures
- * @param idx index of search element
- * @return an index of node in ptrs
+ * @param data pointer on saved object
+ * @param fdp field descriptor
+ * @return an index of node in collection of already saved nodes
  */
 static int
 mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
@@ -223,6 +234,11 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     mr_conf.io_handlers[fdp->mr_type].save.rl (mr_save_data);
 }
 
+/**
+ * MR_STRING type saving handler. Saves string as internal representation tree node.
+ * Detects if string content was already saved.
+ * @param mr_save_data save routines data and lookup structures
+ */
 static void
 mr_save_string (mr_save_data_t * mr_save_data)
 {
@@ -477,6 +493,12 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
     }
 }
 
+/**
+ * Saves pointer into internal representation.
+ * @param postpone flag for postponed saving
+ * @param idx node index
+ * @param mr_save_data save routines data and lookup structures
+ */
 static void
 mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 {

@@ -6,9 +6,8 @@
 
 /**
  * Public function. Save scheduler. Save any object as XML node.
- * @param node a pointer on XML node
- * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
+ * @return XML document
  */
 xmlDocPtr
 xml2_save (mr_ra_mr_ptrdes_t * ptrs)
@@ -96,6 +95,12 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
   return (doc);
 }
 
+/**
+ * XML string quote handler. Uses libxml encoding function.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @return XML escaped string content
+ */
 static char *
 xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -119,6 +124,9 @@ xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (content);
 }
 
+/**
+ * libxml initialize handlers. Copy handlers common with builtin implementation and replace string handler.
+ */
 static void __attribute__((constructor))
 mr_init_save_xml2 (void)
 {

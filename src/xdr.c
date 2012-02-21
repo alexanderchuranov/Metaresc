@@ -20,6 +20,12 @@ union ieee854_long_double { char ieee[12]; };
 
 #include <mr_load.h>
 
+/**
+ * Loads int32_t from binary XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param lp pointer on int32_t
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static bool_t
 xdrra_getlong (XDR * xdrs, long * lp)
 {
@@ -34,6 +40,12 @@ xdrra_getlong (XDR * xdrs, long * lp)
   return (TRUE);
 }
 
+/**
+ * Saves int32_t into binary XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param lp pointer on int32_t
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static bool_t
 xdrra_putlong (XDR * xdrs, const long * lp)
 {
@@ -48,6 +60,13 @@ xdrra_putlong (XDR * xdrs, const long * lp)
   return (TRUE);
 }
 
+/**
+ * Loads opaque bytes stream from binary XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param addr pointer of bytes stream
+ * @param len length of byte array
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static bool_t
 xdrra_getbytes (XDR * xdrs, caddr_t addr, u_int len)
 {
@@ -62,6 +81,13 @@ xdrra_getbytes (XDR * xdrs, caddr_t addr, u_int len)
   return (TRUE);
 }
 
+/**
+ * Saves opaque bytes stream into binary XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param addr pointer of bytes stream
+ * @param len length of byte array
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static bool_t
 xdrra_putbytes (XDR * xdrs, const char * addr, u_int len)
 {
@@ -77,12 +103,23 @@ xdrra_putbytes (XDR * xdrs, const char * addr, u_int len)
   return (TRUE);
 }
 
+/**
+ * Gets current stream position.
+ * @param xdrs XDR stream descriptor
+ * @return position of cursor
+ */
 static u_int
 xdrra_getpostn (__const XDR * xdrs)
 {
   return (xdrs->x_handy);
 }
 
+/**
+ * Sets stream cursor position.
+ * @param xdrs XDR stream descriptor
+ * @param pos position to set
+ * @return status
+ */
 static bool_t
 xdrra_setpostn (XDR * xdrs, u_int pos)
 {
@@ -574,10 +611,10 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 /**
  * Saves/loads pointer into/from binary XDR stream. First goes flag that pointer is not NULL,
- * and if pointer is not NULL, strucure goes after flag.
+ * and if pointer is not NULL, then ref_idx goes next.
  * @param xdrs XDR stream descriptor
  * @param idx index of the node in nodes collection
- * @param ptrs collection of nodes
+ * @param ptrs resizeable array with pointers descriptors
  * @return status of operation. 0 - failure, !0 - success.
  */
 static int
@@ -715,10 +752,9 @@ xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 /**
  * Public function. Save scheduler. Save any object as XML node.
- * @param data a pointer on data
- * @param fdp a ponter of field descriptor
- * @param ptrs resizeable array with pointers descriptors 
- * @return A pointer on new XML node
+ * @param xdrs XDR context structure
+ * @param ptrs resizeable array with pointers descriptors
+ * @return status
  */
 int
 xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)

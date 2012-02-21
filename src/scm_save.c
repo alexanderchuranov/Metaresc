@@ -39,7 +39,6 @@ static int scm_is_array[MR_MAX_TYPES] = {
 
 /**
  * Public function. Save scheduler. Save any object as a string.
- * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
  * @return stringified representation of object
  */
@@ -170,8 +169,9 @@ scm_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 /**
  * MR_XXX type saving handler. Make a string from *(XXX_t*)data.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * \@param idx an index of node in ptrs
+ * \@param ptrs resizeable array with pointers descriptors
+ * \@return stringified int value
  */
 #define SCM_SAVE_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_stringify_ ## TYPE (&ptrs->ra.data[idx])); }
 
@@ -242,6 +242,7 @@ scm_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * Quote string.
  * @param str string pointer
+ * @param quote quote character
  * @return quoted string
  */
 static char *
@@ -325,6 +326,12 @@ scm_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (MR_STRDUP (MR_SCM_FALSE));
 }
 
+/**
+ * Dummy stub for compaund types.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors
+ * @return empty string
+ */
 static char *
 scm_save_empty (int idx, mr_ra_mr_ptrdes_t * ptrs)
 { 

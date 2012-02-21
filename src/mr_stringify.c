@@ -53,8 +53,8 @@ void __attribute__((constructor)) mr_init_output_format (void)
 
 /**
  * MR_UINTxx type saving handler. Make a string from *(uintXX_t*)data.
- * @param ptrdes pointer descriptor
- * @return stringified int value
+ * \@param mr_save_data save routines data and lookup structures
+ * \@return stringified int value
  */
 #define MR_STRINGIFY_TYPE(TYPE, MR_TYPE)				\
   char * mr_stringify_ ## TYPE (mr_ptrdes_t * ptrdes) {			\
@@ -74,8 +74,8 @@ MR_STRINGIFY_TYPE (uint64, MR_TYPE_UINT64);
 
 /**
  * MR_FLOAT type saving handler. Stringify float value.
- * @param ptrs resizeable array with pointers descriptors 
- * @return stringified float value
+ * \@param mr_save_data save routines data and lookup structures
+ * \@return stringified float value
  */
 MR_STRINGIFY_TYPE (float, MR_TYPE_FLOAT);
 MR_STRINGIFY_TYPE (double, MR_TYPE_DOUBLE);
@@ -83,7 +83,7 @@ MR_STRINGIFY_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
 
 /**
  * Stringify integer value.
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrdes descriptor of the saved field
  * @return stringified enum value
  */
 static char *
@@ -101,6 +101,11 @@ mr_stringify_uint (mr_ptrdes_t * ptrdes)
     }
 }
 
+/**
+ * Gets enum value as integer
+ * @param ptrdes descriptor of the saved field
+ * @return enum value
+ */
 static uint64_t
 mr_get_enum_value (mr_ptrdes_t * ptrdes)
 {
@@ -125,7 +130,7 @@ mr_get_enum_value (mr_ptrdes_t * ptrdes)
 /**
  * MR_ENUM type saving handler. Look up enum descriptor and save as
  * stringified enum value or as integer otherwise.
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrdes descriptor of the saved field
  * @return stringified enum value
  */
 char *
@@ -154,7 +159,7 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
 
 /**
  * MR_BITFIELD type saving handler. Stringify as integer.
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrdes descriptor of the saved field
  * @return stringified enum value
  */
 char *
@@ -185,7 +190,8 @@ mr_stringify_bitfield (mr_ptrdes_t * ptrdes)
 /**
  * MR_BITMASK type saving handler. Look up type descriptor and save as
  * stringified bitmask value or as integer otherwise.
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrdes descriptor of the saved field
+ * @param bitmask_or_delimiter delimiter for OR statement
  * @return stringified enum value
  */
 char *
@@ -281,6 +287,11 @@ static char * map[ESC_CHAR_MAP_SIZE] = {
   [(unsigned char)'>'] = "&gt;",
 };
 
+/**
+ * XML quote function. Escapes XML special characters.
+ * @param str input string
+ * @return XML quoted string
+ */
 char *
 xml_quote_string (char * str)
 {
@@ -323,6 +334,12 @@ xml_quote_string (char * str)
   return (str_);
 }
 
+/**
+ * XML unquote function. Replace XML special characters aliases on a source characters.
+ * @param str input string
+ * @param length length of the input string
+ * @return XML unquoted string
+ */
 char *
 xml_unquote_string (char * str, int length)
 {
