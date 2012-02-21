@@ -95,6 +95,14 @@ mr_conf_t mr_conf = {
 
 MR_MEM_INIT ( , __attribute__((constructor,weak)));
 
+#undef MR_MODE
+TYPEDEF_STRUCT (mr_ra_void_t, RARRAY (void, ra));
+
+#undef MR_COMPARE_FIELDS_EXT
+#define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) (!__builtin_types_compatible_p (typeof (((TYPE1*)NULL)->NAME1), typeof (((TYPE2*)NULL)->NAME2)))
+
+MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (mr_rarray_t, mr_ra_void_t, (data, ra.data), (size, ra.size), (alloc_size, ra.alloc_size), (ext, ra.ext), (ptr_type, ra.ptr_type)));
+
 /**
  * Memory cleanp handler.
  */
@@ -215,6 +223,12 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
   va_end (args);
 }
 
+/**
+ * Helper function for serialization macroses. Detects mr_type for enums, structures and unions.
+ * Enums are detected at compile time as integers, and structures & unions as MR_TYPE_NONE
+ *
+ * @param fdp pointer on field descriptor
+ */
 void
 mr_detect_type (mr_fd_t * fdp)
 {
@@ -239,19 +253,28 @@ mr_detect_type (mr_fd_t * fdp)
     }								
 }
 
+/**
+ * Helper function for serialization macroses. Extracts variable name that was passed for serialization.
+ * Possible variants are: var_name, &var_name, &var_name[idx], &((type*)var_name)[idx], etc
+ *
+ * @param name string with var_name
+ * @return variable name var_name
+ */
 char *
 mr_normalize_name (char * name)
 {
   char * ptr;
-  ptr = strchr (name, '[');				
-  if (NULL == ptr)						
-    ptr = strchr (name, 0);					
-  --ptr;							
-  while ((ptr >= name) && !(isalnum (*ptr) || ('_' == *ptr))) 
-    --ptr;							
-  *(ptr + 1) = 0;						
-  while ((ptr >= name) && (isalnum (*ptr) || ('_' == *ptr))) 
-    --ptr;							
+  ptr = strchr (name, '['); /* lookup for a bracket */
+  if (NULL == ptr)          /* if bracket was not found */
+    ptr = strchr (name, 0); /* use end of the string */
+  --ptr;
+  /* skip all invalid characters */
+  while ((ptr >= name) && !(isalnum (*ptr) || ('_' == *ptr)))
+    --ptr;
+  *(ptr + 1) = 0; /* put end-of-string marker */
+  /* all valid characters to the left forms the var_name */
+  while ((ptr >= name) && (isalnum (*ptr) || ('_' == *ptr)))
+    --ptr;
   return (++ptr);
 }
 
@@ -393,11 +416,12 @@ mr_rarray_append (mr_rarray_t * rarray, int size)
 
 /**
  * printf into resizable array
- * @param rarray a pointer on resizable array
+ * @param mr_ra_str a pointer on resizable array
  * @param format standard printf format string
+ * @param ... arguments for printf
  * @return length of added content and -1 in case of memory allocation failure
  */
-int __attribute__ ((format (printf, 2, 3))) 
+int
 mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 {
   va_list args;
@@ -837,8 +861,8 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
 /**
  * comparator for mr_fd_t sorting by enum value
- * @param a pointer on one mr_fd_t
- * @param b pointer on another mr_fd_t
+ * @param x pointer on one mr_fd_t
+ * @param y pointer on another mr_fd_t
  * @return comparation sign
  */
 static int
@@ -848,9 +872,9 @@ cmp_enums_by_value (const void * x, const void * y)
 }
 
 /**
- * comparator for mr_dd_t sorting by enum name
- * @param a pointer on one mr_fd_t
- * @param b pointer on another mr_fd_t
+ * comparator for mr_fd_t sorting by enum name
+ * @param x pointer on one mr_fd_t
+ * @param y pointer on another mr_fd_t
  * @return comparation sign
  */
 static int
@@ -923,6 +947,13 @@ mr_add_enum (mr_td_t * tdp)
   return (EXIT_SUCCESS);
 }
 
+/**
+ * Get enum by value. Enums type descriptors contains red-black tree with all enums forted by value.
+ *
+ * @param tdp pointer on a type descriptor
+ * @param value enums value
+ * @return pointer on enum value descriptor (mr_fd_t*) or NULL is value was not found
+ */
 mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
@@ -951,7 +982,7 @@ mr_get_enum_by_name (uint64_t * value, char * name)
 
 /**
  * Type name clean up. We need to drop all key words.
- * @param tdp pointer on a type descriptor
+ * @param fdp pointer on a field descriptor
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
@@ -1023,7 +1054,7 @@ mr_normalize_type (mr_fd_t * fdp)
 
 /**
  * Bitfield initialization. We need to calculate offset and shift. Width was initialized by macro.
- * @param tdp pointer on a type descriptor
+ * @param fdp pointer on a field descriptor
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
@@ -1142,8 +1173,8 @@ mr_build_field_names_hash (mr_td_t * tdp)
 }
 
 /**
- * Initialize AUTO fields. Detect type, size, pointers etc.
- * @param tdp pointer on a type descriptor
+ * Initialize AUTO fields. Detect types, size, pointers etc.
+ * @param fdp pointer on a field descriptor
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
@@ -1223,8 +1254,8 @@ mr_auto_field_detect (mr_fd_t * fdp)
 }
 
 /**
- * Initialize fields that a pointers on functions. We need to detect types of arguments.
- * @param tdp pointer on a type descriptor
+ * Initialize fields that are pointers on functions. Detects types of arguments.
+ * @param fdp pointer on a field descriptor
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
@@ -1400,10 +1431,10 @@ mr_register_type_pointer_wrapper (mr_td_t * tdp, void * arg)
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
  * @param comment comments
- * @param ext auxiliary void pointer
+ * @param ... auxiliary void pointer
  * @return status, 0 - new type was added, !0 - type was already registered
  */
-int __attribute__ ((sentinel(0)))
+int
 mr_add_type (mr_td_t * tdp, char * comment, ...)
 {
   va_list args;

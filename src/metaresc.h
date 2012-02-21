@@ -413,7 +413,8 @@
 #define P00_COMMA_NAMED_ANON_UNION NAMED_ANON_UNION,
 #define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
-#define MR_COMPILETIME_ASSERT(X) while (sizeof (struct { int:-!!(X); }));
+#define MR_COMPILETIME_ASSERT(X) MR_COMPILETIME_ASSERT_ (X, __LINE__)
+#define MR_COMPILETIME_ASSERT_(X, LINE) typedef struct { int:-!!(X); } MR_ANON_UNION_NAME (LINE)
 /*
   For types defined using standard language approach you will need to create analog types with metaresc.
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
@@ -513,7 +514,7 @@
 #define MR_POINTER_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE *, NAME, )
 #define MR_POINTER_STRUCT_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct MR_TYPEDEF_PREFIX (TYPE) *, NAME, )
 /* rarray defenition should be syncroonized with mr_rarray_t type definition */
-#define MR_RARRAY_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; int32_t size; int32_t alloc_size; mr_ptr_t ext; char * ptr_type;}, NAME, )
+#define MR_RARRAY_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; typeof (((mr_rarray_t*)NULL)->size) size; typeof (((mr_rarray_t*)NULL)->alloc_size) alloc_size; typeof (((mr_rarray_t*)NULL)->ext) ext; typeof (((mr_rarray_t*)NULL)->ptr_type) ptr_type;}, NAME, )
 #define MR_FUNC_PROTO(MR_TYPE_NAME, TYPE, NAME, ARGS, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, (*NAME), ARGS)
 #define MR_END_STRUCT_PROTO(MR_TYPE_NAME, ...) };
 
@@ -805,7 +806,7 @@
       mr_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, }; \
       _ra_.data = METHOD (MR_TYPE_NAME, S_PTR);				\
       if (_ra_.data) _ra_.size = _ra_.alloc_size = strlen (_ra_.data) + 1; \
-      _ra_;								\
+s      _ra_;								\
     })
 
 #define MR_SAVE_XML_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_XML, MR_TYPE_NAME, S_PTR)
