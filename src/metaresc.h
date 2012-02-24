@@ -806,7 +806,7 @@
       mr_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, }; \
       _ra_.data = METHOD (MR_TYPE_NAME, S_PTR);				\
       if (_ra_.data) _ra_.size = _ra_.alloc_size = strlen (_ra_.data) + 1; \
-s      _ra_;								\
+      _ra_;								\
     })
 
 #define MR_SAVE_XML_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_XML, MR_TYPE_NAME, S_PTR)
