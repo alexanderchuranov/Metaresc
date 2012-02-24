@@ -127,6 +127,12 @@ xdrra_setpostn (XDR * xdrs, u_int pos)
   return (TRUE);
 }
 
+/**
+ * Returns pointer on opaque data from XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param len length of opaque data
+ * @return pointer on buffer
+ */
 static int32_t *
 xdrra_inline (XDR * xdrs, u_int len)
 {
@@ -139,6 +145,10 @@ xdrra_inline (XDR * xdrs, u_int len)
   return ((int32_t*)&base[xdrs->x_handy]);
 }
 
+/**
+ * Deallocates XDR reader/writer for resizeable array.
+ * @param xdrs XDR stream descriptor
+ */
 static void
 xdrra_destroy (XDR * xdrs)
 {
@@ -152,6 +162,12 @@ xdrra_destroy (XDR * xdrs)
 }
 
 #ifdef HAVE_STRUCT_XDR_OPS_X_GETINT32
+/**
+ * Loads int32 from XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param ip pointer on int32
+ * @return status
+ */
 static bool_t
 xdrra_getint32 (XDR * xdrs, int32_t * ip)
 {
@@ -160,6 +176,12 @@ xdrra_getint32 (XDR * xdrs, int32_t * ip)
 #endif /* HAVE_STRUCT_XDR_OPS_X_GETINT32 */
 
 #ifdef HAVE_STRUCT_XDR_OPS_X_PUTINT32
+/**
+ * Puts int32 into XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param ip pointer on int32
+ * @return status
+ */
 static bool_t
 xdrra_putint32 (XDR * xdrs, const int32_t * ip)
 {
@@ -167,6 +189,12 @@ xdrra_putint32 (XDR * xdrs, const int32_t * ip)
 }
 #endif /* HAVE_STRUCT_XDR_OPS_X_PUTINT32 */
 
+/**
+ * Constructor for XDR reader/writer for resizeable array.
+ * @param xdrs XDR stream descriptor
+ * @param ra resizeable array
+ * @param op XDR operation XDR_DECODE XDR_ENCODE
+ */
 void
 xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
 {
@@ -194,6 +222,11 @@ xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
   xdrs->x_handy = 0;
 }
 
+/**
+ * Set cross refernces within loaded data.
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -225,6 +258,13 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
   return (!0);
 }
 
+/**
+ * Handler for RL_TYPE_NONE.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_none (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -251,6 +291,12 @@ bool_t xdr_char (xdrs, cp)
   Here is workaround.
 */
 
+/**
+ * Handler for type char.
+ * @param xdrs XDR stream descriptor
+ * @param cp pointer on char
+ * @return status
+ */
 static int __attribute__((unused))
 xdr_char_ (XDR * xdrs, char * cp)
 {
@@ -271,6 +317,13 @@ xdr_char_ (XDR * xdrs, char * cp)
 #define xdr_int8_t xdr_char_
 #endif /* HAVE_XDR_INT8_T */
 
+/**
+ * Handler for unsigned integer types.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_uint_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -284,6 +337,13 @@ xdr_uint_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 }
 
+/**
+ * Handler for signed integer types.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_int_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -297,12 +357,26 @@ xdr_int_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 }
 
+/**
+ * Handler for type float.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   return (xdr_float (xdrs, ptrs->ra.data[idx].data));
 }
 
+/**
+ * Handler for type double.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -313,8 +387,21 @@ xdr_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   need to substract double from long double, but agruments should be strictly casted to their types.
   that's why we pass them as pointers and make a public function for optimization workaround.
 */
+/**
+ * Helper function for compiler optimization blocking. Returns difference between long double and its value casted to double.
+ * @param ldp pointer on a long double
+ * @param dp pointer on double
+ * @return difference *ldp - *dp
+ */
 double xdr_sub_doubles (long double * ldp, double * dp) { return (*ldp - *dp); }
 
+/**
+ * Handler for type long double. Saves into 2 double entities.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
  __attribute__ ((unused)) xdr_long_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -338,12 +425,26 @@ static int
   return (0);
 }
 
+/**
+ * Handler for type long double. Saves as opaque data binary representation of long double in memeory. Assumes that CPU uses ieee854 standard.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 __attribute__ ((unused)) xdr_long_double (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   return xdr_opaque (xdrs, ptrs->ra.data[idx].data, sizeof (((union ieee854_long_double*)NULL)->ieee));
 }
 
+/**
+ * Handler for char arrays.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -376,6 +477,13 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_opaque (xdrs, ptrs->ra.data[idx].data, str_len));
 }
 
+/**
+ * Save handler for char pointers.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_save_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -401,6 +509,13 @@ xdr_save_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 }
 
+/**
+ * Load handler for char pointers.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -428,6 +543,14 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 }
 
+/**
+ * Load handler for structures.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @param tdp type descriptor
+ * @return status
+ */
 static int
 xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * tdp)
 {
@@ -448,6 +571,13 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
   return (!0);
 }
 
+/**
+ * Load handler for structures.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_load_struct (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -456,6 +586,13 @@ xdr_load_struct (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 /*
   Union mr_ptr_t might be different on source and destination computer. That's why union branch could be identified only by name, not index.
+ */
+/**
+ * Save handler for unions. Saves discriminator as a string.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
  */
 static int
 xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
@@ -466,6 +603,13 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_save_string (xdrs, 0, &ptrs_));
 }
 
+/**
+ * Load handler for unions.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -499,6 +643,12 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (status);
 }
 
+/**
+ * Saves temporary string into XDR stream and free it.
+ * @param xdrs XDR stream descriptor
+ * @param str pointer on a string
+ * @return status
+ */
 static int
 xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
 {
@@ -513,6 +663,12 @@ xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
   return (status);
 }
 
+/**
+ * Loads temporary string from XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param str pointer on a string
+ * @return status
+ */
 static int
 xdr_load_temp_string (XDR * xdrs, char ** str)
 {
@@ -521,6 +677,13 @@ xdr_load_temp_string (XDR * xdrs, char ** str)
   return (xdr_load_string (xdrs, 0, &ptrs));
 }
 
+/**
+ * Saves enum value as a string.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_save_enum (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -528,6 +691,13 @@ xdr_save_enum (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_save_temp_string_and_free (xdrs, &value));
 }
 
+/**
+ * Saves bitmask value as a string.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -535,6 +705,13 @@ xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_save_temp_string_and_free (xdrs, &value));
 }
 
+/**
+ * Loads enum or bitmask.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_load_enum_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -554,6 +731,13 @@ xdr_load_enum_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (status);
 }
 
+/**
+ * Saves/loads bit field value according its type.
+ * @param xdrs XDR stream descriptor
+ * @param fdp field descriptor
+ * @param data pointer on data
+ * @return status
+ */
 static int
 xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
 {
@@ -568,6 +752,13 @@ xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
     return (!0);
 }
 
+/**
+ * Saves bit field into XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_save_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -577,6 +768,13 @@ xdr_save_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_bitfield_value (xdrs, &ptrs->ra.data[idx].fd, &value));
 }
 
+/**
+ * Loads bit field from XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -586,6 +784,13 @@ xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (EXIT_SUCCESS == mr_load_bitfield_value (&ptrs->ra.data[idx], &value));
 }
 
+/**
+ * Loads char array from XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
 static int
 xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -610,7 +815,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
- * Saves/loads pointer into/from binary XDR stream. First goes flag that pointer is not NULL,
+ * Saves pointer into binary XDR stream. First goes flags of the node
  * and if pointer is not NULL, then ref_idx goes next.
  * @param xdrs XDR stream descriptor
  * @param idx index of the node in nodes collection
@@ -630,6 +835,13 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
 }
 
+/**
+ * Loads pointer from binary XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of the node in nodes collection
+ * @param ptrs resizeable array with pointers descriptors
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static int
 xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -661,6 +873,13 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (!0);
 }
 
+/**
+ * Saves resizeable array data field into XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of the node in nodes collection
+ * @param ptrs resizeable array with pointers descriptors
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static int
 xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -684,6 +903,13 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 }
 
+/**
+ * Loads resizeable array data field from XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of the node in nodes collection
+ * @param ptrs resizeable array with pointers descriptors
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static int
 xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -722,6 +948,13 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (!0);
 }
 
+/**
+ * Loads resizeable array from XDR stream.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of the node in nodes collection
+ * @param ptrs resizeable array with pointers descriptors
+ * @return status of operation. 0 - failure, !0 - success.
+ */
 static int
 xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
@@ -751,7 +984,7 @@ xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
- * Public function. Save scheduler. Save any object as XML node.
+ * Public function. Save scheduler. Save any object into XDR stream.
  * @param xdrs XDR context structure
  * @param ptrs resizeable array with pointers descriptors
  * @return status
