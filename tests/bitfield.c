@@ -26,10 +26,8 @@ TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, sizeof (enum_t) * 
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_bitfield_uint64_t, VALUE, __VA_ARGS__); \
     })
 
-MR_START_TEST (bitfield_enum_t, "bitfield as enum") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO, STRUCT_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE, STRUCT_X_CMP);
-} END_TEST
+MR_START_TEST (bitfield_enum_zero, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO, STRUCT_X_CMP); } END_TEST
+MR_START_TEST (bitfield_enum_three, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE, STRUCT_X_CMP); } END_TEST
 
 MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
   int checked = 0;

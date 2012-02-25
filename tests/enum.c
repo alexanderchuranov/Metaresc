@@ -60,15 +60,11 @@ TYPEDEF_STRUCT (struct_mr_bitmask_t, BITMASK (mr_bitmask_t, x))
   That's why we can't compare results by MEM_CMP macro, which uses object size.
  */
   
-MR_START_TEST (zero_mr_enum_t, "zero as number enum") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, SCALAR_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, STRUCT_X_CMP);
-} END_TEST
+MR_START_TEST (zero_mr_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, SCALAR_CMP); } END_TEST
+MR_START_TEST (zero_mr_struct_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, STRUCT_X_CMP); } END_TEST
 
-MR_START_TEST (three_mr_enum_t, "three as enum") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, THREE, SCALAR_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, THREE, STRUCT_X_CMP);
-} END_TEST
+MR_START_TEST (three_mr_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, THREE, SCALAR_CMP); } END_TEST
+MR_START_TEST (three_mr_struct_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, THREE, STRUCT_X_CMP); } END_TEST
 
 MR_START_TEST (invalid_mr_enum_t, "invalid enum") {
   int checked = 0;
