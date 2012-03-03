@@ -4,7 +4,7 @@
 
 TYPEDEF_STRUCT (ld_ptr_t, (const volatile long double *, x));
 
-MR_START_TEST (ld_ptr, "pointer on lonf double (type name with spaces)") {
+MR_START_TEST (ld_ptr, "pointer on a long double (type name with spaces)") {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, ld_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, ld_ptr_t, (long double[]){ 0 });
 } END_TEST
