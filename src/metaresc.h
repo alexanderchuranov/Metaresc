@@ -724,7 +724,7 @@
 
 #define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) mr_free_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR))
 
-#define MR_SAVE(MR_TYPE_NAME, S_PTR) ({				\
+#define MR_SAVE(MR_TYPE_NAME, S_PTR) ({					\
       mr_fd_t __fd__ =							\
 	{								\
 	  .name = MR_STRINGIFY (S_PTR),					\

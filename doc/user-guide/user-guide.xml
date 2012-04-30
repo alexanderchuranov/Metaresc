@@ -106,9 +106,7 @@
 
          <para>
            Note, that now not only the library itself, but also its
-           clients have to be written in C and compiled with the GCC. You
-           need to compile files which include library headers with
-           -std=gnu99 compiler option.
+           clients have to be written in C and compiled with the GCC.
          </para>
        </section>
 
@@ -195,6 +193,10 @@
                <listitem><para>Flex 2.5.35</para></listitem>
                <listitem><para>Help2Man 1.39.2</para></listitem>
                <listitem><para>Libtool 2.4</para></listitem>
+               <listitem><para>Autoconf 2.66 (optional)</para></listitem>
+               <listitem><para>Automake 1.11.1 (optional)</para></listitem>
+               <listitem><para>LibXML2 2.7.7 (optional)</para></listitem>
+               <listitem><para>LibCheck 0.9.5 (optional)</para></listitem>
              </itemizedlist>
              The library is known to work with these versions of
              software. Newer software is also expected to work.
@@ -306,8 +308,8 @@
            looks like this:
 
            <screen><![CDATA[
- cc -std=gnu99 -Ipath/to/metaresc/headers -I/usr/include/libxml2 -c -o basic.o basic.c
- cc -Lpath/to/metaresc/libs -lmetaresc -o basic basic.o ]]></screen>
+ cc -Ipath/to/metaresc/headers `xml2-config --cflags` -c -o basic.o basic.c
+ cc -Lpath/to/metaresc/libs -lmetaresc `xml2-config --libs` -o basic basic.o ]]></screen>
 
            If the METARESC library is installed in /usr, as when
            installing from a pre-built package, then paths to the
@@ -316,10 +318,10 @@
            /usr/lib:
 
            <screen><![CDATA[
- cc -std=gnu99 -I/usr/include/libxml2 -c -o basic.o basic.c
- cc -lmetaresc -o basic basic.o ]]></screen>
+ cc `xml2-config --cflags` -c -o basic.o basic.c
+ cc -lmetaresc `xml2-config --libs` -o basic basic.o ]]></screen>
 
-           Note, that in both cases paths to libxml2 header files are
+           Note, that in both cases options for libxml2 header files are
            also specified. This is only necessary if METARESC was built
            with libxml2 support (which is the default).
          </para>
@@ -337,7 +339,7 @@
            like the following:
 
            <screen><![CDATA[
- cc -std=gnu99 -I/usr/local/include/libxml2 -I/usr/local/include -c -o basic.o basic.c
+ cc -I/usr/local/include/libxml2 -I/usr/local/include -c -o basic.o basic.c
  cc -L/usr/local/lib -lmetaresc -o basic basic.o ]]></screen>
          </para>
          <!-- TODO: verify all command lines for Linuxen -->

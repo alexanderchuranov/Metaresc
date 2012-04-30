@@ -45,20 +45,15 @@ if test x${HAVE_BISON} = xyes && test x${HAVE_FLEX} = xyes; then
 fi
 
 # Checks for libraries.
-XML2CONFIG="`which xml2-config 2> /dev/null`"
-if test x != x${XML2CONFIG} && test -x ${XML2CONFIG} ; then
-  CPPFLAGS="${CPPFLAGS} `${XML2CONFIG} --cflags`"
-  LDFLAGS="${LDFLAGS} `${XML2CONFIG} --libs`"
-  AC_CHECK_LIB(xml2, xmlKeepBlanksDefault, [HAVE_LIBXML2=yes], [HAVE_LIBXML2=no])
-  if test x${HAVE_LIBXML2} = xyes ; then
-    AC_DEFINE(HAVE_LIBXML2, [], [Libxml2 found])
-  fi
-else
-  HAVE_LIBXML2=no
-fi
+PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
 AM_CONDITIONAL(HAVE_LIBXML2, test x${HAVE_LIBXML2} = xyes)
+if test x${HAVE_LIBXML2} = xyes ; then
+  AC_DEFINE(HAVE_LIBXML2, [], [define if libxml2 is present])
+  CFLAGS="${CFLAGS} ${LIBXML2_CFLAGS}"
+fi
 
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.5])
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )
+AM_CONDITIONAL(HAVE_CHECK, test x${HAVE_CHECK} = xyes)
 
 AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#include <rpc/types.h>
 #include <rpc/xdr.h>]])
