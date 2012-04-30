@@ -68,7 +68,7 @@
 /* make a string from argument in writable memory. #STR itself is in read-only memory */
 #define MR_STRINGIFY(STR) (char []) { #STR }
 
-#define MR_MEM_INIT(FUNC, /* ATTR */ ...) void __VA_ARGS__ mr_mem_init (void) { FUNC; }
+#define MR_MEM_INIT(FUNC, /* ATTR */ ...) __VA_ARGS__ void mr_mem_init (void) { FUNC; }
 
 #define MR_MALLOC(SIZE) (mr_conf.mr_mem.malloc)(__FILE__, __FUNCTION__, __LINE__, SIZE)
 #define MR_REALLOC(PTR, SIZE) (mr_conf.mr_mem.realloc)(__FILE__, __FUNCTION__, __LINE__, PTR, SIZE)

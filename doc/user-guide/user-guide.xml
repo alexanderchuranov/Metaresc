@@ -339,7 +339,7 @@
            like the following:
 
            <screen><![CDATA[
- cc -I/usr/local/include/libxml2 -I/usr/local/include -c -o basic.o basic.c
+ cc `xml2-config --cflags` -I/usr/local/include -c -o basic.o basic.c
  cc -L/usr/local/lib -lmetaresc -o basic basic.o ]]></screen>
          </para>
          <!-- TODO: verify all command lines for Linuxen -->
@@ -379,22 +379,21 @@
                their names are, etc.
              </para></listitem>
              <listitem><para>
-               Functions for accessing metadata for the type and for
-               registering the type in the application-wide type
-               registry.
+               Functions for registering the type in the
+	       application-wide type registry.
              </para></listitem>
              <listitem><para>
-               Ordinary type declaration, e.g. "struct user {
+               Standard type declaration, e.g. "typedef struct user_t {
                ...". Obviously, this is necessary for the program to
                manipulate the variables of that type.
              </para></listitem>
            </itemizedlist>
 
-           The ordinary type declaration has no specific impact on the
+           The standard type declaration has no specific impact on the
            CPU and memory usage, since it is exactly the same you would
            declare if METARESC was not used. Metadata, however,
            occupies space in the executable file both on disk and in
-           memory, when loaded. Functions for working with metadata
+           memory, when loaded. Functions for type registring
            not only also occupy space, but get executed when the
            application starts. This is necessary for building a global,
            application-wide type registry.
@@ -450,9 +449,7 @@
            may be specifically instructed to generate either type
            declarations or metadata and related functions. For
            exploiting this, you need to define (or re-define) the
-           <code>RL_MODE</code> macro right <emphasis>before</emphasis>
-           including the <filename>metaresc.h</filename> header. The
-           macro may have following values:
+           <code>MR_MODE</code> macro. The macro may have following values:
 
            <informaltable>
              <tgroup cols="2" align="left" colsep="1" rowsep="1">
@@ -506,7 +503,7 @@
 
              <listitem><para>
                In the "ordinary" header file, specify the
-               <code>RL_MODE</code> as <code>PROTO</code>, then include
+               <code>MR_MODE</code> as <code>PROTO</code>, then include
                the "naked" header file. If you have functions that
                "implement" a serializable type, this header file is a
                natural place to put their declarations into.
@@ -515,7 +512,7 @@
              <listitem><para>
                The "implementation" source file should include the
                "ordinary" header file, then unconditionally re-declare
-               <code>RL_MODE</code> macro to <code>DESC</code> and
+               <code>MR_MODE</code> macro to <code>DESC</code> and
                include the "naked" header file with declarations. It's
                convenient to define functions that "implement" a
                serializable type in this source file.
@@ -603,17 +600,74 @@
      
      <para>
        To make switching memory managers easier, METARESC provides
-       three memory management macros: <code>RL_MALLOC</code>,
-       <code>RL_REALLOC</code> and <code>RL_FREE</code>. They are used
+       three memory management macros: <code>MR_MALLOC</code>,
+       <code>MR_REALLOC</code>, <code>MR_FREE</code> and <code>MR_STRDUP</code>.
+       They are used
        as drop-in replacements for the <code>malloc</code>,
-       <code>realloc</code> and <code>free</code> respectively. These
+       <code>realloc</code>, <code>free</code> and <code>strdup</code>
+       respectively. These
        macros always call memory management functions, which
        the library is configured to use. Using them in the code that
        works with serializable data structures is the recommended way
        to achieve consistency in managing memory.
      </para>
      
-     <!-- TODO: how to configure memory management? -->
+     <para>
+       Memory management functions are stored in a global structure
+       mr_conf of type mr_conf_t. This structure contains all library
+       specific information. All four handlers are stored in a field
+       mr_mem of type mr_mem_t. mr_mem_t and mr_conf_t both defined
+       in a <filename>mr_protos.h</filename> header file. All
+       library's types are defined
+       on a library macro language. E.g. mr_mem_t is defined as follows:
+        <programlisting language="c"><![CDATA[
+TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
+	(float, mem_alloc_strategy, , "memory allocation strategy"),
+	(void *, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
+	(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
+	(char *, strdup, (const char *, const char *, int, const char *), "pointer on strdup() function"),
+	(void, free, (const char *, const char *, int, void *), "pointer on free() function"),
+	)
+	]]></programlisting>
+	First 3 arguments of those handlers are file name, function
+	name and line number of the invocation place. Macro functions
+	MR_MALLOC, MR_REALLOC, MR_FREE and MR_STRDUP are defined in
+	a <filename>metaresc.h</filename> header file as follows:
+        <programlisting language="c"><![CDATA[
+	#define MR_MALLOC(SIZE) (mr_conf.mr_mem.malloc)(__FILE__, __FUNCTION__, __LINE__, SIZE)
+	#define MR_REALLOC(PTR, SIZE) (mr_conf.mr_mem.realloc)(__FILE__, __FUNCTION__, __LINE__, PTR, SIZE)
+	#define MR_STRDUP(STR) (mr_conf.mr_mem.strdup)(__FILE__, __FUNCTION__, __LINE__, STR)
+	#define MR_FREE(PTR) (mr_conf.mr_mem.free)(__FILE__, __FUNCTION__, __LINE__, PTR)
+	]]></programlisting>
+     </para>
+
+     <para>
+       By default memory handling functions are stubbed as wrappers
+       over standard LibC implementations. User can replace those
+       handlers on a custom memory management solution. Due to the
+       fact that library do some magic before execution of main (),
+       there are some memory allocations before all users code execution.
+       There is a way to redefine hooks at the very begging.
+       Macro <code>MR_MEM_INIT()</code> do the trick. This macro is
+       defined in a <filename>metaresc.h</filename> as follows:
+       
+       <programlisting language="c"><![CDATA[
+       #define MR_MEM_INIT(FUNC, /* ATTR */ ...) __VA_ARGS__ void mr_mem_init (void) { FUNC; }
+       ]]></programlisting>
+       
+       Macro can have from zero to three arguments. First one is a
+       function that will be called before all other code. Second
+       is an attribute for mr_mem_init function. mr_mem_init () is
+       defined as
+       <programlisting language="c"><![CDATA[
+       MR_MEM_INIT ( , __attribute__((constructor,weak)));
+       ]]></programlisting>
+       in a <filename>metaresc.c</filename>. I.e. this functions is
+       a first in a list of <code>constructors</code> due to library
+       linkage order and could be replaced on alternative implementation
+       at later linkage stages.
+     </para>
+
    </section>
    
    <section xml:id="type-declaration">
@@ -740,7 +794,7 @@
            </para></listitem>
            <listitem><para>The pointer-on-user-data is used for a
            second text field. In this case user-data-type should be
-           specified as "rl_char_array_t".
+           specified as "mr_char_array_t".
            </para></listitem>
          </itemizedlist>
        </para>
@@ -863,7 +917,7 @@
         declarations. Declarations have the following form:
         
         <programlisting language="c">
-( name, = value<subscript>opt</subscript>,
+	  ( name, = value<subscript>opt</subscript>,
           comment<subscript>opt</subscript>,
           { pointer-on-user-data }<subscript>opt</subscript>,
           user-data-type<subscript>opt</subscript>
@@ -1041,11 +1095,11 @@
         structure itself and has at least the following fields:
         
         <programlisting language="c"><![CDATA[
-employee_t* data;   // pointer to array items
+employee_t * data;  // pointer to array items
 int32_t size;       // used space in bytes
 int32_t alloc_size; // allocated space in bytes
-rl_ptr_t ext;       // per-instance user data
-char* ptr_type;     // the name of the pointed-to object type
+mr_ptr_t ext;       // per-instance user data
+char * ptr_type;    // the name of the pointed-to object type
 ]]></programlisting>
         
         The <code>ext</code> field is intended for additional data you
@@ -1063,8 +1117,8 @@ char* ptr_type;     // the name of the pointed-to object type
         use its fileds as you see fit. The library, however, will
         always assume that the memory pointed to by the
         <code>data</code> field is allocated using the
-        <code>RL_MALLOC</code> macro. When loading data from external
-        source, you must use <code>RL_FREE</code> to free the memory,
+        <code>MR_MALLOC</code> macro. When loading data from external
+        source, you must use <code>MR_FREE</code> to free the memory,
         occupied by resizable array items ( which the
         <code>data</code> member points to ), when the array is no
         longer necessary.
@@ -1094,13 +1148,13 @@ char* ptr_type;     // the name of the pointed-to object type
       
       <para>
         For each textual serialization format there is a macro named
-        like <code>RL_SAVE_</code>XXX, where XXX is a suffix, which
+        like <code>MR_SAVE_</code>XXX, where XXX is a suffix, which
         specifies the desired data representation. A macro like that
         accepts two arguments: the name of the serializable type and a
         pointer to the variable of that type to be serialized. The
         return value is a pointer to the character string. Is is
         allocated dynamically and must be released using the
-        <code>RL_FREE</code> library macro. The following is an
+        <code>MR_FREE</code> library macro. The following is an
         example of serializing data to XML:
         
         <programlisting language="c"><xi:include
@@ -1126,7 +1180,7 @@ char* ptr_type;     // the name of the pointed-to object type
           xmlns:xi="http://www.w3.org/2003/XInclude"
         /></programlisting>
         
-        The naming scheme is <code>RL_LOAD_</code>XXX, where XXX
+        The naming scheme is <code>MR_LOAD_</code>XXX, where XXX
         specifies the format. The returned value is an
         <code>int</code>, which is zero if loading failed and non-zero
         otherwise.
@@ -1521,7 +1575,7 @@ char* ptr_type;     // the name of the pointed-to object type
         <para>
           METARESC supports the XML format as defined in <link
           xlink:href="http://www.w3.org/TR/2008/REC-xml-20081126/">W3C
-          XML 1.0 specification</link>. The <code>RL_SAVE_XML</code>
+          XML 1.0 specification</link>. The <code>MR_SAVE_XML</code>
           macro is used for serializing into XML. It accepts two
           arguments: the name of the type and the pointer to the
           variable. First argument specifies the type of the variable
@@ -1540,7 +1594,7 @@ char* ptr_type;     // the name of the pointed-to object type
         
         <para>
           There are two macros for de-serializing data from XML. Both
-          are named <code>RL_LOAD_XML</code>; the library
+          are named <code>MR_LOAD_XML</code>; the library
           distinguishes one from another by the number of
           arguments. First version accepts two arguments: the name of
           the type to be loaded and the text string representing the
@@ -1629,7 +1683,7 @@ char* ptr_type;     // the name of the pointed-to object type
           xlink:href="http://www.ietf.org/rfc/rfc4627.txt">RFC
           4627</link>. METARESC supports saving to and loading from
           this format. Serialization is performed by the
-          <code>RL_SAVE_JSON</code> macro. It's arguments are the name
+          <code>MR_SAVE_JSON</code> macro. It's arguments are the name
           of the type and a pointer to the variable of that type. The
           macro is used in the following code sample:
           
@@ -1641,7 +1695,7 @@ char* ptr_type;     // the name of the pointed-to object type
         </para>
         
         <para>
-          There is the <code>RL_LOAD_JSON</code> macro for
+          There is the <code>MR_LOAD_JSON</code> macro for
           de-serializing JSON data. The version with two arguments
           accepts the name of the type and the character string with
           JSON data. The returned value may be used to initialize
@@ -1706,7 +1760,7 @@ char* ptr_type;     // the name of the pointed-to object type
         
         <para>
           The serialization is performed by the
-          <code>RL_SAVE_CINIT</code> macro. It accepts the name of the
+          <code>MR_SAVE_CINIT</code> macro. It accepts the name of the
           type and a pointer to the variable of that type. The
           returned value is a pointer to the character string in the
           case of success and <code>NULL</code> in the case of
@@ -1721,7 +1775,7 @@ char* ptr_type;     // the name of the pointed-to object type
         
         <para>
           De-serialization is performed by the
-          <code>RL_LOAD_CINIT</code> macro, which has two forms. The
+          <code>MR_LOAD_CINIT</code> macro, which has two forms. The
           first accepts the name of the type and pointer to the
           character string. The returned value has the specified type
           and may be used to directly initialize a variable of that
@@ -1750,7 +1804,7 @@ char* ptr_type;     // the name of the pointed-to object type
           The SCM is also a METARESC-specific data representation format. It
           is intended for programs written in Scheme language as it
           has compatible grammar. Serialization is performed by the
-          <code>RL_SAVE_SCM</code> macro, which accepts the name of
+          <code>MR_SAVE_SCM</code> macro, which accepts the name of
           the type to be serialized and the pointer to the variable,
           which provides the data:
           
@@ -1762,7 +1816,7 @@ char* ptr_type;     // the name of the pointed-to object type
         </para>
         
         <para>
-          There is a macro <code>RL_LOAD_SCM</code> for loading data
+          There is a macro <code>MR_LOAD_SCM</code> for loading data
           in SCM format. It has two forms: with two and three
           arguments. The two-argument form accepts a name of the type
           and a pointer to the character string with SCM text. The
