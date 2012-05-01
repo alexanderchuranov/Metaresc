@@ -640,6 +640,14 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	#define MR_FREE(PTR) (mr_conf.mr_mem.free)(__FILE__, __FUNCTION__, __LINE__, PTR)
 	]]></programlisting>
      </para>
+     
+     <para>
+       mr_mem_t has one more field - mem_alloc_strategy. This parameter
+       is used for resizable arrays re-allocation strategy. This is ratio
+       for array size re-allocation. By default it is equals to 2. This
+       means that array size at least doubles on an additional arrays
+       elements request.
+     </para>
 
      <para>
        By default memory handling functions are stubbed as wrappers
