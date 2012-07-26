@@ -10,7 +10,7 @@
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, VALUE, STRUCT_X_CMP); \
     })
 
-TYPEDEF_STRUCT (struct_long_double, long_double_t x);
+TYPEDEF_STRUCT (struct_long_double, long_double_t x)
 
 MR_START_TEST (zero_long_double, "zero long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, 0); } END_TEST
 MR_START_TEST (nan_long_double, "NAN long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, NAN); } END_TEST

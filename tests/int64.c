@@ -4,8 +4,8 @@
 
 #include <int.h>
 
-TYPEDEF_STRUCT (struct_uint64_t, uint64_t x);
-TYPEDEF_STRUCT (struct_int64_t, int64_t x);
+TYPEDEF_STRUCT (struct_uint64_t, uint64_t x)
+TYPEDEF_STRUCT (struct_int64_t, int64_t x)
 
 MR_START_TEST (zero_u_int64_t, "zero [u]int64_t") { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, 0); } END_TEST
 MR_START_TEST (all_bits_u_int64_t, "all bits set [u]int64_t") { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, -1); } END_TEST

@@ -2,7 +2,7 @@
 #include <metaresc.h>
 #include <regression.h>
 
-TYPEDEF_STRUCT (ld_ptr_t, (const volatile long double *, x));
+TYPEDEF_STRUCT (ld_ptr_t, (const volatile long double *, x))
 
 MR_START_TEST (ld_ptr, "pointer on a long double (type name with spaces)") {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, ld_ptr_t, NULL);

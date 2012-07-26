@@ -10,7 +10,7 @@
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float, VALUE, STRUCT_X_CMP); \
     })
 
-TYPEDEF_STRUCT (struct_float, float x);
+TYPEDEF_STRUCT (struct_float, float x)
 
 MR_START_TEST (zero_float, "zero float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, 0); } END_TEST
 MR_START_TEST (nan_float, "NAN float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, NAN); } END_TEST

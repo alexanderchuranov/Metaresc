@@ -14,11 +14,11 @@ TYPEDEF_STRUCT (struct_ca_str_t, (char_array_t, x), string_t y)
 TYPEDEF_STRUCT (struct_str_ca_t, string_t y, (char_array_t, x))
 TYPEDEF_STRUCT (struct_str_str_t, string_t x, string_t y)
 
-#define ASSERT_SAVE_LOAD_CHAR_POINTER(METHOD, ...) ({		    \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, string_t,  __VA_ARGS__);	    \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, char *, __VA_ARGS__);	    \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_string_t, __VA_ARGS__); \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_charp_t, __VA_ARGS__);  \
+#define ASSERT_SAVE_LOAD_CHAR_POINTER(METHOD, ...) ({			\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, string_t,  __VA_ARGS__);		\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, char *, __VA_ARGS__);		\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_string_t, __VA_ARGS__);	\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_charp_t, __VA_ARGS__);	\
     })
 
 #define ASSERT_SAVE_LOAD_STRING(METHOD, ...) ({				\
