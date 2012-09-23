@@ -24,15 +24,15 @@ TYPEDEF_ENUM (sign_t, (PLUS, = 0), (MINUS, = 1))
 TYPEDEF_ENUM (boolean_t, (_FALSE_, = 0), (_TRUE_, = 1))
 
 TYPEDEF_STRUCT (ieee_754_float_t,
-		BITFIELD (unsigned int, mantissa, 23),
-		BITFIELD (unsigned int, exponent, 8),
-		BITFIELD (sign_t, sign, 1))
+		BITFIELD (unsigned int, mantissa, :23),
+		BITFIELD (unsigned int, exponent, :8),
+		BITFIELD (sign_t, sign, :1))
 
 TYPEDEF_STRUCT (ieee_754_float_nan_t,
-		BITFIELD (unsigned int, mantissa, 22),
-		BITFIELD (boolean_t, quiet_nan, 1),
-		BITFIELD (unsigned int, exponent, 8),
-		BITFIELD (sign_t, sign, 1))
+		BITFIELD (unsigned int, mantissa, :22),
+		BITFIELD (boolean_t, quiet_nan, :1),
+		BITFIELD (unsigned int, exponent, :8),
+		BITFIELD (sign_t, sign, :1))
 
 TYPEDEF_STRUCT (ieee_float_t,
 		ANON_UNION (),
@@ -44,17 +44,17 @@ TYPEDEF_STRUCT (ieee_float_t,
 		)
 
 TYPEDEF_STRUCT (ieee_754_double_t,
-		BITFIELD (unsigned int, mantissa1, 32),
-		BITFIELD (unsigned int, mantissa0, 20),
-		BITFIELD (unsigned int, exponent, 11),
-		BITFIELD (sign_t, sign, 1))
+		BITFIELD (unsigned int, mantissa1, :32),
+		BITFIELD (unsigned int, mantissa0, :20),
+		BITFIELD (unsigned int, exponent, :11),
+		BITFIELD (sign_t, sign, :1))
 
 TYPEDEF_STRUCT (ieee_754_double_nan_t,
-		BITFIELD (unsigned int, mantissa1, 32),
-		BITFIELD (unsigned int, mantissa0, 19),
-		BITFIELD (boolean_t, quiet_nan, 1),
-		BITFIELD (unsigned int, exponent, 11),
-		BITFIELD (sign_t, sign, 1))
+		BITFIELD (unsigned int, mantissa1, :32),
+		BITFIELD (unsigned int, mantissa0, :19),
+		BITFIELD (boolean_t, quiet_nan, :1),
+		BITFIELD (unsigned int, exponent, :11),
+		BITFIELD (sign_t, sign, :1))
 
 TYPEDEF_STRUCT (ieee_double_t,
 		ANON_UNION (),
@@ -66,20 +66,20 @@ TYPEDEF_STRUCT (ieee_double_t,
 		)
 
 TYPEDEF_STRUCT (ieee_854_long_double_t,
-		BITFIELD (unsigned int, mantissa1, 32),
-		BITFIELD (unsigned int, mantissa0, 32),
-		BITFIELD (unsigned int, exponent, 15),
-		BITFIELD (sign_t, sign, 1),
-		BITFIELD (unsigned int, empty, 16))
+		BITFIELD (unsigned int, mantissa1, :32),
+		BITFIELD (unsigned int, mantissa0, :32),
+		BITFIELD (unsigned int, exponent, :15),
+		BITFIELD (sign_t, sign, :1),
+		BITFIELD (unsigned int, empty, :16))
 
 TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
-		BITFIELD (unsigned int, mantissa1, 32),
-		BITFIELD (unsigned int, mantissa0, 30),
-		BITFIELD (boolean_t, quiet_nan, 1),
-		BITFIELD (unsigned int, one, 1),
-		BITFIELD (unsigned int, exponent, 15),
-		BITFIELD (sign_t, sign, 1),
-		BITFIELD (unsigned int, empty, 16))
+		BITFIELD (unsigned int, mantissa1, :32),
+		BITFIELD (unsigned int, mantissa0, :30),
+		BITFIELD (boolean_t, quiet_nan, :1),
+		BITFIELD (unsigned int, one, :1),
+		BITFIELD (unsigned int, exponent, :15),
+		BITFIELD (sign_t, sign, :1),
+		BITFIELD (unsigned int, empty, :16))
 
 TYPEDEF_STRUCT (ieee_long_double_t,
 		ANON_UNION (),

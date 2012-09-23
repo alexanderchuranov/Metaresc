@@ -98,7 +98,7 @@ TYPEDEF_STRUCT (struct_union_uint64_t,
 
 TYPEDEF_STRUCT (struct_union_bitfield_t,
 		(union_int32_float_t, xy, , "discriminator"),
-		BITFIELD (enum_discriminator_t, discriminator, 1),
+		BITFIELD (enum_discriminator_t, discriminator, :1),
 		)
 
 TYPEDEF_STRUCT (struct_union_string_t,

@@ -4,16 +4,16 @@
 
 TYPEDEF_ENUM (_enum_t, ZERO, ONE, (TWO, = 2), (THREE, = 3))
 
-TYPEDEF_STRUCT (struct_bitfield_int8_t, BITFIELD (int8_t, x, 7))
-TYPEDEF_STRUCT (struct_bitfield_uint8_t, BITFIELD (uint8_t, x, 7))
-TYPEDEF_STRUCT (struct_bitfield_int16_t, BITFIELD (int16_t, x, 15))
-TYPEDEF_STRUCT (struct_bitfield_uint16_t, BITFIELD (uint16_t, x, 15))
-TYPEDEF_STRUCT (struct_bitfield_int32_t, BITFIELD (int32_t, x, 31))
-TYPEDEF_STRUCT (struct_bitfield_uint32_t, BITFIELD (uint32_t, x, 31))
-TYPEDEF_STRUCT (struct_bitfield_int64_t, BITFIELD (int64_t, x, 63))
-TYPEDEF_STRUCT (struct_bitfield_uint64_t, BITFIELD (uint64_t, x, 63))
+TYPEDEF_STRUCT (struct_bitfield_int8_t, BITFIELD (int8_t, x, :7))
+TYPEDEF_STRUCT (struct_bitfield_uint8_t, BITFIELD (uint8_t, x, :7))
+TYPEDEF_STRUCT (struct_bitfield_int16_t, BITFIELD (int16_t, x, :15))
+TYPEDEF_STRUCT (struct_bitfield_uint16_t, BITFIELD (uint16_t, x, :15))
+TYPEDEF_STRUCT (struct_bitfield_int32_t, BITFIELD (int32_t, x, :31))
+TYPEDEF_STRUCT (struct_bitfield_uint32_t, BITFIELD (uint32_t, x, :31))
+TYPEDEF_STRUCT (struct_bitfield_int64_t, BITFIELD (int64_t, x, :63))
+TYPEDEF_STRUCT (struct_bitfield_uint64_t, BITFIELD (uint64_t, x, :63))
 
-TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, sizeof (enum_t) * 8 - 1))
+TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (enum_t) * 8 - 1))
 
 #define ASSERT_SAVE_LOAD_BITFIELD(METHOD, VALUE, ...) ({		\
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_bitfield_int8_t, VALUE, __VA_ARGS__); \

@@ -1064,7 +1064,7 @@ mr_normalize_type (mr_fd_t * fdp)
 static int
 mr_init_bitfield (mr_fd_t * fdp)
 {
-  int i;
+  int i, j;
   for (i = 0; i < fdp->param.bitfield_param.bitfield.size; ++i)
     if (fdp->param.bitfield_param.bitfield.data[i])
       break;
@@ -1073,6 +1073,18 @@ mr_init_bitfield (mr_fd_t * fdp)
     if (fdp->param.bitfield_param.bitfield.data[fdp->offset] & (1 << i))
       break;
   fdp->param.bitfield_param.shift = i;
+  fdp->param.bitfield_param.width = 0;
+  for (j = fdp->offset; j < fdp->param.bitfield_param.bitfield.size; ++j)
+    {
+      for ( ; i < 8; ++i)
+	if (fdp->param.bitfield_param.bitfield.data[j] & (1 << i))
+	  ++fdp->param.bitfield_param.width;
+	else
+	  break;
+      if (i < 8)
+	break;
+      i = 0;
+    }
   return (EXIT_SUCCESS);
 }
 

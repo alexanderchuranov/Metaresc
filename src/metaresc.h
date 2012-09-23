@@ -493,7 +493,7 @@
 
 #define MR_FIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) TYPE NAME SUFFIX;
 #define MR_ENUM_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
-#define MR_BITFIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, : SUFFIX)
+#define MR_BITFIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, SUFFIX)
 #define MR_BITMASK_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
 #define MR_INT8_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, int8_t, NAME, )
 #define MR_UINT8_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, uint8_t, NAME, )
@@ -602,7 +602,6 @@
       .mr_type_ext = MR_TYPE_EXT_NONE,					\
       .param = {							\
       .bitfield_param = {						\
-	.width = SUFFIX,						\
 	.bitfield = {							\
 	  .size = sizeof (MR_TYPE_NAME),				\
 	  .alloc_size = -1,						\
