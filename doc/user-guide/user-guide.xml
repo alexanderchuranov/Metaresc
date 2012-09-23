@@ -15,7 +15,7 @@
      </author>
 
      <copyright>
-       <year>2011</year>
+       <year>2012</year>
        <holder>Alexander Churanov</holder>
      </copyright>
    </info>
@@ -717,21 +717,50 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
+
+	 Macro <code>TYPEDEF_STRUCT</code> provides a mechanism for
+	 specification of metadata for type itself. Second argument
+	 after type name might have prefix <code>ATTRIBUTE</code>.
+	 After this key-word there should be a list of metadata in
+	 parentheses. 
+         <programlisting language="c">
+	   ATTRIBUTE (
+	   type-attributes<subscript>opt</subscript>,
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
+	 <code>type-attributes</code> is an attruibute for type
+	 declaration, for example it could be
+	 <code>__attribute__ ((packed))</code>.
+	 This parameter is also saved as a string in type's metadata.
+	 <code>comment</code> is an arbitrary text that would be saved
+	 as type's metadta.
+	 <code>poiner-on-user-data</code> is a void pointer for
+	 user data. For serialization of pointer-on-user-data
+	 it is possible to specify type of this pointer via
+	 <code>user-data-type</code>. This type should be declared
+	 by means METARESC.
        </para>
 
        <para>
+	 After type name and optional type's attributes fields
+	 declaration follows. Field's declaration should be delimitted
+	 by comma. Comma after last field is optional.
          Fields of the structure may be of standard C types,
          user-defined types and types, specific to METARESC. Field
          declarations for standard and user-defined types have
          following form:
          
          <programlisting language="c">
-( type, name,
-        suffix<subscript>opt</subscript>,
-        comment<subscript>opt</subscript>,
-        { pointer-on-user-data }<subscript>opt</subscript>,
-        user-data-type<subscript>opt</subscript>
-        )</programlisting>
+	   ( type, name,
+	   suffix<subscript>opt</subscript>,
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
         
         The first two arguments specify field type and name. Other
         four arguments are optional. If any of optional arguments is
@@ -802,7 +831,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
            </para></listitem>
            <listitem><para>The pointer-on-user-data is used for a
            second text field. In this case user-data-type should be
-           specified as "mr_char_array_t".
+           specified as "string_t".
            </para></listitem>
          </itemizedlist>
        </para>
@@ -847,18 +876,20 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
            <!-- TODO: support other integer types, like least, fast,
            max, etc. -->
            <listitem><para> <code>volatile</code> </para></listitem>
+           <listitem><para> <code>__volatile__</code> and <code>__volatile</code> ( GCC-specific ) </para></listitem>
            <listitem><para> <code>const</code> </para></listitem>
-           
-           <listitem><para> <code>__volatile__</code> ( GCC-specific ) </para></listitem>
-           <listitem><para> <code>__const__</code> ( GCC-specific ) </para></listitem>
+           <listitem><para> <code>__const__</code> and <code>__const</code>( GCC-specific ) </para></listitem>
            
            <listitem><para> <code>string_t</code> ( METARESC-specific ) </para></listitem>
+           <listitem><para> <code>long_double_t</code> ( METARESC-specific ) </para></listitem>
          </itemizedlist>
          
          The <code>string_t</code> is a <code>typedef</code> for
          <code>char*</code>. It is necessary to make possible
          declaring a pointer to character string when using simplified
-         grammar.
+         grammar. <code>long_double_t</code> is a <code>typedef</code> for
+         <code>long double</code>.
+
        </para>
        
        <para>
@@ -979,6 +1010,59 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
+
+	Output of this code is the following:
+        <programlisting language="c">
+space_t space = {
+  .planes = {
+    {
+      .points = {
+        {
+          {
+            .pbox = (box_t[]){
+              {
+                .name = "some name",
+                .creation_time = 1336547701,
+              },
+            },
+          },
+          {
+            .pbox = NULL,
+          },
+        },
+        {
+          {
+            .pbox = NULL,
+          },
+          {
+            .pbox = NULL,
+          },
+        },
+      },
+    },
+    {
+      .points = {
+        {
+          {
+            .pbox = NULL,
+          },
+          {
+            .pbox = NULL,
+          },
+        },
+        {
+          {
+            .pbox = NULL,
+          },
+          {
+            .pbox = NULL,
+          },
+        },
+      },
+    },
+  },
+};
+	</programlisting>
        </para>
     </section>
     
@@ -1545,21 +1629,29 @@ char * ptr_type;    // the name of the pointed-to object type
 <firm>
   <name>Gen-sys</name>
   <employees>
-    <employees>
-      <firstname>Will</firstname>
-      <lastname>Rodman</lastname>
-      <salary>200000</salary>
-    </employees>
-    <employees>
-      <firstname>Steven</firstname>
-      <lastname>Jacobs</lastname>
-      <salary>630000</salary>
-    </employees>
-    <employees>
-      <firstname>Robert</firstname>
-      <lastname>Franklin</lastname>
-      <salary>170000</salary>
-    </employees>
+    <data>
+      <employees>
+        <firstname>Will</firstname>
+        <lastname>Rodman</lastname>
+        <salary>200000</salary>
+      </employees>
+      <employees>
+        <firstname>Static</firstname>
+        <lastname>Jacobs</lastname>
+        <salary>250000</salary>
+      </employees>
+      <employees>
+        <firstname>Robert</firstname>
+        <lastname>Franklin</lastname>
+        <salary>170000</salary>
+      </employees>
+    </data>
+    <size>72</size>
+    <alloc_size>0</alloc_size>
+    <ext>
+      <ptr isnull="true"/>
+    </ext>
+    <ptr_type isnull="true"/>
   </employees>
 </firm>
 ]]></programlisting>

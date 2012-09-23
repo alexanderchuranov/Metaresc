@@ -30,7 +30,7 @@ int main ()
   
   space.planes[0].points[0][0].pbox = &box;
   
-  // here goes the rest of the code
+  // here we will serialize and print to console
   char * space_serialized = MR_SAVE_CINIT (space_t, &space);
   if (NULL == space_serialized)
     printf ("Serialization failed\n");
