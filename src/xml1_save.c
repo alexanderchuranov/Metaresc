@@ -58,13 +58,13 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 	return (NULL);
       if (ptrs->ra.data[idx].ref_idx >= 0)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT,
-			  (ptrs->ra.data[idx].flags & MR_PDF_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
+			  (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			  ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	  return (NULL);
-      if (ptrs->ra.data[idx].flags & MR_PDF_IS_REFERENCED)
+      if (ptrs->ra.data[idx].flags.is_referenced)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	  return (NULL);
-      if (ptrs->ra.data[idx].flags & MR_PDF_IS_NULL)
+      if (ptrs->ra.data[idx].flags.is_null)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
 	  return (NULL);
 	  

@@ -61,16 +61,16 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
 	      /* set REF_IDX property */
 	      sprintf (number, "%" SCNd32, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
 	      xmlSetProp (node,
-			  BAD_CAST ((ptrs->ra.data[idx].flags & MR_PDF_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF),
+			  BAD_CAST ((ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF),
 			  BAD_CAST number);
 	    }
-	  if (ptrs->ra.data[idx].flags & MR_PDF_IS_REFERENCED)
+	  if (ptrs->ra.data[idx].flags.is_referenced)
 	    {
 	      /* set IDX property */
 	      sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
 	      xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
 	    }
-	  if (ptrs->ra.data[idx].flags & MR_PDF_IS_NULL)
+	  if (ptrs->ra.data[idx].flags.is_null)
 	    xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
 	  if (parent >= 0)

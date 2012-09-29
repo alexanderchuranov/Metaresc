@@ -214,11 +214,15 @@ TYPEDEF_STRUCT (mr_ra_mr_td_ptr_t,
 		RARRAY (mr_td_ptr_t, ra, "non-collision hash table"),
 		)
 
-TYPEDEF_ENUM (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))) , "ponter descriptor flag bitmask values"),
-	      (MR_PDF_NONE, = 0),
-	      (MR_PDF_IS_NULL, = (1 << 0)),
-	      (MR_PDF_IS_REFERENCED, = (1 << 1)),
-	      (MR_PDF_CONTENT_REFERENCE, = (1 << 2)),
+TYPEDEF_ENUM (mr_bool_t, ATTRIBUTES ( , "boolean type"),
+	      (MR_FALSE, = 0),
+	      (MR_TRUE, = !0),
+	      )
+
+TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))), "ponter descriptor flag bitfield values"),
+		BITFIELD (mr_bool_t, is_null, :1),
+		BITFIELD (mr_bool_t, is_referenced, :1),
+		BITFIELD (mr_bool_t, is_content_reference, :1),
 	      )
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
@@ -232,7 +236,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, last_child, , "last child index"),
 		(int, prev, , "previous sibling index"),
 		(int, next, , "next sibling index"),
-		BITMASK (mr_ptrdes_flags_t, flags),
+		(mr_ptrdes_flags_t, flags),
 		(char *, union_field_name, , "field descriptor for unions"),
 		(char *, value, , "stringified value"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */

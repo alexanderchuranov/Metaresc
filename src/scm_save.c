@@ -67,13 +67,13 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
 			    level * MR_SCM_INDENT_SPACES, "",
-			    (ptrs->ra.data[idx].flags & MR_PDF_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
+			    (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			    ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	    return (NULL);
 	  else
 	    in_comment = !0;
 	}
-      if (ptrs->ra.data[idx].flags & MR_PDF_IS_REFERENCED)
+      if (ptrs->ra.data[idx].flags.is_referenced)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
 			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)

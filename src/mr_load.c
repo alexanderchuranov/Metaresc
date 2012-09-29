@@ -63,7 +63,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 	else
 	  {
 	    void * data;
-	    if (mr_load_data->ptrs.ra.data[i].flags & MR_PDF_CONTENT_REFERENCE)
+	    if (mr_load_data->ptrs.ra.data[i].flags.is_content_reference)
 	      data = *(void**)(mr_load_data->ptrs.ra.data[idx].data);
 	    else
 	      data = mr_load_data->ptrs.ra.data[idx].data;
@@ -408,7 +408,7 @@ static int
 mr_load_string (int idx, mr_load_data_t * mr_load_data)
 {
   char * str = mr_load_data->ptrs.ra.data[idx].value;
-  if ((mr_load_data->ptrs.ra.data[idx].flags & MR_PDF_IS_NULL) || (mr_load_data->ptrs.ra.data[idx].ref_idx >= 0))
+  if ((mr_load_data->ptrs.ra.data[idx].flags.is_null) || (mr_load_data->ptrs.ra.data[idx].ref_idx >= 0))
     *(char**)mr_load_data->ptrs.ra.data[idx].data = NULL;
   else
     *(char**)mr_load_data->ptrs.ra.data[idx].data = str ? MR_STRDUP (str) : NULL;

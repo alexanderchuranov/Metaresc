@@ -140,11 +140,11 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
       if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = "Can't read " MR_REF " property.";
       else
-	mr_load->ptrs->ra.data[mr_load->parent].flags |= MR_PDF_CONTENT_REFERENCE;
+	mr_load->ptrs->ra.data[mr_load->parent].flags.is_content_reference = MR_TRUE;
     }
   else if (0 == mr_substrcmp (MR_ISNULL, &$3))
     {
-      mr_load->ptrs->ra.data[mr_load->parent].flags |= MR_PDF_IS_NULL;
+      mr_load->ptrs->ra.data[mr_load->parent].flags.is_null = MR_TRUE;
     }
 
   if (error)

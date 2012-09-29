@@ -70,10 +70,10 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, char * named_field_template, int (*no
 	      return (NULL);
 	  if (ptrs->ra.data[idx].ref_idx >= 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT,
-			      (ptrs->ra.data[idx].flags & MR_PDF_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
+			      (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			      ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	      return (NULL);
-	  if (ptrs->ra.data[idx].flags & MR_PDF_IS_REFERENCED)
+	  if (ptrs->ra.data[idx].flags.is_referenced)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	      return (NULL);
 	  if (save_data.prefix)
@@ -310,7 +310,7 @@ static int
 cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
   char * str = *(char**)ptrs->ra.data[idx].data;
-  if ((ptrs->ra.data[idx].flags & MR_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
+  if ((ptrs->ra.data[idx].flags.is_null) || (ptrs->ra.data[idx].ref_idx >= 0))
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     data->content = cinit_quote_string (str, '"');
@@ -357,7 +357,7 @@ cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 static int
 cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  if ((ptrs->ra.data[idx].flags & MR_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
+  if ((ptrs->ra.data[idx].flags.is_null) || (ptrs->ra.data[idx].ref_idx >= 0))
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     {
@@ -417,7 +417,7 @@ json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 static int
 json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  if ((ptrs->ra.data[idx].flags & MR_PDF_IS_NULL) || (ptrs->ra.data[idx].ref_idx >= 0))
+  if ((ptrs->ra.data[idx].flags.is_null) || (ptrs->ra.data[idx].ref_idx >= 0))
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     {

@@ -494,7 +494,9 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->last_child = -1;
   ptrdes->prev = -1;
   ptrdes->next = -1;
-  ptrdes->flags = MR_PDF_NONE;
+  ptrdes->flags.is_null = MR_FALSE;
+  ptrdes->flags.is_referenced = MR_FALSE;
+  ptrdes->flags.is_content_reference = MR_FALSE;
   ptrdes->union_field_name = NULL;
   ptrdes->value = NULL;
   ptrdes->ext.ptr = NULL;
@@ -832,7 +834,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    {
 	      mr_fd_t fd = *first;
 	      memmove (first, &first[1], (count - i - 1) * sizeof (*first));
-	      /* offset of union memebers may differ from offset of anonymous unionplace holder */
+	      /* offset of union memebers may differ from offset of anonymous union place holder */
 	      if (fd.offset != 0) /* MR_NONE and MR_END_ANON_UNION has zero offset */
 		tdp->fields.data[i].offset = fd.offset;
 	      fd.offset = 0; /* reset offset to zero */

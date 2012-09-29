@@ -216,7 +216,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
       mr_save_data->ptrs.ra.data[parent].ref_idx = ref_idx;
       mr_save_data->ptrs.ra.data[parent].first_child = -1;
       mr_save_data->ptrs.ra.data[parent].last_child = -1;
-      mr_save_data->ptrs.ra.data[ref_idx].flags |= MR_PDF_IS_REFERENCED;
+      mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
       mr_save_data->ptrs.ra.data[ref_idx].fd.name = fdp->name;
       mr_add_child (mr_save_data->parent, ref_idx, &mr_save_data->ptrs);
       return;
@@ -245,7 +245,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1;
   char * str = *(char**)mr_save_data->ptrs.ra.data[idx].data;
   if (NULL == str)
-    mr_save_data->ptrs.ra.data[idx].flags |= MR_PDF_IS_NULL;
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE;
   else
     {
       static mr_fd_t fd_ = {
@@ -256,7 +256,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
       if (ref_idx >= 0)
 	{
 	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	  mr_save_data->ptrs.ra.data[ref_idx].flags |= MR_PDF_IS_REFERENCED;
+	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
 	}
       else
 	{
@@ -477,7 +477,7 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
       if (mr_save_data->ptrs.ra.data[data_idx].ref_idx < 0)
 	{
 	  if ((NULL == ra->data) || (0 == count))
-	    mr_save_data->ptrs.ra.data[data_idx].flags |= MR_PDF_IS_NULL;
+	    mr_save_data->ptrs.ra.data[data_idx].flags.is_null = MR_TRUE;
 	  else
 	    {
 	      int i;
@@ -507,7 +507,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
   int ref_idx;
   
   if (NULL == *data)
-    mr_save_data->ptrs.ra.data[idx].flags |= MR_PDF_IS_NULL; /* return empty node if pointer is NULL */
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* return empty node if pointer is NULL */
   else
     {
       /* set extended type property to NONE in copy of field descriptor */
@@ -518,7 +518,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
       if (ref_idx >= 0)
 	{
 	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	  mr_save_data->ptrs.ra.data[ref_idx].flags |= MR_PDF_IS_REFERENCED;
+	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
 	}
       else if ((fd_.mr_type != MR_TYPE_NONE) && (fd_.mr_type != MR_TYPE_VOID))
 	{
@@ -571,10 +571,10 @@ mr_post_process (mr_save_data_t * mr_save_data)
 	  if (ref_idx >= 0)
 	    {
 	      mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	      mr_save_data->ptrs.ra.data[ref_idx].flags |= MR_PDF_IS_REFERENCED;
+	      mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
 	    }
 	  else
-	    mr_save_data->ptrs.ra.data[idx].flags |= MR_PDF_IS_NULL; /* unresolved void pointers are saved as NULL */
+	    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* unresolved void pointers are saved as NULL */
 	}
 
       if (mr_save_data->ptrs.ra.data[idx].ref_idx >= 0)
@@ -584,8 +584,8 @@ mr_post_process (mr_save_data_t * mr_save_data)
 	      && (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[ref_parent].fd.mr_type_ext))
 	    {
 	      mr_save_data->ptrs.ra.data[idx].ref_idx = ref_parent;
-	      mr_save_data->ptrs.ra.data[idx].flags |= MR_PDF_CONTENT_REFERENCE;
-	      mr_save_data->ptrs.ra.data[ref_parent].flags |= MR_PDF_IS_REFERENCED;
+	      mr_save_data->ptrs.ra.data[idx].flags.is_content_reference = MR_TRUE;
+	      mr_save_data->ptrs.ra.data[ref_parent].flags.is_referenced = MR_TRUE;
 	    }
 	}
 
