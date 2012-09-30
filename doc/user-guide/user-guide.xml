@@ -1148,7 +1148,8 @@ space_t space = {
         integer types side-by-side. METARESC language allows you to
         declare bit-fields of the structure via the
         <code>BITFIELD</code> macro. It's arguments are the base type,
-        the name of the field and the number of bits it occupies. The
+        the name of the field and the number of bits it occupies. Base
+	type might be any intger type of enum. The
         structure in the example below has several bit-fields. This
         makes it possible to access each field individually without
         having to encode/decode data, yet retains compact
@@ -1575,18 +1576,18 @@ char * ptr_type;    // the name of the pointed-to object type
         <title>Marshalling bit-fields</title>
         <para>
           The sole purpose of using bit-fields is to minimize the
-          memory occupied by small integers. Serialization formats are
-          often verbose and the product of serialization is better
-          compressed by archiving the entire stream. Based on that,
-          bit-fields are serialized by METARESC as if they were
-          distinct variables.
+          memory occupied by small integers or enums. Serialization
+	  formats are often verbose and the product of serialization
+	  is better compressed by archiving the entire stream.
+	  Based on that, bit-fields are serialized by METARESC as
+	  if they were distinct variables.
         </para>
         
         <para>
           This is exemplified by following declarations:
           
           <programlisting language="c"><xi:include
-            href="../../examples/marshalling_bit_fields.h"
+            href="../../examples/bitfields.c"
             parse="text"
             xmlns:xi="http://www.w3.org/2003/XInclude"
           /></programlisting>
@@ -1594,17 +1595,16 @@ char * ptr_type;    // the name of the pointed-to object type
           The serialization may produce the following XML output:
           
           <programlisting language="xml"><![CDATA[
+sizeof (date_t) = 4
 <?xml version="1.0"?>
-<coords>
-  <longitude>51.5000000</longitude>
-  <latitude>46.0000000</latitude>
-  <year>2011</year>
-  <month>6</month>
-  <day>29</day>
+<today>
+  <year>2012</year>
+  <month>SEP</month>
+  <day>30</day>
   <hour>10</hour>
-  <minute>25</minute>
-  <second>31</second>
-</coords> ]]></programlisting>
+  <minute>59</minute>
+</today>
+]]></programlisting>
         </para>
       </section>
       
