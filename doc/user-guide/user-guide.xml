@@ -24,13 +24,13 @@
      <title>Overview</title>
 
      <para>
-       METARESC is a software library written in C programming
-       language. It allows declaring types using a special METARESC
-       grammar. The variables of types declared that way may be
-       subsequently serialized into various formats and deserialized
+       METARESC  is  a  software  library  written  in  C  programming
+       language. It  allows declaring  types using a  special METARESC
+       grammar.  The  variables of  types  declared  that  way may  be
+       subsequently serialized  into various formats  and deserialized
        later. To achieve this the library adds metadata annotations to
-       types. These annotations may be used for may purposes far beyond
-       just achieving the persistence.
+       types.  These annotations  may  be used  for  may purposes  far
+       beyond just achieving the persistence.
      </para>
    </section>
 
@@ -731,27 +731,26 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	   user-data-type<subscript>opt</subscript>
 	   )
 	 </programlisting>
+	 
 	 <code>type-attributes</code> is an attruibute for type
-	 declaration, for example it could be
-	 <code>__attribute__ ((packed))</code>.
-	 This parameter is also saved as a string in type's metadata.
-	 <code>comment</code> is an arbitrary text that would be saved
-	 as type's metadta.
-	 <code>poiner-on-user-data</code> is a void pointer for
-	 user data. For serialization of pointer-on-user-data
-	 it is possible to specify type of this pointer via
-	 <code>user-data-type</code>. This type should be declared
-	 by means METARESC.
+	 declaration, for example it could be <code>__attribute__
+	 ((packed))</code>.  This parameter is also saved as a string
+	 in type's metadata.  <code>comment</code> is an arbitrary
+	 text that would be saved as type's metadta.
+	 <code>poiner-on-user-data</code> is a void pointer for user
+	 data. For serialization of pointer-on-user-data it is
+	 possible to specify type of this pointer via
+	 <code>user-data-type</code>. This type should be declared by
+	 means METARESC.
        </para>
 
        <para>
 	 After type name and optional type's attributes fields
 	 declaration follows. Field's declaration should be delimitted
-	 by comma. Comma after last field is optional.
-         Fields of the structure may be of standard C types,
-         user-defined types and types, specific to METARESC. Field
-         declarations for standard and user-defined types have
-         following form:
+	 by comma. Comma after last field is optional.  Fields of the
+	 structure may be of standard C types, user-defined types and
+	 types, specific to METARESC. Field declarations for standard
+	 and user-defined types have following form:
          
          <programlisting language="c">
 	   ( type, name,
@@ -762,13 +761,13 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	   )
 	 </programlisting>
         
-        The first two arguments specify field type and name. Other
-        four arguments are optional. If any of optional arguments is
-        used in a declaration, then the previous optional arguments
-        must be specified too. That is to have a comment you need to
-        specify type suffix as well. To make declaring structures more
-        convenient the library allows empty type suffixes and
-        comments:
+        The first two arguments are mandatory and specify field type
+        and name.  Other four arguments are optional.  If any of
+        optional arguments is used in a declaration, then the previous
+        optional arguments must be specified too. That is to have a
+        comment you need to specify type suffix as well. To make
+        declaring structures more convenient the library allows empty
+        type suffixes and comments:
         
         <programlisting language="c"><xi:include
           href="../../examples/suffixes_comments_userdata.h"
@@ -797,7 +796,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
          Note, that the library does not allow declaring more than one
          structure field in a single declaration line. As the result,
          you have to put type prefixes in the "type" argument of a
-         field declaration:
+         field declaration. Here is the example:
          
          <programlisting language="c"><xi:include
            href="../../examples/type_prefixes.h"
@@ -819,11 +818,10 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
          <itemizedlist>
            <listitem><para> Pointer-on-user-data points to statically
            allocated object with external linkage (a global variable,
-           for example). In this case user-data-type should be a text string,
-           specifying the type of the pointed-to value. Any type
-           declared using METARESC grammar is allowed, built-in types
-           are not supported.
-           </para></listitem>
+           for example). In this case user-data-type should be a text
+           string, specifying the type of the pointed-to value. Any
+           type declared using METARESC grammar is allowed, built-in
+           types are not supported.  </para></listitem>
            <listitem><para>The user-data-type argument is unspecified.
            <!-- TODO: or meaningless: how "meaningful" is defined? -->
            In this case pointer-on-user-data is treated by the library
@@ -952,15 +950,21 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
       <para>
         Enumerations are declared using the <code>TYPEDEF_ENUM</code>
         variadic macro. The first argument is the name of the
-        enumerated type and the rest is the list of enumerator
-        declarations. Declarations have the following form:
+        enumerated type. This macro is similar to the
+        <code>TYPEDEF_STRUCT</code>. It might have second optional
+        argument <code>ATTRIBUTE (...)</code> with type attributes and
+        meta data. Symantic and usage is equivalent to structures
+        declarations. The rest arguments of <code>TYPEDEF_ENUM</code>
+        are considered to be declarations of enumeration.
+        Declarations have the following form:
         
         <programlisting language="c">
 	  ( name, = value<subscript>opt</subscript>,
           comment<subscript>opt</subscript>,
           { pointer-on-user-data }<subscript>opt</subscript>,
           user-data-type<subscript>opt</subscript>
-          ) </programlisting>
+          )
+	</programlisting>
         
         Each enumerator declaration should at least specify the name
         of the constant. If the declaration only specifies a name,
@@ -1444,10 +1448,9 @@ char * ptr_type;    // the name of the pointed-to object type
           pointer to access a pointed-to object and the value of the
           pointer is typically a memory address of that object. Memory
           addresses are meaningless from the serialization perspective
-          — when objects are de-serialized in other program
-          invocation the saved address may point to the memory of an
-          unrelated object or to the location where there is no object
-          at all.
+          — when objects are de-serialized in other program invocation
+          the saved address may point to the memory of an unrelated
+          object or to the location where there is no object at all.
         </para>
         
         <para>
@@ -1612,8 +1615,12 @@ sizeof (date_t) = 4
         <title>Marshalling RARRAYs</title>
         <para>
           The resizable arrays, provided by the library, are
-          serialized just like the fixed-width arrays: the field
-          contents is all array items serialized. The traversal starts
+          serialized as a structure presented in C: serialization
+	  starts with block <code>data</code> and followed by the
+	  rest of <code>rarray_t</code> fields: <code>size</code>,
+	  <code>alloc_size</code>, <code>ext</code>, <code>ptr_type</code>.
+	  Block <code>data</code> contains list of entities just like
+	  fixed size arrays. The traversal starts
           form zero index. So that, having a declaration like this:
           
           <programlisting language="c"><xi:include
@@ -1901,12 +1908,12 @@ sizeof (date_t) = 4
       <section>
         <title>SCM format</title>
         <para>
-          The SCM is also a METARESC-specific data representation format. It
-          is intended for programs written in Scheme language as it
-          has compatible grammar. Serialization is performed by the
-          <code>MR_SAVE_SCM</code> macro, which accepts the name of
-          the type to be serialized and the pointer to the variable,
-          which provides the data:
+          The SCM is also a METARESC-specific data representation
+          format. It is intended for programs written in Scheme
+          language as it has compatible grammar. Serialization is
+          performed by the <code>MR_SAVE_SCM</code> macro, which
+          accepts the name of the type to be serialized and the
+          pointer to the variable, which provides the data:
           
           <programlisting language="c"><xi:include
             href="../../examples/save_scm.c"

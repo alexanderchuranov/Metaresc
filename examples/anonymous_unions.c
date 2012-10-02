@@ -3,7 +3,7 @@
 
 #include <metaresc.h>
 
-TYPEDEF_STRUCT (struct1_t,
+TYPEDEF_STRUCT (struct_t,
                 (char *, name),
                 ANON_UNION (),
                   (int, x),
@@ -14,8 +14,8 @@ TYPEDEF_STRUCT (struct1_t,
 
 int main ()
 {
-  struct1_t s1;
+  struct_t s;
   
-  s1.y = .375;
+  s.y = .375;
   return (EXIT_SUCCESS);
 }

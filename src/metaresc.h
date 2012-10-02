@@ -85,7 +85,7 @@
 #define MR_TYPEDEF_PREFIX(MR_TYPE_NAME) MR_TYPE_NAME
 #endif /* MR_TYPEDEF_PREFIX */
 #ifndef MR_ANON_UNION_NAME
-#define MR_ANON_UNION_NAME(LINE) anon_union_ ## LINE
+#define MR_ANON_UNION_NAME(NAME) MR_IF_ELSE (MR_IS_EMPTY (NAME)) (anon_union) (NAME)
 #endif /* MR_ANON_UNION_NAME */
 #ifndef MR_CONSTRUCTOR_PREFIX
 #define MR_CONSTRUCTOR_PREFIX(MR_TYPE_NAME) mr_init_ ## MR_TYPE_NAME
@@ -409,12 +409,12 @@
 #define MR_IS_BUILTIN___const__ __const__,
 
 /* NB! for p99 mode only one anonymous union in struct is possible and it has default name */
-#define P00_COMMA_ANON_UNION ANON_UNION_DEF,
-#define P00_COMMA_NAMED_ANON_UNION NAMED_ANON_UNION,
+#define P00_COMMA_ANON_UNION ANON_UNION,
 #define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
+#define MR_UNIQ_NAME(LINE) name_ ## LINE
 #define MR_COMPILETIME_ASSERT(X) MR_COMPILETIME_ASSERT_ (X, __LINE__)
-#define MR_COMPILETIME_ASSERT_(X, LINE) typedef struct { int:-!!(X); } MR_ANON_UNION_NAME (LINE)
+#define MR_COMPILETIME_ASSERT_(X, LINE) typedef struct { int:-!!(X); } MR_UNIQ_NAME (LINE)
 /*
   For types defined using standard language approach you will need to create analog types with metaresc.
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
@@ -472,8 +472,6 @@
 #define MR_TYPEDEF_UNION(...) MR_UNFOLD (MR_TYPEDEF_UNION, __VA_ARGS__)
 #define MR_END_UNION(...) MR_UNFOLD (MR_END_UNION, __VA_ARGS__)
 #define MR_ANON_UNION(...) MR_UNFOLD (MR_ANON_UNION, __VA_ARGS__)
-#define MR_ANON_UNION_DEF(...) MR_UNFOLD (MR_ANON_UNION_DEF, __VA_ARGS__)
-#define MR_NAMED_ANON_UNION(...) MR_UNFOLD (MR_NAMED_ANON_UNION, __VA_ARGS__)
 #define MR_END_ANON_UNION(...) MR_UNFOLD (MR_END_ANON_UNION, __VA_ARGS__)
 
 #define MR_TYPEDEF_ENUM(...) MR_UNFOLD (MR_TYPEDEF_ENUM, __VA_ARGS__)
@@ -520,10 +518,8 @@
 
 #define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef union __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
 #define MR_END_UNION_PROTO(MR_TYPE_NAME, ...) } MR_TYPE_NAME;
-#define MR_ANON_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) MR_ANON_UNION_PROTO_ (MR_TYPE_NAME, __LINE__, __VA_ARGS__)
-#define MR_ANON_UNION_PROTO_(MR_TYPE_NAME, LINE, ATTR) MR_NAMED_ANON_UNION_PROTO (MR_TYPE_NAME, MR_ANON_UNION_NAME (LINE), ATTR)
-#define MR_ANON_UNION_DEF_PROTO(MR_TYPE_NAME, /* ATTR */ ...) MR_ANON_UNION_PROTO_ (MR_TYPE_NAME, , __VA_ARGS__)
-#define MR_NAMED_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, /* ATTR */ ...) char NAME[0]; union __VA_ARGS__ {
+#define MR_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, /* ATTR */ ...) MR_ANON_UNION_PROTO__ (MR_TYPE_NAME, MR_ANON_UNION_NAME (NAME), __VA_ARGS__)
+#define MR_ANON_UNION_PROTO__(MR_TYPE_NAME, NAME, ATTR) char NAME[0]; union ATTR {
 #define MR_END_ANON_UNION_PROTO(MR_TYPE_NAME, ...) };
 
 #define MR_TYPEDEF_ENUM_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef enum __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
@@ -642,18 +638,16 @@
 
 #define MR_TYPEDEF_UNION_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_UNION, __VA_ARGS__)
 #define MR_END_UNION_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
-#define MR_ANON_UNION_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_ANON_UNION_DESC_ (MR_TYPE_NAME, __LINE__, __VA_ARGS__)
-#define MR_ANON_UNION_DESC_(MR_TYPE_NAME, LINE, ATTR) MR_ANON_UNION_DESC__ (MR_TYPE_NAME, MR_ANON_UNION_NAME (LINE), ATTR)
-#define MR_ANON_UNION_DESC__(MR_TYPE_NAME, NAME, ATTR) MR_NAMED_ANON_UNION_DESC (MR_TYPE_NAME, NAME, ATTR)
-#define MR_ANON_UNION_DEF_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_ANON_UNION_DESC_ (MR_TYPE_NAME, , __VA_ARGS__)
+#define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...) MR_ANON_UNION_DESC_ (MR_TYPE_NAME, MR_ANON_UNION_NAME (NAME), __VA_ARGS__)
+#define MR_ANON_UNION_DESC_(...) MR_ANON_UNION_DESC__ (__VA_ARGS__)
 
-#define MR_NAMED_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...) {	\
+#define MR_ANON_UNION_DESC__(MR_TYPE_NAME, NAME, ATTR) {		\
     .type = "",								\
       .name = #NAME,							\
       .offset = offsetof (MR_TYPE_NAME, NAME),				\
       .mr_type = MR_TYPE_ANON_UNION,					\
       .mr_type_ext = MR_TYPE_EXT_NONE,					\
-      .comment = #__VA_ARGS__,						\
+      .comment = #ATTR,							\
       .ext = {(mr_td_t[]){ { .type = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, } }}, \
       .ptr_type = "mr_td_t",						\
 	 },

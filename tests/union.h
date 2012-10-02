@@ -19,7 +19,7 @@ TYPEDEF_STRUCT (struct_anon_union_enum_t,
 
 TYPEDEF_STRUCT (struct_named_anon_union_enum_t,
 		int dummy,
-		NAMED_ANON_UNION (xy),
+		ANON_UNION (xy),
 		float x,
 		int32_t y,
 		END_ANON_UNION ("discriminator"),
