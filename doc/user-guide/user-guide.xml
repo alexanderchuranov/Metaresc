@@ -24,12 +24,12 @@
      <title>Overview</title>
 
      <para>
-       METARESC  is  a  software  library  written  in  C  programming
-       language. It  allows declaring  types using a  special METARESC
-       grammar.  The  variables of  types  declared  that  way may  be
-       subsequently serialized  into various formats  and deserialized
+       METARESC is a software library written in C programming
+       language. It allows declaring types using a special METARESC
+       grammar. The variables of types declared that way may be
+       subsequently serialized into various formats and deserialized
        later. To achieve this the library adds metadata annotations to
-       types.  These annotations  may  be used  for  may purposes  far
+       types. These annotations may be used for may purposes far
        beyond just achieving the persistence.
      </para>
    </section>
@@ -1104,6 +1104,30 @@ space_t space = {
         As seen from the example, anonymous unions declared using the
         library language obey normal C rules — their members are
         accessed as if they were declared right in the structure.
+
+	Metaresc implementation of anonymous unions creates internal
+	type with the name <code>mr_type_anonymous_union_XXX_t</code>
+	where XXX is a counter place holder. In structure anonymous
+	union replaced on a field of that type. Name of this field
+	could be specified as a first argument for
+	<code>ANON_UNION</code> macro. If name is omitted then it
+	defaults to <code>anon_union</code>. Several anonymous unions
+	inside one structure must have unique names. Macro
+	<code>ANON_UNION</code> might have second argument -
+	attributes of the union, for example
+	<code>__attribute__((aligned((sizeof
+	(int64_t)))))</code>. Meta data of temporary type could be
+	specified via macro <code>END_ANON_UNION</code>. It have the
+	same semantics as all other meta data definitions.
+	
+         <programlisting language="c">
+	   END_ANON_UNION ( 
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
+	
       </para>
     </section>
     
@@ -1118,7 +1142,7 @@ space_t space = {
         run-time, just like any other structure delared using the
         language of the library. Moreover, you can programmatically
         walk through the signature of the function. This may be
-        helpful for some of your tasks.
+        helpful for run time type checking.
         <!-- TODO: add xref to the section explaining how function
              pointers are marshalled -->
       </para>
@@ -1151,13 +1175,22 @@ space_t space = {
         by using bit-fields — bit sequences, which reside in standard
         integer types side-by-side. METARESC language allows you to
         declare bit-fields of the structure via the
-        <code>BITFIELD</code> macro. It's arguments are the base type,
-        the name of the field and the number of bits it occupies. Base
-	type might be any intger type of enum. The
-        structure in the example below has several bit-fields. This
-        makes it possible to access each field individually without
-        having to encode/decode data, yet retains compact
-        representation in computer memory:
+        <code>BITFIELD</code> macro. It's arguments are similar to any
+	other declarations.
+	
+	<programlisting language="c">
+	  BITFIELD ( type, name, :width,
+	    comment<subscript>opt</subscript>,
+	    { pointer-on-user-data }<subscript>opt</subscript>,
+	    user-data-type<subscript>opt</subscript>
+	  )
+	</programlisting>
+	
+	Base type might be any intger type or enum. The structure in
+	the example below has several bit-fields. This makes it
+	possible to access each field individually without having to
+	encode/decode data, yet retains compact representation in
+	computer memory:
         
         <programlisting language="c"><xi:include
           href="../../examples/bitfields.h"
@@ -1172,9 +1205,9 @@ space_t space = {
       <para>
         In addition to the usual types found in C language, the
         library allows declaring a structure field to be of
-        METARESC-specific RARRAY type. There is no widely-accepted
-        idea on how to declare a resizable array in C; most
-        applications use their own patterns and naming
+        METARESC-specific RARRAY (Resizable Array) type. There is no
+        widely-accepted idea on how to declare a resizable array in C;
+        most applications use their own patterns and naming
         conventions. The RARRAY is a resizable array provided by the
         library. A structure field of RARRAY type may de declared as
         follows:
@@ -1186,17 +1219,20 @@ space_t space = {
         /></programlisting>
         
         The first declaration argument specifies the type of array
-        items, the second — the name of the field. If the first
+        items, the second — the name of the field. Those mandatory
+        arguments might be followed by field meta data. If the first
         argument is <code>employee_t</code>, as shown in example, then
         the <code>employees</code> member of the structure is a
         structure itself and has at least the following fields:
         
         <programlisting language="c"><![CDATA[
-employee_t * data;  // pointer to array items
-int32_t size;       // used space in bytes
-int32_t alloc_size; // allocated space in bytes
-mr_ptr_t ext;       // per-instance user data
-char * ptr_type;    // the name of the pointed-to object type
+	struct __attribute__((packed)) {
+	  employee_t * data;  // pointer to array items
+	  int32_t size;       // used space in bytes
+	  int32_t alloc_size; // allocated space in bytes
+	  mr_ptr_t ext;       // per-instance user data
+	  char * ptr_type;    // the name of the pointed-to object type
+	} employees;
 ]]></programlisting>
         
         The <code>ext</code> field is intended for additional data you
@@ -1237,10 +1273,10 @@ char * ptr_type;    // the name of the pointed-to object type
         most popular one. METARESC supports data persistence
         out-of-box, providing tools for serializing to and
         de-serializing from multiple data representation formats. The
-        supported formats are: XML, JSON, C-init, SCM and XDR. They
-        are described in details later in this guide. The XML, JSON,
-        C-init and SCM are textual formats and the XDR is a binary
-        format.
+        supported formats are: XML, JSON, C-init, SCM (Scheme-like
+        notation) and XDR. They are described in details later in this
+        guide. The XML, JSON, C-init and SCM are textual formats and
+        the XDR is a binary format.
       </para>
       
       <para>
@@ -1248,9 +1284,11 @@ char * ptr_type;    // the name of the pointed-to object type
         like <code>MR_SAVE_</code>XXX, where XXX is a suffix, which
         specifies the desired data representation. A macro like that
         accepts two arguments: the name of the serializable type and a
-        pointer to the variable of that type to be serialized. The
-        return value is a pointer to the character string. Is is
-        allocated dynamically and must be released using the
+        pointer to the variable of that type to be serialized. This
+        macro validates at compile time that type specified for
+        serialization matches type of provided pointer. The return
+        value is a pointer to the character string. Is is allocated
+        dynamically and must be released using the
         <code>MR_FREE</code> library macro. The following is an
         example of serializing data to XML:
         
@@ -1261,26 +1299,37 @@ char * ptr_type;    // the name of the pointed-to object type
         /></programlisting>
         
         If the serialization fails, the returned value is
-        <code>NULL</code>.
+        <code>NULL</code>. Advanced error handling described in
+        separate section <xref linkend="error-handling"/>.
       </para>
       
       <para>
         For de-serializing data from each textual format there is a
-        couple of macros: with two and three arguments. Macros with
-        three arguments take a type name, a pointer to the source
-        string and a pointer to the variable that will receive the
-        loaded value. The usage looks like the following:
+        macro MR_LOAD_XXX. It might be called with two or three
+        arguments. Based on number of arguments return value is
+        different. Macro with three arguments take a type name, a
+        pointer to the source string and a pointer to the variable
+        that will receive the loaded value. The returned value is an
+        <code>int</code>, which is zero if loading failed and non-zero
+        otherwise.
+	The usage looks like the following:
         
         <programlisting language="c"><xi:include
           href="../../examples/deserialization_3_args.c"
           parse="text"
           xmlns:xi="http://www.w3.org/2003/XInclude"
         /></programlisting>
-        
-        The naming scheme is <code>MR_LOAD_</code>XXX, where XXX
-        specifies the format. The returned value is an
-        <code>int</code>, which is zero if loading failed and non-zero
-        otherwise.
+
+	The same macro with two arguments returns object of
+	deserialized type and takes type name and pointer to the
+	source string. Load errors could be catched by means of <xref
+	linkend="error-handling"/>. Usage example follows:
+	
+        <programlisting language="c"><xi:include
+          href="../../examples/deserialization_2_args.c"
+          parse="text"
+          xmlns:xi="http://www.w3.org/2003/XInclude"
+        /></programlisting>
       </para>
       
     </section>
@@ -1986,6 +2035,15 @@ sizeof (date_t) = 4
       <para />
     </section>
     
+  </section>
+  
+  <section xml:id="error-handling">
+    <title>Advanced error handling</title>
+    
+    <section>
+      <title>Verbosity levels</title>
+      <para />
+    </section>
   </section>
   
   <appendix>

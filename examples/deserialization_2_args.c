@@ -21,18 +21,13 @@ main (int argc, char * argv[])
     "<salary>123456</salary>"
     "</employee>";
   
-  employee_t employee;
-  
-  if (0 == MR_LOAD_XML (employee_t, source, &employee))
-    fprintf (stderr, "De-serialization error has occurred.\n");
-  else
-    {
-      printf ("%11s: %s\n"
-	      "%11s: %s\n"
-	      "%11s: %u\n",
-  	      "firstname", employee.firstname,
-	      "lastname",  employee.lastname,
-	      "salary",    employee.salary);
-    }
+  employee_t employee = MR_LOAD_XML (employee_t, source);
+  printf ("%11s: %s\n"
+	  "%11s: %s\n"
+	  "%11s: %u\n",
+	  "firstname", employee.firstname,
+	  "lastname",  employee.lastname,
+	  "salary",    employee.salary);
+
   return (EXIT_SUCCESS);
 }
