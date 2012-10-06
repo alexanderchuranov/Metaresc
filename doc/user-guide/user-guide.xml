@@ -1386,7 +1386,9 @@ space_t space = {
           If the field of the structure has enumerated type, then when
           serializing the field into a textual representation METARESC
           uses the readable enumeration member name instead of
-          numerical value. For instance, if declared like this:
+          numerical value. If saved value is not listed in
+          enumeration, then it will be saved as a numerical value. For
+          instance, if declared like this:
           
           <programlisting language="c"><xi:include
             href="../../examples/marshalling_enumerations.h"
@@ -1405,9 +1407,6 @@ space_t space = {
   <fg>WHITE</fg>
 </cons25>]]></programlisting>
         </para>
-        
-        <!-- TODO: What if the value in XML is not in the set of
-             enumeration members? -->
       </section>
       
       <section>
@@ -1416,10 +1415,8 @@ space_t space = {
           If the field of the structure is an array, then during
           serialization the library saves each element's value. The
           process starts from the element with zero index. The
-          elements are named after the array field. <!-- TODO: is is
-          correct? Is this compatible with the XML Schemas that may be
-          written to verify the serialized output? --> As usual, there
-          is an example. The declaration looks like this:
+          elements are named after the array field. As usual, there is
+          an example. The declaration looks like this:
           
           <programlisting language="c"><xi:include
             href="../../examples/marshalling_arrays.h"
@@ -1430,13 +1427,29 @@ space_t space = {
           And the XML output looks like this:
           
           <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
-<wa>
+<a>
   <a>
     <a>11</a>
     <a>17</a>
     <a>23</a>
   </a>
-</wa>]]></programlisting>
+</a>
+<?xml version="1.0"?>
+<a2d>
+  <a>
+    <a>
+      <a>1</a>
+      <a>2</a>
+    </a>
+    <a>
+      <a>3</a>
+      <a>4</a>
+    </a>
+  </a>
+</a2d>]]></programlisting>
+
+	  Two-dimensional arrays saves as an array of rows. Each row
+	  is one-dimnsional array. 
         </para>
       </section>
       
@@ -1450,22 +1463,44 @@ space_t space = {
           memory consumption of the program and don't store all the
           fields of the union in the memory at the same time
           <footnote><para>see C99 6.7.2.1p5 and
-          6.7.2.1p14</para></footnote>. It's tricky to serialize the
+          6.7.2.1p14</para></footnote>.  It's tricky to serialize the
           union, since C doesn't provide any means to determine which
           field was most recently written. At present, METARESC relies
           on the behavior of GCC, which allows cross-reading of union
           members<footnote><para>The library code is based on the
           assumption that all side-effects of statements that write to
           the union are completed before the serialization takes
-          place.</para></footnote>: the library serializes the value
-          of the first member.
-        </para>
+          place.</para></footnote>. By default library serializes the
+          value of the first union member. There is a convention that
+          allows to choose union branch at the time of
+          serialization. Discriminator value should be stored in
+          structure at the same lavel as union. Name of the
+          discriminator field should be specified in meta data comment
+          of the union. Discriminator field could be of the following
+          types: integer, bit-field, string, static string,
+          enumeration or pointer on one of this types. Value of
+	  discriminator field interpreted in the following manner:
+	  <itemizedlist>
+	    <listitem><para>
+	      integers, bit-fields: interpreted as union branch index
+	      counted from zero.
+	    </para></listitem>
+	    <listitem><para>
+	      strings, static strings: interpreted as a union branch name.
+	    </para></listitem>
+	    <listitem><para>
+	      enumeration: definitions of enumeration values should
+	      contain meta data comment with the name of the
+	      designated union branch.
+	    </para></listitem>
+	  </itemizedlist>
+	</para>
         
         <para>
-          So then, having the declaration like this:
+          So then, having the sample like this:
           
           <programlisting language="c"><xi:include
-            href="../../examples/marshalling_unions.h"
+            href="../../examples/marshalling_unions.c"
             parse="text"
             xmlns:xi="http://www.w3.org/2003/XInclude"
           /></programlisting>
@@ -1473,15 +1508,20 @@ space_t space = {
           You may expect the following output on GCC, regardless of
           what member was most recently written:
           
-          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
-<fl>
-  <ar>
-    <ar>195</ar>
-    <ar>245</ar>
-    <ar>72</ar>
-    <ar>64</ar>
-  </ar>
-</fl> ]]></programlisting>
+          <programlisting language="xml"><![CDATA[
+<?xml version="1.0"?>
+<u>
+  <union_val>
+    <uc_array>
+      <uc_array>219</uc_array>
+      <uc_array>15</uc_array>
+      <uc_array>73</uc_array>
+      <uc_array>64</uc_array>
+    </uc_array>
+  </union_val>
+  <union_discriminator>UD_UC_ARRAY</union_discriminator>
+</u>
+]]></programlisting>
           
           This, of course, also depends on the language
           implementation. For example, there may be more
