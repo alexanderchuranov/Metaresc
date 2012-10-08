@@ -680,7 +680,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
    
    <section xml:id="type-declaration">
      <title>Declaring Types</title>
-
+     
      <section>
        <title>Why special grammar?</title>
        <para>
@@ -706,11 +706,11 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 
        <para>
          In METARESC language the structure is declared using
-         <code>TYPEDEF_STRUCT</code> variadic macro, that is with
-         variable number of arguments. The first argument is an
-         identifier - the name of the structure and the rest is the
-         list of field declarations. Recall the example from the
-         previous chapter:
+         <code>TYPEDEF_STRUCT</code> variadic macro, that has variable
+         number of arguments. The first argument is an identifier -
+         the name of the structure and the rest is the list of field
+         declarations, see <xref linkend="decl-fields"/>. Recall the
+         example from the previous chapter:
 
          <programlisting language="c"><xi:include
            href="../../examples/simple_structure.h"
@@ -735,15 +735,140 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	 <code>type-attributes</code> is an attruibute for type
 	 declaration, for example it could be <code>__attribute__
 	 ((packed))</code>.  This parameter is also saved as a string
-	 in type's metadata.  <code>comment</code> is an arbitrary
-	 text that would be saved as type's metadta.
+	 in type's metadata. <code>comment</code> is an arbitrary text
+	 that would be saved as type's metadta.
 	 <code>poiner-on-user-data</code> is a void pointer for user
 	 data. For serialization of pointer-on-user-data it is
 	 possible to specify type of this pointer via
 	 <code>user-data-type</code>. This type should be declared by
 	 means METARESC.
        </para>
+     </section>
 
+     <section xml:id="decl-unions">
+       <title>Declaring unions</title>
+       <para>
+	 The declaration of the named union type follows the same
+	 rules as for the structure. The only syntactic difference is
+	 the use of the <code>TYPEDEF_UNION</code> macro. After name
+	 of the type <code>ATTRIBUTE (...)</code> may follow. The rest
+	 arguments are list of the union members, see <xref
+	 linkend="decl-fields"/>. Sample follows:
+        
+	 <programlisting language="c"><xi:include
+	 href="../../examples/named_union.h"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+	 /></programlisting>
+       </para>
+     </section>
+    
+     <section>
+       <title>Declaring enumerations</title>
+       <para>
+	 The library allows you to declare metadata-enabled
+	 enumerations. This may be used, for example, if you want to
+	 walk over enumeration members programmatically from inside
+	 the running application. Another example is METARESC
+	 itself. If the enumeration is declared using the library
+	 language and the fields of the enumeration type present in a
+	 structure, then when the instance of the structure is
+	 serialized the output may contain readable enumeration
+	 constant name for the field value instead of a number. For
+	 example, see <xref linkend="marsh-enums"/>.
+       </para>
+      
+       <para>
+	 Enumerations are declared using the <code>TYPEDEF_ENUM</code>
+	 variadic macro. The first argument is the name of the
+	 enumerated type. This macro is similar to the
+	 <code>TYPEDEF_STRUCT</code>. It might have second optional
+	 argument <code>ATTRIBUTE (...)</code> with type attributes
+	 and meta data. Symantic and usage is equivalent to structures
+	 declarations. The rest arguments of <code>TYPEDEF_ENUM</code>
+	 are considered to be declarations of enumeration.
+	 Declarations have the following form:
+        
+	 <programlisting language="c">
+	   ( name, = value<subscript>opt</subscript>,
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
+        
+	 Each enumerator declaration should at least specify the name
+	 of the constant. If the declaration only specifies a name,
+	 then parentheses may be omitted. The second argument is
+	 optional and, if present, specifies the value preceded with
+	 equals sign. Enumeration constant values obey usual C rules:
+	 if the value is not specified, it recieves the incremented
+	 value of the previous constant; the first constant recives
+	 the value zero if it is not specified explicitly. The
+	 following code exemplifies this:
+        
+	 <programlisting language="c"><xi:include
+	 href="../../examples/enums.h"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+         /></programlisting>
+        
+	 Comment, pointer-on-user-data and user-data-type arguments
+	 have the same meaning as in structure member declarations.
+       </para>
+     </section>
+    
+     <section xml:id="decl-char-array-type">
+       <title>Declaring chars array type</title>
+       <para>
+	 The Library allows to declare types for strings of fixed
+	 length. It is a type of char array of fixed length declared
+	 like following <code>typedef char
+	 char_array_t[8]</code>. This is a special case because this
+	 kind of arrays should be serialized as strings, but not as an
+	 array of characters. The macro
+	 <code>TYPEDEF_CHAR_ARRAY</code> has two mandatory
+	 arguments. The first argument is a name of new type, second
+	 is a length of the string. Type meta data may follow after
+	 mandatory agrument:
+	 <programlisting language="c">
+	   TYPEDEF_CHAR_ARRAY (type_name, length,
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
+       </para>
+     </section>
+
+     <section xml:id="decl-funcs-type">
+       <title>Declaring function type</title>
+       <para>
+	 Library provides a macro for declaration of function
+	 types. <code>TYPEDEF_FUNC</code> gets three mandatory
+	 arguments and optional type meta data.
+	 
+	 <programlisting language="c">
+	   TYPEDEF_FUNC (type_name, return_type, (func_args_list),
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
+
+	 Function types can't be serialized, but library has meta data
+	 about return type and types of all arguments. This
+	 information could be inspected programmatically. Example follows:
+	 <programlisting language="c"><xi:include
+	 href="../../examples/function_type.h"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+	 /></programlisting>
+       </para>
+     </section>
+
+     <section xml:id="decl-fields">
+       <title>Declaring structure/union fields</title>
        <para>
 	 After type name and optional type's attributes fields
 	 declaration follows. Field's declaration should be delimitted
@@ -762,7 +887,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	 </programlisting>
         
         The first two arguments are mandatory and specify field type
-        and name.  Other four arguments are optional.  If any of
+        and name. Other four arguments are optional. If any of
         optional arguments is used in a declaration, then the previous
         optional arguments must be specified too. That is to have a
         comment you need to specify type suffix as well. To make
@@ -790,6 +915,12 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
          function. Type suffixes in METARESC work the same way. For
          immediate example of type suffixes see <xref
          linkend="decl-arrays"/> or <xref linkend="decl-pfuncs"/>.
+       </para>
+
+       <para>
+	 Fields that preceded with key word <code>NONE</code> wil lnot
+	 be serialized. Meta information of this field will be
+	 incomplete and has type <code>MR_TYPE_VOID</code>
        </para>
        
        <para>
@@ -895,7 +1026,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
          involved. Most notable are anonymous unions and bit-fields.
          Structures may also have fields of METARESC-specific
          types. For more information see <xref
-         linkend="decl-unions"/>, <xref linkend="decl-bfields"/> and
+         linkend="decl-anon-union"/>, <xref linkend="decl-bfields"/> and
          <xref linkend="decl-rarrays"/>.
        </para>
      </section>
@@ -929,67 +1060,12 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
-      </para>
-    </section>
+       </para>
+     </section>
     
-    <section>
-      <title>Declaring enumerations</title>
-      <para>
-        The library allows you to declare metadata-enabled
-        enumerations. This may be used, for example, if you want to
-        walk over enumeration members programmatically from inside the
-        running application. Another example is METARESC itself. If
-        the enumeration is declared using the library language and the
-        fields of the enumeration type present in a structure, then
-        when the instance of the structure is serialized the output
-        may contain readable enumeration constant name for the field
-        value instead of a number. For example, see <xref
-        linkend="marsh-enums"/>.
-      </para>
-      
-      <para>
-        Enumerations are declared using the <code>TYPEDEF_ENUM</code>
-        variadic macro. The first argument is the name of the
-        enumerated type. This macro is similar to the
-        <code>TYPEDEF_STRUCT</code>. It might have second optional
-        argument <code>ATTRIBUTE (...)</code> with type attributes and
-        meta data. Symantic and usage is equivalent to structures
-        declarations. The rest arguments of <code>TYPEDEF_ENUM</code>
-        are considered to be declarations of enumeration.
-        Declarations have the following form:
-        
-        <programlisting language="c">
-	  ( name, = value<subscript>opt</subscript>,
-          comment<subscript>opt</subscript>,
-          { pointer-on-user-data }<subscript>opt</subscript>,
-          user-data-type<subscript>opt</subscript>
-          )
-	</programlisting>
-        
-        Each enumerator declaration should at least specify the name
-        of the constant. If the declaration only specifies a name,
-        then parentheses may be omitted. The second argument is
-        optional and, if present, specifies the value preceded with
-        equals sign. Enumeration constant values obey usual C rules:
-        if the value is not specified, it recieves the incremented
-        value of the previous constant; the first constant recives the
-        value zero if it is not specified explicitly. The following
-        code exemplifies this:
-        
-        <programlisting language="c"><xi:include
-           href="../../examples/enums.h"
-           parse="text"
-           xmlns:xi="http://www.w3.org/2003/XInclude"
-         /></programlisting>
-        
-        Comment, pointer-on-user-data and user-data-type arguments
-        have the same meaning as in structure member declarations.
-      </para>
-    </section>
-    
-    <section xml:id="decl-arrays">
-      <title>Declaring arrays</title>
-      <para>
+     <section xml:id="decl-arrays">
+       <title>Declaring arrays</title>
+       <para>
          To declare a structure field as an array with fixed number of
          elements you may use the third — type suffix — argument of a
          declaration. METARESC is able to recognize one- and two-
@@ -1068,57 +1144,135 @@ space_t space = {
 };
 	</programlisting>
        </para>
-    </section>
-    
-    <section xml:id="decl-unions">
-      <title>Declaring unions</title>
-      <para>
-        The declaration of the named union type follows the same rules
-        as for the structure. The only syntactic difference is the use
-        of the <code>TYPEDEF_UNION</code> macro:
-        
-        <programlisting language="c"><xi:include
-          href="../../examples/named_union.h"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-      </para>
-      
-      <para>
-        The C language allows omitting identifiers when declaring
-        structures and unions, this results in a type which can only
-        be reffered to by the declaration of which it is a part.
-        <!-- TODO: add reference §6.7.2.3(5) -->
-        METARESC partially follows this and allows to declare a union
-        member of the structure without having to declare the type for
-        the union first. A union member like this is called
-        <firstterm>anonymous union</firstterm>. The following code
-        sample declares anonymous unions:
-        
-        <programlisting language="c"><xi:include
-          href="../../examples/anonymous_unions.c"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-        
-        As seen from the example, anonymous unions declared using the
-        library language obey normal C rules — their members are
-        accessed as if they were declared right in the structure.
 
-	Metaresc implementation of anonymous unions creates internal
-	type with the name <code>mr_type_anonymous_union_XXX_t</code>
-	where XXX is a counter place holder. In structure anonymous
-	union replaced on a field of that type. Name of this field
-	could be specified as a first argument for
-	<code>ANON_UNION</code> macro. If name is omitted then it
-	defaults to <code>anon_union</code>. Several anonymous unions
-	inside one structure must have unique names. Macro
-	<code>ANON_UNION</code> might have second argument -
-	attributes of the union, for example
-	<code>__attribute__((aligned((sizeof
-	(int64_t)))))</code>. Meta data of temporary type could be
-	specified via macro <code>END_ANON_UNION</code>. It have the
-	same semantics as all other meta data definitions.
+       <para>
+	 There is a special case for arrays of <code>char</code>. By
+	 default such fields will be serialized as an array of single
+	 characters. For serialization as string you need to use key
+	 word <code>CHAR_ARRAY</code> before field
+	 declaration. Another option is to declare chars array type as
+	 described here <xref linkend="decl-char-array-type"/> and use
+	 it as a field type.
+       </para>
+     </section>
+    
+     <section xml:id="decl-pfuncs">
+       <title>Declaring pointers to functions</title>
+       <para>
+	 The C language allows you to declare a field of the structure
+	 as a pointer to function — and for the sake of completeness
+	 METARESC allows this too. From the serialization point of
+	 view this has little meaning. The structure type having a
+	 pointer-to-function member can be, however, inspected at
+	 run-time, just like any other structure declared using the
+	 language of the library. Moreover, you can programmatically
+	 walk through the signature of the function. This may be
+	 helpful for run time type checking.
+       </para>
+      
+       <para>
+	 To declare a function pointer just use the type suffix
+	 argument of a field declaration and pass a parenthesized list
+	 of types. The only difference from a normal function pointer
+	 declaration is that you don't use an asterisk and additional
+	 parentheses around pointer name:
+        
+	 <programlisting language="c"><xi:include
+	 href="../../examples/function_pointers.c"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+	 /></programlisting>
+        
+	 The example above prints the following:
+        
+	 <screen><![CDATA[1 is odd
+4 is even
+7 is odd]]></screen>
+       </para>
+     </section>
+
+     <section xml:id="decl-composite">
+       <title>Declaring field of composite type and pointers</title>
+       <para>
+	 Fields that has type declared by means of Metaresc could be
+	 defined as any other basic type. The same is true for
+	 pointers on composite and basic types. Pointers on structures
+	 that are not declared yet should use key word
+	 <code>struct</code>. Pointers on pointers and any other
+	 higher level of pointers should be declared by means of
+	 wrapper types. Sample follows:
+	 
+	 <programlisting language="c"><xi:include
+	 href="../../examples/double_pointer.c"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+	 /></programlisting>
+
+	 This sample produces the following output:
+	 <screen><![CDATA[
+<?xml version="1.0"?>
+<idp>
+  <ip_ptr>
+    <ip_ptr>
+      <ptr>
+        <ptr>1234</ptr>
+      </ptr>
+    </ip_ptr>
+  </ip_ptr>
+  <ptr>
+    <ptr>4321</ptr>
+  </ptr>
+</idp>
+]]></screen>
+       </para>
+     </section>
+    
+     <section xml:id="decl-anon-union">
+       <title>Declaring anonymous unions</title>
+       <para>
+	 The C language allows omitting identifiers when declaring
+	 structures and unions, this results in a type which can only
+	 be reffered to by the declaration of which it is a part.
+	 <!-- TODO: add reference §6.7.2.3(5) -->
+	 METARESC partially follows this and allows to declare a union
+	 member of the structure without having to declare the type
+	 for the union first. A union member like this is called
+	 <firstterm>anonymous union</firstterm>. The following code
+	 sample declares anonymous unions:
+        
+	 <programlisting language="c"><xi:include
+	 href="../../examples/anonymous_unions.c"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+	 /></programlisting>
+        
+	 As seen from the example, anonymous unions declared using the
+	 library language obey normal C rules — their members are
+	 accessed as if they were declared right in the structure.
+
+	 Metaresc implementation of anonymous unions creates internal
+	 type with the name <code>mr_type_anonymous_union_XXX_t</code>
+	 where XXX is a counter place holder. In structure anonymous
+	 union replaced on a field of that type. Name of this field
+	 could be specified as a first argument for
+	 <code>ANON_UNION</code> macro.
+
+         <programlisting language="c">
+	   ANON_UNION ( 
+	   name<subscript>opt</subscript>,
+	   attributes<subscript>opt</subscript>
+	   )
+	 </programlisting>
+
+	 If name is omitted then it defaults to
+	 <code>anon_union</code>. Several anonymous unions inside one
+	 structure must have unique names. Macro
+	 <code>ANON_UNION</code> might have second argument -
+	 attributes of the union, for example
+	 <code>__attribute__((aligned((sizeof
+	 (int64_t)))))</code>. Meta data of temporary type could be
+	 specified via macro <code>END_ANON_UNION</code>. It has the
+	 same semantics as all other meta data definitions.
 	
          <programlisting language="c">
 	   END_ANON_UNION ( 
@@ -1128,144 +1282,107 @@ space_t space = {
 	   )
 	 </programlisting>
 	
-      </para>
-    </section>
+       </para>
+     </section>
     
-    <section xml:id="decl-pfuncs">
-      <title>Declaring pointers to functions</title>
-      <para>
-        The C language allows you to declare a field of the structure
-        as a pointer to function — and for the sake of completeness
-        METARESC allows this too. From the serialization point of view
-        this has little meaning. The structure type having a
-        pointer-to-function member can be, however, inspected at
-        run-time, just like any other structure delared using the
-        language of the library. Moreover, you can programmatically
-        walk through the signature of the function. This may be
-        helpful for run time type checking.
-        <!-- TODO: add xref to the section explaining how function
-             pointers are marshalled -->
-      </para>
-      
-      <para>
-        To declare a function pointer just use the type suffix
-        argument of a field declaration and pass a parenthesized
-        list of types. The only difference from a normal function
-        pointer declaration is that you don't use an asterisk and
-        additional parentheses around pointer name:
-        
-        <programlisting language="c"><xi:include
-          href="../../examples/function_pointers.c"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-        
-        The example above prints the following:
-        
-        <screen><![CDATA[1 is odd
-4 is even
-7 is odd]]></screen>
-      </para>
-    </section>
-    
-    <section xml:id="decl-bfields">
-      <title>Declaring bit-fields</title>
-      <para>
-        Structures may implement memory-efficient storage of integers
-        by using bit-fields — bit sequences, which reside in standard
-        integer types side-by-side. METARESC language allows you to
-        declare bit-fields of the structure via the
-        <code>BITFIELD</code> macro. It's arguments are similar to any
-	other declarations.
+     <section xml:id="decl-bfields">
+       <title>Declaring bit-fields</title>
+       <para>
+	 Structures may implement memory-efficient storage of integers
+	 by using bit-fields — bit sequences, which reside in standard
+	 integer types side-by-side. METARESC language allows you to
+	 declare bit-fields of the structure via the
+	 <code>BITFIELD</code> macro. It's arguments are similar to
+	 any other declarations.
 	
-	<programlisting language="c">
-	  BITFIELD ( type, name, :width,
-	    comment<subscript>opt</subscript>,
-	    { pointer-on-user-data }<subscript>opt</subscript>,
-	    user-data-type<subscript>opt</subscript>
-	  )
-	</programlisting>
+	 <programlisting language="c">
+	   BITFIELD ( type, name, :width,
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
 	
-	Base type might be any intger type or enum. The structure in
-	the example below has several bit-fields. This makes it
-	possible to access each field individually without having to
-	encode/decode data, yet retains compact representation in
-	computer memory:
+	 Base type might be any intger type or enum. The structure in
+	 the example below has several bit-fields. This makes it
+	 possible to access each field individually without having to
+	 encode/decode data, yet retains compact representation in
+	 computer memory:
         
-        <programlisting language="c"><xi:include
-          href="../../examples/bitfields.h"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
-      </para>
-    </section>
+	 <programlisting language="c"><xi:include
+	 href="../../examples/bitfields.h"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+	 /></programlisting>
+       </para>
+     </section>
     
-    <section xml:id="decl-rarrays">
-      <title>Declaring RARRAYs</title>
-      <para>
-        In addition to the usual types found in C language, the
-        library allows declaring a structure field to be of
-        METARESC-specific RARRAY (Resizable Array) type. There is no
-        widely-accepted idea on how to declare a resizable array in C;
-        most applications use their own patterns and naming
-        conventions. The RARRAY is a resizable array provided by the
-        library. A structure field of RARRAY type may de declared as
-        follows:
+     <section xml:id="decl-rarrays">
+       <title>Declaring RARRAYs</title>
+       <para>
+	 In addition to the usual types found in C language, the
+	 library allows declaring a structure field to be of
+	 METARESC-specific RARRAY (Resizable Array) type. There is no
+	 widely-accepted idea on how to declare a resizable array in
+	 C; most applications use their own patterns and naming
+	 conventions. The RARRAY is a resizable array provided by the
+	 library. A structure field of RARRAY type may de declared as
+	 follows:
         
-        <programlisting language="c"><xi:include
-          href="../../examples/decl_rarray.h"
-          parse="text"
-          xmlns:xi="http://www.w3.org/2003/XInclude"
-        /></programlisting>
+	 <programlisting language="c"><xi:include
+	 href="../../examples/decl_rarray.h"
+	 parse="text"
+	 xmlns:xi="http://www.w3.org/2003/XInclude"
+	 /></programlisting>
         
-        The first declaration argument specifies the type of array
-        items, the second — the name of the field. Those mandatory
-        arguments might be followed by field meta data. If the first
-        argument is <code>employee_t</code>, as shown in example, then
-        the <code>employees</code> member of the structure is a
-        structure itself and has at least the following fields:
+	 The first declaration argument specifies the type of array
+	 items, the second — the name of the field. Those mandatory
+	 arguments might be followed by field meta data. If the first
+	 argument is <code>employee_t</code>, as shown in example,
+	 then the <code>employees</code> member of the structure is a
+	 structure itself and has at least the following fields:
         
-        <programlisting language="c"><![CDATA[
-	struct __attribute__((packed)) {
-	  employee_t * data;  // pointer to array items
-	  int32_t size;       // used space in bytes
-	  int32_t alloc_size; // allocated space in bytes
-	  mr_ptr_t ext;       // per-instance user data
-	  char * ptr_type;    // the name of the pointed-to object type
-	} employees;
-]]></programlisting>
+	 <programlisting language="c"><![CDATA[
+	 struct __attribute__((packed)) {
+	 employee_t * data;  // pointer to array items
+	 int32_t size;       // used space in bytes
+	 int32_t alloc_size; // allocated space in bytes
+	 mr_ptr_t ext;       // per-instance user data
+	 char * ptr_type;    // the name of the pointed-to object type
+	 } employees;
+	 ]]></programlisting>
         
-        The <code>ext</code> field is intended for additional data you
-        may need to attach to the instance of resizable array. Usage
-        of <code>ext</code> and <code>ptr_type</code> fields is
-        optional. You may safely zeroize the fields. However, to
-        serialize the <code>ext</code> field correctly (if it is
-        non-null), set <code>ptr_type</code> to character string,
-        containing the name of the type of the object the
-        <code>ext</code> field points to.
-      </para>
+	 The <code>ext</code> field is intended for additional data
+	 you may need to attach to the instance of resizable
+	 array. Usage of <code>ext</code> and <code>ptr_type</code>
+	 fields is optional. You may safely zeroize the
+	 fields. However, to serialize the <code>ext</code> field
+	 correctly (if it is non-null), set <code>ptr_type</code> to
+	 character string, containing the name of the type of the
+	 object the <code>ext</code> field points to.
+       </para>
       
-      <para>
-        Since RARRAY keyword produces ordinary data structure, you may
-        use its fileds as you see fit. The library, however, will
-        always assume that the memory pointed to by the
-        <code>data</code> field is allocated using the
-        <code>MR_MALLOC</code> macro. When loading data from external
-        source, you must use <code>MR_FREE</code> to free the memory,
-        occupied by resizable array items ( which the
-        <code>data</code> member points to ), when the array is no
-        longer necessary.
-      </para>
-    </section>
-    
-  </section>
+       <para>
+	 Since RARRAY keyword produces ordinary data structure, you
+	 may use its fileds as you see fit. The library, however, will
+	 always assume that the memory pointed to by the
+	 <code>data</code> field is allocated using the
+	 <code>MR_MALLOC</code> macro. When loading data from external
+	 source, you must use <code>MR_FREE</code> to free the memory,
+	 occupied by resizable array items ( which the
+	 <code>data</code> member points to ), when the array is no
+	 longer necessary.
+       </para>
+     </section>
+     
+   </section>
   
-  <section xml:id="data-persistence">
-    <title>Data Persistence</title>
+   <section xml:id="data-persistence">
+     <title>Data Persistence</title>
     
-    <section>
-      <title>Overview</title>
-      <para>
+     <section>
+       <title>Overview</title>
+       <para>
         Among various applications of metadata, data persistence — the
         ability to save objects from the memory into a storage
         external to the program and successfully restore them later,

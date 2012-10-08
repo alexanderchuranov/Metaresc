@@ -8,12 +8,14 @@
 TYPEDEF_ENUM (union_discriminator_t,
 	      (UD_VOID_PTR, , "void_ptr"),
 	      (UD_UC_ARRAY, , "uc_array"),
+	      (UD_U32, , "u32"),
 	      (UD_FLOAT_VAL, , "float_val")
 	      )
 
 TYPEDEF_UNION (union_t,
 	       (void *, void_ptr),
                (unsigned char, uc_array, [sizeof (float)]),
+	       (uint32_t, u32),
                (float, float_val)
                )
 

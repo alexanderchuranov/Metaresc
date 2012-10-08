@@ -18,7 +18,7 @@ TYPEDEF_STRUCT (plane_t,
                 )
 
 TYPEDEF_STRUCT (space_t,
-                (plane_t, planes, [2])
+                (plane_t, planes, [2]),
                 )
 
 int main ()
