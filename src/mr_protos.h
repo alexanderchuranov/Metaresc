@@ -8,7 +8,7 @@ TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES ( , "pointer on any type"),
 	       (void *, ptr, , "default void pointer")
 	       )
 
-TYPEDEF_FUNC (string_t, char, , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY)
+TYPEDEF_FUNC (string_t, char, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
 
 TYPEDEF_ENUM (mr_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      (MR_LL_ALL, = 0),
@@ -311,7 +311,7 @@ TYPEDEF_STRUCT (mr_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
 		(mr_save_io_t, save, , "save handlers"),
 		)
 
-TYPEDEF_FUNC (mr_output_format_t, char *, (mr_ptrdes_t *), "formater handler")
+TYPEDEF_FUNC (mr_output_format_t, char *, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
 
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
