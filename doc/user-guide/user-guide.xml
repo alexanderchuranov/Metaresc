@@ -359,7 +359,7 @@
            previous section is convenient and suitable for many types
            of applications. It is the recommended way to use the
            library unless you have specific requirements for memory and
-           CPU usage. Applications written it C language are likely to
+           CPU usage. Applications written in C language are likely to
            have such requirements. And this is why you may want to
            consider the other method of accessing the METARESC
            facilities from your program.
@@ -436,7 +436,7 @@
            which includes library headers, is executed. If the same
            serializable type declaration is included into more than one
            source file, the code to register the same type may be
-           called more than once. The library detecs that the type is
+           called more than once. The library detects that the type is
            already registered and does not perform the registration
            again. This optimization is performed automatically and is
            not controlled by the client application.
@@ -717,31 +717,6 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
            parse="text"
            xmlns:xi="http://www.w3.org/2003/XInclude"
          /></programlisting>
-
-	 Macro <code>TYPEDEF_STRUCT</code> provides a mechanism for
-	 specification of metadata for type itself. Second argument
-	 after type name might have prefix <code>ATTRIBUTE</code>.
-	 After this key-word there should be a list of metadata in
-	 parentheses. 
-         <programlisting language="c">
-	   ATTRIBUTE (
-	   type-attributes<subscript>opt</subscript>,
-	   comment<subscript>opt</subscript>,
-	   { pointer-on-user-data }<subscript>opt</subscript>,
-	   user-data-type<subscript>opt</subscript>
-	   )
-	 </programlisting>
-	 
-	 <code>type-attributes</code> is an attruibute for type
-	 declaration, for example it could be <code>__attribute__
-	 ((packed))</code>.  This parameter is also saved as a string
-	 in type's metadata. <code>comment</code> is an arbitrary text
-	 that would be saved as type's metadta.
-	 <code>poiner-on-user-data</code> is a void pointer for user
-	 data. For serialization of pointer-on-user-data it is
-	 possible to specify type of this pointer via
-	 <code>user-data-type</code>. This type should be declared by
-	 means METARESC.
        </para>
      </section>
 
@@ -750,8 +725,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
        <para>
 	 The declaration of the named union type follows the same
 	 rules as for the structure. The only syntactic difference is
-	 the use of the <code>TYPEDEF_UNION</code> macro. After name
-	 of the type <code>ATTRIBUTE (...)</code> may follow. The rest
+	 the use of the <code>TYPEDEF_UNION</code> macro. The rest
 	 arguments are list of the union members, see <xref
 	 linkend="decl-fields"/>. Sample follows:
         
@@ -781,13 +755,9 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
        <para>
 	 Enumerations are declared using the <code>TYPEDEF_ENUM</code>
 	 variadic macro. The first argument is the name of the
-	 enumerated type. This macro is similar to the
-	 <code>TYPEDEF_STRUCT</code>. It might have second optional
-	 argument <code>ATTRIBUTE (...)</code> with type attributes
-	 and meta data. Symantic and usage is equivalent to structures
-	 declarations. The rest arguments of <code>TYPEDEF_ENUM</code>
-	 are considered to be declarations of enumeration.
-	 Declarations have the following form:
+	 enumerated type. The rest arguments are considered to be
+	 declarations of enumeration.  Declarations have the following
+	 form:
         
 	 <programlisting language="c">
 	   ( name, = value<subscript>opt</subscript>,
@@ -800,12 +770,12 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	 Each enumerator declaration should at least specify the name
 	 of the constant. If the declaration only specifies a name,
 	 then parentheses may be omitted. The second argument is
-	 optional and, if present, specifies the value preceded with
-	 equals sign. Enumeration constant values obey usual C rules:
-	 if the value is not specified, it recieves the incremented
-	 value of the previous constant; the first constant recives
-	 the value zero if it is not specified explicitly. The
-	 following code exemplifies this:
+	 optional and, if present, specifies the value for enumeration
+	 preceded with equals sign. Enumeration constant values obey
+	 usual C rules: if the value is not specified, it recieves the
+	 incremented value of the previous constant; the first
+	 constant recives the value zero if it is not specified
+	 explicitly. The following code exemplifies this:
         
 	 <programlisting language="c"><xi:include
 	 href="../../examples/enums.h"
@@ -821,7 +791,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
      <section xml:id="decl-char-array-type">
        <title>Declaring chars array type</title>
        <para>
-	 The Library allows to declare types for strings of fixed
+	 The library allows to declare types for strings of fixed
 	 length. It is a type of char array of fixed length declared
 	 like following <code>typedef char
 	 char_array_t[8]</code>. This is a special case because this
@@ -829,14 +799,9 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	 array of characters. The macro
 	 <code>TYPEDEF_CHAR_ARRAY</code> has two mandatory
 	 arguments. The first argument is a name of new type, second
-	 is a length of the string. Type meta data may follow after
-	 mandatory agrument:
+	 is a length of the string.
 	 <programlisting language="c">
-	   TYPEDEF_CHAR_ARRAY (type_name, length,
-	   comment<subscript>opt</subscript>,
-	   { pointer-on-user-data }<subscript>opt</subscript>,
-	   user-data-type<subscript>opt</subscript>
-	   )
+	   TYPEDEF_CHAR_ARRAY (type_name, length)
 	 </programlisting>
        </para>
      </section>
@@ -846,24 +811,197 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
        <para>
 	 Library provides a macro for declaration of function
 	 types. <code>TYPEDEF_FUNC</code> gets three mandatory
-	 arguments and optional type meta data.
+	 arguments - type name, type of return value and a list of
+	 arguments types. Note that C allows accomplish types of the
+	 arguments with names. Metaresc declarations must not use
+	 names for arguments.
 	 
 	 <programlisting language="c">
-	   TYPEDEF_FUNC (type_name, return_type, (func_args_list),
-	   comment<subscript>opt</subscript>,
-	   { pointer-on-user-data }<subscript>opt</subscript>,
-	   user-data-type<subscript>opt</subscript>
-	   )
+	   TYPEDEF_FUNC (type_name, return_type, (func_args_list))
 	 </programlisting>
 
 	 Function types can't be serialized, but library has meta data
 	 about return type and types of all arguments. This
 	 information could be inspected programmatically. Example follows:
 	 <programlisting language="c"><xi:include
-	 href="../../examples/function_type.h"
+	 href="../../examples/function_type.c"
 	 parse="text"
 	 xmlns:xi="http://www.w3.org/2003/XInclude"
 	 /></programlisting>
+
+	 This sample outputs the following:
+	 <programlisting language="c">
+{
+  .mr_type = MR_TYPE_FUNC_TYPE,
+  .size = 8,
+  .type = "func_t",
+  .attr = "__attribute__ ((aligned (sizeof (int64_t))))",
+  .mr_type_effective = MR_TYPE_NONE,
+  .size_effective = 0,
+  .lookup_by_value = NULL,
+  .hash_value = 14201389972600988967,
+  .lookup_by_name = {
+    .data = NULL,
+    .size = 0,
+    .alloc_size = 0,
+    .ext = {
+      NULL,
+    },
+    .ptr_type = NULL,
+  },
+  .fields = {
+    .data = (mr_fd_t[]){
+      {
+        .type = "int",
+        .name = NULL,
+        .hash_value = 0,
+        .offset = 0,
+        .size = 4,
+        .mr_type = MR_TYPE_INT32,
+        .mr_type_aux = MR_TYPE_NONE,
+        .mr_type_ext = MR_TYPE_EXT_NONE,
+        .param = {
+          .array_param = {
+            .count = 0,
+            .row_count = 0,
+          },
+        },
+        .comment = "return value",
+        .ext = {
+          NULL,
+        },
+        .ptr_type = NULL,
+      },
+      {
+        .type = "char *",
+        .name = NULL,
+        .hash_value = 0,
+        .offset = 0,
+        .size = 8,
+        .mr_type = MR_TYPE_STRING,
+        .mr_type_aux = MR_TYPE_CHAR,
+        .mr_type_ext = MR_TYPE_EXT_NONE,
+        .param = {
+          .array_param = {
+            .count = 0,
+            .row_count = 0,
+          },
+        },
+        .comment = /* ref_idx = 48 */ "",
+        .ext = {
+          NULL,
+        },
+        .ptr_type = NULL,
+      },
+      {
+        .type = "int",
+        .name = NULL,
+        .hash_value = 0,
+        .offset = 0,
+        .size = 4,
+        .mr_type = MR_TYPE_INT32,
+        .mr_type_aux = MR_TYPE_NONE,
+        .mr_type_ext = MR_TYPE_EXT_NONE,
+        .param = {
+          .array_param = {
+            .count = 0,
+            .row_count = 0,
+          },
+        },
+        .comment = /* ref_content = 48 */ NULL,
+        .ext = {
+          NULL,
+        },
+        .ptr_type = NULL,
+      },
+      {
+        .type = "int",
+        .name = NULL,
+        .hash_value = 0,
+        .offset = 0,
+        .size = 4,
+        .mr_type = MR_TYPE_INT32,
+        .mr_type_aux = MR_TYPE_INT32,
+        .mr_type_ext = MR_TYPE_EXT_POINTER,
+        .param = {
+          .array_param = {
+            .count = 0,
+            .row_count = 0,
+          },
+        },
+        .comment = /* ref_content = 48 */ NULL,
+        .ext = {
+          NULL,
+        },
+        .ptr_type = NULL,
+      },
+      {
+        .type = "double",
+        .name = NULL,
+        .hash_value = 0,
+        .offset = 0,
+        .size = 8,
+        .mr_type = MR_TYPE_DOUBLE,
+        .mr_type_aux = MR_TYPE_NONE,
+        .mr_type_ext = MR_TYPE_EXT_NONE,
+        .param = {
+          .array_param = {
+            .count = 0,
+            .row_count = 0,
+          },
+        },
+        .comment = /* ref_content = 48 */ NULL,
+        .ext = {
+          NULL,
+        },
+        .ptr_type = NULL,
+      },
+    },
+    .size = 560,
+    .alloc_size = -1,
+    .ext = {
+      NULL,
+    },
+    .ptr_type = NULL,
+  },
+  .comment = "function type sample",
+  .ext = {
+    NULL,
+  },
+  .ptr_type = NULL,
+}
+	 </programlisting>
+
+       </para>
+     </section>
+
+     <section xml:id="decl-typedef-attr">
+       <title>Types declaration attributes and meta data</title>
+       <para>
+	 Macroses <code>TYPEDEF_</code>XXX provides a mechanism for
+	 specification of metadata for type itself. One of arguments
+	 (at any position) might have prefix <code>ATTRIBUTE</code>.
+	 After this key-word there should be a list of metadata in
+	 parentheses.
+         <programlisting language="c">
+	   ATTRIBUTES (
+	   type-attributes<subscript>opt</subscript>,
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
+	 
+	 <code>type-attributes</code> is an attruibute for type
+	 declaration, for example it could be <code>__attribute__
+	 ((packed))</code>. This parameter is also saved as a string
+	 in type's metadata. <code>comment</code> is an arbitrary text
+	 that would be saved as type's metadta.
+	 <code>poiner-on-user-data</code> is a void pointer for user
+	 data. For serialization of pointer-on-user-data it is
+	 possible to specify type of this pointer via
+	 <code>user-data-type</code>. This type should be declared by
+	 means METARESC.
        </para>
      </section>
 
@@ -1184,10 +1322,122 @@ space_t space = {
 	 /></programlisting>
         
 	 The example above prints the following:
-        
-	 <screen><![CDATA[1 is odd
-4 is even
-7 is odd]]></screen>
+	 <programlisting language="c">
+{
+  .mr_type = MR_TYPE_STRUCT,
+  .size = 8,
+  .type = "with_f_pointers_t",
+  .attr = /* ref_idx = 4 */ "",
+  .mr_type_effective = MR_TYPE_NONE,
+  .size_effective = 0,
+  .lookup_by_value = NULL,
+  .hash_value = 5242295550596278467,
+  .lookup_by_name = {
+    .data = (mr_fd_ptr_t[]){
+      {
+        .fdp = NULL,
+      },
+      {
+        .fdp = NULL,
+      },
+      {
+        .fdp = /* ref = 24 */ NULL,
+      },
+    },
+    .size = 24,
+    .alloc_size = 24,
+    .ext = {
+      NULL,
+    },
+    .ptr_type = NULL,
+  },
+  .fields = {
+    .data = (mr_fd_t[]){
+      /* ref_idx = 24 */ {
+        .type = "char *",
+        .name = "pfunc",
+        .hash_value = 10734660904406256812,
+        .offset = 0,
+        .size = 8,
+        .mr_type = MR_TYPE_FUNC,
+        .mr_type_aux = MR_TYPE_NONE,
+        .mr_type_ext = MR_TYPE_EXT_NONE,
+        .param = {
+          .func_param = {
+            .data = (mr_fd_t[]){
+              {
+                .type = "char *",
+                .name = NULL,
+                .hash_value = 0,
+                .offset = 0,
+                .size = 8,
+                .mr_type = MR_TYPE_STRING,
+                .mr_type_aux = MR_TYPE_CHAR,
+                .mr_type_ext = MR_TYPE_EXT_NONE,
+                .param = {
+                  .array_param = {
+                    .count = 0,
+                    .row_count = 0,
+                  },
+                },
+                .comment = "return value",
+                .ext = {
+                  NULL,
+                },
+                .ptr_type = NULL,
+              },
+              {
+                .type = "int",
+                .name = NULL,
+                .hash_value = 0,
+                .offset = 0,
+                .size = 4,
+                .mr_type = MR_TYPE_INT32,
+                .mr_type_aux = MR_TYPE_NONE,
+                .mr_type_ext = MR_TYPE_EXT_NONE,
+                .param = {
+                  .array_param = {
+                    .count = 0,
+                    .row_count = 0,
+                  },
+                },
+                .comment = /* ref_content = 4 */ NULL,
+                .ext = {
+                  NULL,
+                },
+                .ptr_type = NULL,
+              },
+            },
+            .size = 224,
+            .alloc_size = -1,
+            .ext = {
+              NULL,
+            },
+            .ptr_type = NULL,
+          },
+        },
+        .comment = /* ref_content = 4 */ NULL,
+        .ext = {
+          NULL,
+        },
+        .ptr_type = NULL,
+      },
+    },
+    .size = 112,
+    .alloc_size = -1,
+    .ext = {
+      NULL,
+    },
+    .ptr_type = NULL,
+  },
+  .comment = /* ref_content = 4 */ NULL,
+  .ext = {
+    NULL,
+  },
+  .ptr_type = NULL,
+}
+	 </programlisting>
+
        </para>
      </section>
 
@@ -1422,14 +1672,13 @@ space_t space = {
       
       <para>
         For de-serializing data from each textual format there is a
-        macro MR_LOAD_XXX. It might be called with two or three
-        arguments. Based on number of arguments return value is
+        macro <code>MR_LOAD_</code>XXX. It might be called with two or
+        three arguments. Based on number of arguments return value is
         different. Macro with three arguments take a type name, a
         pointer to the source string and a pointer to the variable
         that will receive the loaded value. The returned value is an
         <code>int</code>, which is zero if loading failed and non-zero
-        otherwise.
-	The usage looks like the following:
+        otherwise.  The usage looks like the following:
         
         <programlisting language="c"><xi:include
           href="../../examples/deserialization_3_args.c"

@@ -2,13 +2,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <function_type.h>
+#include <metaresc.h>
 
-char * _strdup_ (char * str) { return (strdup (str)); }
+TYPEDEF_FUNC (func_t, int , (char *, int, int *, double), ATTRIBUTES (__attribute__ ((aligned (sizeof (int64_t)))) , "function type sample"))
 
 int main ()
 {
-  string_porcessor_t x = _strdup_;
-  printf ("x = %p\n", x);
+  char * serialized = MR_SAVE_CINIT (mr_td_t, mr_get_td_by_name ("func_t"));
+  if (NULL == serialized)
+    printf ("Serialization failed\n");
+  else
+    {
+      printf ("%s\n", serialized);
+      MR_FREE (serialized);
+    }
   return (EXIT_SUCCESS);
 }
