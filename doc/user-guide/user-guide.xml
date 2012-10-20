@@ -1531,7 +1531,10 @@ space_t space = {
 	   user-data-type<subscript>opt</subscript>
 	   )
 	 </programlisting>
-	
+
+	 Note that comment for the union might be used for run-time
+	 specification of union branch (see <xref
+	 linkend="marsh-unions"/>).
        </para>
      </section>
     
@@ -1708,30 +1711,30 @@ space_t space = {
         data marshalling, which does not depend on the particular
         representation format.
       </para>
-      
-      <section>
-        <title>Marshalling structures and basic types</title>
-        <para>
-          When saving a structure, constisting of fields of basic
-          types, the library saves the name and value of each field in
-          the order of declaration. The composition of structures,
-          e.g. when a structure object being serialized contains a
-          field of structure type, is handled by recursing into the
-          field and saving all sub-field names and values. The
-          recursion depth is exactly defined by the declaration of the
-          type. To have an example, consider the following
-          declaration:
+    </section>
+	
+    <section>
+      <title>Marshalling structures and basic types</title>
+      <para>
+	When saving a structure, constisting of fields of basic types,
+	the library saves the name and value of each field in the
+	order of declaration. The composition of structures, e.g. when
+	a structure object being serialized contains a field of
+	structure type, is handled by recursing into the field and
+	saving all sub-field names and values. The recursion depth is
+	exactly defined by the declaration of the type. To have an
+	example, consider the following declaration:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/marshalling_structures_basic_types.h"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/marshalling_structures_basic_types.h"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
+	
+	If an instance of <code>basics_t</code> is serialized to XML,
+	it may look like this:
           
-          If an instance of <code>basics_t</code> is serialized to
-          XML, it may look like this:
-          
-          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
+	<programlisting language="xml"><![CDATA[<?xml version="1.0"?>
 <b>
   <c>Z</c>
   <uli>123</uli>
@@ -1741,58 +1744,58 @@ space_t space = {
   </fl>
 </b>]]></programlisting>
           
-          <!-- TODO: add example of composition in "declarations"
-               section -->
-        </para>
-      </section>
+	<!-- TODO: add example of composition in "declarations"
+	     section -->
+      </para>
+    </section>
       
-      <section xml:id="marsh-enums">
-        <title>Marshalling enumerations</title>
-        <para>
-          If the field of the structure has enumerated type, then when
-          serializing the field into a textual representation METARESC
-          uses the readable enumeration member name instead of
-          numerical value. If saved value is not listed in
-          enumeration, then it will be saved as a numerical value. For
-          instance, if declared like this:
+    <section xml:id="marsh-enums">
+      <title>Marshalling enumerations</title>
+      <para>
+	If the field of the structure has enumerated type, then when
+	serializing the field into a textual representation METARESC
+	uses the readable enumeration member name instead of numerical
+	value. If saved value is not listed in enumeration, then it
+	will be saved as a numerical value. For instance, if declared
+	like this:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/marshalling_enumerations.h"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/marshalling_enumerations.h"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
           
-          The variable of <code>screen_t</code> type may have the
-          following XML representation:
+	The variable of <code>screen_t</code> type may have the
+	following XML representation:
           
-          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
+	<programlisting language="xml"><![CDATA[<?xml version="1.0"?>
 <cons25>
   <width>80</width>
   <height>25</height>
   <bg>BLACK</bg>
   <fg>WHITE</fg>
 </cons25>]]></programlisting>
-        </para>
-      </section>
+      </para>
+    </section>
       
-      <section>
-        <title>Marshalling arrays</title>
-        <para>
-          If the field of the structure is an array, then during
-          serialization the library saves each element's value. The
-          process starts from the element with zero index. The
-          elements are named after the array field. As usual, there is
-          an example. The declaration looks like this:
+    <section>
+      <title>Marshalling arrays</title>
+      <para>
+	If the field of the structure is an array, then during
+	serialization the library saves each element's value. The
+	process starts from the element with zero index. The elements
+	are named after the array field. As usual, there is an
+	example. The declaration looks like this:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/marshalling_arrays.h"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/marshalling_arrays.h"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
+	
+	And the XML output looks like this:
           
-          And the XML output looks like this:
-          
-          <programlisting language="xml"><![CDATA[<?xml version="1.0"?>
+	<programlisting language="xml"><![CDATA[<?xml version="1.0"?>
 <a>
   <a>
     <a>11</a>
@@ -1812,69 +1815,68 @@ space_t space = {
       <a>4</a>
     </a>
   </a>
-</a2d>]]></programlisting>
-
-	  Two-dimensional arrays saves as an array of rows. Each row
-	  is one-dimnsional array. 
-        </para>
-      </section>
+</a2d>]]>
+	</programlisting>
+	Two-dimensional arrays saves as an array of rows. Each row is
+	one-dimnsional array.
+      </para>
+    </section>
       
-      <section>
-        <title>Marshalling unions</title>
-        <para>
-          The union is very similar to a structure with a constraint
-          that only the field that was most recently written may be
-          read <footnote><para>ISO/IEC 9899:1999
-          J1.1</para></footnote>. This allows compilers to optimize
-          memory consumption of the program and don't store all the
-          fields of the union in the memory at the same time
-          <footnote><para>see C99 6.7.2.1p5 and
-          6.7.2.1p14</para></footnote>.  It's tricky to serialize the
-          union, since C doesn't provide any means to determine which
-          field was most recently written. At present, METARESC relies
-          on the behavior of GCC, which allows cross-reading of union
-          members<footnote><para>The library code is based on the
-          assumption that all side-effects of statements that write to
-          the union are completed before the serialization takes
-          place.</para></footnote>. By default library serializes the
-          value of the first union member. There is a convention that
-          allows to choose union branch at the time of
-          serialization. Discriminator value should be stored in
-          structure at the same lavel as union. Name of the
-          discriminator field should be specified in meta data comment
-          of the union. Discriminator field could be of the following
-          types: integer, bit-field, string, static string,
-          enumeration or pointer on one of this types. Value of
-	  discriminator field interpreted in the following manner:
-	  <itemizedlist>
-	    <listitem><para>
-	      integers, bit-fields: interpreted as union branch index
-	      counted from zero.
-	    </para></listitem>
-	    <listitem><para>
-	      strings, static strings: interpreted as a union branch name.
-	    </para></listitem>
-	    <listitem><para>
-	      enumeration: definitions of enumeration values should
-	      contain meta data comment with the name of the
-	      designated union branch.
-	    </para></listitem>
-	  </itemizedlist>
-	</para>
+    <section xml:id="marsh-unions">
+      <title>Marshalling unions</title>
+      <para>
+	The union is very similar to a structure with a constraint
+	that only the field that was most recently written may be read
+	<footnote><para>ISO/IEC 9899:1999 J1.1</para></footnote>. This
+	allows compilers to optimize memory consumption of the program
+	and don't store all the fields of the union in the memory at
+	the same time <footnote><para>see C99 6.7.2.1p5 and
+	6.7.2.1p14</para></footnote>.  It's tricky to serialize the
+	union, since C doesn't provide any means to determine which
+	field was most recently written. At present, METARESC relies
+	on the behavior of GCC, which allows cross-reading of union
+	members<footnote><para>The library code is based on the
+	assumption that all side-effects of statements that write to
+	the union are completed before the serialization takes
+	place.</para></footnote>. By default library serializes the
+	value of the first union member. There is a convention that
+	allows to choose union branch at the time of
+	serialization. Discriminator value should be stored in
+	structure at the same lavel as union. Name of the
+	discriminator field should be specified in meta data comment
+	of the union. Discriminator field could be of the following
+	types: integer, bit-field, string, static string, enumeration
+	or pointer on one of this types. Value of discriminator field
+	interpreted in the following manner:
+	<itemizedlist>
+	  <listitem><para>
+	    integers, bit-fields: interpreted as union branch index
+	    counted from zero.
+	  </para></listitem>
+	  <listitem><para>
+	    strings, static strings: interpreted as a union branch name.
+	  </para></listitem>
+	  <listitem><para>
+	    enumeration: definitions of enumeration values should
+	    contain meta data comment with the name of the
+	    designated union branch.
+	  </para></listitem>
+	</itemizedlist>
+      </para>
         
-        <para>
-          So then, having the sample like this:
+      <para>
+	So then, having the sample like this:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/marshalling_unions.c"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/marshalling_unions.c"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
           
-          You may expect the following output on GCC, regardless of
-          what member was most recently written:
+	You may expect the following output on GCC, regardless of what
+	member was most recently written:
           
-          <programlisting language="xml"><![CDATA[
+	<programlisting language="xml"><![CDATA[
 <?xml version="1.0"?>
 <u>
   <union_val>
@@ -1887,95 +1889,95 @@ space_t space = {
   </union_val>
   <union_discriminator>UD_UC_ARRAY</union_discriminator>
 </u>
-]]></programlisting>
+]]>
+	</programlisting>
           
-          This, of course, also depends on the language
-          implementation. For example, there may be more
-          <code>char</code>s in a <code>float</code>.
-        </para>
-      </section>
+	This, of course, also depends on the language
+	implementation. For example, there may be more
+	<code>char</code>s in a <code>float</code>.
+      </para>
+    </section>
       
-      <section>
-        <title>Marshalling pointers</title>
-        <para>
-          Pointers differ from numeric types in that the value a
-          pointer holds is rarely interesting per se. You rather use a
-          pointer to access a pointed-to object and the value of the
-          pointer is typically a memory address of that object. Memory
-          addresses are meaningless from the serialization perspective
-          — when objects are de-serialized in other program invocation
-          the saved address may point to the memory of an unrelated
-          object or to the location where there is no object at all.
-        </para>
+    <section>
+      <title>Marshalling pointers</title>
+      <para>
+	Pointers differ from numeric types in that the value a pointer
+	holds is rarely interesting per se. You rather use a pointer
+	to access a pointed-to object and the value of the pointer is
+	typically a memory address of that object. Memory addresses
+	are meaningless from the serialization perspective — when
+	objects are de-serialized in other program invocation the
+	saved address may point to the memory of an unrelated object
+	or to the location where there is no object at all.
+      </para>
         
-        <para>
-          That's why METARESC takes a specific approach for pointers,
-          called "deep pointer serialization": when a structure field
-          of pointer type is encountered, the library examines the
-          value and if it points to an object of metadata-enabled
-          type, then this pointed-to object is also serialized. This
-          process is recursive.
-        </para>
+      <para>
+	That's why METARESC takes a specific approach for pointers,
+	called "deep pointer serialization": when a structure field of
+	pointer type is encountered, the library examines the value
+	and if it points to an object of metadata-enabled type, then
+	this pointed-to object is also serialized. This process is
+	recursive.
+      </para>
         
-        <para>
-          During de-serialization of a field of pointer type METARESC
-          allocates memory for a pointed-to object and recursively
-          restores it. That is pointer values are not preserved when
-          objects are saved and restored, but their meaning is.
-        </para>
+      <para>
+	During de-serialization of a field of pointer type METARESC
+	allocates memory for a pointed-to object and recursively
+	restores it. That is pointer values are not preserved when
+	objects are saved and restored, but their meaning is.
+      </para>
         
-        <para>
-          The special cases for deep pointer serialization are
-          duplicate pointers, that is more than one pointer to the
-          same object, and cycles in chains of pointers. The library
-          keeps a track of already visited objects during
-          serialization. In presence of multiple pointers to the same
-          object the latter is serialized only once and assigned an
-          id, which is used to serialize other pointers to that
-          object. For the same reason pointer loops are never an
-          issue.
-        </para>
+      <para>
+	The special cases for deep pointer serialization are duplicate
+	pointers, that is more than one pointer to the same object,
+	and cycles in chains of pointers. The library keeps a track of
+	already visited objects during serialization. In presence of
+	multiple pointers to the same object the latter is serialized
+	only once and assigned an id, which is used to serialize other
+	pointers to that object. For the same reason pointer loops are
+	never an issue.
+      </para>
         
-        <para>
-          Note, that uniqueness of objects is only examined for a
-          single serialization session. If you have two structures,
-          containing pointers to the same third object, and serialize
-          them independently, METARESC will create four distinct
-          objects on de-serialization. The recommended way of
-          preserving the uniqueness is gathering all the data into a
-          single structure and serializing it in a single step.
-        </para>
+      <para>
+	Note, that uniqueness of objects is only examined for a single
+	serialization session. If you have two structures, containing
+	pointers to the same third object, and serialize them
+	independently, METARESC will create four distinct objects on
+	de-serialization. The recommended way of preserving the
+	uniqueness is gathering all the data into a single structure
+	and serializing it in a single step.
+      </para>
         
-        <para>
-          Deep pointer serialization is only possible if the
-          pointed-to object is of serializable type, i.e. declared
-          using METARESC grammar. If the field of the structure points
-          to the object which is not serializable, then pointer value
-          is not serialized at all.
-        </para>
+      <para>
+	Deep pointer serialization is only possible if the pointed-to
+	object is of serializable type, i.e. declared using METARESC
+	grammar. If the field of the structure points to the object
+	which is not serializable, then pointer value is not
+	serialized at all.
+      </para>
         
-        <para>
-          The following is an example of deep pointer serialization
-          with duplicate pointers and a pointer to type lacking
-          metadata. Given the declarations like this:
+      <para>
+	The following is an example of deep pointer serialization with
+	duplicate pointers and a pointer to type lacking
+	metadata. Given the declarations like this:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/marshalling_pointers.h"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/marshalling_pointers.h"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
           
-          And the program, which uses them:
+	And the program, which uses them:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/marshalling_pointers.c"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/marshalling_pointers.c"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
           
-          The serialized data may look like this:
+	The serialized data may look like this:
           
-          <programlisting language="c"><![CDATA[
+	<programlisting language="c"><![CDATA[
 <?xml version="1.0"?>
 <p>
   <server_a>
@@ -1994,65 +1996,66 @@ space_t space = {
       <port>443</port>
     </fallback>
   </fallback>
-</p>]]></programlisting>
+</p>]]>
+	</programlisting>
           
-          Note that the field <code>f</code> is not assigned a value
-          and fields <code>server_b</code> and <code>fallback</code>
-          both point to the same object.
-        </para>
-      </section>
+	Note that the field <code>f</code> is not assigned a value and
+	fields <code>server_b</code> and <code>fallback</code> both
+	point to the same object.
+      </para>
+    </section>
       
-      <section>
-        <title>Marshalling pointers to functions</title>
-        <para>
-          Unlike instances of structures, functions are not tracked by
-          the library. That's why pointers to functions are always
-          excluded from serialization. Given the following
-          declarations:
+    <section>
+      <title>Marshalling pointers to functions</title>
+      <para>
+	Unlike instances of structures, functions are not tracked by
+	the library. That's why pointers to functions are always
+	excluded from serialization. Given the following declarations:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/marshalling_pointers_to_functions.h"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/marshalling_pointers_to_functions.h"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
+	
+	You may expect output like this:
           
-          You may expect output like this:
-          
-          <programlisting language="c"><![CDATA[
+	<programlisting language="c"><![CDATA[
 <?xml version="1.0"?>
 <s>
   <value>7</value>
-</s> ]]></programlisting>
+</s> ]]>
+	</programlisting>
           
-          The field <code>func</code> is not present in the XML file
-          and the intended usage of pointers-to-functions metadata is
-          reading the data programmatically.
-        </para>
-      </section>
+	The field <code>func</code> is not present in the XML file and
+	the intended usage of pointers-to-functions metadata is
+	reading the data programmatically.
+      </para>
+    </section>
       
-      <section>
-        <title>Marshalling bit-fields</title>
-        <para>
-          The sole purpose of using bit-fields is to minimize the
-          memory occupied by small integers or enums. Serialization
-	  formats are often verbose and the product of serialization
-	  is better compressed by archiving the entire stream.
-	  Based on that, bit-fields are serialized by METARESC as
-	  if they were distinct variables.
-        </para>
+    <section>
+      <title>Marshalling bit-fields</title>
+      <para>
+	The sole purpose of using bit-fields is to minimize the memory
+	occupied by small integers or enums. Serialization formats are
+	often verbose and the product of serialization is better
+	compressed by archiving the entire stream.  Based on that,
+	bit-fields are serialized by METARESC as if they were distinct
+	variables.
+      </para>
         
-        <para>
-          This is exemplified by following declarations:
+      <para>
+	This is exemplified by following declarations:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/bitfields.c"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/bitfields.c"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
           
-          The serialization may produce the following XML output:
+	The serialization may produce the following XML output:
           
-          <programlisting language="xml"><![CDATA[
+	<programlisting language="xml"><![CDATA[
 sizeof (date_t) = 4
 <?xml version="1.0"?>
 <today>
@@ -2062,31 +2065,32 @@ sizeof (date_t) = 4
   <hour>10</hour>
   <minute>59</minute>
 </today>
-]]></programlisting>
-        </para>
-      </section>
+]]>
+	</programlisting>
+      </para>
+    </section>
       
-      <section>
-        <title>Marshalling RARRAYs</title>
-        <para>
-          The resizable arrays, provided by the library, are
-          serialized as a structure presented in C: serialization
-	  starts with block <code>data</code> and followed by the
-	  rest of <code>rarray_t</code> fields: <code>size</code>,
-	  <code>alloc_size</code>, <code>ext</code>, <code>ptr_type</code>.
-	  Block <code>data</code> contains list of entities just like
-	  fixed size arrays. The traversal starts
-          form zero index. So that, having a declaration like this:
+    <section>
+      <title>Marshalling RARRAYs</title>
+      <para>
+	The resizable arrays, provided by the library, are serialized
+	as a structure presented in C: serialization starts with block
+	<code>data</code> and followed by the rest of
+	<code>rarray_t</code> fields: <code>size</code>,
+	<code>alloc_size</code>, <code>ext</code>,
+	<code>ptr_type</code>.  Block <code>data</code> contains list
+	of entities just like fixed size arrays. The traversal starts
+	form zero index. So that, having a declaration like this:
           
-          <programlisting language="c"><xi:include
-            href="../../examples/decl_rarray.h"
-            parse="text"
-            xmlns:xi="http://www.w3.org/2003/XInclude"
-          /></programlisting>
+	<programlisting language="c"><xi:include
+	href="../../examples/decl_rarray.h"
+	parse="text"
+	xmlns:xi="http://www.w3.org/2003/XInclude"
+	/></programlisting>
+	
+	You may expect the following output:
           
-          You may expect the following output:
-          
-          <programlisting language="xml"><![CDATA[
+	<programlisting language="xml"><![CDATA[
 <?xml version="1.0"?>
 <firm>
   <name>Gen-sys</name>
@@ -2116,19 +2120,17 @@ sizeof (date_t) = 4
     <ptr_type isnull="true"/>
   </employees>
 </firm>
-]]></programlisting>
+]]>
+	</programlisting>
           
-          The only trick here is to remember that the
-          <code>size</code> and <code>alloc_size</code> fields of a
-          resizable array are in bytes. To correctly serialize the
-          variable in the example above the program set the
-          <code>size</code> member to <code>3 *
-          sizeof(employee_t)</code>.
-        </para>
-      </section>
-      
+	The only trick here is to remember that the <code>size</code>
+	and <code>alloc_size</code> fields of a resizable array are in
+	bytes. To correctly serialize the variable in the example
+	above the program set the <code>size</code> member to <code>3
+	* sizeof(employee_t)</code>.
+      </para>
     </section>
-    
+      
     <section>
       <title>Input-output Formats</title>
       

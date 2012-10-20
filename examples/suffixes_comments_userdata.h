@@ -2,7 +2,7 @@
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (example_t,
-		/* optionaly second argument could be an attributes for the type */
+		/* optional argument with meta data for type itself */
 		ATTRIBUTES (__attribute__((packed)), "Comment on type", { "auxiliary void pointer" }, "string_t" /* type of aux ptr */),
 		/* all 4 arguments of ATTRIBUTES are optional */
                 (int, x1), /* (type, name) */
