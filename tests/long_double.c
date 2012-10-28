@@ -5,9 +5,11 @@
 #include <regression.h>
 #include <flt_values.h>
 
+#define SCALAR_DOUBLE(TYPE, X, Y, ...) memcmp (X, Y, MR_SIZEOF_LONG_DOUBLE)
+
 #define ASSERT_SAVE_LOAD_LONG_DOUBLE(METHOD, VALUE) ({			\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, long double, VALUE, SCALAR_CMP);	\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, VALUE, STRUCT_X_CMP); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, long double, VALUE, SCALAR_DOUBLE); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, VALUE, SCALAR_DOUBLE); \
     })
 
 TYPEDEF_STRUCT (struct_long_double, long_double_t x)

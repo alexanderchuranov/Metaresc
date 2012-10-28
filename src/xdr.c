@@ -7,11 +7,6 @@
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <netinet/in.h>
-#if HAVE_IEEE754_H
-#include <ieee754.h>
-#else /* ! HAVE_IEEE754_H */
-union ieee854_long_double { char ieee[12]; };
-#endif /* HAVE_IEEE754_H */ 
 #ifdef HAVE_CONFIG_H
 # include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
@@ -435,7 +430,7 @@ static int
 static int
 __attribute__ ((unused)) xdr_long_double (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return xdr_opaque (xdrs, ptrs->ra.data[idx].data, sizeof (((union ieee854_long_double*)NULL)->ieee));
+  return xdr_opaque (xdrs, ptrs->ra.data[idx].data, MR_SIZEOF_LONG_DOUBLE);
 }
 
 /**

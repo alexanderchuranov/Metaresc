@@ -6,8 +6,8 @@
 #include <flt_values.h>
 
 #define ASSERT_SAVE_LOAD_FLOAT(METHOD, VALUE) ({			\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE, SCALAR_CMP);		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float, VALUE, STRUCT_X_CMP); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE, MEM_CMP);		\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float, VALUE, MEM_CMP);	\
     })
 
 TYPEDEF_STRUCT (struct_float, float x)

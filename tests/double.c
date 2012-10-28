@@ -5,9 +5,9 @@
 #include <regression.h>
 #include <flt_values.h>
 
-#define ASSERT_SAVE_LOAD_DOUBLE(METHOD, VALUE) ({			\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, double, VALUE, SCALAR_CMP);	\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_double, VALUE, STRUCT_X_CMP); \
+#define ASSERT_SAVE_LOAD_DOUBLE(METHOD, VALUE) ({		     \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, double, VALUE, MEM_CMP);	     \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_double, VALUE, MEM_CMP); \
     })
 
 TYPEDEF_STRUCT (struct_double, double x)
