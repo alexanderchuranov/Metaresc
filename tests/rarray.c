@@ -98,4 +98,19 @@ MR_START_TEST (rarray_packed_enum, "packed enum - sizeof != used bytes") {
   ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_rarray_t, &orig);
 } END_TEST
 
+MR_START_TEST (rarray_opaque_data, "rarray with opaque data") {
+  packed_enum_rarray_t orig = {
+    .x =
+    {
+      .data = (packed_enum_t[]){ ONE, TWO, },
+      .size = 2 * sizeof (packed_enum_t),
+      .alloc_size = 2 * sizeof (packed_enum_t),
+      .ptr_type = MR_RARRAY_OPAQUE_DATA_T,
+    },
+  };
+  ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_rarray_t, &orig);
+  orig.x.size = orig.x.alloc_size = 2 * sizeof (packed_enum_t) + 1; /* incorrect size */
+  ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_rarray_t, &orig);
+} END_TEST
+
 MAIN ();
