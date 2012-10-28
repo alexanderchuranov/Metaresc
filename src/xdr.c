@@ -891,23 +891,26 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static int
 xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  uint32_t childs = 0;
-  int idx_;
+  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+    return (0);
   
-  for (idx_ = ptrs->ra.data[idx].first_child; idx_ >= 0; idx_ = ptrs->ra.data[idx_].next)
-    ++childs;
-
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    {
-      if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
-	return (0);
-      return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
-    }
+    return (xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
   else
     {
+      char * ra_data = ptrs->ra.data[idx].data;
+      mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
 	return (0);
-      return (xdr_uint32_t (xdrs, &childs));
+      if (!xdr_int32_t (xdrs, &ra->size))
+	return (0);
+      if (!ptrs->ra.data[idx].flags.is_opaque_data)
+	return (!0);
+      else
+	{
+	  ptrs->ra.data[idx].first_child = -1; /* do not save sub-nodes */
+	  return (xdr_opaque (xdrs, ra->data, ra->size)); /* content saved as opaque data */
+	}
     }
 }
 
@@ -921,36 +924,41 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static int
 xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  void ** data = ptrs->ra.data[idx].data;
-  mr_fd_t fd_ = ptrs->ra.data[idx].fd;
-  uint32_t childs = 0;
-  int size;
-
+  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+    return (0);
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (0);
-  if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
-  else
+  if (ptrs->ra.data[idx].ref_idx < 0)
     {
-      if (!xdr_uint32_t (xdrs, &childs))
+      void ** data = ptrs->ra.data[idx].data;
+      mr_fd_t fd_ = ptrs->ra.data[idx].fd;
+      char * ra_data = ptrs->ra.data[idx].data;
+      mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
+
+      if (!xdr_int32_t (xdrs, &ra->size))
 	return (0);
 
-      /* .size and .alloc_size will be loaded directly from XDRS */
+      /* .size and .alloc_size will be loaded once again as fields of mr_rarray_t */
+      ra->alloc_size = ra->size;
       fd_.mr_type_ext = MR_TYPE_EXT_NONE;
       *data = NULL;
-      size = childs * fd_.size;
-      if (size > 0)
+      if (ra->size > 0)
 	{
 	  int i;
-	  *data = MR_MALLOC (size);
+	  int count = ra->size / fd_.size;
+
+	  *data = MR_MALLOC (ra->size);
 	  if (NULL == *data)
 	    {
 	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	      return (0);
 	    }
-	  for (i = 0; i < childs; ++i)
-	    if (!xdr_load (((char*)*data) + i * fd_.size, &fd_, xdrs, ptrs))
-	      return (0);
+	  if (ptrs->ra.data[idx].flags.is_opaque_data)
+	    return (xdr_opaque (xdrs, *data, ra->size));
+	  else
+	    for (i = 0; i < count; ++i)
+	      if (!xdr_load (((char*)*data) + i * fd_.size, &fd_, xdrs, ptrs))
+		return (0);
 	}
     }
   return (!0);

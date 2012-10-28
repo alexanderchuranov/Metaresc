@@ -617,7 +617,6 @@ mr_load_rarray (int idx, mr_load_data_t * mr_load_data)
 
       fd_.mr_type_ext = MR_TYPE_EXT_NONE;
 
-      ra->size = count * mr_load_data->ptrs.ra.data[idx].fd.size;
       ra->data = MR_MALLOC (ra->size);
       if (NULL == ra->data)
 	{
