@@ -1582,6 +1582,16 @@ space_t space = {
 	 library. A structure field of RARRAY type may de declared as
 	 follows:
         
+	 <programlisting language="c">
+	   RARRAY ( type, name, 
+	   comment<subscript>opt</subscript>,
+	   { pointer-on-user-data }<subscript>opt</subscript>,
+	   user-data-type<subscript>opt</subscript>
+	   )
+	 </programlisting>
+
+	 Example follows:
+	 
 	 <programlisting language="c"><xi:include
 	 href="../../examples/decl_rarray.h"
 	 parse="text"
