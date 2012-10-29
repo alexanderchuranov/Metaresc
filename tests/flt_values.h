@@ -58,9 +58,9 @@ TYPEDEF_STRUCT (ieee_754_double_nan_t,
 
 TYPEDEF_UNION (ieee_double_t,
 	       ANON_UNION (),
-	       double _double,
 	       (ieee_754_double_t, ieee_754_double),
 	       (ieee_754_double_nan_t, ieee_754_double_nan),
+	       double _double,
 	       END_ANON_UNION ("quiet_nan"),
 	       BITFIELD (unsigned char, quiet_nan, :1, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 1, .shift = (32 + 19) % 8, }, } ),
 	       )
@@ -83,9 +83,9 @@ TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
 
 TYPEDEF_UNION (ieee_long_double_t,
 	       ANON_UNION (),
-	       long double long_double,
 	       (ieee_854_long_double_t, ieee_854_long_double),
 	       (ieee_854_long_double_nan_t, ieee_854_long_double_nan),
+	       long double long_double,
 	       END_ANON_UNION ("quiet_nan"),
 	       BITFIELD (unsigned char, quiet_nan, :1, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 1, .shift = (32 + 30) % 8, }, } ),
 	       )
