@@ -319,7 +319,6 @@ mr_save_union (mr_save_data_t * mr_save_data)
 
   if ((mr_save_data->ptrs.ra.data[idx].fd.comment) && (mr_save_data->ptrs.ra.data[idx].fd.comment[0]) &&
       (mr_save_data->ptrs.ra.data[idx].parent >= 0) &&
-      (MR_TYPE_STRUCT == mr_save_data->ptrs.ra.data[mr_save_data->ptrs.ra.data[idx].parent].fd.mr_type) &&
       (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[mr_save_data->ptrs.ra.data[idx].parent].fd.mr_type_ext))
     {
       mr_td_t * parent_tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[mr_save_data->ptrs.ra.data[idx].parent].fd.type);

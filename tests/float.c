@@ -5,6 +5,7 @@
 #include <regression.h>
 #include <flt_values.h>
 
+
 #define ASSERT_SAVE_LOAD_FLOAT(METHOD, VALUE) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE, MEM_CMP);		\
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float, VALUE, MEM_CMP);	\
@@ -20,7 +21,8 @@ MR_START_TEST (flt_max_float, "FLT_MAX float") { ALL_METHODS (ASSERT_SAVE_LOAD_F
 MR_START_TEST (flt_min_float, "FLT_MIN float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, FLT_MIN); } END_TEST
 MR_START_TEST (flt_epsilon_float, "FLT_EPSILON float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, FLT_EPSILON); } END_TEST
 MR_START_TEST (random_float, "random float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, 1.23456789012345678909L); } END_TEST
-MR_START_TEST (pi_float, "pi long_float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, M_PI); } END_TEST
-MR_START_TEST (e_float, "e long_float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, M_E); } END_TEST
+MR_START_TEST (pi_float, "pi float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, M_PI); } END_TEST
+MR_START_TEST (e_float, "e float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, M_E); } END_TEST
 
 MAIN ();
+

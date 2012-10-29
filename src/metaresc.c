@@ -1067,9 +1067,17 @@ static int
 mr_init_bitfield (mr_fd_t * fdp)
 {
   int i, j;
+  if ((NULL == fdp->param.bitfield_param.bitfield.data) ||
+      (0 == fdp->param.bitfield_param.bitfield.size))
+    return (EXIT_SUCCESS);
+  
   for (i = 0; i < fdp->param.bitfield_param.bitfield.size; ++i)
     if (fdp->param.bitfield_param.bitfield.data[i])
       break;
+  /* if bitmask is clear then there is no need to initialize anything */
+  if (!fdp->param.bitfield_param.bitfield.data[i])
+    return (EXIT_SUCCESS);
+  
   fdp->offset = i;
   for (i = 0; i < 8; ++i)
     if (fdp->param.bitfield_param.bitfield.data[fdp->offset] & (1 << i))
