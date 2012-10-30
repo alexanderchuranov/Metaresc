@@ -34,13 +34,15 @@ TYPEDEF_STRUCT (ieee_754_float_nan_t,
 		BITFIELD (unsigned int, exponent, :8),
 		BITFIELD (sign_t, sign, :1))
 
+TYPEDEF_ENUM (ieee_754_float_nan_enum_t, (IEEE_754_FLOAT_NAN_ENUM_T, = (1 << 9) - 1, "ieee_754_float_nan"))
 TYPEDEF_UNION (ieee_float_t,
 	       ANON_UNION (),
 	       (ieee_754_float_t, ieee_754_float),
 	       (ieee_754_float_nan_t, ieee_754_float_nan),
 	       float _float,
+	       uint32_t uint32,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (unsigned char, quiet_nan, :1, , .offset = 22 / 8, .param = { .bitfield_param = { .width = 1, .shift = 22 % 8, }, } ),
+	       BITFIELD (ieee_754_float_nan_enum_t, quiet_nan, :9, , .offset = 22 / 8, .param = { .bitfield_param = { .width = 9, .shift = 22 % 8, }, } ),
 	       )
 
 TYPEDEF_STRUCT (ieee_754_double_t,
@@ -56,13 +58,15 @@ TYPEDEF_STRUCT (ieee_754_double_nan_t,
 		BITFIELD (unsigned int, exponent, :11),
 		BITFIELD (sign_t, sign, :1))
 
+TYPEDEF_ENUM (ieee_754_double_nan_enum_t, (IEEE_754_DOUBLE_NAN_ENUM_T, = (1 << 12) - 1, "ieee_754_double_nan"))
 TYPEDEF_UNION (ieee_double_t,
 	       ANON_UNION (),
 	       (ieee_754_double_t, ieee_754_double),
 	       (ieee_754_double_nan_t, ieee_754_double_nan),
 	       double _double,
+	       uint64_t uint64,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (unsigned char, quiet_nan, :1, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 1, .shift = (32 + 19) % 8, }, } ),
+	       BITFIELD (ieee_754_double_nan_enum_t, quiet_nan, :12, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 12, .shift = (32 + 19) % 8, }, } ),
 	       )
 
 TYPEDEF_STRUCT (ieee_854_long_double_t,
@@ -81,12 +85,13 @@ TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
 		BITFIELD (sign_t, sign, :1),
 		BITFIELD (unsigned int, empty, :16))
 
+TYPEDEF_ENUM (ieee_854_long_double_nan_enum_t, (IEEE_854_LONG_DOUBLE_NAN_ENUM_T, = (1 << 16) - 1, "ieee_854_long_double_nan"))
 TYPEDEF_UNION (ieee_long_double_t,
 	       ANON_UNION (),
 	       (ieee_854_long_double_t, ieee_854_long_double),
 	       (ieee_854_long_double_nan_t, ieee_854_long_double_nan),
 	       long double long_double,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (unsigned char, quiet_nan, :1, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 1, .shift = (32 + 30) % 8, }, } ),
+	       BITFIELD (ieee_854_long_double_nan_enum_t, quiet_nan, :16, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 16, .shift = (32 + 30) % 8, }, } ),
 	       )
 #endif /* _FLT_VALUES_H_ */
