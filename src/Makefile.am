@@ -1,6 +1,6 @@
 # -*- makefile -*-
 
-AM_CFLAGS = --fast-math -Wall -Werror
+AM_CFLAGS = @AM_CFLAGS@ @LIBXML2_CFLAGS@
 
 DISTCLEANFILES = mr_pp.h
 MOSTLYCLEANFILES = *.tab.[ch] *.lex.[ch]

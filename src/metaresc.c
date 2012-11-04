@@ -110,23 +110,23 @@ MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void
 /**
  * Memory cleanp handler.
  */
+void dummy_free_func (void * nodep) {}
+  
+int free_lookup_tree (mr_td_t * tdp, void * arg)
+{
+  tdestroy (tdp->lookup_by_value, dummy_free_func);
+  tdp->lookup_by_value = NULL;
+  if (tdp->lookup_by_name.data)
+    MR_FREE (tdp->lookup_by_name.data);
+  tdp->lookup_by_name.data = NULL;
+  tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
+  return (0);
+}
+
 static void __attribute__((destructor)) mr_cleanup (void)
 {
   mr_td_t * void_ptr_tdp = mr_get_td_by_name ("mr_ptr_t");
   
-  void dummy_free_func (void * nodep) {}
-  
-  int free_lookup_tree (mr_td_t * tdp, void * arg)
-  {
-    tdestroy (tdp->lookup_by_value, dummy_free_func);
-    tdp->lookup_by_value = NULL;
-    if (tdp->lookup_by_name.data)
-      MR_FREE (tdp->lookup_by_name.data);
-    tdp->lookup_by_name.data = NULL;
-    tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
-    return (0);
-  }
-
   if ((void_ptr_tdp) && (void_ptr_tdp->fields.alloc_size > 0) && (void_ptr_tdp->fields.data))
     {
       MR_FREE (void_ptr_tdp->fields.data);
@@ -540,9 +540,23 @@ mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs)
  * @param b pointer on another mr_ptrdes_t
  * @return comparation sign
  */
-static int mr_cmp_idx (const void * a, const void * b)
+static int
+mr_cmp_idx (const void * a, const void * b)
 {
   return (((const mr_ptrdes_t*)a)->idx - ((const mr_ptrdes_t*)b)->idx);
+}
+
+/**
+ * Clang produces call of memcpy for operation data[dst_idx] = data[src_idx]; if dst_idx == src_idx valgrind reports source and destination overlap. Here is a wrapper that checks necessity of copying.
+ * @param data array of mr_ptrdes_t
+ * @param dst_idx index of destination
+ * @param src_idx index of source
+ */
+static inline void
+save_copy_ptrdes (mr_ptrdes_t * data, int dst_idx, int src_idx)
+{
+  if (dst_idx != src_idx)
+    data[dst_idx] = data[src_idx];  
 }
 
 /**
@@ -563,12 +577,12 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
       case MR_TYPE_EXT_POINTER:
       case MR_TYPE_EXT_RARRAY_DATA:
 	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
-	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
+	  save_copy_ptrdes (&ptrs.ra.data[0], to_free++, i);
 	break;
       case MR_TYPE_EXT_NONE:
 	if ((MR_TYPE_STRING == ptrs.ra.data[i].fd.mr_type) &&
 	    (NULL != *(char**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
-	  ptrs.ra.data[to_free++] = ptrs.ra.data[i];
+	  save_copy_ptrdes (&ptrs.ra.data[0], to_free++, i);
 	break;
       default:
 	break;
@@ -651,12 +665,30 @@ mr_td_foreach (int (*func) (mr_td_t*, void*), void * args)
  * @param hash mr_rarray_t with hash table for type descriptors
  * @return void
  */
+
+static int
+td_count (mr_td_t * tdp, void * args)
+{
+  ++*((int*)args);
+  return (0);
+}
+
+int td_populate (mr_td_t * tdp, void * args)
+{
+  mr_ra_mr_td_ptr_t * hash = args;
+  mr_td_ptr_t * x = &hash->ra.data[tdp->hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
+  /* check for collision */
+  if (x->tdp)
+    return (!0);
+  x->tdp = tdp;
+  return (0);
+}
+
 static void
 mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
 {
-  int size;
-  mr_td_ptr_t * x;
-
+  int count;
+  
   tdp->hash_value = mr_hash_str (tdp->type);
 
   if (NULL == hash->ra.data)
@@ -665,10 +697,9 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
   if (0 == hash->ra.size)
     {
       /* hash size is not defined. Let it be doubled number of elements in the list */
-      size = 0;
-      int td_count (mr_td_t * tdp, void * args) { ++size; return (0); }
-      mr_td_foreach (td_count, NULL);
-      hash->ra.size = 2 * size * sizeof (hash->ra.data[0]);
+      count = 0;
+      mr_td_foreach (td_count, &count);
+      hash->ra.size = 2 * count * sizeof (hash->ra.data[0]);
       if (hash->ra.data)
 	MR_FREE (hash->ra.data);
       hash->ra.data = NULL;
@@ -676,7 +707,7 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
   else
     {
       /* Lets calculate hash bucket for new element */
-      x = &hash->ra.data[tdp->hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
+      mr_td_ptr_t * x = &hash->ra.data[tdp->hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
       if (NULL == x->tdp)
 	x->tdp = tdp; /* bucket was free and hash resize is not required */ 
       else
@@ -692,44 +723,34 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
 	  hash->ra.size = hash->ra.alloc_size = 0;
 	}
     }
-
+  /* we will find new size for hash table to avoid collisions */
+  count = (hash->ra.size / sizeof (hash->ra.data[0])) | 1; /* for optimization of new size search we will probe only prime numbers */
   while (NULL == hash->ra.data)
     {
-      mr_td_ptr_t * array;
-      int i;
-      /* we need to find next prime number greater then hash->ra.size */ 
-      size = ((hash->ra.size / sizeof (hash->ra.data[0])) | 1) + 2;
-      while (!is_prime (size))
-	size += 2;
-      hash->ra.alloc_size = hash->ra.size = size * sizeof (hash->ra.data[0]);
-      array = MR_MALLOC (hash->ra.alloc_size);
+      /* we need to find next prime number greater then count */
+      do
+	count += 2;
+      while (!is_prime (count));
+      
+      hash->ra.alloc_size = hash->ra.size = count * sizeof (hash->ra.data[0]);
+      hash->ra.data = MR_MALLOC (hash->ra.alloc_size);
       /* check memory allocation */
-      if (NULL == array)
+      if (NULL == hash->ra.data)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  hash->ra.alloc_size = hash->ra.size = 0;
 	  return;
 	}
-      for (i = 0; i < size; ++i)
-	array[i].tdp = NULL;
+      memset (hash->ra.data, 0, hash->ra.size);
       /* populate list elements into hash table */
-      int td_populate (mr_td_t * tdp, void * args)
-      {
-	mr_td_ptr_t * x = &array[tdp->hash_value % size];
-	/* check for collision */
-	if (x->tdp)
-	  return (!0);
-	x->tdp = tdp;
-	return (0);
-      }
       /* check that all elements were successfully populated into the hash table */
-      if (mr_td_foreach (td_populate, NULL))
-	MR_FREE (array); /* otherwise try to find new hash size */
-      else
-	hash->ra.data = array;
+      if (mr_td_foreach (td_populate, hash))
+	{
+	  MR_FREE (hash->ra.data); /* otherwise try to find new hash size */
+	  hash->ra.data = NULL;
+	}
     }
 }
-
 #else /* MR_TREE_LOOKUP */
 
 /**
@@ -758,6 +779,23 @@ mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 }
 #endif /* MR_TREE_LOOKUP */
 
+typedef struct {
+  char * type;
+  mr_td_t ** tdpp;
+} td_cmp_args_t;
+
+static int
+td_cmp (mr_td_t * tdp_, void * args)
+{
+  td_cmp_args_t * args_ = args;
+  if (0 == strcmp (args_->type, tdp_->type))
+    {
+      *args_->tdpp = tdp_;
+      return (!0);
+    }
+  return (0);
+}
+
 /**
  * Type descriptor lookup function. Lookup by type name.
  * @param type stringified type name
@@ -768,16 +806,6 @@ mr_get_td_by_name (char * type)
 {
   mr_td_t * tdp;
 
-  int td_cmp (mr_td_t * tdp_, void * args)
-    {
-      if (0 == strcmp (type, tdp_->type))
-	{
-	  *(mr_td_t**)args = tdp_;
-	  return (!0);
-	}
-      return (0);
-    }
-  
 #ifndef MR_TREE_LOOKUP
   if (mr_conf.hash.ra.data && mr_conf.hash.ra.size)
     {
@@ -798,7 +826,9 @@ mr_get_td_by_name (char * type)
 	return (NULL);
     }
 #endif /* MR_TREE_LOOKUP */
-  if (mr_td_foreach (td_cmp, &tdp))
+
+  td_cmp_args_t td_cmp_args = { .type = type, .tdpp = & tdp };
+  if (mr_td_foreach (td_cmp, &td_cmp_args))
     return (tdp);
   return (NULL);
 }
@@ -872,7 +902,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @return comparation sign
  */
 static int
-cmp_enums_by_value (const void * x, const void * y)
+cmp_enums_by_value (const void * x, const void * y, const void * context)
 {
   return ((((const mr_fd_t *) x)->param.enum_value > ((const mr_fd_t *) y)->param.enum_value) - (((const mr_fd_t *) x)->param.enum_value < ((const mr_fd_t *) y)->param.enum_value));
 }
@@ -884,7 +914,7 @@ cmp_enums_by_value (const void * x, const void * y)
  * @return comparation sign
  */
 static int
-cmp_enums_by_name (const void * x, const void * y)
+cmp_enums_by_name (const void * x, const void * y, const void * context)
 {
   return (strcmp (((const mr_fd_t *) x)->name, ((const mr_fd_t *) y)->name));
 }
@@ -931,7 +961,7 @@ mr_add_enum (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      mr_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name, cmp_enums_by_name);  
+      mr_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name, cmp_enums_by_name, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -943,7 +973,7 @@ mr_add_enum (mr_td_t * tdp)
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
-      fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value, cmp_enums_by_value);  
+      fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value, cmp_enums_by_value, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -964,7 +994,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value, cmp_enums_by_value);
+  mr_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value, cmp_enums_by_value, NULL);
   if (fdpp)
     return (*fdpp);
   return (NULL);
@@ -980,7 +1010,7 @@ int
 mr_get_enum_by_name (uint64_t * value, char * name)
 {
   mr_fd_t fd = { .name = name };
-  mr_fd_t ** fdpp = tfind (&fd, (void*)&mr_conf.enum_by_name, cmp_enums_by_name);
+  mr_fd_t ** fdpp = tfind (&fd, (void*)&mr_conf.enum_by_name, cmp_enums_by_name, NULL);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
   return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);

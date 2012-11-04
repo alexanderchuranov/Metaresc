@@ -42,7 +42,7 @@ TYPEDEF_UNION (ieee_float_t,
 	       float _float,
 	       uint32_t uint32,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (ieee_754_float_nan_enum_t, quiet_nan, :9, , .offset = 22 / 8, .param = { .bitfield_param = { .width = 9, .shift = 22 % 8, }, } ),
+	       BITFIELD (ieee_754_float_nan_enum_t, quiet_nan, :9, , .offset = 22 / 8, .param = { .bitfield_param = { .width = 9, .shift = 22 % 8, .bitfield = { .size = 0 }, }, } ),
 	       )
 
 TYPEDEF_STRUCT (ieee_754_double_t,
@@ -66,7 +66,7 @@ TYPEDEF_UNION (ieee_double_t,
 	       double _double,
 	       uint64_t uint64,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (ieee_754_double_nan_enum_t, quiet_nan, :12, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 12, .shift = (32 + 19) % 8, }, } ),
+	       BITFIELD (ieee_754_double_nan_enum_t, quiet_nan, :12, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 12, .shift = (32 + 19) % 8, .bitfield = { .size = 0 }, }, } ),
 	       )
 
 TYPEDEF_STRUCT (ieee_854_long_double_t,
@@ -85,13 +85,17 @@ TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
 		BITFIELD (sign_t, sign, :1),
 		BITFIELD (unsigned int, empty, :16))
 
-TYPEDEF_ENUM (ieee_854_long_double_nan_enum_t, (IEEE_854_LONG_DOUBLE_NAN_ENUM_T, = (1 << 16) - 1, "ieee_854_long_double_nan"))
+TYPEDEF_ENUM (ieee_854_long_double_nan_enum_t,
+	      (IEEE_854_LONG_DOUBLE_NAN_ENUM_T, = (1 << 17) - 1, "ieee_854_long_double_nan"),
+	      (IEEE_854_LONG_DOUBLE_NAN_ZERO_ONE_ENUM_T, = ((1 << 17) - 1) ^ (1 << 1), "ieee_854_long_double_nan"),
+	      )
+
 TYPEDEF_UNION (ieee_long_double_t,
 	       ANON_UNION (),
 	       (ieee_854_long_double_t, ieee_854_long_double),
 	       (ieee_854_long_double_nan_t, ieee_854_long_double_nan),
 	       long double long_double,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (ieee_854_long_double_nan_enum_t, quiet_nan, :16, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 16, .shift = (32 + 30) % 8, }, } ),
+	       BITFIELD (ieee_854_long_double_nan_enum_t, quiet_nan, :17, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 17, .shift = (32 + 30) % 8, .bitfield = { .size = 0 }, }, } ),
 	       )
 #endif /* _FLT_VALUES_H_ */

@@ -1,6 +1,6 @@
 # -*- makefile -*-
 
-AM_CFLAGS = --fast-math -Wall -Werror
+AM_CFLAGS = @AM_CFLAGS@ @LIBXML2_CFLAGS@
 INCLUDES = -I$(top_srcdir)/src
 LIBS += ../src/libmetaresc.la $(LIBXML2_LIBS)
 

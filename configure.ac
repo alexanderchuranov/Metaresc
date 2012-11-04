@@ -20,6 +20,37 @@ AM_PROG_LIBTOOL
 AC_PROG_YACC
 AC_PROG_LEX
 
+AM_CFLAGS=""
+aux_CFLAGS=--fast-math
+save_CFLAGS=${CFLAGS}
+CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+CFLAGS=${save_CFLAGS}
+
+aux_CFLAGS=-Wall
+save_CFLAGS=${CFLAGS}
+CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+CFLAGS=${save_CFLAGS}
+
+aux_CFLAGS=-Werror
+save_CFLAGS=${CFLAGS}
+CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+CFLAGS=${save_CFLAGS}
+
+aux_CFLAGS=-Wno-initializer-overrides
+save_CFLAGS=${CFLAGS}
+CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+CFLAGS=${save_CFLAGS}
+
+AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
+
 YACC=bison
 
 AC_ARG_VAR(HAVE_BISON, [Bison check])
@@ -49,7 +80,6 @@ PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
 AM_CONDITIONAL(HAVE_LIBXML2, test x${HAVE_LIBXML2} = xyes)
 if test x${HAVE_LIBXML2} = xyes ; then
   AC_DEFINE(HAVE_LIBXML2, [], [define if libxml2 is present])
-  CFLAGS="${CFLAGS} ${LIBXML2_CFLAGS}"
 fi
 
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )

@@ -23,16 +23,17 @@ MR_START_TEST (enum_ptr, "pointer on enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, packed_enum_ptr_t, (packed_enum_t[]){ PE_ONE });
 } END_TEST
 
+static int warnings = 0;
+static void
+msg_handler (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args)
+{
+  if ((MR_MESSAGE_SAVE_ENUM == message_id) || (MR_MESSAGE_SAVE_BITMASK == message_id))
+    ++warnings;
+}
+
 MR_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
   int checked = 0;
-  int warnings = 0;
   void (*save_msg_handler) (const char*, const char*, int, mr_log_level_t, mr_message_id_t, va_list) = mr_conf.msg_handler;
-
-  void msg_handler (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args)
-  {
-    if ((MR_MESSAGE_SAVE_ENUM == message_id) || (MR_MESSAGE_SAVE_BITMASK == message_id))
-      ++warnings;
-  }
 
 #define CMP_ENUMS(TYPE, X, Y, ...) ({ ++checked; (*((X)->x) != *((Y)->x));})
 

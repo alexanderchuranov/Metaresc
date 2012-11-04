@@ -29,16 +29,18 @@ TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (enum_t) *
 MR_START_TEST (bitfield_enum_zero, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO, STRUCT_X_CMP); } END_TEST
 MR_START_TEST (bitfield_enum_three, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE, STRUCT_X_CMP); } END_TEST
 
+static int warnings = 0;
+
+static void
+msg_handler (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args)
+{
+  if ((MR_MESSAGE_SAVE_ENUM == message_id) || (MR_MESSAGE_SAVE_BITMASK == message_id))
+    ++warnings;
+}
+
 MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
   int checked = 0;
-  int warnings = 0;
   void (*save_msg_handler) (const char*, const char*, int, mr_log_level_t, mr_message_id_t, va_list) = mr_conf.msg_handler;
-
-  void msg_handler (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args)
-  {
-    if ((MR_MESSAGE_SAVE_ENUM == message_id) || (MR_MESSAGE_SAVE_BITMASK == message_id))
-      ++warnings;
-  }
 
 #define CMP_STRUCT_(...) ({ ++checked; STRUCT_X_CMP (__VA_ARGS__);})
 

@@ -746,8 +746,7 @@
 	  .param = 							\
 	  {								\
 	    .array_param = {						\
-	      .count = sizeof (MR_TYPE_NAME) == 0 ? 0 :			\
-	      sizeof (S_PTR) / sizeof (MR_TYPE_NAME),			\
+	      .count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
 	      .row_count = 1,						\
 	    },								\
 	  },								\
@@ -842,8 +841,7 @@
 	    .param = 							\
 	    {								\
 	      .array_param = {						\
-		.count = sizeof (MR_TYPE_NAME) == 0 ? 0 :		\
-		(sizeof S_PTR + 0) / sizeof (MR_TYPE_NAME),		\
+		.count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
 		.row_count = 1,						\
 	      },							\
 	    },								\
@@ -920,8 +918,7 @@
 	.param = 							\
 	{								\
 	  .array_param = {						\
-	    .count = sizeof (MR_TYPE_NAME) == 0 ? 0 :			\
-	    (sizeof S_PTR + 0) / sizeof (MR_TYPE_NAME),			\
+	    .count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
 	    .row_count = 1,						\
 	  },								\
 	},								\
@@ -1028,8 +1025,7 @@
 		.param = 						\
 		{							\
 		  .array_param = {					\
-		    .count = sizeof (MR_TYPE_NAME) == 0 ? 0 :		\
-		    (sizeof S_PTR + 0) / sizeof (MR_TYPE_NAME),		\
+		    .count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
 		    .row_count = 1,					\
 		  },							\
 		},							\

@@ -14,7 +14,7 @@ main (int argc, char * argv[])
   
   memset (&empty, 0, sizeof (empty));
   char * str = MR_SAVE_CINIT (empty_t, &empty);
-  MR_LOAD_CINIT (empty_t, str, &empty);
+  (void)MR_LOAD_CINIT (empty_t, str, &empty);
   if (str)
     MR_FREE (str);
   

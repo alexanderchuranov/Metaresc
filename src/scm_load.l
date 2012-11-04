@@ -128,9 +128,10 @@ static char * unquote (char * str, int length)
   return (str_);
 }
 
-static void
-tokenize (char * str, void (*handler) (char*, int), int length)
+static int
+tokenize (char * str, int length, void (*handler) (char * token, int token_size, int token_count, void * context), void * context)
 {
+  int tok_count = 0;
   char * end = strchr (str, ')');
   if (NULL == end)
     end = &str[length];
@@ -143,48 +144,57 @@ tokenize (char * str, void (*handler) (char*, int), int length)
       while (!isspace (*tok) && (')' != *tok))
 	tok++;
       if (tok != str)
-	handler (str, tok - str);
+	handler (str, tok - str, tok_count++, context);
       str = tok;
     }
+  return (tok_count);
 }
 
+static void
+calc_size (char * tok, int tok_size, int tok_count, void * context)
+{
+  int * size_ptr = context;
+  if (tok_count > 0)
+    *size_ptr += sizeof (MR_BITMASK_OR_DELIMITER) - 1;
+  *size_ptr += tok_size;
+}
+
+static void
+append (char * tok, int tok_size, int tok_count, void * context)
+{
+  char ** end_ptr = context;
+  if (tok_count > 0)
+    {
+      memcpy (*end_ptr, MR_BITMASK_OR_DELIMITER, sizeof (MR_BITMASK_OR_DELIMITER) - 1);
+      *end_ptr += sizeof (MR_BITMASK_OR_DELIMITER) - 1;
+    }
+  memcpy (*end_ptr, tok, tok_size);
+  *end_ptr += tok_size;
+}
+  
 static char *
 encode_bitmask (char * str, int length)
 {
   int size = 0;
-  int tok_count = 0;
   char * bitmask;
   char * end;
 
-  void calc_size (char * tok, int tok_size) { size += tok_size; ++tok_count; }
-  void append (char * tok, int tok_size)
-  {
-    if (tok_count++)
-      {
-	memcpy (end, MR_BITMASK_OR_DELIMITER, sizeof (MR_BITMASK_OR_DELIMITER) - 1);
-	end += sizeof (MR_BITMASK_OR_DELIMITER) - 1;
-      }
-    memcpy (end, tok, tok_size);
-    end += tok_size;
-  }
-  
   str = strstr (str, MR_SCM_BIT_OR);
   if (NULL == str)
     return (NULL);
   str += sizeof (MR_SCM_BIT_OR) - 1;
 
-  tokenize (str, calc_size, length);
+  tokenize (str, length, calc_size, &size);
 
-  bitmask = MR_MALLOC (size + (tok_count - 1) * (sizeof (MR_BITMASK_OR_DELIMITER) - 1) + 1);
+  bitmask = MR_MALLOC (size + 1);
   if (NULL == bitmask)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
   end = bitmask;
-  tok_count = 0;
   
-  tokenize (str, append, length);
+  tokenize (str, length, append, &end);
   *end = 0;
   return (bitmask);
 }

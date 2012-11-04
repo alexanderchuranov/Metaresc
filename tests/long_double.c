@@ -12,10 +12,12 @@
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, VALUE, SCALAR_DOUBLE); \
     })
 
+#define LD_NAN ({ ieee_long_double_t _x_; _x_.long_double = 0; _x_.ieee_854_long_double_nan.quiet_nan = !0; _x_.ieee_854_long_double_nan.one = 1; _x_.ieee_854_long_double_nan.exponent = -1; _x_.long_double;})
+
 TYPEDEF_STRUCT (struct_long_double, long_double_t x)
 
 MR_START_TEST (zero_long_double, "zero long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, 0); } END_TEST
-MR_START_TEST (nan_long_double, "NAN long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, NAN); } END_TEST
+MR_START_TEST (nan_long_double, "NAN long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, LD_NAN); } END_TEST
 MR_START_TEST (inf_long_double, "INFINITY long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, INFINITY); } END_TEST
 MR_START_TEST (huge_val_long_double, "HUGE_VAL long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, HUGE_VAL); } END_TEST
 MR_START_TEST (ldbl_max_long_double, "LDBL_MAX long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, LDBL_MAX); } END_TEST

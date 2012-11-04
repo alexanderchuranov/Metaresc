@@ -230,7 +230,7 @@ maybe_split_for_insert (node *rootp, node *parentp, node *gparentp,
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-__tsearch (const void *key, void **vrootp, __compar_fn_t compar)
+__tsearch (const void *key, void **vrootp, mr_compar_fn_t compar, const void * context)
 {
   node q;
   node *parentp = NULL, *gparentp = NULL;
@@ -251,7 +251,7 @@ __tsearch (const void *key, void **vrootp, __compar_fn_t compar)
   while (*nextp != NULL)
     {
       node root = *rootp;
-      r = (*compar) (key, root->key);
+      r = (*compar) (key, root->key, context);
       if (r == 0)
 	return root;
 
@@ -294,10 +294,11 @@ weak_alias (__tsearch, tsearch)
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-__tfind (key, vrootp, compar)
+__tfind (key, vrootp, compar, context)
      const void *key;
      void *const *vrootp;
-     __compar_fn_t compar;
+     mr_compar_fn_t compar;
+     const void * context;
 {
   node *rootp = (node *) vrootp;
 
@@ -311,7 +312,7 @@ __tfind (key, vrootp, compar)
       node root = *rootp;
       int r;
 
-      r = (*compar) (key, root->key);
+      r = (*compar) (key, root->key, context);
       if (r == 0)
 	return root;
 
@@ -326,7 +327,7 @@ weak_alias (__tfind, tfind)
    KEY is the key to be deleted, ROOTP is the address of the root of tree,
    COMPAR the comparison function.  */
 void *
-__tdelete (const void *key, void **vrootp, __compar_fn_t compar)
+__tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * context)
 {
   node p, q, r, retval;
   int cmp;
@@ -347,7 +348,7 @@ __tdelete (const void *key, void **vrootp, __compar_fn_t compar)
 
   CHECK_TREE (p);
 
-  while ((cmp = (*compar) (key, (*rootp)->key)) != 0)
+  while ((cmp = (*compar) (key, (*rootp)->key, context)) != 0)
     {
       if (sp == stacksize)
 	{

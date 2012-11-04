@@ -70,9 +70,19 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
   return (0);
 }
 
-#define CMP_TYPED_PTRDES(PTRS) int cmp_typed_ptrdes (const void * x, const void * y) { return (mr_cmp_ptrdes (&PTRS->ra.data[(long)x], &PTRS->ra.data[(long)y])); }
+static int
+cmp_typed_ptrdes (const void * x, const void * y, const void * context)
+{
+  const mr_ra_mr_ptrdes_t * ptrs = context;
+  return (mr_cmp_ptrdes (&ptrs->ra.data[(long)x], &ptrs->ra.data[(long)y]));
+}
 
-#define CMP_UNTYPED_PTRDES(PTRS) int cmp_untyped_ptrdes (const void * x, const void * y) { return (PTRS->ra.data[(long)x].data - PTRS->ra.data[(long)y].data); }
+static int
+cmp_untyped_ptrdes (const void * x, const void * y, const void * context)
+{
+  const mr_ra_mr_ptrdes_t * ptrs = context;
+  return (ptrs->ra.data[(long)x].data - ptrs->ra.data[(long)y].data);
+}
 
 /**
  * Typed lookup for a pointer (last element in collection) in collection of already saved pointers.
@@ -89,9 +99,7 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  CMP_TYPED_PTRDES (ptrs);
-
-  tree_search_result = tsearch ((void*)count, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes);
+  tree_search_result = tsearch ((void*)count, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -119,9 +127,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  CMP_UNTYPED_PTRDES (ptrs);
-
-  tree_search_result = tsearch ((void*)count, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes);  
+  tree_search_result = tsearch ((void*)count, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);  
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -170,9 +176,6 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
   void * tree_find_result;
   long idx_;
 
-  CMP_TYPED_PTRDES (ptrs);
-  CMP_UNTYPED_PTRDES (ptrs);
-  
   idx_ = mr_add_ptr_to_list (ptrs);
   if (idx_ < 0)
     return (idx_); /* memory allocation error occured */
@@ -180,10 +183,10 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
   ptrs->ra.data[idx_].fd = *fdp;
   
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
-  tree_find_result = tfind ((void*)idx_, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes);
+  tree_find_result = tfind ((void*)idx_, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
-  tree_find_result = tfind ((void*)idx_, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes);
+  tree_find_result = tfind ((void*)idx_, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
   return (-1);

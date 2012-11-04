@@ -126,40 +126,42 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, char * named_field_template, int (*no
   return (mr_ra_str.data);
 }
 
+static int
+cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+{
+  int skip_node = 0;
+  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES) && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.cinit)
+    skip_node = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.cinit (idx, ptrs, save_data);
+  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES) && mr_conf.io_handlers[fdp->mr_type].save.cinit)
+    skip_node = mr_conf.io_handlers[fdp->mr_type].save.cinit (idx, ptrs, save_data);
+  else
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+  return (skip_node);
+}
+  
 char *
 cinit_save (mr_ra_mr_ptrdes_t * _ptrs_)
 {
-  int node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
-  {
-    int skip_node = 0;
-    if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES) && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.cinit)
-      skip_node = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.cinit (idx, ptrs, save_data);
-    else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES) && mr_conf.io_handlers[fdp->mr_type].save.cinit)
-      skip_node = mr_conf.io_handlers[fdp->mr_type].save.cinit (idx, ptrs, save_data);
-    else
-      MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
-    return (skip_node);
-  }
-  
-  return (cinit_json_save (_ptrs_, MR_CINIT_NAMED_FIELD_TEMPLATE, node_handler));
+  return (cinit_json_save (_ptrs_, MR_CINIT_NAMED_FIELD_TEMPLATE, cinit_node_handler));
 }
 
+static int
+json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+{
+  int skip_node = 0;
+  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES) && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.json)
+    skip_node = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.json (idx, ptrs, save_data);
+  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES) && mr_conf.io_handlers[fdp->mr_type].save.json)
+    skip_node = mr_conf.io_handlers[fdp->mr_type].save.json (idx, ptrs, save_data);
+  else
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+  return (skip_node);
+}
+  
 char *
 json_save (mr_ra_mr_ptrdes_t * _ptrs_)
 {
-  int node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
-  {
-    int skip_node = 0;
-    if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES) && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.json)
-      skip_node = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.json (idx, ptrs, save_data);
-    else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES) && mr_conf.io_handlers[fdp->mr_type].save.json)
-      skip_node = mr_conf.io_handlers[fdp->mr_type].save.json (idx, ptrs, save_data);
-    else
-      MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
-    return (skip_node);
-  }
-  
-  return (cinit_json_save (_ptrs_, MR_JSON_NAMED_FIELD_TEMPLATE, node_handler));
+  return (cinit_json_save (_ptrs_, MR_JSON_NAMED_FIELD_TEMPLATE, json_node_handler));
 }
 
 /**

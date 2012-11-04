@@ -2,13 +2,9 @@
 #define _TSEARCH_H_
 
 /* For use with hsearch(3).  */
-#ifndef __COMPAR_FN_T
-# define __COMPAR_FN_T
-typedef int (*__compar_fn_t) (__const void *, __const void *);
-
-# ifdef	__USE_GNU
-typedef __compar_fn_t comparison_fn_t;
-# endif
+#ifndef MR_COMPAR_FN_T
+# define MR_COMPAR_FN_T
+typedef int (*mr_compar_fn_t) (__const void *, __const void *, __const void *);
 #endif
 
 /* The tsearch routines are very interesting. They make many
@@ -34,23 +30,18 @@ typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
 /* Search for an entry matching the given KEY in the tree pointed to
    by *ROOTP and insert a new element if not found.  */
 extern void *tsearch (__const void *__key, void **__rootp,
-		      __compar_fn_t __compar);
+		      mr_compar_fn_t __compar, __const void * __context);
 
 /* Search for an entry matching the given KEY in the tree pointed to
    by *ROOTP.  If no matching entry is available return NULL.  */
 extern void *tfind (__const void *__key, void *__const *__rootp,
-		    __compar_fn_t __compar);
+		    mr_compar_fn_t __compar, __const void * __context);
 
 /* Remove the element matching KEY from the tree pointed to by *ROOTP.  */
 extern void *tdelete (__const void *__restrict __key,
 		      void **__restrict __rootp,
-		      __compar_fn_t __compar);
-
-#ifndef __ACTION_FN_T
-# define __ACTION_FN_T
-typedef void (*__action_fn_t) (__const void *__nodep, VISIT __value,
-			       int __level);
-#endif
+		      mr_compar_fn_t __compar,
+		      __const void * __context);
 
 /* Walk through the whole tree and call the ACTION callback for every node
    or leaf.  */
