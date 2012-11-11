@@ -17,6 +17,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_LIBTOOL
+YACC=bison
 AC_PROG_YACC
 AC_PROG_LEX
 
@@ -51,24 +52,8 @@ CFLAGS=${save_CFLAGS}
 
 AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
 
-YACC=bison
-
-AC_ARG_VAR(HAVE_BISON, [Bison check])
-if test x != x${YACC} && test -x ${YACC} ; then
-  AC_MSG_CHECKING(${YACC})
-  AC_MSG_RESULT(yes)
-  HAVE_BISON=yes
-else
-  AC_CHECK_PROG(HAVE_BISON, $YACC, yes)
-fi
-AC_ARG_VAR(HAVE_FLEX, [Flex check])
-if test x != x${LEX} && test -x ${LEX} ; then
-  AC_MSG_CHECKING(${LEX})
-  AC_MSG_RESULT(yes)
-  HAVE_FLEX=yes
-else
-  AC_CHECK_PROG(HAVE_FLEX, $LEX, yes)
-fi
+AC_CHECK_PROG(HAVE_BISON, $YACC, yes)
+AC_CHECK_PROG(HAVE_FLEX, $LEX, yes)
 
 AM_CONDITIONAL(HAVE_BISON_FLEX, test x${HAVE_BISON} = xyes && test x${HAVE_FLEX} = xyes)
 if test x${HAVE_BISON} = xyes && test x${HAVE_FLEX} = xyes; then

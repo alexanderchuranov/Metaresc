@@ -103,11 +103,11 @@ MR_START_TEST (rarray_opaque_data, "rarray with opaque data") {
   int_rarray_t orig = {
     .x =
     {
-      .data = (int[]){ 0, 1, },
+      .data = (int[]){ 0, 1, 0 /* zero padding for incorrect size test */, },
       .size = 2 * sizeof (int),
       .alloc_size = 2 * sizeof (int),
       .ext = { NULL },
-      .ptr_type = MR_RARRAY_OPAQUE_DATA_T,
+      .ptr_type = MR_RARRAY_OPAQUE_DATA_T_STR,
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, int_rarray_t, &orig);

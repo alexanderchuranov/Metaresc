@@ -475,7 +475,7 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
       /* change void * on appropriate type */
       mr_save_data->ptrs.ra.data[data_idx].fd.type = fd_.type;
       mr_save_data->ptrs.ra.data[data_idx].fd.mr_type_ext = MR_TYPE_EXT_RARRAY_DATA;
-      mr_save_data->ptrs.ra.data[data_idx].flags.is_opaque_data = ra->ptr_type ? !strcmp (ra->ptr_type, MR_RARRAY_OPAQUE_DATA_T) : MR_FALSE;
+      mr_save_data->ptrs.ra.data[data_idx].flags.is_opaque_data = ra->ptr_type ? !strcmp (ra->ptr_type, MR_RARRAY_OPAQUE_DATA_T_STR) : MR_FALSE;
 
       if (mr_save_data->ptrs.ra.data[data_idx].ref_idx < 0)
 	{

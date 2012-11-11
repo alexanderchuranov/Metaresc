@@ -53,7 +53,10 @@
 /* XML attribute for zero length strings */
 #define MR_ISNULL "isnull"
 #define MR_ISNULL_VALUE "true"
-#define MR_RARRAY_OPAQUE_DATA_T "mr_rarray_opaque_data_t"
+#define MR_RARRAY_OPAQUE_DATA_T mr_rarray_opaque_data_t
+#define MR_RARRAY_OPAQUE_DATA_T_STR MR_STRINGIFY_READONLY(MR_RARRAY_OPAQUE_DATA_T)
+#define MR_STRINGIFY_READONLY(...) MR_STRINGIFY_READONLY_ (__VA_ARGS__)
+#define MR_STRINGIFY_READONLY_(...) #__VA_ARGS__
 
 #define MR_BITMASK_OR_DELIMITER " | "
 
