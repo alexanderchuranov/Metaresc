@@ -70,7 +70,7 @@ extern void tdestroy (void *__root, __free_fn_t __freefct);
 
 #include <metaresc.h>
 
-#define node_t MR_TYPEDEF_PREFIX(mr_red_black_tree_node_t)
+#define node_t MR_TYPEDEF_PREFIX (mr_red_black_tree_node_t)
 typedef struct node_t *node;
 
 #endif /* _TSEARCH_H_ */
