@@ -558,6 +558,12 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
       return (0);
     }
+  if (tdp->mr_type != MR_TYPE_STRUCT)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type);
+      return (0);
+    }
+  
   count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
     if (!xdr_load (data + tdp->fields.data[i].offset, &tdp->fields.data[i], xdrs, ptrs))
@@ -623,7 +629,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   /* get pointer on structure descriptor */
   if (NULL == tdp)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
-  else if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION))
+  else if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_UNION, tdp->type);
   else if (!xdr_load_string (xdrs, 0, &ptrs_))
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
@@ -1100,6 +1106,7 @@ static void __attribute__((constructor)) mr_init_save_xdr (void)
   mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].save.xdr = xdr_none; 
   mr_conf.io_handlers[MR_TYPE_UNION].save.xdr = xdr_save_union; 
   mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.xdr = xdr_save_union; 
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.xdr = xdr_save_union; 
      
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.xdr = xdr_none;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].save.xdr = xdr_save_rarray_data; 
@@ -1135,6 +1142,7 @@ static void __attribute__((constructor)) mr_init_load_xdr (void)
   mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].load.xdr = xdr_none; 
   mr_conf.io_handlers[MR_TYPE_UNION].load.xdr = xdr_load_union; 
   mr_conf.io_handlers[MR_TYPE_ANON_UNION].load.xdr = xdr_load_union; 
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].load.xdr = xdr_load_union; 
      
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].load.xdr = xdr_load_array;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY].load.xdr = xdr_load_rarray; 

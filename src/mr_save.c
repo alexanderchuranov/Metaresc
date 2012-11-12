@@ -288,6 +288,11 @@ mr_save_struct (mr_save_data_t * mr_save_data)
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra.data[idx].fd.type);
       return;
     }
+  if (tdp->mr_type != MR_TYPE_STRUCT)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type);
+      return;
+    }
 
   mr_save_data->parent = idx;
   /* add each child to this node */
@@ -314,7 +319,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra.data[idx].fd.type);
       return;
     }
-  if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION))
+  if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->type);
       return;
@@ -654,6 +659,7 @@ static void __attribute__((constructor)) mr_init_save_rl (void)
   mr_conf.io_handlers[MR_TYPE_STRUCT].save.rl = mr_save_struct;
   mr_conf.io_handlers[MR_TYPE_UNION].save.rl = mr_save_union;
   mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.rl = mr_save_union;
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.rl = mr_save_union;
 
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.rl = mr_save_array;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY].save.rl = mr_save_rarray;

@@ -12,7 +12,7 @@
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, VALUE, SCALAR_DOUBLE); \
     })
 
-#define LD_NAN ({ ieee_long_double_t _x_; _x_.long_double = 0; _x_.ieee_854_long_double_nan.quiet_nan = !0; _x_.ieee_854_long_double_nan.one = 1; _x_.ieee_854_long_double_nan.exponent = -1; _x_.long_double;})
+#define LD_NAN ((ieee_long_double_t){ { .long_double = 0, .ieee_854_long_double_nan = { .quiet_nan = !0, .one = 1, .exponent = -1, }, }, }).long_double
 
 TYPEDEF_STRUCT (struct_long_double, long_double_t x)
 

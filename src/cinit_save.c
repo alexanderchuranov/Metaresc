@@ -11,7 +11,6 @@
 #define MR_CINIT_INDENT_TEMPLATE "%*s"
 #define MR_CINIT_INDENT "  "
 
-#define MR_CINIT_TYPE_SIZE_TEMPLATE "%1$" SCNd32
 #define MR_CINIT_TYPE_NAME_TEMPLATE "%2$s"
 #define MR_JSON_TYPE_NAME_TEMPLATE MR_CINIT_TYPE_NAME_TEMPLATE
 #define MR_CINIT_FIELDS_DELIMITER ",\n"
@@ -27,6 +26,7 @@ static int cinit_named_node[MR_MAX_TYPES] = {
   [MR_TYPE_STRUCT] = MR_CINIT_NAMED_FIELDS,
   [MR_TYPE_UNION] = MR_CINIT_NAMED_FIELDS,
   [MR_TYPE_ANON_UNION] = MR_CINIT_NAMED_FIELDS,
+  [MR_TYPE_NAMED_ANON_UNION] = MR_CINIT_NAMED_FIELDS,
 };
 
 /**
@@ -38,7 +38,7 @@ static int cinit_named_node[MR_MAX_TYPES] = {
  * @return stringified representation of the object
  */
 static char *
-cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, char * named_field_template, int (*node_handler) (mr_fd_t*, int, mr_ra_mr_ptrdes_t*, mr_save_type_data_t*))
+cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, mr_ra_mr_ptrdes_t*, mr_save_type_data_t*))
 {
   mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = { NULL }, };
   int idx = 0;
@@ -51,7 +51,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, char * named_field_template, int (*no
       int level = 0;
       int skip_node;
       mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
-      mr_save_type_data_t save_data = { .prefix = NULL, .content = NULL, .suffix = NULL, };
+      mr_save_type_data_t save_data = { .named_field_template = NULL, .prefix = NULL, .content = NULL, .suffix = NULL, };
 
       /* route saving handler */
       skip_node = node_handler (fdp, idx, ptrs, &save_data);
@@ -59,32 +59,39 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, char * named_field_template, int (*no
 	{
 	  int named_node = MR_CINIT_UNNAMED_FIELDS;
 	  level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+	  
 	  if (ptrs->ra.data[idx].level > 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 	      return (NULL);
-	  if ((ptrs->ra.data[idx].parent >= 0) && (MR_TYPE_EXT_NONE == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type_ext)
-	      && strcmp ("mr_ptr_t", ptrs->ra.data[ptrs->ra.data[idx].parent].fd.type)) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
+	  
+	  if ((ptrs->ra.data[idx].parent >= 0) && (MR_TYPE_EXT_NONE == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type_ext))
 	    named_node = cinit_named_node[ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type];
-	  if (MR_CINIT_NAMED_FIELDS == named_node)
-	    if (mr_ra_printf (&mr_ra_str, named_field_template, ptrs->ra.data[idx].fd.name) < 0)
+	  
+	  if ((MR_CINIT_NAMED_FIELDS == named_node) && (save_data.named_field_template))
+	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra.data[idx].fd.name) < 0)
 	      return (NULL);
+	  
 	  if (ptrs->ra.data[idx].ref_idx >= 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT,
 			      (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			      ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	      return (NULL);
+	  
 	  if (ptrs->ra.data[idx].flags.is_referenced)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	      return (NULL);
+	  
 	  if (save_data.prefix)
 	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.size, ptrs->ra.data[idx].fd.type) < 0)
 	      return (NULL);
+	  
 	  if (save_data.content)
 	    {
 	      if (mr_ra_printf (&mr_ra_str, "%s", save_data.content) < 0)
 		return (NULL);
 	      MR_FREE (save_data.content);
 	    }
+	  
 	  ptrs->ra.data[idx].ext.ptr = save_data.suffix;
 	  ptrs->ra.data[idx].ptr_type = "string_t";
 	}
@@ -130,6 +137,10 @@ static int
 cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   int skip_node = 0;
+  if ((fdp->mr_type != MR_TYPE_ANON_UNION) || /* anonymous unions should be unnamed for CINIT */
+      ((ptrs->ra.data[idx].parent >= 0) && strcmp ("mr_ptr_t", ptrs->ra.data[ptrs->ra.data[idx].parent].fd.type))) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
+    save_data->named_field_template = MR_CINIT_NAMED_FIELD_TEMPLATE;
+  
   if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES) && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.cinit)
     skip_node = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.cinit (idx, ptrs, save_data);
   else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES) && mr_conf.io_handlers[fdp->mr_type].save.cinit)
@@ -142,13 +153,14 @@ cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_ty
 char *
 cinit_save (mr_ra_mr_ptrdes_t * _ptrs_)
 {
-  return (cinit_json_save (_ptrs_, MR_CINIT_NAMED_FIELD_TEMPLATE, cinit_node_handler));
+  return (cinit_json_save (_ptrs_, cinit_node_handler));
 }
 
 static int
 json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   int skip_node = 0;
+  save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
   if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES) && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.json)
     skip_node = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.json (idx, ptrs, save_data);
   else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES) && mr_conf.io_handlers[fdp->mr_type].save.json)
@@ -161,7 +173,7 @@ json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_typ
 char *
 json_save (mr_ra_mr_ptrdes_t * _ptrs_)
 {
-  return (cinit_json_save (_ptrs_, MR_JSON_NAMED_FIELD_TEMPLATE, json_node_handler));
+  return (cinit_json_save (_ptrs_, json_node_handler));
 }
 
 /**
@@ -477,7 +489,8 @@ static void __attribute__((constructor)) mr_init_save_cinit (void)
   mr_conf.io_handlers[MR_TYPE_FUNC].save.cinit = cinit_save_none;
   mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].save.cinit = cinit_save_none;
   mr_conf.io_handlers[MR_TYPE_UNION].save.cinit = cinit_save_struct;
-  mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.cinit = cinit_save_anon_union;
+  mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.cinit = cinit_save_struct;
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.cinit = cinit_save_anon_union;
 
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.cinit = cinit_save_struct;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].save.cinit = cinit_save_rarray_data;
@@ -509,7 +522,8 @@ static void __attribute__((constructor)) mr_init_save_json (void)
   mr_conf.io_handlers[MR_TYPE_FUNC].save.json = cinit_save_none;
   mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].save.json = cinit_save_none;
   mr_conf.io_handlers[MR_TYPE_UNION].save.json = cinit_save_struct;
-  mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.json = cinit_save_anon_union;
+  mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.json = cinit_save_struct;
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.json = cinit_save_struct;
 
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.json = json_save_array;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].save.json = json_save_rarray_data;

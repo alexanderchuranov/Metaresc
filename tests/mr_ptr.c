@@ -6,7 +6,7 @@
 #include <union.h>
 
 #define ASSERT_SAVE_LOAD_MR_PTR(METHOD, TYPE, VALUE, ...) ({		\
-      struct_mr_ptr_t x = { { (TYPE[]){ { { M_PI }, VALUE } } }, #TYPE }; \
+      struct_mr_ptr_t x = { 0, { (TYPE[]){ { 0, { M_PI }, VALUE } } }, #TYPE }; \
       ASSERT_SAVE_LOAD (METHOD, struct_mr_ptr_t, &x, __VA_ARGS__);	\
     })
 
@@ -37,7 +37,7 @@ MR_START_TEST (union_mr_ptr_string_y, "mr_ptr_t is a pointer on any Metaresc typ
 } END_TEST
 
 MR_START_TEST (union_mr_ptr_string, "mr_ptr_t is a pointer on any Metaresc type") {
-  struct_mr_ptr_t x = { { "string_t" }, "string_t" };	
+  struct_mr_ptr_t x = { 0, { "string_t" }, "string_t" };	
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_mr_ptr_t, &x);
   x.ptr.ptr = "string longer then sizeof (void*)";
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_mr_ptr_t, &x);	

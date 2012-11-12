@@ -26,6 +26,7 @@ static int scm_named_fields[MR_MAX_TYPES] = {
   [MR_TYPE_STRUCT] = MR_SCM_NAMED_FIELDS,
   [MR_TYPE_UNION] = MR_SCM_NAMED_FIELDS,
   [MR_TYPE_ANON_UNION] = MR_SCM_NAMED_FIELDS,
+  [MR_TYPE_NAMED_ANON_UNION] = MR_SCM_NAMED_FIELDS,
 };
 
 #define MR_SCM_IS_NOT_ARRAY (0)
@@ -367,6 +368,7 @@ static void __attribute__((constructor)) mr_init_save_scm (void)
   mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].save.scm = scm_save_none;
   mr_conf.io_handlers[MR_TYPE_UNION].save.scm = scm_save_empty;
   mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.scm = scm_save_empty;
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.scm = scm_save_empty;
 
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.scm = scm_save_empty;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].save.scm = scm_save_pointer;

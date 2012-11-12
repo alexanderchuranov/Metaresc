@@ -11,13 +11,13 @@
     })
 
 #define ASSERT_SAVE_LOAD_UNION(METHOD, TYPE, VALUE, ...) ({		\
-      TYPE x = { { M_PI }, VALUE };					\
+      TYPE x = { 0, { M_PI }, VALUE };					\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
 MR_START_TEST (anon_union, "anonymous union") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_ANON_UNION, struct_anon_union_enum_t, UD_FLOAT, STRUCT_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_ANON_UNION, struct_anon_union_enum_t, UD_INT32, STRUCT_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_FLOAT, STRUCT_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_INT32, STRUCT_X_CMP);
 } END_TEST
 
 MR_START_TEST (named_anon_union, "named anonymous union") {

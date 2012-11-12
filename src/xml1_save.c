@@ -235,6 +235,7 @@ void mr_init_save_xml (void)
   mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].save.xml = xml_save_none;
   mr_conf.io_handlers[MR_TYPE_UNION].save.xml = xml_save_empty;
   mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.xml = xml_save_empty;
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.xml = xml_save_empty;
 
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.xml = xml_save_empty;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].save.xml = xml_save_empty;

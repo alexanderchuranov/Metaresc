@@ -760,7 +760,7 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
  * @return comparation sign
  */
 static int
-cmp_tdp (const void * x, const void * y)
+cmp_tdp (const void * x, const void * y, const void * context)
 {
   return (strcmp (((const mr_td_t *) x)->type, ((const mr_td_t *) y)->type));
 }
@@ -773,7 +773,7 @@ cmp_tdp (const void * x, const void * y)
 static void
 mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 {
-  mr_td_t ** tdpp = tsearch (tdp, (void*)tree, cmp_tdp);
+  mr_td_t ** tdpp = tsearch (tdp, (void*)tree, cmp_tdp, NULL);
   if (NULL == tdpp)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 }
@@ -819,7 +819,7 @@ mr_get_td_by_name (char * type)
   if (mr_conf.tree)
     {
       mr_td_t td = { .type = type };
-      mr_td_t ** tdpp = tfind (&td, (void*)&mr_conf.tree, cmp_tdp);
+      mr_td_t ** tdpp = tfind (&td, (void*)&mr_conf.tree, cmp_tdp, NULL);
       if (tdpp)
 	return (*tdpp);
       else
@@ -845,7 +845,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
   int i, j;
   
   for (i = 0; i < count; ++i)
-    if (MR_TYPE_ANON_UNION == tdp->fields.data[i].mr_type)
+    if ((MR_TYPE_ANON_UNION == tdp->fields.data[i].mr_type) || (MR_TYPE_NAMED_ANON_UNION == tdp->fields.data[i].mr_type))
       {
 	for (j = i + 1; j < count; ++j)
 	  if (MR_TYPE_END_ANON_UNION == tdp->fields.data[j].mr_type)
@@ -873,7 +873,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		tdp_->size = fd.size; /* find union max size member */
 	    }
 	  tdp->fields.data[count].mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
-	  tdp_->mr_type = MR_TYPE_ANON_UNION;
+	  tdp_->mr_type = tdp->fields.data[i].mr_type;
 	  sprintf (tdp_->type, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	  tdp_->attr = tdp->fields.data[i].comment; /* anonymous union stringified attributes are saved into comments field */
 	  tdp_->comment = tdp->fields.data[count].comment; /* copy comment from MR_END_ANON_UNION record */
@@ -884,6 +884,8 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  count -= fields_count;
 	  tdp->fields.data[i].type = tdp_->type;
 	  tdp->fields.data[i].size = tdp_->size;
+	  if (tdp->fields.data[i].name && (0 == tdp->fields.data[i].name[0]))
+	    tdp->fields.data[i].name = tdp->fields.data[i].type;
 
 	  if (mr_add_type (tdp_, NULL, NULL))
 	    {
@@ -1258,6 +1260,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
       [MR_TYPE_STRUCT] = sizeof (void),
       [MR_TYPE_UNION] = sizeof (void),
       [MR_TYPE_ANON_UNION] = sizeof (void),
+      [MR_TYPE_NAMED_ANON_UNION] = sizeof (void),
     };
   
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);

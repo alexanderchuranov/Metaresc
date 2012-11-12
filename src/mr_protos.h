@@ -33,6 +33,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_LOAD_METHOD_MISSED, , "Load method missed."),
 	      (MR_MESSAGE_XDR_LOAD_FAILED, , "XDR load failed."),
 	      (MR_MESSAGE_NO_TYPE_DESCRIPTOR, , "Can't find type descriptor for '%s'."),
+	      (MR_MESSAGE_TYPE_NOT_STRUCT, , "Type '%s' is not a struct."),
 	      (MR_MESSAGE_TYPE_NOT_UNION, , "Type '%s' is not a union."),
 	      (MR_MESSAGE_TYPE_NOT_ENUM, , "Type '%s' is not a enum."),
 	      (MR_MESSAGE_STRING_IS_NULL, , "Input string is NULL."),
@@ -98,6 +99,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      MR_TYPE_BITMASK,
 	      MR_TYPE_UNION,
 	      MR_TYPE_ANON_UNION,
+	      MR_TYPE_NAMED_ANON_UNION,
 	      MR_TYPE_END_ANON_UNION,
 	      MR_TYPE_TRAILING_RECORD,
 	      MR_TYPE_LAST, /* keep it last */
@@ -249,6 +251,7 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 		)
 
 TYPEDEF_STRUCT (mr_save_type_data_t, ATTRIBUTES ( , "serialization of the node"),
+		(char *, named_field_template, , "statically allocated string"),
 		(char *, prefix, , "statically allocated string"),
 		(char *, content, , "dynamically formed string. Need to be freed."),
 		(char *, suffix, , "statically allocated string"),

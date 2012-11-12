@@ -865,7 +865,8 @@ static void __attribute__((constructor)) mr_init_load_rl (void)
   mr_conf.io_handlers[MR_TYPE_FUNC].load.rl = mr_load_none;
   mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].load.rl = mr_load_none;
   mr_conf.io_handlers[MR_TYPE_UNION].load.rl = mr_load_struct;
-  mr_conf.io_handlers[MR_TYPE_ANON_UNION].load.rl = mr_load_anon_union;
+  mr_conf.io_handlers[MR_TYPE_ANON_UNION].load.rl = mr_load_struct;
+  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].load.rl = mr_load_anon_union;
 
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].load.rl = mr_load_array;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY].load.rl = mr_load_rarray;
