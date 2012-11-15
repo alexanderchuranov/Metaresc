@@ -14,8 +14,5 @@ TYPEDEF_STRUCT (struct_t,
 
 int main ()
 {
-  struct_t s;
-  
-  s.y = .375;
   return (EXIT_SUCCESS);
 }
