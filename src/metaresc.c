@@ -183,7 +183,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
   if ((message_id >= 0) && (message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
     format = messages[message_id];
 
-  vasprintf (&message, format, args);
+  int __attribute__ ((unused)) unused = vasprintf (&message, format, args);
 
   return (message);
 }
