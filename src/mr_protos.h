@@ -239,9 +239,9 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (
 	      )
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
-		(char *, type),
-		(char *, discriminator),
-		(int, field_idx),
+		(char *, type, , "union type name"),
+		(char *, discriminator, , "union discriminator"),
+		(int, field_idx, , "discriminated union field index"),
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
@@ -261,7 +261,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(char *, value, , "stringified value"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
-		) /* pointer descriptor */
+		)
 
 TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		RARRAY (mr_ptrdes_t, ra, "resizable array with mr_ptrdes_t"),

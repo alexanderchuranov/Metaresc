@@ -88,8 +88,8 @@
 #include <string.h>
 #include <tsearch.h>
 
-#define malloc(ARGS...) MR_MALLOC(ARGS)
-#define free(ARGS...) MR_FREE(ARGS)
+#define malloc(...) MR_MALLOC(__VA_ARGS__)
+#define free(...) MR_FREE(__VA_ARGS__)
 
 typedef const struct node_t *const_node;
 
