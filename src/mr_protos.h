@@ -5,7 +5,7 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES ( , "pointer on any type"),
-	       (void *, ptr, , "default void pointer")
+	       (void *, ptr, , "default void pointer"),
 	       )
 
 TYPEDEF_FUNC (string_t, char, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
@@ -129,10 +129,20 @@ TYPEDEF_ENUM (mr_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeo
 	      )
 
 TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
+		ANON_UNION (),
 		(const void *, key, , "void pointer"),
+		(mr_ptr_t, typed_key, , "tree_key_ptr_type"),
+		(long, long_int_key),
+		END_ANON_UNION ("tree_key_ptr_wrapper_type"),
 		(mr_red_black_tree_node_t *, left, , "left child"),
 		(mr_red_black_tree_node_t *, right, , "right child"),
 		(mr_red_black_t, red),
+		)
+
+TYPEDEF_STRUCT (mr_typed_tree_t, ATTRIBUTES ( , "typed RB-tree"),
+		(mr_red_black_tree_node_t *, root, , "RB-tree"),
+		(char *, tree_key_ptr_wrapper_type, , "should be set to 'typed_key' or 'long_int_key' in run time"),
+		(char *, tree_key_ptr_type, , "type of mr_ptr_t"),
 		)
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
@@ -189,7 +199,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, attr, , "stringified typedef attributes"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(int, size_effective, , "effective size"),
-		(mr_red_black_tree_node_t *, lookup_by_value, , "RB-tree for enums values lookup"),
+		(mr_typed_tree_t, lookup_by_value, , "RB-tree for enums values lookup"),
 #ifndef MR_TREE_LOOKUP
 		(uint64_t, hash_value, , "type name hash value"),
 #endif /* MR_TREE_LOOKUP */
@@ -228,6 +238,12 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (
 		BITFIELD (mr_bool_t, is_opaque_data, :1),
 	      )
 
+TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
+		(char *, type),
+		(char *, discriminator),
+		(int, field_idx),
+		)
+
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(void *, data, , "pointer on binary data"),
 		(mr_fd_t, fd, , "field descriptor"),
@@ -241,6 +257,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, next, , "next sibling index"),
 		(mr_ptrdes_flags_t, flags),
 		(char *, union_field_name, , "field descriptor for unions"),
+		(mr_red_black_tree_node_t *, union_discriminator, , "RB-tree for unions discriminator resolution"),
 		(char *, value, , "stringified value"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
@@ -291,7 +308,9 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(int, parent, , "index of current parent"),
 		(mr_red_black_tree_node_t *, typed_ptrs_tree, , "RB-tree with typed nodes"),
 		(mr_red_black_tree_node_t *, untyped_ptrs_tree, , "RB-tree with untyped nodes"),
+		(char *, tree_key_ptr_wrapper_type, , "should be set to 'long_int_key' in run time"),
 		RARRAY (int, mr_ra_idx, "indexes of postponed nodes"),
+		RARRAY (mr_union_discriminator_t, mr_ra_ud, "allocation of union discriminators"),
 		)
 
 TYPEDEF_STRUCT (mr_load_io_t, ATTRIBUTES ( , "load handlers"),
@@ -324,10 +343,10 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 #ifndef MR_TREE_LOOKUP
 		(mr_ra_mr_td_ptr_t, hash, , "hash for type descriptors lookup"),
 #else /* MR_TREE_LOOKUP */
-		(mr_red_black_tree_node_t *, tree, , "RB-tree for type descriptors lookup"),
+		(mr_typed_tree_t, tree, , "typed RB-tree for type descriptors lookup"),
 #endif /* MR_TREE_LOOKUP */
+		(mr_typed_tree_t, enum_by_name, , "RB-tree with enums mapping"),
 		RARRAY (mr_td_ptr_t, des, "types descriptors"),
-		(mr_red_black_tree_node_t *, enum_by_name, , "RB-tree with enums mapping"),
 		NONE (mr_output_format_t, output_format, [MR_MAX_TYPES], "formaters"),
 		NONE (mr_io_handler_t, io_handlers, [MR_MAX_TYPES], "io handlers"),
 		NONE (mr_io_handler_t, io_ext_handlers, [MR_MAX_TYPES], "io handlers"),

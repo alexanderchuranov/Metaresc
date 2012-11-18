@@ -137,7 +137,7 @@ static int
 cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   int skip_node = 0;
-  if ((fdp->mr_type != MR_TYPE_ANON_UNION) || /* anonymous unions should be unnamed for CINIT */
+  if ((fdp->mr_type != MR_TYPE_ANON_UNION) && /* anonymous unions should be unnamed for CINIT */
       ((ptrs->ra.data[idx].parent >= 0) && strcmp ("mr_ptr_t", ptrs->ra.data[ptrs->ra.data[idx].parent].fd.type))) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
     save_data->named_field_template = MR_CINIT_NAMED_FIELD_TEMPLATE;
   

@@ -51,9 +51,9 @@ mr_conf_t mr_conf = {
     },
   },
 #else /* MR_TREE_LOOKUP */
-  .tree = NULL,
+  .tree =  { .root = NULL, .tree_key_ptr_wrapper_type = "typed_key", .tree_key_ptr_type = "mr_td_t", },
 #endif /* MR_TREE_LOOKUP */
-  .enum_by_name = NULL,
+  .enum_by_name = { .root = NULL, .tree_key_ptr_wrapper_type = "typed_key", .tree_key_ptr_type = "mr_fd_t", },
   .output_format = { [0 ... MR_MAX_TYPES - 1] = NULL, },
   .io_handlers =
   { [0 ... MR_MAX_TYPES - 1] =
@@ -114,8 +114,8 @@ void dummy_free_func (void * nodep) {}
   
 int free_lookup_tree (mr_td_t * tdp, void * arg)
 {
-  tdestroy (tdp->lookup_by_value, dummy_free_func);
-  tdp->lookup_by_value = NULL;
+  tdestroy (tdp->lookup_by_value.root, dummy_free_func);
+  tdp->lookup_by_value.root = NULL;
   if (tdp->lookup_by_name.data)
     MR_FREE (tdp->lookup_by_name.data);
   tdp->lookup_by_name.data = NULL;
@@ -133,8 +133,8 @@ static void __attribute__((destructor)) mr_cleanup (void)
       void_ptr_tdp->fields.data = NULL;
     }
   
-  tdestroy (mr_conf.enum_by_name, dummy_free_func);
-  mr_conf.enum_by_name = NULL;
+  tdestroy (mr_conf.enum_by_name.root, dummy_free_func);
+  mr_conf.enum_by_name.root = NULL;
   mr_td_foreach (free_lookup_tree, NULL);
   
 #ifndef MR_TREE_LOOKUP
@@ -143,8 +143,8 @@ static void __attribute__((destructor)) mr_cleanup (void)
   mr_conf.hash.ra.data = NULL;
   mr_conf.hash.ra.size = mr_conf.hash.ra.alloc_size = 0;
 #else /* MR_TREE_LOOKUP */
-  tdestroy (mr_conf.tree, dummy_free_func);
-  mr_conf.tree = NULL;
+  tdestroy (mr_conf.tree.root, dummy_free_func);
+  mr_conf.tree.root = NULL;
 #endif /* MR_TREE_LOOKUP */
 
   if (mr_conf.des.data)
@@ -498,6 +498,7 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->flags.is_referenced = MR_FALSE;
   ptrdes->flags.is_content_reference = MR_FALSE;
   ptrdes->union_field_name = NULL;
+  ptrdes->union_discriminator = NULL;
   ptrdes->value = NULL;
   ptrdes->ext.ptr = NULL;
   ptrdes->ptr_type = NULL;
@@ -816,10 +817,10 @@ mr_get_td_by_name (char * type)
       return (NULL);
     }
 #else /* MR_TREE_LOOKUP */
-  if (mr_conf.tree)
+  if (mr_conf.tree.root)
     {
       mr_td_t td = { .type = type };
-      mr_td_t ** tdpp = tfind (&td, (void*)&mr_conf.tree, cmp_tdp, NULL);
+      mr_td_t ** tdpp = tfind (&td, (void*)&mr_conf.tree.root, cmp_tdp, NULL);
       if (tdpp)
 	return (*tdpp);
       else
@@ -959,11 +960,14 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }  
   
-  tdp->lookup_by_value = NULL;
+  tdp->lookup_by_value.root = NULL;
+  tdp->lookup_by_value.tree_key_ptr_wrapper_type = "typed_key";
+  tdp->lookup_by_value.tree_key_ptr_type = "mr_fd_t";
+  
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      mr_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name, cmp_enums_by_name, NULL);  
+      mr_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -975,7 +979,7 @@ mr_add_enum (mr_td_t * tdp)
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
-      fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value, cmp_enums_by_value, NULL);  
+      fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -996,7 +1000,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value, cmp_enums_by_value, NULL);
+  mr_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
   if (fdpp)
     return (*fdpp);
   return (NULL);
@@ -1012,7 +1016,7 @@ int
 mr_get_enum_by_name (uint64_t * value, char * name)
 {
   mr_fd_t fd = { .name = name };
-  mr_fd_t ** fdpp = tfind (&fd, (void*)&mr_conf.enum_by_name, cmp_enums_by_name, NULL);
+  mr_fd_t ** fdpp = tfind (&fd, (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
   return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -1538,9 +1542,9 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
 #ifndef MR_TREE_LOOKUP
   mr_update_td_hash (tdp, &mr_conf.hash);
 #else /* MR_TREE_LOOKUP */
-  mr_update_td_tree (tdp, &mr_conf.tree);
+  mr_update_td_tree (tdp, &mr_conf.tree.root);
 #endif /*  MR_TREE_LOOKUP */
-  tdp->lookup_by_value = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
+  tdp->lookup_by_value.root = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 

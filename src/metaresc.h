@@ -749,14 +749,7 @@
 	  },								\
 	};								\
       MR_TYPE_NAME * check_type = S_PTR;				\
-      mr_save_data_t __mr_save_data__ =					\
-	{								\
-	  .parent = -1,							\
-	  .typed_ptrs_tree = NULL,					\
-	  .untyped_ptrs_tree = NULL,					\
-	  .mr_ra_idx = { .data = NULL, .size = 0, .alloc_size = 0, },	\
-	  .ptrs = { .ra = { .data = NULL, .size = 0, .alloc_size = 0, } } \
-	};								\
+      mr_save_data_t __mr_save_data__;					\
       mr_detect_type (&__fd__);						\
       __fd__.name = mr_normalize_name (__fd__.name);			\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\

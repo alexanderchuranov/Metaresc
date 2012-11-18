@@ -53,12 +53,14 @@
   } END_TEST								\
   TYPEDEF_STRUCT (mr_empty_t);						\
   TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), NONE (int, y[]));	\
-  TYPEDEF_STRUCT (list_t, (list_t *, next));				\
+  TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
+  TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
   TYPEDEF_STRUCT (array_t, RARRAY (list_t, ra));			\
   int test_run (int count)						\
   {									\
     array_t array;							\
     mr_rarray_t ra;							\
+    typed_list_t typed_list = { .ptr_type = "string_t", };		\
     struct tms start, end;						\
     times (&start);							\
     memset (&array, 0, sizeof (array));					\
@@ -69,16 +71,22 @@
 	int i;								\
 	int count_ = array.ra.size / sizeof (array.ra.data[0]);		\
 	for (i = 1; i < count_; ++i)					\
-	  array.ra.data[i - 1].next = &array.ra.data[i];		\
+	  {								\
+	    array.ra.data[i - 1].next = &array.ra.data[i];		\
+	    array.ra.data[i - 1].mr_ptr.ptr = "string_t";		\
+	  }								\
 	array.ra.data[count_ - 1].next = &array.ra.data[0];		\
-	ra = MR_SAVE_ ## METHOD ## _RA (list_t, array.ra.data);		\
+	array.ra.data[count_ - 1].mr_ptr.ptr = "string_t";		\
+	typed_list.root = &array.ra.data[0];				\
+	ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);	\
 	if ((ra.size > 0) && (ra.data != NULL))				\
 	  {								\
-	    list_t list_;						\
-	    if (MR_LOAD_ ## METHOD ## _RA (list_t, &ra, &list_))	\
-	      MR_FREE_RECURSIVELY (list_t, &list_);			\
+	    typed_list_t list_;						\
+	    if (MR_LOAD_ ## METHOD ## _RA (typed_list_t, &ra, &list_))	\
+	      MR_FREE_RECURSIVELY (typed_list_t, &list_);		\
 	    MR_FREE (ra.data);						\
 	  }								\
+	array.ra.ptr_type = "string_t";					\
 	ra = MR_SAVE_ ## METHOD ## _RA (array_t, &array);		\
 	if ((ra.size > 0) && (ra.data != NULL))				\
 	  {								\
