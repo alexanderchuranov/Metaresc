@@ -536,31 +536,6 @@ mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
- * Comparator for mr_ra_mr_ptrdes_t sorting by idx field
- * @param a pointer on one mr_ptrdes_t
- * @param b pointer on another mr_ptrdes_t
- * @return comparation sign
- */
-static int
-mr_cmp_idx (const void * a, const void * b)
-{
-  return (((const mr_ptrdes_t*)a)->idx - ((const mr_ptrdes_t*)b)->idx);
-}
-
-/**
- * Clang produces call of memcpy for operation data[dst_idx] = data[src_idx]; if dst_idx == src_idx valgrind reports source and destination overlap. Here is a wrapper that checks necessity of copying.
- * @param data array of mr_ptrdes_t
- * @param dst_idx index of destination
- * @param src_idx index of source
- */
-static inline void
-save_copy_ptrdes (mr_ptrdes_t * data, int dst_idx, int src_idx)
-{
-  if (dst_idx != src_idx)
-    data[dst_idx] = data[src_idx];  
-}
-
-/**
  * Recursively free all allocated memory. Needs to be done from bottom to top.
  * @param ptrs resizable array with serialized data
  * @return status, EXIT_SUCCESS or EXIT_FAILURE
@@ -569,43 +544,47 @@ int
 mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 {
   int i;
-  int to_free = 0;
-  int count = ptrs.ra.size / sizeof (ptrs.ra.data[0]);
       
-  for (i = 0; i < count; ++i)
-    switch (ptrs.ra.data[i].fd.mr_type_ext)
-      {
-      case MR_TYPE_EXT_POINTER:
-      case MR_TYPE_EXT_RARRAY_DATA:
-	if ((NULL != *(void**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
-	  save_copy_ptrdes (&ptrs.ra.data[0], to_free++, i);
-	break;
-      case MR_TYPE_EXT_NONE:
-	if ((MR_TYPE_STRING == ptrs.ra.data[i].fd.mr_type) &&
-	    (NULL != *(char**)ptrs.ra.data[i].data) && (ptrs.ra.data[i].ref_idx < 0))
-	  save_copy_ptrdes (&ptrs.ra.data[0], to_free++, i);
-	break;
-      default:
-	break;
-      }
-  /* sort out nodes to the end of the array */
-  qsort (ptrs.ra.data, to_free, sizeof (ptrs.ra.data[0]), mr_cmp_idx);
-  for (i = to_free - 1; i >= 0; --i)
-    switch (ptrs.ra.data[i].fd.mr_type_ext)
-      {
-      case MR_TYPE_EXT_POINTER:
-      case MR_TYPE_EXT_RARRAY_DATA:
-	MR_FREE (*(void**)ptrs.ra.data[i].data);
-	break;
-      case MR_TYPE_EXT_NONE:
-	MR_FREE (*(char**)ptrs.ra.data[i].data);
-	break;
-      default:
-	break;
-      }
-  if (ptrs.ra.data)
-    MR_FREE (ptrs.ra.data);
+  if (NULL == ptrs.ra.data)
+    return (EXIT_FAILURE);
+    
+  for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
+    {
+      ptrs.ra.data[i].ext.ptr = NULL;
+      switch (ptrs.ra.data[i].fd.mr_type_ext)
+	{
+	case MR_TYPE_EXT_POINTER:
+	case MR_TYPE_EXT_RARRAY_DATA:
+	  if (ptrs.ra.data[i].ref_idx < 0)
+	    ptrs.ra.data[i].ext.ptr = *(void**)ptrs.ra.data[i].data;
+	  break;
+	case MR_TYPE_EXT_NONE:
+	  if ((MR_TYPE_STRING == ptrs.ra.data[i].fd.mr_type) && (ptrs.ra.data[i].ref_idx < 0))
+	    ptrs.ra.data[i].ext.ptr = *(void**)ptrs.ra.data[i].data;
+	  break;
+	default:
+	  break;
+	}
+    }
+  
+  for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
+    if (ptrs.ra.data[i].ext.ptr)
+      MR_FREE (ptrs.ra.data[i].ext.ptr);
+  
+  MR_FREE (ptrs.ra.data);
   return (EXIT_SUCCESS);
+}
+
+/**
+ * Recursively copy 
+ * @param ptrs resizable array with serialized data
+ * @return status, 0 - failure, !0 - success
+ */
+int
+mr_deep_copy (mr_ra_mr_ptrdes_t ptrs, void * dst)
+{
+  
+  return (!0);
 }
 
 /**

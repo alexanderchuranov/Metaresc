@@ -730,6 +730,10 @@
 #define MR_CHECK_TYPES(MR_TYPE_NAME, ...) ({ (void) ((MR_TYPE_NAME*)0 - (typeof (__VA_ARGS__ + 0))0); })
 #endif /* MR_CHECK_TYPES */
 
+#define MR_DEEP_COPY(MR_TYPE_NAME, S_PTR, ...) MR_DEEP_COPY_ (MR_TYPE_NAME, S_PTR, __VA_ARGS__, 1, 2)
+#define MR_DEEP_COPY_(MR_TYPE_NAME, S_PTR, D_PTR, N, ...) MR_PASTE2 (MR_DEEP_COPY_ARG, N) (MR_TYPE_NAME, S_PTR, D_PTR)
+#define MR_DEEP_COPY_ARG3(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR); mr_deep_copy (MR_SAVE (MR_TYPE_NAME, S_PTR), D_PTR); })
+#define MR_DEEP_COPY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_TYPE_NAME dst; mr_deep_copy (MR_SAVE (MR_TYPE_NAME, S_PTR), &dst); dst; })
 #define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) mr_free_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR))
 
 #define MR_SAVE(MR_TYPE_NAME, S_PTR) ({					\
