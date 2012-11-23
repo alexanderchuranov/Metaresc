@@ -54,7 +54,7 @@ mr_conf_t mr_conf = {
 #else /* MR_TREE_LOOKUP */
   .tree =  { .root = NULL, .tree_key_ptr_wrapper_type = "typed_key", .tree_key_ptr_type = "mr_td_t", },
 #endif /* MR_TREE_LOOKUP */
-  .enum_by_name = { .root = NULL, .tree_key_ptr_wrapper_type = "typed_key", .tree_key_ptr_type = "mr_fd_t", },
+  .enum_by_name = { .root = NULL, .key_type = "mr_fd_t", },
   .output_format = { [0 ... MR_MAX_TYPES - 1] = NULL, },
   .io_handlers =
   { [0 ... MR_MAX_TYPES - 1] =
@@ -1046,8 +1046,7 @@ mr_add_enum (mr_td_t * tdp)
     }  
   
   tdp->lookup_by_value.root = NULL;
-  tdp->lookup_by_value.tree_key_ptr_wrapper_type = "typed_key";
-  tdp->lookup_by_value.tree_key_ptr_type = "mr_fd_t";
+  tdp->lookup_by_value.key_type = "mr_fd_t";
   
   for (i = 0; i < count; ++i)
     {

@@ -746,7 +746,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->parent = -1;
   mr_save_data->typed_ptrs_tree = NULL;
   mr_save_data->untyped_ptrs_tree = NULL;
-  mr_save_data->tree_key_ptr_wrapper_type = "long_int_key";
+  mr_save_data->key_type = "long_int_t";
   mr_save_data->mr_ra_ud.size = 0;
   mr_save_data->mr_ra_ud.data = NULL;
   mr_save_data->mr_ra_idx.size = 0;

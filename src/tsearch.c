@@ -251,7 +251,7 @@ __tsearch (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
   while (*nextp != NULL)
     {
       node root = *rootp;
-      r = (*compar) (key, root->key, context);
+      r = (*compar) (key, root->key.ptr, context);
       if (r == 0)
 	return root;
 
@@ -276,7 +276,7 @@ __tsearch (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
   if (q != NULL)
     {
       *nextp = q;			/* link new node to old */
-      q->key = key;			/* initialize new node */
+      q->key.ptr = (void*)key;			/* initialize new node */
       q->red = 1;
       q->left = q->right = NULL;
     }
@@ -312,7 +312,7 @@ __tfind (key, vrootp, compar, context)
       node root = *rootp;
       int r;
 
-      r = (*compar) (key, root->key, context);
+      r = (*compar) (key, root->key.ptr, context);
       if (r == 0)
 	return root;
 
@@ -348,7 +348,7 @@ __tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
 
   CHECK_TREE (p);
 
-  while ((cmp = (*compar) (key, (*rootp)->key, context)) != 0)
+  while ((cmp = (*compar) (key, (*rootp)->key.ptr, context)) != 0)
     {
       if (sp == stacksize)
 	{
@@ -634,7 +634,7 @@ tdestroy_recurse (node root, __free_fn_t freefct)
     tdestroy_recurse (root->left, freefct);
   if (root->right != NULL)
     tdestroy_recurse (root->right, freefct);
-  (*freefct) ((void *) root->key);
+  (*freefct) ((void *) root->key.ptr);
   /* Free the node itself.  */
   free (root);
 }

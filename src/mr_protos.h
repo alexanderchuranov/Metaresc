@@ -6,6 +6,7 @@
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES ( , "pointer on any type"),
 	       (void *, ptr, , "default void pointer"),
+	       (long, long_int_t),
 	       )
 
 TYPEDEF_FUNC (string_t, char, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
@@ -133,11 +134,7 @@ TYPEDEF_ENUM (mr_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeo
 	      )
 
 TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
-		ANON_UNION (),
-		(const void *, key, , "void pointer"),
-		(mr_ptr_t, typed_key, , "tree_key_ptr_type"),
-		(long, long_int_key),
-		END_ANON_UNION ("tree_key_ptr_wrapper_type"),
+		(mr_ptr_t, key, , "key_type"),
 		(mr_red_black_tree_node_t *, left, , "left child"),
 		(mr_red_black_tree_node_t *, right, , "right child"),
 		(mr_red_black_t, red),
@@ -145,8 +142,7 @@ TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
 
 TYPEDEF_STRUCT (mr_typed_tree_t, ATTRIBUTES ( , "typed RB-tree"),
 		(mr_red_black_tree_node_t *, root, , "RB-tree"),
-		(char *, tree_key_ptr_wrapper_type, , "should be set to 'typed_key' or 'long_int_key' in run time"),
-		(char *, tree_key_ptr_type, , "type of mr_ptr_t"),
+		(char *, key_type, , "type of mr_ptr_t key"),
 		)
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
@@ -312,7 +308,7 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(int, parent, , "index of current parent"),
 		(mr_red_black_tree_node_t *, typed_ptrs_tree, , "RB-tree with typed nodes"),
 		(mr_red_black_tree_node_t *, untyped_ptrs_tree, , "RB-tree with untyped nodes"),
-		(char *, tree_key_ptr_wrapper_type, , "should be set to 'long_int_key' in run time"),
+		(char *, key_type, , "should be set to 'long_int_t' in run time"),
 		RARRAY (int, mr_ra_idx, "indexes of postponed nodes"),
 		RARRAY (mr_union_discriminator_t, mr_ra_ud, "allocation of union discriminators"),
 		)
