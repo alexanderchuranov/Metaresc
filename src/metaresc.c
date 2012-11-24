@@ -16,7 +16,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-#include <tsearch.h>
+#include <mr_tsearch.h>
 #include <metaresc.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
@@ -851,7 +851,7 @@ cmp_tdp (const void * x, const void * y, const void * context)
 static void
 mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 {
-  mr_td_t ** tdpp = tsearch (tdp, (void*)tree, cmp_tdp, NULL);
+  mr_td_t ** tdpp = mr_tsearch (tdp, (void*)tree, cmp_tdp, NULL);
   if (NULL == tdpp)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 }

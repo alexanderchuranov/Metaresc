@@ -86,9 +86,9 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <tsearch.h>
 
 /* Metaresc modified */
+#include <mr_tsearch.h>
 #include <metaresc.h>
 
 #define malloc(...) MR_MALLOC(__VA_ARGS__)

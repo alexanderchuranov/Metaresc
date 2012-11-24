@@ -1,9 +1,8 @@
-#ifndef _TSEARCH_H_
-#define _TSEARCH_H_
+#ifndef _MR_TSEARCH_H_
+#define _MR_TSEARCH_H_
 
 #include <metaresc.h>
 
-/* For use with hsearch(3).  */
 #ifndef MR_COMPAR_FN_T
 # define MR_COMPAR_FN_T
 typedef int (*mr_compar_fn_t) (__const void *, __const void *, __const void *);
@@ -45,4 +44,4 @@ extern void mr_twalk (__const void *__root, mr_action_fn_t __action);
 /* Destroy the whole tree, call FREEFCT for each node or leaf.  */
 extern void mr_tdestroy (void *__root, mr_free_fn_t __freefct);
 
-#endif /* _TSEARCH_H_ */
+#endif /* _MR_TSEARCH_H_ */

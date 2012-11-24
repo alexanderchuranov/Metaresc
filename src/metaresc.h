@@ -1109,6 +1109,8 @@
 #undef MR_MODE
 #endif
 
+#include <mr_tsearch.h>
+
 typedef long double long_double_t;
 
 extern mr_conf_t mr_conf;
