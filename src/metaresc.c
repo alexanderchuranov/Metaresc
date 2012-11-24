@@ -568,52 +568,13 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
   return (!0);
 }
 
-static void **
-mr_get_ptr_addr (mr_ra_mr_ptrdes_t * ptrs, int idx)
-{
-  int parent;
-  int first_child;
-  ptrdiff_t offset;
-
-  if ((idx < 0) || (idx >= ptrs->ra.size / sizeof (ptrs->ra.data[0])))
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INVALID_INDEX);
-      return (NULL);
-    }
-  
-  for (parent = ptrs->ra.data[idx].parent; parent >= 0; parent = ptrs->ra.data[parent].parent)
-    if ((MR_TYPE_EXT_POINTER == ptrs->ra.data[parent].fd.mr_type_ext) ||
-	(MR_TYPE_EXT_RARRAY_DATA == ptrs->ra.data[parent].fd.mr_type_ext) ||
-	((MR_TYPE_EXT_NONE == ptrs->ra.data[parent].fd.mr_type_ext) && (MR_TYPE_STRING == ptrs->ra.data[parent].fd.mr_type)))
-      break;
-
-  first_child = (parent < 0) ? 0 : ptrs->ra.data[parent].first_child;
-  if (first_child < 0)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-		  ptrs->ra.data[parent].fd.type, ptrs->ra.data[parent].fd.name);
-      return (NULL);
-    }
-
-  if ((NULL == ptrs->ra.data[first_child].data) ||
-      (NULL == ptrs->ra.data[first_child].ext.ptr) ||
-      (NULL == ptrs->ra.data[idx].data))
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (NULL);
-    }
-  
-  offset = (char*)ptrs->ra.data[idx].data - (char*)ptrs->ra.data[first_child].data;
-  return (void**)(&((char*)ptrs->ra.data[first_child].ext.ptr)[offset]);
-}
-
 /**
  * Recursively copy 
  * @param ptrs resizable array with serialized data
  * @return status, 0 - failure, !0 - success
  */
 int
-mr_deep_copy (mr_ra_mr_ptrdes_t ptrs, void * dst)
+mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 {
   int i;
       
@@ -644,21 +605,32 @@ mr_deep_copy (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	case MR_TYPE_EXT_POINTER:
 	case MR_TYPE_EXT_RARRAY_DATA:
 	  {
-	    void * copy;
+	    int idx;
+	    char * copy;
+	    int alloc_size = ptrs.ra.data[i].fd.size;
 	    if (ptrs.ra.data[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
 			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name);
 		return (0);
 	      }
-	    copy = MR_MALLOC (ptrs.ra.data[i].fd.size);
+	    if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)
+	      {
+		mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)];
+		ptrs.ra.data[i].fd.size = ra->size;
+		if (ra->alloc_size > ra->size)
+		  alloc_size = ra->alloc_size;
+	      }
+	    copy = MR_MALLOC (alloc_size);
 	    if (NULL == copy)
 	      {
 		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 		return (0);
 	      }
 	    memcpy (copy, *(void**)ptrs.ra.data[i].data, ptrs.ra.data[i].fd.size);
-	    ptrs.ra.data[ptrs.ra.data[i].first_child].ext.ptr = copy;
+	    memset (&copy[ptrs.ra.data[i].fd.size], 0, alloc_size - ptrs.ra.data[i].fd.size);
+	    for (idx = ptrs.ra.data[i].first_child; idx >= 0; idx = ptrs.ra.data[idx].next)
+	      ptrs.ra.data[idx].ext.ptr = &copy[(char*)ptrs.ra.data[idx].data - *(char**)ptrs.ra.data[i].data];
 	  }
 	  break;
 	default:
@@ -667,7 +639,27 @@ mr_deep_copy (mr_ra_mr_ptrdes_t ptrs, void * dst)
 
   memcpy (dst, ptrs.ra.data[0].data, ptrs.ra.data[0].fd.size);
   ptrs.ra.data[0].ext.ptr = dst;
-  
+
+  i = ptrs.ra.data[0].first_child;
+  while (i >= 0)
+    {
+      if (NULL == ptrs.ra.data[i].ext.ptr)
+	{
+	  int parent = ptrs.ra.data[i].parent;
+	  ptrdiff_t offset = (char*)ptrs.ra.data[i].data - (char*)ptrs.ra.data[parent].data;
+	  ptrs.ra.data[i].ext.ptr = &((char*)ptrs.ra.data[parent].ext.ptr)[offset];
+	}
+      
+      if (ptrs.ra.data[i].first_child >= 0)
+	i = ptrs.ra.data[i].first_child;
+      else
+	{
+	  while ((ptrs.ra.data[i].next < 0) && (ptrs.ra.data[i].parent >= 0))
+	    i = ptrs.ra.data[i].parent;
+	  i = ptrs.ra.data[i].next;
+	}
+    }      
+    
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     if ((ptrs.ra.data[i].idx >= 0) && !ptrs.ra.data[i].flags.is_null)
       switch (ptrs.ra.data[i].fd.mr_type_ext)
@@ -677,14 +669,14 @@ mr_deep_copy (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    break;
 	case MR_TYPE_EXT_POINTER:
 	case MR_TYPE_EXT_RARRAY_DATA:
-	    {
-	      void ** ptr_addr = mr_get_ptr_addr (&ptrs, i);
-	      int ptr_idx = (ptrs.ra.data[i].ref_idx < 0) ? ptrs.ra.data[i].first_child : ptrs.ra.data[i].ref_idx;
-	      void ** ptr_value = mr_get_ptr_addr (&ptrs, ptrs.ra.data[i].flags.is_content_reference ? ptrs.ra.data[ptr_idx].first_child : ptr_idx);
-	      if ((NULL == ptr_addr) || (NULL == ptr_value))
-		return (0);
-	      *ptr_addr = ptr_value;
-	    }
+	  {
+	    int ptr_idx;
+	    if (ptrs.ra.data[i].ref_idx < 0)
+	      ptr_idx = ptrs.ra.data[i].first_child;
+	    else
+	      ptr_idx = ptrs.ra.data[i].flags.is_content_reference ? ptrs.ra.data[ptrs.ra.data[i].ref_idx].first_child : ptrs.ra.data[i].ref_idx;
+	    *(void**)ptrs.ra.data[i].ext.ptr = ptrs.ra.data[ptr_idx].ext.ptr;
+	  }
 	  break;
 	default:
 	  break;

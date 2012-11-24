@@ -730,10 +730,10 @@
 #define MR_CHECK_TYPES(MR_TYPE_NAME, ...) ({ (void) ((MR_TYPE_NAME*)0 - (typeof (__VA_ARGS__ + 0))0); })
 #endif /* MR_CHECK_TYPES */
 
-#define MR_DEEP_COPY(MR_TYPE_NAME, ...) MR_DEEP_COPY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_DEEP_COPY_(MR_TYPE_NAME, S_PTR, D_PTR, N, ...) MR_PASTE2 (MR_DEEP_COPY_ARG, N) (MR_TYPE_NAME, S_PTR, D_PTR)
-#define MR_DEEP_COPY_ARG3(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR); mr_deep_copy (MR_SAVE (MR_TYPE_NAME, S_PTR), D_PTR); })
-#define MR_DEEP_COPY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_TYPE_NAME dst; mr_deep_copy (MR_SAVE (MR_TYPE_NAME, S_PTR), &dst); dst; })
+#define MR_COPY_RECURSIVELY(MR_TYPE_NAME, ...) MR_COPY_RECURSIVELY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
+#define MR_COPY_RECURSIVELY_(MR_TYPE_NAME, S_PTR, D_PTR, N, ...) MR_PASTE2 (MR_COPY_RECURSIVELY_ARG, N) (MR_TYPE_NAME, S_PTR, D_PTR)
+#define MR_COPY_RECURSIVELY_ARG3(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR); mr_copy_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR), D_PTR); })
+#define MR_COPY_RECURSIVELY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_TYPE_NAME dst; mr_copy_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR), &dst); dst; })
 #define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) mr_free_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR))
 
 #define MR_SAVE(MR_TYPE_NAME, S_PTR) ({					\
@@ -1146,7 +1146,7 @@ extern void mr_add_child (int, int, mr_ra_mr_ptrdes_t*);
 extern void mr_detect_type (mr_fd_t*);
 extern char * mr_normalize_name (char*);
 extern int mr_free_recursively (mr_ra_mr_ptrdes_t);
-extern int mr_deep_copy (mr_ra_mr_ptrdes_t, void*);
+extern int mr_copy_recursively (mr_ra_mr_ptrdes_t, void*);
 extern int mr_free_ptrs (mr_ra_mr_ptrdes_t);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t*, char*);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t*, int64_t);
