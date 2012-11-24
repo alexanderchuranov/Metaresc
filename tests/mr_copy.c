@@ -10,7 +10,6 @@ MR_START_TEST (mr_copy_args2, "test that dump of mr_conf matches with dump of MR
 } END_TEST
 
 MR_START_TEST (mr_copy_arg3, "test that dump of mr_conf matches with dump of MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf, &mr_conf_copy)") {
-  return;
   mr_conf_t mr_conf_copy;
   int orig_eq_restored;
   int status = MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf, &mr_conf_copy);
