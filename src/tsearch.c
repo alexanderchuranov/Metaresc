@@ -88,10 +88,47 @@
 #include <string.h>
 #include <tsearch.h>
 
+/* Metaresc modified */
+#include <metaresc.h>
+
 #define malloc(...) MR_MALLOC(__VA_ARGS__)
 #define free(...) MR_FREE(__VA_ARGS__)
 
+/* The tsearch routines are very interesting. They make many
+   assumptions about the compiler.  It assumes that the first field
+   in node must be the "key" field, which points to the datum.
+   Everything depends on that.  */
+#define preorder MR_RB_VISIT_PREORDER
+#define postorder MR_RB_VISIT_POSTORDER
+#define endorder MR_RB_VISIT_ENDORDER
+#define leaf MR_RB_VISIT_LEAF
+
+#define compar(X, Y) compar (X, Y.ptr, context)
+#define __tsearch(...) mr_tsearch (__VA_ARGS__, __const void * context)
+#define __tfind(...) mr_tfind (__VA_ARGS__, __const void * context)
+#define __tdelete(...) mr_tdelete (__VA_ARGS__, __const void * context)
+#define __twalk mr_twalk
+#define __tdestroy mr_tdestroy
+
+#define weak_alias(...)
+
+#define __compar_fn_t mr_compar_fn_t
+#define __free_fn_t mr_free_fn_t
+#define __action_fn_t mr_action_fn_t
+
+/* On some platforms we can make internal function calls (i.e., calls of
+   functions not exported) a bit faster by using a different calling
+   convention.  */
+#ifndef internal_function
+#define internal_function	/* empty */
+#endif
+
+#define _LIBC
+
+#define node_t MR_TYPEDEF_PREFIX (mr_red_black_tree_node_t)
+typedef struct node_t *node;
 typedef const struct node_t *const_node;
+/* -------------------- Metaresc modified -------------------- */
 
 #undef DEBUGGING
 
@@ -148,7 +185,7 @@ check_tree (node root)
    edges between GPARENTP and ROOTP.  */
 static void
 maybe_split_for_insert (node *rootp, node *parentp, node *gparentp,
-			int p_r, int gp_r, int mode)
+                        int p_r, int gp_r, int mode)
 {
   node root = *rootp;
   node *rp, *lp;
@@ -162,67 +199,67 @@ maybe_split_for_insert (node *rootp, node *parentp, node *gparentp,
       /* This node becomes red, its successors black.  */
       root->red = 1;
       if (*rp)
-	(*rp)->red = 0;
+        (*rp)->red = 0;
       if (*lp)
-	(*lp)->red = 0;
+        (*lp)->red = 0;
 
       /* If the parent of this node is also red, we have to do
-	 rotations.  */
+         rotations.  */
       if (parentp != NULL && (*parentp)->red)
-	{
-	  node gp = *gparentp;
-	  node p = *parentp;
-	  /* There are two main cases:
-	     1. The edge types (left or right) of the two red edges differ.
-	     2. Both red edges are of the same type.
-	     There exist two symmetries of each case, so there is a total of
-	     4 cases.  */
-	  if ((p_r > 0) != (gp_r > 0))
-	    {
-	      /* Put the child at the top of the tree, with its parent
-		 and grandparent as successors.  */
-	      p->red = 1;
-	      gp->red = 1;
-	      root->red = 0;
-	      if (p_r < 0)
-		{
-		  /* Child is left of parent.  */
-		  p->left = *rp;
-		  *rp = p;
-		  gp->right = *lp;
-		  *lp = gp;
-		}
-	      else
-		{
-		  /* Child is right of parent.  */
-		  p->right = *lp;
-		  *lp = p;
-		  gp->left = *rp;
-		  *rp = gp;
-		}
-	      *gparentp = root;
-	    }
-	  else
-	    {
-	      *gparentp = *parentp;
-	      /* Parent becomes the top of the tree, grandparent and
-		 child are its successors.  */
-	      p->red = 0;
-	      gp->red = 1;
-	      if (p_r < 0)
-		{
-		  /* Left edges.  */
-		  gp->left = p->right;
-		  p->right = gp;
-		}
-	      else
-		{
-		  /* Right edges.  */
-		  gp->right = p->left;
-		  p->left = gp;
-		}
-	    }
-	}
+        {
+          node gp = *gparentp;
+          node p = *parentp;
+          /* There are two main cases:
+             1. The edge types (left or right) of the two red edges differ.
+             2. Both red edges are of the same type.
+             There exist two symmetries of each case, so there is a total of
+             4 cases.  */
+          if ((p_r > 0) != (gp_r > 0))
+            {
+              /* Put the child at the top of the tree, with its parent
+                 and grandparent as successors.  */
+              p->red = 1;
+              gp->red = 1;
+              root->red = 0;
+              if (p_r < 0)
+                {
+                  /* Child is left of parent.  */
+                  p->left = *rp;
+                  *rp = p;
+                  gp->right = *lp;
+                  *lp = gp;
+                }
+              else
+                {
+                  /* Child is right of parent.  */
+                  p->right = *lp;
+                  *lp = p;
+                  gp->left = *rp;
+                  *rp = gp;
+                }
+              *gparentp = root;
+            }
+          else
+            {
+              *gparentp = *parentp;
+              /* Parent becomes the top of the tree, grandparent and
+                 child are its successors.  */
+              p->red = 0;
+              gp->red = 1;
+              if (p_r < 0)
+                {
+                  /* Left edges.  */
+                  gp->left = p->right;
+                  p->right = gp;
+                }
+              else
+                {
+                  /* Right edges.  */
+                  gp->right = p->left;
+                  p->left = gp;
+                }
+            }
+        }
     }
 }
 
@@ -230,7 +267,7 @@ maybe_split_for_insert (node *rootp, node *parentp, node *gparentp,
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-__tsearch (const void *key, void **vrootp, mr_compar_fn_t compar, const void * context)
+__tsearch (const void *key, void **vrootp, __compar_fn_t compar)
 {
   node q;
   node *parentp = NULL, *gparentp = NULL;
@@ -251,18 +288,18 @@ __tsearch (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
   while (*nextp != NULL)
     {
       node root = *rootp;
-      r = (*compar) (key, root->key.ptr, context);
+      r = compar (key, root->key); /* Metaresc modified */
       if (r == 0)
-	return root;
+        return root;
 
       maybe_split_for_insert (rootp, parentp, gparentp, p_r, gp_r, 0);
       /* If that did any rotations, parentp and gparentp are now garbage.
-	 That doesn't matter, because the values they contain are never
-	 used again in that case.  */
+         That doesn't matter, because the values they contain are never
+         used again in that case.  */
 
       nextp = r < 0 ? &root->left : &root->right;
       if (*nextp == NULL)
-	break;
+        break;
 
       gparentp = parentp;
       parentp = rootp;
@@ -272,33 +309,32 @@ __tsearch (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
       p_r = r;
     }
 
-  q = malloc (sizeof (*q));
+  q = (struct node_t *) malloc (sizeof (struct node_t));
   if (q != NULL)
     {
-      *nextp = q;			/* link new node to old */
-      q->key.ptr = (void*)key;			/* initialize new node */
+      *nextp = q;                       /* link new node to old */
+      q->key.ptr = (void*)key; /* Metaresc modified */ /* initialize new node */
       q->red = 1;
       q->left = q->right = NULL;
+
+      if (nextp != rootp)
+        /* There may be two red edges in a row now, which we must avoid by
+           rotating the tree.  */
+        maybe_split_for_insert (nextp, rootp, parentp, r, p_r, 1);
     }
-  if (nextp != rootp)
-    /* There may be two red edges in a row now, which we must avoid by
-       rotating the tree.  */
-    maybe_split_for_insert (nextp, rootp, parentp, r, p_r, 1);
 
   return q;
 }
+#ifdef weak_alias
 weak_alias (__tsearch, tsearch)
+#endif
 
 
 /* Find datum in search tree.
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-__tfind (key, vrootp, compar, context)
-     const void *key;
-     void *const *vrootp;
-     mr_compar_fn_t compar;
-     const void * context;
+__tfind (const void *key, void *const *vrootp, __compar_fn_t compar) /* Metaresc modified */
 {
   node *rootp = (node *) vrootp;
 
@@ -312,22 +348,24 @@ __tfind (key, vrootp, compar, context)
       node root = *rootp;
       int r;
 
-      r = (*compar) (key, root->key.ptr, context);
+      r = compar (key, root->key); /* Metaresc modified */
       if (r == 0)
-	return root;
+        return root;
 
       rootp = r < 0 ? &root->left : &root->right;
     }
   return NULL;
 }
+#ifdef weak_alias
 weak_alias (__tfind, tfind)
+#endif
 
 
 /* Delete node with given key.
    KEY is the key to be deleted, ROOTP is the address of the root of tree,
    COMPAR the comparison function.  */
 void *
-__tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * context)
+__tdelete (const void *key, void **vrootp, __compar_fn_t compar)
 {
   node p, q, r, retval;
   int cmp;
@@ -336,9 +374,9 @@ __tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
   /* Stack of nodes so we remember the parents without recursion.  It's
      _very_ unlikely that there are paths longer than 40 nodes.  The tree
      would need to have around 250.000 nodes.  */
-  int stacksize = 40;
+  int stacksize = 100;
   int sp = 0;
-  node **nodestack = alloca (sizeof (node *) * stacksize);
+  node *nodestack[100];
 
   if (rootp == NULL)
     return NULL;
@@ -348,23 +386,18 @@ __tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
 
   CHECK_TREE (p);
 
-  while ((cmp = (*compar) (key, (*rootp)->key.ptr, context)) != 0)
+  while ((cmp = compar (key, (*rootp)->key)) != 0) /* Metaresc modified */
     {
       if (sp == stacksize)
-	{
-	  node **newstack;
-	  stacksize += 20;
-	  newstack = alloca (sizeof (node *) * stacksize);
-	  nodestack = memcpy (newstack, nodestack, sp * sizeof (node *));
-	}
+        abort ();
 
       nodestack[sp++] = rootp;
       p = *rootp;
       rootp = ((cmp < 0)
-	       ? &(*rootp)->left
-	       : &(*rootp)->right);
+               ? &(*rootp)->left
+               : &(*rootp)->right);
       if (*rootp == NULL)
-	return NULL;
+        return NULL;
     }
 
   /* This is bogus if the node to be deleted is the root... this routine
@@ -387,20 +420,15 @@ __tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
     {
       node *parent = rootp, *up = &root->right;
       for (;;)
-	{
-	  if (sp == stacksize)
-	    {
-	      node **newstack;
-	      stacksize += 20;
-	      newstack = alloca (sizeof (node *) * stacksize);
-	      nodestack = memcpy (newstack, nodestack, sp * sizeof (node *));
-	    }
-	  nodestack[sp++] = parent;
-	  parent = up;
-	  if ((*up)->left == NULL)
-	    break;
-	  up = &(*up)->left;
-	}
+        {
+          if (sp == stacksize)
+            abort ();
+          nodestack[sp++] = parent;
+          parent = up;
+          if ((*up)->left == NULL)
+            break;
+          up = &(*up)->left;
+        }
       unchained = *up;
     }
 
@@ -415,9 +443,9 @@ __tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
     {
       q = *nodestack[sp-1];
       if (unchained == q->right)
-	q->right = r;
+        q->right = r;
       else
-	q->left = r;
+        q->left = r;
     }
 
   if (unchained != root)
@@ -425,162 +453,164 @@ __tdelete (const void *key, void **vrootp, mr_compar_fn_t compar, const void * c
   if (!unchained->red)
     {
       /* Now we lost a black edge, which means that the number of black
-	 edges on every path is no longer constant.  We must balance the
-	 tree.  */
+         edges on every path is no longer constant.  We must balance the
+         tree.  */
       /* NODESTACK now contains all parents of R.  R is likely to be NULL
-	 in the first iteration.  */
+         in the first iteration.  */
       /* NULL nodes are considered black throughout - this is necessary for
-	 correctness.  */
+         correctness.  */
       while (sp > 0 && (r == NULL || !r->red))
-	{
-	  node *pp = nodestack[sp - 1];
-	  p = *pp;
-	  /* Two symmetric cases.  */
-	  if (r == p->left)
-	    {
-	      /* Q is R's brother, P is R's parent.  The subtree with root
-		 R has one black edge less than the subtree with root Q.  */
-	      q = p->right;
-	      if (q != NULL && q->red)
-		{
-		  /* If Q is red, we know that P is black. We rotate P left
-		     so that Q becomes the top node in the tree, with P below
-		     it.  P is colored red, Q is colored black.
-		     This action does not change the black edge count for any
-		     leaf in the tree, but we will be able to recognize one
-		     of the following situations, which all require that Q
-		     is black.  */
-		  q->red = 0;
-		  p->red = 1;
-		  /* Left rotate p.  */
-		  p->right = q->left;
-		  q->left = p;
-		  *pp = q;
-		  /* Make sure pp is right if the case below tries to use
-		     it.  */
-		  nodestack[sp++] = pp = &q->left;
-		  q = p->right;
-		}
-	      /* We know that Q can't be NULL here.  We also know that Q is
-		 black.  */
-	      if ((q->left == NULL || !q->left->red)
-		  && (q->right == NULL || !q->right->red))
-		{
-		  /* Q has two black successors.  We can simply color Q red.
-		     The whole subtree with root P is now missing one black
-		     edge.  Note that this action can temporarily make the
-		     tree invalid (if P is red).  But we will exit the loop
-		     in that case and set P black, which both makes the tree
-		     valid and also makes the black edge count come out
-		     right.  If P is black, we are at least one step closer
-		     to the root and we'll try again the next iteration.  */
-		  q->red = 1;
-		  r = p;
-		}
-	      else
-		{
-		  /* Q is black, one of Q's successors is red.  We can
-		     repair the tree with one operation and will exit the
-		     loop afterwards.  */
-		  if (q->right == NULL || !q->right->red)
-		    {
-		      /* The left one is red.  We perform the same action as
-			 in maybe_split_for_insert where two red edges are
-			 adjacent but point in different directions:
-			 Q's left successor (let's call it Q2) becomes the
-			 top of the subtree we are looking at, its parent (Q)
-			 and grandparent (P) become its successors. The former
-			 successors of Q2 are placed below P and Q.
-			 P becomes black, and Q2 gets the color that P had.
-			 This changes the black edge count only for node R and
-			 its successors.  */
-		      node q2 = q->left;
-		      q2->red = p->red;
-		      p->right = q2->left;
-		      q->left = q2->right;
-		      q2->right = q;
-		      q2->left = p;
-		      *pp = q2;
-		      p->red = 0;
-		    }
-		  else
-		    {
-		      /* It's the right one.  Rotate P left. P becomes black,
-			 and Q gets the color that P had.  Q's right successor
-			 also becomes black.  This changes the black edge
-			 count only for node R and its successors.  */
-		      q->red = p->red;
-		      p->red = 0;
+        {
+          node *pp = nodestack[sp - 1];
+          p = *pp;
+          /* Two symmetric cases.  */
+          if (r == p->left)
+            {
+              /* Q is R's brother, P is R's parent.  The subtree with root
+                 R has one black edge less than the subtree with root Q.  */
+              q = p->right;
+              if (q->red)
+                {
+                  /* If Q is red, we know that P is black. We rotate P left
+                     so that Q becomes the top node in the tree, with P below
+                     it.  P is colored red, Q is colored black.
+                     This action does not change the black edge count for any
+                     leaf in the tree, but we will be able to recognize one
+                     of the following situations, which all require that Q
+                     is black.  */
+                  q->red = 0;
+                  p->red = 1;
+                  /* Left rotate p.  */
+                  p->right = q->left;
+                  q->left = p;
+                  *pp = q;
+                  /* Make sure pp is right if the case below tries to use
+                     it.  */
+                  nodestack[sp++] = pp = &q->left;
+                  q = p->right;
+                }
+              /* We know that Q can't be NULL here.  We also know that Q is
+                 black.  */
+              if ((q->left == NULL || !q->left->red)
+                  && (q->right == NULL || !q->right->red))
+                {
+                  /* Q has two black successors.  We can simply color Q red.
+                     The whole subtree with root P is now missing one black
+                     edge.  Note that this action can temporarily make the
+                     tree invalid (if P is red).  But we will exit the loop
+                     in that case and set P black, which both makes the tree
+                     valid and also makes the black edge count come out
+                     right.  If P is black, we are at least one step closer
+                     to the root and we'll try again the next iteration.  */
+                  q->red = 1;
+                  r = p;
+                }
+              else
+                {
+                  /* Q is black, one of Q's successors is red.  We can
+                     repair the tree with one operation and will exit the
+                     loop afterwards.  */
+                  if (q->right == NULL || !q->right->red)
+                    {
+                      /* The left one is red.  We perform the same action as
+                         in maybe_split_for_insert where two red edges are
+                         adjacent but point in different directions:
+                         Q's left successor (let's call it Q2) becomes the
+                         top of the subtree we are looking at, its parent (Q)
+                         and grandparent (P) become its successors. The former
+                         successors of Q2 are placed below P and Q.
+                         P becomes black, and Q2 gets the color that P had.
+                         This changes the black edge count only for node R and
+                         its successors.  */
+                      node q2 = q->left;
+                      q2->red = p->red;
+                      p->right = q2->left;
+                      q->left = q2->right;
+                      q2->right = q;
+                      q2->left = p;
+                      *pp = q2;
+                      p->red = 0;
+                    }
+                  else
+                    {
+                      /* It's the right one.  Rotate P left. P becomes black,
+                         and Q gets the color that P had.  Q's right successor
+                         also becomes black.  This changes the black edge
+                         count only for node R and its successors.  */
+                      q->red = p->red;
+                      p->red = 0;
 
-		      q->right->red = 0;
+                      q->right->red = 0;
 
-		      /* left rotate p */
-		      p->right = q->left;
-		      q->left = p;
-		      *pp = q;
-		    }
+                      /* left rotate p */
+                      p->right = q->left;
+                      q->left = p;
+                      *pp = q;
+                    }
 
-		  /* We're done.  */
-		  sp = 1;
-		  r = NULL;
-		}
-	    }
-	  else
-	    {
-	      /* Comments: see above.  */
-	      q = p->left;
-	      if (q != NULL && q->red)
-		{
-		  q->red = 0;
-		  p->red = 1;
-		  p->left = q->right;
-		  q->right = p;
-		  *pp = q;
-		  nodestack[sp++] = pp = &q->right;
-		  q = p->left;
-		}
-	      if ((q->right == NULL || !q->right->red)
-		       && (q->left == NULL || !q->left->red))
-		{
-		  q->red = 1;
-		  r = p;
-		}
-	      else
-		{
-		  if (q->left == NULL || !q->left->red)
-		    {
-		      node q2 = q->right;
-		      q2->red = p->red;
-		      p->left = q2->right;
-		      q->right = q2->left;
-		      q2->left = q;
-		      q2->right = p;
-		      *pp = q2;
-		      p->red = 0;
-		    }
-		  else
-		    {
-		      q->red = p->red;
-		      p->red = 0;
-		      q->left->red = 0;
-		      p->left = q->right;
-		      q->right = p;
-		      *pp = q;
-		    }
-		  sp = 1;
-		  r = NULL;
-		}
-	    }
-	  --sp;
-	}
+                  /* We're done.  */
+                  sp = 1;
+                  r = NULL;
+                }
+            }
+          else
+            {
+              /* Comments: see above.  */
+              q = p->left;
+              if (q->red)
+                {
+                  q->red = 0;
+                  p->red = 1;
+                  p->left = q->right;
+                  q->right = p;
+                  *pp = q;
+                  nodestack[sp++] = pp = &q->right;
+                  q = p->left;
+                }
+              if ((q->right == NULL || !q->right->red)
+                       && (q->left == NULL || !q->left->red))
+                {
+                  q->red = 1;
+                  r = p;
+                }
+              else
+                {
+                  if (q->left == NULL || !q->left->red)
+                    {
+                      node q2 = q->right;
+                      q2->red = p->red;
+                      p->left = q2->right;
+                      q->right = q2->left;
+                      q2->left = q;
+                      q2->right = p;
+                      *pp = q2;
+                      p->red = 0;
+                    }
+                  else
+                    {
+                      q->red = p->red;
+                      p->red = 0;
+                      q->left->red = 0;
+                      p->left = q->right;
+                      q->right = p;
+                      *pp = q;
+                    }
+                  sp = 1;
+                  r = NULL;
+                }
+            }
+          --sp;
+        }
       if (r != NULL)
-	r->red = 0;
+        r->red = 0;
     }
 
   free (unchained);
   return retval;
 }
+#ifdef weak_alias
 weak_alias (__tdelete, tdelete)
+#endif
 
 
 /* Walk the nodes of a tree.
@@ -598,10 +628,10 @@ trecurse (const void *vroot, __action_fn_t action, int level)
     {
       (*action) (root, preorder, level);
       if (root->left != NULL)
-	trecurse (root->left, action, level + 1);
+        trecurse (root->left, action, level + 1);
       (*action) (root, postorder, level);
       if (root->right != NULL)
-	trecurse (root->right, action, level + 1);
+        trecurse (root->right, action, level + 1);
       (*action) (root, endorder, level);
     }
 }
@@ -620,9 +650,12 @@ __twalk (const void *vroot, __action_fn_t action)
   if (root != NULL && action != NULL)
     trecurse (root, action, 0);
 }
+#ifdef weak_alias
 weak_alias (__twalk, twalk)
+#endif
 
 
+#ifdef _LIBC
 
 /* The standardized functions miss an important functionality: the
    tree cannot be removed easily.  We provide a function to do this.  */
@@ -634,7 +667,7 @@ tdestroy_recurse (node root, __free_fn_t freefct)
     tdestroy_recurse (root->left, freefct);
   if (root->right != NULL)
     tdestroy_recurse (root->right, freefct);
-  (*freefct) ((void *) root->key.ptr);
+  (*freefct) ((void *) root->key.ptr); /* Metaresc modified */
   /* Free the node itself.  */
   free (root);
 }
@@ -650,3 +683,5 @@ __tdestroy (void *vroot, __free_fn_t freefct)
     tdestroy_recurse (root, freefct);
 }
 weak_alias (__tdestroy, tdestroy)
+
+#endif /* _LIBC */

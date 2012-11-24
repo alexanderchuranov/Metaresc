@@ -115,7 +115,7 @@ void dummy_free_func (void * nodep) {}
   
 int free_lookup_tree (mr_td_t * tdp, void * arg)
 {
-  tdestroy (tdp->lookup_by_value.root, dummy_free_func);
+  mr_tdestroy (tdp->lookup_by_value.root, dummy_free_func);
   tdp->lookup_by_value.root = NULL;
   if (tdp->lookup_by_name.data)
     MR_FREE (tdp->lookup_by_name.data);
@@ -134,7 +134,7 @@ static void __attribute__((destructor)) mr_cleanup (void)
       void_ptr_tdp->fields.data = NULL;
     }
   
-  tdestroy (mr_conf.enum_by_name.root, dummy_free_func);
+  mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func);
   mr_conf.enum_by_name.root = NULL;
   mr_td_foreach (free_lookup_tree, NULL);
   
@@ -1043,7 +1043,7 @@ mr_add_enum (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      mr_fd_t ** fdpp = tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
+      mr_fd_t ** fdpp = mr_tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1055,7 +1055,7 @@ mr_add_enum (mr_td_t * tdp)
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
-      fdpp = tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
+      fdpp = mr_tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1076,7 +1076,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_fd_t ** fdpp = tfind (&fd, (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
+  mr_fd_t ** fdpp = mr_tfind (&fd, (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
   if (fdpp)
     return (*fdpp);
   return (NULL);
@@ -1092,7 +1092,7 @@ int
 mr_get_enum_by_name (uint64_t * value, char * name)
 {
   mr_fd_t fd = { .name = name };
-  mr_fd_t ** fdpp = tfind (&fd, (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
+  mr_fd_t ** fdpp = mr_tfind (&fd, (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
   return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);

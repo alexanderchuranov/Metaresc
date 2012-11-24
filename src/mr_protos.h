@@ -133,6 +133,13 @@ TYPEDEF_ENUM (mr_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeo
 	      (MR_RED, = 1),
 	      )
 
+TYPEDEF_ENUM (mr_rb_visit_order_t,
+	      MR_RB_VISIT_PREORDER,
+	      MR_RB_VISIT_POSTORDER,
+	      MR_RB_VISIT_ENDORDER,
+	      MR_RB_VISIT_LEAF,
+	      )
+
 TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
 		(mr_ptr_t, key, , "key_type"),
 		(mr_red_black_tree_node_t *, left, , "left child"),

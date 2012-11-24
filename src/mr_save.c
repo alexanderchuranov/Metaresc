@@ -99,7 +99,7 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  tree_search_result = tsearch ((void*)count, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
+  tree_search_result = mr_tsearch ((void*)count, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -127,7 +127,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  tree_search_result = tsearch ((void*)count, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);  
+  tree_search_result = mr_tsearch ((void*)count, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);  
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -183,10 +183,10 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
   ptrs->ra.data[idx_].fd = *fdp;
   
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
-  tree_find_result = tfind ((void*)idx_, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
+  tree_find_result = mr_tfind ((void*)idx_, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
-  tree_find_result = tfind ((void*)idx_, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
+  tree_find_result = mr_tfind ((void*)idx_, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
   return (-1);
@@ -352,7 +352,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	void * discriminator;
 	char * named_discriminator = NULL;
 	/* checks if this parent already have union resolution info */
-	ud_find = tfind ((void*)ud_idx, (void*)&mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	ud_find = mr_tfind ((void*)ud_idx, (void*)&mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	/* break the traverse loop if it has */
 	if (ud_find)
 	  break;
@@ -465,7 +465,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
       {
-	void * ud_search = tsearch (*(void**)ud_find, (void*)&mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	void * ud_search = mr_tsearch (*(void**)ud_find, (void*)&mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	if (NULL == ud_search)
 	  {
 	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -765,7 +765,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 
   for (i = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1; i >= 0; --i)
     {
-      tdestroy (mr_save_data->ptrs.ra.data[i].union_discriminator, dummy_free_func);
+      mr_tdestroy (mr_save_data->ptrs.ra.data[i].union_discriminator, dummy_free_func);
       mr_save_data->ptrs.ra.data[i].union_discriminator = NULL;
     }
   if (mr_save_data->mr_ra_ud.data)
@@ -775,10 +775,10 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     MR_FREE (mr_save_data->mr_ra_idx.data);
   mr_save_data->mr_ra_idx.data = NULL;
   if (mr_save_data->typed_ptrs_tree)
-    tdestroy (mr_save_data->typed_ptrs_tree, dummy_free_func);
+    mr_tdestroy (mr_save_data->typed_ptrs_tree, dummy_free_func);
   mr_save_data->typed_ptrs_tree = NULL;
   if (mr_save_data->untyped_ptrs_tree)
-    tdestroy (mr_save_data->untyped_ptrs_tree, dummy_free_func);
+    mr_tdestroy (mr_save_data->untyped_ptrs_tree, dummy_free_func);
   mr_save_data->untyped_ptrs_tree = NULL;
   
 }
