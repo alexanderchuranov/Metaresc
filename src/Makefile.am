@@ -1,6 +1,7 @@
 # -*- makefile -*-
 
 AM_CFLAGS = @AM_CFLAGS@ @LIBXML2_CFLAGS@
+INCLUDES = -I$(top_srcdir)/src
 
 DISTCLEANFILES = mr_pp.h
 MOSTLYCLEANFILES = *.tab.[ch] *.lex.[ch]
