@@ -5,20 +5,20 @@
 
 #ifndef MR_COMPAR_FN_T
 # define MR_COMPAR_FN_T
-typedef int (*mr_compar_fn_t) (__const mr_ptr_t, __const mr_ptr_t, __const void *);
+typedef int (*mr_compar_fn_t) (__const mr_ptr_t __x, __const mr_ptr_t __y, __const void * __context);
 #endif
 
 #ifndef MR_ACTION_FN_T
 # define MR_ACTION_FN_T
-typedef void (*mr_action_fn_t) (__const void *__nodep, mr_rb_visit_order_t __value,
-				int __level);
+typedef void (*mr_action_fn_t) (__const mr_ptr_t __nodep, mr_rb_visit_order_t __value,
+				int __level, __const void * __context);
 #endif
 
 /* Callback type for function to free a tree node.  If the keys are atomic
    data this function should do nothing.  */
 #ifndef MR_FREE_FN_T
 # define MR_FREE_FN_T
-typedef void (*mr_free_fn_t) (void *__nodep);
+typedef void (*mr_free_fn_t) (mr_ptr_t __nodep, __const void * __context);
 #endif
 
 /* Search for an entry matching the given KEY in the tree pointed to
@@ -39,9 +39,9 @@ extern void *mr_tdelete (__const mr_ptr_t __key,
 
 /* Walk through the whole tree and call the ACTION callback for every node
    or leaf.  */
-extern void mr_twalk (__const mr_red_black_tree_node_t *__root, mr_action_fn_t __action);
+extern void mr_twalk (__const mr_red_black_tree_node_t *__root, mr_action_fn_t __action, __const void * __context);
 
 /* Destroy the whole tree, call FREEFCT for each node or leaf.  */
-extern void mr_tdestroy (mr_red_black_tree_node_t *__root, mr_free_fn_t __freefct);
+extern void mr_tdestroy (mr_red_black_tree_node_t *__root, mr_free_fn_t __freefct, __const void * __context);
 
 #endif /* _MR_TSEARCH_H_ */

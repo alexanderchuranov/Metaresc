@@ -122,8 +122,8 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 /* mr_rarray_t defenition should be syncroonized with MR_RARRAY_PROTO macro */
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
 		(void *, data, , "pointer on data array"),
-		(int32_t, size, , "used space in bytes"),
-		(int32_t, alloc_size, , "allocated space in bytes"),
+		(int64_t, size, , "used space in bytes"),
+		(int64_t, alloc_size, , "allocated space in bytes"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
 		)

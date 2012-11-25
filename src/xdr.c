@@ -901,10 +901,20 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     {
       char * ra_data = ptrs->ra.data[idx].data;
       mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
+      int status = 0;
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
 	return (0);
-      if (!xdr_int32_t (xdrs, &ra->size))
+      switch (sizeof (ra->size))
+	{
+	case sizeof (int8_t): status = xdr_int8_t (xdrs, (int8_t*)&ra->size); break;
+	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)&ra->size); break;
+	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)&ra->size); break;
+	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)&ra->size); break;
+	}
+      
+      if (!status)
 	return (0);
+      
       if (!ptrs->ra.data[idx].flags.is_opaque_data)
 	return (!0);
       else
@@ -934,8 +944,17 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       mr_fd_t fd_ = ptrs->ra.data[idx].fd;
       char * ra_data = ptrs->ra.data[idx].data;
       mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
+      int status = 0;
 
-      if (!xdr_int32_t (xdrs, &ra->size))
+      switch (sizeof (ra->size))
+	{
+	case sizeof (int8_t): status = xdr_int8_t (xdrs, (int8_t*)&ra->size); break;
+	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)&ra->size); break;
+	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)&ra->size); break;
+	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)&ra->size); break;
+	}
+      
+      if (!status)
 	return (0);
 
       /* .size and .alloc_size will be loaded once again as fields of mr_rarray_t */

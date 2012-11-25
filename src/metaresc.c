@@ -111,11 +111,11 @@ MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void
 /**
  * Memory cleanp handler.
  */
-void dummy_free_func (void * nodep) {}
+void dummy_free_func (void * nodep, const void * context) {}
   
 int free_lookup_tree (mr_td_t * tdp, void * arg)
 {
-  mr_tdestroy (tdp->lookup_by_value.root, dummy_free_func);
+  mr_tdestroy (tdp->lookup_by_value.root, dummy_free_func, NULL);
   tdp->lookup_by_value.root = NULL;
   if (tdp->lookup_by_name.data)
     MR_FREE (tdp->lookup_by_name.data);
@@ -134,7 +134,7 @@ static void __attribute__((destructor)) mr_cleanup (void)
       void_ptr_tdp->fields.data = NULL;
     }
   
-  mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func);
+  mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func, NULL);
   mr_conf.enum_by_name.root = NULL;
   mr_td_foreach (free_lookup_tree, NULL);
   

@@ -94,20 +94,7 @@
 #define malloc(...) MR_MALLOC(__VA_ARGS__)
 #define free(...) MR_FREE(__VA_ARGS__)
 
-/* The tsearch routines are very interesting. They make many
-   assumptions about the compiler.  It assumes that the first field
-   in node must be the "key" field, which points to the datum.
-   Everything depends on that.  */
-#define preorder MR_RB_VISIT_PREORDER
-#define postorder MR_RB_VISIT_POSTORDER
-#define endorder MR_RB_VISIT_ENDORDER
-#define leaf MR_RB_VISIT_LEAF
-
 #define weak_alias(...)
-
-#define __compar_fn_t mr_compar_fn_t
-#define __free_fn_t mr_free_fn_t
-#define __action_fn_t mr_action_fn_t
 
 /* On some platforms we can make internal function calls (i.e., calls of
    functions not exported) a bit faster by using a different calling
@@ -260,7 +247,7 @@ maybe_split_for_insert (node *rootp, node *parentp, node *gparentp,
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-mr_tsearch (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_t compar, __const void * context) /* Metaresc modified */
+mr_tsearch (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_t compar, const void * context) /* Metaresc modified */
 {
   node q;
   node *parentp = NULL, *gparentp = NULL;
@@ -327,7 +314,7 @@ weak_alias (__tsearch, tsearch)
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-mr_tfind (const mr_ptr_t key, mr_red_black_tree_node_t *const *vrootp, __compar_fn_t compar, __const void * context) /* Metaresc modified */
+mr_tfind (const mr_ptr_t key, mr_red_black_tree_node_t *const *vrootp, mr_compar_fn_t compar, const void * context) /* Metaresc modified */
 {
   node *rootp = (node *) vrootp;
 
@@ -358,7 +345,7 @@ weak_alias (__tfind, tfind)
    KEY is the key to be deleted, ROOTP is the address of the root of tree,
    COMPAR the comparison function.  */
 void *
-mr_tdelete (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, __compar_fn_t compar, __const void * context) /* Metaresc modified */
+mr_tdelete (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_t compar, const void * context) /* Metaresc modified */
 {
   node p, q, r, retval;
   int cmp;
@@ -611,21 +598,21 @@ weak_alias (__tdelete, tdelete)
    called at each node.  LEVEL is the level of ROOT in the whole tree.  */
 static void
 internal_function
-trecurse (const void *vroot, __action_fn_t action, int level)
+trecurse (const void *vroot, mr_action_fn_t action, int level, const void * context) /* Metaresc modified */
 {
-  const_node root = (const_node) vroot;
+  node root = (node) vroot;
 
   if (root->left == NULL && root->right == NULL)
-    (*action) (root, leaf, level);
+    (*action) (root, MR_RB_VISIT_LEAF, level, context); /* Metaresc modified */
   else
     {
-      (*action) (root, preorder, level);
+      (*action) (root, MR_RB_VISIT_PREORDER, level, context); /* Metaresc modified */
       if (root->left != NULL)
-        trecurse (root->left, action, level + 1);
-      (*action) (root, postorder, level);
+        trecurse (root->left, action, level + 1, context); /* Metaresc modified */
+      (*action) (root, MR_RB_VISIT_POSTORDER, level, context); /* Metaresc modified */
       if (root->right != NULL)
-        trecurse (root->right, action, level + 1);
-      (*action) (root, endorder, level);
+        trecurse (root->right, action, level + 1, context); /* Metaresc modified */
+      (*action) (root, MR_RB_VISIT_ENDORDER, level, context); /* Metaresc modified */
     }
 }
 
@@ -634,14 +621,14 @@ trecurse (const void *vroot, __action_fn_t action, int level)
    ROOT is the root of the tree to be walked, ACTION the function to be
    called at each node.  */
 void
-mr_twalk (const mr_red_black_tree_node_t * vroot, mr_action_fn_t action) /* Metaresc modified */
+mr_twalk (const mr_red_black_tree_node_t * vroot, mr_action_fn_t action, const void * context) /* Metaresc modified */
 {
   const_node root = (const_node) vroot;
 
   CHECK_TREE (root);
 
   if (root != NULL && action != NULL)
-    trecurse (root, action, 0);
+    trecurse (root, action, 0, context); /* Metaresc modified */
 }
 #ifdef weak_alias
 weak_alias (__twalk, twalk)
@@ -654,26 +641,26 @@ weak_alias (__twalk, twalk)
    tree cannot be removed easily.  We provide a function to do this.  */
 static void
 internal_function
-tdestroy_recurse (node root, __free_fn_t freefct)
+tdestroy_recurse (node root, mr_free_fn_t freefct, const void * context) /* Metaresc modified */
 {
   if (root->left != NULL)
-    tdestroy_recurse (root->left, freefct);
+    tdestroy_recurse (root->left, freefct, context); /* Metaresc modified */
   if (root->right != NULL)
-    tdestroy_recurse (root->right, freefct);
-  (*freefct) ((void *) root->key.ptr); /* Metaresc modified */
+    tdestroy_recurse (root->right, freefct, context); /* Metaresc modified */
+  (*freefct) (root->key, context); /* Metaresc modified */
   /* Free the node itself.  */
   free (root);
 }
 
 void
-mr_tdestroy (mr_red_black_tree_node_t * vroot, mr_free_fn_t freefct) /* Metaresc modified */
+mr_tdestroy (mr_red_black_tree_node_t * vroot, mr_free_fn_t freefct, const void * context) /* Metaresc modified */
 {
   node root = (node) vroot;
 
   CHECK_TREE (root);
 
   if (root != NULL)
-    tdestroy_recurse (root, freefct);
+    tdestroy_recurse (root, freefct, context); /* Metaresc modified */
 }
 weak_alias (__tdestroy, tdestroy)
 

@@ -19,7 +19,7 @@
  * Dummy stub for tree delete function
  * @param nodep pointer on a tree node
  */
-static void dummy_free_func (void * nodep) {};
+static void dummy_free_func (void * nodep, const void * context) {};
 
 /**
  * Comparator for mr_ptrdes_t.
@@ -765,7 +765,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 
   for (i = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1; i >= 0; --i)
     {
-      mr_tdestroy (mr_save_data->ptrs.ra.data[i].union_discriminator, dummy_free_func);
+      mr_tdestroy (mr_save_data->ptrs.ra.data[i].union_discriminator, dummy_free_func, NULL);
       mr_save_data->ptrs.ra.data[i].union_discriminator = NULL;
     }
   if (mr_save_data->mr_ra_ud.data)
@@ -775,10 +775,10 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     MR_FREE (mr_save_data->mr_ra_idx.data);
   mr_save_data->mr_ra_idx.data = NULL;
   if (mr_save_data->typed_ptrs_tree)
-    mr_tdestroy (mr_save_data->typed_ptrs_tree, dummy_free_func);
+    mr_tdestroy (mr_save_data->typed_ptrs_tree, dummy_free_func, NULL);
   mr_save_data->typed_ptrs_tree = NULL;
   if (mr_save_data->untyped_ptrs_tree)
-    mr_tdestroy (mr_save_data->untyped_ptrs_tree, dummy_free_func);
+    mr_tdestroy (mr_save_data->untyped_ptrs_tree, dummy_free_func, NULL);
   mr_save_data->untyped_ptrs_tree = NULL;
   
 }
