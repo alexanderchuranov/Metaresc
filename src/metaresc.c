@@ -586,13 +586,20 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
   
   /* NB index 0 is excluded */  
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
-    if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0) && !ptrs.ra.data[i].flags.is_null)
+    /*
+      skip nodes that are not in final save graph (ptrs.ra.data[i].idx >= 0)
+      nodes are references on other nodes (ptrs.ra.data[i].ref_idx < 0)
+      or NULL pointers !ptrs.ra.data[i].flags.is_null
+     */
+    if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0) && !ptrs.ra.data[i].flags.is_null) 
       switch (ptrs.ra.data[i].fd.mr_type_ext)
 	{
 	case MR_TYPE_EXT_NONE:
 	  if (MR_TYPE_STRING != ptrs.ra.data[i].fd.mr_type)
 	    break;
+	  /* calc string length for further malloc */
 	  ptrs.ra.data[i].fd.size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
+	  /* string node should be followed with unlinked char array node */
 	  if ((ptrs.ra.data[i].first_child >= 0) ||
 	      (ptrs.ra.data[i + 1].parent != i) ||
 	      (*(void**)ptrs.ra.data[i].data != ptrs.ra.data[i + 1].data))
@@ -600,6 +607,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA);
 	      return (0);
 	    }
+	  /* link it back. we need to save address of allocated memory into this node */
 	  ptrs.ra.data[i].first_child = ptrs.ra.data[i].last_child = i + 1;
 	  
 	case MR_TYPE_EXT_POINTER:
@@ -607,17 +615,19 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	  {
 	    int idx;
 	    char * copy;
-	    int alloc_size = ptrs.ra.data[i].fd.size;
+	    int alloc_size = ptrs.ra.data[i].fd.size; /* default allocation size */
 	    if (ptrs.ra.data[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
 			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name);
 		return (0);
 	      }
+	    /* rarrays require allocation of memoty chunk according alloc_size field */
 	    if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)
 	      {
 		mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)];
 		ptrs.ra.data[i].fd.size = ra->size;
+		/* statically allocated rarrays has negative alloc_size */
 		if (ra->alloc_size > ra->size)
 		  alloc_size = ra->alloc_size;
 	      }
@@ -627,8 +637,11 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 		return (0);
 	      }
+	    /* copy data from source */
 	    memcpy (copy, *(void**)ptrs.ra.data[i].data, ptrs.ra.data[i].fd.size);
+	    /* zeros the rest of allocated memeory (only for rarrays) */
 	    memset (&copy[ptrs.ra.data[i].fd.size], 0, alloc_size - ptrs.ra.data[i].fd.size);
+	    /* go thru all childs and calculate their addresses in newly allocated chunk */
 	    for (idx = ptrs.ra.data[i].first_child; idx >= 0; idx = ptrs.ra.data[idx].next)
 	      ptrs.ra.data[idx].ext.ptr = &copy[(char*)ptrs.ra.data[idx].data - *(char**)ptrs.ra.data[i].data];
 	  }
@@ -636,20 +649,21 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	default:
 	  break;
 	}
-
+  /* copy first level struct */
   memcpy (dst, ptrs.ra.data[0].data, ptrs.ra.data[0].fd.size);
   ptrs.ra.data[0].ext.ptr = dst;
 
-  i = ptrs.ra.data[0].first_child;
+  /* depth search thru the graph and calculate new addresses for all nodes */
+  i = 0;
   while (i >= 0)
     {
+      /* is new address is not set yet, then it could be calculated as relative address from the parent node */
       if (NULL == ptrs.ra.data[i].ext.ptr)
 	{
 	  int parent = ptrs.ra.data[i].parent;
-	  ptrdiff_t offset = (char*)ptrs.ra.data[i].data - (char*)ptrs.ra.data[parent].data;
-	  ptrs.ra.data[i].ext.ptr = &((char*)ptrs.ra.data[parent].ext.ptr)[offset];
+	  ptrs.ra.data[i].ext.ptr = &((char*)ptrs.ra.data[parent].ext.ptr)[ptrs.ra.data[i].data - ptrs.ra.data[parent].data];
 	}
-      
+      /* depth search iterator */
       if (ptrs.ra.data[i].first_child >= 0)
 	i = ptrs.ra.data[i].first_child;
       else
@@ -659,9 +673,9 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	  i = ptrs.ra.data[i].next;
 	}
     }      
-    
+  /* now we should update pointers in a copy */
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
-    if ((ptrs.ra.data[i].idx >= 0) && !ptrs.ra.data[i].flags.is_null)
+    if ((ptrs.ra.data[i].idx >= 0) && !ptrs.ra.data[i].flags.is_null) /* skip NULL and invalid nodes */
       switch (ptrs.ra.data[i].fd.mr_type_ext)
 	{
 	case MR_TYPE_EXT_NONE:
@@ -671,10 +685,12 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	case MR_TYPE_EXT_RARRAY_DATA:
 	  {
 	    int ptr_idx;
+	    /* get index of the node that is referenced by the pointer */
 	    if (ptrs.ra.data[i].ref_idx < 0)
 	      ptr_idx = ptrs.ra.data[i].first_child;
 	    else
 	      ptr_idx = ptrs.ra.data[i].flags.is_content_reference ? ptrs.ra.data[ptrs.ra.data[i].ref_idx].first_child : ptrs.ra.data[i].ref_idx;
+	    /* update pointer in the copy */
 	    *(void**)ptrs.ra.data[i].ext.ptr = ptrs.ra.data[ptr_idx].ext.ptr;
 	  }
 	  break;
@@ -851,7 +867,7 @@ cmp_tdp (const void * x, const void * y, const void * context)
 static void
 mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 {
-  mr_td_t ** tdpp = mr_tsearch (tdp, (void*)tree, cmp_tdp, NULL);
+  mr_td_t ** tdpp = mr_tsearch (tdp, tree, cmp_tdp, NULL);
   if (NULL == tdpp)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 }
@@ -897,7 +913,7 @@ mr_get_td_by_name (char * type)
   if (mr_conf.tree.root)
     {
       mr_td_t td = { .type = type };
-      mr_td_t ** tdpp = tfind (&td, (void*)&mr_conf.tree.root, cmp_tdp, NULL);
+      mr_td_t ** tdpp = tfind (&td, &mr_conf.tree.root, cmp_tdp, NULL);
       if (tdpp)
 	return (*tdpp);
       else
@@ -982,9 +998,10 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @return comparation sign
  */
 static int
-cmp_enums_by_value (const void * x, const void * y, const void * context)
+cmp_enums_by_value (void * x, void * y, const void * context)
 {
-  return ((((const mr_fd_t *) x)->param.enum_value > ((const mr_fd_t *) y)->param.enum_value) - (((const mr_fd_t *) x)->param.enum_value < ((const mr_fd_t *) y)->param.enum_value));
+  return ((((const mr_fd_t *) x)->param.enum_value > ((const mr_fd_t *) y)->param.enum_value) -
+	  (((const mr_fd_t *) x)->param.enum_value < ((const mr_fd_t *) y)->param.enum_value));
 }
 
 /**
@@ -994,7 +1011,7 @@ cmp_enums_by_value (const void * x, const void * y, const void * context)
  * @return comparation sign
  */
 static int
-cmp_enums_by_name (const void * x, const void * y, const void * context)
+cmp_enums_by_name (void * x, void * y, const void * context)
 {
   return (strcmp (((const mr_fd_t *) x)->name, ((const mr_fd_t *) y)->name));
 }
@@ -1043,7 +1060,7 @@ mr_add_enum (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      mr_fd_t ** fdpp = mr_tsearch (&tdp->fields.data[i], (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
+      mr_fd_t ** fdpp = mr_tsearch (&tdp->fields.data[i], &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1055,7 +1072,7 @@ mr_add_enum (mr_td_t * tdp)
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
-      fdpp = mr_tsearch (&tdp->fields.data[i], (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
+      fdpp = mr_tsearch (&tdp->fields.data[i], &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1076,7 +1093,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_fd_t ** fdpp = mr_tfind (&fd, (void*)&tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
+  mr_fd_t ** fdpp = mr_tfind (&fd, &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
   if (fdpp)
     return (*fdpp);
   return (NULL);
@@ -1092,7 +1109,7 @@ int
 mr_get_enum_by_name (uint64_t * value, char * name)
 {
   mr_fd_t fd = { .name = name };
-  mr_fd_t ** fdpp = mr_tfind (&fd, (void*)&mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
+  mr_fd_t ** fdpp = mr_tfind (&fd, &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
   return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);

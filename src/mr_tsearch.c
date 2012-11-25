@@ -103,13 +103,6 @@
 #define endorder MR_RB_VISIT_ENDORDER
 #define leaf MR_RB_VISIT_LEAF
 
-#define compar(X, Y) compar (X, Y.ptr, context)
-#define __tsearch(...) mr_tsearch (__VA_ARGS__, __const void * context)
-#define __tfind(...) mr_tfind (__VA_ARGS__, __const void * context)
-#define __tdelete(...) mr_tdelete (__VA_ARGS__, __const void * context)
-#define __twalk mr_twalk
-#define __tdestroy mr_tdestroy
-
 #define weak_alias(...)
 
 #define __compar_fn_t mr_compar_fn_t
@@ -267,7 +260,7 @@ maybe_split_for_insert (node *rootp, node *parentp, node *gparentp,
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-__tsearch (const void *key, void **vrootp, __compar_fn_t compar)
+mr_tsearch (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_t compar, __const void * context) /* Metaresc modified */
 {
   node q;
   node *parentp = NULL, *gparentp = NULL;
@@ -288,7 +281,7 @@ __tsearch (const void *key, void **vrootp, __compar_fn_t compar)
   while (*nextp != NULL)
     {
       node root = *rootp;
-      r = compar (key, root->key); /* Metaresc modified */
+      r = compar (key, root->key, context); /* Metaresc modified */
       if (r == 0)
         return root;
 
@@ -313,7 +306,7 @@ __tsearch (const void *key, void **vrootp, __compar_fn_t compar)
   if (q != NULL)
     {
       *nextp = q;                       /* link new node to old */
-      q->key.ptr = (void*)key; /* Metaresc modified */ /* initialize new node */
+      q->key = key; /* initialize new node */
       q->red = 1;
       q->left = q->right = NULL;
 
@@ -334,7 +327,7 @@ weak_alias (__tsearch, tsearch)
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
 void *
-__tfind (const void *key, void *const *vrootp, __compar_fn_t compar) /* Metaresc modified */
+mr_tfind (const mr_ptr_t key, mr_red_black_tree_node_t *const *vrootp, __compar_fn_t compar, __const void * context) /* Metaresc modified */
 {
   node *rootp = (node *) vrootp;
 
@@ -348,7 +341,7 @@ __tfind (const void *key, void *const *vrootp, __compar_fn_t compar) /* Metaresc
       node root = *rootp;
       int r;
 
-      r = compar (key, root->key); /* Metaresc modified */
+      r = compar (key, root->key, context); /* Metaresc modified */
       if (r == 0)
         return root;
 
@@ -365,7 +358,7 @@ weak_alias (__tfind, tfind)
    KEY is the key to be deleted, ROOTP is the address of the root of tree,
    COMPAR the comparison function.  */
 void *
-__tdelete (const void *key, void **vrootp, __compar_fn_t compar)
+mr_tdelete (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, __compar_fn_t compar, __const void * context) /* Metaresc modified */
 {
   node p, q, r, retval;
   int cmp;
@@ -386,7 +379,7 @@ __tdelete (const void *key, void **vrootp, __compar_fn_t compar)
 
   CHECK_TREE (p);
 
-  while ((cmp = compar (key, (*rootp)->key)) != 0) /* Metaresc modified */
+  while ((cmp = compar (key, (*rootp)->key, context)) != 0) /* Metaresc modified */
     {
       if (sp == stacksize)
         abort ();
@@ -641,7 +634,7 @@ trecurse (const void *vroot, __action_fn_t action, int level)
    ROOT is the root of the tree to be walked, ACTION the function to be
    called at each node.  */
 void
-__twalk (const void *vroot, __action_fn_t action)
+mr_twalk (const mr_red_black_tree_node_t * vroot, mr_action_fn_t action) /* Metaresc modified */
 {
   const_node root = (const_node) vroot;
 
@@ -673,7 +666,7 @@ tdestroy_recurse (node root, __free_fn_t freefct)
 }
 
 void
-__tdestroy (void *vroot, __free_fn_t freefct)
+mr_tdestroy (mr_red_black_tree_node_t * vroot, mr_free_fn_t freefct) /* Metaresc modified */
 {
   node root = (node) vroot;
 

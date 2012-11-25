@@ -4,7 +4,7 @@
 
 #include <metaresc.h>
 
-TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES ( , "pointer on any type"),
+TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)) , "pointer on any type"),
 	       (void *, ptr, , "default void pointer"),
 	       (long, long_int_t),
 	       )

@@ -71,17 +71,17 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 }
 
 static int
-cmp_typed_ptrdes (const void * x, const void * y, const void * context)
+cmp_typed_ptrdes (const long x, const long y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
-  return (mr_cmp_ptrdes (&ptrs->ra.data[(long)x], &ptrs->ra.data[(long)y]));
+  return (mr_cmp_ptrdes (&ptrs->ra.data[x], &ptrs->ra.data[y]));
 }
 
 static int
-cmp_untyped_ptrdes (const void * x, const void * y, const void * context)
+cmp_untyped_ptrdes (const long x, const long y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
-  return (ptrs->ra.data[(long)x].data - ptrs->ra.data[(long)y].data);
+  return (ptrs->ra.data[x].data - ptrs->ra.data[y].data);
 }
 
 /**
@@ -99,7 +99,7 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  tree_search_result = mr_tsearch ((void*)count, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
+  tree_search_result = mr_tsearch (count, &mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -127,7 +127,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  tree_search_result = mr_tsearch ((void*)count, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);  
+  tree_search_result = mr_tsearch (count, &mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);  
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -183,10 +183,10 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
   ptrs->ra.data[idx_].fd = *fdp;
   
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
-  tree_find_result = mr_tfind ((void*)idx_, (void*)&mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
+  tree_find_result = mr_tfind (idx_, &mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
-  tree_find_result = mr_tfind ((void*)idx_, (void*)&mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
+  tree_find_result = mr_tfind (idx_, &mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
   return (-1);
@@ -309,13 +309,13 @@ mr_save_struct (mr_save_data_t * mr_save_data)
  * @param content void pointer to context
  */
 static int
-cmp_ud (const void * x, const void * y, const void * context)
+cmp_ud (const long x, const long y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  int diff = strcmp (mr_save_data->mr_ra_ud.data[(long)x].type, mr_save_data->mr_ra_ud.data[(long)y].type);
+  int diff = strcmp (mr_save_data->mr_ra_ud.data[x].type, mr_save_data->mr_ra_ud.data[y].type);
   if (diff)
     return (diff);
-  return (strcmp (mr_save_data->mr_ra_ud.data[(long)x].discriminator, mr_save_data->mr_ra_ud.data[(long)y].discriminator));
+  return (strcmp (mr_save_data->mr_ra_ud.data[x].discriminator, mr_save_data->mr_ra_ud.data[y].discriminator));
 }
 
 /**
@@ -352,7 +352,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	void * discriminator;
 	char * named_discriminator = NULL;
 	/* checks if this parent already have union resolution info */
-	ud_find = mr_tfind ((void*)ud_idx, (void*)&mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	ud_find = mr_tfind (ud_idx, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	/* break the traverse loop if it has */
 	if (ud_find)
 	  break;
@@ -465,7 +465,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
       {
-	void * ud_search = mr_tsearch (*(void**)ud_find, (void*)&mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	void * ud_search = mr_tsearch (*(void**)ud_find, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	if (NULL == ud_search)
 	  {
 	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
