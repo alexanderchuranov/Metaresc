@@ -3,23 +3,9 @@
 
 #include <metaresc.h>
 
-#ifndef MR_COMPAR_FN_T
-# define MR_COMPAR_FN_T
 typedef int (*mr_compar_fn_t) (__const mr_ptr_t __x, __const mr_ptr_t __y, __const void * __context);
-#endif
-
-#ifndef MR_ACTION_FN_T
-# define MR_ACTION_FN_T
-typedef void (*mr_action_fn_t) (__const mr_ptr_t __nodep, mr_rb_visit_order_t __value,
-				int __level, __const void * __context);
-#endif
-
-/* Callback type for function to free a tree node.  If the keys are atomic
-   data this function should do nothing.  */
-#ifndef MR_FREE_FN_T
-# define MR_FREE_FN_T
+typedef void (*mr_action_fn_t) (__const mr_ptr_t __nodep, mr_rb_visit_order_t __value, int __level, __const void * __context);
 typedef void (*mr_free_fn_t) (mr_ptr_t __nodep, __const void * __context);
-#endif
 
 /* Search for an entry matching the given KEY in the tree pointed to
    by *ROOTP and insert a new element if not found.  */
