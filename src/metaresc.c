@@ -173,10 +173,9 @@ mr_message_format (mr_message_id_t message_id, va_list args)
       mr_td_t * tdp = mr_get_td_by_name ("mr_message_id_t");
       if (tdp)
 	{
-	  int i;
-	  mr_fd_t * fdp = tdp->fields.data;
-	  for (i = 0; fdp[i].mr_type != MR_TYPE_TRAILING_RECORD; ++i)
-	    messages[fdp[i].param.enum_value] = fdp[i].comment;
+	  mr_fd_t * fdp;
+	  for (fdp = tdp->fields.data; fdp->mr_type != MR_TYPE_TRAILING_RECORD; ++fdp)
+	    messages[fdp->param.enum_value] = fdp->comment;
 	}
       messages_inited = !0;
     }
@@ -978,7 +977,8 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  count -= fields_count;
 	  tdp->fields.data[i].type = tdp_->type;
 	  tdp->fields.data[i].size = tdp_->size;
-	  if (tdp->fields.data[i].name && (0 == tdp->fields.data[i].name[0]))
+	  /* set name of anonymous union to temporary type name */
+	  if ((NULL == tdp->fields.data[i].name) || (0 == tdp->fields.data[i].name[0]))
 	    tdp->fields.data[i].name = tdp->fields.data[i].type;
 
 	  if (mr_add_type (tdp_, NULL, NULL))

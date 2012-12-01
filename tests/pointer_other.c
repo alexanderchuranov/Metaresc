@@ -87,17 +87,17 @@ TYPEDEF_STRUCT (self_ref_string_t,
 		CHAR_ARRAY (char, x, [sizeof ("x")]),
 		string_t y,
 		(string_t *, z),
-		(void *, v));
+		mr_ptr_t v);
 
 MR_START_TEST (self_ref_string, "self referenced strings") {
   self_ref_string_t x = { "x", "y", (string_t[]){ "z" }};
-  x.v = &x.z; /* resolved not-NULL void pointer */
+  x.v.ptr = &x.z; /* resolved not-NULL void pointer */
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
   x.z = &x.y;
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
   x.y = x.x;
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
-  x.v = "z"; /* unresolved not-NULL void pointer */
+  x.v.ptr = "z"; /* unresolved not-NULL void pointer */
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
 } END_TEST
 

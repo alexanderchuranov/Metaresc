@@ -1514,9 +1514,11 @@ space_t space = {
 	   )
 	 </programlisting>
 
-	 If name is omitted then it defaults to
-	 <code>anon_union</code>. Several anonymous unions inside one
-	 structure must have unique names. Macro
+	 If name is omitted then it defaults to name of the temporary
+	 type. Named anonymous unions generates dummy place-holder
+	 field just before uinon itsef of type
+	 <code>char[0]</code>. This place-holder field is helpful for
+	 serializatio into C-init format. Macro 
 	 <code>ANON_UNION</code> might have second argument -
 	 attributes of the union, for example
 	 <code>__attribute__((aligned((sizeof
@@ -1608,8 +1610,8 @@ space_t space = {
 	 <programlisting language="c"><![CDATA[
 	 struct __attribute__((packed)) {
 	 employee_t * data;  // pointer to array items
-	 int32_t size;       // used space in bytes
-	 int32_t alloc_size; // allocated space in bytes
+	 int64_t size;       // used space in bytes
+	 int64_t alloc_size; // allocated space in bytes
 	 mr_ptr_t ext;       // per-instance user data
 	 char * ptr_type;    // the name of the pointed-to object type
 	 } employees;
@@ -1841,7 +1843,8 @@ space_t space = {
 	allows compilers to optimize memory consumption of the program
 	and don't store all the fields of the union in the memory at
 	the same time <footnote><para>see C99 6.7.2.1p5 and
-	6.7.2.1p14</para></footnote>.  It's tricky to serialize the
+	6.7.2.1p14</para></footnote>.
+	It's tricky to serialize the
 	union, since C doesn't provide any means to determine which
 	field was most recently written. At present, METARESC relies
 	on the behavior of GCC, which allows cross-reading of union
@@ -1852,24 +1855,26 @@ space_t space = {
 	value of the first union member. There is a convention that
 	allows to choose union branch at the time of
 	serialization. Discriminator value should be stored in
-	structure at the same lavel as union. Name of the
-	discriminator field should be specified in meta data comment
-	of the union. Discriminator field could be of the following
-	types: integer, bit-field, string, static string, enumeration
-	or pointer on one of this types. Value of discriminator field
-	interpreted in the following manner:
+	some parent structure or union. It means that library traverse
+	to the top of serialization tree and search for nearest parent
+	with required field. Name of the discriminator field should be
+	specified in meta data comment of the union. Discriminator
+	field could be one of the following types: integer, bit-field,
+	string, static string, enumeration or pointer on one of those
+	types. Value of discriminator field interpreted in the
+	following manner:
 	<itemizedlist>
 	  <listitem><para>
-	    integers, bit-fields: interpreted as union branch index
-	    counted from zero.
+	    integers, integer typed bit-fields: interpreted as union
+	    branch index counted from zero.
 	  </para></listitem>
 	  <listitem><para>
 	    strings, static strings: interpreted as a union branch name.
 	  </para></listitem>
 	  <listitem><para>
-	    enumeration: definitions of enumeration values should
-	    contain meta data comment with the name of the
-	    designated union branch.
+	    enumeration, enumeration typed bit-fields: definitions of
+	    enumeration values should contain meta data comment with
+	    the name of the designated union branch.
 	  </para></listitem>
 	</itemizedlist>
       </para>
@@ -2233,7 +2238,7 @@ sizeof (date_t) = 4
             </para></listitem>
             
             <listitem><para> Unions are serialized like structures,
-            however only the first union member is serialized.
+            however only one union member is serialized.
             </para></listitem>
             
             <listitem><para> Pointer field is represented by the

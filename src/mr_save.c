@@ -174,19 +174,19 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
 {
   mr_ra_mr_ptrdes_t * ptrs = &mr_save_data->ptrs;
   void * tree_find_result;
-  long idx_;
+  long idx;
 
-  idx_ = mr_add_ptr_to_list (ptrs);
-  if (idx_ < 0)
-    return (idx_); /* memory allocation error occured */
-  ptrs->ra.data[idx_].data = data;
-  ptrs->ra.data[idx_].fd = *fdp;
+  idx = mr_add_ptr_to_list (ptrs);
+  if (idx < 0)
+    return (idx); /* memory allocation error occured */
+  ptrs->ra.data[idx].data = data;
+  ptrs->ra.data[idx].fd = *fdp;
   
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
-  tree_find_result = mr_tfind (idx_, &mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
+  tree_find_result = mr_tfind (idx, &mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
-  tree_find_result = mr_tfind (idx_, &mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
+  tree_find_result = mr_tfind (idx, &mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
   return (-1);

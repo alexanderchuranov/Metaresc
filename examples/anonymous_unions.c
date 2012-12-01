@@ -14,5 +14,9 @@ TYPEDEF_STRUCT (struct_t,
 
 int main ()
 {
+  struct_t my_struct;
+  my_struct.name = my_struct.description = "string";
+  my_struct.y = 1;
+  printf ("my_struct.x = 0x%08x my_struct.y = %f\n", my_struct.x, my_struct.y);
   return (EXIT_SUCCESS);
 }
