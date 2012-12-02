@@ -1001,7 +1001,7 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	 data. For serialization of pointer-on-user-data it is
 	 possible to specify type of this pointer via
 	 <code>user-data-type</code>. This type should be declared by
-	 means METARESC.
+	 means METARESC. user-data-type is a static string.
        </para>
      </section>
 
@@ -1148,14 +1148,23 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
            <listitem><para> <code>__const__</code> and <code>__const</code>( GCC-specific ) </para></listitem>
            
            <listitem><para> <code>string_t</code> ( METARESC-specific ) </para></listitem>
+           <listitem><para> <code>mr_ptr_t</code> ( METARESC-specific ) </para></listitem>
            <listitem><para> <code>long_double_t</code> ( METARESC-specific ) </para></listitem>
          </itemizedlist>
          
-         The <code>string_t</code> is a <code>typedef</code> for
-         <code>char*</code>. It is necessary to make possible
-         declaring a pointer to character string when using simplified
-         grammar. <code>long_double_t</code> is a <code>typedef</code> for
-         <code>long double</code>.
+         <code>long_double_t</code> is a <code>typedef</code> for
+         <code>long double</code>. The <code>string_t</code> is a
+	 <code>typedef</code> for <code>char*</code>. It is necessary
+	 to make possible declaring a pointer to character string when
+	 using simplified grammar. 
+
+	 <code>mr_ptr_t</code> is a Metaresc specific type for
+	 serialization of pointers typed at run-time only. At compile
+	 time it is a union of <code>void * ptr</code> and <code>long
+	 log_int_t</code>. Type descriptor for this type is extended
+	 at run time with additional union members in a form of
+	 <code>type_t * type_t</code> for every Metaresc enabled
+	 type.
 
        </para>
        
@@ -1617,14 +1626,15 @@ space_t space = {
 	 } employees;
 	 ]]></programlisting>
         
-	 The <code>ext</code> field is intended for additional data
-	 you may need to attach to the instance of resizable
-	 array. Usage of <code>ext</code> and <code>ptr_type</code>
-	 fields is optional. You may safely zeroize the
-	 fields. However, to serialize the <code>ext</code> field
-	 correctly (if it is non-null), set <code>ptr_type</code> to
-	 character string, containing the name of the type of the
-	 object the <code>ext</code> field points to.
+	 The <code>ext</code> field of type <code>mr_ptr_t</code> is
+	 intended for additional data you may need to attach to the
+	 instance of resizable array. Usage of <code>ext</code> and
+	 <code>ptr_type</code> fields is optional. You may safely
+	 zeroize the fields. However, to serialize the
+	 <code>ext</code> field correctly (if it is non-null), set
+	 <code>ptr_type</code> to character string, containing the
+	 name of the type of the object the <code>ext</code> field
+	 points to.
        </para>
       
        <para>
