@@ -3,10 +3,6 @@
 
 #include <metaresc.h>
 
-typedef int (*mr_compar_fn_t) (__const mr_ptr_t __x, __const mr_ptr_t __y, __const void * __context);
-typedef void (*mr_action_fn_t) (__const mr_ptr_t __nodep, mr_rb_visit_order_t __value, int __level, __const void * __context);
-typedef void (*mr_free_fn_t) (mr_ptr_t __nodep, __const void * __context);
-
 /* Search for an entry matching the given KEY in the tree pointed to
    by *ROOTP and insert a new element if not found.  */
 extern void *mr_tsearch (__const mr_ptr_t __key, mr_red_black_tree_node_t **__rootp,

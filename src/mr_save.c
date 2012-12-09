@@ -220,7 +220,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
       mr_save_data->ptrs.ra.data[parent].first_child = -1;
       mr_save_data->ptrs.ra.data[parent].last_child = -1;
       mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
-      mr_save_data->ptrs.ra.data[ref_idx].fd.name = fdp->name;
+      mr_save_data->ptrs.ra.data[ref_idx].fd.hashed_name.name = fdp->hashed_name.name;
       mr_add_child (mr_save_data->parent, ref_idx, &mr_save_data->ptrs);
       return;
     }
@@ -290,7 +290,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
     }
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->hashed_name.name);
       return;
     }
 
@@ -517,7 +517,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
     }
   if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->hashed_name.name);
       return;
     }
 
@@ -526,7 +526,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
     field_idx = mr_union_discriminator (mr_save_data);
   
   mr_save_data->parent = idx;
-  mr_save_data->ptrs.ra.data[idx].union_field_name = tdp->fields.data[field_idx].name; /* field name is required for XDR serialization */
+  mr_save_data->ptrs.ra.data[idx].union_field_name = tdp->fields.data[field_idx].hashed_name.name; /* field name is required for XDR serialization */
   mr_save_inner (data + tdp->fields.data[field_idx].offset, &tdp->fields.data[field_idx], mr_save_data);
   mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
 }
@@ -580,7 +580,7 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
 
   /* lookup for subnode .data */
   for (data_idx = mr_save_data->ptrs.ra.data[idx].first_child; data_idx >= 0; data_idx = mr_save_data->ptrs.ra.data[data_idx].next)
-    if (0 == strcmp ("data", mr_save_data->ptrs.ra.data[data_idx].fd.name))
+    if (0 == strcmp ("data", mr_save_data->ptrs.ra.data[data_idx].fd.hashed_name.name))
       break;
 
   if (data_idx < 0)

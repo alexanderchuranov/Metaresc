@@ -84,7 +84,7 @@ list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
 nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->ptrs->ra.data[mr_load->parent].last_child].fd.name = mr_unquote (&$1); }
+| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->ptrs->ra.data[mr_load->parent].last_child].fd.hashed_name.name = mr_unquote (&$1); }
 
 %%
 

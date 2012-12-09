@@ -68,7 +68,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	    named_node = cinit_named_node[ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type];
 	  
 	  if ((MR_CINIT_NAMED_FIELDS == named_node) && (save_data.named_field_template))
-	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra.data[idx].fd.name) < 0)
+	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
 	      return (NULL);
 	  
 	  if (ptrs->ra.data[idx].ref_idx >= 0)

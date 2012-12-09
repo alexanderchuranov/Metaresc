@@ -39,21 +39,17 @@ mr_conf_t mr_conf = {
   .log_level = MR_LL_ALL, /**< default log level ALL */
   .msg_handler = NULL, /**< pointer on user defined message handler */
   .des = {
-    .data = NULL,
-    .size = 0,
-    .alloc_size = 0,
-  },
-#ifndef MR_TREE_LOOKUP
-  .hash = {
-    .ra = { /**< resizable array with hash for type descriptors */
-      .data = NULL, /* descriptors mr_rarray_t */
+    .collection = {
+      .data = NULL,
       .size = 0,
       .alloc_size = 0,
     },
+    .add = NULL,
+    .index = NULL,
+    .find = NULL,
+    .free = NULL,
+    .ext = { .ptr = NULL, },
   },
-#else /* MR_TREE_LOOKUP */
-  .tree =  { .root = NULL, .tree_key_ptr_wrapper_type = "typed_key", .tree_key_ptr_type = "mr_td_t", },
-#endif /* MR_TREE_LOOKUP */
   .enum_by_name = { .root = NULL, .key_type = "mr_fd_t", },
   .output_format = { [0 ... MR_MAX_TYPES - 1] = NULL, },
   .io_handlers =
@@ -124,34 +120,101 @@ int free_lookup_tree (mr_td_t * tdp, void * arg)
   return (0);
 }
 
+/**
+ * Type descriptors collection iterator.
+ * @param func function for type descriptors processing
+ * @param args auxiliary arguments
+ * @return flag that cycle was not completed
+ */
+int
+mr_td_foreach (int (*func) (mr_td_t*, void*), void * args)
+{
+  int count = mr_conf.des.collection.size / sizeof (mr_conf.des.collection.data[0]);
+  int i;
+
+  for (i = 0; i < count; ++i)
+    if (func (mr_conf.des.collection.data[i].ptr, args))
+      return (!0);
+  return (0);
+}
+
+static mr_ptr_t
+mr_ic_find_none (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+{
+  int i;
+  for (i = ic->collection.size / sizeof (ic->collection.data[0]) - 1; i >= 0; --i)
+    if (0 == compar_fn (key, ic->collection.data[i], context))
+      return (ic->collection.data[i]);
+  return ((mr_ptr_t){ NULL });
+}
+
+static int
+mr_ic_new_none (mr_ic_t * ic)
+{
+  if (NULL == ic)
+    return (!0);
+  ic->add = NULL;
+  ic->index = NULL;
+  ic->find = mr_ic_find_none;
+  ic->free = NULL;
+  ic->ext.ptr = NULL;
+  return (0);
+}
+
+static inline mr_ptr_t
+mr_ic_add (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+{
+  if (NULL == ic)
+    return ((mr_ptr_t){ NULL });
+  if (ic->add)
+    return (ic->add (key, ic, compar_fn, context));
+  return ((mr_ptr_t){ NULL });
+}
+
+static inline int
+mr_ic_index (mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+{
+  if (NULL == ic)
+    return (!0);
+  if (ic->index)
+    return (ic->index (ic, compar_fn, context));
+  return (0);
+}
+
+static inline mr_ptr_t
+mr_ic_find (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+{
+  if (NULL == ic)
+    return ((mr_ptr_t){ NULL });
+  if (ic->find)
+    return (ic->find (key, ic, compar_fn, context));
+  return ((mr_ptr_t){ NULL });
+}
+
+static inline void
+mr_ic_free (mr_ic_t * ic, mr_free_fn_t free_fn, const void * context)
+{
+  if (NULL == ic)
+    return;
+  if (ic->free)
+    ic->free (ic, free_fn, context);
+}
+
 static void __attribute__((destructor)) mr_cleanup (void)
 {
-  mr_td_t * void_ptr_tdp = mr_get_td_by_name ("mr_ptr_t");
+  mr_td_t * mr_ptr_t_td = mr_get_td_by_name ("mr_ptr_t");
   
-  if ((void_ptr_tdp) && (void_ptr_tdp->fields.alloc_size > 0) && (void_ptr_tdp->fields.data))
+  if ((mr_ptr_t_td) && (mr_ptr_t_td->fields.alloc_size > 0) && (mr_ptr_t_td->fields.data))
     {
-      MR_FREE (void_ptr_tdp->fields.data);
-      void_ptr_tdp->fields.data = NULL;
+      MR_FREE (mr_ptr_t_td->fields.data);
+      mr_ptr_t_td->fields.data = NULL;
     }
   
   mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func, NULL);
   mr_conf.enum_by_name.root = NULL;
   mr_td_foreach (free_lookup_tree, NULL);
-  
-#ifndef MR_TREE_LOOKUP
-  if (mr_conf.hash.ra.data)
-    MR_FREE (mr_conf.hash.ra.data);
-  mr_conf.hash.ra.data = NULL;
-  mr_conf.hash.ra.size = mr_conf.hash.ra.alloc_size = 0;
-#else /* MR_TREE_LOOKUP */
-  tdestroy (mr_conf.tree.root, dummy_free_func);
-  mr_conf.tree.root = NULL;
-#endif /* MR_TREE_LOOKUP */
 
-  if (mr_conf.des.data)
-    MR_FREE (mr_conf.des.data);
-  mr_conf.des.data = NULL;
-  mr_conf.des.size = mr_conf.des.alloc_size = 0;
+  mr_ic_free (&mr_conf.des, dummy_free_func, NULL);
 }
 
 /**
@@ -474,8 +537,8 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   memset (ptrdes, 0, sizeof (*ptrdes));
   ptrdes->data = NULL;
   ptrdes->fd.type = NULL;
-  ptrdes->fd.name = NULL;
-  ptrdes->fd.hash_value = 0;
+  ptrdes->fd.hashed_name.name = NULL;
+  ptrdes->fd.hashed_name.hash_value = 0;
   ptrdes->fd.size = 0;
   ptrdes->fd.offset = 0;
   ptrdes->fd.mr_type = MR_TYPE_VOID;
@@ -618,7 +681,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    if (ptrs.ra.data[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name);
+			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.hashed_name.name);
 		return (0);
 	      }
 	    /* rarrays require allocation of memoty chunk according alloc_size field */
@@ -733,25 +796,7 @@ is_prime (int x)
   return (!0);
 }
 
-/**
- * Type descriptors collection iterator.
- * @param func function for type descriptors processing
- * @param args auxiliary arguments
- * @return flag that cycle was not completed
- */
-int
-mr_td_foreach (int (*func) (mr_td_t*, void*), void * args)
-{
-  int count = mr_conf.des.size / sizeof (mr_conf.des.data[0]);
-  int i;
-
-  for (i = 0; i < count; ++i)
-    if (func (mr_conf.des.data[i].tdp, args))
-      return (!0);
-  return (0);
-}
-
-#ifndef MR_TREE_LOOKUP
+#ifdef MR_TREE_LOOKUP_
 /**
  * Update hash with type descriptors
  * @param tdp root of linked list with type descriptors
@@ -769,7 +814,7 @@ td_count (mr_td_t * tdp, void * args)
 int td_populate (mr_td_t * tdp, void * args)
 {
   mr_ra_mr_td_ptr_t * hash = args;
-  mr_td_ptr_t * x = &hash->ra.data[tdp->hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
+  mr_td_ptr_t * x = &hash->ra.data[tdp->hashed_name.hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
   /* check for collision */
   if (x->tdp)
     return (!0);
@@ -782,7 +827,7 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
 {
   int count;
   
-  tdp->hash_value = mr_hash_str (tdp->type);
+  tdp->hashed_name.hash_value = mr_hash_str (tdp->hashed_name.name);
 
   if (NULL == hash->ra.data)
     hash->ra.alloc_size = hash->ra.size = 0;
@@ -800,14 +845,14 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
   else
     {
       /* Lets calculate hash bucket for new element */
-      mr_td_ptr_t * x = &hash->ra.data[tdp->hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
+      mr_td_ptr_t * x = &hash->ra.data[tdp->hashed_name.hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
       if (NULL == x->tdp)
 	x->tdp = tdp; /* bucket was free and hash resize is not required */ 
       else
 	{
-	  if (x->tdp->hash_value == tdp->hash_value) /* hashes matched and non-collision hash table is not possible */
+	  if (x->tdp->hashed_name.hash_value == tdp->hashed_name.hash_value) /* hashes matched and non-collision hash table is not possible */
 	    {
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPES_HASHES_MATCHED, x->tdp->type, tdp->type);
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPES_HASHES_MATCHED, x->tdp->hashed_name.name, tdp->hashed_name.name);
 	      return;
 	    }
 	  /* we have a collision, so we will need to find new hash size to avoid collisions */ 
@@ -844,19 +889,6 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
 	}
     }
 }
-#else /* MR_TREE_LOOKUP */
-
-/**
- * Comparator for mr_td_t sorting by type field
- * @param a pointer on one mr_td_t
- * @param b pointer on another mr_td_t
- * @return comparation sign
- */
-static int
-cmp_tdp (const void * x, const void * y, const void * context)
-{
-  return (strcmp (((const mr_td_t *) x)->type, ((const mr_td_t *) y)->type));
-}
 
 /**
  * Addition of a new type descriptor to lookup structure. Implementation as a RB-tree.
@@ -870,23 +902,35 @@ mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
   if (NULL == tdpp)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 }
+
+#else /* MR_TREE_LOOKUP */
 #endif /* MR_TREE_LOOKUP */
 
-typedef struct {
-  char * type;
-  mr_td_t ** tdpp;
-} td_cmp_args_t;
-
-static int
-td_cmp (mr_td_t * tdp_, void * args)
+static inline uint64_t
+mr_hashed_name_get_hash (mr_hashed_name_t * x)
 {
-  td_cmp_args_t * args_ = args;
-  if (0 == strcmp (args_->type, tdp_->type))
-    {
-      *args_->tdpp = tdp_;
-      return (!0);
-    }
-  return (0);
+  if (0 == x->hash_value)
+    x->hash_value = mr_hash_str (x->name);
+  return (x->hash_value);
+}
+
+/**
+ * Comparator for mr_hashed_name_t
+ * @param a pointer on one mr_hashed_name_t
+ * @param b pointer on another mr_hashed_name_t
+ * @return comparation sign
+ */
+static int
+mr_hashed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_hashed_name_t * x_ = x.ptr;
+  const mr_hashed_name_t * y_ = y.ptr;
+  uint64_t x_hash_value = mr_hashed_name_get_hash ((mr_hashed_name_t*)x_);
+  uint64_t y_hash_value = mr_hashed_name_get_hash ((mr_hashed_name_t*)y_);
+  int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
+  if (diff)
+    return (diff);
+  return (strcmp (x_->name, y_->name));
 }
 
 /**
@@ -897,33 +941,8 @@ td_cmp (mr_td_t * tdp_, void * args)
 mr_td_t *
 mr_get_td_by_name (char * type)
 {
-  mr_td_t * tdp;
-
-#ifndef MR_TREE_LOOKUP
-  if (mr_conf.hash.ra.data && mr_conf.hash.ra.size)
-    {
-      uint64_t hash_value = mr_hash_str (type);
-      tdp = mr_conf.hash.ra.data[hash_value % (mr_conf.hash.ra.size / sizeof (mr_conf.hash.ra.data[0]))].tdp;
-      if (tdp && (hash_value == tdp->hash_value) && (0 == strcmp (type, tdp->type)))
-	return (tdp);
-      return (NULL);
-    }
-#else /* MR_TREE_LOOKUP */
-  if (mr_conf.tree.root)
-    {
-      mr_td_t td = { .type = type };
-      mr_td_t ** tdpp = tfind (&td, &mr_conf.tree.root, cmp_tdp, NULL);
-      if (tdpp)
-	return (*tdpp);
-      else
-	return (NULL);
-    }
-#endif /* MR_TREE_LOOKUP */
-
-  td_cmp_args_t td_cmp_args = { .type = type, .tdpp = & tdp };
-  if (mr_td_foreach (td_cmp, &td_cmp_args))
-    return (tdp);
-  return (NULL);
+  mr_hashed_name_t hashed_name = { .name = type, .hash_value = mr_hash_str (type), };
+  return (mr_ic_find (&hashed_name, &mr_conf.des, mr_hashed_name_cmp, NULL).ptr);
 }
 
 /**
@@ -967,7 +986,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    }
 	  tdp->fields.data[count].mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
 	  tdp_->mr_type = tdp->fields.data[i].mr_type;
-	  sprintf (tdp_->type, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
+	  sprintf (tdp_->hashed_name.name, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	  tdp_->attr = tdp->fields.data[i].comment; /* anonymous union stringified attributes are saved into comments field */
 	  tdp_->comment = tdp->fields.data[count].comment; /* copy comment from MR_END_ANON_UNION record */
 	  tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
@@ -975,15 +994,18 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  tdp->fields.data[i].comment = tdp->fields.data[count].comment; /* copy comment from MR_END_ANON_UNION record */
 	  tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
 	  count -= fields_count;
-	  tdp->fields.data[i].type = tdp_->type;
+	  tdp->fields.data[i].type = tdp_->hashed_name.name;
 	  tdp->fields.data[i].size = tdp_->size;
 	  /* set name of anonymous union to temporary type name */
-	  if ((NULL == tdp->fields.data[i].name) || (0 == tdp->fields.data[i].name[0]))
-	    tdp->fields.data[i].name = tdp->fields.data[i].type;
+	  if ((NULL == tdp->fields.data[i].hashed_name.name) || (0 == tdp->fields.data[i].hashed_name.name[0]))
+	    {
+	      tdp->fields.data[i].hashed_name.name = tdp->fields.data[i].type;
+	      tdp->fields.data[i].hashed_name.hash_value = 0;
+	    }
 
 	  if (mr_add_type (tdp_, NULL, NULL))
 	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->type);
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->hashed_name.name);
 	      return (EXIT_SUCCESS);
 	    }
 	}
@@ -1013,7 +1035,7 @@ cmp_enums_by_value (void * x, void * y, const void * context)
 static int
 cmp_enums_by_name (void * x, void * y, const void * context)
 {
-  return (strcmp (((const mr_fd_t *) x)->name, ((const mr_fd_t *) y)->name));
+  return (strcmp (((const mr_fd_t *) x)->hashed_name.name, ((const mr_fd_t *) y)->hashed_name.name));
 }
 
 /**
@@ -1068,7 +1090,7 @@ mr_add_enum (mr_td_t * tdp)
 	}
       if (*fdpp != &tdp->fields.data[i])
 	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->name, tdp->type);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->hashed_name.name, tdp->hashed_name.name);
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
@@ -1108,7 +1130,7 @@ mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 int
 mr_get_enum_by_name (uint64_t * value, char * name)
 {
-  mr_fd_t fd = { .name = name };
+  mr_fd_t fd = { .hashed_name = { .name = name } };
   mr_fd_t ** fdpp = mr_tfind (&fd, &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
@@ -1244,7 +1266,7 @@ mr_check_fields (mr_td_t * tdp)
 	Check names of the fileds.
 	MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
       */
-      char * name = fdp->name;
+      char * name = fdp->hashed_name.name;
       if (name)
 	{
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
@@ -1258,8 +1280,8 @@ mr_check_fields (mr_td_t * tdp)
   /* check for name duplicates */
   for (i = 0; i < count; ++i)
     for (j = i + 1; j < count; ++j)
-      if (tdp->fields.data[i].name && tdp->fields.data[j].name && (0 == strcmp (tdp->fields.data[i].name, tdp->fields.data[j].name)))
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_FIELDS, tdp->fields.data[i].name, tdp->type);
+      if (tdp->fields.data[i].hashed_name.name && tdp->fields.data[j].hashed_name.name && (0 == strcmp (tdp->fields.data[i].hashed_name.name, tdp->fields.data[j].hashed_name.name)))
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_FIELDS, tdp->fields.data[i].hashed_name.name, tdp->hashed_name.name);
   
   return (EXIT_SUCCESS);
 }
@@ -1278,12 +1300,12 @@ mr_build_field_names_hash (mr_td_t * tdp)
   tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
   tdp->lookup_by_name.data = NULL;
   for (i = 0; i < fields_count; ++i)
-    tdp->fields.data[i].hash_value = mr_hash_str (tdp->fields.data[i].name);
+    tdp->fields.data[i].hashed_name.hash_value = mr_hash_str (tdp->fields.data[i].hashed_name.name);
 
   /* sanity check for hash value collision */
   for (i = 0; i < fields_count; ++i)
     for (j = i + 1; j < fields_count; ++j)
-      if (tdp->fields.data[i].hash_value == tdp->fields.data[j].hash_value)
+      if (tdp->fields.data[i].hashed_name.hash_value == tdp->fields.data[j].hashed_name.hash_value)
 	return (EXIT_FAILURE);
 
   if (0 == fields_count)
@@ -1310,7 +1332,7 @@ mr_build_field_names_hash (mr_td_t * tdp)
       /* populate list elements into hash table */
       for (i = 0; i < fields_count; ++i)
 	{
-	  mr_fd_ptr_t * x = &array[tdp->fields.data[i].hash_value % size];
+	  mr_fd_ptr_t * x = &array[tdp->fields.data[i].hashed_name.hash_value % size];
 	  /* check for collision */
 	  if (x->fdp)
 	    break;
@@ -1519,7 +1541,7 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
     {
       uint64_t hash_value = mr_hash_str (name);
       mr_fd_t * fdp = tdp->lookup_by_name.data[hash_value % (tdp->lookup_by_name.size / sizeof (tdp->lookup_by_name.data[0]))].fdp;
-      if (fdp && (hash_value == fdp->hash_value) && (0 == strcmp (name, fdp->name)))
+      if (fdp && (hash_value == fdp->hashed_name.hash_value) && (0 == strcmp (name, fdp->hashed_name.name)))
 	return (fdp);
     }
   else
@@ -1527,7 +1549,7 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
       int i;
       int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
       for (i = 0; i < fields_count; ++i)
-	if (0 == strcmp (name, tdp->fields.data[i].name))
+	if (0 == strcmp (name, tdp->fields.data[i].hashed_name.name))
 	  return (&tdp->fields.data[i]);
     }
   return (NULL);
@@ -1545,7 +1567,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
   if (NULL == union_tdp)
     return (EXIT_FAILURE);
-  if (mr_get_fd_by_name (union_tdp, tdp->type))
+  if (mr_get_fd_by_name (union_tdp, tdp->hashed_name.name))
     return (EXIT_FAILURE);
   if (union_tdp->fields.alloc_size < 0)
     {
@@ -1562,8 +1584,8 @@ mr_register_type_pointer (mr_td_t * tdp)
   if (NULL == fdp)
     return (EXIT_FAILURE);
   memset (fdp, 0, sizeof (*fdp));
-  fdp->type = tdp->type;
-  fdp->name = tdp->type;
+  fdp->type = tdp->hashed_name.name;
+  fdp->hashed_name.name = tdp->hashed_name.name;
   fdp->size = tdp->size;
   fdp->offset = 0;
   fdp->mr_type = tdp->mr_type;
@@ -1600,7 +1622,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL == tdp)
     return (EXIT_FAILURE); /* assert */
   /* check whether this type is already in the list */
-  if (mr_get_td_by_name (tdp->type))
+  if (mr_get_td_by_name (tdp->hashed_name.name))
     return (EXIT_SUCCESS); /* this type is already registered */
 
   va_start (args, comment);
@@ -1621,22 +1643,23 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   mr_anon_unions_extract (tdp);
   mr_check_fields (tdp);
   mr_build_field_names_hash (tdp);
+
+  if (NULL == mr_conf.des.find)
+    mr_ic_new_none (&mr_conf.des);
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
   {
-    mr_td_t ** tdpp = mr_rarray_append ((void*)&mr_conf.des, sizeof (mr_conf.des.data[0]));
+    mr_td_t ** tdpp = mr_rarray_append ((void*)&mr_conf.des.collection, sizeof (mr_conf.des.collection.data[0]));
     if (NULL == tdpp)
       {
 	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	return (EXIT_FAILURE);
       }
     *tdpp = tdp;
+    mr_conf.des.key_type = "mr_td_t";
+    mr_ic_index (&mr_conf.des, mr_hashed_name_cmp, NULL);
   }
-#ifndef MR_TREE_LOOKUP
-  mr_update_td_hash (tdp, &mr_conf.hash);
-#else /* MR_TREE_LOOKUP */
-  mr_update_td_tree (tdp, &mr_conf.tree.root);
-#endif /*  MR_TREE_LOOKUP */
+
   tdp->lookup_by_value.root = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);

@@ -25,7 +25,7 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
   while (idx >= 0)
     {
       mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
-      xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name);
+      xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->hashed_name.name);
       
       ptrs->ra.data[idx].ext.ptr = node;
 

@@ -54,7 +54,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 
       level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
       empty_tag = (ptrs->ra.data[idx].first_child < 0) && ((NULL == content) || (0 == content[0]));
-      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START, level * MR_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.name) < 0)
+      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START, level * MR_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.hashed_name.name) < 0)
 	return (NULL);
       if (ptrs->ra.data[idx].ref_idx >= 0)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT,
@@ -86,13 +86,13 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
       else
 	{
 	  if (!empty_tag)
-	    if (mr_ra_printf (&mr_ra_str, MR_XML1_CLOSE_TAG, ptrs->ra.data[idx].fd.name) < 0)
+	    if (mr_ra_printf (&mr_ra_str, MR_XML1_CLOSE_TAG, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
 	      return (NULL);
 	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra.data[idx].parent;
 	      level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
-	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG, level * MR_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.name) < 0)
+	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG, level * MR_XML1_INDENT_SPACES, "", ptrs->ra.data[idx].fd.hashed_name.name) < 0)
 		return (NULL);
 	    }
 	  idx = ptrs->ra.data[idx].next;

@@ -560,7 +560,7 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
     }
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->hashed_name.name);
       return (0);
     }
   
@@ -630,7 +630,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (NULL == tdp)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
   else if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_UNION, tdp->type);
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_UNION, tdp->hashed_name.name);
   else if (!xdr_load_string (xdrs, 0, &ptrs_))
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else if (NULL == discriminator)

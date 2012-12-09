@@ -170,10 +170,55 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 	       RARRAY (struct mr_fd_t, func_param, "function arguments descriptors"),
 	       )
 
+TYPEDEF_FUNC (mr_compar_fn_t, int, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
+
+TYPEDEF_FUNC (mr_action_fn_t, void, (__const mr_ptr_t /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
+
+TYPEDEF_FUNC (mr_free_fn_t, void, (mr_ptr_t /* nodep */, __const void * /* context */))
+
+TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
+		(char *, name, , "key field"),
+		(uint64_t, hash_value, , "hash value of 'name'"),
+		)
+
+TYPEDEF_ENUM (mr_ic_type_t,
+	      MR_IC_NONE,
+	      (MR_IC_NC_HASH, , "mr_ic_nc_hash_t"),
+	      (MR_IC_SORTED_ARRAY, , "mr_ic_sorted_array_t"),
+	      (MR_IC_HASH, , "mr_ic_hash_t"),
+	      (MR_IC_RB_TREE, , "mr_red_black_tree_node_t"),
+	      )
+
+TYPEDEF_STRUCT (mr_ic_t,
+		RARRAY (mr_ptr_t, collection, "key_type"),
+		(mr_ic_type_t, ic_type),
+		(char *, key_type),
+		(mr_ptr_t, add, (mr_ptr_t /* key */, mr_ic_t * /* ic */, mr_compar_fn_t /* compar_fn */, __const void * /* context */)),
+		(int, index, (mr_ic_t * /* ic */, mr_compar_fn_t /* compar_fn */, __const void * /* context */)),
+		(mr_ptr_t, find, (mr_ptr_t /* key */, mr_ic_t * /* ic */, mr_compar_fn_t /* compar_fn */, __const void * /* context */)),
+		(void, free, (mr_ic_t * /* ic */, mr_free_fn_t /* free_fn */, __const void * /* context */)),
+		(mr_ptr_t, ext, , "ic_type")
+		)
+
+TYPEDEF_STRUCT (mr_ic_nc_hash_t,
+		RARRAY (mr_ptr_t, index, "key_type"),
+		)		
+
+TYPEDEF_STRUCT (mr_ic_sorted_array_t,
+		RARRAY (mr_ptr_t, index, "key_type"),
+		)		
+
+TYPEDEF_STRUCT (mr_rb_tree_t,
+		(mr_red_black_tree_node_t *, root),
+		)		
+
+TYPEDEF_STRUCT (mr_ic_hash_t,
+		RARRAY (mr_rb_tree_t, index),
+		)		
+
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
+		(mr_hashed_name_t, hashed_name, , "must be the first field"),
 		(char *, type, , "stringified type name"),
-		(char *, name, , "name of the field"),
-		(uint64_t, hash_value, , "hash of the name"),
 		(int, offset, , "offset in structure"),
 		(int, size, , "size of field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
@@ -185,11 +230,11 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		  ext field can be used by user for extended information
 		  placed after comments for tricky intialization
 		  sample:
-		  MR_NONE (void *, ext, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
+		  NONE (void *, ptr, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
 		  or
-		  MR_NONE (void *, ext, , "user extended info", { (ext_info_t[]){ {.field = XXX}, {.field = YYY} } }, "ext_info_t")
+		  NONE (void *, ptr, , "user extended info", { (ext_info_t[]){ {.field = XXX} } }, "ext_info_t")
 		  or
-		  MR_NONE (void *, ext, , "user extended info", { "one more extra string" }, "string_t")
+		  NONE (void *, ptr, , "user extended info", { "one more extra string" }, "string_t")
 		*/
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
@@ -200,16 +245,13 @@ TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "mr_fd_t pointer wrapper"),
 		)
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
+		(mr_hashed_name_t, hashed_name, , "must be the first field"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(int, size, , "size of type"),
-		(char *, type, , "stringified type name"),
 		(char *, attr, , "stringified typedef attributes"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(int, size_effective, , "effective size"),
 		(mr_typed_tree_t, lookup_by_value, , "RB-tree for enums values lookup"),
-#ifndef MR_TREE_LOOKUP
-		(uint64_t, hash_value, , "type name hash value"),
-#endif /* MR_TREE_LOOKUP */
 		RARRAY (mr_fd_ptr_t, lookup_by_name, "hash for lookup by field name"),
 		RARRAY (mr_fd_t, fields, "fields or enums descriptors"),
 		(char *, comment, , "type comments"),
@@ -347,13 +389,8 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(void, msg_handler, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), "handler for error messages"),
-#ifndef MR_TREE_LOOKUP
-		(mr_ra_mr_td_ptr_t, hash, , "hash for type descriptors lookup"),
-#else /* MR_TREE_LOOKUP */
-		(mr_typed_tree_t, tree, , "typed RB-tree for type descriptors lookup"),
-#endif /* MR_TREE_LOOKUP */
+		(mr_ic_t, des, , "indexed types descriptors"),
 		(mr_typed_tree_t, enum_by_name, , "RB-tree with enums mapping"),
-		RARRAY (mr_td_ptr_t, des, "types descriptors"),
 		NONE (mr_output_format_t, output_format, [MR_MAX_TYPES], "formaters"),
 		NONE (mr_io_handler_t, io_handlers, [MR_MAX_TYPES], "io handlers"),
 		NONE (mr_io_handler_t, io_ext_handlers, [MR_MAX_TYPES], "io handlers"),

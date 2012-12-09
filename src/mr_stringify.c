@@ -148,9 +148,9 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
       {
 	uint64_t value = mr_get_enum_value (ptrdes);
 	mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
-	if (fdp && fdp->name)
-	  return (MR_STRDUP (fdp->name));
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type);
+	if (fdp && fdp->hashed_name.name)
+	  return (MR_STRDUP (fdp->hashed_name.name));
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->hashed_name.name);
       }
     }
   /* save as integer otherwise */
@@ -224,7 +224,7 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
   if (0 == value)
     {
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
-      str = MR_STRDUP (fdp && fdp->name ? fdp->name : "0");
+      str = MR_STRDUP (fdp && fdp->hashed_name.name ? fdp->hashed_name.name : "0");
     }
   else
     {
@@ -234,10 +234,10 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
 	    && !(~value & tdp->fields.data[i].param.enum_value))
 	  {
 	    if (NULL == str)
-	      str = MR_STRDUP (tdp->fields.data[i].name);
+	      str = MR_STRDUP (tdp->fields.data[i].hashed_name.name);
 	    else
 	      {
-		char * name = tdp->fields.data[i].name;
+		char * name = tdp->fields.data[i].hashed_name.name;
 		str_ = MR_REALLOC (str, strlen (str) + strlen (bitmask_or_delimiter) + strlen (name) + 1);
 		if (NULL == str_)
 		  {

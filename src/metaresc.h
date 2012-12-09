@@ -68,7 +68,7 @@
     mr_td_t * mr_type_ext_td = mr_get_td_by_name ("mr_type_ext_t");	\
     mr_fd_t * mr_type_fd = mr_type_td ? mr_get_enum_by_value (mr_type_td, __fdp__->mr_type) : NULL; \
     mr_fd_t * mr_type_ext_fd = mr_type_ext_td ? mr_get_enum_by_value (mr_type_ext_td, __fdp__->mr_type_ext) : NULL; \
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, (mr_type_fd ? mr_type_fd->name : "unknown"), __fdp__->mr_type, (mr_type_ext_fd ? mr_type_ext_fd->name : "unknown"), __fdp__->mr_type_ext); \
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, (mr_type_fd ? mr_type_fd->hashed_name.name : "unknown"), __fdp__->mr_type, (mr_type_ext_fd ? mr_type_ext_fd->hashed_name.name : "unknown"), __fdp__->mr_type_ext); \
   })
 
 /* make a string from argument in writable memory. #STR itself is in read-only memory */
@@ -499,6 +499,9 @@
 
 /* Macroses for prototypes generation mode */
 #define MR_TYPEDEF_STRUCT_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) MR_TYPE_NAME; struct __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
+#define MR_END_STRUCT_PROTO(MR_TYPE_NAME, ...) };
+#define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef union __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
+#define MR_END_UNION_PROTO(MR_TYPE_NAME, ...) } MR_TYPE_NAME;
 
 /* next macro adds empty argument. Required for MR_AUTO, MR_NONE, MR_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */
 #define MR_AUTO_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
@@ -530,10 +533,7 @@
 /* rarray defenition should be syncroonized with mr_rarray_t type definition */
 #define MR_RARRAY_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; typeof (((mr_rarray_t*)NULL)->size) size; typeof (((mr_rarray_t*)NULL)->alloc_size) alloc_size; typeof (((mr_rarray_t*)NULL)->ext) ext; typeof (((mr_rarray_t*)NULL)->ptr_type) ptr_type;}, NAME, )
 #define MR_FUNC_PROTO(MR_TYPE_NAME, TYPE, NAME, ARGS, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, (*NAME), ARGS)
-#define MR_END_STRUCT_PROTO(MR_TYPE_NAME, ...) };
 
-#define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef union __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
-#define MR_END_UNION_PROTO(MR_TYPE_NAME, ...) } MR_TYPE_NAME;
 #define MR_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, ... /* ATTR */) MR_IF_ELSE (MR_IS_EMPTY (NAME)) () (char NAME[0];) union __VA_ARGS__ {
 #define MR_END_ANON_UNION_PROTO(MR_TYPE_NAME, ...) };
 
@@ -552,76 +552,76 @@
 #define MR_TYPEDEF_STRUCT_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_STRUCT, __VA_ARGS__)
 
 #define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, MR_TYPE_EXT, /* COMMENT */ ...)  { \
-    .type = MR_STRINGIFY (TYPE),					\
-      .name = MR_STRINGIFY (NAME),					\
-      .size = sizeof (TYPE),						\
-      .offset = offsetof (MR_TYPE_NAME, NAME),				\
-      .mr_type = MR_TYPE,						\
-      .mr_type_ext = MR_TYPE_EXT,					\
-      .param =								\
-      {									\
-	.array_param = {						\
-	  .count = sizeof (TYPE) == 0 ? 0 :				\
-	  sizeof (((MR_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),		\
-	  .row_count = 1,						\
-	},								\
-      },								\
-      .comment = "" __VA_ARGS__,					\
-	 },
+    .hashed_name = { .name = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+      .type = MR_STRINGIFY (TYPE),					\
+	 .size = sizeof (TYPE),						\
+	 .offset = offsetof (MR_TYPE_NAME, NAME),			\
+	 .mr_type = MR_TYPE,						\
+	 .mr_type_ext = MR_TYPE_EXT,					\
+	 .param =							\
+	 {								\
+	   .array_param = {						\
+	     .count = sizeof (TYPE) == 0 ? 0 :				\
+	     sizeof (((MR_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),	\
+	     .row_count = 1,						\
+	   },								\
+	 },								\
+	 .comment = "" __VA_ARGS__,					\
+	    },
 
 #define MR_POINTER_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENT */ ...)  { \
-    .type = MR_STRINGIFY (TYPE),					\
-      .name = #NAME,							\
-      .offset = offsetof (MR_TYPE_NAME, NAME),				\
-      .mr_type = MR_TYPE_STRUCT,					\
-      .mr_type_ext = MR_TYPE_EXT_POINTER,				\
-      .comment = "" __VA_ARGS__,					\
-      },
-
-#define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...)  { \
-    .type = MR_STRINGIFY (TYPE),					\
-      .name = #NAME,							\
-      .size = sizeof (TYPE),						\
-      .offset = offsetof (MR_TYPE_NAME, NAME),				\
-      .mr_type = MR_TYPE_DETECT (TYPE),					\
-      .mr_type_ext = MR_TYPE_EXT_ARRAY,					\
-      .param =								\
-      {									\
-	.array_param = {						\
-	  .count = sizeof (TYPE) == 0 ? 0 :				\
-	  sizeof (((MR_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),		\
-	  .row_count = sizeof (TYPE) == 0 ? 0 :				\
-	  sizeof (((MR_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE),	\
-	},								\
-      },								\
-      .comment = "" __VA_ARGS__,					\
+    .hashed_name = { .name = #NAME, .hash_value = 0, },			\
+      .type = MR_STRINGIFY (TYPE),					\
+	 .offset = offsetof (MR_TYPE_NAME, NAME),			\
+	 .mr_type = MR_TYPE_STRUCT,					\
+	 .mr_type_ext = MR_TYPE_EXT_POINTER,				\
+	 .comment = "" __VA_ARGS__,					\
 	 },
 
-#define MR_NONE_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...)  { \
-    .type = MR_STRINGIFY (TYPE),					\
-      .name = MR_STRINGIFY (NAME),					\
-      .size = sizeof (TYPE),						\
-      .mr_type = MR_TYPE_VOID,						\
-      .mr_type_ext = MR_TYPE_EXT_NONE,					\
-      .comment = "" __VA_ARGS__,					\
-      },
+#define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...) { \
+    .hashed_name = { .name = #NAME, .hash_value = 0, },			\
+      .type = MR_STRINGIFY (TYPE),					\
+	 .size = sizeof (TYPE),						\
+	 .offset = offsetof (MR_TYPE_NAME, NAME),			\
+	 .mr_type = MR_TYPE_DETECT (TYPE),				\
+	 .mr_type_ext = MR_TYPE_EXT_ARRAY,				\
+	 .param =							\
+	 {								\
+	   .array_param = {						\
+	     .count = sizeof (TYPE) == 0 ? 0 :				\
+	     sizeof (((MR_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),	\
+	     .row_count = sizeof (TYPE) == 0 ? 0 :			\
+	     sizeof (((MR_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE),	\
+	   },								\
+	 },								\
+	 .comment = "" __VA_ARGS__,					\
+	    },
+
+#define MR_NONE_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...) { \
+    .hashed_name = { .name = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+      .type = MR_STRINGIFY (TYPE),					\
+	 .size = sizeof (TYPE),						\
+	 .mr_type = MR_TYPE_VOID,					\
+	 .mr_type_ext = MR_TYPE_EXT_NONE,				\
+	 .comment = "" __VA_ARGS__,					\
+	 },
 
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...) { \
-    .type = MR_STRINGIFY (TYPE),					\
-      .name = MR_STRINGIFY (NAME),					\
-      .size = sizeof (TYPE),						\
-      .mr_type = MR_TYPE_BITFIELD,					\
-      .mr_type_aux = MR_TYPE_DETECT (TYPE),				\
-      .mr_type_ext = MR_TYPE_EXT_NONE,					\
-      .param = {							\
+    .hashed_name = { .name = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+      .type = MR_STRINGIFY (TYPE),					\
+	 .size = sizeof (TYPE),						\
+	 .mr_type = MR_TYPE_BITFIELD,					\
+	 .mr_type_aux = MR_TYPE_DETECT (TYPE),				\
+	 .mr_type_ext = MR_TYPE_EXT_NONE,				\
+	 .param = {							\
       .bitfield_param = {						\
 	.bitfield = {							\
 	  .size = sizeof (MR_TYPE_NAME),				\
 	  .alloc_size = -1,						\
 	  .data = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), },	\
       }, },								\
-      .comment = "" __VA_ARGS__,					\
-	 },
+	 .comment = "" __VA_ARGS__,					\
+	    },
 
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_DETECT (TYPE, ((MR_TYPE_NAME*)NULL)->NAME), __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE))
 
@@ -657,15 +657,15 @@
 #define MR_END_UNION_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, ... /* ATTR */) {	\
-    .type = "",								\
-      .name = #NAME,							\
-      .offset = 0,							\
-      .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
-      .mr_type_ext = MR_TYPE_EXT_NONE,					\
-      .comment = #__VA_ARGS__,						\
-      .ext = {(mr_td_t[]){ { .type = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, } }}, \
-      .ptr_type = "mr_td_t",						\
-	 },
+    .hashed_name = { .name = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+      .type = "",							\
+	 .offset = 0,							\
+	 .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
+	 .mr_type_ext = MR_TYPE_EXT_NONE,				\
+	 .comment = #__VA_ARGS__,					\
+	 .ext = {(mr_td_t[]){ { .hashed_name = { .name = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
+	 .ptr_type = "mr_td_t",						\
+	    },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) {	\
     .type = "",								\
       .mr_type = MR_TYPE_END_ANON_UNION,				\
@@ -677,7 +677,7 @@
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* COMMENTS */ ...) { \
     .type = MR_STRINGIFY (MR_TYPE_NAME),				\
-      .name = #NAME,							\
+      .hashed_name = { .name = MR_STRINGIFY (NAME), .hash_value = 0, },	\
       .mr_type = MR_TYPE_ENUM_VALUE,					\
       .mr_type_ext = MR_TYPE_EXT_NONE,					\
       .param =								\
@@ -699,9 +699,9 @@
 
 #define MR_TYPEDEF_DESC(MR_TYPE_NAME, MR_TYPE, /* ATTR */ ...)		\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME) = {	\
+    .hashed_name = { .name = #MR_TYPE_NAME, .hash_value = 0, },		\
     .mr_type = MR_TYPE,							\
     .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-    .type = #MR_TYPE_NAME,						\
     .size = sizeof (MR_TYPE_NAME),					\
     .attr = #__VA_ARGS__,						\
     .fields = { .alloc_size = -1, .size = 0, .data = (mr_fd_t []){
@@ -741,7 +741,7 @@
 #define MR_SAVE(MR_TYPE_NAME, S_PTR) ({					\
       mr_fd_t __fd__ =							\
 	{								\
-	  .name = MR_STRINGIFY (S_PTR),					\
+	  .hashed_name = { .name = MR_STRINGIFY (S_PTR), .hash_value = 0, }, \
 	  .type = #MR_TYPE_NAME,					\
 	  .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	  .mr_type_ext = MR_TYPE_EXT_DETECT (MR_TYPE_NAME, S_PTR),	\
@@ -757,7 +757,7 @@
       MR_TYPE_NAME * check_type = S_PTR;				\
       mr_save_data_t __mr_save_data__;					\
       mr_detect_type (&__fd__);						\
-      __fd__.name = mr_normalize_name (__fd__.name);			\
+      __fd__.hashed_name.name = mr_normalize_name (__fd__.hashed_name.name); \
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
       if (check_type == NULL)						\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
@@ -830,7 +830,7 @@
 	{								\
 	  mr_fd_t __fd__ = {						\
 	    .type = #MR_TYPE_NAME,					\
-	    .name = NULL,						\
+	    .hashed_name = { .name = NULL, .hash_value = 0, },		\
 	    .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	    .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	    .size = sizeof (MR_TYPE_NAME),				\
@@ -907,7 +907,7 @@
 	.mr_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, };	\
       mr_fd_t __fd__ = {						\
 	.type = #MR_TYPE_NAME,						\
-	.name = NULL,							\
+	.hashed_name = { .name = NULL, .hash_value = 0, },		\
 	.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	.mr_type_ext = MR_TYPE_EXT_NONE,				\
 	.size = sizeof (MR_TYPE_NAME),					\
@@ -1014,7 +1014,7 @@
 	    {								\
 	      mr_fd_t _fd_ = {						\
 		.type = #MR_TYPE_NAME,					\
-		.name = NULL,						\
+		.hashed_name = { .name = NULL, .hash_value = 0, },	\
 		.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),		\
 		.mr_type_ext = MR_TYPE_EXT_DETECT (MR_TYPE_NAME, S_PTR), \
 		.size = sizeof (MR_TYPE_NAME),				\
@@ -1158,7 +1158,6 @@ extern int mr_get_enum_by_name (uint64_t*, char*);
 extern int mr_parse_add_node (mr_load_t*);
 extern int mr_load_bitfield_value (mr_ptrdes_t*, uint64_t*);
 extern int mr_save_bitfield_value (mr_ptrdes_t*, uint64_t*);
-extern int mr_td_foreach (int (*func) (mr_td_t*, void*), void*);
 extern mr_td_t * mr_get_td_by_name (char*);
 extern char * mr_message_format (mr_message_id_t, va_list);
 extern void mr_message (const char*, const char*, int, mr_log_level_t, mr_message_id_t, ...);

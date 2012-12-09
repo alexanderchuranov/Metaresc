@@ -53,7 +53,7 @@ xml2_load (xmlNodePtr node, mr_ra_mr_ptrdes_t * ptrs)
     content = (char*)XML_GET_CONTENT (node_);
 
   ptrs->ra.data[idx].value = content ? MR_STRDUP (content) : MR_STRDUP ("");
-  ptrs->ra.data[idx].fd.name = MR_STRDUP ((char*)node->name);
+  ptrs->ra.data[idx].fd.hashed_name.name = MR_STRDUP ((char*)node->name);
 
   /* loop on subnodes */
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)

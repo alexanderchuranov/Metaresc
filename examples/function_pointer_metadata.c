@@ -19,7 +19,7 @@ int print_func_field_signature (mr_fd_t const * fd)
     {
       fprintf(stderr,
 	      "error: the field '%s' is not a pointer to function\n",
-	      fd->name);
+	      fd->hashed_name.name);
       return (EXIT_FAILURE);
     }
   

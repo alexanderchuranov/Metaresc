@@ -21,7 +21,7 @@
 	memcpy (fields, _td_.fields.data, _td_.fields.size);		\
 	memset (lookup_by_name, 0, _td_.lookup_by_name.size);		\
 	for (_i_ = 0; _i_ < fields_count; ++_i_)			\
-	  lookup_by_name[fields[_i_].hash_value % lookup_by_name_count].fdp = &fields[_i_]; \
+	  lookup_by_name[fields[_i_].hashed_name.hash_value % lookup_by_name_count].fdp = &fields[_i_]; \
 	_td_.lookup_by_name.data = lookup_by_name;			\
 	_td_.fields.data = fields;					\
 	_status_ = ACTION (_td_);					\

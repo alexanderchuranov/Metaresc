@@ -34,7 +34,7 @@ int main ()
   for (i = 0; i < num_constants; ++i)
     {
       mr_fd_t const * fd = &td->fields.data[i];
-      printf ("%d: %s = %" PRId64 "\n", i, fd->name, fd->param.enum_value);
+      printf ("%d: %s = %" PRId64 "\n", i, fd->hashed_name.name, fd->param.enum_value);
     }
   
   return (EXIT_SUCCESS);

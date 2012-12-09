@@ -31,7 +31,7 @@ int main ()
       mr_fd_t const * fd = &td->fields.data[i];
     
       printf("\t%u: name = %s, type = %s, size = %u bytes\n",
-	     i, fd->name, fd->type, fd->size);
+	     i, fd->hashed_name.name, fd->type, fd->size);
     }
   
   return (EXIT_SUCCESS);
