@@ -261,20 +261,12 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, ptr_type, , "union discriminator"),
 		) /* type descriptor */
 
-TYPEDEF_STRUCT (mr_td_ptr_t, ATTRIBUTES ( , "mr_td_t pointer wrapper"),
-		(mr_td_t *, tdp, , "pointer on type descriptor"),
-		)
-
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
 		(void *, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
 		(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
 		(char *, strdup, (const char *, const char *, int, const char *), "pointer on strdup() function"),
 		(void, free, (const char *, const char *, int, void *), "pointer on free() function"),
-		)
-
-TYPEDEF_STRUCT (mr_ra_mr_td_ptr_t,
-		RARRAY (mr_td_ptr_t, ra, "non-collision hash table"),
 		)
 
 TYPEDEF_ENUM (mr_bool_t, ATTRIBUTES ( , "boolean type"),
