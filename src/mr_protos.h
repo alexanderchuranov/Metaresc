@@ -195,9 +195,10 @@ TYPEDEF_STRUCT (mr_ic_t,
 		RARRAY (mr_ptr_t, collection, "key_type"),
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
-		(mr_ptr_t, add, (mr_ptr_t /* key */, mr_ic_t * /* ic */, mr_compar_fn_t /* compar_fn */, __const void * /* context */)),
-		(int, index, (mr_ic_t * /* ic */, mr_compar_fn_t /* compar_fn */, __const void * /* context */)),
-		(mr_ptr_t, find, (mr_ptr_t /* key */, mr_ic_t * /* ic */, mr_compar_fn_t /* compar_fn */, __const void * /* context */)),
+		(mr_compar_fn_t, compar_fn),
+		(int, index, (mr_ic_t * /* ic */, __const void * /* context */)),
+		(mr_ptr_t, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
+		(mr_ptr_t, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(void, free, (mr_ic_t * /* ic */, mr_free_fn_t /* free_fn */, __const void * /* context */)),
 		(mr_ptr_t, ext, , "ic_type")
 		)

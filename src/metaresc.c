@@ -46,8 +46,9 @@ mr_conf_t mr_conf = {
     },
     .ic_type = MR_IC_NONE,
     .key_type = "mr_td_t",
-    .add = NULL,
+    .compar_fn = NULL,
     .index = NULL,
+    .add = NULL,
     .find = NULL,
     .free = NULL,
     .ext = { .ptr = NULL, },
@@ -110,7 +111,7 @@ MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void
  * Memory cleanp handler.
  */
 static void
-dummy_free_func (void * nodep, const void * context) {}
+dummy_free_func (mr_ptr_t key, const void * context) {}
   
 static int
 free_lookup_tree (mr_ptr_t key, const void * context)
@@ -126,30 +127,32 @@ free_lookup_tree (mr_ptr_t key, const void * context)
 }
 
 static mr_ptr_t
-mr_ic_find_none (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   int i;
   for (i = ic->collection.size / sizeof (ic->collection.data[0]) - 1; i >= 0; --i)
-    if (0 == compar_fn (key, ic->collection.data[i], context))
+    if (0 == ic->compar_fn (key, ic->collection.data[i], context))
       return (ic->collection.data[i]);
   return ((mr_ptr_t){ NULL });
 }
 
 static int
-mr_ic_new_none (mr_ic_t * ic)
+mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
-  if (NULL == ic)
+  if ((NULL == ic) || (NULL == compar_fn))
     return (!0);
-  ic->add = NULL;
+  ic->key_type = key_type;
+  ic->compar_fn = compar_fn;
   ic->index = NULL;
-  ic->find = mr_ic_find_none;
+  ic->add = NULL;
+  ic->find = mr_ic_none_find;
   ic->free = NULL;
   ic->ext.ptr = NULL;
   return (0);
 }
 
 static inline mr_ptr_t
-mr_ic_add (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ptr_t * new_element;
   if (NULL == ic)
@@ -164,17 +167,17 @@ mr_ic_add (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * co
   *new_element = key;
   
   if (ic->add)
-    return (ic->add (key, ic, compar_fn, context));
+    return (ic->add (ic, key, context));
   return (key);
 }
 
 static inline int
-mr_ic_index (mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+mr_ic_index (mr_ic_t * ic, const void * context)
 {
   if (NULL == ic)
     return (!0);
   if (ic->index)
-    return (ic->index (ic, compar_fn, context));
+    return (ic->index (ic, context));
   return (0);
 }
 
@@ -199,12 +202,12 @@ mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 }
 
 static inline mr_ptr_t
-mr_ic_find (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
+mr_ic_find (mr_ic_t * ic,mr_ptr_t key, const void * context)
 {
   if (NULL == ic)
     return ((mr_ptr_t){ NULL });
   if (ic->find)
-    return (ic->find (key, ic, compar_fn, context));
+    return (ic->find (ic, key, context));
   return ((mr_ptr_t){ NULL });
 }
 
@@ -217,7 +220,8 @@ mr_ic_free (mr_ic_t * ic, mr_free_fn_t free_fn, const void * context)
     ic->free (ic, free_fn, context);
 }
 
-static void __attribute__((destructor)) mr_cleanup (void)
+static void __attribute__((destructor))
+mr_cleanup (void)
 {
   mr_td_t * mr_ptr_t_td = mr_get_td_by_name ("mr_ptr_t");
   
@@ -959,7 +963,7 @@ mr_td_t *
 mr_get_td_by_name (char * type)
 {
   mr_hashed_name_t hashed_name = { .name = type, .hash_value = mr_hash_str (type), };
-  return (mr_ic_find (&hashed_name, &mr_conf.des, mr_hashed_name_cmp, NULL).ptr);
+  return (mr_ic_find (&mr_conf.des, &hashed_name, NULL).ptr);
 }
 
 /**
@@ -1663,10 +1667,10 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   mr_build_field_names_hash (tdp);
 
   if (NULL == mr_conf.des.find)
-    mr_ic_new_none (&mr_conf.des);
+    mr_ic_none_new (&mr_conf.des, mr_hashed_name_cmp, "mr_td_t");
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
-  if (NULL == mr_ic_add ((void*)tdp, &mr_conf.des, mr_hashed_name_cmp, NULL).ptr)
+  if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL).ptr)
     return (EXIT_FAILURE);
 
   tdp->lookup_by_value.root = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
