@@ -199,7 +199,7 @@
 #define TYPEDEF_UNION(...) P00_TYPEDEF (UNION, __VA_ARGS__)
 #define TYPEDEF_ENUM(...) P00_TYPEDEF (ENUM, __VA_ARGS__)
 #define TYPEDEF_CHAR_ARRAY(...) P00_TYPEDEF (CHAR_ARRAY, __VA_ARGS__)
-#define TYPEDEF_FUNC(...) P00_TYPEDEF (FUNC, __VA_ARGS__)
+#define TYPEDEF_FUNC(RET_TYPE, MR_TYPE_NAME, ...) P00_TYPEDEF (FUNC, MR_TYPE_NAME, RET_TYPE, __VA_ARGS__)
 
 /*
   Checks if MR_MODE was defined. If it was undefined automtically produce prototypes and descriptors.

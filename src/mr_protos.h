@@ -9,7 +9,7 @@ TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)) , "point
 	       (long, long_int_t),
 	       )
 
-TYPEDEF_FUNC (string_t, char, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
+TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
 
 TYPEDEF_ENUM (mr_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      (MR_LL_ALL, = 0),
@@ -170,13 +170,13 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 	       RARRAY (struct mr_fd_t, func_param, "function arguments descriptors"),
 	       )
 
-TYPEDEF_FUNC (mr_compar_fn_t, int, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
+TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
 
-TYPEDEF_FUNC (mr_action_fn_t, void, (__const mr_ptr_t /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
+TYPEDEF_FUNC (void, mr_action_fn_t, (__const mr_ptr_t /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
 
-TYPEDEF_FUNC (mr_visit_fn_t, int, (mr_ptr_t /* nodep */, __const void * /* context */))
+TYPEDEF_FUNC (int, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
-TYPEDEF_FUNC (mr_free_fn_t, void, (mr_ptr_t /* nodep */, __const void * /* context */))
+TYPEDEF_FUNC (void, mr_free_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
 		(char *, name, , "key field"),
@@ -385,7 +385,7 @@ TYPEDEF_STRUCT (mr_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
 		(mr_save_io_t, save, , "save handlers"),
 		)
 
-TYPEDEF_FUNC (mr_output_format_t, char *, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
+TYPEDEF_FUNC (char *, mr_output_format_t, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
 
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
