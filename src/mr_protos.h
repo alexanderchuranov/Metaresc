@@ -174,6 +174,8 @@ TYPEDEF_FUNC (mr_compar_fn_t, int, (__const mr_ptr_t /* x */, __const mr_ptr_t /
 
 TYPEDEF_FUNC (mr_action_fn_t, void, (__const mr_ptr_t /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
 
+TYPEDEF_FUNC (mr_visit_fn_t, int, (mr_ptr_t /* nodep */, __const void * /* context */))
+
 TYPEDEF_FUNC (mr_free_fn_t, void, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),

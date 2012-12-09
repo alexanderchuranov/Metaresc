@@ -44,6 +44,8 @@ mr_conf_t mr_conf = {
       .size = 0,
       .alloc_size = 0,
     },
+    .ic_type = MR_IC_NONE,
+    .key_type = "mr_td_t",
     .add = NULL,
     .index = NULL,
     .find = NULL,
@@ -107,34 +109,19 @@ MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void
 /**
  * Memory cleanp handler.
  */
-void dummy_free_func (void * nodep, const void * context) {}
+static void
+dummy_free_func (void * nodep, const void * context) {}
   
-int free_lookup_tree (mr_td_t * tdp, void * arg)
+static int
+free_lookup_tree (mr_ptr_t key, const void * context)
 {
+  mr_td_t * tdp = key.ptr;
   mr_tdestroy (tdp->lookup_by_value.root, dummy_free_func, NULL);
   tdp->lookup_by_value.root = NULL;
   if (tdp->lookup_by_name.data)
     MR_FREE (tdp->lookup_by_name.data);
   tdp->lookup_by_name.data = NULL;
   tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
-  return (0);
-}
-
-/**
- * Type descriptors collection iterator.
- * @param func function for type descriptors processing
- * @param args auxiliary arguments
- * @return flag that cycle was not completed
- */
-int
-mr_td_foreach (int (*func) (mr_td_t*, void*), void * args)
-{
-  int count = mr_conf.des.collection.size / sizeof (mr_conf.des.collection.data[0]);
-  int i;
-
-  for (i = 0; i < count; ++i)
-    if (func (mr_conf.des.collection.data[i].ptr, args))
-      return (!0);
   return (0);
 }
 
@@ -164,11 +151,21 @@ mr_ic_new_none (mr_ic_t * ic)
 static inline mr_ptr_t
 mr_ic_add (mr_ptr_t key, mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
 {
+  mr_ptr_t * new_element;
   if (NULL == ic)
     return ((mr_ptr_t){ NULL });
+  
+  new_element = mr_rarray_append ((mr_rarray_t*)&ic->collection, sizeof (ic->collection.data[0]));
+  if (NULL == new_element)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return ((mr_ptr_t){ NULL });
+    }
+  *new_element = key;
+  
   if (ic->add)
     return (ic->add (key, ic, compar_fn, context));
-  return ((mr_ptr_t){ NULL });
+  return (key);
 }
 
 static inline int
@@ -178,6 +175,26 @@ mr_ic_index (mr_ic_t * ic, mr_compar_fn_t compar_fn, const void * context)
     return (!0);
   if (ic->index)
     return (ic->index (ic, compar_fn, context));
+  return (0);
+}
+
+/**
+ * Type descriptors collection iterator.
+ * @param func function for type descriptors processing
+ * @param args auxiliary arguments
+ * @return flag that cycle was not completed
+ */
+static inline int
+mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+{
+  int count, i;
+  if (NULL == ic)
+    return (!0);
+  
+  count = ic->collection.size / sizeof (ic->collection.data[0]);
+  for (i = 0; i < count; ++i)
+    if (visit_fn (ic->collection.data[i], context))
+      return (!0);
   return (0);
 }
 
@@ -212,8 +229,8 @@ static void __attribute__((destructor)) mr_cleanup (void)
   
   mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func, NULL);
   mr_conf.enum_by_name.root = NULL;
-  mr_td_foreach (free_lookup_tree, NULL);
 
+  mr_ic_foreach (&mr_conf.des, free_lookup_tree, NULL);
   mr_ic_free (&mr_conf.des, dummy_free_func, NULL);
 }
 
@@ -1472,8 +1489,9 @@ mr_func_field_detect (mr_fd_t * fdp)
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
 static int
-mr_detect_fields_types (mr_td_t * tdp, void * args)
+mr_detect_fields_types (mr_ptr_t key, const void * context)
 {
+  mr_td_t * tdp = key.ptr;
   int i;
   mr_td_t * tdp_;
   int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
@@ -1599,9 +1617,9 @@ mr_register_type_pointer (mr_td_t * tdp)
 }
 
 static int
-mr_register_type_pointer_wrapper (mr_td_t * tdp, void * arg)
+mr_register_type_pointer_wrapper (mr_ptr_t key, const void * arg)
 {
-  mr_register_type_pointer (tdp);
+  mr_register_type_pointer (key.ptr);
   return (0);
 }
 
@@ -1648,24 +1666,15 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
     mr_ic_new_none (&mr_conf.des);
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
-  {
-    mr_td_t ** tdpp = mr_rarray_append ((void*)&mr_conf.des.collection, sizeof (mr_conf.des.collection.data[0]));
-    if (NULL == tdpp)
-      {
-	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	return (EXIT_FAILURE);
-      }
-    *tdpp = tdp;
-    mr_conf.des.key_type = "mr_td_t";
-    mr_ic_index (&mr_conf.des, mr_hashed_name_cmp, NULL);
-  }
+  if (NULL == mr_ic_add ((void*)tdp, &mr_conf.des, mr_hashed_name_cmp, NULL).ptr)
+    return (EXIT_FAILURE);
 
   tdp->lookup_by_value.root = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 
-  mr_td_foreach (mr_detect_fields_types, tdp);
-  mr_td_foreach (mr_register_type_pointer_wrapper, tdp);
+  mr_ic_foreach (&mr_conf.des, mr_detect_fields_types, tdp);
+  mr_ic_foreach (&mr_conf.des, mr_register_type_pointer_wrapper, tdp);
   return (EXIT_SUCCESS);
 }
 
