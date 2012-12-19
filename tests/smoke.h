@@ -34,6 +34,13 @@
 	  mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)]; \
 	  ra->alloc_size = ra->size;					\
 	}								\
+      else if ((MR_TYPE_EXT_NONE == ptrs.ra.data[i].fd.mr_type_ext) &&	\
+	       (MR_TYPE_STRUCT == ptrs.ra.data[i].fd.mr_type) &&	\
+	       (0 == strcmp ("mr_hashed_name_t", ptrs.ra.data[i].fd.type))) \
+	{								\
+	  mr_hashed_name_t * mr_hashed_name = ptrs.ra.data[i].data;	\
+	  mr_hashed_name->hash_value = mr_hash_str (mr_hashed_name->name); \
+	}								\
     MR_FREE (ptrs.ra.data);						\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
     if ((0 == mr_conf_serialized.size) || (NULL == mr_conf_serialized.data)) \
@@ -41,6 +48,18 @@
     mr_conf_t mr_conf_loaded = mr_conf;					\
     if (0 == MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded)) \
       ck_abort_msg ("load for method " #METHOD " failed");		\
+    ptrs = MR_SAVE (mr_conf_t, &mr_conf_loaded);			\
+    if ((0 == ptrs.ra.size) || (NULL == ptrs.ra.data))			\
+      ck_abort_msg ("save into internal representation failed");	\
+    for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)	\
+      if ((MR_TYPE_EXT_NONE == ptrs.ra.data[i].fd.mr_type_ext) &&	\
+	  (MR_TYPE_STRUCT == ptrs.ra.data[i].fd.mr_type) &&		\
+	  (0 == strcmp ("mr_ic_t", ptrs.ra.data[i].fd.type)))		\
+	{								\
+	  mr_ic_t * mr_ic = ptrs.ra.data[i].data;			\
+	  mr_ic->compar_fn = mr_hashed_name_cmp;			\
+	}								\
+    MR_FREE (ptrs.ra.data);						\
     mr_conf = mr_conf_loaded;						\
     mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
     if ((mr_conf_serialized.size != mr_conf_serialized_.size) ||	\

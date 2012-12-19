@@ -538,6 +538,23 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 }
 
+typedef struct {
+  XDR * xdrs;
+  int idx;
+  mr_ra_mr_ptrdes_t * ptrs;
+} xdr_load_struct_args_t;
+
+static int
+xdr_load_struct_field (mr_ptr_t key, const void * context)
+{
+  mr_fd_t * fdp = key.ptr;
+  xdr_load_struct_args_t * xdr_load_struct_args = (void*)context;
+  char * data = xdr_load_struct_args->ptrs->ra.data[xdr_load_struct_args->idx].data;
+  return (!xdr_load (&data[fdp->offset], fdp,
+		     xdr_load_struct_args->xdrs,
+		     xdr_load_struct_args->ptrs));
+}
+
 /**
  * Load handler for structures.
  * @param xdrs XDR stream descriptor
@@ -549,9 +566,11 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static int
 xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * tdp)
 {
-  char * data = ptrs->ra.data[idx].data;
-  int count;
-  int i;
+  xdr_load_struct_args_t xdr_load_struct_args = {
+    .xdrs = xdrs,
+    .idx = idx,
+    .ptrs = ptrs,
+  };
 
   if (NULL == tdp)
     {
@@ -564,11 +583,7 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
       return (0);
     }
   
-  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
-  for (i = 0; i < count; ++i)
-    if (!xdr_load (data + tdp->fields.data[i].offset, &tdp->fields.data[i], xdrs, ptrs))
-      return (0);
-  
+  mr_ic_foreach (&tdp->fields, xdr_load_struct_field, &xdr_load_struct_args);
   return (!0);
 }
 
@@ -603,7 +618,7 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     .data = &ptrs->ra.data[idx].union_field_name,
     .ref_idx = -1,
     .flags = { .is_null = MR_FALSE, .is_referenced = MR_FALSE, .is_content_reference = MR_FALSE, },
-  }; 
+  };
   mr_ra_mr_ptrdes_t ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_save_string (xdrs, 0, &ptrs_));
 }
@@ -915,13 +930,12 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       if (!status)
 	return (0);
       
-      if (!ptrs->ra.data[idx].flags.is_opaque_data)
-	return (!0);
-      else
+      if (ptrs->ra.data[idx].flags.is_opaque_data)
 	{
 	  ptrs->ra.data[idx].first_child = -1; /* do not save sub-nodes */
 	  return (xdr_opaque (xdrs, ra->data, ra->size)); /* content saved as opaque data */
 	}
+      return (!0);
     }
 }
 
@@ -959,8 +973,8 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
       /* .size and .alloc_size will be loaded once again as fields of mr_rarray_t */
       ra->alloc_size = ra->size;
-      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
       ra->data = NULL;
+
       if (ra->size > 0)
 	{
 	  int i;
@@ -972,6 +986,8 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	      return (0);
 	    }
+	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+	  
 	  memset (ra->data, 0, ra->size);
 	  if (ptrs->ra.data[idx].flags.is_opaque_data)
 	    return (xdr_opaque (xdrs, ra->data, ra->size));
@@ -981,7 +997,24 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 		return (0);
 	}
     }
+  
   return (!0);
+}
+
+typedef struct {
+  XDR * xdrs;
+  int idx;
+  mr_ra_mr_ptrdes_t * ptrs;
+} xdr_load_rarray_struct_t;
+
+static int
+xdr_load_rarray_inner (void * context, mr_td_t * tdp)
+{
+  xdr_load_rarray_struct_t * xdr_load_rarray_struct = context;
+  return (xdr_load_struct_inner (xdr_load_rarray_struct->xdrs,
+				 xdr_load_rarray_struct->idx,
+				 xdr_load_rarray_struct->ptrs,
+				 tdp));
 }
 
 /**
@@ -995,28 +1028,19 @@ static int
 xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   mr_rarray_t * ra = ptrs->ra.data[idx].data;
+  xdr_load_rarray_struct_t xdr_load_rarray_struct = {
+    .xdrs = xdrs,
+    .idx = idx,
+    .ptrs = ptrs,
+  };
   
-#define XDR_LOAD_RARRAY_ACTION(TD) ({					\
-      int __status = 0;							\
-      mr_fd_t * fdp = mr_get_fd_by_name (&TD, "data");			\
-      if (NULL == fdp)							\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);		\
-      else								\
-	{								\
-	  fdp->type = ptrs->ra.data[idx].fd.type;			\
-	  fdp->size = ptrs->ra.data[idx].fd.size;			\
-	  fdp->mr_type = ptrs->ra.data[idx].fd.mr_type;			\
-	  fdp->mr_type_ext = MR_TYPE_EXT_RARRAY_DATA;			\
-	  __status = xdr_load_struct_inner (xdrs, idx, ptrs, &TD);	\
-	}								\
-      __status;								\
-    })
-
-  int status = MR_LOAD_RARRAY (XDR_LOAD_RARRAY_ACTION);
+  memset (ra, 0, sizeof (*ra));
+  if (!mr_load_rarray_type (&ptrs->ra.data[idx].fd, xdr_load_rarray_inner, &xdr_load_rarray_struct))
+    return (0);
   /* alloc_size is loaded from XDRS, but it should reflect amount of memory really allocated for data */
   ra->alloc_size = ra->size;
   
-  return (status);
+  return (!0);
 }
 
 /**

@@ -255,8 +255,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(int, size_effective, , "effective size"),
 		(mr_typed_tree_t, lookup_by_value, , "RB-tree for enums values lookup"),
-		RARRAY (mr_fd_ptr_t, lookup_by_name, "hash for lookup by field name"),
-		RARRAY (mr_fd_t, fields, "fields or enums descriptors"),
+		(mr_ic_t, fields, , "fields or enums descriptors"),
 		(char *, comment, , "type comments"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
@@ -285,7 +284,7 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
 		(char *, type, , "union type name"),
 		(char *, discriminator, , "union discriminator"),
-		(int, field_idx, , "discriminated union field index"),
+		(mr_fd_t *, fdp, , "discriminated union field descriptor"),
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),

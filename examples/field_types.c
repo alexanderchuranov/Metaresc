@@ -10,11 +10,21 @@ TYPEDEF_STRUCT (employee_t,
 		(int, salary),
 		)
 
+static int
+print_fd (mr_ptr_t key, const void * context)
+{
+  mr_fd_t * fdp = key.ptr;
+  int * i = (void*)context;
+  printf("\t%u: name = %s, type = %s, size = %u bytes\n",
+	 (*i)++, fdp->hashed_name.name, fdp->type, fdp->size);
+  return (0);
+}
+
 int main ()
 {
   char name[] = "employee_t";
   mr_td_t * td = mr_get_td_by_name(name);
-  int i;
+  int i = 0;
   
   if (NULL == td)
     {
@@ -22,17 +32,7 @@ int main ()
       return (EXIT_FAILURE);
     }
   
-  int const num_fields = td->fields.size / sizeof (td->fields.data[0]);
-  
-  printf ("the '%s' structure has %u fields:\n", name, num_fields);
-  
-  for (i = 0; i < num_fields; ++i)
-    {
-      mr_fd_t const * fd = &td->fields.data[i];
-    
-      printf("\t%u: name = %s, type = %s, size = %u bytes\n",
-	     i, fd->hashed_name.name, fd->type, fd->size);
-    }
+  mr_ic_foreach (&td->fields, print_fd, &i);
   
   return (EXIT_SUCCESS);
 }

@@ -69,6 +69,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 	      data = mr_load_data->ptrs.ra.data[idx].data;
 	    
 	    if ((MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[i].fd.mr_type_ext) ||
+		(MR_TYPE_EXT_RARRAY_DATA == mr_load_data->ptrs.ra.data[i].fd.mr_type_ext) ||
 		(MR_TYPE_STRING == mr_load_data->ptrs.ra.data[i].fd.mr_type))
 	      *(void**)mr_load_data->ptrs.ra.data[i].data = data;
 	  }
@@ -431,6 +432,21 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
+static int
+mr_load_struct_next_field (mr_ptr_t key, const void * context)
+{
+  mr_fd_t * fdp = key.ptr;
+  mr_fd_t ** next_fd = (void*)context;
+  if (NULL == *next_fd)
+    {
+      *next_fd = fdp;
+      return (!0);
+    }
+  if (fdp == *next_fd)
+    *next_fd = NULL;
+  return (0);
+}
+
 /**
  * MR_STRUCT load handler.
  * Save content of subnodes to structure fileds.
@@ -444,7 +460,7 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
 {
   char * data = mr_load_data->ptrs.ra.data[idx].data;
   int first_child = mr_load_data->ptrs.ra.data[idx].first_child;
-  mr_fd_t * fdp;
+  mr_fd_t * fdp = NULL;
   
   /* get pointer on structure descriptor */
   if (NULL == tdp)
@@ -461,11 +477,10 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
       mr_load_data->ptrs.ra.data[first_child].fd.type = NULL;
     }
 
-  fdp = tdp->fields.data;
-  
   /* loop on all subnodes */
   for (idx = first_child; idx >= 0; idx = mr_load_data->ptrs.ra.data[idx].next)
     {
+      mr_ic_foreach (&tdp->fields, mr_load_struct_next_field, &fdp);
       if (mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name)
 	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
       if (NULL == fdp)
@@ -477,10 +492,6 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
       /* recursively load subnode */
       if (!mr_load (&data[fdp->offset], fdp, idx, mr_load_data))
 	return (0);
-      
-      ++fdp;
-      if (MR_TYPE_TRAILING_RECORD == fdp->mr_type)
-	fdp = NULL;
     }
   return (!0);
 }
@@ -538,6 +549,92 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
+static int
+mr_load_rarray_data (int idx, mr_load_data_t * mr_load_data)
+{
+  char * ra_data = mr_load_data->ptrs.ra.data[idx].data;
+  mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
+  int i, count = 0;
+  mr_fd_t fd_ = mr_load_data->ptrs.ra.data[idx].fd;
+
+  for (i = mr_load_data->ptrs.ra.data[idx].first_child; i >= 0; i = mr_load_data->ptrs.ra.data[i].next)
+    ++count;
+  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+  fd_.hashed_name = mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].fd.hashed_name;
+
+  ra->size = ra->alloc_size = count * fd_.size;
+  ra->data = NULL;
+  if ((mr_load_data->ptrs.ra.data[idx].ref_idx < 0) && (count > 0))
+    {
+      ra->data = MR_MALLOC (ra->size);
+      if (NULL == ra->data)
+	{
+	  ra->alloc_size = ra->size = 0;
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (0);
+	}
+      memset (ra->data, 0, ra->size);
+
+      /* loop on subnodes */
+      i = 0;
+      for (idx = mr_load_data->ptrs.ra.data[idx].first_child; idx >= 0; idx = mr_load_data->ptrs.ra.data[idx].next)
+	if (!mr_load (&((char*)ra->data)[fd_.size * i++], &fd_, idx, mr_load_data))
+	  return (0);
+    }
+  return (!0);
+}
+
+int
+mr_load_rarray_type (mr_fd_t * fdp, int (*action) (void *, mr_td_t *), void * context)
+{
+  mr_td_t * tdp = mr_get_td_by_name ("mr_rarray_t");
+  int status = 0;
+  if (NULL == tdp)
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, "mr_rarray_t");
+  else
+    {
+      mr_td_t td = *tdp;
+      int fields_count = td.fields.collection.size / sizeof (td.fields.collection.data[0]);
+      mr_ptr_t fields_data[fields_count];
+      mr_fd_t * data_fdp;
+      mr_fd_t fd;
+      int i;
+      memcpy (fields_data, td.fields.collection.data, td.fields.collection.size);
+      td.fields.collection.data = fields_data;
+      for (i = 0; i < fields_count; ++i)
+	{
+	  data_fdp = fields_data[i].ptr;
+	  if (0 == strcmp ("data", data_fdp->hashed_name.name))
+	    break;
+	}
+      if (i >= fields_count)
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);
+      else
+	{
+	  fd = *fdp; /* make a copy of 'data' field descriptor */
+	  fd.mr_type_ext = MR_TYPE_EXT_RARRAY_DATA;
+	  fd.hashed_name = data_fdp->hashed_name;
+	  fd.offset = data_fdp->offset;
+	  fields_data[i].ptr = &fd; /* replace 'data' descriptor on a local copy */
+	  mr_ic_none_new (&td.fields, mr_hashed_name_cmp, "mr_fd_t");
+	  status = action (context, &td);
+	}
+    }
+  return (status);
+}
+
+typedef struct {
+  int idx;
+  mr_load_data_t * mr_load_data;
+} mr_load_rarray_struct_t;
+
+static int
+mr_load_rarray_inner (void * context, mr_td_t * tdp)
+{
+  mr_load_rarray_struct_t * mr_load_rarray_struct = context;
+  return (mr_load_struct_inner (mr_load_rarray_struct->idx, mr_load_rarray_struct->mr_load_data, tdp));
+}
+
 /**
  * MR_RARRAY load handler.
  * Save content of subnodes to resizeable array elements
@@ -550,70 +647,17 @@ static int
 mr_load_rarray (int idx, mr_load_data_t * mr_load_data)
 {
   mr_rarray_t * ra = mr_load_data->ptrs.ra.data[idx].data;
-  int data_idx, idx_;
-  int count = 0;
+  mr_load_rarray_struct_t mr_load_rarray_struct = {
+    .idx = idx,
+    .mr_load_data = mr_load_data,
+  };
 
   memset (ra, 0, sizeof (*ra));
   
-#define MR_LOAD_RARRAY_ACTION(TD) ({					\
-      int __status = 0;							\
-      mr_fd_t * fdp = mr_get_fd_by_name (&TD, "data");			\
-      if (NULL == fdp)							\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);		\
-      else								\
-	{								\
-	  fdp->type = mr_load_data->ptrs.ra.data[idx].fd.type;		\
-	  fdp->size = mr_load_data->ptrs.ra.data[idx].fd.size;		\
-	  __status = mr_load_struct_inner (idx, mr_load_data, &TD);	\
-	}								\
-      __status;								\
-    })
-  
-  if (!MR_LOAD_RARRAY (MR_LOAD_RARRAY_ACTION))
+  if (!mr_load_rarray_type (&mr_load_data->ptrs.ra.data[idx].fd, mr_load_rarray_inner, &mr_load_rarray_struct))
     return (0);
+  ra->alloc_size = ra->size;
 
-  for (data_idx = mr_load_data->ptrs.ra.data[idx].first_child; data_idx >= 0; data_idx = mr_load_data->ptrs.ra.data[data_idx].next)
-    if (0 == strcmp ("data", mr_load_data->ptrs.ra.data[data_idx].fd.hashed_name.name))
-      break;
-
-  if (data_idx < 0)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);
-      return (0);
-    }
-
-  /* initialize resizeable array */
-  for (idx_ = mr_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = mr_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
-    ++count;
-  
-  if ((mr_load_data->ptrs.ra.data[data_idx].ref_idx < 0) && (count > 0))
-    {
-      int i = 0;
-      mr_fd_t fd_ = mr_load_data->ptrs.ra.data[idx].fd;
-
-      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-
-      ra->data = MR_MALLOC (ra->size);
-      if (NULL == ra->data)
-	{
-	  ra->alloc_size = ra->size = 0;
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (0);
-	}
-      memset (ra->data, 0, ra->size);
-      ra->alloc_size = ra->size;
-      
-      for (idx_ = mr_load_data->ptrs.ra.data[data_idx].first_child; idx_ >= 0; idx_ = mr_load_data->ptrs.ra.data[idx_].next) /* loop on subnodes */
-	{
-	  if (!mr_load (((char*)ra->data) + i * fd_.size, &fd_, idx_, mr_load_data))
-	    return (0);
-	  if (++i > count)
-	    {
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.hashed_name.name);
-	      break;
-	    }
-	}
-    }
   return (!0);
 }
 
@@ -846,5 +890,6 @@ static void __attribute__((constructor)) mr_init_load_rl (void)
 
   mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].load.rl = mr_load_array;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY].load.rl = mr_load_rarray;
+  mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].load.rl = mr_load_rarray_data;
   mr_conf.io_ext_handlers[MR_TYPE_EXT_POINTER].load.rl = mr_load_pointer;
 };

@@ -270,6 +270,21 @@ mr_save_string (mr_save_data_t * mr_save_data)
     }
 }
 
+typedef struct {
+  int idx;
+  mr_save_data_t * mr_save_data;
+} mr_save_struct_t;
+
+static int
+mr_save_field (mr_ptr_t key, const void * context)
+{
+  mr_fd_t * fdp = key.ptr;
+  mr_save_struct_t * mr_save_struct = (void*)context;
+  char * data = mr_save_struct->mr_save_data->ptrs.ra.data[mr_save_struct->idx].data;
+  mr_save_inner (&data[fdp->offset], fdp, mr_save_struct->mr_save_data);
+  return (0);
+}
+
 /**
  * MR_STRUCT type saving handler. Saves structure as internal representation tree node.
  * @param mr_save_data save routines data and lookup structures
@@ -278,10 +293,11 @@ static void
 mr_save_struct (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1;
-  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type); /* look up for type descriptor */
-  char * data = mr_save_data->ptrs.ra.data[idx].data;
-  int count;
-  int i;
+  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type);
+  mr_save_struct_t mr_save_struct = {
+    .idx = idx,
+    .mr_save_data = mr_save_data,
+  };
   
   if (NULL == tdp) /* check whether type descriptor was found */
     {
@@ -295,10 +311,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
     }
 
   mr_save_data->parent = idx;
-  /* add each child to this node */
-  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
-  for (i = 0; i < count; ++i)
-    mr_save_inner (data + tdp->fields.data[i].offset, &tdp->fields.data[i], mr_save_data);
+  mr_ic_foreach (&tdp->fields, mr_save_field, &mr_save_struct); /* add each child to this node */
   mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
 }
 
@@ -318,24 +331,148 @@ cmp_ud (const long x, const long y, const void * context)
   return (strcmp (mr_save_data->mr_ra_ud.data[x].discriminator, mr_save_data->mr_ra_ud.data[y].discriminator));
 }
 
+static mr_fd_t *
+mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
+{
+  /* check that field index in union is valid and reset to default otherwise */
+  if ((idx < 0) || (idx >= tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0])))
+    idx = 0;
+  return (tdp->fields.collection.data[idx].ptr);
+}
+
+static mr_fd_t *
+mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
+{
+  if (name && name[0])
+    {
+      mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
+      if (fdp)
+	return (fdp);
+    }
+  return (tdp->fields.collection.data[0].ptr);
+}
+
+static mr_fd_t *
+mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * discriminator)
+{
+  /* switch over basic types */
+  switch (parent_fdp->mr_type)
+    {
+    case MR_TYPE_UINT8:
+      return (mr_union_discriminator_by_idx (tdp, *(uint8_t*)discriminator));
+    case MR_TYPE_INT8:
+      return (mr_union_discriminator_by_idx (tdp, *(int8_t*)discriminator));
+    case MR_TYPE_UINT16:
+      return (mr_union_discriminator_by_idx (tdp, *(uint16_t*)discriminator));
+    case MR_TYPE_INT16:
+      return (mr_union_discriminator_by_idx (tdp, *(int16_t*)discriminator));
+    case MR_TYPE_UINT32:
+      return (mr_union_discriminator_by_idx (tdp, *(uint32_t*)discriminator));
+    case MR_TYPE_INT32:
+      return (mr_union_discriminator_by_idx (tdp, *(int32_t*)discriminator));
+    case MR_TYPE_UINT64:
+      return (mr_union_discriminator_by_idx (tdp, *(uint64_t*)discriminator));
+    case MR_TYPE_INT64:
+      return (mr_union_discriminator_by_idx (tdp, *(int64_t*)discriminator));
+    case MR_TYPE_BITFIELD:
+      {
+	uint64_t value = 0;
+	mr_ptrdes_t ptrdes = { .data = discriminator, .fd = *parent_fdp, };
+	mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
+	mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
+	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
+	  {
+	    /* if bitfield is a enumeration then get named discriminator from enum value comment */
+	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
+	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->comment : NULL));
+	  }
+	else
+	  return (mr_union_discriminator_by_idx (tdp, value));
+      }
+    case MR_TYPE_CHAR_ARRAY:
+      return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
+    case MR_TYPE_STRING:
+      return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
+    case MR_TYPE_ENUM:
+      {
+	int64_t enum_value = 0;
+	mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
+	mr_fd_t * enum_fdp;
+			
+	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
+	  {
+	    /*
+	      GCC caluculates sizeof for the type according alignment, but initialize only effective bytes
+	      i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
+	      sizeof (enum_t) == 2, but type has size only 1 byte
+	    */
+	    switch (enum_tdp->size_effective)
+	      {
+	      case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
+	      case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
+	      case sizeof (uint32_t): enum_value = *(uint32_t*)discriminator; break;
+	      case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
+	      default:
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		memcpy (&enum_value, discriminator, MR_MIN (enum_tdp->size_effective, sizeof (enum_value)));
+#else
+#error Support for non little endian architectures to be implemented
+#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
+		break;
+	      }
+	    /* get named discriminator from enum value comment */
+	    enum_fdp = mr_get_enum_by_value (enum_tdp, enum_value);
+	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->comment : NULL));
+	  }
+	break;
+      }
+    default:
+      break;
+    }
+  return (mr_union_discriminator_by_name (tdp, NULL));
+}
+
+/**
+ * Checks that string is a valid field name [_a-zA-A][_a-zA-Z0-9]*
+ * @param name union comment string
+ */
+static int
+mr_is_valid_field_name (char * name)
+{
+  if (NULL == name)
+    return (0);
+  if (!isalpha (*name) && ('_' != *name))
+    return (0);
+  for (++name; *name; ++name)
+    if (!isalnum (*name) && ('_' != *name))
+      return (0);
+  return (!0);
+}
+
 /**
  * Finds out union discriminator
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_fd_t *
 mr_union_discriminator (mr_save_data_t * mr_save_data)
 {
-  int field_idx = -1; /* marker that no valid discriminator was found */
+  mr_fd_t * fdp = NULL; /* marker that no valid discriminator was found */
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1; /* index of the last element - it is union itself */
   int parent;
   long ud_idx;
-  void * ud_find = NULL;
+  long * ud_find = NULL;
+  mr_union_discriminator_t * ud;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type); /* look up for type descriptor */
-  mr_union_discriminator_t * ud = mr_rarray_append ((void*)&mr_save_data->mr_ra_ud, sizeof (mr_save_data->mr_ra_ud.data[0]));
 
+  /* if union comment is a valid field name, then traverse thruogh parents and look for union discriminator */
+  if (!mr_is_valid_field_name (mr_save_data->ptrs.ra.data[idx].fd.comment))
+    return (mr_union_discriminator_by_name (tdp, NULL));
+
+  ud = mr_rarray_append ((void*)&mr_save_data->mr_ra_ud, sizeof (mr_save_data->mr_ra_ud.data[0]));
   /* create a record for further lookups in parent nodes for discriminator value */
   if (NULL == ud)
-    return (0);
+    return (mr_union_discriminator_by_name (tdp, NULL));
+  
   memset (ud, 0, sizeof (*ud));
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud.size -= sizeof (mr_save_data->mr_ra_ud.data[0]);
@@ -350,7 +487,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	mr_td_t * parent_tdp;
 	mr_fd_t * parent_fdp;
 	void * discriminator;
-	char * named_discriminator = NULL;
+
 	/* checks if this parent already have union resolution info */
 	ud_find = mr_tfind (ud_idx, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	/* break the traverse loop if it has */
@@ -375,89 +512,18 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	/* if discriminator is a pointer then we need address of the content */
 	if (MR_TYPE_EXT_POINTER == parent_fdp->mr_type_ext)
 	  discriminator = *(void**)discriminator;
-	/* switch over basic types */
-	switch (parent_fdp->mr_type)
-	  {
-	  case MR_TYPE_UINT8: field_idx = *(uint8_t*)discriminator; break;
-	  case MR_TYPE_INT8: field_idx = *(int8_t*)discriminator; break;
-	  case MR_TYPE_UINT16: field_idx = *(uint16_t*)discriminator; break;
-	  case MR_TYPE_INT16: field_idx = *(int16_t*)discriminator; break;
-	  case MR_TYPE_UINT32: field_idx = *(uint32_t*)discriminator; break;
-	  case MR_TYPE_INT32: field_idx = *(int32_t*)discriminator; break;
-	  case MR_TYPE_UINT64: field_idx = *(uint64_t*)discriminator; break;
-	  case MR_TYPE_INT64: field_idx = *(int64_t*)discriminator; break;
-	  case MR_TYPE_BITFIELD:
-	    {
-	      uint64_t value = 0;
-	      mr_ptrdes_t ptrdes = { .data = discriminator, .fd = *parent_fdp, };
-	      mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
-	      mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
-	      if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
-		{
-		  /* if bitfield is a enumeration then get named discriminator from enum value comment */
-		  mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
-		  if (enum_fdp)
-		    named_discriminator = enum_fdp->comment;
-		}
-	      else
-		field_idx = value;
-	      break;
-	    }
-	  case MR_TYPE_CHAR_ARRAY: named_discriminator = (char*)discriminator; break;
-	  case MR_TYPE_STRING: named_discriminator = *(char**)discriminator; break;
-	  case MR_TYPE_ENUM:
-	    {
-	      int64_t enum_value = 0;
-	      mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
-	      mr_fd_t * enum_fdp;
-			
-	      if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
-		{
-		  /*
-		    GCC caluculates sizeof for the type according alignment, but initialize only effective bytes
-		    i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
-		    sizeof (enum_t) == 2, but type has size only 1 byte
-		  */
-		  switch (enum_tdp->size_effective)
-		    {
-		    case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
-		    case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
-		    case sizeof (uint32_t): enum_value = *(uint32_t*)discriminator; break;
-		    case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
-		    default:
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		      memcpy (&enum_value, discriminator, MR_MIN (enum_tdp->size_effective, sizeof (enum_value)));
-#else
-#error Support for non little endian architectures to be implemented
-#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
-		      break;
-		    }
-		  /* get named discriminator from enum value comment */
-		  enum_fdp = mr_get_enum_by_value (enum_tdp, enum_value);
-		  if (enum_fdp)
-		    named_discriminator = enum_fdp->comment;
-		}
-	      break;
-	    }
-	  default: break;
-	  }
-	/* if named discriminator was found then calculate corresponding field index */
-	if (named_discriminator && named_discriminator[0])
-	  {
-	    mr_fd_t * union_fdp = mr_get_fd_by_name (tdp, named_discriminator);
-	    if (union_fdp)
-	      field_idx = union_fdp - tdp->fields.data;
-	  }
+
+	fdp = mr_union_discriminator_by_type (tdp, parent_fdp, discriminator);
 	break;
       }
 
   if (ud_find)
-    field_idx = mr_save_data->mr_ra_ud.data[*(long*)ud_find].field_idx; /* union discriminator info was found in some of the parents */
+    fdp = mr_save_data->mr_ra_ud.data[*ud_find].fdp; /* union discriminator info was found in some of the parents */
   else
     {
       /* union discriminator info was not found in parents so we add new record */
       mr_save_data->mr_ra_ud.size += sizeof (mr_save_data->mr_ra_ud.data[0]);
-      ud->field_idx = field_idx;
+      ud->fdp = fdp;
       ud_find = &ud_idx;
     }
 
@@ -465,7 +531,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
       {
-	void * ud_search = mr_tsearch (*(void**)ud_find, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	long * ud_search = mr_tsearch (*(void**)ud_find, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	if (NULL == ud_search)
 	  {
 	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -473,29 +539,9 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	  }
 	if (ud_search == ud_find)
 	  break;
-      }  
-  /* check that field index in union is valid and reset to default otherwise */
-  if ((field_idx < 0) || (field_idx >= tdp->fields.size / sizeof (tdp->fields.data[0])))
-    field_idx = 0;
+      }
 
-  return (field_idx);
-}
-
-/**
- * Checks that string is a valid field name [_a-zA-A][_a-zA-Z0-9]*
- * @param name union comment string
- */
-static int
-mr_is_valid_field_name (char * name)
-{
-  if (NULL == name)
-    return (0);
-  if (!isalpha (*name) && ('_' != *name))
-    return (0);
-  for (++name; *name; ++name)
-    if (!isalnum (*name) && ('_' != *name))
-      return (0);
-  return (!0);
+  return (fdp ? fdp : mr_union_discriminator_by_name (tdp, NULL)); /* fdp might be NULL */
 }
 
 /**
@@ -508,7 +554,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1;
   char * data = mr_save_data->ptrs.ra.data[idx].data;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type); /* look up for type descriptor */
-  int field_idx = 0;
+  mr_fd_t * fdp;
   
   if (NULL == tdp) /* check whether type descriptor was found */
     {
@@ -521,13 +567,11 @@ mr_save_union (mr_save_data_t * mr_save_data)
       return;
     }
 
-  /* if union comment is a valid field name, then traverse thruogh parents and look for union discriminator */
-  if (mr_is_valid_field_name (mr_save_data->ptrs.ra.data[idx].fd.comment))
-    field_idx = mr_union_discriminator (mr_save_data);
+  fdp = mr_union_discriminator (mr_save_data);
+  mr_save_data->ptrs.ra.data[idx].union_field_name = fdp->hashed_name.name; /* field name is required for XDR serialization */
   
   mr_save_data->parent = idx;
-  mr_save_data->ptrs.ra.data[idx].union_field_name = tdp->fields.data[field_idx].hashed_name.name; /* field name is required for XDR serialization */
-  mr_save_inner (data + tdp->fields.data[field_idx].offset, &tdp->fields.data[field_idx], mr_save_data);
+  mr_save_inner (&data[fdp->offset], fdp, mr_save_data);
   mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
 }
 

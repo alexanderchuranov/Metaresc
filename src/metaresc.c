@@ -118,37 +118,17 @@ free_lookup_tree (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_tdestroy (tdp->lookup_by_value.root, dummy_free_func, NULL);
-  tdp->lookup_by_value.root = NULL;
-  if (tdp->lookup_by_name.data)
-    MR_FREE (tdp->lookup_by_name.data);
-  tdp->lookup_by_name.data = NULL;
-  tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
   return (0);
 }
 
-static mr_ptr_t
+mr_ptr_t
 mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  int i;
-  for (i = ic->collection.size / sizeof (ic->collection.data[0]) - 1; i >= 0; --i)
+  int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
+  for (i = 0; i < count; ++i)
     if (0 == ic->compar_fn (key, ic->collection.data[i], context))
       return (ic->collection.data[i]);
   return ((mr_ptr_t){ NULL });
-}
-
-static int
-mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
-{
-  if ((NULL == ic) || (NULL == compar_fn))
-    return (!0);
-  ic->key_type = key_type;
-  ic->compar_fn = compar_fn;
-  ic->index = NULL;
-  ic->add = NULL;
-  ic->find = mr_ic_none_find;
-  ic->free = NULL;
-  ic->ext.ptr = NULL;
-  return (0);
 }
 
 static inline mr_ptr_t
@@ -181,34 +161,14 @@ mr_ic_index (mr_ic_t * ic, const void * context)
   return (0);
 }
 
-/**
- * Type descriptors collection iterator.
- * @param func function for type descriptors processing
- * @param args auxiliary arguments
- * @return flag that cycle was not completed
- */
-static inline int
-mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
-{
-  int count, i;
-  if (NULL == ic)
-    return (!0);
-  
-  count = ic->collection.size / sizeof (ic->collection.data[0]);
-  for (i = 0; i < count; ++i)
-    if (visit_fn (ic->collection.data[i], context))
-      return (!0);
-  return (0);
-}
-
 static inline mr_ptr_t
-mr_ic_find (mr_ic_t * ic,mr_ptr_t key, const void * context)
+mr_ic_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   if (NULL == ic)
     return ((mr_ptr_t){ NULL });
   if (ic->find)
     return (ic->find (ic, key, context));
-  return ((mr_ptr_t){ NULL });
+  return (mr_ic_none_find (ic, key, context));
 }
 
 static inline void
@@ -224,11 +184,10 @@ static void __attribute__((destructor))
 mr_cleanup (void)
 {
   mr_td_t * mr_ptr_t_td = mr_get_td_by_name ("mr_ptr_t");
-  
-  if ((mr_ptr_t_td) && (mr_ptr_t_td->fields.alloc_size > 0) && (mr_ptr_t_td->fields.data))
+  if (mr_ptr_t_td->fields.collection.alloc_size > 0)
     {
-      MR_FREE (mr_ptr_t_td->fields.data);
-      mr_ptr_t_td->fields.data = NULL;
+      MR_FREE (mr_ptr_t_td->fields.collection.data);
+      mr_ptr_t_td->fields.collection.data = NULL;
     }
   
   mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func, NULL);
@@ -236,6 +195,11 @@ mr_cleanup (void)
 
   mr_ic_foreach (&mr_conf.des, free_lookup_tree, NULL);
   mr_ic_free (&mr_conf.des, dummy_free_func, NULL);
+  if (mr_conf.des.collection.data)
+    {
+      MR_FREE (mr_conf.des.collection.data);
+      mr_conf.des.collection.data = NULL;
+    }
 }
 
 /**
@@ -257,11 +221,11 @@ mr_message_format (mr_message_id_t message_id, va_list args)
       mr_td_t * tdp = mr_get_td_by_name ("mr_message_id_t");
       if (tdp)
 	{
-	  mr_fd_t * fdp;
-	  for (fdp = tdp->fields.data; fdp->mr_type != MR_TYPE_TRAILING_RECORD; ++fdp)
-	    messages[fdp->param.enum_value] = fdp->comment;
+	  mr_fd_t ** fdpp;
+	  for (fdpp = (mr_fd_t**)tdp->fields.collection.data; NULL != *fdpp; ++fdpp)
+	    messages[(*fdpp)->param.enum_value] = (*fdpp)->comment;
+	  messages_inited = !0;
 	}
-      messages_inited = !0;
     }
 
   if ((message_id >= 0) && (message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
@@ -581,6 +545,7 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->flags.is_null = MR_FALSE;
   ptrdes->flags.is_referenced = MR_FALSE;
   ptrdes->flags.is_content_reference = MR_FALSE;
+  ptrdes->flags.is_opaque_data = MR_FALSE;
   ptrdes->union_field_name = NULL;
   ptrdes->union_discriminator = NULL;
   ptrdes->value = NULL;
@@ -789,7 +754,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
  * @param str a pointer on null terminated string
  * @return Hash function value.
  */
-static uint64_t
+uint64_t
 mr_hash_str (char * str)
 {
   uint64_t hash_value = 0;
@@ -806,7 +771,7 @@ mr_hash_str (char * str)
  * @return Returns TRUE if number is prime, FALSE otherwise. 
  */
 static int
-is_prime (int x)
+__attribute__ ((unused)) is_prime (int x)
 {
   int i;
   if (1 == x)
@@ -941,7 +906,7 @@ mr_hashed_name_get_hash (mr_hashed_name_t * x)
  * @param b pointer on another mr_hashed_name_t
  * @return comparation sign
  */
-static int
+int
 mr_hashed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_hashed_name_t * x_ = x.ptr;
@@ -974,63 +939,84 @@ mr_get_td_by_name (char * type)
 static int
 mr_anon_unions_extract (mr_td_t * tdp)
 {
-  int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
   int i, j;
   
   for (i = 0; i < count; ++i)
-    if ((MR_TYPE_ANON_UNION == tdp->fields.data[i].mr_type) || (MR_TYPE_NAMED_ANON_UNION == tdp->fields.data[i].mr_type))
-      {
-	for (j = i + 1; j < count; ++j)
-	  if (MR_TYPE_END_ANON_UNION == tdp->fields.data[j].mr_type)
-	    break;
-	if (j >= count)
-	  return (EXIT_FAILURE);
+    {
+      mr_fd_t * fdp = tdp->fields.collection.data[i].ptr;
+      if ((MR_TYPE_ANON_UNION == fdp->mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->mr_type))
 	{
-	  int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_TRAILING_RECORD */
 	  static int mr_type_anonymous_union_cnt = 0;
-	  mr_td_t * tdp_ = tdp->fields.data[i].ext.ptr; /* statically allocated memory for new type descriptor */
-	  mr_fd_t * first = &tdp->fields.data[i + 1];
-
-	  tdp_->size = 0;
-	  /* rotate fields until all union fields will be shifted to the end of the array */
-	  for (j = 0; j < fields_count; ++j)
+	  mr_td_t * tdp_ = fdp->ext.ptr; /* statically allocated memory for new type descriptor */
+	  mr_fd_t ** first = (void*)&tdp->fields.collection.data[i + 1];
+	  mr_fd_t * last;
+	
+	  for (j = i + 1; j < count; ++j)
 	    {
-	      mr_fd_t fd = *first;
-	      memmove (first, &first[1], (count - i - 1) * sizeof (*first));
-	      /* offset of union memebers may differ from offset of anonymous union place holder */
-	      if (fd.offset != 0) /* MR_NONE and MR_END_ANON_UNION has zero offset */
-		tdp->fields.data[i].offset = fd.offset;
-	      fd.offset = 0; /* reset offset to zero */
-	      tdp->fields.data[count] = fd;
-	      if (fd.size > tdp_->size)
-		tdp_->size = fd.size; /* find union max size member */
+	      mr_fd_t * fdp_ = tdp->fields.collection.data[j].ptr;
+	      if (MR_TYPE_END_ANON_UNION == fdp_->mr_type)
+		break;
 	    }
-	  tdp->fields.data[count].mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
-	  tdp_->mr_type = tdp->fields.data[i].mr_type;
-	  sprintf (tdp_->hashed_name.name, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
-	  tdp_->attr = tdp->fields.data[i].comment; /* anonymous union stringified attributes are saved into comments field */
-	  tdp_->comment = tdp->fields.data[count].comment; /* copy comment from MR_END_ANON_UNION record */
-	  tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
+	  if (j >= count)
+	    return (EXIT_FAILURE);
+	  
+	  {
+	    int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_TRAILING_RECORD */
+	    mr_fd_t * fields[fields_count];
+	    /*
+	      0  1  2  3  4  5  6
+	      F1 AH U1 U2 AE F2 T
+	      i = 1
+	      j = 4
+	      first = 2
+	      fields_count = 3
+	      count = 6
+	    */
+	    
+	    memcpy (fields, first, fields_count * sizeof (first[0]));
+	    memcpy (first, &first[fields_count], (count - j) * sizeof (first[0]));
+	    memcpy (&first[count - j], fields, fields_count * sizeof (first[0]));
+	    
+	    tdp_->size = 0;
+	    for (j = 0; j < fields_count - 1; ++j)
+	      {
+		/* offset of union memebers may differ from offset of anonymous union place holder */
+		if (fields[j]->offset != 0) /* MR_NONE and MR_END_ANON_UNION has zero offset */
+		  fdp->offset = fields[j]->offset;
+		fields[j]->offset = 0; /* reset offset to zero */
+		if (tdp_->size < fields[j]->size)
+		  tdp_->size = fields[j]->size; /* find union max size member */
+	      }
 
-	  tdp->fields.data[i].comment = tdp->fields.data[count].comment; /* copy comment from MR_END_ANON_UNION record */
-	  tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
-	  count -= fields_count;
-	  tdp->fields.data[i].type = tdp_->hashed_name.name;
-	  tdp->fields.data[i].size = tdp_->size;
-	  /* set name of anonymous union to temporary type name */
-	  if ((NULL == tdp->fields.data[i].hashed_name.name) || (0 == tdp->fields.data[i].hashed_name.name[0]))
-	    {
-	      tdp->fields.data[i].hashed_name.name = tdp->fields.data[i].type;
-	      tdp->fields.data[i].hashed_name.hash_value = 0;
-	    }
+	    last = tdp->fields.collection.data[count].ptr;	  
+	    last->mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
+	    tdp_->mr_type = fdp->mr_type; /*MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
+	    sprintf (tdp_->hashed_name.name, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
+	    tdp_->hashed_name.hash_value = mr_hash_str (tdp_->hashed_name.name);
+	    tdp_->attr = fdp->comment; /* anonymous union stringified attributes are saved into comments field */
+	    tdp_->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
+	    tdp_->fields.collection.data = &tdp->fields.collection.data[count - fields_count + 1];
 
-	  if (mr_add_type (tdp_, NULL, NULL))
-	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->hashed_name.name);
-	      return (EXIT_SUCCESS);
-	    }
+	    fdp->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
+	    tdp->fields.collection.size -= fields_count * sizeof (tdp->fields.collection.data[0]);
+	    count -= fields_count;
+	    fdp->type = tdp_->hashed_name.name;
+	    fdp->size = tdp_->size;
+	    /* set name of anonymous union to temporary type name */
+	    if ((NULL == fdp->hashed_name.name) || (0 == fdp->hashed_name.name[0]))
+	      fdp->hashed_name.name = fdp->type;
+	    fdp->hashed_name.hash_value = mr_hash_str (fdp->hashed_name.name);
+
+	    if (EXIT_SUCCESS != mr_add_type (tdp_, NULL, NULL))
+	      {
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->hashed_name.name);
+		return (EXIT_FAILURE);
+	      }
+	  }
+
 	}
-      }
+    }
   return (EXIT_SUCCESS);
 }
 
@@ -1067,12 +1053,13 @@ cmp_enums_by_name (void * x, void * y, const void * context)
 static int
 mr_add_enum (mr_td_t * tdp)
 {
-  int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
   int i;
 
   /*
-    Enums with __attribute__((packed, aligned (XXX))) generates size according alignment, but not real size which is 1 byte due to packing.
+    Enums with __attribute__((packed, aligned (XXX))) GCC generates size according alignment, but not real size which is 1 byte due to packing.
     Here we determine effective type size.
+    Clang calculates size and effective size according alignment.
   */
   switch (tdp->mr_type_effective)
     {
@@ -1103,19 +1090,19 @@ mr_add_enum (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      mr_fd_t ** fdpp = mr_tsearch (&tdp->fields.data[i], &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
+      mr_fd_t ** fdpp = mr_tsearch (tdp->fields.collection.data[i], &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (EXIT_FAILURE);
 	}
-      if (*fdpp != &tdp->fields.data[i])
+      if (*fdpp != tdp->fields.collection.data[i].ptr)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->hashed_name.name, tdp->hashed_name.name);
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
-      fdpp = mr_tsearch (&tdp->fields.data[i], &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
+      fdpp = mr_tsearch (tdp->fields.collection.data[i], &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1278,11 +1265,11 @@ mr_init_bitfield (mr_fd_t * fdp)
 static int
 mr_check_fields (mr_td_t * tdp)
 {
-  int i, j;
-  int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int i;
+  int count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = &tdp->fields.data[i];
+      mr_fd_t * fdp = tdp->fields.collection.data[i].ptr;
       /*
 	Check names of the fileds.
 	MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
@@ -1298,75 +1285,14 @@ mr_check_fields (mr_td_t * tdp)
       if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_init_bitfield (fdp);
     }
+
+#if 0
   /* check for name duplicates */
   for (i = 0; i < count; ++i)
     for (j = i + 1; j < count; ++j)
       if (tdp->fields.data[i].hashed_name.name && tdp->fields.data[j].hashed_name.name && (0 == strcmp (tdp->fields.data[i].hashed_name.name, tdp->fields.data[j].hashed_name.name)))
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_FIELDS, tdp->fields.data[i].hashed_name.name, tdp->hashed_name.name);
-  
-  return (EXIT_SUCCESS);
-}
-
-/**
- * Initialize non-collision hash table for fields lookup by fields name.
- * @param tdp pointer on a type descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
- */
-static int
-mr_build_field_names_hash (mr_td_t * tdp)
-{
-  int i, j;
-  int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
-
-  tdp->lookup_by_name.size = tdp->lookup_by_name.alloc_size = 0;
-  tdp->lookup_by_name.data = NULL;
-  for (i = 0; i < fields_count; ++i)
-    tdp->fields.data[i].hashed_name.hash_value = mr_hash_str (tdp->fields.data[i].hashed_name.name);
-
-  /* sanity check for hash value collision */
-  for (i = 0; i < fields_count; ++i)
-    for (j = i + 1; j < fields_count; ++j)
-      if (tdp->fields.data[i].hashed_name.hash_value == tdp->fields.data[j].hashed_name.hash_value)
-	return (EXIT_FAILURE);
-
-  if (0 == fields_count)
-    return (EXIT_SUCCESS);
-  
-  while (NULL == tdp->lookup_by_name.data)
-    {
-      mr_fd_ptr_t * array;
-      int size = ((tdp->lookup_by_name.size / sizeof (tdp->lookup_by_name.data[0])) | 1) + 2;
-      /* we need to find next prime number greater then current hash table size */ 
-      while (!is_prime (size))
-	size += 2;
-      tdp->lookup_by_name.alloc_size = tdp->lookup_by_name.size = size * sizeof (tdp->lookup_by_name.data[0]);
-      array = MR_MALLOC (tdp->lookup_by_name.alloc_size);
-      /* check memory allocation */
-      if (NULL == array)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  tdp->lookup_by_name.alloc_size = tdp->lookup_by_name.size = 0;
-	  return (EXIT_FAILURE);
-	}
-      for (i = 0; i < size; ++i)
-	array[i].fdp = NULL;
-      /* populate list elements into hash table */
-      for (i = 0; i < fields_count; ++i)
-	{
-	  mr_fd_ptr_t * x = &array[tdp->fields.data[i].hashed_name.hash_value % size];
-	  /* check for collision */
-	  if (x->fdp)
-	    break;
-	  else
-	    x->fdp = &tdp->fields.data[i];
-	}
-      /* check that all elements were successfully populated into the hash table */
-      if (i >= fields_count)
-	tdp->lookup_by_name.data = array;
-      else
-	MR_FREE (array); /* otherwise try to find new hash size */
-    }
-  
+#endif
   return (EXIT_SUCCESS);
 }
 
@@ -1498,55 +1424,58 @@ mr_detect_fields_types (mr_ptr_t key, const void * context)
   mr_td_t * tdp = key.ptr;
   int i;
   mr_td_t * tdp_;
-  int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int fields_count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
 
   for (i = 0; i < fields_count; ++i)
-    switch (tdp->fields.data[i].mr_type)
-      {
-	/* Enum detection */
-      case MR_TYPE_INT8:
-      case MR_TYPE_UINT8:
-      case MR_TYPE_INT16:
-      case MR_TYPE_UINT16:
-      case MR_TYPE_INT32:
-      case MR_TYPE_UINT32:
-      case MR_TYPE_INT64:
-      case MR_TYPE_UINT64:
-	tdp_ = mr_get_td_by_name (tdp->fields.data[i].type);
-	if (tdp_)
-	  tdp->fields.data[i].mr_type = tdp_->mr_type;
-	break;
+    {
+      mr_fd_t * fdp = tdp->fields.collection.data[i].ptr;
+      switch (fdp->mr_type)
+	{
+	  /* Enum detection */
+	case MR_TYPE_INT8:
+	case MR_TYPE_UINT8:
+	case MR_TYPE_INT16:
+	case MR_TYPE_UINT16:
+	case MR_TYPE_INT32:
+	case MR_TYPE_UINT32:
+	case MR_TYPE_INT64:
+	case MR_TYPE_UINT64:
+	  tdp_ = mr_get_td_by_name (fdp->type);
+	  if (tdp_)
+	    fdp->mr_type = tdp_->mr_type;
+	  break;
 
-      case MR_TYPE_BITFIELD:
-	tdp_ = mr_get_td_by_name (tdp->fields.data[i].type);
-	if (tdp_)
-	  tdp->fields.data[i].mr_type_aux = tdp_->mr_type;
-	break;
+	case MR_TYPE_BITFIELD:
+	  tdp_ = mr_get_td_by_name (fdp->type);
+	  if (tdp_)
+	    fdp->mr_type_aux = tdp_->mr_type;
+	  break;
 
-	/*
-	  MR_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
-	 */
-      case MR_TYPE_STRUCT:
-      case MR_TYPE_CHAR_ARRAY:
-	if (MR_TYPE_EXT_POINTER == tdp->fields.data[i].mr_type_ext)
-	  {
-	    tdp_ = mr_get_td_by_name (tdp->fields.data[i].type);
-	    if (tdp_)
-	      tdp->fields.data[i].size = tdp_->size;
-	  }
-	break;
+	  /*
+	    MR_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
+	  */
+	case MR_TYPE_STRUCT:
+	case MR_TYPE_CHAR_ARRAY:
+	  if (MR_TYPE_EXT_POINTER == fdp->mr_type_ext)
+	    {
+	      tdp_ = mr_get_td_by_name (fdp->type);
+	      if (tdp_)
+		fdp->size = tdp_->size;
+	    }
+	  break;
 	
-      case MR_TYPE_NONE: /* MR_AUTO type resolution */
-	mr_auto_field_detect (&tdp->fields.data[i]);
-	break;
+	case MR_TYPE_NONE: /* MR_AUTO type resolution */
+	  mr_auto_field_detect (fdp);
+	  break;
 	  
-      case MR_TYPE_FUNC:
-	mr_func_field_detect (&tdp->fields.data[i]);
-	break;
+	case MR_TYPE_FUNC:
+	  mr_func_field_detect (fdp);
+	  break;
 	  
-      default:
-	break;
-      }
+	default:
+	  break;
+	}
+    }
   return (0);
 }
 
@@ -1559,22 +1488,8 @@ mr_detect_fields_types (mr_ptr_t key, const void * context)
 mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
-  if (tdp->lookup_by_name.data)
-    {
-      uint64_t hash_value = mr_hash_str (name);
-      mr_fd_t * fdp = tdp->lookup_by_name.data[hash_value % (tdp->lookup_by_name.size / sizeof (tdp->lookup_by_name.data[0]))].fdp;
-      if (fdp && (hash_value == fdp->hashed_name.hash_value) && (0 == strcmp (name, fdp->hashed_name.name)))
-	return (fdp);
-    }
-  else
-    {
-      int i;
-      int fields_count = tdp->fields.size / sizeof (tdp->fields.data[0]);
-      for (i = 0; i < fields_count; ++i)
-	if (0 == strcmp (name, tdp->fields.data[i].hashed_name.name))
-	  return (&tdp->fields.data[i]);
-    }
-  return (NULL);
+  mr_hashed_name_t hashed_name = { .name = name, .hash_value = mr_hash_str (name), };
+  return (mr_ic_find (&tdp->fields, &hashed_name, NULL).ptr);
 }
 
 /**
@@ -1587,44 +1502,46 @@ mr_register_type_pointer (mr_td_t * tdp)
 {
   mr_fd_t * fdp;
   mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
+
   if (NULL == union_tdp)
     return (EXIT_FAILURE);
   if (mr_get_fd_by_name (union_tdp, tdp->hashed_name.name))
     return (EXIT_FAILURE);
-  if (union_tdp->fields.alloc_size < 0)
+  
+  /* statically allocated trailing record is used for field descriptor */
+  fdp = tdp->fields.collection.data[tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0])].ptr;
+  if (NULL == fdp)
+    {
+      fprintf (stderr,  "failed for type '%s'\n", tdp->hashed_name.name);
+      return (EXIT_FAILURE);
+    }
+  
+  if (union_tdp->fields.collection.alloc_size < 0)
     {
       /* reallocate descriptors of union fields into heap */
-      int alloc_size = sizeof (union_tdp->fields.data[0]) + union_tdp->fields.size; /* allocate one additional slot */
-      mr_fd_t * fields_data = MR_MALLOC (alloc_size);
+      int alloc_size = sizeof (union_tdp->fields.collection.data[0]) + union_tdp->fields.collection.size; /* allocate one additional slot */
+      void * fields_data = MR_MALLOC (alloc_size);
       if (NULL == fields_data)
 	return (EXIT_FAILURE);
-      memcpy (fields_data, union_tdp->fields.data, union_tdp->fields.size);
-      union_tdp->fields.data = fields_data;
-      union_tdp->fields.alloc_size = alloc_size;
+      memcpy (fields_data, union_tdp->fields.collection.data, union_tdp->fields.collection.size);
+      union_tdp->fields.collection.data = fields_data;
+      union_tdp->fields.collection.alloc_size = alloc_size;
     }
-  fdp = mr_rarray_append ((void*)&union_tdp->fields, sizeof (union_tdp->fields.data[0]));
-  if (NULL == fdp)
-    return (EXIT_FAILURE);
   memset (fdp, 0, sizeof (*fdp));
   fdp->type = tdp->hashed_name.name;
-  fdp->hashed_name.name = tdp->hashed_name.name;
+  fdp->hashed_name = tdp->hashed_name;
   fdp->size = tdp->size;
   fdp->offset = 0;
   fdp->mr_type = tdp->mr_type;
   fdp->mr_type_aux = MR_TYPE_VOID;
   fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
-  if (union_tdp->lookup_by_name.data)
-    MR_FREE (union_tdp->lookup_by_name.data);
-  union_tdp->lookup_by_name.data = NULL;
-  /* we need to rebuild hash table each time because array with fields descriptors might be reallocated */
-  return (mr_build_field_names_hash (union_tdp));
+  return ((NULL == mr_ic_add (&union_tdp->fields, fdp, NULL).ptr) ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 static int
 mr_register_type_pointer_wrapper (mr_ptr_t key, const void * arg)
 {
-  mr_register_type_pointer (key.ptr);
-  return (0);
+  return ((EXIT_SUCCESS == mr_register_type_pointer (key.ptr)) ? 0 : !0);
 }
 
 /**
@@ -1651,10 +1568,15 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   ext = va_arg (args, void*);
   va_end (args);
 
-  for (count = 0; MR_TYPE_TRAILING_RECORD != tdp->fields.data[count].mr_type; ++count);
-  tdp->fields.size = count * sizeof (tdp->fields.data[0]);
-  tdp->fields.alloc_size = -1;
-  tdp->fields.ext.ptr = NULL;
+  for (count = 0; ; ++count)
+    {
+      mr_fd_t * fdp = tdp->fields.collection.data[count].ptr;
+      if (MR_TYPE_TRAILING_RECORD == fdp->mr_type)
+	break;
+    }
+  tdp->fields.collection.size = count * sizeof (tdp->fields.collection.data[0]);
+  tdp->fields.collection.alloc_size = -1;
+  tdp->fields.collection.ext.ptr = NULL;
   
   if ((NULL != comment) && comment[0])
     tdp->comment = comment;
@@ -1662,9 +1584,11 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL != ext)
     tdp->ext.ptr = ext;
 
-  mr_anon_unions_extract (tdp);
+  if (EXIT_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
+    return (EXIT_FAILURE);
+  
   mr_check_fields (tdp);
-  mr_build_field_names_hash (tdp);
+  mr_ic_none_new (&tdp->fields, mr_hashed_name_cmp, "mr_fd_t");
 
   if (NULL == mr_conf.des.find)
     mr_ic_none_new (&mr_conf.des, mr_hashed_name_cmp, "mr_td_t");
@@ -1678,6 +1602,8 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
     mr_add_enum (tdp);
 
   mr_ic_foreach (&mr_conf.des, mr_detect_fields_types, tdp);
+  mr_register_type_pointer (tdp);
+  /* mr_ptr_t with -O0 is not the first registered type, so we need to register all pointer types on each type registration */
   mr_ic_foreach (&mr_conf.des, mr_register_type_pointer_wrapper, tdp);
   return (EXIT_SUCCESS);
 }
