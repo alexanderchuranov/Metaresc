@@ -480,9 +480,10 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
   /* loop on all subnodes */
   for (idx = first_child; idx >= 0; idx = mr_load_data->ptrs.ra.data[idx].next)
     {
-      mr_ic_foreach (&tdp->fields, mr_load_struct_next_field, &fdp);
       if (mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name)
 	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
+      else
+	mr_ic_foreach (&tdp->fields, mr_load_struct_next_field, &fdp);
       if (NULL == fdp)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->hashed_name.name, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);

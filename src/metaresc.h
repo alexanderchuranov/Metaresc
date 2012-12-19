@@ -623,8 +623,9 @@
 	    .bitfield = {						\
 	      .size = sizeof (MR_TYPE_NAME),				\
 	      .alloc_size = -1,						\
-	      .data = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), }, \
-	  }, },								\
+	      .data = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }),	\
+	      .ptr_type = MR_RARRAY_OPAQUE_DATA_T_STR,			\
+	    }, }, },							\
 	     .comment = "" __VA_ARGS__,					\
 		} } },
 
