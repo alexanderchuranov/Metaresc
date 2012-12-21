@@ -11,7 +11,7 @@
 #define MR_CINIT_INDENT_TEMPLATE "%*s"
 #define MR_CINIT_INDENT "  "
 
-#define MR_CINIT_TYPE_NAME_TEMPLATE "%2$s"
+#define MR_CINIT_TYPE_NAME_TEMPLATE "%s"
 #define MR_JSON_TYPE_NAME_TEMPLATE MR_CINIT_TYPE_NAME_TEMPLATE
 #define MR_CINIT_FIELDS_DELIMITER ",\n"
 #define MR_CINIT_NAMED_FIELD_TEMPLATE ".%s = "
@@ -82,7 +82,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	      return (NULL);
 	  
 	  if (save_data.prefix)
-	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.size, ptrs->ra.data[idx].fd.type) < 0)
+	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.type) < 0)
 	      return (NULL);
 	  
 	  if (save_data.content)

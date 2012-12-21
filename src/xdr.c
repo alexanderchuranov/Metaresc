@@ -230,24 +230,30 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
-    if ((ptrs->ra.data[i].ref_idx >= 0) && (ptrs->ra.data[i].ref_idx <= count))
+    if (ptrs->ra.data[i].ref_idx >= 0)
       {
-	void * data;
-	if (ptrs->ra.data[i].flags.is_content_reference)
-	  data = *(void**)(ptrs->ra.data[ptrs->ra.data[i].ref_idx].data);
+	if (ptrs->ra.data[i].ref_idx >= count)
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNDEFINED_REF_IDX, "ref_idx", ptrs->ra.data[i].ref_idx);
 	else
-	  data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
-	
-	switch (ptrs->ra.data[i].fd.mr_type_ext)
 	  {
-	  case MR_TYPE_EXT_POINTER:
-	  case MR_TYPE_EXT_RARRAY_DATA:
-	    *(void**)ptrs->ra.data[i].data = data;
-	    break;
-	  default:
-	    if (MR_TYPE_STRING == ptrs->ra.data[i].fd.mr_type)
-	      *(char**)ptrs->ra.data[i].data = data;
-	    break;
+	    void * data;
+	
+	    if (ptrs->ra.data[i].flags.is_content_reference)
+	      data = *(void**)(ptrs->ra.data[ptrs->ra.data[i].ref_idx].data);
+	    else
+	      data = ptrs->ra.data[ptrs->ra.data[i].ref_idx].data;
+
+	    switch (ptrs->ra.data[i].fd.mr_type_ext)
+	      {
+	      case MR_TYPE_EXT_POINTER:
+	      case MR_TYPE_EXT_RARRAY_DATA:
+		*(void**)ptrs->ra.data[i].data = data;
+		break;
+	      default:
+		if (MR_TYPE_STRING == ptrs->ra.data[i].fd.mr_type)
+		  *(char**)ptrs->ra.data[i].data = data;
+		break;
+	      }
 	  }
       }
   return (!0);
@@ -931,10 +937,7 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	return (0);
       
       if (ptrs->ra.data[idx].flags.is_opaque_data)
-	{
-	  ptrs->ra.data[idx].first_child = -1; /* do not save sub-nodes */
-	  return (xdr_opaque (xdrs, ra->data, ra->size)); /* content saved as opaque data */
-	}
+	return (xdr_opaque (xdrs, ra->data, ra->size)); /* content saved as opaque data */
       return (!0);
     }
 }
@@ -1043,6 +1046,41 @@ xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (!0);
 }
 
+static void
+renumber_nodes (mr_ra_mr_ptrdes_t * ptrs)
+{
+  int idx = 0;
+  int idx_ = 0;
+  
+  while (idx >= 0)
+    {
+      ptrs->ra.data[idx].idx = idx_++;
+      if (ptrs->ra.data[idx].first_child >= 0)
+	idx = ptrs->ra.data[idx].first_child;
+      else
+	{
+	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
+	    idx = ptrs->ra.data[idx].parent;
+	  idx = ptrs->ra.data[idx].next;
+	}
+    }      
+}
+
+static int
+has_opaque_rarrays (mr_ra_mr_ptrdes_t * ptrs)
+{
+  int i;
+  int has_opaque_rarrays_flag = 0;
+  for (i = ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1; i >= 0; --i)
+    if (MR_TRUE == ptrs->ra.data[i].flags.is_opaque_data)
+      {
+	/* do not save sub-nodes */
+	ptrs->ra.data[i].first_child = ptrs->ra.data[i].last_child = -1;
+	has_opaque_rarrays_flag = !0;
+      }
+  return (has_opaque_rarrays_flag);
+}
+
 /**
  * Public function. Save scheduler. Save any object into XDR stream.
  * @param xdrs XDR context structure
@@ -1053,7 +1091,8 @@ int
 xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 {
   int idx = 0;
-
+  if (has_opaque_rarrays (ptrs))
+    renumber_nodes (ptrs);
   while (idx >= 0)
     {
       mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
