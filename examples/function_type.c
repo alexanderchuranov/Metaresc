@@ -4,7 +4,7 @@
 
 #include <metaresc.h>
 
-TYPEDEF_FUNC (int, func_t, (char *, int, int *, double), ATTRIBUTES (__attribute__ ((aligned (sizeof (int64_t)))) , "function type sample"))
+TYPEDEF_FUNC (ATTRIBUTES (__attribute__ ((aligned (sizeof (int64_t)))) , "function type sample"), int, func_t, (char *, int, int *, double))
 
 int main ()
 {

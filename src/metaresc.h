@@ -199,7 +199,7 @@
 #define TYPEDEF_UNION(...) P00_TYPEDEF (UNION, __VA_ARGS__)
 #define TYPEDEF_ENUM(...) P00_TYPEDEF (ENUM, __VA_ARGS__)
 #define TYPEDEF_CHAR_ARRAY(...) P00_TYPEDEF (CHAR_ARRAY, __VA_ARGS__)
-#define TYPEDEF_FUNC(RET_TYPE, MR_TYPE_NAME, ...) P00_TYPEDEF (FUNC, MR_TYPE_NAME, RET_TYPE, __VA_ARGS__)
+#define TYPEDEF_FUNC(...) P00_TYPEDEF (FUNC, __VA_ARGS__)
 
 /*
   Checks if MR_MODE was defined. If it was undefined automtically produce prototypes and descriptors.
@@ -250,7 +250,7 @@
 #define P00_TYPEDEF_ATTR_UNION TYPEDEF_ATTR
 #define P00_TYPEDEF_ATTR_ENUM TYPEDEF_ATTR
 #define P00_TYPEDEF_ATTR_CHAR_ARRAY(P00_MODE, P00_TYPE, ATTR_COM_EXT, P00_TYPE_NAME, SIZE, ...) MR_PASTE2 (MR_TYPEDEF_CHAR_ARRAY_, P00_MODE) (P00_TYPE_NAME, SIZE, MR_PASTE2 (P00_REMOVE_, ATTR_COM_EXT), __VA_ARGS__)
-#define P00_TYPEDEF_ATTR_FUNC(P00_MODE, P00_TYPE, ATTR_COM_EXT, P00_TYPE_NAME, RET_TYPE, ARGS, ...) MR_PASTE2 (MR_TYPEDEF_FUNC_, P00_MODE) (P00_TYPE_NAME, RET_TYPE, ARGS, MR_PASTE2 (P00_REMOVE_, ATTR_COM_EXT), __VA_ARGS__)
+#define P00_TYPEDEF_ATTR_FUNC(P00_MODE, P00_TYPE, ATTR_COM_EXT, RET_TYPE, P00_TYPE_NAME, ARGS, ...) MR_PASTE2 (MR_TYPEDEF_FUNC_, P00_MODE) (RET_TYPE, P00_TYPE_NAME, ARGS, MR_PASTE2 (P00_REMOVE_, ATTR_COM_EXT), __VA_ARGS__)
 
 #define P00_UNFOLD(PREFIX, P00_TYPE, P00_MODE, ...) MR_PASTE4 (PREFIX, P00_TYPE, _, P00_MODE) (__VA_ARGS__)
 
@@ -544,8 +544,8 @@
 
 #define MR_TYPEDEF_CHAR_ARRAY_PROTO(MR_TYPE_NAME, SIZE, /* ATTR */...) MR_TYPEDEF_CHAR_ARRAY_PROTO_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
 #define MR_TYPEDEF_CHAR_ARRAY_PROTO_(MR_TYPE_NAME, SIZE, ATTR, /* COMMENT */ ...) typedef ATTR char MR_TYPE_NAME[SIZE];
-#define MR_TYPEDEF_FUNC_PROTO(MR_TYPE_NAME, RET_TYPE, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_PROTO_ (MR_TYPE_NAME, RET_TYPE, ARGS, __VA_ARGS__)
-#define MR_TYPEDEF_FUNC_PROTO_(MR_TYPE_NAME, RET_TYPE, ARGS, ATTR, /* COMMENT */ ...) typedef ATTR RET_TYPE (*MR_TYPE_NAME) ARGS;
+#define MR_TYPEDEF_FUNC_PROTO(RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_PROTO_ (RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
+#define MR_TYPEDEF_FUNC_PROTO_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* COMMENT */ ...) typedef ATTR RET_TYPE (*MR_TYPE_NAME) ARGS;
 
 /* Macroses for descriptors generation mode */
 
@@ -698,8 +698,8 @@
 
 #define MR_TYPEDEF_CHAR_ARRAY_DESC(MR_TYPE_NAME, SIZE, /* ATTR */ ...) MR_TYPEDEF_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
 #define MR_TYPEDEF_CHAR_ARRAY_DESC_(MR_TYPE_NAME, SIZE, ATTR, /* COMMENTS */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY, ATTR) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
-#define MR_TYPEDEF_FUNC_DESC(MR_TYPE_NAME, RET_TYPE, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (MR_TYPE_NAME, RET_TYPE, ARGS, __VA_ARGS__)
-#define MR_TYPEDEF_FUNC_DESC_(MR_TYPE_NAME, RET_TYPE, ARGS, ATTR, /* COMMENTS */ ...) \
+#define MR_TYPEDEF_FUNC_DESC(RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
+#define MR_TYPEDEF_FUNC_DESC_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* COMMENTS */ ...) \
   MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_FUNC_TYPE, ATTR)		\
   MR_FUNC_ARG_PTR (RET_TYPE, "return value")				\
   MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))			\
@@ -1240,7 +1240,10 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   TODO
   1. test case and resolution for anonymous union embeded into another anonymous union
   2. pointers serialization with mr_conf timestamp
-  3. opaque data attribute for bitfields mask rarray
-  4. fix MR_TYPEDEF_FUNC args reordering
+ *3. opaque data attribute for bitfields mask rarray
+ *4. fix MR_TYPEDEF_FUNC args reordering
+  5. introduce a visitor for mr_ra_mr_ptrdes_t
+  6. cleanup metaresc.h
+  7. implement indexed collection with hash-tree 
  */
 #endif /* _METARESC_H_ */
