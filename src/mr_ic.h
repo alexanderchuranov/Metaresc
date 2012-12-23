@@ -1,0 +1,18 @@
+/* -*- C -*- */
+/* I hate this bloody country. Smash. */
+/* This file is part of Metaresc project */
+#ifndef _MR_IC_H_
+#define _MR_IC_H_
+
+#include <metaresc.h>
+
+extern int mr_ic_foreach (mr_ic_t *, mr_visit_fn_t, const void *);
+extern mr_ptr_t * mr_ic_add (mr_ic_t *, mr_ptr_t, const void *);
+extern int mr_ic_index (mr_ic_t *, const void *);
+extern mr_ptr_t * mr_ic_find (mr_ic_t *, mr_ptr_t, const void *);
+extern void mr_ic_free (mr_ic_t *, const void *);
+
+extern int mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char *key_type);
+extern int mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, void * context);
+
+#endif /* _MR_IC_H_ */
