@@ -5,16 +5,16 @@
 
 /* Search for an entry matching the given KEY in the tree pointed to
    by *ROOTP and insert a new element if not found.  */
-extern void *mr_tsearch (__const mr_ptr_t __key, mr_red_black_tree_node_t **__rootp,
+extern mr_ptr_t * mr_tsearch (__const mr_ptr_t __key, mr_red_black_tree_node_t **__rootp,
 			 mr_compar_fn_t __compar, __const void * __context);
 
 /* Search for an entry matching the given KEY in the tree pointed to
    by *ROOTP.  If no matching entry is available return NULL.  */
-extern void *mr_tfind (__const mr_ptr_t __key, mr_red_black_tree_node_t *__const *__rootp,
+extern mr_ptr_t * mr_tfind (__const mr_ptr_t __key, mr_red_black_tree_node_t *__const *__rootp,
 		       mr_compar_fn_t __compar, __const void * __context);
 
 /* Remove the element matching KEY from the tree pointed to by *ROOTP.  */
-extern void *mr_tdelete (__const mr_ptr_t __key,
+extern mr_ptr_t * mr_tdelete (__const mr_ptr_t __key,
 			 mr_red_black_tree_node_t **__restrict __rootp,
 			 mr_compar_fn_t __compar,
 			 __const void * __context);

@@ -64,7 +64,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_DUPLICATED_FIELDS, , "Duplicated field definition for `%s` in type '%s'."),
 	      (MR_MESSAGE_INT_OF_UNKNOWN_SIZE, , "Failed to stringify integer of unknown size: %" SCNd32 "."),
 	      (MR_MESSAGE_PARSE_ERROR, , "Parser error: '%s'. Position: %" SCNd32 ":%" SCNd32 "-%" SCNd32 ":%" SCNd32 "."),
-	      (MR_MESSAGE_ANON_UNION_TYPE_ERROR, , "Can't create type for anonymous union due to type name collision: '%s'."),
+	      (MR_MESSAGE_ANON_UNION_TYPE_ERROR, , "Can't create type for anonymous union in type: '%s'."),
 	      (MR_MESSAGE_UNKNOWN_XML_ESC, , "Unknown XML escape sequence '%s'."),
 	      (MR_MESSAGE_WRONG_XML_ESC, , "Wrong XML escape sequence '%s'."),
 	      (MR_MESSAGE_TYPES_HASHES_MATCHED, , "For types '%s' and '%s' hashes matched. Last type is not available."),
@@ -178,6 +178,8 @@ TYPEDEF_FUNC (int, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* conte
 
 TYPEDEF_FUNC (void, mr_free_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
+TYPEDEF_FUNC (uint64_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+
 TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
 		(char *, name, , "key field"),
 		(uint64_t, hash_value, , "hash value of 'name'"),
@@ -192,15 +194,15 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      )
 
 TYPEDEF_STRUCT (mr_ic_t,
+		(mr_ptr_t, ext, , "ic_type"),
 		RARRAY (mr_ptr_t, collection, "key_type"),
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
 		(mr_compar_fn_t, compar_fn),
 		(int, index, (mr_ic_t * /* ic */, __const void * /* context */)),
-		(mr_ptr_t, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
-		(mr_ptr_t, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
-		(void, free, (mr_ic_t * /* ic */, mr_free_fn_t /* free_fn */, __const void * /* context */)),
-		(mr_ptr_t, ext, , "ic_type")
+		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
+		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
+		(void, free, (mr_ic_t * /* ic */, __const void * /* context */)),
 		)
 
 TYPEDEF_STRUCT (mr_ic_nc_hash_t,
@@ -216,6 +218,7 @@ TYPEDEF_STRUCT (mr_rb_tree_t,
 		)		
 
 TYPEDEF_STRUCT (mr_ic_hash_t,
+		(mr_hash_fn_t, hash_fn),
 		RARRAY (mr_rb_tree_t, index),
 		)		
 

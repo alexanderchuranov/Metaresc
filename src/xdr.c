@@ -12,7 +12,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <metaresc.h>
-
+#include <mr_ic.h>
 #include <mr_load.h>
 
 /**

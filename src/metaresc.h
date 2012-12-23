@@ -1196,54 +1196,17 @@ extern char * xml_quote_string (char*);
 extern char * xml_unquote_string (char*, int);
 extern void mr_init_save_xml (void);
 
-
 extern uint64_t mr_hash_str (char*);
 extern int mr_hashed_name_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
-
-/**
- * Type descriptors collection iterator.
- * @param ic indexed collection
- * @param visit_fn function for type descriptors processing
- * @param context auxiliary arguments
- * @return flag that cycle was not completed
- */
-static inline int
-mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
-{
-  int count, i;
-  if (NULL == ic)
-    return (!0);
-  
-  count = ic->collection.size / sizeof (ic->collection.data[0]);
-  for (i = 0; i < count; ++i)
-    if (visit_fn (ic->collection.data[i], context))
-      return (!0);
-  return (0);
-}
-extern mr_ptr_t mr_ic_none_find (mr_ic_t *, mr_ptr_t, const void *);
-
-static inline int
-mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
-{
-  if ((NULL == ic) || (NULL == compar_fn))
-    return (!0);
-  ic->key_type = key_type;
-  ic->compar_fn = compar_fn;
-  ic->index = NULL;
-  ic->add = NULL;
-  ic->find = mr_ic_none_find;
-  ic->free = NULL;
-  ic->ext.ptr = NULL;
-  return (0);
-}
 /*
   TODO
-  1. test case and resolution for anonymous union embeded into another anonymous union
+ *1. test case and resolution for anonymous union embeded into another anonymous union
   2. pointers serialization with mr_conf timestamp
  *3. opaque data attribute for bitfields mask rarray
  *4. fix MR_TYPEDEF_FUNC args reordering
   5. introduce a visitor for mr_ra_mr_ptrdes_t
-  6. cleanup metaresc.h
-  7. implement indexed collection with hash-tree 
+  6. implement indexed collection with hash-tree
+  7. check how bit-fields in union works
+  8. cleanup metaresc.h
  */
 #endif /* _METARESC_H_ */

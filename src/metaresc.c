@@ -18,6 +18,7 @@
 
 #include <mr_tsearch.h>
 #include <metaresc.h>
+#include <mr_ic.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
@@ -114,91 +115,36 @@ static void
 dummy_free_func (mr_ptr_t key, const void * context) {}
   
 static int
-free_lookup_tree (mr_ptr_t key, const void * context)
+mr_td_free (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_tdestroy (tdp->lookup_by_value.root, dummy_free_func, NULL);
+  mr_ic_free (&tdp->fields, NULL);
   return (0);
-}
-
-mr_ptr_t
-mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
-{
-  int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
-  for (i = 0; i < count; ++i)
-    if (0 == ic->compar_fn (key, ic->collection.data[i], context))
-      return (ic->collection.data[i]);
-  return ((mr_ptr_t){ NULL });
-}
-
-static inline mr_ptr_t
-mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
-{
-  mr_ptr_t * new_element;
-  if (NULL == ic)
-    return ((mr_ptr_t){ NULL });
-  
-  new_element = mr_rarray_append ((mr_rarray_t*)&ic->collection, sizeof (ic->collection.data[0]));
-  if (NULL == new_element)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return ((mr_ptr_t){ NULL });
-    }
-  *new_element = key;
-  
-  if (ic->add)
-    return (ic->add (ic, key, context));
-  return (key);
-}
-
-static inline int
-mr_ic_index (mr_ic_t * ic, const void * context)
-{
-  if (NULL == ic)
-    return (!0);
-  if (ic->index)
-    return (ic->index (ic, context));
-  return (0);
-}
-
-static inline mr_ptr_t
-mr_ic_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
-{
-  if (NULL == ic)
-    return ((mr_ptr_t){ NULL });
-  if (ic->find)
-    return (ic->find (ic, key, context));
-  return (mr_ic_none_find (ic, key, context));
-}
-
-static inline void
-mr_ic_free (mr_ic_t * ic, mr_free_fn_t free_fn, const void * context)
-{
-  if (NULL == ic)
-    return;
-  if (ic->free)
-    ic->free (ic, free_fn, context);
 }
 
 static void __attribute__((destructor))
 mr_cleanup (void)
 {
+  mr_conf.des.find = NULL;
   mr_td_t * mr_ptr_t_td = mr_get_td_by_name ("mr_ptr_t");
   if (mr_ptr_t_td->fields.collection.alloc_size > 0)
     {
       MR_FREE (mr_ptr_t_td->fields.collection.data);
       mr_ptr_t_td->fields.collection.data = NULL;
+      mr_ptr_t_td->fields.collection.size = 0;
     }
   
   mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func, NULL);
   mr_conf.enum_by_name.root = NULL;
 
-  mr_ic_foreach (&mr_conf.des, free_lookup_tree, NULL);
-  mr_ic_free (&mr_conf.des, dummy_free_func, NULL);
+  mr_ic_foreach (&mr_conf.des, mr_td_free, NULL);
+  mr_ic_free (&mr_conf.des, NULL);
   if (mr_conf.des.collection.data)
     {
       MR_FREE (mr_conf.des.collection.data);
       mr_conf.des.collection.data = NULL;
+      mr_conf.des.collection.size = 0;
     }
 }
 
@@ -893,11 +839,12 @@ mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 #endif /* MR_TREE_LOOKUP */
 
 static inline uint64_t
-mr_hashed_name_get_hash (mr_hashed_name_t * x)
+mr_hashed_name_get_hash (mr_ptr_t x, const void * context)
 {
-  if (0 == x->hash_value)
-    x->hash_value = mr_hash_str (x->name);
-  return (x->hash_value);
+  mr_hashed_name_t * _x = x.ptr;
+  if (0 == _x->hash_value)
+    _x->hash_value = mr_hash_str (_x->name);
+  return (_x->hash_value);
 }
 
 /**
@@ -911,8 +858,8 @@ mr_hashed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_hashed_name_t * x_ = x.ptr;
   const mr_hashed_name_t * y_ = y.ptr;
-  uint64_t x_hash_value = mr_hashed_name_get_hash ((mr_hashed_name_t*)x_);
-  uint64_t y_hash_value = mr_hashed_name_get_hash ((mr_hashed_name_t*)y_);
+  uint64_t x_hash_value = mr_hashed_name_get_hash ((mr_ptr_t)x, context);
+  uint64_t y_hash_value = mr_hashed_name_get_hash ((mr_ptr_t)y, context);
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
@@ -928,7 +875,8 @@ mr_td_t *
 mr_get_td_by_name (char * type)
 {
   mr_hashed_name_t hashed_name = { .name = type, .hash_value = mr_hash_str (type), };
-  return (mr_ic_find (&mr_conf.des, &hashed_name, NULL).ptr);
+  mr_ptr_t * result = mr_ic_find (&mr_conf.des, &hashed_name, NULL);
+  return (result ? result->ptr : NULL);
 }
 
 /**
@@ -951,12 +899,17 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  mr_td_t * tdp_ = fdp->ext.ptr; /* statically allocated memory for new type descriptor */
 	  mr_fd_t ** first = (void*)&tdp->fields.collection.data[i + 1];
 	  mr_fd_t * last;
+	  int opened = 1;
 	
 	  for (j = i + 1; j < count; ++j)
 	    {
 	      mr_fd_t * fdp_ = tdp->fields.collection.data[j].ptr;
+	      if ((MR_TYPE_ANON_UNION == fdp_->mr_type) ||
+		  (MR_TYPE_NAMED_ANON_UNION == fdp_->mr_type))
+		++opened;
 	      if (MR_TYPE_END_ANON_UNION == fdp_->mr_type)
-		break;
+		if (0 == --opened)
+		  break;
 	    }
 	  if (j >= count)
 	    return (EXIT_FAILURE);
@@ -1010,7 +963,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
 	    if (EXIT_SUCCESS != mr_add_type (tdp_, NULL, NULL))
 	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp_->hashed_name.name);
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->hashed_name.name);
 		return (EXIT_FAILURE);
 	      }
 	  }
@@ -1090,7 +1043,7 @@ mr_add_enum (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      mr_fd_t ** fdpp = mr_tsearch (tdp->fields.collection.data[i], &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
+      mr_fd_t ** fdpp = (mr_fd_t**)mr_tsearch (tdp->fields.collection.data[i], &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1102,7 +1055,7 @@ mr_add_enum (mr_td_t * tdp)
 	  return (EXIT_FAILURE);
 	}
       /* adding to local lookup table by enum values */
-      fdpp = mr_tsearch (tdp->fields.collection.data[i], &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
+      fdpp = (mr_fd_t**)mr_tsearch (tdp->fields.collection.data[i], &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
       if (NULL == fdpp)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1123,7 +1076,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_fd_t ** fdpp = mr_tfind (&fd, &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
+  mr_fd_t ** fdpp = (mr_fd_t**)mr_tfind (&fd, &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
   if (fdpp)
     return (*fdpp);
   return (NULL);
@@ -1139,7 +1092,7 @@ int
 mr_get_enum_by_name (uint64_t * value, char * name)
 {
   mr_fd_t fd = { .hashed_name = { .name = name } };
-  mr_fd_t ** fdpp = mr_tfind (&fd, &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
+  mr_fd_t ** fdpp = (mr_fd_t**)mr_tfind (&fd, &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
   if (fdpp)
     *value = (*fdpp)->param.enum_value;
   return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -1489,7 +1442,8 @@ mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
   mr_hashed_name_t hashed_name = { .name = name, .hash_value = mr_hash_str (name), };
-  return (mr_ic_find (&tdp->fields, &hashed_name, NULL).ptr);
+  mr_ptr_t * result = mr_ic_find (&tdp->fields, &hashed_name, NULL);
+  return (result ? result->ptr : NULL);
 }
 
 /**
@@ -1512,7 +1466,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp = tdp->fields.collection.data[tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0])].ptr;
   if (NULL == fdp)
     {
-      fprintf (stderr,  "failed for type '%s'\n", tdp->hashed_name.name);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (EXIT_FAILURE);
     }
   
@@ -1522,7 +1476,10 @@ mr_register_type_pointer (mr_td_t * tdp)
       int alloc_size = sizeof (union_tdp->fields.collection.data[0]) + union_tdp->fields.collection.size; /* allocate one additional slot */
       void * fields_data = MR_MALLOC (alloc_size);
       if (NULL == fields_data)
-	return (EXIT_FAILURE);
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (EXIT_FAILURE);
+	}
       memcpy (fields_data, union_tdp->fields.collection.data, union_tdp->fields.collection.size);
       union_tdp->fields.collection.data = fields_data;
       union_tdp->fields.collection.alloc_size = alloc_size;
@@ -1535,7 +1492,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->mr_type = tdp->mr_type;
   fdp->mr_type_aux = MR_TYPE_VOID;
   fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
-  return ((NULL == mr_ic_add (&union_tdp->fields, fdp, NULL).ptr) ? EXIT_FAILURE : EXIT_SUCCESS);
+  return ((NULL == mr_ic_add (&union_tdp->fields, fdp, NULL)) ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 
 static int
@@ -1571,6 +1528,11 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   for (count = 0; ; ++count)
     {
       mr_fd_t * fdp = tdp->fields.collection.data[count].ptr;
+      if (NULL == fdp)
+	{
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	  return (EXIT_FAILURE);
+	}
       if (MR_TYPE_TRAILING_RECORD == fdp->mr_type)
 	break;
     }
@@ -1591,17 +1553,19 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   mr_ic_none_new (&tdp->fields, mr_hashed_name_cmp, "mr_fd_t");
 
   if (NULL == mr_conf.des.find)
-    mr_ic_none_new (&mr_conf.des, mr_hashed_name_cmp, "mr_td_t");
+    mr_ic_hash_new (&mr_conf.des, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
+  //mr_ic_none_new (&mr_conf.des, mr_hashed_name_cmp, "mr_td_t");
   
-  /* NB! not thread safe - only calls from __constructor__ assumed */
-  if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL).ptr)
-    return (EXIT_FAILURE);
-
   tdp->lookup_by_value.root = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 
   mr_ic_foreach (&mr_conf.des, mr_detect_fields_types, tdp);
+
+  /* NB! not thread safe - only calls from __constructor__ assumed */
+  if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL))
+    return (EXIT_FAILURE);
+
   mr_register_type_pointer (tdp);
   /* mr_ptr_t with -O0 is not the first registered type, so we need to register all pointer types on each type registration */
   mr_ic_foreach (&mr_conf.des, mr_register_type_pointer_wrapper, tdp);

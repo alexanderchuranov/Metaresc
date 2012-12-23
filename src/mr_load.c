@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include <metaresc.h>
-
+#include <mr_ic.h>
 #include <mr_load.h>
 
 #ifdef HAVE_CONFIG_H

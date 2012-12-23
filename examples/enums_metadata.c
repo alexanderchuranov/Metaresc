@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include <metaresc.h>
+#include <mr_ic.h>
 
 TYPEDEF_ENUM (color_t,
               (BLACK, = 17),

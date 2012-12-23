@@ -2,7 +2,6 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-#include <metaresc.h>
 #include <math.h>
 #ifdef HAVE_CONFIG_H
 # include <mr_config.h>
@@ -13,6 +12,9 @@
 #ifdef HAVE_MACHINE_ENDIAN_H
 #include <machine/endian.h>
 #endif /* HAVE_MACHINE_ENDIAN_H */
+
+#include <metaresc.h>
+#include <mr_ic.h>
 
 #define MR_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   static char * mr_output_format_ ## TYPE (mr_ptrdes_t * ptrdes) {	\

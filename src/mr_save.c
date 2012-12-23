@@ -14,6 +14,7 @@
 #endif /* HAVE_MACHINE_ENDIAN_H */
 
 #include <metaresc.h>
+#include <mr_ic.h>
 
 /**
  * Dummy stub for tree delete function
@@ -489,7 +490,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	void * discriminator;
 
 	/* checks if this parent already have union resolution info */
-	ud_find = mr_tfind (ud_idx, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	ud_find = (long*)mr_tfind (ud_idx, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	/* break the traverse loop if it has */
 	if (ud_find)
 	  break;
@@ -531,7 +532,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
       {
-	long * ud_search = mr_tsearch (*(void**)ud_find, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	long * ud_search = (long*)mr_tsearch (*(void**)ud_find, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	if (NULL == ud_search)
 	  {
 	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);

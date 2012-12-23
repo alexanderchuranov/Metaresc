@@ -246,7 +246,7 @@ maybe_split_for_insert (node *rootp, node *parentp, node *gparentp,
 /* Find or insert datum into search tree.
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
-void *
+mr_ptr_t * /* Metaresc modified */
 mr_tsearch (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_t compar, const void * context) /* Metaresc modified */
 {
   node q;
@@ -270,7 +270,7 @@ mr_tsearch (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_
       node root = *rootp;
       r = compar (key, root->key, context); /* Metaresc modified */
       if (r == 0)
-        return root;
+        return (mr_ptr_t*)root; /* Metaresc modified */
 
       maybe_split_for_insert (rootp, parentp, gparentp, p_r, gp_r, 0);
       /* If that did any rotations, parentp and gparentp are now garbage.
@@ -303,7 +303,7 @@ mr_tsearch (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_
         maybe_split_for_insert (nextp, rootp, parentp, r, p_r, 1);
     }
 
-  return q;
+  return (mr_ptr_t*)q; /* Metaresc modified */
 }
 #ifdef weak_alias
 weak_alias (__tsearch, tsearch)
@@ -313,7 +313,7 @@ weak_alias (__tsearch, tsearch)
 /* Find datum in search tree.
    KEY is the key to be located, ROOTP is the address of tree root,
    COMPAR the ordering function.  */
-void *
+mr_ptr_t * /* Metaresc modified */
 mr_tfind (const mr_ptr_t key, mr_red_black_tree_node_t *const *vrootp, mr_compar_fn_t compar, const void * context) /* Metaresc modified */
 {
   node *rootp = (node *) vrootp;
@@ -330,7 +330,7 @@ mr_tfind (const mr_ptr_t key, mr_red_black_tree_node_t *const *vrootp, mr_compar
 
       r = compar (key, root->key, context); /* Metaresc modified */
       if (r == 0)
-        return root;
+        return (mr_ptr_t*)root; /* Metaresc modified */
 
       rootp = r < 0 ? &root->left : &root->right;
     }
@@ -344,7 +344,7 @@ weak_alias (__tfind, tfind)
 /* Delete node with given key.
    KEY is the key to be deleted, ROOTP is the address of the root of tree,
    COMPAR the comparison function.  */
-void *
+mr_ptr_t * /* Metaresc modified */
 mr_tdelete (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_t compar, const void * context) /* Metaresc modified */
 {
   node p, q, r, retval;
@@ -586,7 +586,7 @@ mr_tdelete (const mr_ptr_t key, mr_red_black_tree_node_t **vrootp, mr_compar_fn_
     }
 
   free (unchained);
-  return retval;
+  return (mr_ptr_t*)retval; /* Metaresc modified */
 }
 #ifdef weak_alias
 weak_alias (__tdelete, tdelete)
