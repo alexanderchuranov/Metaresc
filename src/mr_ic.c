@@ -2,7 +2,7 @@
 #include <mr_tsearch.h>
 #include <mr_ic.h>
 
-static mr_ptr_t *
+mr_ptr_t *
 mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
@@ -28,7 +28,7 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   return (0);
 }
 
-#define MR_HASH_TABLE_SIZE_MULT (1)
+#define MR_HASH_TABLE_SIZE_MULT (2)
 
 static void
 dummy_free_fn (mr_ptr_t key, const void * context)
@@ -48,7 +48,7 @@ mr_ic_hash_free_inner (mr_ic_hash_t * index, const void * context)
     }
 }
 
-static void
+void
 mr_ic_hash_free (mr_ic_t * ic, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
@@ -70,7 +70,7 @@ mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key, const void * context)
   return (mr_tsearch (key, &index->index.data[hash_value % count].root, ic->compar_fn, context));
 }
 
-static int
+int
 mr_ic_hash_index (mr_ic_t * ic, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
@@ -100,7 +100,7 @@ mr_ic_hash_index (mr_ic_t * ic, const void * context)
   return (0);
 }
 
-static mr_ptr_t *
+mr_ptr_t *
 mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
@@ -113,7 +113,7 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   return (mr_ic_hash_add_inner (ic, key, context));
 }
 
-static mr_ptr_t *
+mr_ptr_t *
 mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;

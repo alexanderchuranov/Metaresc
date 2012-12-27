@@ -16,6 +16,9 @@
 #include <metaresc.h>
 #include <mr_ic.h>
 
+static mr_save_handler_t mr_save_handler[];
+static mr_save_handler_t ext_mr_save_handler[];
+
 /**
  * Dummy stub for tree delete function
  * @param nodep pointer on a tree node
@@ -230,12 +233,10 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_add_child (mr_save_data->parent, idx, &mr_save_data->ptrs);
 
   /* route saving handler */
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES)
-      && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.rl)
-    mr_conf.io_ext_handlers[fdp->mr_type_ext].save.rl (mr_save_data);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES)
-	   && mr_conf.io_handlers[fdp->mr_type].save.rl)
-    mr_conf.io_handlers[fdp->mr_type].save.rl (mr_save_data);
+  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_mr_save_handler[fdp->mr_type_ext])
+    ext_mr_save_handler[fdp->mr_type_ext] (mr_save_data);
+  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST) && mr_save_handler[fdp->mr_type])
+    mr_save_handler[fdp->mr_type] (mr_save_data);
 }
 
 /**
@@ -271,10 +272,9 @@ mr_save_string (mr_save_data_t * mr_save_data)
     }
 }
 
-typedef struct {
-  int idx;
-  mr_save_data_t * mr_save_data;
-} mr_save_struct_t;
+TYPEDEF_STRUCT (mr_save_struct_t,
+		int idx,
+		(mr_save_data_t *, mr_save_data))
 
 static int
 mr_save_field (mr_ptr_t key, const void * context)
@@ -460,8 +460,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   mr_fd_t * fdp = NULL; /* marker that no valid discriminator was found */
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1; /* index of the last element - it is union itself */
   int parent;
-  long ud_idx;
-  long * ud_find = NULL;
+  mr_ptr_t ud_idx;
+  mr_ptr_t * ud_find = NULL;
   mr_union_discriminator_t * ud;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type); /* look up for type descriptor */
 
@@ -477,7 +477,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   memset (ud, 0, sizeof (*ud));
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud.size -= sizeof (mr_save_data->mr_ra_ud.data[0]);
-  ud_idx = mr_save_data->mr_ra_ud.size / sizeof (mr_save_data->mr_ra_ud.data[0]); /* index of lookup record */
+  ud_idx.long_int_t = mr_save_data->mr_ra_ud.size / sizeof (mr_save_data->mr_ra_ud.data[0]); /* index of lookup record */
   ud->type = mr_save_data->ptrs.ra.data[idx].fd.type; /* union type */
   ud->discriminator = mr_save_data->ptrs.ra.data[idx].fd.comment; /* union discriminator */
 
@@ -490,7 +490,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	void * discriminator;
 
 	/* checks if this parent already have union resolution info */
-	ud_find = (long*)mr_tfind (ud_idx, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	ud_find = mr_tfind (ud_idx, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	/* break the traverse loop if it has */
 	if (ud_find)
 	  break;
@@ -519,7 +519,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
       }
 
   if (ud_find)
-    fdp = mr_save_data->mr_ra_ud.data[*ud_find].fdp; /* union discriminator info was found in some of the parents */
+    fdp = mr_save_data->mr_ra_ud.data[ud_find->long_int_t].fdp; /* union discriminator info was found in some of the parents */
   else
     {
       /* union discriminator info was not found in parents so we add new record */
@@ -532,7 +532,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
       {
-	long * ud_search = (long*)mr_tsearch (*(void**)ud_find, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	mr_ptr_t * ud_search = mr_tsearch (ud_find->ptr, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
 	if (NULL == ud_search)
 	  {
 	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -831,16 +831,18 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 /**
  * Init IO handlers Table
  */
-static void __attribute__((constructor)) mr_init_save_rl (void)
-{
-  mr_conf.io_handlers[MR_TYPE_STRING].save.rl = mr_save_string;
-  
-  mr_conf.io_handlers[MR_TYPE_STRUCT].save.rl = mr_save_struct;
-  mr_conf.io_handlers[MR_TYPE_UNION].save.rl = mr_save_union;
-  mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.rl = mr_save_union;
-  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.rl = mr_save_union;
+static mr_save_handler_t mr_save_handler[] =
+  {
+    [MR_TYPE_STRING] = mr_save_string,
+    [MR_TYPE_STRUCT] = mr_save_struct,
+    [MR_TYPE_UNION] = mr_save_union,
+    [MR_TYPE_ANON_UNION] = mr_save_union,
+    [MR_TYPE_NAMED_ANON_UNION] = mr_save_union,
+  };
 
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.rl = mr_save_array;
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY].save.rl = mr_save_rarray;
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_POINTER].save.rl = mr_save_pointer;
-}
+static mr_save_handler_t ext_mr_save_handler[] =
+  {
+    [MR_TYPE_EXT_ARRAY] = mr_save_array,
+    [MR_TYPE_EXT_RARRAY] = mr_save_rarray,
+    [MR_TYPE_EXT_POINTER] = mr_save_pointer,
+  };

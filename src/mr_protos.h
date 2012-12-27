@@ -305,6 +305,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(char *, union_field_name, , "field descriptor for unions"),
 		(mr_red_black_tree_node_t *, union_discriminator, , "RB-tree for unions discriminator resolution"),
 		(char *, value, , "stringified value"),
+		(typeof (NULL - NULL), offset),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
 		)
@@ -359,26 +360,19 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		RARRAY (mr_union_discriminator_t, mr_ra_ud, "allocation of union discriminators"),
 		)
 
-TYPEDEF_STRUCT (mr_load_io_t, ATTRIBUTES ( , "load handlers"),
-		(int, rl, (int, mr_load_data_t *), "handler for internal format parsing"),
-		(int, xdr, (XDR *, int, mr_ra_mr_ptrdes_t *), "handler for XDR parsing"),
-		)
+TYPEDEF_FUNC (int, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
 
-TYPEDEF_STRUCT (mr_save_io_t, ATTRIBUTES ( , "save handlers"),
-		(void, rl, (mr_save_data_t *), "handler for internal format"),
-		(int, xdr, (XDR *, int, mr_ra_mr_ptrdes_t *), "handler for XDR"),
-		(char *, xml, (int, mr_ra_mr_ptrdes_t *), "handler for XML"),
-		(char *, xml1, (int, mr_ra_mr_ptrdes_t *), "handler for internaml XML implementation"),
-		(char *, xml2, (int, mr_ra_mr_ptrdes_t *), "handler for XML implementation based on libxml2"),
-		(int, cinit, (int, mr_ra_mr_ptrdes_t *, mr_save_type_data_t *), "handler for CINIT"),
-		(int, json, (int, mr_ra_mr_ptrdes_t *, mr_save_type_data_t *), "handler for JSON"),
-		(char *, scm, (int, mr_ra_mr_ptrdes_t *), "handler for SCHEME"),
-		)
+TYPEDEF_FUNC (int, cinit_json_save_handler_t, (int, mr_ra_mr_ptrdes_t *, mr_save_type_data_t *))
 
-TYPEDEF_STRUCT (mr_io_handler_t, ATTRIBUTES ( , "input/ouput handlers"),
-		(mr_load_io_t, load, , "load handlers"),
-		(mr_save_io_t, save, , "save handlers"),
-		)
+TYPEDEF_FUNC (int, xdr_load_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
+
+TYPEDEF_FUNC (int, xdr_save_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
+
+TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
+
+TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
+
+TYPEDEF_FUNC (char *, scm_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
 
 TYPEDEF_FUNC (char *, mr_output_format_t, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
 
@@ -388,8 +382,6 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(void, msg_handler, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), "handler for error messages"),
 		(mr_ic_t, des, , "indexed types descriptors"),
 		(mr_typed_tree_t, enum_by_name, , "RB-tree with enums mapping"),
-		NONE (mr_output_format_t, output_format, [MR_MAX_TYPES], "formaters"),
-		NONE (mr_io_handler_t, io_handlers, [MR_MAX_TYPES], "io handlers"),
-		NONE (mr_io_handler_t, io_ext_handlers, [MR_MAX_TYPES], "io handlers"),
+		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)
 

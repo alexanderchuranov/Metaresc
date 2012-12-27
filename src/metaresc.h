@@ -29,7 +29,6 @@
 #include <rpc/xdr.h>
 
 /* Library exports */
-#define MR_MAX_TYPES (256)
 #define MR_MAX_STRING_LENGTH ((unsigned int)-1)
 
 #define MR_TYPE_ANONYMOUS_UNION_TEMPLATE "mr_type_anonymous_union_%d_t"
@@ -47,6 +46,7 @@
 
 /* each refereed structure will have REF_IDX property */
 #define MR_REF_IDX "ref_idx"
+#define MR_OFFSET_PROP "offset"
 /* references on already saved structures will be replaced with nodes that have only REF index property */
 #define MR_REF "ref"
 #define MR_REF_CONTENT "ref_content"
@@ -1177,20 +1177,21 @@ extern void mr_message_unsupported_node_type (mr_fd_t*);
 extern void * mr_rarray_append (mr_rarray_t*, int);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t*, const char*, ...);
 
-extern char * mr_stringify_int8 (mr_ptrdes_t*);
-extern char * mr_stringify_uint8 (mr_ptrdes_t*);
-extern char * mr_stringify_int16 (mr_ptrdes_t*);
-extern char * mr_stringify_uint16 (mr_ptrdes_t*);
-extern char * mr_stringify_int32 (mr_ptrdes_t*);
-extern char * mr_stringify_uint32 (mr_ptrdes_t*);
-extern char * mr_stringify_int64 (mr_ptrdes_t*);
-extern char * mr_stringify_uint64 (mr_ptrdes_t*);
-extern char * mr_stringify_enum (mr_ptrdes_t*);
-extern char * mr_stringify_bitfield (mr_ptrdes_t*);
-extern char * mr_stringify_bitmask (mr_ptrdes_t*, char*);
+extern char * mr_stringify_int8_t (mr_ptrdes_t*);
+extern char * mr_stringify_uint8_t (mr_ptrdes_t*);
+extern char * mr_stringify_int16_t (mr_ptrdes_t*);
+extern char * mr_stringify_uint16_t (mr_ptrdes_t*);
+extern char * mr_stringify_int32_t (mr_ptrdes_t*);
+extern char * mr_stringify_uint32_t (mr_ptrdes_t*);
+extern char * mr_stringify_int64_t (mr_ptrdes_t*);
+extern char * mr_stringify_uint64_t (mr_ptrdes_t*);
 extern char * mr_stringify_float (mr_ptrdes_t*);
 extern char * mr_stringify_double (mr_ptrdes_t*);
 extern char * mr_stringify_long_double_t (mr_ptrdes_t*);
+extern char * mr_stringify_enum (mr_ptrdes_t*);
+extern char * mr_stringify_bitfield (mr_ptrdes_t*);
+extern char * mr_stringify_bitmask (mr_ptrdes_t*, char*);
+extern char * mr_stringify_func (mr_ptrdes_t*);
 
 extern char * xml_quote_string (char*);
 extern char * xml_unquote_string (char*, int);

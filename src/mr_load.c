@@ -205,7 +205,7 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
-static int
+int
 mr_load_enum (int idx, mr_load_data_t * mr_load_data)
 {
   char * str = mr_load_data->ptrs.ra.data[idx].value;
@@ -243,7 +243,7 @@ mr_load_enum (int idx, mr_load_data_t * mr_load_data)
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
-static int
+int
 mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
@@ -775,6 +775,47 @@ mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
   return (EXIT_SUCCESS);
 }
 
+
+/**
+ * Init IO handlers Table
+ */
+static mr_load_handler_t mr_load_handler[] =
+  {
+    [MR_TYPE_NONE] = mr_load_none,
+    [MR_TYPE_VOID] = mr_load_none,
+    [MR_TYPE_ENUM] = mr_load_enum,
+    [MR_TYPE_BITFIELD] = mr_load_bitfield,
+    [MR_TYPE_BITMASK] = mr_load_bitmask,
+    [MR_TYPE_INT8] = mr_load_integer,
+    [MR_TYPE_UINT8] = mr_load_integer,
+    [MR_TYPE_INT16] = mr_load_integer,
+    [MR_TYPE_UINT16] = mr_load_integer,
+    [MR_TYPE_INT32] = mr_load_integer,
+    [MR_TYPE_UINT32] = mr_load_integer,
+    [MR_TYPE_INT64] = mr_load_integer,
+    [MR_TYPE_UINT64] = mr_load_integer,
+    [MR_TYPE_FLOAT] = mr_load_float,
+    [MR_TYPE_DOUBLE] = mr_load_double,
+    [MR_TYPE_LONG_DOUBLE] = mr_load_long_double_t,
+    [MR_TYPE_CHAR] = mr_load_char,
+    [MR_TYPE_CHAR_ARRAY] = mr_load_char_array,
+    [MR_TYPE_STRING] = mr_load_string,
+    [MR_TYPE_STRUCT] = mr_load_struct,
+    [MR_TYPE_FUNC] = mr_load_none,
+    [MR_TYPE_FUNC_TYPE] = mr_load_none,
+    [MR_TYPE_UNION] = mr_load_struct,
+    [MR_TYPE_ANON_UNION] = mr_load_struct,
+    [MR_TYPE_NAMED_ANON_UNION] = mr_load_anon_union,
+  };
+
+static mr_load_handler_t mr_ext_load_handler[] =
+  {
+    [MR_TYPE_EXT_ARRAY] = mr_load_array,
+    [MR_TYPE_EXT_RARRAY] = mr_load_rarray,
+    [MR_TYPE_EXT_RARRAY_DATA] = mr_load_rarray_data,
+    [MR_TYPE_EXT_POINTER] = mr_load_pointer,
+  };
+
 /**
  * Public function. Load router. Load any object from internal representation graph.
  * @param data pointer on place to save data
@@ -827,12 +868,12 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra.data[idx].fd.param = fdp->param;
   
   /* route loading */
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES)
-      && mr_conf.io_ext_handlers[fdp->mr_type_ext].load.rl)
-    status = mr_conf.io_ext_handlers[fdp->mr_type_ext].load.rl (idx, mr_load_data);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES)
-	   && mr_conf.io_handlers[fdp->mr_type].load.rl)
-    status = mr_conf.io_handlers[fdp->mr_type].load.rl (idx, mr_load_data);
+  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
+      && mr_ext_load_handler[fdp->mr_type_ext])
+    status = mr_ext_load_handler[fdp->mr_type_ext] (idx, mr_load_data);
+  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
+	   && mr_load_handler[fdp->mr_type])
+    status = mr_load_handler[fdp->mr_type] (idx, mr_load_data);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
 
@@ -857,40 +898,3 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   
   return (status);
 }     
-
-/**
- * Init IO handlers Table
- */
-static void __attribute__((constructor)) mr_init_load_rl (void)
-{
-  mr_conf.io_handlers[MR_TYPE_NONE].load.rl = mr_load_none;
-  mr_conf.io_handlers[MR_TYPE_VOID].load.rl = mr_load_none;
-  mr_conf.io_handlers[MR_TYPE_ENUM].load.rl = mr_load_enum;
-  mr_conf.io_handlers[MR_TYPE_BITFIELD].load.rl = mr_load_bitfield;
-  mr_conf.io_handlers[MR_TYPE_BITMASK].load.rl = mr_load_bitmask;
-  mr_conf.io_handlers[MR_TYPE_INT8].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_UINT8].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_INT16].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_UINT16].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_INT32].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_UINT32].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_INT64].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_UINT64].load.rl = mr_load_integer;
-  mr_conf.io_handlers[MR_TYPE_FLOAT].load.rl = mr_load_float;
-  mr_conf.io_handlers[MR_TYPE_DOUBLE].load.rl = mr_load_double;
-  mr_conf.io_handlers[MR_TYPE_LONG_DOUBLE].load.rl = mr_load_long_double_t;
-  mr_conf.io_handlers[MR_TYPE_CHAR].load.rl = mr_load_char;
-  mr_conf.io_handlers[MR_TYPE_CHAR_ARRAY].load.rl = mr_load_char_array;
-  mr_conf.io_handlers[MR_TYPE_STRING].load.rl = mr_load_string;
-  mr_conf.io_handlers[MR_TYPE_STRUCT].load.rl = mr_load_struct;
-  mr_conf.io_handlers[MR_TYPE_FUNC].load.rl = mr_load_none;
-  mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].load.rl = mr_load_none;
-  mr_conf.io_handlers[MR_TYPE_UNION].load.rl = mr_load_struct;
-  mr_conf.io_handlers[MR_TYPE_ANON_UNION].load.rl = mr_load_struct;
-  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].load.rl = mr_load_anon_union;
-
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].load.rl = mr_load_array;
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY].load.rl = mr_load_rarray;
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].load.rl = mr_load_rarray_data;
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_POINTER].load.rl = mr_load_pointer;
-};

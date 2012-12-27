@@ -23,10 +23,10 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
-static void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
-static void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
-static char * mr_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
-static void mr_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
+void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
+void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
+char * mr_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
+void mr_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
 
 /** Metaresc configuration structure */
 mr_conf_t mr_conf = {
@@ -55,43 +55,7 @@ mr_conf_t mr_conf = {
     .ext = { .ptr = NULL, },
   },
   .enum_by_name = { .root = NULL, .key_type = "mr_fd_t", },
-  .output_format = { [0 ... MR_MAX_TYPES - 1] = NULL, },
-  .io_handlers =
-  { [0 ... MR_MAX_TYPES - 1] =
-    {
-      .load =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-      },
-      .save =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-	.xml = NULL,
-	.cinit = NULL,
-	.scm = NULL,
-      },
-    }
-  },  
-  .io_ext_handlers =
-  { [0 ... MR_MAX_TYPES - 1] =
-    {
-      .load =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-      },
-      .save =
-      {
-	.rl = NULL,
-	.xdr = NULL,
-	.xml = NULL,
-	.cinit = NULL,
-	.scm = NULL,
-      },
-    }
-  },
+  .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
 };
 
 MR_MEM_INIT ( , __attribute__((constructor,weak)));
@@ -126,7 +90,6 @@ mr_td_free (mr_ptr_t key, const void * context)
 static void __attribute__((destructor))
 mr_cleanup (void)
 {
-  mr_conf.des.find = NULL;
   mr_td_t * mr_ptr_t_td = mr_get_td_by_name ("mr_ptr_t");
   if (mr_ptr_t_td->fields.collection.alloc_size > 0)
     {
@@ -838,7 +801,7 @@ mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 #else /* MR_TREE_LOOKUP */
 #endif /* MR_TREE_LOOKUP */
 
-static inline uint64_t
+inline uint64_t
 mr_hashed_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_hashed_name_t * _x = x.ptr;
@@ -1259,7 +1222,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
 {
   static size_t types_sizes[] =
     {
-      [0 ... MR_MAX_TYPES - 1] = 0,
+      [0 ... MR_TYPE_LAST - 1] = 0,
       [MR_TYPE_NONE] = 0,
       [MR_TYPE_VOID] = sizeof (void),
       [MR_TYPE_INT8] = sizeof (int8_t),
@@ -1556,15 +1519,16 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
     mr_ic_hash_new (&mr_conf.des, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
   //mr_ic_none_new (&mr_conf.des, mr_hashed_name_cmp, "mr_td_t");
   
+  
+  /* NB! not thread safe - only calls from __constructor__ assumed */
+  if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL))
+    return (EXIT_FAILURE);
+
   tdp->lookup_by_value.root = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 
   mr_ic_foreach (&mr_conf.des, mr_detect_fields_types, tdp);
-
-  /* NB! not thread safe - only calls from __constructor__ assumed */
-  if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL))
-    return (EXIT_FAILURE);
 
   mr_register_type_pointer (tdp);
   /* mr_ptr_t with -O0 is not the first registered type, so we need to register all pointer types on each type registration */

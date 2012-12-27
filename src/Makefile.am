@@ -24,12 +24,12 @@ pkgincludedir = $(includedir)
 
 lib_LTLIBRARIES = libmetaresc.la 
 
-libmetaresc_la_SOURCES = metaresc.c mr_stringify.c mr_save.c mr_load.c xdr.c xml1_save.c cinit_save.c scm_save.c mr_ic.c mr_tsearch.c
+libmetaresc_la_SOURCES = metaresc.c mr_stringify.c mr_save.c mr_load.c xdr.c xml_save.c cinit_save.c scm_save.c mr_ic.c mr_tsearch.c
 if HAVE_BISON_FLEX
   libmetaresc_la_SOURCES += xml1_load.tab.c xml1_load.lex.c cinit_load.tab.c cinit_load.lex.c scm_load.tab.c scm_load.lex.c
 endif
 if HAVE_LIBXML2
-  libmetaresc_la_SOURCES += xml2_save.c xml2_load.c
+  libmetaresc_la_SOURCES += xml2_load.c
 endif
 
 pkginclude_HEADERS = metaresc.h mr_protos.h mr_export.h mr_pp.h mr_tsearch.h

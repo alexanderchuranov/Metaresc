@@ -21,8 +21,8 @@
 #define MR_SCM_UNNAMED_FIELDS (0)
 #define MR_SCM_NAMED_FIELDS (!MR_SCM_UNNAMED_FIELDS)
 
-static int scm_named_fields[MR_MAX_TYPES] = {
-  [0 ... MR_MAX_TYPES - 1] = MR_SCM_UNNAMED_FIELDS,
+static int scm_named_fields[MR_TYPE_LAST] = {
+  [0 ... MR_TYPE_LAST - 1] = MR_SCM_UNNAMED_FIELDS,
   [MR_TYPE_STRUCT] = MR_SCM_NAMED_FIELDS,
   [MR_TYPE_UNION] = MR_SCM_NAMED_FIELDS,
   [MR_TYPE_ANON_UNION] = MR_SCM_NAMED_FIELDS,
@@ -32,129 +32,11 @@ static int scm_named_fields[MR_MAX_TYPES] = {
 #define MR_SCM_IS_NOT_ARRAY (0)
 #define MR_SCM_IS_ARRAY (!MR_SCM_IS_NOT_ARRAY)
 
-static int scm_is_array[MR_MAX_TYPES] = {
-  [0 ... MR_MAX_TYPES - 1] = MR_SCM_IS_NOT_ARRAY,
+static int scm_is_array[MR_TYPE_LAST] = {
+  [0 ... MR_TYPE_LAST - 1] = MR_SCM_IS_NOT_ARRAY,
   [MR_TYPE_EXT_ARRAY] = MR_SCM_IS_ARRAY,
   [MR_TYPE_EXT_RARRAY] = MR_SCM_IS_ARRAY,
 };
-
-/**
- * Public function. Save scheduler. Save any object as a string.
- * @param ptrs resizeable array with pointers descriptors
- * @return stringified representation of object
- */
-char *
-scm_save (mr_ra_mr_ptrdes_t * ptrs)
-{
-  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = { NULL }, };
-  int idx = 0;
-
-  if (NULL == mr_ra_str.data)
-    return (NULL);
-  
-  while (idx >= 0)
-    {
-      mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
-      int level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
-      int named_node = MR_SCM_UNNAMED_FIELDS;
-      int parent = ptrs->ra.data[idx].parent;
-      char * content = NULL;
-      int in_comment = 0;
-
-      if (parent >= 0)
-	named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
-
-      if (ptrs->ra.data[idx].ref_idx >= 0)
-	{
-	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    level * MR_SCM_INDENT_SPACES, "",
-			    (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-			    ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
-	    return (NULL);
-	  else
-	    in_comment = !0;
-	}
-      if (ptrs->ra.data[idx].flags.is_referenced)
-	{
-	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
-	    return (NULL);
-	  else
-	    in_comment = !0;
-	}
-	    
-      if (ptrs->ra.data[idx].first_child < 0)
-	{
-	  /* route saving handler */
-	  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_MAX_TYPES)
-	      && mr_conf.io_ext_handlers[fdp->mr_type_ext].save.scm)
-	    content = mr_conf.io_ext_handlers[fdp->mr_type_ext].save.scm (idx, ptrs);
-	  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_MAX_TYPES)
-		   && mr_conf.io_handlers[fdp->mr_type].save.scm)
-	    content = mr_conf.io_handlers[fdp->mr_type].save.scm (idx, ptrs);
-	  else
-	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
-
-	  if (content)
-	    {
-	      if (MR_SCM_NAMED_FIELDS == named_node)
-		{
-		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START "%s" MR_SCM_NAMED_FIELD_END,
-				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
-		    return (NULL);
-		}
-	      else
-		{
-		  if (in_comment)
-		    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
-		      return (NULL);
-		  if (mr_ra_printf (&mr_ra_str, " %s", content) < 0)
-		    return (NULL);
-		}
-	      MR_FREE (content);
-	    }
-	}
-      else
-	{
-	  if ((idx != 0) || in_comment)
-	    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
-	      return (NULL);
-	  if (MR_SCM_NAMED_FIELDS == named_node)
-	    if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
-	      return (NULL);
-	  if (MR_SCM_IS_ARRAY == scm_is_array[fdp->mr_type_ext])
-	    if (mr_ra_printf (&mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
-	      return (NULL);
-	  if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_START) < 0)
-	    return (NULL);
-	}
-      
-      if (ptrs->ra.data[idx].first_child >= 0)
-	idx = ptrs->ra.data[idx].first_child;
-      else
-	{
-	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
-	    {
-	      idx = ptrs->ra.data[idx].parent;
-	      level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
-	      named_node = MR_SCM_UNNAMED_FIELDS;
-	      parent = ptrs->ra.data[idx].parent;
-
-	      if (parent >= 0)
-		named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
-	      
-	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)
-		return (NULL);
-	      if (MR_SCM_NAMED_FIELDS == named_node)
-		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
-		  return (NULL);
-	    }
-	  idx = ptrs->ra.data[idx].next;
-	}
-    }
-
-  return (mr_ra_str.data);
-}
 
 /**
  * MR_NONE type saving handler.
@@ -176,14 +58,14 @@ scm_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
  */
 #define SCM_SAVE_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_stringify_ ## TYPE (&ptrs->ra.data[idx])); }
 
-SCM_SAVE_TYPE (int8);
-SCM_SAVE_TYPE (uint8);
-SCM_SAVE_TYPE (int16);
-SCM_SAVE_TYPE (uint16);
-SCM_SAVE_TYPE (int32);
-SCM_SAVE_TYPE (uint32);
-SCM_SAVE_TYPE (int64);
-SCM_SAVE_TYPE (uint64);
+SCM_SAVE_TYPE (int8_t);
+SCM_SAVE_TYPE (uint8_t);
+SCM_SAVE_TYPE (int16_t);
+SCM_SAVE_TYPE (uint16_t);
+SCM_SAVE_TYPE (int32_t);
+SCM_SAVE_TYPE (uint32_t);
+SCM_SAVE_TYPE (int64_t);
+SCM_SAVE_TYPE (uint64_t);
 SCM_SAVE_TYPE (enum);
 SCM_SAVE_TYPE (float);
 SCM_SAVE_TYPE (double);
@@ -342,35 +224,156 @@ scm_save_empty (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * Init IO handlers Table
  */
-static void __attribute__((constructor)) mr_init_save_scm (void)
-{
-  mr_conf.io_handlers[MR_TYPE_NONE].save.scm = scm_save_none;
-  mr_conf.io_handlers[MR_TYPE_VOID].save.scm = scm_save_none;
-  mr_conf.io_handlers[MR_TYPE_ENUM].save.scm = scm_save_enum;
-  mr_conf.io_handlers[MR_TYPE_BITFIELD].save.scm = scm_save_bitfield;
-  mr_conf.io_handlers[MR_TYPE_BITMASK].save.scm = scm_save_bitmask;
-  mr_conf.io_handlers[MR_TYPE_INT8].save.scm = scm_save_int8;
-  mr_conf.io_handlers[MR_TYPE_UINT8].save.scm = scm_save_uint8;
-  mr_conf.io_handlers[MR_TYPE_INT16].save.scm = scm_save_int16;
-  mr_conf.io_handlers[MR_TYPE_UINT16].save.scm = scm_save_uint16;
-  mr_conf.io_handlers[MR_TYPE_INT32].save.scm = scm_save_int32;
-  mr_conf.io_handlers[MR_TYPE_UINT32].save.scm = scm_save_uint32;
-  mr_conf.io_handlers[MR_TYPE_INT64].save.scm = scm_save_int64;
-  mr_conf.io_handlers[MR_TYPE_UINT64].save.scm = scm_save_uint64;
-  mr_conf.io_handlers[MR_TYPE_FLOAT].save.scm = scm_save_float;
-  mr_conf.io_handlers[MR_TYPE_DOUBLE].save.scm = scm_save_double;
-  mr_conf.io_handlers[MR_TYPE_LONG_DOUBLE].save.scm = scm_save_long_double_t;
-  mr_conf.io_handlers[MR_TYPE_CHAR].save.scm = scm_save_char;
-  mr_conf.io_handlers[MR_TYPE_CHAR_ARRAY].save.scm = scm_save_char_array;
-  mr_conf.io_handlers[MR_TYPE_STRING].save.scm = scm_save_string;
-  mr_conf.io_handlers[MR_TYPE_STRUCT].save.scm = scm_save_empty;
-  mr_conf.io_handlers[MR_TYPE_FUNC].save.scm = scm_save_none;
-  mr_conf.io_handlers[MR_TYPE_FUNC_TYPE].save.scm = scm_save_none;
-  mr_conf.io_handlers[MR_TYPE_UNION].save.scm = scm_save_empty;
-  mr_conf.io_handlers[MR_TYPE_ANON_UNION].save.scm = scm_save_empty;
-  mr_conf.io_handlers[MR_TYPE_NAMED_ANON_UNION].save.scm = scm_save_empty;
+static scm_save_handler_t scm_save_handler[] =
+  {
+    [MR_TYPE_NONE] = scm_save_none,
+    [MR_TYPE_VOID] = scm_save_none,
+    [MR_TYPE_ENUM] = scm_save_enum,
+    [MR_TYPE_BITFIELD] = scm_save_bitfield,
+    [MR_TYPE_BITMASK] = scm_save_bitmask,
+    [MR_TYPE_INT8] = scm_save_int8_t,
+    [MR_TYPE_UINT8] = scm_save_uint8_t,
+    [MR_TYPE_INT16] = scm_save_int16_t,
+    [MR_TYPE_UINT16] = scm_save_uint16_t,
+    [MR_TYPE_INT32] = scm_save_int32_t,
+    [MR_TYPE_UINT32] = scm_save_uint32_t,
+    [MR_TYPE_INT64] = scm_save_int64_t,
+    [MR_TYPE_UINT64] = scm_save_uint64_t,
+    [MR_TYPE_FLOAT] = scm_save_float,
+    [MR_TYPE_DOUBLE] = scm_save_double,
+    [MR_TYPE_LONG_DOUBLE] = scm_save_long_double_t,
+    [MR_TYPE_CHAR] = scm_save_char,
+    [MR_TYPE_CHAR_ARRAY] = scm_save_char_array,
+    [MR_TYPE_STRING] = scm_save_string,
+    [MR_TYPE_STRUCT] = scm_save_empty,
+    [MR_TYPE_FUNC] = scm_save_none,
+    [MR_TYPE_FUNC_TYPE] = scm_save_none,
+    [MR_TYPE_UNION] = scm_save_empty,
+    [MR_TYPE_ANON_UNION] = scm_save_empty,
+    [MR_TYPE_NAMED_ANON_UNION] = scm_save_empty,
+  };
 
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_ARRAY].save.scm = scm_save_empty;
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_RARRAY_DATA].save.scm = scm_save_pointer;
-  mr_conf.io_ext_handlers[MR_TYPE_EXT_POINTER].save.scm = scm_save_pointer;
+static scm_save_handler_t ext_scm_save_handler[] =
+  {
+    [MR_TYPE_EXT_ARRAY] = scm_save_empty,
+    [MR_TYPE_EXT_RARRAY_DATA] = scm_save_pointer,
+    [MR_TYPE_EXT_POINTER] = scm_save_pointer,
+  };
+
+/**
+ * Public function. Save scheduler. Save any object as a string.
+ * @param ptrs resizeable array with pointers descriptors
+ * @return stringified representation of object
+ */
+char *
+scm_save (mr_ra_mr_ptrdes_t * ptrs)
+{
+  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = { NULL }, };
+  int idx = 0;
+
+  if (NULL == mr_ra_str.data)
+    return (NULL);
+  
+  while (idx >= 0)
+    {
+      mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
+      int level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+      int named_node = MR_SCM_UNNAMED_FIELDS;
+      int parent = ptrs->ra.data[idx].parent;
+      char * content = NULL;
+      int in_comment = 0;
+
+      if (parent >= 0)
+	named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
+
+      if (ptrs->ra.data[idx].ref_idx >= 0)
+	{
+	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
+			    level * MR_SCM_INDENT_SPACES, "",
+			    (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+			    ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
+	    return (NULL);
+	  else
+	    in_comment = !0;
+	}
+      if (ptrs->ra.data[idx].flags.is_referenced)
+	{
+	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
+			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
+	    return (NULL);
+	  else
+	    in_comment = !0;
+	}
+	    
+      if (ptrs->ra.data[idx].first_child < 0)
+	{
+	  /* route saving handler */
+	  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
+	      && ext_scm_save_handler[fdp->mr_type_ext])
+	    content = ext_scm_save_handler[fdp->mr_type_ext] (idx, ptrs);
+	  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
+		   && scm_save_handler[fdp->mr_type])
+	    content = scm_save_handler[fdp->mr_type] (idx, ptrs);
+	  else
+	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
+
+	  if (content)
+	    {
+	      if (MR_SCM_NAMED_FIELDS == named_node)
+		{
+		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START "%s" MR_SCM_NAMED_FIELD_END,
+				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
+		    return (NULL);
+		}
+	      else
+		{
+		  if (in_comment)
+		    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
+		      return (NULL);
+		  if (mr_ra_printf (&mr_ra_str, " %s", content) < 0)
+		    return (NULL);
+		}
+	      MR_FREE (content);
+	    }
+	}
+      else
+	{
+	  if ((idx != 0) || in_comment)
+	    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
+	      return (NULL);
+	  if (MR_SCM_NAMED_FIELDS == named_node)
+	    if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
+	      return (NULL);
+	  if (MR_SCM_IS_ARRAY == scm_is_array[fdp->mr_type_ext])
+	    if (mr_ra_printf (&mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
+	      return (NULL);
+	  if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_START) < 0)
+	    return (NULL);
+	}
+      
+      if (ptrs->ra.data[idx].first_child >= 0)
+	idx = ptrs->ra.data[idx].first_child;
+      else
+	{
+	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
+	    {
+	      idx = ptrs->ra.data[idx].parent;
+	      level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+	      named_node = MR_SCM_UNNAMED_FIELDS;
+	      parent = ptrs->ra.data[idx].parent;
+
+	      if (parent >= 0)
+		named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
+	      
+	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)
+		return (NULL);
+	      if (MR_SCM_NAMED_FIELDS == named_node)
+		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
+		  return (NULL);
+	    }
+	  idx = ptrs->ra.data[idx].next;
+	}
+    }
+
+  return (mr_ra_str.data);
 }

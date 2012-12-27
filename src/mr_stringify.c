@@ -12,12 +12,14 @@
 #ifdef HAVE_MACHINE_ENDIAN_H
 #include <machine/endian.h>
 #endif /* HAVE_MACHINE_ENDIAN_H */
+#define __USE_GNU
+#include <dlfcn.h>
 
 #include <metaresc.h>
 #include <mr_ic.h>
 
 #define MR_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
-  static char * mr_output_format_ ## TYPE (mr_ptrdes_t * ptrdes) {	\
+  char * mr_output_format_ ## TYPE (mr_ptrdes_t * ptrdes) {		\
     char str[MR_MAX(MR_INT_TO_STRING_BUF_SIZE, MR_FLOAT_TO_STRING_BUF_SIZE)]; \
     sprintf (str, FORMAT, *(TYPE*)ptrdes->data);			\
     return (MR_STRDUP (str));						\
@@ -62,17 +64,17 @@ void __attribute__((constructor)) mr_init_output_format (void)
   char * mr_stringify_ ## TYPE (mr_ptrdes_t * ptrdes) {			\
     if (mr_conf.output_format[MR_TYPE])					\
       return (mr_conf.output_format[MR_TYPE](ptrdes));			\
-    return (MR_STRDUP ("0"));						\
+    return (mr_output_format_ ## TYPE (ptrdes));			\
   }
 
-MR_STRINGIFY_TYPE (int8, MR_TYPE_INT8);
-MR_STRINGIFY_TYPE (uint8, MR_TYPE_UINT8);
-MR_STRINGIFY_TYPE (int16, MR_TYPE_INT16);
-MR_STRINGIFY_TYPE (uint16, MR_TYPE_UINT16);
-MR_STRINGIFY_TYPE (int32, MR_TYPE_INT32);
-MR_STRINGIFY_TYPE (uint32, MR_TYPE_UINT32);
-MR_STRINGIFY_TYPE (int64, MR_TYPE_INT64);
-MR_STRINGIFY_TYPE (uint64, MR_TYPE_UINT64);
+MR_STRINGIFY_TYPE (int8_t, MR_TYPE_INT8);
+MR_STRINGIFY_TYPE (uint8_t, MR_TYPE_UINT8);
+MR_STRINGIFY_TYPE (int16_t, MR_TYPE_INT16);
+MR_STRINGIFY_TYPE (uint16_t, MR_TYPE_UINT16);
+MR_STRINGIFY_TYPE (int32_t, MR_TYPE_INT32);
+MR_STRINGIFY_TYPE (uint32_t, MR_TYPE_UINT32);
+MR_STRINGIFY_TYPE (int64_t, MR_TYPE_INT64);
+MR_STRINGIFY_TYPE (uint64_t, MR_TYPE_UINT64);
 
 /**
  * MR_FLOAT type saving handler. Stringify float value.
@@ -93,13 +95,39 @@ mr_stringify_uint (mr_ptrdes_t * ptrdes)
 {
   switch (ptrdes->fd.size)
     {
-    case sizeof (uint8_t): return (mr_stringify_uint8 (ptrdes));
-    case sizeof (uint16_t): return (mr_stringify_uint16 (ptrdes));
-    case sizeof (uint32_t): return (mr_stringify_uint32 (ptrdes));
-    case sizeof (uint64_t): return (mr_stringify_uint64 (ptrdes));
+    case sizeof (uint8_t): return (mr_stringify_uint8_t (ptrdes));
+    case sizeof (uint16_t): return (mr_stringify_uint16_t (ptrdes));
+    case sizeof (uint32_t): return (mr_stringify_uint32_t (ptrdes));
+    case sizeof (uint64_t): return (mr_stringify_uint64_t (ptrdes));
     default:
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_INT_OF_UNKNOWN_SIZE, ptrdes->fd.size);
       return (MR_STRDUP ("0"));
+    }
+}
+
+/**
+ * Save as string pointer descriptor
+ * @param ptrdes descriptor of the saved field
+ * @return stringified pointer value
+ */
+char *
+mr_stringify_func (mr_ptrdes_t * ptrdes)
+{
+  void * func = *(void**)ptrdes->data;
+  if (NULL == func)
+    return (MR_STRDUP ("NULL"));
+  else
+    {
+      char str[MR_INT_TO_STRING_BUF_SIZE];
+      Dl_info info;
+      memset (&info, 0, sizeof (info));
+      if (0 != dladdr (func, &info))
+	{
+	  if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
+	    return (MR_STRDUP (info.dli_sname));
+	}	  
+      sprintf (str, "%p", func);
+      return (MR_STRDUP (str));
     }
 }
 
@@ -176,25 +204,25 @@ mr_stringify_bitfield (mr_ptrdes_t * ptrdes)
 
   switch (ptrdes->fd.mr_type_aux)
     {
-    case MR_TYPE_INT8: return (mr_stringify_int8 (&ptrdes_));
-    case MR_TYPE_UINT8: return (mr_stringify_uint8 (&ptrdes_));
-    case MR_TYPE_INT16: return (mr_stringify_int16 (&ptrdes_));
-    case MR_TYPE_UINT16: return (mr_stringify_uint16 (&ptrdes_));
-    case MR_TYPE_INT32: return (mr_stringify_int32 (&ptrdes_));
-    case MR_TYPE_UINT32: return (mr_stringify_uint32 (&ptrdes_));
-    case MR_TYPE_INT64: return (mr_stringify_int64 (&ptrdes_));
-    case MR_TYPE_UINT64: return (mr_stringify_uint64 (&ptrdes_));
+    case MR_TYPE_INT8: return (mr_stringify_int8_t (&ptrdes_));
+    case MR_TYPE_UINT8: return (mr_stringify_uint8_t (&ptrdes_));
+    case MR_TYPE_INT16: return (mr_stringify_int16_t (&ptrdes_));
+    case MR_TYPE_UINT16: return (mr_stringify_uint16_t (&ptrdes_));
+    case MR_TYPE_INT32: return (mr_stringify_int32_t (&ptrdes_));
+    case MR_TYPE_UINT32: return (mr_stringify_uint32_t (&ptrdes_));
+    case MR_TYPE_INT64: return (mr_stringify_int64_t (&ptrdes_));
+    case MR_TYPE_UINT64: return (mr_stringify_uint64_t (&ptrdes_));
     case MR_TYPE_ENUM: return (mr_stringify_enum (&ptrdes_));
-    default: return (mr_stringify_uint64 (&ptrdes_));
+    default: return (mr_stringify_uint64_t (&ptrdes_));
     }
 }
 
-typedef struct {
-  uint64_t value;
-  mr_td_t * tdp;
-  char * str;
-  char * bitmask_or_delimiter;
-} mr_decompose_bitmask_t;
+TYPEDEF_STRUCT (mr_decompose_bitmask_t,
+		uint64_t value,
+		(mr_td_t *, tdp),
+		string_t str,
+		string_t bitmask_or_delimiter,
+		);
 
 static void
 mr_decompose_bitmask_add (mr_decompose_bitmask_t * mr_decompose_bitmask, char * token)
@@ -252,7 +280,6 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
     .bitmask_or_delimiter = bitmask_or_delimiter,
     .tdp = mr_get_td_by_name (ptrdes->fd.type), /* look up for type descriptor */
   };
-  
   
   /* check whether type descriptor was found */
   if (NULL == mr_decompose_bitmask.tdp)
