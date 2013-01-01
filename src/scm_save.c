@@ -102,6 +102,21 @@ scm_save_bitmask (int idx, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
+ * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @return stringified float value
+ */
+static char *
+scm_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  if (MR_TRUE == ptrs->ra.data[idx].flags.is_null)
+    return (MR_STRDUP (MR_SCM_FALSE));
+  else
+    return (mr_stringify_func (&ptrs->ra.data[idx]));
+}
+
+/**
  * MR_CHAR type saving handler. Stringify char.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors 
@@ -246,8 +261,8 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_CHAR_ARRAY] = scm_save_char_array,
     [MR_TYPE_STRING] = scm_save_string,
     [MR_TYPE_STRUCT] = scm_save_empty,
-    [MR_TYPE_FUNC] = scm_save_none,
-    [MR_TYPE_FUNC_TYPE] = scm_save_none,
+    [MR_TYPE_FUNC] = scm_save_func,
+    [MR_TYPE_FUNC_TYPE] = scm_save_func,
     [MR_TYPE_UNION] = scm_save_empty,
     [MR_TYPE_ANON_UNION] = scm_save_empty,
     [MR_TYPE_NAMED_ANON_UNION] = scm_save_empty,

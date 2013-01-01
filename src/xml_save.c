@@ -58,6 +58,7 @@ XML_SAVE_TYPE (float);
 XML_SAVE_TYPE (double);
 XML_SAVE_TYPE (long_double_t);
 XML_SAVE_TYPE (bitfield);
+XML_SAVE_TYPE (func);
 XML_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
 
 /**
@@ -119,35 +120,6 @@ xml_save_empty (int idx, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
- * XML string quote handler. Uses libxml encoding function.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
- * @return XML escaped string content
- */
-static char *
-xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
-{
-  xmlDocPtr doc = ptrs->ra.ext.ptr;
-  xmlChar * encoded_content;
-  char * content = *(char**)ptrs->ra.data[idx].data;
-  
-  if ((NULL == content) || (ptrs->ra.data[idx].ref_idx >= 0))
-    content = "";
-  encoded_content = xmlEncodeEntitiesReentrant (doc, BAD_CAST content);
-  if (NULL == encoded_content)
-    {
-      content = MR_STRDUP ("");
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_XML_STRING_ENCODING_FAILED, content);
-    }
-  else
-    {
-      content = MR_STRDUP ((char*)encoded_content);
-      xmlFree (encoded_content);
-    }
-  return (content);
-}
-
-/**
  * Init IO handlers Table
  */
 static xml_save_handler_t ext_xml_save_handler[] =
@@ -180,8 +152,8 @@ static xml_save_handler_t xml1_save_handler[] =
     [MR_TYPE_CHAR] = xml_save_char,
     [MR_TYPE_CHAR_ARRAY] = xml_save_char_array,
     [MR_TYPE_STRUCT] = xml_save_empty,
-    [MR_TYPE_FUNC] = xml_save_none,
-    [MR_TYPE_FUNC_TYPE] = xml_save_none,
+    [MR_TYPE_FUNC] = xml_save_func,
+    [MR_TYPE_FUNC_TYPE] = xml_save_func,
     [MR_TYPE_UNION] = xml_save_empty,
     [MR_TYPE_ANON_UNION] = xml_save_empty,
     [MR_TYPE_NAMED_ANON_UNION] = xml_save_empty,
@@ -270,6 +242,35 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 }
 
 #ifdef HAVE_LIBXML2
+/**
+ * XML string quote handler. Uses libxml encoding function.
+ * @param idx an index of node in ptrs
+ * @param ptrs resizeable array with pointers descriptors 
+ * @return XML escaped string content
+ */
+static char *
+xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  xmlDocPtr doc = ptrs->ra.ext.ptr;
+  xmlChar * encoded_content;
+  char * content = *(char**)ptrs->ra.data[idx].data;
+  
+  if ((NULL == content) || (ptrs->ra.data[idx].ref_idx >= 0))
+    content = "";
+  encoded_content = xmlEncodeEntitiesReentrant (doc, BAD_CAST content);
+  if (NULL == encoded_content)
+    {
+      content = MR_STRDUP ("");
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_XML_STRING_ENCODING_FAILED, content);
+    }
+  else
+    {
+      content = MR_STRDUP ((char*)encoded_content);
+      xmlFree (encoded_content);
+    }
+  return (content);
+}
+
 static xml_save_handler_t xml2_save_handler[] =
   {
     [MR_TYPE_STRING] = xml2_save_string,
@@ -293,8 +294,8 @@ static xml_save_handler_t xml2_save_handler[] =
     [MR_TYPE_CHAR] = xml_save_char,
     [MR_TYPE_CHAR_ARRAY] = xml_save_char_array,
     [MR_TYPE_STRUCT] = xml_save_empty,
-    [MR_TYPE_FUNC] = xml_save_none,
-    [MR_TYPE_FUNC_TYPE] = xml_save_none,
+    [MR_TYPE_FUNC] = xml_save_func,
+    [MR_TYPE_FUNC_TYPE] = xml_save_func,
     [MR_TYPE_UNION] = xml_save_empty,
     [MR_TYPE_ANON_UNION] = xml_save_empty,
     [MR_TYPE_NAMED_ANON_UNION] = xml_save_empty,

@@ -739,6 +739,21 @@ xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
+ * Saves function pointer as a string.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
+static int
+xdr_save_func (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  char * value = mr_stringify_func (&ptrs->ra.data[idx]);
+  printf ("func '%s' value '%s'\n", ptrs->ra.data[idx].fd.hashed_name.name, value); fflush (stdout);
+  return (xdr_save_temp_string_and_free (xdrs, &value));
+}
+
+/**
  * Loads enum or bitmask.
  * @param xdrs XDR stream descriptor
  * @param idx index of node in ptrs
@@ -746,7 +761,7 @@ xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @return status
  */
 static int
-xdr_load_enum_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
+xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   int status;
   mr_ptrdes_t ptrdes = { .fd = ptrs->ra.data[idx].fd, .data = ptrs->ra.data[idx].data, };
@@ -757,6 +772,7 @@ xdr_load_enum_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (NULL == ptrdes.value)
     return (0);
 
+  printf ("load '%s' value '%s'\n", ptrs->ra.data[idx].fd.hashed_name.name, ptrdes.value); fflush (stdout);
   switch (ptrs->ra.data[idx].fd.mr_type)
     {
     case MR_TYPE_ENUM:
@@ -764,6 +780,10 @@ xdr_load_enum_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       break;
     case MR_TYPE_BITMASK:
       status = mr_load_bitfield (0, &mr_load_data);
+      break;
+    case MR_TYPE_FUNC:
+    case MR_TYPE_FUNC_TYPE:
+      status = mr_load_func (0, &mr_load_data);
       break;
     default:
       status = 0;
@@ -1120,8 +1140,8 @@ static xdr_save_handler_t xdr_save_handler[] =
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_, 
     [MR_TYPE_STRING] = xdr_save_string,
     [MR_TYPE_STRUCT] = xdr_none, 
-    [MR_TYPE_FUNC] = xdr_none, 
-    [MR_TYPE_FUNC_TYPE] = xdr_none, 
+    [MR_TYPE_FUNC] = xdr_save_func, 
+    [MR_TYPE_FUNC_TYPE] = xdr_save_func, 
     [MR_TYPE_UNION] = xdr_save_union, 
     [MR_TYPE_ANON_UNION] = xdr_save_union, 
     [MR_TYPE_NAMED_ANON_UNION] = xdr_save_union, 
@@ -1186,9 +1206,9 @@ static xdr_load_handler_t xdr_load_handler[] =
   {
     [MR_TYPE_NONE] = xdr_none, 
     [MR_TYPE_VOID] = xdr_none, 
-    [MR_TYPE_ENUM] = xdr_load_enum_bitmask,
+    [MR_TYPE_ENUM] = xdr_load_stringified_type,
     [MR_TYPE_BITFIELD] = xdr_load_bitfield,
-    [MR_TYPE_BITMASK] = xdr_load_enum_bitmask,
+    [MR_TYPE_BITMASK] = xdr_load_stringified_type,
     [MR_TYPE_INT8] = xdr_int_,
     [MR_TYPE_UINT8] = xdr_uint_,
     [MR_TYPE_INT16] = xdr_int_,
@@ -1204,8 +1224,8 @@ static xdr_load_handler_t xdr_load_handler[] =
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_, 
     [MR_TYPE_STRING] = xdr_load_string,
     [MR_TYPE_STRUCT] = xdr_load_struct, 
-    [MR_TYPE_FUNC] = xdr_none, 
-    [MR_TYPE_FUNC_TYPE] = xdr_none, 
+    [MR_TYPE_FUNC] = xdr_load_stringified_type, 
+    [MR_TYPE_FUNC_TYPE] = xdr_load_stringified_type, 
     [MR_TYPE_UNION] = xdr_load_union, 
     [MR_TYPE_ANON_UNION] = xdr_load_union, 
     [MR_TYPE_NAMED_ANON_UNION] = xdr_load_union, 

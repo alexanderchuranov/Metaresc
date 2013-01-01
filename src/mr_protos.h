@@ -31,6 +31,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_XDR_SAVE_FAILED, , "XDR save to resizable array failed."),
 	      (MR_MESSAGE_XML_SAVE_FAILED, , "XML save failed."),
 	      (MR_MESSAGE_LOAD_STRUCT_FAILED, , "Structure load failed."),
+	      (MR_MESSAGE_LOAD_FUNC_FAILED, , "Load function '%s' failed."),
 	      (MR_MESSAGE_LOAD_METHOD_MISSED, , "Load method missed."),
 	      (MR_MESSAGE_XDR_LOAD_FAILED, , "XDR load failed."),
 	      (MR_MESSAGE_NO_TYPE_DESCRIPTOR, , "Can't find type descriptor for '%s'."),

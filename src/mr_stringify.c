@@ -113,11 +113,11 @@ mr_stringify_uint (mr_ptrdes_t * ptrdes)
 char *
 mr_stringify_func (mr_ptrdes_t * ptrdes)
 {
-  void * func = *(void**)ptrdes->data;
-  if (NULL == func)
-    return (MR_STRDUP ("NULL"));
+  if (MR_TRUE == ptrdes->flags.is_null)
+    return (MR_STRDUP (""));
   else
     {
+      void * func = *(void**)ptrdes->data;
       char str[MR_INT_TO_STRING_BUF_SIZE];
       Dl_info info;
       memset (&info, 0, sizeof (info));

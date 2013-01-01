@@ -1385,6 +1385,7 @@ mr_detect_fields_types (mr_ptr_t key, const void * context)
 	  break;
 	  
 	case MR_TYPE_FUNC:
+	  fdp->size = sizeof (void*);
 	  mr_func_field_detect (fdp);
 	  break;
 	  
@@ -1517,7 +1518,6 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
 
   if (NULL == mr_conf.des.find)
     mr_ic_hash_new (&mr_conf.des, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
-  //mr_ic_none_new (&mr_conf.des, mr_hashed_name_cmp, "mr_td_t");
   
   
   /* NB! not thread safe - only calls from __constructor__ assumed */

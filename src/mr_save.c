@@ -240,6 +240,18 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 }
 
 /**
+ * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler. Detects NULL pointers.
+ * @param mr_save_data save routines data and lookup structures
+ */
+static void
+mr_save_func (mr_save_data_t * mr_save_data)
+{
+  int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1;
+  if (NULL == *(void**)mr_save_data->ptrs.ra.data[idx].data)
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE;
+}
+
+/**
  * MR_STRING type saving handler. Saves string as internal representation tree node.
  * Detects if string content was already saved.
  * @param mr_save_data save routines data and lookup structures
@@ -833,6 +845,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
  */
 static mr_save_handler_t mr_save_handler[] =
   {
+    [MR_TYPE_FUNC] = mr_save_func,
+    [MR_TYPE_FUNC_TYPE] = mr_save_func,
     [MR_TYPE_STRING] = mr_save_string,
     [MR_TYPE_STRUCT] = mr_save_struct,
     [MR_TYPE_UNION] = mr_save_union,

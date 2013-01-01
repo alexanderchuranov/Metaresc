@@ -197,7 +197,12 @@ cinit_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
   char * func_str = mr_stringify_func (&ptrs->ra.data[idx]);
   if (func_str)
     {
-      if (isdigit (func_str[0])) /* pointer serialized as int */
+      if (MR_TRUE == ptrs->ra.data[idx].flags.is_null)
+	{
+	  MR_FREE (func_str);
+	  data->content = MR_STRDUP (MR_CINIT_NULL);
+	}
+      else if (isdigit (func_str[0])) /* pointer serialized as int */
 	{
 #define FUNC_CAST "(void*)"
 	  char buf[sizeof (FUNC_CAST) + strlen (func_str)];

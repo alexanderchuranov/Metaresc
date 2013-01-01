@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#define __USE_GNU
+#include <dlfcn.h>
 
 #include <metaresc.h>
 #include <mr_ic.h>
@@ -432,6 +434,42 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
+/**
+ * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE load handler.
+ * Pointer to function loader. It might be a symbol name or an integer casted to void*
+ * @param idx node index
+ * @param mr_load_data structures that holds context of loading
+ * @return Status of read (0 - failure, !0 - success)
+ */
+int
+mr_load_func (int idx, mr_load_data_t * mr_load_data)
+{
+  char * value = mr_load_data->ptrs.ra.data[idx].value;
+  void * func = NULL;
+
+  *(void**)mr_load_data->ptrs.ra.data[idx].data = NULL;
+
+  if (MR_TRUE == mr_load_data->ptrs.ra.data[idx].flags.is_null)
+    return (!0);
+  if (NULL == value)
+    return (!0);
+  if (0 == value[0])
+    return (!0);
+  
+  if (isdigit (value[0]))
+    return (mr_load_integer (idx, mr_load_data));
+
+  func = dlsym (RTLD_DEFAULT, value);
+  if (NULL == func)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_FUNC_FAILED, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
+      return (0);
+    }
+  *(void**)mr_load_data->ptrs.ra.data[idx].data = func;
+
+  return (!0);
+}
+
 static int
 mr_load_struct_next_field (mr_ptr_t key, const void * context)
 {
@@ -775,7 +813,6 @@ mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
   return (EXIT_SUCCESS);
 }
 
-
 /**
  * Init IO handlers Table
  */
@@ -801,8 +838,8 @@ static mr_load_handler_t mr_load_handler[] =
     [MR_TYPE_CHAR_ARRAY] = mr_load_char_array,
     [MR_TYPE_STRING] = mr_load_string,
     [MR_TYPE_STRUCT] = mr_load_struct,
-    [MR_TYPE_FUNC] = mr_load_none,
-    [MR_TYPE_FUNC_TYPE] = mr_load_none,
+    [MR_TYPE_FUNC] = mr_load_func,
+    [MR_TYPE_FUNC_TYPE] = mr_load_func,
     [MR_TYPE_UNION] = mr_load_struct,
     [MR_TYPE_ANON_UNION] = mr_load_struct,
     [MR_TYPE_NAMED_ANON_UNION] = mr_load_anon_union,

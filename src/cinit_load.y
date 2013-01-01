@@ -54,7 +54,7 @@ cinit: start_node cinit_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = 
 start_node: { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_parse_add_node (mr_load); }
 
 cinit_stmt:
-value
+casted_value
 | TOK_CINIT_ID_IVALUE cinit_stmt {
   mr_load_t * mr_load = MR_LOAD;
   if ($1.id.substr.data && $1.id.substr.size)
@@ -71,12 +71,16 @@ value
     }
 }
 
+casted_value:
+value
+| TOK_CINIT_FIELD_CAST value { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].fd.type = mr_unquote (&$1); }
+
 value:
-compaund
-| TOK_CINIT_FIELD_CAST compaund { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].fd.type = mr_unquote (&$1); }
+compaund 
 | TOK_CINIT_VALUE { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$1); }
 
-compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE 
+compaund:
+TOK_CINIT_LBRACE list TOK_CINIT_RBRACE 
 | TOK_CINIT_LBRACKET list TOK_CINIT_RBRACKET
 
 list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
