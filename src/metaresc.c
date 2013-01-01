@@ -82,7 +82,7 @@ static int
 mr_td_free (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  mr_tdestroy (tdp->lookup_by_value.root, dummy_free_func, NULL);
+  mr_ic_free (&tdp->lookup_by_value, NULL);
   mr_ic_free (&tdp->fields, NULL);
   return (0);
 }
@@ -804,10 +804,10 @@ mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
 inline uint64_t
 mr_hashed_name_get_hash (mr_ptr_t x, const void * context)
 {
-  mr_hashed_name_t * _x = x.ptr;
-  if (0 == _x->hash_value)
-    _x->hash_value = mr_hash_str (_x->name);
-  return (_x->hash_value);
+  mr_hashed_name_t * x_ = x.ptr;
+  if (0 == x_->hash_value)
+    x_->hash_value = mr_hash_str (x_->name);
+  return (x_->hash_value);
 }
 
 /**
@@ -937,16 +937,30 @@ mr_anon_unions_extract (mr_td_t * tdp)
 }
 
 /**
+ * calculate a hash value for mr_fd_t
+ * @param x pointer on mr_fd_t
+ * @param context pointer on a context
+ * @return hash value
+ */
+uint64_t
+mr_fd_get_hash (mr_ptr_t x, const void * context)
+{
+  mr_fd_t * fdp = x.ptr;
+  return (fdp->param.enum_value);
+}
+
+/**
  * comparator for mr_fd_t sorting by enum value
  * @param x pointer on one mr_fd_t
  * @param y pointer on another mr_fd_t
  * @return comparation sign
  */
-static int
-cmp_enums_by_value (void * x, void * y, const void * context)
+int
+cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
-  return ((((const mr_fd_t *) x)->param.enum_value > ((const mr_fd_t *) y)->param.enum_value) -
-	  (((const mr_fd_t *) x)->param.enum_value < ((const mr_fd_t *) y)->param.enum_value));
+  mr_fd_t * x_ = x.ptr;
+  mr_fd_t * y_ = y.ptr;
+  return ((x_->param.enum_value > y_->param.enum_value) - (x_->param.enum_value < y_->param.enum_value));
 }
 
 /**
@@ -1000,8 +1014,8 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }  
   
-  tdp->lookup_by_value.root = NULL;
-  tdp->lookup_by_value.key_type = "mr_fd_t";
+  tdp->lookup_by_value.collection = tdp->fields.collection;
+  mr_ic_hash_new (&tdp->lookup_by_value, mr_fd_get_hash, cmp_enums_by_value, "mr_fd_t", NULL);
   
   for (i = 0; i < count; ++i)
     {
@@ -1015,13 +1029,6 @@ mr_add_enum (mr_td_t * tdp)
       if (*fdpp != tdp->fields.collection.data[i].ptr)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->hashed_name.name, tdp->hashed_name.name);
-	  return (EXIT_FAILURE);
-	}
-      /* adding to local lookup table by enum values */
-      fdpp = (mr_fd_t**)mr_tsearch (tdp->fields.collection.data[i], &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);  
-      if (NULL == fdpp)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (EXIT_FAILURE);
 	}
     }
@@ -1039,10 +1046,8 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_fd_t ** fdpp = (mr_fd_t**)mr_tfind (&fd, &tdp->lookup_by_value.root, cmp_enums_by_value, NULL);
-  if (fdpp)
-    return (*fdpp);
-  return (NULL);
+  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_value, &fd, NULL);
+  return (result ? result->ptr : NULL);
 }
 
 /**
@@ -1524,7 +1529,6 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL))
     return (EXIT_FAILURE);
 
-  tdp->lookup_by_value.root = NULL; /* should be in mr_add_enum, but produces warning for non-enum types due to uninitialized memory */
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 

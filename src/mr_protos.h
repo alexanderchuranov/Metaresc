@@ -258,7 +258,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, attr, , "stringified typedef attributes"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(int, size_effective, , "effective size"),
-		(mr_typed_tree_t, lookup_by_value, , "RB-tree for enums values lookup"),
+		(mr_ic_t, lookup_by_value, , "lookup by enum values"),
 		(mr_ic_t, fields, , "fields or enums descriptors"),
 		(char *, comment, , "type comments"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
