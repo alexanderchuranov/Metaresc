@@ -1166,7 +1166,7 @@ extern int mr_copy_recursively (mr_ra_mr_ptrdes_t, void*);
 extern int mr_free_ptrs (mr_ra_mr_ptrdes_t);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t*, char*);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t*, int64_t);
-extern int mr_get_enum_by_name (uint64_t*, char*);
+extern mr_fd_t * mr_get_enum_by_name (char*);
 extern int mr_parse_add_node (mr_load_t*);
 extern int mr_load_bitfield_value (mr_ptrdes_t*, uint64_t*);
 extern int mr_save_bitfield_value (mr_ptrdes_t*, uint64_t*);
@@ -1209,5 +1209,6 @@ extern int mr_hashed_name_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
  *6. implement indexed collection with hash-tree
   7. check how bit-fields in union works
   8. cleanup metaresc.h
+  9. convert 'count' to int64_t
  */
 #endif /* _METARESC_H_ */

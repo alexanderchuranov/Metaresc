@@ -772,14 +772,13 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (NULL == ptrdes.value)
     return (0);
 
-  printf ("load '%s' value '%s'\n", ptrs->ra.data[idx].fd.hashed_name.name, ptrdes.value); fflush (stdout);
   switch (ptrs->ra.data[idx].fd.mr_type)
     {
     case MR_TYPE_ENUM:
       status = mr_load_enum (0, &mr_load_data);
       break;
     case MR_TYPE_BITMASK:
-      status = mr_load_bitfield (0, &mr_load_data);
+      status = mr_load_bitmask (0, &mr_load_data);
       break;
     case MR_TYPE_FUNC:
     case MR_TYPE_FUNC_TYPE:

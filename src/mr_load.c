@@ -98,13 +98,18 @@ mr_get_enum (uint64_t * data, char * str)
 
   {
     char name_[size + 1];
+    mr_fd_t * fdp;
     memcpy (name_, name, size);
     name_[size] = 0;
-    
-    if (EXIT_SUCCESS == mr_get_enum_by_name (data, name_))
-      return (str);
 
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name);
+    fdp = mr_get_enum_by_name (name_);
+    if (fdp)
+      {
+	*data = fdp->param.enum_value;
+	return (str);
+      }
+
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
     return (NULL);
   }
 }
@@ -245,7 +250,7 @@ mr_load_enum (int idx, mr_load_data_t * mr_load_data)
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
-int
+static int
 mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
@@ -268,7 +273,7 @@ mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
-static int
+int
 mr_load_bitmask (int idx, mr_load_data_t * mr_load_data)
 {
   char * str = mr_load_data->ptrs.ra.data[idx].value;

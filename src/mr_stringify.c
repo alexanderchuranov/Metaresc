@@ -180,7 +180,7 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
 	mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
 	if (fdp && fdp->hashed_name.name)
 	  return (MR_STRDUP (fdp->hashed_name.name));
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->hashed_name.name);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->hashed_name.name, ptrdes->fd.hashed_name.name);
       }
     }
   /* save as integer otherwise */

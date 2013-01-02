@@ -54,7 +54,7 @@ mr_conf_t mr_conf = {
     .free = NULL,
     .ext = { .ptr = NULL, },
   },
-  .enum_by_name = { .root = NULL, .key_type = "mr_fd_t", },
+  .enum_by_name = { .collection = { .data = NULL, .size = 0, .alloc_size = 0, }, .find = NULL },
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
 };
 
@@ -75,9 +75,6 @@ MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void
 /**
  * Memory cleanp handler.
  */
-static void
-dummy_free_func (mr_ptr_t key, const void * context) {}
-  
 static int
 mr_td_free (mr_ptr_t key, const void * context)
 {
@@ -97,9 +94,14 @@ mr_cleanup (void)
       mr_ptr_t_td->fields.collection.data = NULL;
       mr_ptr_t_td->fields.collection.size = 0;
     }
-  
-  mr_tdestroy (mr_conf.enum_by_name.root, dummy_free_func, NULL);
-  mr_conf.enum_by_name.root = NULL;
+
+  mr_ic_free (&mr_conf.enum_by_name, NULL);
+  if (mr_conf.enum_by_name.collection.data)
+    {
+      MR_FREE (mr_conf.enum_by_name.collection.data);
+      mr_conf.enum_by_name.collection.data = NULL;
+      mr_conf.enum_by_name.collection.size = 0;
+    }
 
   mr_ic_foreach (&mr_conf.des, mr_td_free, NULL);
   mr_ic_free (&mr_conf.des, NULL);
@@ -158,7 +160,7 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
 {
   char * message;
   va_list args;
-   
+
   va_start (args, message_id);
   /* if we have user defined message handler then pass error to it */
   if (mr_conf.msg_handler)
@@ -172,7 +174,7 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
 
       if ((log_level >= 0) && (log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])) && log_level_str[log_level])
 	log_level_str_ = log_level_str[log_level];
-      
+
       message = mr_message_format (message_id, args);
       if (message)
 	{
@@ -480,7 +482,7 @@ mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs)
   ptrs->ra.data[child].parent = parent;
   if (parent < 0)
     return;
-  
+
   last_child = ptrs->ra.data[parent].last_child;
   if (last_child < 0)
     ptrs->ra.data[parent].first_child = child;
@@ -502,10 +504,10 @@ int
 mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 {
   int i;
-      
+
   if (NULL == ptrs.ra.data)
     return (0);
-    
+
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
     {
       ptrs.ra.data[i].ext.ptr = NULL;
@@ -516,11 +518,11 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 	     (MR_TYPE_STRING == ptrs.ra.data[i].fd.mr_type)))
 	  ptrs.ra.data[i].ext.ptr = *(void**)ptrs.ra.data[i].data;
     }
-  
+
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
     if (ptrs.ra.data[i].ext.ptr)
       MR_FREE (ptrs.ra.data[i].ext.ptr);
-  
+
   MR_FREE (ptrs.ra.data);
   return (!0);
 }
@@ -534,20 +536,20 @@ int
 mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 {
   int i;
-      
+
   if ((NULL == ptrs.ra.data) || (NULL == dst))
     return (0);
 
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     ptrs.ra.data[i].ext.ptr = NULL;
-  
+
   /* NB index 0 is excluded */  
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     /*
       skip nodes that are not in final save graph (ptrs.ra.data[i].idx >= 0)
       nodes are references on other nodes (ptrs.ra.data[i].ref_idx < 0)
       or NULL pointers !ptrs.ra.data[i].flags.is_null
-     */
+    */
     if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0) && !ptrs.ra.data[i].flags.is_null) 
       switch (ptrs.ra.data[i].fd.mr_type_ext)
 	{
@@ -566,7 +568,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    }
 	  /* link it back. we need to save address of allocated memory into this node */
 	  ptrs.ra.data[i].first_child = ptrs.ra.data[i].last_child = i + 1;
-	  
+
 	case MR_TYPE_EXT_POINTER:
 	case MR_TYPE_EXT_RARRAY_DATA:
 	  {
@@ -721,7 +723,7 @@ static void
 mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
 {
   int count;
-  
+
   tdp->hashed_name.hash_value = mr_hash_str (tdp->hashed_name.name);
 
   if (NULL == hash->ra.data)
@@ -764,7 +766,7 @@ mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
       do
 	count += 2;
       while (!is_prime (count));
-      
+
       hash->ra.alloc_size = hash->ra.size = count * sizeof (hash->ra.data[0]);
       hash->ra.data = MR_MALLOC (hash->ra.alloc_size);
       /* check memory allocation */
@@ -852,7 +854,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 {
   int count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
   int i, j;
-  
+
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields.collection.data[i].ptr;
@@ -863,7 +865,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  mr_fd_t ** first = (void*)&tdp->fields.collection.data[i + 1];
 	  mr_fd_t * last;
 	  int opened = 1;
-	
+
 	  for (j = i + 1; j < count; ++j)
 	    {
 	      mr_fd_t * fdp_ = tdp->fields.collection.data[j].ptr;
@@ -876,7 +878,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    }
 	  if (j >= count)
 	    return (EXIT_FAILURE);
-	  
+
 	  {
 	    int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_TRAILING_RECORD */
 	    mr_fd_t * fields[fields_count];
@@ -889,11 +891,11 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	      fields_count = 3
 	      count = 6
 	    */
-	    
+
 	    memcpy (fields, first, fields_count * sizeof (first[0]));
 	    memcpy (first, &first[fields_count], (count - j) * sizeof (first[0]));
 	    memcpy (&first[count - j], fields, fields_count * sizeof (first[0]));
-	    
+
 	    tdp_->size = 0;
 	    for (j = 0; j < fields_count - 1; ++j)
 	      {
@@ -963,18 +965,21 @@ cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context)
   return ((x_->param.enum_value > y_->param.enum_value) - (x_->param.enum_value < y_->param.enum_value));
 }
 
-/**
- * comparator for mr_fd_t sorting by enum name
- * @param x pointer on one mr_fd_t
- * @param y pointer on another mr_fd_t
- * @return comparation sign
- */
 static int
-cmp_enums_by_name (void * x, void * y, const void * context)
+mr_index_enum (mr_ptr_t key, const void * arg)
 {
-  return (strcmp (((const mr_fd_t *) x)->hashed_name.name, ((const mr_fd_t *) y)->hashed_name.name));
+  /* adding to global lookup table by enum literal names */
+  mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key, NULL);  
+  if (NULL == result)
+    return (!0);
+  if (result->ptr != key.ptr)
+    {
+      mr_fd_t * fdp = result->ptr;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->hashed_name.name, (char*)arg);
+      return (!0);
+    }
+  return (0);
 }
-
 /**
  * New enum descriptor preprocessing. Enum literal values should be added to global lookup table and enum type descriptor should have a lookup by enum values.
  * @param tdp pointer on a new enum type descriptor
@@ -983,9 +988,6 @@ cmp_enums_by_name (void * x, void * y, const void * context)
 static int
 mr_add_enum (mr_td_t * tdp)
 {
-  int count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
-  int i;
-
   /*
     Enums with __attribute__((packed, aligned (XXX))) GCC generates size according alignment, but not real size which is 1 byte due to packing.
     Here we determine effective type size.
@@ -1013,25 +1015,12 @@ mr_add_enum (mr_td_t * tdp)
       tdp->size_effective = tdp->size;
       break;
     }  
-  
+
   tdp->lookup_by_value.collection = tdp->fields.collection;
   mr_ic_hash_new (&tdp->lookup_by_value, mr_fd_get_hash, cmp_enums_by_value, "mr_fd_t", NULL);
-  
-  for (i = 0; i < count; ++i)
-    {
-      /* adding to global lookup table by enum literal names */
-      mr_fd_t ** fdpp = (mr_fd_t**)mr_tsearch (tdp->fields.collection.data[i], &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);  
-      if (NULL == fdpp)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (EXIT_FAILURE);
-	}
-      if (*fdpp != tdp->fields.collection.data[i].ptr)
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, (*fdpp)->hashed_name.name, tdp->hashed_name.name);
-	  return (EXIT_FAILURE);
-	}
-    }
+
+  mr_ic_foreach (&tdp->fields, mr_index_enum, tdp->hashed_name.name);
+
   return (EXIT_SUCCESS);
 }
 
@@ -1056,14 +1045,12 @@ mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
  * @param name literal name of enum to lookup
  * @return status EXIT_SUCCESS or EXIT_FAILURE
  */
-int
-mr_get_enum_by_name (uint64_t * value, char * name)
+mr_fd_t *
+mr_get_enum_by_name (char * name)
 {
-  mr_fd_t fd = { .hashed_name = { .name = name } };
-  mr_fd_t ** fdpp = (mr_fd_t**)mr_tfind (&fd, &mr_conf.enum_by_name.root, cmp_enums_by_name, NULL);
-  if (fdpp)
-    *value = (*fdpp)->param.enum_value;
-  return (fdpp ? EXIT_SUCCESS : EXIT_FAILURE);
+  mr_hashed_name_t hashed_name = { .name = name, .hash_value = mr_hash_str (name), };
+  mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, &hashed_name, NULL);
+  return (result ? result->ptr : NULL);
 }
 
 /**
@@ -1523,12 +1510,14 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
 
   if (NULL == mr_conf.des.find)
     mr_ic_hash_new (&mr_conf.des, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
-  
+  if (NULL == mr_conf.enum_by_name.find)
+    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
   if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL))
     return (EXIT_FAILURE);
 
+  memset (&tdp->lookup_by_value, 0, sizeof (tdp->lookup_by_value));
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 
