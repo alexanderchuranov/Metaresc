@@ -89,7 +89,7 @@ mr_ic_hash_index (mr_ic_t * ic, const void * context)
       return (!0);
     }
   memset (index->index.data, 0, index->index.size);
-  
+
   for (i = 0; i < count; ++i)
     if (NULL == mr_ic_hash_add_inner (ic, ic->collection.data[i], context))
       {

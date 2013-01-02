@@ -1506,7 +1506,8 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
     return (EXIT_FAILURE);
   
   mr_check_fields (tdp);
-  mr_ic_none_new (&tdp->fields, mr_hashed_name_cmp, "mr_fd_t");
+  mr_ic_hash_new (&tdp->fields, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t", NULL);
+  //mr_ic_none_new (&tdp->fields, mr_hashed_name_cmp, "mr_fd_t");
 
   if (NULL == mr_conf.des.find)
     mr_ic_hash_new (&mr_conf.des, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);

@@ -656,7 +656,15 @@
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_POINTER, __VA_ARGS__)
 #define MR_RARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_RARRAY, __VA_ARGS__)
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, MR_TYPE_EXT_NONE, __VA_ARGS__, .param = { .func_param = { .alloc_size = -1, .size = 0, .data = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
-#define MR_FUNC_ARG(TYPE, /* COMMENTS */ ...) { .type = MR_STRINGIFY (TYPE), .size = sizeof (TYPE), .mr_type = MR_TYPE_DETECT (TYPE), .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE), .mr_type_ext = MR_TYPE_EXT_NONE, .comment = "" __VA_ARGS__, },
+#define MR_FUNC_ARG(TYPE, /* COMMENTS */ ...) {				\
+    .hashed_name = { .name = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
+      .type = MR_STRINGIFY (TYPE),					\
+	 .size = sizeof (TYPE),						\
+	 .mr_type = MR_TYPE_DETECT (TYPE),				\
+	 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
+	 .mr_type_ext = MR_TYPE_EXT_NONE,				\
+	 .comment = "" __VA_ARGS__,					\
+	 },
 #define MR_END_STRUCT_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_TYPEDEF_UNION_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_UNION, __VA_ARGS__)

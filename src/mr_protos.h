@@ -195,15 +195,15 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      )
 
 TYPEDEF_STRUCT (mr_ic_t,
-		RARRAY (mr_ptr_t, collection, "key_type"),
 		(mr_ic_type_t, ic_type),
+		(mr_ptr_t, ext, , "ic_type"),
+		RARRAY (mr_ptr_t, collection, "key_type"),
 		(char *, key_type),
 		(mr_compar_fn_t, compar_fn),
 		(int, index, (mr_ic_t * /* ic */, __const void * /* context */)),
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(void, free, (mr_ic_t * /* ic */, __const void * /* context */)),
-		(mr_ptr_t, ext, , "ic_type"),
 		)
 
 TYPEDEF_STRUCT (mr_ic_nc_hash_t,
@@ -245,10 +245,6 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		*/
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
-		)
-
-TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "mr_fd_t pointer wrapper"),
-		(mr_fd_t *, fdp, , "pointer on field descriptor"),
 		)
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
