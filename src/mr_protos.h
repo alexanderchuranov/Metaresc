@@ -195,7 +195,6 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      )
 
 TYPEDEF_STRUCT (mr_ic_t,
-		(mr_ptr_t, ext, , "ic_type"),
 		RARRAY (mr_ptr_t, collection, "key_type"),
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
@@ -204,6 +203,7 @@ TYPEDEF_STRUCT (mr_ic_t,
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(void, free, (mr_ic_t * /* ic */, __const void * /* context */)),
+		(mr_ptr_t, ext, , "ic_type"),
 		)
 
 TYPEDEF_STRUCT (mr_ic_nc_hash_t,
@@ -381,8 +381,8 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(void, msg_handler, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), "handler for error messages"),
-		(mr_ic_t, enum_by_name, , "index over all enumnames"),
 		(mr_ic_t, des, , "indexed types descriptors"),
+		(mr_ic_t, enum_by_name, , "index over all enum names"),
 		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)
 

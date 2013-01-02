@@ -1511,7 +1511,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL == mr_conf.des.find)
     mr_ic_hash_new (&mr_conf.des, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
   if (NULL == mr_conf.enum_by_name.find)
-    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
+    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t", NULL);
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
   if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL))
