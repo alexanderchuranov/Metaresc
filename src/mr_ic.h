@@ -13,6 +13,7 @@ extern mr_ptr_t * mr_ic_find (mr_ic_t *, mr_ptr_t, const void *);
 extern void mr_ic_free (mr_ic_t *, const void *);
 
 extern int mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char *key_type);
+extern int mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char *key_type, void * context);
 extern int mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, void * context);
 
 #endif /* _MR_IC_H_ */

@@ -58,7 +58,7 @@ mr_ic_hash_free (mr_ic_t * ic, const void * context)
 
   mr_ic_hash_free_inner (index, context);
   MR_FREE (index);
-  ic->index = NULL;
+  ic->ext.ptr = NULL;
 }
 
 static inline mr_ptr_t *
@@ -118,7 +118,7 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
 
-  if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn))
+  if ((NULL == index) || (NULL == index->hash_fn))
     return (NULL);
   else
     {
@@ -153,6 +153,60 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
   ic->ext.ptr = index;
 
   return (mr_ic_hash_index (ic, context));
+}
+
+void
+mr_ic_rbtree_free (mr_ic_t * ic, const void * context)
+{
+  mr_tdestroy (ic->ext.ptr, dummy_free_fn, context);
+  ic->ext.ptr = NULL;
+}
+
+mr_ptr_t *
+mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  return (mr_tsearch (key, (mr_red_black_tree_node_t**)&ic->ext.ptr, ic->compar_fn, context));
+}
+
+int
+mr_ic_rbtree_index (mr_ic_t * ic, const void * context)
+{
+  int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
+
+  mr_ic_rbtree_free (ic, context);
+
+  for (i = 0; i < count; ++i)
+    if (NULL == mr_ic_rbtree_add (ic, ic->collection.data[i], context))
+      {
+	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	return (!0);
+      }
+  
+  return (0);
+}
+
+mr_ptr_t *
+mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  return (mr_tfind (key, (mr_red_black_tree_node_t**)&ic->ext.ptr, ic->compar_fn, context));
+}
+
+int
+mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, void * context)
+{
+  if ((NULL == ic) || (NULL == compar_fn))
+    return (!0);
+
+  ic->ic_type = MR_IC_RBTREE;
+  ic->key_type = key_type;
+  ic->compar_fn = compar_fn;
+  ic->index = mr_ic_rbtree_index;
+  ic->add = mr_ic_rbtree_add;
+  ic->find = mr_ic_rbtree_find;
+  ic->free = mr_ic_rbtree_free;
+  ic->ext.ptr = NULL;
+
+  return (mr_ic_rbtree_index (ic, context));
 }
 
 /**
@@ -209,7 +263,7 @@ mr_ic_index (mr_ic_t * ic, const void * context)
 mr_ptr_t *
 mr_ic_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  if (NULL == ic)
+  if ((NULL == ic) || (NULL == ic->compar_fn))
     return (NULL);
   if (ic->find)
     return (ic->find (ic, key, context));

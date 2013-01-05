@@ -191,7 +191,7 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      (MR_IC_NC_HASH, , "mr_ic_nc_hash_t"),
 	      (MR_IC_SORTED_ARRAY, , "mr_ic_sorted_array_t"),
 	      (MR_IC_HASH, , "mr_ic_hash_t"),
-	      (MR_IC_RB_TREE, , "mr_red_black_tree_node_t"),
+	      (MR_IC_RBTREE, , "mr_red_black_tree_node_t"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_t,
