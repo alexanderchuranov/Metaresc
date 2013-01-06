@@ -183,7 +183,7 @@ TYPEDEF_FUNC (uint64_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* c
 
 TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
 		(char *, name, , "key field"),
-		(uint64_t, hash_value, , "hash value of 'name'"),
+		(unsigned int, hash_value, , "hash value of 'name'"),
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t,

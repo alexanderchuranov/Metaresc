@@ -636,7 +636,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
  * @param str a pointer on null terminated string
  * @return Hash function value.
  */
-uint64_t
+unsigned int
 mr_hash_str (char * str)
 {
   uint64_t hash_value = 0;

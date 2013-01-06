@@ -99,9 +99,6 @@ AC_FUNC_REALLOC
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([memset strchr strndup strdup strncasecmp strstr xdr_int8_t xdr_uint8_t])
 
-AC_ARG_ENABLE(tree-lookup,
-	[  --enable-tree-lookup		enables red-black tree lookup for type descriptor search instead of non-collision hash],
-	AC_DEFINE(MR_TREE_LOOKUP, [], [Red-black tree lookup is enabled]))
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=128)
 AC_MSG_CHECKING(preprocessor routines depth)
 AC_MSG_RESULT(${PP_DEPTH})
