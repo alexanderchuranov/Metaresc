@@ -11,10 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <stdarg.h>
+#include <limits.h>
 
 #include <mr_tsearch.h>
 #include <metaresc.h>
@@ -187,36 +188,6 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
 }
 
 /**
- * Helper function for serialization macroses. Detects mr_type for enums, structures and unions.
- * Enums are detected at compile time as integers, and structures & unions as MR_TYPE_NONE
- *
- * @param fdp pointer on field descriptor
- */
-void
-mr_detect_type (mr_fd_t * fdp)
-{
-  mr_td_t * tdp;
-  switch (fdp->mr_type)						
-    {								
-    case MR_TYPE_UINT8:						
-    case MR_TYPE_INT8:						
-    case MR_TYPE_UINT16:						
-    case MR_TYPE_INT16:						
-    case MR_TYPE_UINT32:						
-    case MR_TYPE_INT32:						
-    case MR_TYPE_UINT64:						
-    case MR_TYPE_INT64:
-    case MR_TYPE_NONE:
-      /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
-      tdp = mr_get_td_by_name (fdp->type);		
-      if (tdp)							
-	fdp->mr_type = tdp->mr_type;				
-      break;							
-    default: break;							
-    }								
-}
-
-/**
  * Helper function for serialization macroses. Extracts variable name that was passed for serialization.
  * Possible variants are: var_name, &var_name, &var_name[idx], &((type*)var_name)[idx], etc
  *
@@ -281,7 +252,7 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   int i;
 
   *value = *ptr++ >> ptrdes->fd.param.bitfield_param.shift;
-  for (i = 8 - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += 8)
+  for (i = CHAR_BIT - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += CHAR_BIT)
     *value |= ((uint64_t)*ptr++) << i;
   *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
   switch (ptrdes->fd.mr_type_aux)
@@ -313,13 +284,13 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   int i;
 
   *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
-  if (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width >= 8)
+  if (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width >= CHAR_BIT)
     *ptr &= ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
   else
     *ptr &= (-1 - ((1 << (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width)) - 1)) | ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
   *ptr++ |= *value << ptrdes->fd.param.bitfield_param.shift;
-  for (i = 8 - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += 8)
-    if (ptrdes->fd.param.bitfield_param.width - i >= 8)
+  for (i = CHAR_BIT - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += CHAR_BIT)
+    if (ptrdes->fd.param.bitfield_param.width - i >= CHAR_BIT)
       *ptr++ = *value >> i;
     else
       {
@@ -676,133 +647,6 @@ mr_hash_str (char * str)
   return (hash_value);
 }
 
-/**
- * Function for checking if a number is prime.
- * @param x an integer number.
- * @return Returns TRUE if number is prime, FALSE otherwise. 
- */
-static int
-__attribute__ ((unused)) is_prime (int x)
-{
-  int i;
-  if (1 == x)
-    return (0);
-  for (i = 2; i * i <= x; ++i)
-    if (x % i == 0)
-      return (0);
-  return (!0);
-}
-
-#ifdef MR_TREE_LOOKUP_
-/**
- * Update hash with type descriptors
- * @param tdp root of linked list with type descriptors
- * @param hash mr_rarray_t with hash table for type descriptors
- * @return void
- */
-
-static int
-td_count (mr_td_t * tdp, void * args)
-{
-  ++*((int*)args);
-  return (0);
-}
-
-int td_populate (mr_td_t * tdp, void * args)
-{
-  mr_ra_mr_td_ptr_t * hash = args;
-  mr_td_ptr_t * x = &hash->ra.data[tdp->hashed_name.hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
-  /* check for collision */
-  if (x->tdp)
-    return (!0);
-  x->tdp = tdp;
-  return (0);
-}
-
-static void
-mr_update_td_hash (mr_td_t * tdp, mr_ra_mr_td_ptr_t * hash)
-{
-  int count;
-
-  tdp->hashed_name.hash_value = mr_hash_str (tdp->hashed_name.name);
-
-  if (NULL == hash->ra.data)
-    hash->ra.alloc_size = hash->ra.size = 0;
-
-  if (0 == hash->ra.size)
-    {
-      /* hash size is not defined. Let it be doubled number of elements in the list */
-      count = 0;
-      mr_td_foreach (td_count, &count);
-      hash->ra.size = 2 * count * sizeof (hash->ra.data[0]);
-      if (hash->ra.data)
-	MR_FREE (hash->ra.data);
-      hash->ra.data = NULL;
-    }
-  else
-    {
-      /* Lets calculate hash bucket for new element */
-      mr_td_ptr_t * x = &hash->ra.data[tdp->hashed_name.hash_value % (hash->ra.size / sizeof (hash->ra.data[0]))];
-      if (NULL == x->tdp)
-	x->tdp = tdp; /* bucket was free and hash resize is not required */ 
-      else
-	{
-	  if (x->tdp->hashed_name.hash_value == tdp->hashed_name.hash_value) /* hashes matched and non-collision hash table is not possible */
-	    {
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPES_HASHES_MATCHED, x->tdp->hashed_name.name, tdp->hashed_name.name);
-	      return;
-	    }
-	  /* we have a collision, so we will need to find new hash size to avoid collisions */ 
-	  MR_FREE (hash->ra.data);
-	  hash->ra.data = NULL;
-	  hash->ra.size = hash->ra.alloc_size = 0;
-	}
-    }
-  /* we will find new size for hash table to avoid collisions */
-  count = (hash->ra.size / sizeof (hash->ra.data[0])) | 1; /* for optimization of new size search we will probe only prime numbers */
-  while (NULL == hash->ra.data)
-    {
-      /* we need to find next prime number greater then count */
-      do
-	count += 2;
-      while (!is_prime (count));
-
-      hash->ra.alloc_size = hash->ra.size = count * sizeof (hash->ra.data[0]);
-      hash->ra.data = MR_MALLOC (hash->ra.alloc_size);
-      /* check memory allocation */
-      if (NULL == hash->ra.data)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  hash->ra.alloc_size = hash->ra.size = 0;
-	  return;
-	}
-      memset (hash->ra.data, 0, hash->ra.size);
-      /* populate list elements into hash table */
-      /* check that all elements were successfully populated into the hash table */
-      if (mr_td_foreach (td_populate, hash))
-	{
-	  MR_FREE (hash->ra.data); /* otherwise try to find new hash size */
-	  hash->ra.data = NULL;
-	}
-    }
-}
-
-/**
- * Addition of a new type descriptor to lookup structure. Implementation as a RB-tree.
- * @param tdp new type descriptor
- * @param tree pointer on a root pointer of the lookup tree
- */
-static void
-mr_update_td_tree (mr_td_t * tdp, mr_red_black_tree_node_t ** tree)
-{
-  mr_td_t ** tdpp = mr_tsearch (tdp, tree, cmp_tdp, NULL);
-  if (NULL == tdpp)
-    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-}
-
-#else /* MR_TREE_LOOKUP */
-#endif /* MR_TREE_LOOKUP */
-
 inline uint64_t
 mr_hashed_name_get_hash (mr_ptr_t x, const void * context)
 {
@@ -1076,9 +920,9 @@ mr_normalize_type (mr_fd_t * fdp)
       "__restrict",
       "__restrict__",
     };
-  static int isdelimiter [1 << (8 * sizeof (uint8_t))] =
+  static int isdelimiter [1 << (CHAR_BIT * sizeof (uint8_t))] =
     {
-      [0 ... (1 << (8 * sizeof (char))) - 1] = 0,
+      [0 ... (1 << (CHAR_BIT * sizeof (char))) - 1] = 0,
       [0] = !0,
       [(uint8_t)' '] = !0,
       [(uint8_t)'*'] = !0,
@@ -1146,19 +990,19 @@ mr_init_bitfield (mr_fd_t * fdp)
     return (EXIT_SUCCESS);
   
   fdp->offset = i;
-  for (i = 0; i < 8; ++i)
+  for (i = 0; i < CHAR_BIT; ++i)
     if (fdp->param.bitfield_param.bitfield.data[fdp->offset] & (1 << i))
       break;
   fdp->param.bitfield_param.shift = i;
   fdp->param.bitfield_param.width = 0;
   for (j = fdp->offset; j < fdp->param.bitfield_param.bitfield.size; ++j)
     {
-      for ( ; i < 8; ++i)
+      for ( ; i < CHAR_BIT; ++i)
 	if (fdp->param.bitfield_param.bitfield.data[j] & (1 << i))
 	  ++fdp->param.bitfield_param.width;
 	else
 	  break;
-      if (i < 8)
+      if (i < CHAR_BIT)
 	break;
       i = 0;
     }
@@ -1193,14 +1037,6 @@ mr_check_fields (mr_td_t * tdp)
       if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_init_bitfield (fdp);
     }
-
-#if 0
-  /* check for name duplicates */
-  for (i = 0; i < count; ++i)
-    for (j = i + 1; j < count; ++j)
-      if (tdp->fields.data[i].hashed_name.name && tdp->fields.data[j].hashed_name.name && (0 == strcmp (tdp->fields.data[i].hashed_name.name, tdp->fields.data[j].hashed_name.name)))
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_FIELDS, tdp->fields.data[i].hashed_name.name, tdp->hashed_name.name);
-#endif
   return (EXIT_SUCCESS);
 }
 
@@ -1405,40 +1241,49 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
 /**
  * Add type to union mr_void_ptr_t.
  * @param tdp a pointer on statically initialized type descriptor
- * @return status, EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
 static int
-mr_register_type_pointer (mr_td_t * tdp)
+mr_register_type_pointer (mr_ptr_t key, const void * context)
 {
+  mr_td_t * tdp = key.ptr;
   mr_fd_t * fdp;
   mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
 
   if (NULL == union_tdp)
-    return (EXIT_FAILURE);
+    return (0);
   if (mr_get_fd_by_name (union_tdp, tdp->hashed_name.name))
-    return (EXIT_FAILURE);
+    return (0);
   
   /* statically allocated trailing record is used for field descriptor */
   fdp = tdp->fields.collection.data[tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0])].ptr;
   if (NULL == fdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (EXIT_FAILURE);
+      return (!0);
     }
   
   if (union_tdp->fields.collection.alloc_size < 0)
     {
-      /* reallocate descriptors of union fields into heap */
-      int alloc_size = sizeof (union_tdp->fields.collection.data[0]) + union_tdp->fields.collection.size; /* allocate one additional slot */
-      void * fields_data = MR_MALLOC (alloc_size);
-      if (NULL == fields_data)
+      if (tdp != union_tdp)
 	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (EXIT_FAILURE);
+	  if (mr_register_type_pointer (union_tdp, NULL))
+	    return (!0);
 	}
-      memcpy (fields_data, union_tdp->fields.collection.data, union_tdp->fields.collection.size);
-      union_tdp->fields.collection.data = fields_data;
-      union_tdp->fields.collection.alloc_size = alloc_size;
+      else
+	{
+	  /* reallocate descriptors of union fields into heap */
+	  int alloc_size = sizeof (union_tdp->fields.collection.data[0]) + union_tdp->fields.collection.size;
+	  void * fields_data = MR_MALLOC (alloc_size); /* allocate one additional slot */
+	  if (NULL == fields_data)
+	    {
+	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	      return (!0);
+	    }
+	  memcpy (fields_data, union_tdp->fields.collection.data, union_tdp->fields.collection.size);
+	  union_tdp->fields.collection.data = fields_data;
+	  union_tdp->fields.collection.alloc_size = alloc_size;
+	}
     }
   memset (fdp, 0, sizeof (*fdp));
   fdp->type = tdp->hashed_name.name;
@@ -1448,13 +1293,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->mr_type = tdp->mr_type;
   fdp->mr_type_aux = MR_TYPE_VOID;
   fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
-  return ((NULL == mr_ic_add (&union_tdp->fields, fdp, NULL)) ? EXIT_FAILURE : EXIT_SUCCESS);
-}
-
-static int
-mr_register_type_pointer_wrapper (mr_ptr_t key, const void * arg)
-{
-  return ((EXIT_SUCCESS == mr_register_type_pointer (key.ptr)) ? 0 : !0);
+  return ((NULL == mr_ic_add (&union_tdp->fields, fdp, NULL)) ? !0 : 0);
 }
 
 /**
@@ -1507,12 +1346,11 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   
   mr_check_fields (tdp);
   mr_ic_hash_new (&tdp->fields, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t", NULL);
-  //mr_ic_none_new (&tdp->fields, mr_hashed_name_cmp, "mr_fd_t");
+  if (NULL == mr_conf.enum_by_name.find)
+    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t", NULL);
 
   if (NULL == mr_conf.des.find)
     mr_ic_hash_new (&mr_conf.des, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
-  if (NULL == mr_conf.enum_by_name.find)
-    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t", NULL);
   
   /* NB! not thread safe - only calls from __constructor__ assumed */
   if (NULL == mr_ic_add (&mr_conf.des, (void*)tdp, NULL))
@@ -1522,12 +1360,52 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 
-  mr_ic_foreach (&mr_conf.des, mr_detect_fields_types, tdp);
-
-  mr_register_type_pointer (tdp);
-  /* mr_ptr_t with -O0 is not the first registered type, so we need to register all pointer types on each type registration */
-  mr_ic_foreach (&mr_conf.des, mr_register_type_pointer_wrapper, tdp);
   return (EXIT_SUCCESS);
+}
+
+static void
+mr_conf_init ()
+{
+  static int initialized = 0;
+  if (!initialized)
+    {
+      mr_ic_foreach (&mr_conf.des, mr_detect_fields_types, NULL);
+      mr_ic_foreach (&mr_conf.des, mr_register_type_pointer, NULL);
+      initialized = !0;
+    }
+}
+
+/**
+ * Helper function for serialization macroses. Detects mr_type for enums, structures and unions.
+ * Enums are detected at compile time as integers, and structures & unions as MR_TYPE_NONE
+ *
+ * @param fdp pointer on field descriptor
+ */
+void
+mr_detect_type (mr_fd_t * fdp)
+{
+  mr_td_t * tdp;
+
+  mr_conf_init ();
+  
+  switch (fdp->mr_type)						
+    {								
+    case MR_TYPE_UINT8:						
+    case MR_TYPE_INT8:						
+    case MR_TYPE_UINT16:						
+    case MR_TYPE_INT16:						
+    case MR_TYPE_UINT32:						
+    case MR_TYPE_INT32:						
+    case MR_TYPE_UINT64:						
+    case MR_TYPE_INT64:
+    case MR_TYPE_NONE:
+      /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
+      tdp = mr_get_td_by_name (fdp->type);		
+      if (tdp)							
+	fdp->mr_type = tdp->mr_type;				
+      break;							
+    default: break;							
+    }								
 }
 
 /**

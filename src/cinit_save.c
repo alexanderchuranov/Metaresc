@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <limits.h>
+
 #include <metaresc.h>
 
 #define MR_CINIT_NULL "NULL"
@@ -66,7 +68,7 @@ CINIT_SAVE_TYPE (long_double_t);
 CINIT_SAVE_TYPE (bitfield);
 CINIT_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
 
-#define ESC_CHAR_MAP_SIZE (1 << 8)
+#define ESC_CHAR_MAP_SIZE (1 << CHAR_BIT)
 static int map[ESC_CHAR_MAP_SIZE] = {
   [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
   [(unsigned char)'\f'] = (unsigned char)'f',
