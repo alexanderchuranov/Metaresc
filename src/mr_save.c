@@ -15,6 +15,7 @@
 
 #include <metaresc.h>
 #include <mr_ic.h>
+#include <mr_save.h>
 
 static mr_save_handler_t mr_save_handler[];
 static mr_save_handler_t ext_mr_save_handler[];
@@ -714,6 +715,84 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
     }
 }
 
+int
+mr_ptrs_ds (mr_ra_mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
+{
+  int idx = 0;
+  while (idx >= 0)
+    {
+      if (processor (ptrs, idx, context))
+	return (!0);
+      
+      if (ptrs->ra.data[idx].first_child >= 0)
+	idx = ptrs->ra.data[idx].first_child;
+      else
+	{
+	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
+	    idx = ptrs->ra.data[idx].parent;
+	  idx = ptrs->ra.data[idx].next;
+	}
+    }      
+  return (0);
+}
+
+int
+mr_renumber_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+{
+  int * idx_ = context;
+  ptrs->ra.data[idx].idx = (*idx_)++;
+  return (0);
+}
+
+static int
+mr_post_process_node  (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+{
+  mr_save_data_t * mr_save_data = context;
+  int parent = mr_save_data->ptrs.ra.data[idx].parent;
+
+  if (parent < 0)
+    mr_save_data->ptrs.ra.data[idx].level = 0;
+  else
+    mr_save_data->ptrs.ra.data[idx].level = mr_save_data->ptrs.ra.data[parent].level + 1;
+
+  if ((MR_TYPE_EXT_POINTER == mr_save_data->ptrs.ra.data[idx].fd.mr_type_ext) &&
+      ((MR_TYPE_NONE == mr_save_data->ptrs.ra.data[idx].fd.mr_type) || (MR_TYPE_VOID == mr_save_data->ptrs.ra.data[idx].fd.mr_type)) &&
+      (mr_save_data->ptrs.ra.data[idx].ref_idx < 0) &&
+      (NULL != *(void**)mr_save_data->ptrs.ra.data[idx].data))
+    {
+      static mr_fd_t fd_ = {
+	.mr_type = MR_TYPE_NONE,
+	.mr_type_ext = MR_TYPE_EXT_NONE,
+      };
+      int ref_idx = mr_check_ptr_in_list (mr_save_data, *(void**)mr_save_data->ptrs.ra.data[idx].data, &fd_);
+      if (ref_idx >= 0)
+	{
+	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
+	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
+	}
+      else
+	mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* unresolved void pointers are saved as NULL */
+    }
+
+  if (mr_save_data->ptrs.ra.data[idx].ref_idx >= 0)
+    {
+      int ref_parent = mr_save_data->ptrs.ra.data[mr_save_data->ptrs.ra.data[idx].ref_idx].parent;
+      if ((ref_parent >= 0) && (MR_TYPE_STRING == mr_save_data->ptrs.ra.data[ref_parent].fd.mr_type)
+	  && (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[ref_parent].fd.mr_type_ext))
+	{
+	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_parent;
+	  mr_save_data->ptrs.ra.data[idx].flags.is_content_reference = MR_TRUE;
+	  mr_save_data->ptrs.ra.data[ref_parent].flags.is_referenced = MR_TRUE;
+	}
+    }
+
+  if ((MR_TYPE_STRING == mr_save_data->ptrs.ra.data[idx].fd.mr_type) &&
+      (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[idx].fd.mr_type_ext))
+    mr_save_data->ptrs.ra.data[idx].first_child = mr_save_data->ptrs.ra.data[idx].last_child = -1;
+
+  return (0);
+}
+
 /**
  * Set indexes to nodes according saving sequence.
  * @param mr_save_data save routines data and lookup structures
@@ -721,62 +800,9 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 static void
 mr_post_process (mr_save_data_t * mr_save_data)
 {
-  int idx = 0;
   int idx_ = 0;
-  
-  while (idx >= 0)
-    {
-      int parent = mr_save_data->ptrs.ra.data[idx].parent;
-      mr_save_data->ptrs.ra.data[idx].idx = idx_++;
-      if (parent < 0)
-	mr_save_data->ptrs.ra.data[idx].level = 0;
-      else
-	mr_save_data->ptrs.ra.data[idx].level = mr_save_data->ptrs.ra.data[parent].level + 1;
-
-      if ((MR_TYPE_EXT_POINTER == mr_save_data->ptrs.ra.data[idx].fd.mr_type_ext) &&
-	  ((MR_TYPE_NONE == mr_save_data->ptrs.ra.data[idx].fd.mr_type) || (MR_TYPE_VOID == mr_save_data->ptrs.ra.data[idx].fd.mr_type)) &&
-	  (mr_save_data->ptrs.ra.data[idx].ref_idx < 0) &&
-	  (NULL != *(void**)mr_save_data->ptrs.ra.data[idx].data))
-	{
-	  static mr_fd_t fd_ = {
-	    .mr_type = MR_TYPE_NONE,
-	    .mr_type_ext = MR_TYPE_EXT_NONE,
-	  };
-	  int ref_idx = mr_check_ptr_in_list (mr_save_data, *(void**)mr_save_data->ptrs.ra.data[idx].data, &fd_);
-	  if (ref_idx >= 0)
-	    {
-	      mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	      mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
-	    }
-	  else
-	    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* unresolved void pointers are saved as NULL */
-	}
-
-      if (mr_save_data->ptrs.ra.data[idx].ref_idx >= 0)
-	{
-	  int ref_parent = mr_save_data->ptrs.ra.data[mr_save_data->ptrs.ra.data[idx].ref_idx].parent;
-	  if ((ref_parent >= 0) && (MR_TYPE_STRING == mr_save_data->ptrs.ra.data[ref_parent].fd.mr_type)
-	      && (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[ref_parent].fd.mr_type_ext))
-	    {
-	      mr_save_data->ptrs.ra.data[idx].ref_idx = ref_parent;
-	      mr_save_data->ptrs.ra.data[idx].flags.is_content_reference = MR_TRUE;
-	      mr_save_data->ptrs.ra.data[ref_parent].flags.is_referenced = MR_TRUE;
-	    }
-	}
-
-      if ((MR_TYPE_STRING == mr_save_data->ptrs.ra.data[idx].fd.mr_type) &&
-	  (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[idx].fd.mr_type_ext))
-	mr_save_data->ptrs.ra.data[idx].first_child = mr_save_data->ptrs.ra.data[idx].last_child = -1;
-
-      if (mr_save_data->ptrs.ra.data[idx].first_child >= 0)
-	idx = mr_save_data->ptrs.ra.data[idx].first_child;
-      else
-	{
-	  while ((mr_save_data->ptrs.ra.data[idx].next < 0) && (mr_save_data->ptrs.ra.data[idx].parent >= 0))
-	    idx = mr_save_data->ptrs.ra.data[idx].parent;
-	  idx = mr_save_data->ptrs.ra.data[idx].next;
-	}
-    }      
+  mr_ptrs_ds (&mr_save_data->ptrs, mr_post_process_node, mr_save_data);
+  mr_ptrs_ds (&mr_save_data->ptrs, mr_renumber_node, &idx_); /* enumeration of nodes should be done only after strings processing */
 }
 
 /**

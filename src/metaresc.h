@@ -1213,11 +1213,10 @@ extern int mr_hashed_name_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
  *2. pointers serialization with mr_conf timestamp
  *3. opaque data attribute for bitfields mask rarray
  *4. fix MR_TYPEDEF_FUNC args reordering
-  5. introduce a visitor for mr_ra_mr_ptrdes_t
+ *5. introduce a visitor for mr_ra_mr_ptrdes_t
  *6. implement indexed collection with hash-tree
   7. check how bit-fields in union works
-  8. cleanup metaresc.h
-  9. convert 'count' to int64_t
- *10. introduce mr_conf_init signle tone 
+ *8. cleanup metaresc.h
+ *9. introduce mr_conf_init signle tone 
  */
 #endif /* _METARESC_H_ */

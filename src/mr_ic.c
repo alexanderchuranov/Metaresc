@@ -65,9 +65,9 @@ static inline mr_ptr_t *
 mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
-  uint64_t hash_value = index->hash_fn (key, context);
-  int count = index->index.size / sizeof (index->index.data[0]);
-  return (mr_tsearch (key, &index->index.data[hash_value % count].root, ic->compar_fn, context));
+  unsigned int hash_value = index->hash_fn (key, context);
+  int hash_size = index->index.size / sizeof (index->index.data[0]);
+  return (mr_tsearch (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
 }
 
 int
@@ -122,9 +122,9 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
     return (NULL);
   else
     {
-      uint64_t hash_value = index->hash_fn (key, context);
-      int count = index->index.size / sizeof (index->index.data[0]);
-      return (mr_tfind (key, &index->index.data[hash_value % count].root, ic->compar_fn, context));
+      unsigned int hash_value = index->hash_fn (key, context);
+      int hash_size = index->index.size / sizeof (index->index.data[0]);
+      return (mr_tfind (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
     }
 }
 

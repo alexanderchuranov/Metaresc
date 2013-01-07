@@ -14,6 +14,7 @@
 #include <metaresc.h>
 #include <mr_ic.h>
 #include <mr_load.h>
+#include <mr_save.h>
 
 static xdr_load_handler_t xdr_load_handler[];
 static xdr_save_handler_t xdr_save_handler[];
@@ -749,7 +750,6 @@ static int
 xdr_save_func (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char * value = mr_stringify_func (&ptrs->ra.data[idx]);
-  printf ("func '%s' value '%s'\n", ptrs->ra.data[idx].fd.hashed_name.name, value); fflush (stdout);
   return (xdr_save_temp_string_and_free (xdrs, &value));
 }
 
@@ -1037,11 +1037,10 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (!0);
 }
 
-typedef struct {
-  XDR * xdrs;
-  int idx;
-  mr_ra_mr_ptrdes_t * ptrs;
-} xdr_load_rarray_struct_t;
+TYPEDEF_STRUCT (xdr_load_rarray_struct_t,
+		(XDR *, xdrs),
+		int idx,
+		(mr_ra_mr_ptrdes_t *, ptrs))
 
 static int
 xdr_load_rarray_inner (void * context, mr_td_t * tdp)
@@ -1077,26 +1076,6 @@ xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   ra->alloc_size = ra->size;
   
   return (!0);
-}
-
-static void
-renumber_nodes (mr_ra_mr_ptrdes_t * ptrs)
-{
-  int idx = 0;
-  int idx_ = 0;
-  
-  while (idx >= 0)
-    {
-      ptrs->ra.data[idx].idx = idx_++;
-      if (ptrs->ra.data[idx].first_child >= 0)
-	idx = ptrs->ra.data[idx].first_child;
-      else
-	{
-	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
-	    idx = ptrs->ra.data[idx].parent;
-	  idx = ptrs->ra.data[idx].next;
-	}
-    }      
 }
 
 static int
@@ -1153,6 +1132,31 @@ static xdr_save_handler_t ext_xdr_save_handler[] =
     [MR_TYPE_EXT_POINTER] = xdr_save_pointer, 
   };
 
+static int
+xdr_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+{
+  XDR * xdrs = context;
+  mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
+  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
+      && ext_xdr_save_handler[fdp->mr_type_ext])
+    {
+      if (!ext_xdr_save_handler[fdp->mr_type_ext] (xdrs, idx, ptrs))
+	return (!0);
+    }
+  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
+	   && xdr_save_handler[fdp->mr_type])
+    {
+      if (!xdr_save_handler[fdp->mr_type] (xdrs, idx, ptrs))
+	return (!0);
+    }
+  else
+    {
+      MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
+      return (!0);
+    }
+  return (0);
+}
+
 /**
  * Public function. Save scheduler. Save any object into XDR stream.
  * @param xdrs XDR context structure
@@ -1162,40 +1166,12 @@ static xdr_save_handler_t ext_xdr_save_handler[] =
 int
 xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 {
-  int idx = 0;
   if (has_opaque_rarrays (ptrs))
-    renumber_nodes (ptrs);
-  while (idx >= 0)
     {
-      mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
-      if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-	  && ext_xdr_save_handler[fdp->mr_type_ext])
-	{
-	  if (!ext_xdr_save_handler[fdp->mr_type_ext] (xdrs, idx, ptrs))
-	    return (0);
-	}
-      else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-	       && xdr_save_handler[fdp->mr_type])
-	{
-	  if (!xdr_save_handler[fdp->mr_type] (xdrs, idx, ptrs))
-	    return (0);
-	}
-      else
-	{
-	  MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
-	  return (0);
-	}
-      
-      if (ptrs->ra.data[idx].first_child >= 0)
-	idx = ptrs->ra.data[idx].first_child;
-      else
-	{
-	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
-	    idx = ptrs->ra.data[idx].parent;
-	  idx = ptrs->ra.data[idx].next;
-	}
+      int idx_ = 0;
+      mr_ptrs_ds (ptrs, mr_renumber_node, &idx_);
     }
-  return (!0);
+  return (!mr_ptrs_ds (ptrs, xdr_save_node, xdrs));
 }
 
 /**

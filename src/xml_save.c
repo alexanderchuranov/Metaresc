@@ -6,6 +6,7 @@
 #include <stdarg.h>
 
 #include <metaresc.h>
+#include <mr_save.h>
 
 #define MR_XML1_DOCUMENT_HEADER "<?xml version=\"1.0\"?>"
 
@@ -301,6 +302,64 @@ static xml_save_handler_t xml2_save_handler[] =
     [MR_TYPE_NAMED_ANON_UNION] = xml_save_empty,
   };
 
+static int
+xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+{
+  mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
+  int parent = ptrs->ra.data[idx].parent;
+  char number[MR_INT_TO_STRING_BUF_SIZE];
+  char * content = NULL;
+  xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->hashed_name.name);
+	  
+  ptrs->ra.data[idx].ext.ptr = node;
+  if (NULL == node)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (!0);
+    }
+  
+  node->_private = (void*)(long)idx;
+
+  /* route saving handler */
+  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
+      && ext_xml_save_handler[fdp->mr_type_ext])
+    content = ext_xml_save_handler[fdp->mr_type_ext] (idx, ptrs);
+  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
+	   && xml2_save_handler[fdp->mr_type])
+    content = xml2_save_handler[fdp->mr_type] (idx, ptrs);
+  else
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
+
+  if (content)
+    {
+      if (content[0])
+	xmlNodeSetContent (node, BAD_CAST content);
+      MR_FREE (content);
+    }
+
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    {
+      /* set REF_IDX property */
+      sprintf (number, "%" SCNd32, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
+      xmlSetProp (node,
+		  BAD_CAST ((ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF),
+		  BAD_CAST number);
+    }
+  if (ptrs->ra.data[idx].flags.is_referenced)
+    {
+      /* set IDX property */
+      sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
+      xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
+    }
+  if (ptrs->ra.data[idx].flags.is_null)
+    xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
+
+  if (parent >= 0)
+    xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
+
+  return (0);
+}
+
 /**
  * Public function. Save scheduler. Save any object as XML node.
  * @param ptrs resizeable array with pointers descriptors 
@@ -309,7 +368,6 @@ static xml_save_handler_t xml2_save_handler[] =
 xmlDocPtr
 xml2_save (mr_ra_mr_ptrdes_t * ptrs)
 {
-  long idx = 0;
   xmlDocPtr doc = xmlNewDoc (BAD_CAST "1.0");
   
   if (NULL == doc)
@@ -319,74 +377,9 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
     }
 
   ptrs->ra.ext.ptr = doc;
-  while (idx >= 0)
-    {
-      mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
-      xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->hashed_name.name);
-      
-      ptrs->ra.data[idx].ext.ptr = node;
+  mr_ptrs_ds (ptrs, xml2_save_node, NULL);
 
-      if (NULL == node)
-	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      else
-	{
-	  int parent = ptrs->ra.data[idx].parent;
-	  char number[MR_INT_TO_STRING_BUF_SIZE];
-	  char * content = NULL;
-	  
-	  node->_private = (void*)idx;
-
-	  /* route saving handler */
-	  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-	      && ext_xml_save_handler[fdp->mr_type_ext])
-	    content = ext_xml_save_handler[fdp->mr_type_ext] (idx, ptrs);
-	  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-		   && xml2_save_handler[fdp->mr_type])
-	    content = xml2_save_handler[fdp->mr_type] (idx, ptrs);
-	  else
-	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
-
-	  if (content)
-	    {
-	      if (content[0])
-		xmlNodeSetContent (node, BAD_CAST content);
-	      MR_FREE (content);
-	    }
-
-	  if (ptrs->ra.data[idx].ref_idx >= 0)
-	    {
-	      /* set REF_IDX property */
-	      sprintf (number, "%" SCNd32, ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
-	      xmlSetProp (node,
-			  BAD_CAST ((ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF),
-			  BAD_CAST number);
-	    }
-	  if (ptrs->ra.data[idx].flags.is_referenced)
-	    {
-	      /* set IDX property */
-	      sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
-	      xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
-	    }
-	  if (ptrs->ra.data[idx].flags.is_null)
-	    xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
-
-	  if (parent >= 0)
-	    xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
-	}
-
-      if (ptrs->ra.data[idx].first_child >= 0)
-	idx = ptrs->ra.data[idx].first_child;
-      else
-	{
-	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
-	    idx = ptrs->ra.data[idx].parent;
-	  idx = ptrs->ra.data[idx].next;
-	}
-    }
-  
-  if (NULL == ptrs->ra.data[0].ext.ptr)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XML_SAVE_FAILED);
-  else
+  if ((ptrs->ra.size > 0) && (NULL != ptrs->ra.data[0].ext.ptr))
     xmlDocSetRootElement (doc, ptrs->ra.data[0].ext.ptr);
   
   return (doc);
