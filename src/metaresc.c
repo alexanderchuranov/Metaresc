@@ -20,6 +20,7 @@
 #include <mr_tsearch.h>
 #include <metaresc.h>
 #include <mr_ic.h>
+#include <mr_stringify.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>

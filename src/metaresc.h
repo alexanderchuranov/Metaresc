@@ -1207,16 +1207,5 @@ extern void mr_init_save_xml (void);
 
 extern unsigned int mr_hash_str (char*);
 extern int mr_hashed_name_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
-/*
-  TODO
- *1. test case and resolution for anonymous union embeded into another anonymous union
- *2. pointers serialization with mr_conf timestamp
- *3. opaque data attribute for bitfields mask rarray
- *4. fix MR_TYPEDEF_FUNC args reordering
- *5. introduce a visitor for mr_ra_mr_ptrdes_t
- *6. implement indexed collection with hash-tree
-  7. check how bit-fields in union works
- *8. cleanup metaresc.h
- *9. introduce mr_conf_init signle tone 
- */
+
 #endif /* _METARESC_H_ */

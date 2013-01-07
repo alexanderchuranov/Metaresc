@@ -2506,14 +2506,14 @@ sizeof (date_t) = 4
               <entry>3.17 / 0.00 / 6.0 k</entry>
             </row>
             <row>
-              <entry>100</entry>
-              <entry>32.63 / 0.01 / 236.0 k</entry>
-              <entry>29.36 / 0.00 / 15.3 k</entry>
-            </row>
-            <row>
               <entry>50</entry>
               <entry>16.21 / 0.00 / 172.1 k</entry>
               <entry>15.12 / 0.00 / 10.1 k</entry>
+            </row>
+            <row>
+              <entry>100</entry>
+              <entry>32.63 / 0.01 / 236.0 k</entry>
+              <entry>29.36 / 0.00 / 15.3 k</entry>
             </row>
             <row>
               <entry>500</entry>
