@@ -1,5 +1,7 @@
 #!/bin/sh
 
+export LANG=C LC_MEASUREMENT=C LC_NUMERIC=C
+
 numpasses=3
 
 perform_test()
@@ -7,6 +9,7 @@ perform_test()
     local numfiles=$1
     local variant=$2
     local optimize=
+    local numcpus=`cat /proc/cpuinfo | grep processor | tail -n 1 | awk '{print $3 + 1}'`
     
     local buildtime='N/A'
     local filesize='N/A'
@@ -15,7 +18,7 @@ perform_test()
     [ "$variant" = "optimized" ] && CFLAGS="-DMR_MODE=PROTO" || CFLAGS=""
     
     make distclean
-    buildtime=$( (time -p CFLAGS=${CFLAGS} make -j NUMFILES=${numfiles} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
+    buildtime=$( (time -p CFLAGS=${CFLAGS} make -j ${numcpus} NUMFILES=${numfiles} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
     filesize=$( stat --format '%s' huge_enterprise_app )
     starttime=$( (time -p ./huge_enterprise_app > /dev/null) 2>&1 | grep real | awk '{print $NF;}' )
     
@@ -24,7 +27,7 @@ perform_test()
 
 test_all_sizes()
 {
-    for numfiles in 1 10 50 100
+    for numfiles in 1 10 50 100 500
     do
         echo -n "${numfiles}..." > /dev/stderr
         perform_test $numfiles simple
@@ -66,8 +69,6 @@ print_averages()
     
     echo "$number files, $variant, build $print_build, start $print_start, size $print_size k"
 }
-
-export LANG=C
 
 for (( pass = 0; $pass < $numpasses; pass = $pass + 1 ));
 do

@@ -1,5 +1,5 @@
 
-NUMFILES  ?= 100
+NUMFILES ?= 100
 
 BINARY = huge_enterprise_app
 
@@ -25,10 +25,10 @@ main.h: $(patsubst %.c, %.h, $(patsubst main.c, , ${SOURCES}))
 	echo -e "#ifndef _MAIN_H_\n#define _MAIN_H_\n" $(patsubst %,"#include \"%\"\n", $?) "#endif\n" > main.h
 	
 clean:
-	${RM} ${BINARY} *.o
+	@${RM} ${BINARY} *.o
 
 distclean:
-	${RM} ${BINARY} *.o file_*.[ch] main.h
+	@${RM} ${BINARY} *.o file_*.[ch] main.h
 
 .PHONY: clean distclean all
 
