@@ -27,7 +27,7 @@ perform_test()
 
 test_all_sizes()
 {
-    for numfiles in 1 10 50 100 500
+    for numfiles in 1 2 4 8 16 32 64 128 256
     do
         echo -n "${numfiles}..." > /dev/stderr
         perform_test $numfiles simple
