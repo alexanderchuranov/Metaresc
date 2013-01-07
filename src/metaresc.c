@@ -647,7 +647,7 @@ mr_hash_str (char * str)
   return (hash_value);
 }
 
-inline uint64_t
+unsigned int
 mr_hashed_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_hashed_name_t * x_ = x.ptr;
@@ -788,7 +788,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @param context pointer on a context
  * @return hash value
  */
-uint64_t
+unsigned int
 mr_fd_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * fdp = x.ptr;
@@ -1009,6 +1009,27 @@ mr_init_bitfield (mr_fd_t * fdp)
   return (EXIT_SUCCESS);
 }
 
+static int
+mr_check_field (mr_ptr_t key, const void * context)
+{
+  mr_fd_t * fdp = key.ptr;
+  /*
+    Check names of the fileds.
+    MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
+  */
+  char * name = fdp->hashed_name.name;
+  if (name)
+    {
+      for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
+      if (*name) /* strings with field names might be in read-only memory. For MR_NONE names are saved in writable memory. */
+	*name = 0; /* truncate on first invalid charecter */
+    }
+  mr_normalize_type (fdp);
+  if (MR_TYPE_BITFIELD == fdp->mr_type)
+    mr_init_bitfield (fdp);
+  return (0);
+}
+
 /**
  * New type descriptor preprocessing. Check fields names duplocation, nornalize types name, initialize bitfields. Called once for each type.
  * @param tdp pointer on a type descriptor
@@ -1017,26 +1038,7 @@ mr_init_bitfield (mr_fd_t * fdp)
 static int
 mr_check_fields (mr_td_t * tdp)
 {
-  int i;
-  int count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
-  for (i = 0; i < count; ++i)
-    {
-      mr_fd_t * fdp = tdp->fields.collection.data[i].ptr;
-      /*
-	Check names of the fileds.
-	MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
-      */
-      char * name = fdp->hashed_name.name;
-      if (name)
-	{
-	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
-	  if (*name) /* strings with field names might be in read-only memory. For MR_NONE names are saved in writable memory. */
-	    *name = 0; /* truncate on first invalid charecter */
-	}
-      mr_normalize_type (fdp);
-      if (MR_TYPE_BITFIELD == fdp->mr_type)
-	mr_init_bitfield (fdp);
-    }
+  mr_ic_foreach (&tdp->fields, mr_check_field, NULL);
   return (EXIT_SUCCESS);
 }
 
@@ -1155,6 +1157,61 @@ mr_func_field_detect (mr_fd_t * fdp)
   return (EXIT_SUCCESS);
 }
 
+static int
+mr_detect_field_type (mr_ptr_t key, const void * context)
+{
+  mr_fd_t * fdp = key.ptr;
+  mr_td_t * tdp;
+  switch (fdp->mr_type)
+    {
+      /* Enum detection */
+    case MR_TYPE_INT8:
+    case MR_TYPE_UINT8:
+    case MR_TYPE_INT16:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_INT32:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_INT64:
+    case MR_TYPE_UINT64:
+      tdp = mr_get_td_by_name (fdp->type);
+      if (tdp)
+	fdp->mr_type = tdp->mr_type;
+      break;
+
+    case MR_TYPE_BITFIELD:
+      tdp = mr_get_td_by_name (fdp->type);
+      if (tdp)
+	fdp->mr_type_aux = tdp->mr_type;
+      break;
+
+      /*
+	MR_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
+      */
+    case MR_TYPE_STRUCT:
+    case MR_TYPE_CHAR_ARRAY:
+      if (MR_TYPE_EXT_POINTER == fdp->mr_type_ext)
+	{
+	  tdp = mr_get_td_by_name (fdp->type);
+	  if (tdp)
+	    fdp->size = tdp->size;
+	}
+      break;
+	
+    case MR_TYPE_NONE: /* MR_AUTO type resolution */
+      mr_auto_field_detect (fdp);
+      break;
+	  
+    case MR_TYPE_FUNC:
+      fdp->size = sizeof (void*);
+      mr_func_field_detect (fdp);
+      break;
+	  
+    default:
+      break;
+    }
+  return (0);
+}
+
 /**
  * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
  * Called on each new type registration for all already registered types.
@@ -1166,61 +1223,7 @@ static int
 mr_detect_fields_types (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  int i;
-  mr_td_t * tdp_;
-  int fields_count = tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0]);
-
-  for (i = 0; i < fields_count; ++i)
-    {
-      mr_fd_t * fdp = tdp->fields.collection.data[i].ptr;
-      switch (fdp->mr_type)
-	{
-	  /* Enum detection */
-	case MR_TYPE_INT8:
-	case MR_TYPE_UINT8:
-	case MR_TYPE_INT16:
-	case MR_TYPE_UINT16:
-	case MR_TYPE_INT32:
-	case MR_TYPE_UINT32:
-	case MR_TYPE_INT64:
-	case MR_TYPE_UINT64:
-	  tdp_ = mr_get_td_by_name (fdp->type);
-	  if (tdp_)
-	    fdp->mr_type = tdp_->mr_type;
-	  break;
-
-	case MR_TYPE_BITFIELD:
-	  tdp_ = mr_get_td_by_name (fdp->type);
-	  if (tdp_)
-	    fdp->mr_type_aux = tdp_->mr_type;
-	  break;
-
-	  /*
-	    MR_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
-	  */
-	case MR_TYPE_STRUCT:
-	case MR_TYPE_CHAR_ARRAY:
-	  if (MR_TYPE_EXT_POINTER == fdp->mr_type_ext)
-	    {
-	      tdp_ = mr_get_td_by_name (fdp->type);
-	      if (tdp_)
-		fdp->size = tdp_->size;
-	    }
-	  break;
-	
-	case MR_TYPE_NONE: /* MR_AUTO type resolution */
-	  mr_auto_field_detect (fdp);
-	  break;
-	  
-	case MR_TYPE_FUNC:
-	  fdp->size = sizeof (void*);
-	  mr_func_field_detect (fdp);
-	  break;
-	  
-	default:
-	  break;
-	}
-    }
+  mr_ic_foreach (&tdp->fields, mr_detect_field_type, NULL);
   return (0);
 }
 
@@ -1249,9 +1252,10 @@ mr_register_type_pointer (mr_ptr_t key, const void * context)
   mr_td_t * tdp = key.ptr;
   mr_fd_t * fdp;
   mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
-
+  /* check that mr_ptr_t is already a registered type */
   if (NULL == union_tdp)
-    return (0);
+    return (!0);
+  /*check that requested type is already registered */
   if (mr_get_fd_by_name (union_tdp, tdp->hashed_name.name))
     return (0);
   
@@ -1265,10 +1269,11 @@ mr_register_type_pointer (mr_ptr_t key, const void * context)
   
   if (union_tdp->fields.collection.alloc_size < 0)
     {
+      /* mr_ptr_t should be registered first because we need the trailing record of fields descriptor */
       if (tdp != union_tdp)
 	{
 	  if (mr_register_type_pointer (union_tdp, NULL))
-	    return (!0);
+	    return (!0); /* throw error if registration failed */
 	}
       else
 	{

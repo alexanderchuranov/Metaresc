@@ -179,7 +179,7 @@ TYPEDEF_FUNC (int, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* conte
 
 TYPEDEF_FUNC (void, mr_free_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
-TYPEDEF_FUNC (uint64_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+TYPEDEF_FUNC (unsigned int, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
 		(char *, name, , "key field"),
