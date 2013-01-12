@@ -20,7 +20,6 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   ic->ic_type = MR_IC_NONE;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
-  ic->index = NULL;
   ic->add = NULL;
   ic->find = mr_ic_none_find;
   ic->free = NULL;
@@ -28,7 +27,7 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   return (0);
 }
 
-#define MR_HASH_TABLE_SIZE_MULT (2)
+#define MR_HASH_TABLE_SIZE_MULT (1.3)
 
 static void
 dummy_free_fn (mr_ptr_t key, const void * context)
@@ -70,7 +69,7 @@ mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key, const void * context)
   return (mr_tsearch (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
 }
 
-int
+static int
 mr_ic_hash_index (mr_ic_t * ic, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
@@ -81,7 +80,7 @@ mr_ic_hash_index (mr_ic_t * ic, const void * context)
 
   mr_ic_hash_free_inner (index, context);
   
-  index->index.size = 2 * count * MR_HASH_TABLE_SIZE_MULT * sizeof (index->index.data[0]);
+  index->index.size = count * 2 * MR_HASH_TABLE_SIZE_MULT * sizeof (index->index.data[0]);
   index->index.data = MR_MALLOC (index->index.size);
   if (NULL == index->index.data)
     {
@@ -146,7 +145,6 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
   ic->ic_type = MR_IC_HASH;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
-  ic->index = mr_ic_hash_index;
   ic->add = mr_ic_hash_add;
   ic->find = mr_ic_hash_find;
   ic->free = mr_ic_hash_free;
@@ -168,7 +166,7 @@ mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   return (mr_tsearch (key, (mr_red_black_tree_node_t**)&ic->ext.ptr, ic->compar_fn, context));
 }
 
-int
+static int
 mr_ic_rbtree_index (mr_ic_t * ic, const void * context)
 {
   int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
@@ -200,7 +198,6 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, void 
   ic->ic_type = MR_IC_RBTREE;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
-  ic->index = mr_ic_rbtree_index;
   ic->add = mr_ic_rbtree_add;
   ic->find = mr_ic_rbtree_find;
   ic->free = mr_ic_rbtree_free;
@@ -248,16 +245,6 @@ mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (ic->add)
     return (ic->add (ic, key, context));
   return (new_element);
-}
-
-int
-mr_ic_index (mr_ic_t * ic, const void * context)
-{
-  if (NULL == ic)
-    return (!0);
-  if (ic->index)
-    return (ic->index (ic, context));
-  return (0);
 }
 
 mr_ptr_t *

@@ -50,7 +50,6 @@ mr_conf_t mr_conf = {
     .ic_type = MR_IC_NONE,
     .key_type = "mr_td_t",
     .compar_fn = NULL,
-    .index = NULL,
     .add = NULL,
     .find = NULL,
     .free = NULL,
