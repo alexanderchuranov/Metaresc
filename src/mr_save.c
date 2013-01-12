@@ -285,20 +285,6 @@ mr_save_string (mr_save_data_t * mr_save_data)
     }
 }
 
-TYPEDEF_STRUCT (mr_save_struct_t,
-		int idx,
-		(mr_save_data_t *, mr_save_data))
-
-static int
-mr_save_field (mr_ptr_t key, const void * context)
-{
-  mr_fd_t * fdp = key.ptr;
-  mr_save_struct_t * mr_save_struct = (void*)context;
-  char * data = mr_save_struct->mr_save_data->ptrs.ra.data[mr_save_struct->idx].data;
-  mr_save_inner (&data[fdp->offset], fdp, mr_save_struct->mr_save_data);
-  return (0);
-}
-
 /**
  * MR_STRUCT type saving handler. Saves structure as internal representation tree node.
  * @param mr_save_data save routines data and lookup structures
@@ -308,16 +294,15 @@ mr_save_struct (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type);
-  mr_save_struct_t mr_save_struct = {
-    .idx = idx,
-    .mr_save_data = mr_save_data,
-  };
+  char * data = mr_save_data->ptrs.ra.data[idx].data;
+  int i, count;
   
   if (NULL == tdp) /* check whether type descriptor was found */
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra.data[idx].fd.type);
       return;
     }
+  
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->hashed_name.name);
@@ -325,7 +310,12 @@ mr_save_struct (mr_save_data_t * mr_save_data)
     }
 
   mr_save_data->parent = idx;
-  mr_ic_foreach (&tdp->fields, mr_save_field, &mr_save_struct); /* add each child to this node */
+  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      mr_save_inner (&data[fdp->offset], fdp, mr_save_data); /* add each child to this node */
+    }
   mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
 }
 
@@ -349,9 +339,9 @@ static mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
   /* check that field index in union is valid and reset to default otherwise */
-  if ((idx < 0) || (idx >= tdp->fields.collection.size / sizeof (tdp->fields.collection.data[0])))
+  if ((idx < 0) || (idx >= tdp->fields.size / sizeof (tdp->fields.data[0])))
     idx = 0;
-  return (tdp->fields.collection.data[idx].ptr);
+  return (tdp->fields.data[idx].fdp);
 }
 
 static mr_fd_t *
@@ -363,7 +353,7 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
       if (fdp)
 	return (fdp);
     }
-  return (tdp->fields.collection.data[0].ptr);
+  return (tdp->fields.data[0].fdp);
 }
 
 static mr_fd_t *

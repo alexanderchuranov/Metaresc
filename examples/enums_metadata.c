@@ -16,22 +16,13 @@ TYPEDEF_ENUM (color_t,
               WHITE
               )
 
-static int
-print_fd (mr_ptr_t key, const void * context)
-{
-  mr_fd_t * fdp = key.ptr;
-  int * i = (void*)context;
-  printf ("%d: %s = %" PRId64 "\n", (*i)++, fdp->hashed_name.name, fdp->param.enum_value);
-  return (0);
-}
-
 int main ()
 {
   char name[] = "color_t";
-  mr_td_t * td = mr_get_td_by_name (name);
-  int i = 0;
+  mr_td_t * tdp = mr_get_td_by_name (name);
+  int i, count;
   
-  if (NULL == td)
+  if (NULL == tdp)
     {
       fprintf (stderr,
 	       "error: can't obtain type information for '%s'\n",
@@ -39,7 +30,11 @@ int main ()
       return (EXIT_FAILURE);
     }
   
-  mr_ic_foreach (&td->fields, print_fd, &i);
-  
+  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      printf ("%d: %s = %" PRId64 "\n", i, fdp->hashed_name.name, fdp->param.enum_value);
+    }  
   return (EXIT_SUCCESS);
 }

@@ -720,13 +720,12 @@
     .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),			\
     .size = sizeof (MR_TYPE_NAME),					\
     .attr = #__VA_ARGS__,						\
-    .fields = {								\
-    .collection = { .alloc_size = -1, .size = 0, .data = (mr_ptr_t []){
+    .fields = { .alloc_size = -1, .size = 0, .data = (mr_fd_ptr_t[]){
 #define MR_TYPEDEF_END_DESC(MR_TYPE_NAME, /* COMMENTS */ ...){		\
     (mr_fd_t[]){ {							\
 	.type = #MR_TYPE_NAME,						\
 	  .mr_type = MR_TYPE_TRAILING_RECORD,				\
-	  } } } } } },							\
+	  } } } } },							\
     .comment = "" __VA_ARGS__ };					\
   static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (MR_TYPE_NAME) (void) { MR_ADD_TYPE (MR_TYPE_NAME); }
 

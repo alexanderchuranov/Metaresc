@@ -475,19 +475,18 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
-static int
-mr_load_struct_next_field (mr_ptr_t key, const void * context)
+static mr_fd_t *
+mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
 {
-  mr_fd_t * fdp = key.ptr;
-  mr_fd_t ** next_fd = (void*)context;
-  if (NULL == *next_fd)
-    {
-      *next_fd = fdp;
-      return (!0);
-    }
-  if (fdp == *next_fd)
-    *next_fd = NULL;
-  return (0);
+  int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+
+  for (i = 0; i < count; ++i)
+    if (NULL == fdp)
+      return (tdp->fields.data[i].fdp);
+    else if (tdp->fields.data[i].fdp == fdp)
+      fdp = NULL;
+      
+  return (NULL);
 }
 
 /**
@@ -526,7 +525,8 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
       if (mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name)
 	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
       else
-	mr_ic_foreach (&tdp->fields, mr_load_struct_next_field, &fdp);
+	fdp = mr_load_struct_next_field (tdp, fdp);
+      
       if (NULL == fdp)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->hashed_name.name, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
@@ -629,7 +629,7 @@ mr_load_rarray_data (int idx, mr_load_data_t * mr_load_data)
 }
 
 int
-mr_load_rarray_type (mr_fd_t * fdp, int (*action) (void *, mr_td_t *), void * context)
+mr_load_rarray_type (mr_fd_t * fdp, int (*action) (mr_td_t *, void *), void * context)
 {
   mr_td_t * tdp = mr_get_td_by_name ("mr_rarray_t");
   int status = 0;
@@ -638,16 +638,17 @@ mr_load_rarray_type (mr_fd_t * fdp, int (*action) (void *, mr_td_t *), void * co
   else
     {
       mr_td_t td = *tdp;
-      int fields_count = td.fields.collection.size / sizeof (td.fields.collection.data[0]);
-      mr_ptr_t fields_data[fields_count];
+      int fields_count = td.fields.size / sizeof (td.fields.data[0]);
+      mr_fd_ptr_t fields_data[fields_count];
       mr_fd_t * data_fdp;
       mr_fd_t fd;
       int i;
-      memcpy (fields_data, td.fields.collection.data, td.fields.collection.size);
-      td.fields.collection.data = fields_data;
+      
+      memcpy (fields_data, td.fields.data, td.fields.size);
+      td.fields.data = fields_data;
       for (i = 0; i < fields_count; ++i)
 	{
-	  data_fdp = fields_data[i].ptr;
+	  data_fdp = fields_data[i].fdp;
 	  if (0 == strcmp ("data", data_fdp->hashed_name.name))
 	    break;
 	}
@@ -659,21 +660,22 @@ mr_load_rarray_type (mr_fd_t * fdp, int (*action) (void *, mr_td_t *), void * co
 	  fd.mr_type_ext = MR_TYPE_EXT_RARRAY_DATA;
 	  fd.hashed_name = data_fdp->hashed_name;
 	  fd.offset = data_fdp->offset;
-	  fields_data[i].ptr = &fd; /* replace 'data' descriptor on a local copy */
-	  mr_ic_none_new (&td.fields, mr_hashed_name_cmp, "mr_fd_t");
-	  status = action (context, &td);
+	  fields_data[i].fdp = &fd; /* replace 'data' descriptor on a local copy */
+	  mr_ic_none_new (&td.lookup_by_name, mr_hashed_name_cmp, "mr_fd_t");
+	  mr_ic_index (&td.lookup_by_name, (mr_ic_rarray_t*)&td.fields, NULL);
+	  status = action (&td, context);
 	}
     }
   return (status);
 }
 
-typedef struct {
-  int idx;
-  mr_load_data_t * mr_load_data;
-} mr_load_rarray_struct_t;
+TYPEDEF_STRUCT (mr_load_rarray_struct_t,
+		int idx,
+		(mr_load_data_t *, mr_load_data)
+		)
 
 static int
-mr_load_rarray_inner (void * context, mr_td_t * tdp)
+mr_load_rarray_inner (mr_td_t * tdp, void * context)
 {
   mr_load_rarray_struct_t * mr_load_rarray_struct = context;
   return (mr_load_struct_inner (mr_load_rarray_struct->idx, mr_load_rarray_struct->mr_load_data, tdp));

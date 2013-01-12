@@ -548,23 +548,6 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 }
 
-typedef struct {
-  XDR * xdrs;
-  int idx;
-  mr_ra_mr_ptrdes_t * ptrs;
-} xdr_load_struct_args_t;
-
-static int
-xdr_load_struct_field (mr_ptr_t key, const void * context)
-{
-  mr_fd_t * fdp = key.ptr;
-  xdr_load_struct_args_t * xdr_load_struct_args = (void*)context;
-  char * data = xdr_load_struct_args->ptrs->ra.data[xdr_load_struct_args->idx].data;
-  return (!xdr_load (&data[fdp->offset], fdp,
-		     xdr_load_struct_args->xdrs,
-		     xdr_load_struct_args->ptrs));
-}
-
 /**
  * Load handler for structures.
  * @param xdrs XDR stream descriptor
@@ -576,24 +559,28 @@ xdr_load_struct_field (mr_ptr_t key, const void * context)
 static int
 xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * tdp)
 {
-  xdr_load_struct_args_t xdr_load_struct_args = {
-    .xdrs = xdrs,
-    .idx = idx,
-    .ptrs = ptrs,
-  };
+  char * data = ptrs->ra.data[idx].data;
+  int i, count;
 
   if (NULL == tdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
       return (0);
     }
+  
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->hashed_name.name);
       return (0);
     }
   
-  mr_ic_foreach (&tdp->fields, xdr_load_struct_field, &xdr_load_struct_args);
+  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      if (!xdr_load (&data[fdp->offset], fdp, xdrs, ptrs))
+	return (0);
+    }
   return (!0);
 }
 
@@ -1043,7 +1030,7 @@ TYPEDEF_STRUCT (xdr_load_rarray_struct_t,
 		(mr_ra_mr_ptrdes_t *, ptrs))
 
 static int
-xdr_load_rarray_inner (void * context, mr_td_t * tdp)
+xdr_load_rarray_inner (mr_td_t * tdp, void * context)
 {
   xdr_load_rarray_struct_t * xdr_load_rarray_struct = context;
   return (xdr_load_struct_inner (xdr_load_rarray_struct->xdrs,

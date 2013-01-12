@@ -76,6 +76,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_UNEXPECTED_NULL_POINTER, , "Unexpected NULL pointer."),
 	      (MR_MESSAGE_INVALID_INDEX, , "Invalid index for internal representation."),
 	      (MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA, , "Unexpected data for string save."),
+	      (MR_MESSAGE_INCORRECT_HASH_SIZE, , "Incorrect hash size %d."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -173,7 +174,7 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 
 TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
 
-TYPEDEF_FUNC (void, mr_action_fn_t, (__const mr_ptr_t /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
+TYPEDEF_FUNC (void, mr_action_fn_t, (__const mr_red_black_tree_node_t * /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
 
 TYPEDEF_FUNC (int, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
@@ -187,31 +188,27 @@ TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup ove
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t,
-	      MR_IC_NONE,
-	      (MR_IC_NC_HASH, , "mr_ic_nc_hash_t"),
-	      (MR_IC_SORTED_ARRAY, , "mr_ic_sorted_array_t"),
+	      (MR_IC_NONE, , "mr_ic_rarray_t"),
+	      (MR_IC_SORTED_ARRAY, , "mr_ic_rarray_t"),
 	      (MR_IC_HASH, , "mr_ic_hash_t"),
 	      (MR_IC_RBTREE, , "mr_red_black_tree_node_t"),
 	      )
 
+TYPEDEF_STRUCT (mr_ic_rarray_t,
+		RARRAY (mr_ptr_t, index, "key_type"),
+		)		
+
 TYPEDEF_STRUCT (mr_ic_t,
 		(mr_ic_type_t, ic_type),
-		(mr_ptr_t, ext, , "ic_type"),
-		RARRAY (mr_ptr_t, collection, "key_type"),
 		(char *, key_type),
+		(int, count),
+		(mr_ptr_t, ext, , "ic_type"),
 		(mr_compar_fn_t, compar_fn),
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
+		(int, index, (mr_ic_t * /* ic */, mr_ic_rarray_t * /* rarray */, __const void * /* context */)),
 		(void, free, (mr_ic_t * /* ic */, __const void * /* context */)),
 		)
-
-TYPEDEF_STRUCT (mr_ic_nc_hash_t,
-		RARRAY (mr_ptr_t, index, "key_type"),
-		)		
-
-TYPEDEF_STRUCT (mr_ic_sorted_array_t,
-		RARRAY (mr_ptr_t, index, "key_type"),
-		)		
 
 TYPEDEF_STRUCT (mr_rb_tree_t,
 		(mr_red_black_tree_node_t *, root),
@@ -246,6 +243,10 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(char *, ptr_type, , "union discriminator"),
 		)
 
+TYPEDEF_STRUCT (mr_fd_ptr_t,
+		(mr_fd_t *, fdp, , "wrapper for mr_fd_t pointer type")
+		)
+
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_hashed_name_t, hashed_name, , "must be the first field"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
@@ -253,12 +254,17 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(int, size, , "size of type"),
 		(char *, attr, , "stringified typedef attributes"),
 		(int, size_effective, , "effective size"),
-		(mr_ic_t, fields, , "fields or enums descriptors"),
+		RARRAY (mr_fd_ptr_t, fields, "fields or enums descriptors"),
+		(mr_ic_t, lookup_by_name, , "lookup by enum values"),
 		(mr_ic_t, lookup_by_value, , "lookup by enum values"),
 		(char *, comment, , "type comments"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
 		) /* type descriptor */
+
+TYPEDEF_STRUCT (mr_td_ptr_t,
+		(mr_td_t *, tdp, , "wrapper for mr_td_t pointer type")
+		)
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
@@ -376,7 +382,8 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(void, msg_handler, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), "handler for error messages"),
-		(mr_ic_t, des, , "indexed types descriptors"),
+		RARRAY (mr_td_ptr_t, des, "types descriptors"),
+		(mr_ic_t, lookup_by_name),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
 		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)

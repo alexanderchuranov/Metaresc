@@ -5,13 +5,24 @@
 mr_ptr_t *
 mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
-  for (i = 0; i < count; ++i)
-    if (0 == ic->compar_fn (key, ic->collection.data[i], context))
-      return (&ic->collection.data[i]);
+  mr_ic_rarray_t * rarray = ic->ext.ptr;
+  if (NULL != rarray)
+    {
+      int i, count = rarray->index.size / sizeof (rarray->index.data[0]);
+      for (i = 0; i < count; ++i)
+	if (0 == ic->compar_fn (key, rarray->index.data[i], context))
+	  return (&rarray->index.data[i]);
+    }
   return (NULL);
 }
 
+int
+mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
+{
+  ic->ext.ptr = rarray;
+  return (EXIT_SUCCESS);
+}
+  
 int
 mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
@@ -19,12 +30,14 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
     return (!0);
   ic->ic_type = MR_IC_NONE;
   ic->key_type = key_type;
+  ic->count = 0;
   ic->compar_fn = compar_fn;
   ic->add = NULL;
   ic->find = mr_ic_none_find;
+  ic->index = mr_ic_none_index;
   ic->free = NULL;
   ic->ext.ptr = NULL;
-  return (0);
+  return (EXIT_SUCCESS);
 }
 
 #define MR_HASH_TABLE_SIZE_MULT (1.3)
@@ -66,37 +79,90 @@ mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key, const void * context)
   mr_ic_hash_t * index = ic->ext.ptr;
   unsigned int hash_value = index->hash_fn (key, context);
   int hash_size = index->index.size / sizeof (index->index.data[0]);
+  if (hash_size <= 0)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INCORRECT_HASH_SIZE, hash_size);
+      return (NULL);
+    }
+  
   return (mr_tsearch (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
 }
 
-static int
-mr_ic_hash_index (mr_ic_t * ic, const void * context)
+int
+mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
-  int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
+  
+  if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn) || (NULL == rarray))
+    return (EXIT_FAILURE);
+  
+  mr_ic_hash_free_inner (index, context);
+
+  ic->count = rarray->index.size / sizeof (rarray->index.data[0]);
+  
+  if (0 != ic->count)
+    {
+      int i;
+      index->index.size = index->index.alloc_size = ic->count * 2 * MR_HASH_TABLE_SIZE_MULT * sizeof (index->index.data[0]);
+      index->index.data = MR_MALLOC (index->index.alloc_size);
+      if (NULL == index->index.data)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (EXIT_FAILURE);
+	}
+      memset (index->index.data, 0, index->index.size);
+
+      for (i = 0; i < ic->count; ++i)
+	if (NULL == mr_ic_hash_add_inner (ic, rarray->index.data[i], context))
+	  {
+	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	    return (EXIT_FAILURE);
+	  }
+    }
+  return (EXIT_SUCCESS);
+}
+
+static void
+visit_node (const mr_red_black_tree_node_t * node, mr_rb_visit_order_t order, int level, const void * context)
+{
+  mr_ic_rarray_t * rarray = (void*)context;
+  if ((MR_RB_VISIT_POSTORDER == order) || (MR_RB_VISIT_LEAF == order))
+    {
+      mr_ptr_t * mr_ptr = mr_rarray_append ((mr_rarray_t*)rarray, sizeof (rarray->index.data[0]));
+      if (mr_ptr)
+	*mr_ptr = node->key;
+    }
+}
+
+int
+mr_ic_hash_reindex (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  mr_ic_hash_t * index = ic->ext.ptr;
+  mr_ic_rarray_t rarray;
+  mr_red_black_tree_node_t node = { .key = key };
+  int status;
+  int i;
   
   if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn))
-    return (!0);
+    return (EXIT_FAILURE);
 
-  mr_ic_hash_free_inner (index, context);
-  
-  index->index.size = count * 2 * MR_HASH_TABLE_SIZE_MULT * sizeof (index->index.data[0]);
-  index->index.data = MR_MALLOC (index->index.size);
-  if (NULL == index->index.data)
+  rarray.index.size = 0;
+  rarray.index.alloc_size = ic->count * sizeof (rarray.index.data[0]);
+  rarray.index.data = MR_MALLOC (rarray.index.alloc_size);
+  if (NULL == rarray.index.data)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (!0);
+      return (EXIT_FAILURE);
     }
-  memset (index->index.data, 0, index->index.size);
-
-  for (i = 0; i < count; ++i)
-    if (NULL == mr_ic_hash_add_inner (ic, ic->collection.data[i], context))
-      {
-	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	return (!0);
-      }
   
-  return (0);
+  for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)
+    mr_twalk (index->index.data[i].root, visit_node, &rarray);
+  visit_node (&node, MR_RB_VISIT_LEAF, 0, &rarray);
+  
+  status = mr_ic_hash_index (ic, &rarray, context);
+  MR_FREE (rarray.index.data);
+  
+  return (status);
 }
 
 mr_ptr_t *
@@ -107,8 +173,11 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn))
     return (NULL);
   
-  if (index->index.size <= ic->collection.size * MR_HASH_TABLE_SIZE_MULT)
-    mr_ic_hash_index (ic, context);
+  if (index->index.size / sizeof (index->index.data[0]) <= ++ic->count * MR_HASH_TABLE_SIZE_MULT)
+    {
+      if (EXIT_SUCCESS != mr_ic_hash_reindex (ic, key, context))
+	return (NULL);
+    }
   return (mr_ic_hash_add_inner (ic, key, context));
 }
 
@@ -123,7 +192,10 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
     {
       unsigned int hash_value = index->hash_fn (key, context);
       int hash_size = index->index.size / sizeof (index->index.data[0]);
-      return (mr_tfind (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
+      if (hash_size <= 0)
+	return (NULL);
+      else
+	return (mr_tfind (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
     }
 }
 
@@ -131,26 +203,31 @@ int
 mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, void * context)
 {
   mr_ic_hash_t * index;
+
   if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
-    return (!0);
+    return (EXIT_FAILURE);
+  
   index = MR_MALLOC (sizeof (*index));
   if (NULL == index)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (!0);
+      return (EXIT_FAILURE);
     }
+  
   memset (index, 0, sizeof (*index));
   index->hash_fn = hash_fn;
   
   ic->ic_type = MR_IC_HASH;
+  ic->count = 0;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
   ic->add = mr_ic_hash_add;
   ic->find = mr_ic_hash_find;
+  ic->index = mr_ic_hash_index;
   ic->free = mr_ic_hash_free;
   ic->ext.ptr = index;
 
-  return (mr_ic_hash_index (ic, context));
+  return (EXIT_SUCCESS);
 }
 
 void
@@ -166,27 +243,21 @@ mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   return (mr_tsearch (key, (mr_red_black_tree_node_t**)&ic->ext.ptr, ic->compar_fn, context));
 }
 
-static int
-mr_ic_rbtree_index (mr_ic_t * ic, const void * context)
-{
-  int i, count = ic->collection.size / sizeof (ic->collection.data[0]);
-
-  mr_ic_rbtree_free (ic, context);
-
-  for (i = 0; i < count; ++i)
-    if (NULL == mr_ic_rbtree_add (ic, ic->collection.data[i], context))
-      {
-	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	return (!0);
-      }
-  
-  return (0);
-}
-
 mr_ptr_t *
 mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   return (mr_tfind (key, (mr_red_black_tree_node_t**)&ic->ext.ptr, ic->compar_fn, context));
+}
+
+int
+mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
+{
+  int i;
+  mr_ic_rbtree_free (ic, context);
+  for (i = rarray->index.size / sizeof (rarray->index.data[0]) - 1; i >= 0; --i)
+    if (NULL == mr_ic_rbtree_add (ic, rarray->index.data[i], context))
+      return (EXIT_FAILURE);
+  return (EXIT_SUCCESS);
 }
 
 int
@@ -200,51 +271,21 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, void 
   ic->compar_fn = compar_fn;
   ic->add = mr_ic_rbtree_add;
   ic->find = mr_ic_rbtree_find;
+  ic->index = mr_ic_rbtree_index;
   ic->free = mr_ic_rbtree_free;
   ic->ext.ptr = NULL;
 
-  return (mr_ic_rbtree_index (ic, context));
-}
-
-/**
- * Type descriptors collection iterator.
- * @param ic indexed collection
- * @param visit_fn function for type descriptors processing
- * @param context auxiliary arguments
- * @return flag that cycle was not completed
- */
-int
-mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
-{
-  int count, i;
-  if (NULL == ic)
-    return (!0);
-  
-  count = ic->collection.size / sizeof (ic->collection.data[0]);
-  for (i = 0; i < count; ++i)
-    if (visit_fn (ic->collection.data[i], context))
-      return (!0);
-  return (0);
+  return (EXIT_SUCCESS);
 }
 
 mr_ptr_t *
 mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  mr_ptr_t * new_element;
   if (NULL == ic)
     return (NULL);
-  
-  new_element = mr_rarray_append ((mr_rarray_t*)&ic->collection, sizeof (ic->collection.data[0]));
-  if (NULL == new_element)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
-  *new_element = key;
-  
   if (ic->add)
     return (ic->add (ic, key, context));
-  return (new_element);
+  return (NULL);
 }
 
 mr_ptr_t *
@@ -254,7 +295,22 @@ mr_ic_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
     return (NULL);
   if (ic->find)
     return (ic->find (ic, key, context));
-  return (mr_ic_none_find (ic, key, context));
+  return (NULL);
+}
+
+int
+mr_ic_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
+{
+  int i, count;
+  if ((NULL == ic) || (NULL == rarray))
+    return (EXIT_FAILURE);
+  if (ic->index)
+    return (ic->index (ic, rarray, context));
+  count = rarray->index.size / sizeof (rarray->index.data[0]);
+  for (i = 0; i < count; ++i)
+    if (NULL == mr_ic_add (ic, rarray->index.data[i], context))
+      return (EXIT_FAILURE);
+  return (EXIT_SUCCESS);
 }
 
 void
@@ -265,4 +321,3 @@ mr_ic_free (mr_ic_t * ic, const void * context)
   if (ic->free)
     ic->free (ic, context);
 }
-

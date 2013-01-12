@@ -217,52 +217,22 @@ mr_stringify_bitfield (mr_ptrdes_t * ptrdes)
     }
 }
 
-TYPEDEF_STRUCT (mr_decompose_bitmask_t,
-		uint64_t value,
-		(mr_td_t *, tdp),
-		string_t str,
-		string_t bitmask_or_delimiter,
-		);
-
-static void
-mr_decompose_bitmask_add (mr_decompose_bitmask_t * mr_decompose_bitmask, char * token)
+static char *
+mr_decompose_bitmask_add (char * str, char * bitmask_or_delimiter, char * token)
 {
-  char * str = MR_REALLOC (mr_decompose_bitmask->str,
-			    strlen (mr_decompose_bitmask->str) +
-			    strlen (mr_decompose_bitmask->bitmask_or_delimiter) +
-			    strlen (token) + 1);
-  if (NULL == str)
+  char * str_ = MR_REALLOC (str, strlen (str) + strlen (bitmask_or_delimiter) + strlen (token) + 1);
+  if (NULL == str_)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      MR_FREE (mr_decompose_bitmask->str);
-      mr_decompose_bitmask->str = NULL;
+      MR_FREE (str);
     }
   else
     {
-      mr_decompose_bitmask->str = str;
-      strcat (mr_decompose_bitmask->str, mr_decompose_bitmask->bitmask_or_delimiter);
-      strcat (mr_decompose_bitmask->str, token);
+      strcat (str_, bitmask_or_delimiter);
+      strcat (str_, token);
     }
+  return (str_);
 }  
-
-static int
-mr_decompose_bitmask_value (mr_ptr_t key, const void * context)
-{
-  mr_fd_t * fdp = key.ptr;
-  mr_decompose_bitmask_t * mr_decompose_bitmask = (void*)context;
-  if ((mr_decompose_bitmask->value & fdp->param.enum_value)
-      && !(~mr_decompose_bitmask->value & fdp->param.enum_value))
-    {
-      if (NULL == mr_decompose_bitmask->str)
-	mr_decompose_bitmask->str = MR_STRDUP (fdp->hashed_name.name);
-      else
-	mr_decompose_bitmask_add (mr_decompose_bitmask, fdp->hashed_name.name);
-      if (NULL == mr_decompose_bitmask->str)
-	return (!0);
-      mr_decompose_bitmask->value &= ~fdp->param.enum_value;
-    }
-  return (0 == mr_decompose_bitmask->value);
-}
 
 /**
  * MR_BITMASK type saving handler. Look up type descriptor and save as
@@ -274,44 +244,60 @@ mr_decompose_bitmask_value (mr_ptr_t key, const void * context)
 char *
 mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
 {
-  mr_decompose_bitmask_t mr_decompose_bitmask = {
-    .value = 0,
-    .str = NULL,
-    .bitmask_or_delimiter = bitmask_or_delimiter,
-    .tdp = mr_get_td_by_name (ptrdes->fd.type), /* look up for type descriptor */
-  };
+  int i, count;
+  uint64_t value = 0;
+  char * str = NULL;
+  mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
   
   /* check whether type descriptor was found */
-  if (NULL == mr_decompose_bitmask.tdp)
+  if (NULL == tdp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->fd.type);
       return (mr_stringify_uint (ptrdes));
     }
-  if (MR_TYPE_ENUM != mr_decompose_bitmask.tdp->mr_type)
+  
+  if (MR_TYPE_ENUM != tdp->mr_type)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
       return (mr_stringify_uint (ptrdes));
     }
 
-  mr_decompose_bitmask.value = mr_get_enum_value (ptrdes);
+  value = mr_get_enum_value (ptrdes);
   
-  if (0 == mr_decompose_bitmask.value)
+  if (0 == value)
     {
-      mr_fd_t * fdp = mr_get_enum_by_value (mr_decompose_bitmask.tdp, mr_decompose_bitmask.value);
+      mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
       return (MR_STRDUP (fdp && fdp->hashed_name.name ? fdp->hashed_name.name : "0"));
     }
+  
   /* decompose value on bitmask */
-  mr_ic_foreach (&mr_decompose_bitmask.tdp->fields, mr_decompose_bitmask_value, &mr_decompose_bitmask);
+  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      if ((value & fdp->param.enum_value) && !(~value & fdp->param.enum_value))
+	{
+	  if (NULL == str)
+	    str = MR_STRDUP (fdp->hashed_name.name);
+	  else
+	    str = mr_decompose_bitmask_add (str, bitmask_or_delimiter, fdp->hashed_name.name);
+	  if (NULL == str)
+	    break;
+	  value &= ~fdp->param.enum_value;
+	}
+      if (0 == value)
+	break;
+    }
 
-  if (mr_decompose_bitmask.value != 0)
+  if (value != 0)
     {
       /* save non-matched part as integer */
       char number[MR_INT_TO_STRING_BUF_SIZE];
-      sprintf (number, "%" SCNu64, mr_decompose_bitmask.value);
-      mr_decompose_bitmask_add (&mr_decompose_bitmask, number);
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_BITMASK, mr_decompose_bitmask.value);
+      sprintf (number, "%" SCNu64, value);
+      str = mr_decompose_bitmask_add (str, bitmask_or_delimiter, number);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_BITMASK, value);
     }
-  return (mr_decompose_bitmask.str);
+  return (str);
 }
 
 #define XML_NONPRINT_ESC "&#x%X;"
