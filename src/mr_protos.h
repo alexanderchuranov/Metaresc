@@ -195,13 +195,12 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,
-		RARRAY (mr_ptr_t, index, "key_type"),
+		RARRAY (mr_ptr_t, ra, "key_type"),
 		)		
 
 TYPEDEF_STRUCT (mr_ic_t,
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
-		(int, count),
 		(mr_ptr_t, ext, , "ic_type"),
 		(mr_compar_fn_t, compar_fn),
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
@@ -215,6 +214,7 @@ TYPEDEF_STRUCT (mr_rb_tree_t,
 		)		
 
 TYPEDEF_STRUCT (mr_ic_hash_t,
+		(int, count),
 		(mr_hash_fn_t, hash_fn),
 		RARRAY (mr_rb_tree_t, index),
 		)		
