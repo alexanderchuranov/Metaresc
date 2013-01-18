@@ -41,7 +41,12 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
       rarray_->ra.ptr_type = MR_IC_NONE_TYPE_T;
       ic->ext.ptr = rarray = rarray_;
     }
+  
   add = mr_rarray_append ((mr_rarray_t*)rarray, sizeof (rarray->ra.data[0]));
+
+  if (NULL == add)
+    return (NULL);
+  
   *add = key;
   return (add);
 }
@@ -99,6 +104,122 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   ic->index = mr_ic_none_index;
   ic->free = mr_ic_none_free;
   ic->ext.ptr = NULL;
+  return (EXIT_SUCCESS);
+}
+
+mr_ptr_t *
+mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  return (NULL);
+}
+
+mr_ptr_t *
+mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  return (NULL);
+}
+
+static inline void
+sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context, int idx0)
+{
+  int idx1;
+  char x[size];
+  memcpy (x, &array[idx0 * size], size);
+  
+  for (idx1 = (idx0 << 1) + 1; idx1 < count; idx1 = (idx1 << 1) + 1)
+    {
+      if (compar_fn (&array[idx1 * size], &array[(idx1 + 1) * size], context) <= 0)
+	++idx1;
+      if (compar_fn (&array[idx1 * size], x, context) <= 0)
+	break;
+      memcpy (&array[idx0 * size], &array[idx1 * size], size);
+      idx0 = idx1;
+    }
+  if ((idx1 == count) && (compar_fn (&array[idx1 * size], x, context) > 0))
+    {
+      memcpy (&array[idx0 * size], &array[idx1 * size], size);
+      idx0 = idx1;
+    }
+  memcpy (&array[idx0 * size], x, size);
+}
+
+static void
+hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context)
+{
+  int i;
+
+  for (i = --count >> 1; i > 0; --i)
+    sift (array, count, size, compar_fn, context, i);
+
+  for ( ; count > 0; --count)
+    {
+      char x[size];
+      void * last = &(((char*)array)[count * size]);
+      sift (array, count, size, compar_fn, context, 0);
+      memcpy (x, last, size);
+      memcpy (last, array, size);
+      memcpy (array, x, size);
+    }
+}
+
+int
+mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray_, const void * context)
+{
+  mr_ic_rarray_t * rarray = ic->ext.ptr;
+  
+  if (NULL == rarray)
+    return (EXIT_FAILURE);
+
+  rarray->ra.size = rarray->ra.alloc_size = rarray_->ra.size;
+  rarray->ra.data = MR_MALLOC (rarray->ra.alloc_size);
+  if (NULL == rarray->ra.data)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      rarray->ra.size = rarray->ra.alloc_size = 0;
+      return (EXIT_FAILURE);
+    }
+
+  memcpy (rarray->ra.data, rarray_->ra.data, rarray->ra.size);
+  hsort (rarray->ra.data, rarray->ra.size / sizeof (rarray->ra.data[0]), sizeof (rarray->ra.data[0]), ic->compar_fn, (void*)context);
+  return (EXIT_SUCCESS);
+}
+
+void
+mr_ic_sorted_array_free (mr_ic_t * ic, const void * context)
+{
+  mr_ic_rarray_t * rarray = ic->ext.ptr;
+  
+  if (NULL == rarray)
+    return;
+
+  MR_FREE (rarray);
+  ic->ext.ptr = NULL;
+}
+
+int
+mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
+{
+  mr_ic_rarray_t * rarray;
+  
+  if ((NULL == ic) || (NULL == compar_fn))
+    return (EXIT_FAILURE);
+
+  rarray = MR_MALLOC (sizeof (*rarray));
+  if (NULL == rarray)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (EXIT_FAILURE);
+    }
+  memset (rarray, 0, sizeof (*rarray));
+  
+  ic->ic_type = MR_IC_SORTED_ARRAY;
+  ic->key_type = key_type;
+  ic->compar_fn = compar_fn;
+  ic->add = mr_ic_sorted_array_add;
+  ic->find = mr_ic_sorted_array_find;
+  ic->index = mr_ic_sorted_array_index;
+  ic->free = mr_ic_sorted_array_free;
+  ic->ext.ptr = rarray;
   return (EXIT_SUCCESS);
 }
 

@@ -56,7 +56,7 @@ do
   echo -n "1, "
   I=$(( $I + 1 ))
 done
-echo "0, ...)" 
+echo "0)" 
 echo 
 
 echo "#endif /* _RLPP_H_ */" 
