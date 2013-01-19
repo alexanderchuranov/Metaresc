@@ -53,6 +53,7 @@
 /* XML attribute for zero length strings */
 #define MR_ISNULL "isnull"
 #define MR_ISNULL_VALUE "true"
+#define MR_IC_NONE_TYPE_T "mr_ic_none_type_t"
 #define MR_RARRAY_OPAQUE_DATA_T mr_rarray_opaque_data_t
 #define MR_RARRAY_OPAQUE_DATA_T_STR MR_STRINGIFY_READONLY (MR_RARRAY_OPAQUE_DATA_T)
 #define MR_STRINGIFY_READONLY(...) MR_STRINGIFY_READONLY_ (__VA_ARGS__)
@@ -169,30 +170,36 @@
 
 /* Next group of macroses checks that it has only one argument and it is 0 */
 #define MR_IS_0_EQ_0 ,
-#define MR_IS_0_EQ_0_CASE_11 ,
+#define MR_IS_EQ_0_CASE_011 ,
 
-#define MR_IS_EQ_0(...) MR_PASTE2 (MR_IS_EQ_0_ARG, MR_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
-#define MR_IS_EQ_0_ARG1(...) 0
-#define MR_IS_EQ_0_ARG0(X) MR_IS_EQ_0_ARG0_ (MR_PASTE2 (MR_IS_0_EQ_, X))
-#define MR_IS_EQ_0_ARG0_(...) MR_IS_EQ_0_ARG0__ (__VA_ARGS__)
-#define MR_IS_EQ_0_ARG0__(X, ...) MR_HAS_COMMA (MR_PASTE3 (MR_IS_0_EQ_0_CASE_, MR_IS_EMPTY (X), MR_IS_EMPTY (__VA_ARGS__)))
+#define MR_GET_SECOND(_0, ...) __VA_ARGS__
+#define MR_IS_EQ_0(...) MR_IS_EQ_0_ (__VA_ARGS__)
+#define MR_IS_EQ_0_(...) MR_IS_EQ_0__ ((__VA_ARGS__), (MR_PASTE2 (MR_IS_0_EQ_, __VA_ARGS__)))
+#define MR_IS_EQ_0__(ARGS, ARGS_EQ_0)					\
+  MR_HAS_COMMA (MR_PASTE4 (MR_IS_EQ_0_CASE_,				\
+			   MR_HAS_COMMA ARGS,				\
+			   MR_HAS_COMMA ARGS_EQ_0,			\
+			   MR_IS_EMPTY (MR_GET_SECOND ARGS_EQ_0)))
 
 /* If clause implementation. Usage MR_IF_ELSE (test_value) (expand_if_nonzero) (expand_if_zero) */
 #define MR_IGNORE(...)
 #define MR_IDENT(...) __VA_ARGS__
-#define MR_IF_ELSE0(...) __VA_ARGS__ MR_IGNORE
-#define MR_IF_ELSE1(...) MR_IDENT
-#define MR_IF_ELSE(...) MR_PASTE2 (MR_IF_ELSE, MR_IS_EQ_0 (__VA_ARGS__))
+#define MR_IF_ELSE_CASE_0(...) __VA_ARGS__ MR_IGNORE
+#define MR_IF_ELSE_CASE_1(...) MR_IDENT
+#define MR_IF_ELSE(...) MR_PASTE2 (MR_IF_ELSE_CASE_, MR_IS_EQ_0 (__VA_ARGS__))
 
-/* Next macro MR_HAS_NO_PAREN(...) checks that arguments are in parents */
-#define MR_DETECT_PAREN(...) 0
-#define MR_HAS_NO_PAREN(...) MR_PASTE2 (MR_HAS_NO_PAREN_ARG, MR_HAS_COMMA (__VA_ARGS__)) (__VA_ARGS__)
-#define MR_HAS_NO_PAREN_ARG0(X) MR_IF_ELSE (MR_IS_EQ_0 (MR_DETECT_PAREN X)) (0) (1)
-#define MR_HAS_NO_PAREN_ARG1(...) 1
+/* Next macro MR_IS_IN_PAREN(...) checks that argument is in parents */
+#define MR_IS_IN_PAREN_CASE_01 ,
+#define MR_DETECT_PAREN(...) ,
+#define MR_IS_IN_PAREN(...) MR_IS_IN_PAREN_ (__VA_ARGS__)
+#define MR_IS_IN_PAREN_(...)						\
+  MR_HAS_COMMA (MR_PASTE3 (MR_IS_IN_PAREN_CASE_,			\
+			   MR_HAS_COMMA (__VA_ARGS__),			\
+			   MR_HAS_COMMA (MR_DETECT_PAREN __VA_ARGS__)))
 
 /* MR_REMOVE_PAREN(...) removes parents if they are presented */
 #define MR_REMOVE_PAREN_(...) __VA_ARGS__
-#define MR_REMOVE_PAREN(...) MR_IF_ELSE (MR_HAS_NO_PAREN (__VA_ARGS__)) (__VA_ARGS__) (MR_REMOVE_PAREN_ __VA_ARGS__)
+#define MR_REMOVE_PAREN(...) MR_IF_ELSE (MR_IS_IN_PAREN (__VA_ARGS__)) (MR_REMOVE_PAREN_ __VA_ARGS__) (__VA_ARGS__)
 
 /* Main macroses for types definition. It passes type of definition to next level. */
 #define TYPEDEF_STRUCT(...) P00_TYPEDEF (STRUCT, __VA_ARGS__)
@@ -279,9 +286,9 @@
   2. (TYPE, NAME, SUFFIX..., COMMENT..., EXT...) for auto detection declarations.
 */
 #define P00_FIELD_(P00_MODE_TYPE_NAME, FIELD)				\
-  MR_IF_ELSE (MR_HAS_NO_PAREN (FIELD))					\
-  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FIELD))			\
-  (P00_FIELD_DETECT (P00_MODE_TYPE_NAME, FIELD, MR_GET_SUFFIX FIELD))
+  MR_IF_ELSE (MR_IS_IN_PAREN (FIELD))					\
+  (P00_FIELD_DETECT (P00_MODE_TYPE_NAME, FIELD, MR_GET_SUFFIX FIELD))	\
+  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FIELD))
 
 #define MR_GET_SUFFIX(...) MR_GET_SUFFIX_ (__VA_ARGS__, ,)
 #define MR_GET_SUFFIX_(_0, _1, _2, ...) _2
@@ -292,11 +299,11 @@
   c. Everything else goes to AUTO.
 */
 #define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)	\
-  MR_IF_ELSE (MR_HAS_NO_PAREN (SUFFIX))				\
+  MR_IF_ELSE (MR_IS_IN_PAREN (SUFFIX))				\
+  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FUNC FIELD))		\
   (MR_IF_ELSE (MR_IS_EMPTY (SUFFIX))				\
    (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))		\
-   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY FIELD)))	\
-  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FUNC FIELD))
+   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY FIELD)))
 
 #define P00_GET_MODE(P00_MODE, P00_TYPE_NAME) P00_MODE
 #define P00_GET_TYPE_NAME(P00_MODE, P00_TYPE_NAME) P00_TYPE_NAME
@@ -441,7 +448,10 @@
 #define MR_COMPARE_COMPAUND_TYPES(TYPE1, TYPE2, ...) ((sizeof (TYPE1) != sizeof (TYPE2)) | MR_FOR ((TYPE1, TYPE2), MR_NARG (__VA_ARGS__), MR_BOR, P00_COMPARE_FIELDS, __VA_ARGS__))
 #define P00_GET_FIRST(_1, _2) _1
 #define P00_GET_SECOND(_1, _2) _2
-#define P00_COMPARE_FIELDS(TYPE1_TYPE2, NAME, I) MR_IF_ELSE (MR_HAS_NO_PAREN (NAME)) (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, NAME, P00_GET_SECOND TYPE1_TYPE2, NAME)) (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, P00_GET_FIRST NAME, P00_GET_SECOND TYPE1_TYPE2, P00_GET_SECOND NAME))
+#define P00_COMPARE_FIELDS(TYPE1_TYPE2, NAME, I)			\
+  MR_IF_ELSE (MR_IS_IN_PAREN (NAME))					\
+  (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, P00_GET_FIRST NAME, P00_GET_SECOND TYPE1_TYPE2, P00_GET_SECOND NAME)) \
+  (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, NAME, P00_GET_SECOND TYPE1_TYPE2, NAME))
 
 #ifndef MR_COMPARE_FIELDS_EXT
 #define MR_COMPARE_FIELDS_EXT(...) 0

@@ -7,8 +7,6 @@
 #include <mr_hsort.h>
 #include <mr_ic.h>
 
-#define MR_IC_NONE_TYPE_T "mr_ic_none_type_t"
-
 mr_ptr_t *
 mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
