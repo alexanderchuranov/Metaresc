@@ -168,6 +168,32 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
 }
 
 /**
+ * Comparator for union discriminator info structures
+ * @param x index in mr_union_discriminator_t rarray
+ * @param y index in mr_union_discriminator_t rarray
+ * @param content void pointer to context
+ */
+static int
+mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_save_data_t * mr_save_data = context;
+  int diff = mr_hashed_name_cmp (&mr_save_data->mr_ra_ud.data[x.long_int_t].type,
+				 &mr_save_data->mr_ra_ud.data[y.long_int_t].type, NULL);
+  if (diff)
+    return (diff);
+  return (mr_hashed_name_cmp (&mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator,
+			      &mr_save_data->mr_ra_ud.data[y.long_int_t].discriminator, NULL));
+}
+
+unsigned int __attribute__ ((unused))
+mr_ud_get_hash (mr_ptr_t x, const void * context)
+{
+  const mr_save_data_t * mr_save_data = context;
+  return ((mr_hashed_name_get_hash (&mr_save_data->mr_ra_ud.data[x.long_int_t].type, NULL) << 1) +
+	  mr_hashed_name_get_hash (&mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator, NULL));
+}
+
+/**
  * Check whether pointer is presented in the collection of already saved pointers.
  * @param mr_save_data save routines data and lookup structures
  * @param data pointer on saved object
@@ -186,7 +212,7 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
     return (idx); /* memory allocation error occured */
   ptrs->ra.data[idx].data = data;
   ptrs->ra.data[idx].fd = *fdp;
-  
+
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
   tree_find_result = mr_tfind (idx, &mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
   if (tree_find_result)
@@ -215,6 +241,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ra.data[idx].data = data;
   mr_save_data->ptrs.ra.data[idx].fd = *fdp;
   mr_save_data->ptrs.ra.data[idx].parent = mr_save_data->parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
+  
+  mr_ic_hash_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t");
   
   /* forward reference resolving */
   ref_idx = mr_resolve_typed_forward_ref (mr_save_data);
@@ -317,22 +345,6 @@ mr_save_struct (mr_save_data_t * mr_save_data)
       mr_save_inner (&data[fdp->offset], fdp, mr_save_data); /* add each child to this node */
     }
   mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
-}
-
-/**
- * Comparator for union discriminator info structures
- * @param x index in mr_union_discriminator_t rarray
- * @param y index in mr_union_discriminator_t rarray
- * @param content void pointer to context
- */
-static int
-cmp_ud (const mr_ptr_t x, const mr_ptr_t y, const void * context)
-{
-  const mr_save_data_t * mr_save_data = context;
-  int diff = strcmp (mr_save_data->mr_ra_ud.data[x.long_int_t].type, mr_save_data->mr_ra_ud.data[y.long_int_t].type);
-  if (diff)
-    return (diff);
-  return (strcmp (mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator, mr_save_data->mr_ra_ud.data[y.long_int_t].discriminator));
 }
 
 static mr_fd_t *
@@ -481,8 +493,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud.size -= sizeof (mr_save_data->mr_ra_ud.data[0]);
   ud_idx.long_int_t = mr_save_data->mr_ra_ud.size / sizeof (mr_save_data->mr_ra_ud.data[0]); /* index of lookup record */
-  ud->type = mr_save_data->ptrs.ra.data[idx].fd.type; /* union type */
-  ud->discriminator = mr_save_data->ptrs.ra.data[idx].fd.comment; /* union discriminator */
+  ud->type.name = mr_save_data->ptrs.ra.data[idx].fd.type; /* union type */
+  ud->discriminator.name = mr_save_data->ptrs.ra.data[idx].fd.comment; /* union discriminator */
 
   /* traverse through parent up to root node */
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
@@ -493,7 +505,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	void * discriminator;
 
 	/* checks if this parent already have union resolution info */
-	ud_find = mr_tfind (ud_idx, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	ud_find = mr_ic_find (&mr_save_data->ptrs.ra.data[parent].union_discriminator, ud_idx, mr_save_data);
 	/* break the traverse loop if it has */
 	if (ud_find)
 	  break;
@@ -535,7 +547,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
       {
-	mr_ptr_t * ud_search = mr_tsearch (ud_find->ptr, &mr_save_data->ptrs.ra.data[parent].union_discriminator, cmp_ud, mr_save_data);
+	mr_ptr_t * ud_search = mr_ic_add (&mr_save_data->ptrs.ra.data[parent].union_discriminator, ud_find->ptr, mr_save_data);
 	if (NULL == ud_search)
 	  {
 	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -819,7 +831,6 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->parent = -1;
   mr_save_data->typed_ptrs_tree = NULL;
   mr_save_data->untyped_ptrs_tree = NULL;
-  mr_save_data->key_type = "long_int_t";
   mr_save_data->mr_ra_ud.size = 0;
   mr_save_data->mr_ra_ud.data = NULL;
   mr_save_data->mr_ra_idx.size = 0;
@@ -837,10 +848,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_post_process (mr_save_data);
 
   for (i = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1; i >= 0; --i)
-    {
-      mr_tdestroy (mr_save_data->ptrs.ra.data[i].union_discriminator, dummy_free_func, NULL);
-      mr_save_data->ptrs.ra.data[i].union_discriminator = NULL;
-    }
+    mr_ic_free (&mr_save_data->ptrs.ra.data[i].union_discriminator, NULL);
   if (mr_save_data->mr_ra_ud.data)
     MR_FREE (mr_save_data->mr_ra_ud.data);
   mr_save_data->mr_ra_ud.data = NULL;

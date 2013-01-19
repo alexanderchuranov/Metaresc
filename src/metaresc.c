@@ -402,7 +402,6 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->flags.is_content_reference = MR_FALSE;
   ptrdes->flags.is_opaque_data = MR_FALSE;
   ptrdes->union_field_name = NULL;
-  ptrdes->union_discriminator = NULL;
   ptrdes->value = NULL;
   ptrdes->ext.ptr = NULL;
   ptrdes->ptr_type = NULL;

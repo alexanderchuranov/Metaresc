@@ -1223,5 +1223,6 @@ extern void mr_init_save_xml (void);
 
 extern unsigned int mr_hash_str (char*);
 extern int mr_hashed_name_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
+extern unsigned int mr_hashed_name_get_hash (mr_ptr_t, const void *);
 
 #endif /* _METARESC_H_ */

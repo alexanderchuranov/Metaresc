@@ -149,11 +149,6 @@ TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
 		(mr_red_black_t, red),
 		)
 
-TYPEDEF_STRUCT (mr_typed_tree_t, ATTRIBUTES ( , "typed RB-tree"),
-		(mr_red_black_tree_node_t *, root, , "RB-tree"),
-		(char *, key_type, , "type of mr_ptr_t key"),
-		)
-
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		(int, count, , "array size"),
 		(int, row_count, , "row size"),
@@ -287,8 +282,8 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (
 	      )
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
-		(char *, type, , "union type name"),
-		(char *, discriminator, , "union discriminator"),
+		(mr_hashed_name_t, type, , "union type name"),
+		(mr_hashed_name_t, discriminator, , "union discriminator"),
 		(mr_fd_t *, fdp, , "discriminated union field descriptor"),
 		)
 
@@ -305,7 +300,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, next, , "next sibling index"),
 		(mr_ptrdes_flags_t, flags),
 		(char *, union_field_name, , "field descriptor for unions"),
-		(mr_red_black_tree_node_t *, union_discriminator, , "RB-tree for unions discriminator resolution"),
+		(mr_ic_t, union_discriminator, , "RB-tree for unions discriminator resolution"),
 		(char *, value, , "stringified value"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
@@ -356,7 +351,6 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(int, parent, , "index of current parent"),
 		(mr_red_black_tree_node_t *, typed_ptrs_tree, , "RB-tree with typed nodes"),
 		(mr_red_black_tree_node_t *, untyped_ptrs_tree, , "RB-tree with untyped nodes"),
-		(char *, key_type, , "should be set to 'long_int_t' in run time"),
 		RARRAY (int, mr_ra_idx, "indexes of postponed nodes"),
 		RARRAY (mr_union_discriminator_t, mr_ra_ud, "allocation of union discriminators"),
 		)
