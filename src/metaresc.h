@@ -142,6 +142,8 @@
 #define MR_PASTE3_(_0, _1, _2) _0 ## _1 ## _2
 #define MR_PASTE4(...) MR_PASTE4_ (__VA_ARGS__)
 #define MR_PASTE4_(_0, _1, _2, _3) _0 ## _1 ## _2 ## _3
+#define MR_PASTE5(...) MR_PASTE5_ (__VA_ARGS__)
+#define MR_PASTE5_(_0, _1, _2, _3, _4) _0 ## _1 ## _2 ## _3 ## _4
 
 /* Interface macros for unrolled loops from mr_pp.h */
 #define MR_FOREACH(X, ...) MR_PASTE2 (MR_FOREACH, MR_NARG (__VA_ARGS__)) (X, __VA_ARGS__)
@@ -155,26 +157,24 @@
 
 #define MR_IS_EMPTY(...)						\
   MR_HAS_COMMA								\
-  (MR_PASTE2								\
+  (MR_PASTE5								\
    (P00_IS_EMPTY_CASE_,							\
-    MR_PASTE4 (								\
-	       /* test if there is just one argument, eventually an empty one */ \
-	       MR_HAS_COMMA (__VA_ARGS__),				\
-	       /* test if P00_IS__EQ__ together with the argument adds a comma */ \
-	       MR_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__),			\
-	       /* test if the argument together with a parenthesis adds a comma */ \
-	       MR_HAS_COMMA (__VA_ARGS__ ()),				\
-	       /* test if placing it between P00_IS__EQ__ and the parenthesis adds a comma */ \
-	       MR_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ ())		\
-									)))
+    /* test if there is just one argument, eventually an empty one */	\
+    MR_HAS_COMMA (__VA_ARGS__),						\
+    /* test if P00_IS__EQ__ together with the argument adds a comma */	\
+    MR_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__),				\
+    /* test if the argument together with a parenthesis adds a comma */ \
+    MR_HAS_COMMA (__VA_ARGS__ ()),					\
+    /* test if placing it between P00_IS__EQ__ and the parenthesis adds a comma */ \
+    MR_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ ())				\
+    ))
 
 /* Next group of macroses checks that it has only one argument and it is 0 */
 #define MR_IS_0_EQ_0 ,
 #define MR_IS_EQ_0_CASE_011 ,
 
 #define MR_GET_SECOND(_0, ...) __VA_ARGS__
-/* evaluate arguments */
-#define MR_IS_EQ_0(...) MR_IS_EQ_0_ (__VA_ARGS__)
+#define MR_IS_EQ_0(...) MR_IS_EQ_0_ (__VA_ARGS__) /* evaluate arguments */
 #define MR_IS_EQ_0_(...) MR_IS_EQ_0__ ((__VA_ARGS__), (MR_PASTE2 (MR_IS_0_EQ_, __VA_ARGS__)))
 #define MR_IS_EQ_0__(ARGS, ARGS_EQ_0)					\
   MR_HAS_COMMA (MR_PASTE4 (MR_IS_EQ_0_CASE_,				\
@@ -195,7 +195,8 @@
 /* Next macro MR_IS_IN_PAREN(...) checks that argument is in parents */
 #define MR_IS_IN_PAREN_CASE_01 ,
 #define MR_DETECT_PAREN(...) ,
-#define MR_IS_IN_PAREN(...) MR_IS_IN_PAREN_ (__VA_ARGS__)
+
+#define MR_IS_IN_PAREN(...) MR_IS_IN_PAREN_ (__VA_ARGS__) /* evaluate agruments */
 #define MR_IS_IN_PAREN_(...)						\
   MR_HAS_COMMA (MR_PASTE3 (MR_IS_IN_PAREN_CASE_,			\
 			   /* test if there is just one argument, eventually in paren */ \
