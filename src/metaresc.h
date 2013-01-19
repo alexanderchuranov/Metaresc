@@ -160,11 +160,11 @@
     MR_PASTE4 (								\
 	       /* test if there is just one argument, eventually an empty one */ \
 	       MR_HAS_COMMA (__VA_ARGS__),				\
-	       /* test if P99_IS__EQ__ together with the argument adds a comma */ \
+	       /* test if P00_IS__EQ__ together with the argument adds a comma */ \
 	       MR_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__),			\
 	       /* test if the argument together with a parenthesis adds a comma */ \
 	       MR_HAS_COMMA (__VA_ARGS__ ()),				\
-	       /* test if placing it between P99_IS__EQ__ and the parenthesis adds a comma */ \
+	       /* test if placing it between P00_IS__EQ__ and the parenthesis adds a comma */ \
 	       MR_HAS_COMMA (P00_IS__EQ__ __VA_ARGS__ ())		\
 									)))
 
@@ -173,12 +173,16 @@
 #define MR_IS_EQ_0_CASE_011 ,
 
 #define MR_GET_SECOND(_0, ...) __VA_ARGS__
+/* evaluate arguments */
 #define MR_IS_EQ_0(...) MR_IS_EQ_0_ (__VA_ARGS__)
 #define MR_IS_EQ_0_(...) MR_IS_EQ_0__ ((__VA_ARGS__), (MR_PASTE2 (MR_IS_0_EQ_, __VA_ARGS__)))
 #define MR_IS_EQ_0__(ARGS, ARGS_EQ_0)					\
   MR_HAS_COMMA (MR_PASTE4 (MR_IS_EQ_0_CASE_,				\
+			   /* test if there is just one argument, eventually a zero */ \
 			   MR_HAS_COMMA ARGS,				\
+			   /* test if MR_IS_0_EQ_ together with the argument adds a comma */ \
 			   MR_HAS_COMMA ARGS_EQ_0,			\
+			   /* test that there is nothing after comma */ \
 			   MR_IS_EMPTY (MR_GET_SECOND ARGS_EQ_0)))
 
 /* If clause implementation. Usage MR_IF_ELSE (test_value) (expand_if_nonzero) (expand_if_zero) */
@@ -194,7 +198,9 @@
 #define MR_IS_IN_PAREN(...) MR_IS_IN_PAREN_ (__VA_ARGS__)
 #define MR_IS_IN_PAREN_(...)						\
   MR_HAS_COMMA (MR_PASTE3 (MR_IS_IN_PAREN_CASE_,			\
+			   /* test if there is just one argument, eventually in paren */ \
 			   MR_HAS_COMMA (__VA_ARGS__),			\
+			   /* test if MR_DETECT_PAREN_ together with the argument adds a comma */ \
 			   MR_HAS_COMMA (MR_DETECT_PAREN __VA_ARGS__)))
 
 /* MR_REMOVE_PAREN(...) removes parents if they are presented */
