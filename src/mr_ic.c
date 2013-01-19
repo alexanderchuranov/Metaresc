@@ -1,5 +1,10 @@
+/* -*- C -*- */
+/* I hate this bloody country. Smash. */
+/* This file is part of Metaresc project */
+
 #include <metaresc.h>
 #include <mr_tsearch.h>
+#include <mr_hsort.h>
 #include <mr_ic.h>
 
 #define MR_IC_NONE_TYPE_T "mr_ic_none_type_t"
@@ -70,6 +75,7 @@ mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 int
 mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
+  mr_ic_none_free (ic, context);
   ic->ext.ptr = rarray;
   return (EXIT_SUCCESS);
 }
@@ -85,7 +91,7 @@ mr_ic_none_free (mr_ic_t * ic, const void * context)
       (0 != strcmp (MR_IC_NONE_TYPE_T, rarray->ra.ptr_type)))
     return;
 
-  if (rarray->ra.data)
+  if (NULL != rarray->ra.data)
     MR_FREE (rarray->ra.data);
   MR_FREE (rarray);
 }
@@ -158,52 +164,6 @@ mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
   return (NULL);
 }
 
-static inline void
-sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context, int idx0)
-{
-  int idx1;
-  char x[size];
-  memcpy (x, &array[idx0 * size], size);
-  
-  for (idx1 = (idx0 << 1) + 1; idx1 < count; idx1 = (idx1 << 1) + 1)
-    {
-      if (compar_fn (&array[idx1 * size], &array[(idx1 + 1) * size], context) <= 0)
-	++idx1;
-      if (compar_fn (&array[idx1 * size], x, context) <= 0)
-	break;
-      memcpy (&array[idx0 * size], &array[idx1 * size], size);
-      idx0 = idx1;
-    }
-  if ((idx1 == count) && (compar_fn (&array[idx1 * size], x, context) > 0))
-    {
-      memcpy (&array[idx0 * size], &array[idx1 * size], size);
-      idx0 = idx1;
-    }
-  memcpy (&array[idx0 * size], x, size);
-}
-
-static void
-hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context)
-{
-  int i;
-
-  if (0 == count)
-    return;
-  
-  for (i = --count >> 1; i > 0; --i)
-    sift (array, count, size, compar_fn, context, i);
-
-  for ( ; count > 0; --count)
-    {
-      char x[size];
-      void * last = &(((char*)array)[count * size]);
-      sift (array, count, size, compar_fn, context, 0);
-      memcpy (x, last, size);
-      memcpy (last, array, size);
-      memcpy (array, x, size);
-    }
-}
-
 TYPEDEF_STRUCT (mr_sort_key_t,
 		(const void *, context),
 		(mr_ic_t *, ic))
@@ -225,6 +185,9 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray_, const void * c
   
   if (NULL == rarray)
     return (EXIT_FAILURE);
+
+  if (NULL != rarray->ra.data)
+    MR_FREE (rarray->ra.data);
 
   rarray->ra.size = rarray->ra.alloc_size = rarray_->ra.size;
   rarray->ra.data = MR_MALLOC (rarray->ra.alloc_size);
@@ -248,7 +211,7 @@ mr_ic_sorted_array_free (mr_ic_t * ic, const void * context)
   if (NULL == rarray)
     return;
 
-  if (rarray->ra.data)
+  if (NULL != rarray->ra.data)
     MR_FREE (rarray->ra.data);
   MR_FREE (rarray);
   ic->ext.ptr = NULL;
@@ -293,7 +256,7 @@ dummy_free_fn (mr_ptr_t key, const void * context)
 static inline void
 mr_ic_hash_free_inner (mr_ic_hash_t * index, const void * context)
 {
-  if (index->index.data)
+  if (NULL != index->index.data)
     {
       int i;
       for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)
@@ -443,8 +406,7 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
       int hash_size = index->index.size / sizeof (index->index.data[0]);
       if (hash_size <= 0)
 	return (NULL);
-      else
-	return (mr_tfind (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
+      return (mr_tfind (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
     }
 }
 

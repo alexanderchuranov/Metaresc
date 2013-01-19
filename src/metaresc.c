@@ -107,7 +107,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
       if (tdp)
 	{
 	  int i;
-	  for (i = 0; NULL != tdp->fields.data[i].fdp->comment; ++i)
+	  for (i = 0; MR_TYPE_ENUM_VALUE == tdp->fields.data[i].fdp->mr_type; ++i)
 	    messages[tdp->fields.data[i].fdp->param.enum_value] = tdp->fields.data[i].fdp->comment;
 	  messages_inited = !0;
 	}
