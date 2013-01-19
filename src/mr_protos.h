@@ -307,7 +307,6 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(char *, union_field_name, , "field descriptor for unions"),
 		(mr_red_black_tree_node_t *, union_discriminator, , "RB-tree for unions discriminator resolution"),
 		(char *, value, , "stringified value"),
-		(typeof (NULL - NULL), offset),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
 		)

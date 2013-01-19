@@ -475,10 +475,6 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	      return (NULL);
 	  
-	  if (ptrs->ra.data[idx].offset != 0)
-	    if (mr_ra_printf (&mr_ra_str, "/* " MR_OFFSET_PROP " = %zd */", ptrs->ra.data[idx].offset) < 0)
-	      return (NULL);
-	  
 	  if (save_data.prefix)
 	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.type) < 0)
 	      return (NULL);
