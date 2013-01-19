@@ -189,9 +189,9 @@ TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup ove
 
 TYPEDEF_ENUM (mr_ic_type_t,
 	      (MR_IC_NONE, , "mr_ic_rarray_t"),
+	      (MR_IC_RBTREE, , "mr_red_black_tree_node_t"),
 	      (MR_IC_SORTED_ARRAY, , "mr_ic_rarray_t"),
 	      (MR_IC_HASH, , "mr_ic_hash_t"),
-	      (MR_IC_RBTREE, , "mr_red_black_tree_node_t"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,

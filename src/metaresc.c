@@ -107,7 +107,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
       if (tdp)
 	{
 	  int i;
-	  for (i = 0; MR_TYPE_TRAILING_RECORD != tdp->fields.data[i].fdp->mr_type; ++i)
+	  for (i = 0; NULL != tdp->fields.data[i].fdp->comment; ++i)
 	    messages[tdp->fields.data[i].fdp->param.enum_value] = tdp->fields.data[i].fdp->comment;
 	  messages_inited = !0;
 	}
@@ -762,7 +762,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @return hash value
  */
 unsigned int
-mr_fd_get_hash (mr_ptr_t x, const void * context)
+mr_enumfd_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * fdp = x.ptr;
   return (fdp->param.enum_value);
@@ -819,7 +819,7 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }  
 
-  mr_ic_hash_new (&tdp->lookup_by_value, mr_fd_get_hash, cmp_enums_by_value, "mr_fd_t");
+  mr_ic_hash_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t");
   mr_ic_index (&tdp->lookup_by_value, (mr_ic_rarray_t*)&tdp->fields, NULL);
 
   for (i = 0; i < count; ++i)
@@ -1246,6 +1246,23 @@ mr_register_type_pointer (mr_td_t * tdp)
   return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp, NULL)) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 
+static int
+mr_ic_hashed_name_new (mr_ic_t * ic, char * key_type)
+{
+  switch (MR_IC_HASH)
+    {
+      /* sample run: compares 168952 matches 9703 ratio: 17.41 */
+    case MR_IC_NONE: return (mr_ic_none_new (ic, mr_hashed_name_cmp, key_type));
+      /* sample run: compares 57272 matches 12029 ratio: 4.76 */
+    case MR_IC_RBTREE: return (mr_ic_rbtree_new (ic, mr_hashed_name_cmp, key_type));
+      /* sample run: compares 54947 matches 10987 ratio: 5.00 */
+    case MR_IC_SORTED_ARRAY: return (mr_ic_sorted_array_new (ic, mr_hashed_name_cmp, key_type));
+      /* sample run: compares 15453 matches 14019 ratio: 1.10 */
+    case MR_IC_HASH: return (mr_ic_hash_new (ic, mr_hashed_name_get_hash, mr_hashed_name_cmp, key_type));
+    default: return (EXIT_FAILURE);
+    }
+}
+
 /**
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
@@ -1296,12 +1313,11 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
     return (EXIT_FAILURE);
   
   mr_check_fields (tdp);
-  //mr_ic_hash_new (&tdp->lookup_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t");
-  mr_ic_sorted_array_new (&tdp->lookup_by_name, mr_hashed_name_cmp, "mr_fd_t");
+  mr_ic_hashed_name_new (&tdp->lookup_by_name, "mr_fd_t");
   mr_ic_index (&tdp->lookup_by_name, (mr_ic_rarray_t*)&tdp->fields, NULL);
   
   if (NULL == mr_conf.enum_by_name.find)
-    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t");
+    mr_ic_hashed_name_new (&mr_conf.enum_by_name, "mr_fd_t");
 
   /* NB! not thread safe - only calls from __constructor__ assumed */
   tdpp = mr_rarray_append ((mr_rarray_t*)&mr_conf.des, sizeof (mr_conf.des.data[0]));
@@ -1310,7 +1326,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   *tdpp = tdp;
   
   if (NULL == mr_conf.lookup_by_name.find)
-    mr_ic_hash_new (&mr_conf.lookup_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t");
+    mr_ic_hashed_name_new (&mr_conf.lookup_by_name, "mr_td_t");
   
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
     return (EXIT_FAILURE);

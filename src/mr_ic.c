@@ -113,7 +113,7 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   mr_ic_rarray_t * rarray = ic->ext.ptr;
   mr_ptr_t * add;
   int i;
-  
+
   if (NULL == rarray)
     return (NULL);
 
@@ -121,15 +121,15 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (NULL == add)
     return (NULL);
 
-  for (i = rarray->ra.size / sizeof (rarray->ra.data[0]) - 2; i >= 0; --i)
+  for (i = rarray->ra.size / sizeof (rarray->ra.data[0]) - 1; i > 0; --i)
     {
-      if (ic->compar_fn (key, rarray->ra.data[i], context) <= 0)
+      rarray->ra.data[i] = rarray->ra.data[i - 1];
+      if (ic->compar_fn (key, rarray->ra.data[i], context) >= 0)
 	break;
-      rarray->ra.data[i + 1] = rarray->ra.data[i];
     }
-  rarray->ra.data[i + 1] = key;
+  rarray->ra.data[i] = key;
   
-  return (NULL);
+  return (&rarray->ra.data[i]);
 }
 
 mr_ptr_t *
@@ -153,7 +153,7 @@ mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
       if (diff < 0)
 	up = mid;
       else
-	down = mid;
+	down = mid + 1;
     }
   return (NULL);
 }
@@ -248,6 +248,8 @@ mr_ic_sorted_array_free (mr_ic_t * ic, const void * context)
   if (NULL == rarray)
     return;
 
+  if (rarray->ra.data)
+    MR_FREE (rarray->ra.data);
   MR_FREE (rarray);
   ic->ext.ptr = NULL;
 }
