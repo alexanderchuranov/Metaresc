@@ -307,7 +307,7 @@ mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
   if (0 != index->count)
     {
       int i;
-      index->index.size = index->index.alloc_size = index->count * 2 * MR_HASH_TABLE_SIZE_MULT * sizeof (index->index.data[0]);
+      index->index.size = index->index.alloc_size = ((int)(index->count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (index->index.data[0]);
       index->index.data = MR_MALLOC (index->index.alloc_size);
       if (NULL == index->index.data)
 	{
