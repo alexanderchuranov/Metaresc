@@ -517,7 +517,7 @@
 /* Macroses for prototypes generation mode */
 #define MR_TYPEDEF_STRUCT_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) MR_TYPE_NAME; struct __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
 #define MR_END_STRUCT_PROTO(MR_TYPE_NAME, ...) };
-#define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef union __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
+#define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef __VA_ARGS__ union MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
 #define MR_END_UNION_PROTO(MR_TYPE_NAME, ...) } MR_TYPE_NAME;
 
 /* next macro adds empty argument. Required for MR_AUTO, MR_NONE, MR_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */

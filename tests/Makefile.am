@@ -2,6 +2,7 @@
 
 AUTOMAKE_OPTIONS = parallel-tests
 AM_CFLAGS = @AM_CFLAGS@ @LIBXML2_CFLAGS@
+AM_LDFLAGS = -rdynamic
 INCLUDES = -I$(top_srcdir)/src
 LIBS += ../src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet

@@ -24,7 +24,7 @@ static mr_save_handler_t ext_mr_save_handler[];
  * Dummy stub for tree delete function
  * @param nodep pointer on a tree node
  */
-static void dummy_free_func (void * nodep, const void * context) {};
+static void dummy_free_func (mr_ptr_t nodep, const void * context) {};
 
 /**
  * Comparator for mr_ptrdes_t.
@@ -76,17 +76,17 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 }
 
 static int
-cmp_typed_ptrdes (const long x, const long y, const void * context)
+cmp_typed_ptrdes (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
-  return (mr_cmp_ptrdes (&ptrs->ra.data[x], &ptrs->ra.data[y]));
+  return (mr_cmp_ptrdes (&ptrs->ra.data[x.long_int_t], &ptrs->ra.data[y.long_int_t]));
 }
 
 static int
-cmp_untyped_ptrdes (const long x, const long y, const void * context)
+cmp_untyped_ptrdes (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
-  return (ptrs->ra.data[x].data - ptrs->ra.data[y].data);
+  return (ptrs->ra.data[x.long_int_t].data - ptrs->ra.data[y.long_int_t].data);
 }
 
 /**
@@ -326,13 +326,13 @@ mr_save_struct (mr_save_data_t * mr_save_data)
  * @param content void pointer to context
  */
 static int
-cmp_ud (const long x, const long y, const void * context)
+cmp_ud (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  int diff = strcmp (mr_save_data->mr_ra_ud.data[x].type, mr_save_data->mr_ra_ud.data[y].type);
+  int diff = strcmp (mr_save_data->mr_ra_ud.data[x.long_int_t].type, mr_save_data->mr_ra_ud.data[y.long_int_t].type);
   if (diff)
     return (diff);
-  return (strcmp (mr_save_data->mr_ra_ud.data[x].discriminator, mr_save_data->mr_ra_ud.data[y].discriminator));
+  return (strcmp (mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator, mr_save_data->mr_ra_ud.data[y.long_int_t].discriminator));
 }
 
 static mr_fd_t *

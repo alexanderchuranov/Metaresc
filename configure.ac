@@ -55,6 +55,9 @@ AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
 AC_CHECK_PROG(HAVE_BISON, $YACC, yes)
 AC_CHECK_PROG(HAVE_FLEX, $LEX, yes)
 
+dnl The dlopen() function is in the C library for *BSD and in libdl on GLIBC-based systems
+AC_SEARCH_LIBS([dladdr], [dl dld], [AC_DEFINE(HAVE_LIBDL, [], [define if dl is present])], [])
+  
 AM_CONDITIONAL(HAVE_BISON_FLEX, test x${HAVE_BISON} = xyes && test x${HAVE_FLEX} = xyes)
 if test x${HAVE_BISON} = xyes && test x${HAVE_FLEX} = xyes; then
   AC_DEFINE(HAVE_BISON_FLEX, [], [Bison & Flex found])

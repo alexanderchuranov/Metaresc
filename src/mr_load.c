@@ -2,18 +2,19 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
+#ifdef HAVE_CONFIG_H
+#include <mr_config.h>
+#endif /* HAVE_CONFIG_H */
 #include <stdio.h>
 #include <string.h>
+#ifdef HAVE_DLFCN_H
 #define __USE_GNU
 #include <dlfcn.h>
+#endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
 #include <mr_ic.h>
 #include <mr_load.h>
-
-#ifdef HAVE_CONFIG_H
-# include <mr_config.h>
-#endif /* HAVE_CONFIG_H */
 
 /**
  * Post load references setting. If node was marked as references
@@ -464,6 +465,7 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
   if (isdigit (value[0]))
     return (mr_load_integer (idx, mr_load_data));
 
+#ifdef HAVE_LIBDL
   func = dlsym (RTLD_DEFAULT, value);
   if (NULL == func)
     {
@@ -471,8 +473,11 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
       return (0);
     }
   *(void**)mr_load_data->ptrs.ra.data[idx].data = func;
-
   return (!0);
+#else /* ! HAVE_LIBDL */
+  return (0);
+#endif /* HAVE_LIBDL */
+
 }
 
 static mr_fd_t *

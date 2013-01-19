@@ -4,7 +4,7 @@
 
 #include <math.h>
 #ifdef HAVE_CONFIG_H
-# include <mr_config.h>
+#include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
 #ifdef HAVE_ENDIAN_H
 #include <endian.h>
@@ -12,8 +12,10 @@
 #ifdef HAVE_MACHINE_ENDIAN_H
 #include <machine/endian.h>
 #endif /* HAVE_MACHINE_ENDIAN_H */
+#ifdef HAVE_DLFCN_H
 #define __USE_GNU
 #include <dlfcn.h>
+#endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
 #include <mr_ic.h>
@@ -119,6 +121,7 @@ mr_stringify_func (mr_ptrdes_t * ptrdes)
     {
       void * func = *(void**)ptrdes->data;
       char str[MR_INT_TO_STRING_BUF_SIZE];
+#ifdef HAVE_LIBDL
       Dl_info info;
       memset (&info, 0, sizeof (info));
       if (0 != dladdr (func, &info))
@@ -126,6 +129,7 @@ mr_stringify_func (mr_ptrdes_t * ptrdes)
 	  if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
 	    return (MR_STRDUP (info.dli_sname));
 	}	  
+#endif /* HAVE_LIBDL */
       sprintf (str, "%p", func);
       return (MR_STRDUP (str));
     }
