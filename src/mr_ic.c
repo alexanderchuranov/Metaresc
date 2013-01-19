@@ -42,7 +42,7 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
       ic->ext.ptr = rarray = rarray_;
     }
   
-  add = mr_rarray_append ((mr_rarray_t*)rarray, sizeof (rarray->ra.data[0]));
+  add = mr_rarray_append ((mr_rarray_t*)&rarray->ra, sizeof (rarray->ra.data[0]));
 
   if (NULL == add)
     return (NULL);
@@ -110,12 +110,51 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 mr_ptr_t *
 mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
+  mr_ic_rarray_t * rarray = ic->ext.ptr;
+  mr_ptr_t * add;
+  int i;
+  
+  if (NULL == rarray)
+    return (NULL);
+
+  add = mr_rarray_append ((mr_rarray_t*)&rarray->ra, sizeof (rarray->ra.data[0]));
+  if (NULL == add)
+    return (NULL);
+
+  for (i = rarray->ra.size / sizeof (rarray->ra.data[0]) - 2; i >= 0; --i)
+    {
+      if (ic->compar_fn (key, rarray->ra.data[i], context) <= 0)
+	break;
+      rarray->ra.data[i + 1] = rarray->ra.data[i];
+    }
+  rarray->ra.data[i + 1] = key;
+  
   return (NULL);
 }
 
 mr_ptr_t *
 mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
+  mr_ic_rarray_t * rarray = ic->ext.ptr;
+  int up, down;
+  
+  if (NULL == rarray)
+    return (NULL);
+
+  down = 0;
+  up = rarray->ra.size / sizeof (rarray->ra.data[0]);
+
+  while (up != down)
+    {
+      int mid = (down + up) >> 1;
+      int diff = ic->compar_fn (key, rarray->ra.data[mid], context);
+      if (0 == diff)
+	return (&rarray->ra.data[mid]);
+      if (diff < 0)
+	up = mid;
+      else
+	down = mid;
+    }
   return (NULL);
 }
 
@@ -148,6 +187,9 @@ hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void *
 {
   int i;
 
+  if (0 == count)
+    return;
+  
   for (i = --count >> 1; i > 0; --i)
     sift (array, count, size, compar_fn, context, i);
 
@@ -162,10 +204,24 @@ hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void *
     }
 }
 
+TYPEDEF_STRUCT (mr_sort_key_t,
+		(const void *, context),
+		(mr_ic_t *, ic))
+
+static int
+mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_sort_key_t * mr_sort_key = context;
+  const mr_ptr_t * x_ = x.ptr;
+  const mr_ptr_t * y_ = y.ptr;
+  return (mr_sort_key->ic->compar_fn (*x_, *y_, mr_sort_key->context));
+}
+
 int
 mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray_, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
+  mr_sort_key_t mr_sort_key = { .context = context, .ic = ic, };
   
   if (NULL == rarray)
     return (EXIT_FAILURE);
@@ -180,7 +236,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray_, const void * c
     }
 
   memcpy (rarray->ra.data, rarray_->ra.data, rarray->ra.size);
-  hsort (rarray->ra.data, rarray->ra.size / sizeof (rarray->ra.data[0]), sizeof (rarray->ra.data[0]), ic->compar_fn, (void*)context);
+  hsort (rarray->ra.data, rarray->ra.size / sizeof (rarray->ra.data[0]), sizeof (rarray->ra.data[0]), mr_sort_key_cmp, &mr_sort_key);
   return (EXIT_SUCCESS);
 }
 
@@ -211,6 +267,8 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
       return (EXIT_FAILURE);
     }
   memset (rarray, 0, sizeof (*rarray));
+  rarray->ra.data = NULL;
+  rarray->ra.size = rarray->ra.alloc_size = 0;
   
   ic->ic_type = MR_IC_SORTED_ARRAY;
   ic->key_type = key_type;
@@ -317,9 +375,9 @@ visit_node (const mr_red_black_tree_node_t * node, mr_rb_visit_order_t order, in
   mr_ic_rarray_t * rarray = (void*)context;
   if ((MR_RB_VISIT_POSTORDER == order) || (MR_RB_VISIT_LEAF == order))
     {
-      mr_ptr_t * mr_ptr = mr_rarray_append ((mr_rarray_t*)rarray, sizeof (rarray->ra.data[0]));
-      if (mr_ptr)
-	*mr_ptr = node->key;
+      mr_ptr_t * add = mr_rarray_append ((mr_rarray_t*)&rarray->ra, sizeof (rarray->ra.data[0]));
+      if (add)
+	*add = node->key;
     }
 }
 
@@ -389,7 +447,7 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 }
 
 int
-mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, void * context)
+mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type)
 {
   mr_ic_hash_t * index;
 
@@ -449,7 +507,7 @@ mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 }
 
 int
-mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, void * context)
+mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
   if ((NULL == ic) || (NULL == compar_fn))
     return (EXIT_FAILURE);

@@ -819,7 +819,7 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }  
 
-  mr_ic_hash_new (&tdp->lookup_by_value, mr_fd_get_hash, cmp_enums_by_value, "mr_fd_t", NULL);
+  mr_ic_hash_new (&tdp->lookup_by_value, mr_fd_get_hash, cmp_enums_by_value, "mr_fd_t");
   mr_ic_index (&tdp->lookup_by_value, (mr_ic_rarray_t*)&tdp->fields, NULL);
 
   for (i = 0; i < count; ++i)
@@ -1296,11 +1296,12 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
     return (EXIT_FAILURE);
   
   mr_check_fields (tdp);
-  mr_ic_hash_new (&tdp->lookup_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t", NULL);
+  //mr_ic_hash_new (&tdp->lookup_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t");
+  mr_ic_sorted_array_new (&tdp->lookup_by_name, mr_hashed_name_cmp, "mr_fd_t");
   mr_ic_index (&tdp->lookup_by_name, (mr_ic_rarray_t*)&tdp->fields, NULL);
   
   if (NULL == mr_conf.enum_by_name.find)
-    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t", NULL);
+    mr_ic_hash_new (&mr_conf.enum_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_fd_t");
 
   /* NB! not thread safe - only calls from __constructor__ assumed */
   tdpp = mr_rarray_append ((mr_rarray_t*)&mr_conf.des, sizeof (mr_conf.des.data[0]));
@@ -1309,7 +1310,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   *tdpp = tdp;
   
   if (NULL == mr_conf.lookup_by_name.find)
-    mr_ic_hash_new (&mr_conf.lookup_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t", NULL);
+    mr_ic_hash_new (&mr_conf.lookup_by_name, mr_hashed_name_get_hash, mr_hashed_name_cmp, "mr_td_t");
   
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
     return (EXIT_FAILURE);
