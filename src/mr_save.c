@@ -21,12 +21,6 @@ static mr_save_handler_t mr_save_handler[];
 static mr_save_handler_t ext_mr_save_handler[];
 
 /**
- * Dummy stub for tree delete function
- * @param nodep pointer on a tree node
- */
-static void dummy_free_func (mr_ptr_t nodep, const void * context) {};
-
-/**
  * Comparator for mr_ptrdes_t.
  * @param x value to compare
  * @param y value to compare
@@ -75,15 +69,30 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
   return (0);
 }
 
+static unsigned int __attribute__ ((unused))
+mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
+{
+  const mr_ra_mr_ptrdes_t * ptrs = context;
+  const mr_ptrdes_t * ptrdes = &ptrs->ra.data[x.long_int_t];
+  return ((long)ptrdes->data + ptrdes->fd.mr_type + ptrdes->fd.mr_type_ext * MR_TYPE_LAST);
+}
+
 static int
-cmp_typed_ptrdes (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
   return (mr_cmp_ptrdes (&ptrs->ra.data[x.long_int_t], &ptrs->ra.data[y.long_int_t]));
 }
 
+static unsigned int __attribute__ ((unused))
+mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
+{
+  const mr_ra_mr_ptrdes_t * ptrs = context;
+  return ((long)ptrs->ra.data[x.long_int_t].data);
+}
+
 static int
-cmp_untyped_ptrdes (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
   return (ptrs->ra.data[x.long_int_t].data - ptrs->ra.data[y.long_int_t].data);
@@ -104,7 +113,7 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  tree_search_result = mr_tsearch (count, &mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
+  tree_search_result = mr_ic_add (&mr_save_data->typed_ptrs_tree, count, ptrs);
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -132,7 +141,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   void * tree_search_result;
   int ref_idx;
 
-  tree_search_result = mr_tsearch (count, &mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);  
+  tree_search_result = mr_ic_add (&mr_save_data->untyped_ptrs_tree, count, ptrs);  
   if (NULL == tree_search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -214,10 +223,10 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
   ptrs->ra.data[idx].fd = *fdp;
 
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
-  tree_find_result = mr_tfind (idx, &mr_save_data->typed_ptrs_tree, cmp_typed_ptrdes, ptrs);
+  tree_find_result = mr_ic_find (&mr_save_data->typed_ptrs_tree, idx, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
-  tree_find_result = mr_tfind (idx, &mr_save_data->untyped_ptrs_tree, cmp_untyped_ptrdes, ptrs);
+  tree_find_result = mr_ic_find (&mr_save_data->untyped_ptrs_tree, idx, ptrs);
   if (tree_find_result)
     return (*(long*)tree_find_result);
   return (-1);
@@ -829,8 +838,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   int i;
 
   mr_save_data->parent = -1;
-  mr_save_data->typed_ptrs_tree = NULL;
-  mr_save_data->untyped_ptrs_tree = NULL;
+  mr_ic_hash_new (&mr_save_data->typed_ptrs_tree, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t");
+  mr_ic_hash_new (&mr_save_data->untyped_ptrs_tree, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t");
   mr_save_data->mr_ra_ud.size = 0;
   mr_save_data->mr_ra_ud.data = NULL;
   mr_save_data->mr_ra_idx.size = 0;
@@ -855,13 +864,9 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   if (mr_save_data->mr_ra_idx.data)
     MR_FREE (mr_save_data->mr_ra_idx.data);
   mr_save_data->mr_ra_idx.data = NULL;
-  if (mr_save_data->typed_ptrs_tree)
-    mr_tdestroy (mr_save_data->typed_ptrs_tree, dummy_free_func, NULL);
-  mr_save_data->typed_ptrs_tree = NULL;
-  if (mr_save_data->untyped_ptrs_tree)
-    mr_tdestroy (mr_save_data->untyped_ptrs_tree, dummy_free_func, NULL);
-  mr_save_data->untyped_ptrs_tree = NULL;
-  
+
+  mr_ic_free (&mr_save_data->typed_ptrs_tree, NULL);
+  mr_ic_free (&mr_save_data->untyped_ptrs_tree, NULL);
 }
 
 /**
