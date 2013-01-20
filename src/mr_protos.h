@@ -375,9 +375,8 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(void, msg_handler, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), "handler for error messages"),
-		(mr_ic_t, lookup_by_name),
+		(mr_ic_t, lookup_by_name, , "index over types descriptors"),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
-		RARRAY (mr_td_ptr_t, des, "types descriptors"),
 		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)
 

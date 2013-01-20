@@ -41,11 +41,6 @@ mr_conf_t mr_conf = {
   },
   .log_level = MR_LL_ALL, /**< default log level ALL */
   .msg_handler = NULL, /**< pointer on user defined message handler */
-  .des = {
-    .data = NULL,
-    .size = 0,
-    .alloc_size = 0,
-  },
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
 };
 
@@ -63,28 +58,24 @@ TYPEDEF_STRUCT (mr_ra_void_t, RARRAY (void, ra));
  */
 MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void_t, ra.data, ra.size, ra.alloc_size, ra.ext, ra.ptr_type));
 
+static int
+mr_td_visitor (mr_ptr_t key, const void * context)
+{
+  mr_td_t * tdp = key.ptr;
+  mr_ic_free (&tdp->lookup_by_name, NULL);
+  mr_ic_free (&tdp->lookup_by_value, NULL);
+  return (EXIT_SUCCESS);
+}
+
 /**
  * Memory cleanp handler.
  */
 static void __attribute__((destructor))
 mr_cleanup (void)
 {
-  int i, count = mr_conf.des.size / sizeof (mr_conf.des.data[0]);
-  for (i = 0; i < count; ++i)
-    {
-      mr_ic_free (&mr_conf.des.data[i].tdp->lookup_by_name, NULL);
-      mr_ic_free (&mr_conf.des.data[i].tdp->lookup_by_value, NULL);
-    }    
-
+  mr_ic_foreach (&mr_conf.lookup_by_name, mr_td_visitor, NULL);
   mr_ic_free (&mr_conf.enum_by_name, NULL);
   mr_ic_free (&mr_conf.lookup_by_name, NULL);
-
-  if (mr_conf.des.data)
-    {
-      MR_FREE (mr_conf.des.data);
-      mr_conf.des.data = NULL;
-      mr_conf.des.size = 0;
-    }
 }
 
 /**
@@ -1273,7 +1264,6 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   va_list args;
   void * ext;
   int count;
-  mr_td_t ** tdpp;
 
   if (NULL == tdp)
     return (EXIT_FAILURE); /* assert */
@@ -1316,12 +1306,6 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL == mr_conf.enum_by_name.find)
     mr_ic_hashed_name_new (&mr_conf.enum_by_name, "mr_fd_t");
 
-  /* NB! not thread safe - only calls from __constructor__ assumed */
-  tdpp = mr_rarray_append ((mr_rarray_t*)&mr_conf.des, sizeof (mr_conf.des.data[0]));
-  if (NULL == tdpp)
-    return (EXIT_FAILURE);
-  *tdpp = tdp;
-  
   if (NULL == mr_conf.lookup_by_name.find)
     mr_ic_hashed_name_new (&mr_conf.lookup_by_name, "mr_td_t");
   
@@ -1335,18 +1319,22 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   return (EXIT_SUCCESS);
 }
 
+static int
+mr_conf_init_visitor (mr_ptr_t key, const void * context)
+{
+  mr_td_t * tdp = key.ptr;
+  mr_detect_fields_types (tdp);
+  mr_register_type_pointer (tdp);
+  return (EXIT_SUCCESS);
+}  
+
 static void
 mr_conf_init ()
 {
   static int initialized = 0;
   if (!initialized)
     {
-      int i, count = mr_conf.des.size / sizeof (mr_conf.des.data[0]);
-      for (i = 0; i < count; ++i)
-	{
-	  mr_detect_fields_types (mr_conf.des.data[i].tdp);
-	  mr_register_type_pointer (mr_conf.des.data[i].tdp);
-	}
+      mr_ic_foreach (&mr_conf.lookup_by_name, mr_conf_init_visitor, NULL);
       initialized = !0;
     }
 }
