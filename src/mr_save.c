@@ -110,19 +110,18 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
 {
   mr_ra_mr_ptrdes_t * ptrs = &mr_save_data->ptrs;
   long count = ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1;
-  void * tree_search_result;
-  int ref_idx;
+  mr_ptr_t * search_result;
 
-  tree_search_result = mr_ic_add (&mr_save_data->typed_ptrs, count, ptrs);
-  if (NULL == tree_search_result)
+  search_result = mr_ic_add (&mr_save_data->typed_ptrs, count, ptrs);
+  if (NULL == search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (-1);
     }
-  ref_idx = *(long*)tree_search_result;
-  if ((ref_idx != count) && (ptrs->ra.data[ref_idx].parent >= 0))
-    if (MR_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[ref_idx].parent].fd.mr_type_ext)
-      return (ref_idx);
+  if ((search_result->long_int_t != count) &&
+      (ptrs->ra.data[search_result->long_int_t].parent >= 0))
+    if (MR_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[search_result->long_int_t].parent].fd.mr_type_ext)
+      return (search_result->long_int_t);
   return (-1);
 }
 
@@ -138,26 +137,24 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   long count = ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1;
   void * data = ptrs->ra.data[count].data;
   int same_ptr = count;
-  void * tree_search_result;
-  int ref_idx;
+  mr_ptr_t * search_result;
 
-  tree_search_result = mr_ic_add (&mr_save_data->untyped_ptrs, count, ptrs);  
-  if (NULL == tree_search_result)
+  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, count, ptrs);  
+  if (NULL == search_result)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (-1);
     }
-  ref_idx = *(long*)tree_search_result;
 
   /*
     We need to walk up in a object tree and find upper parent with the same address.
     I.e. we need to detect situation like
-  .ptr = (type1_t[]){
+    .ptr = (type1_t[]){
     .first_field1 = {
-      .first_field2 = xxx,
+    .first_field2 = xxx,
     }
-  }
-  first_field2 has the same address as .ptr and lookup will return match for .ptr node.
+    }
+    first_field2 has the same address as .ptr and lookup will return match for .ptr node.
   */
   for (;;)
     {
@@ -169,10 +166,11 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   /*
     node with the same address was found and it was not a parent structure.
     Found node is a pointer if its parent has mr_type_ext == MR_TYPE_EXT_POINTER
-   */
-  if ((ref_idx != same_ptr) && (ptrs->ra.data[ref_idx].parent >= 0))
-    if (MR_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[ref_idx].parent].fd.mr_type_ext)
-      return (ref_idx);
+  */
+  if ((search_result->long_int_t != same_ptr) &&
+      (ptrs->ra.data[search_result->long_int_t].parent >= 0))
+    if (MR_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[search_result->long_int_t].parent].fd.mr_type_ext)
+      return (search_result->long_int_t);
   return (-1);
 }
 
@@ -213,22 +211,25 @@ static int
 mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
 {
   mr_ra_mr_ptrdes_t * ptrs = &mr_save_data->ptrs;
-  void * tree_find_result;
+  mr_ptr_t * find_result;
   long idx;
 
   idx = mr_add_ptr_to_list (ptrs);
   if (idx < 0)
     return (idx); /* memory allocation error occured */
+  /* populate attributes of new node */
   ptrs->ra.data[idx].data = data;
   ptrs->ra.data[idx].fd = *fdp;
-
+  /* this element is required only for a search so we need to adjust back size of collection */
   ptrs->ra.size -= sizeof (ptrs->ra.data[0]);
-  tree_find_result = mr_ic_find (&mr_save_data->typed_ptrs, idx, ptrs);
-  if (tree_find_result)
-    return (*(long*)tree_find_result);
-  tree_find_result = mr_ic_find (&mr_save_data->untyped_ptrs, idx, ptrs);
-  if (tree_find_result)
-    return (*(long*)tree_find_result);
+  /* search in index of typed references */
+  find_result = mr_ic_find (&mr_save_data->typed_ptrs, idx, ptrs);
+  if (find_result)
+    return (find_result->long_int_t);
+  /* search in index of untyped references */
+  find_result = mr_ic_find (&mr_save_data->untyped_ptrs, idx, ptrs);
+  if (find_result)
+    return (find_result->long_int_t);
   return (-1);
 }
 
@@ -251,7 +252,11 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ra.data[idx].fd = *fdp;
   mr_save_data->ptrs.ra.data[idx].parent = mr_save_data->parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
   
+#ifdef MR_HASH_PTR_RESOLUTION
   mr_ic_hash_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t");
+#else /* MR_HASH_PTR_RESOLUTION */
+  mr_ic_rbtree_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_cmp, "long_int_t");
+#endif /* MR_HASH_PTR_RESOLUTION */
   
   /* forward reference resolving */
   ref_idx = mr_resolve_typed_forward_ref (mr_save_data);
@@ -362,7 +367,10 @@ mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
   /* check that field index in union is valid and reset to default otherwise */
   if ((idx < 0) || (idx >= tdp->fields.size / sizeof (tdp->fields.data[0])))
     idx = 0;
-  return (tdp->fields.data[idx].fdp);
+  if (tdp->fields.size > 0) /* check for an empty union */
+    return (tdp->fields.data[idx].fdp);
+  else
+    return (NULL);
 }
 
 static mr_fd_t *
@@ -371,10 +379,13 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
   if (name && name[0])
     {
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
-      if (fdp)
+      if (NULL != fdp)
 	return (fdp);
     }
-  return (tdp->fields.data[0].fdp);
+  if (tdp->fields.size > 0) /* check for an empty union */
+    return (tdp->fields.data[0].fdp);
+  else
+    return (NULL);
 }
 
 static mr_fd_t *
@@ -593,11 +604,13 @@ mr_save_union (mr_save_data_t * mr_save_data)
     }
 
   fdp = mr_union_discriminator (mr_save_data);
-  mr_save_data->ptrs.ra.data[idx].union_field_name = fdp->hashed_name.name; /* field name is required for XDR serialization */
-  
-  mr_save_data->parent = idx;
-  mr_save_inner (&data[fdp->offset], fdp, mr_save_data);
-  mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
+
+  if (NULL != fdp)
+    {
+      mr_save_data->parent = idx;
+      mr_save_inner (&data[fdp->offset], fdp, mr_save_data);
+      mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
+    }
 }
 
 /**
@@ -838,8 +851,13 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   int i;
 
   mr_save_data->parent = -1;
+#ifdef MR_HASH_PTR_RESOLUTION
   mr_ic_hash_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t");
   mr_ic_hash_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t");
+#else /* MR_HASH_PTR_RESOLUTION */
+  mr_ic_rbtree_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_cmp, "long_int_t");
+  mr_ic_rbtree_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_cmp, "long_int_t");
+#endif /* MR_HASH_PTR_RESOLUTION */
   mr_save_data->mr_ra_ud.size = 0;
   mr_save_data->mr_ra_ud.data = NULL;
   mr_save_data->mr_ra_idx.size = 0;

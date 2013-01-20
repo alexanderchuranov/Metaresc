@@ -611,11 +611,16 @@ static int
 xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   /* save union branch field name as string */
+  char * dummy_str = "";
   mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
-    .data = &ptrs->ra.data[idx].union_field_name,
+    .data = &dummy_str,
     .ref_idx = -1,
     .flags = { .is_null = MR_FALSE, .is_referenced = MR_FALSE, .is_content_reference = MR_FALSE, },
   };
+  
+  if (ptrs->ra.data[idx].first_child >= 0)
+    ptrdes.data = &ptrs->ra.data[ptrs->ra.data[idx].first_child].fd.hashed_name.name;
+  
   mr_ra_mr_ptrdes_t ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_save_string (xdrs, 0, &ptrs_));
 }
@@ -648,12 +653,17 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   else if (NULL == discriminator)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else
-    {  
-      fdp = mr_get_fd_by_name (tdp, discriminator);
-      if (NULL == fdp)
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+    {
+      if (0 == tdp->fields.size) /* check for an empty union */
+	status = !0;
       else
-	status = xdr_load (data + fdp->offset, fdp, xdrs, ptrs); 
+	{
+	  fdp = mr_get_fd_by_name (tdp, discriminator);
+	  if (NULL == fdp)
+	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+	  else
+	    status = xdr_load (data + fdp->offset, fdp, xdrs, ptrs);
+	}
       MR_FREE (discriminator);
     }
   

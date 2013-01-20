@@ -46,7 +46,6 @@
 
 /* each refereed structure will have REF_IDX property */
 #define MR_REF_IDX "ref_idx"
-#define MR_OFFSET_PROP "offset"
 /* references on already saved structures will be replaced with nodes that have only REF index property */
 #define MR_REF "ref"
 #define MR_REF_CONTENT "ref_content"
@@ -192,7 +191,7 @@
 #define MR_IF_ELSE_CASE_1(...) MR_IDENT
 #define MR_IF_ELSE(...) MR_PASTE2 (MR_IF_ELSE_CASE_, MR_IS_EQ_0 (__VA_ARGS__))
 
-/* Next macro MR_IS_IN_PAREN(...) checks that argument is in parents */
+/* Next macro MR_IS_IN_PAREN(...) checks that argument is in paren */
 #define MR_IS_IN_PAREN_CASE_01 ,
 #define MR_DETECT_PAREN(...) ,
 
@@ -228,7 +227,7 @@
 #define P00_IS_ATTRIBUTES_EQ_ATTRIBUTES(...) 0 /* help macro for ATTRIBUTES test IF clause */
 #define P00_REMOVE_ATTRIBUTES(...) __VA_ARGS__
 #define P00_GET_FIRST_ATTRIBUTES(FIRST, ...) FIRST /* extract typedef attributes */
-#define P00_GET_LAST_ATTRIBUTES(FIRST, ...) __VA_ARGS__ /* extract typedef comments and extended meta information */
+#define P00_GET_OTHER_ATTRIBUTES(FIRST, ...) __VA_ARGS__ /* extract typedef comments and extended meta information */
 
 /* Outputs only arguments that start with ATTRIBUTES. Removes key word ATTRIBUTES and parenthesis. */
 #define P00_EXTRACT_ATTRIBUTES(ARG)					\
@@ -279,7 +278,7 @@
 #define TYPEDEF_ATTR(P00_MODE, P00_TYPE, ATTR_COM_EXT, P00_TYPE_NAME, ...) \
   P00_UNFOLD (MR_TYPEDEF_, P00_TYPE, P00_MODE, P00_TYPE_NAME, MR_PASTE2 (P00_GET_FIRST_, ATTR_COM_EXT)) \
   MR_FOR ((P00_MODE, P00_TYPE_NAME), MR_NARG (__VA_ARGS__), MR_SER, MR_PASTE3 (P00_, P00_TYPE, _HANDLER), __VA_ARGS__) \
-  P00_UNFOLD (MR_END_, P00_TYPE, P00_MODE, P00_TYPE_NAME, MR_PASTE2 (P00_GET_LAST_, ATTR_COM_EXT))
+  P00_UNFOLD (MR_END_, P00_TYPE, P00_MODE, P00_TYPE_NAME, MR_PASTE2 (P00_GET_OTHER_, ATTR_COM_EXT))
 
 #define P00_STRUCT_HANDLER P00_FIELD
 #define P00_UNION_HANDLER P00_FIELD

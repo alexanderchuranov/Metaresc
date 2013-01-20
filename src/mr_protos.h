@@ -299,7 +299,6 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, prev, , "previous sibling index"),
 		(int, next, , "next sibling index"),
 		(mr_ptrdes_flags_t, flags),
-		(char *, union_field_name, , "field descriptor for unions"),
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
 		(char *, value, , "stringified value"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
