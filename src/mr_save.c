@@ -560,7 +560,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = mr_save_data->ptrs.ra.data[idx].parent; idx != parent; idx = mr_save_data->ptrs.ra.data[idx].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[idx].fd.mr_type_ext)
-      if (NULL == mr_ic_add (&mr_save_data->ptrs.ra.data[idx].union_discriminator, ud_find->ptr, mr_save_data))
+      if (NULL == mr_ic_add (&mr_save_data->ptrs.ra.data[idx].union_discriminator, *ud_find, mr_save_data))
 	break;
 
   return (fdp ? fdp : mr_union_discriminator_by_name (tdp, NULL)); /* fdp might be NULL */
