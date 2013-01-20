@@ -77,21 +77,21 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
   return ((long)ptrdes->data + ptrdes->fd.mr_type + ptrdes->fd.mr_type_ext * MR_TYPE_LAST);
 }
 
-static int
+int
 mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
   return (mr_cmp_ptrdes (&ptrs->ra.data[x.long_int_t], &ptrs->ra.data[y.long_int_t]));
 }
 
-static unsigned int __attribute__ ((unused))
+unsigned int __attribute__ ((unused))
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
   return ((long)ptrs->ra.data[x.long_int_t].data);
 }
 
-static int
+int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
@@ -174,7 +174,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
  * @param y index in mr_union_discriminator_t rarray
  * @param content void pointer to context
  */
-static int
+int
 mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
