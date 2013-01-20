@@ -113,11 +113,8 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
   mr_ptr_t * search_result;
 
   search_result = mr_ic_add (&mr_save_data->typed_ptrs, count, ptrs);
-  if (NULL == search_result)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (-1);
-    }
+  if (NULL == search_result) /* out of memory */
+    return (-1);
   if ((search_result->long_int_t != count) &&
       (ptrs->ra.data[search_result->long_int_t].parent >= 0))
     if (MR_TYPE_EXT_POINTER == ptrs->ra.data[ptrs->ra.data[search_result->long_int_t].parent].fd.mr_type_ext)
@@ -140,11 +137,8 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   mr_ptr_t * search_result;
 
   search_result = mr_ic_add (&mr_save_data->untyped_ptrs, count, ptrs);  
-  if (NULL == search_result)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (-1);
-    }
+  if (NULL == search_result) /* out of memory */
+    return (-1);
 
   /*
     We need to walk up in a object tree and find upper parent with the same address.
@@ -553,7 +547,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	break;
       }
 
-  if (ud_find)
+  if (NULL != ud_find)
     fdp = mr_save_data->mr_ra_ud.data[ud_find->long_int_t].fdp; /* union discriminator info was found in some of the parents */
   else
     {
@@ -564,18 +558,10 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
     }
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
-  for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
-    if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
-      {
-	mr_ptr_t * ud_search = mr_ic_add (&mr_save_data->ptrs.ra.data[parent].union_discriminator, ud_find->ptr, mr_save_data);
-	if (NULL == ud_search)
-	  {
-	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	    break;
-	  }
-	if (ud_search == ud_find)
-	  break;
-      }
+  for (idx = mr_save_data->ptrs.ra.data[idx].parent; idx != parent; idx = mr_save_data->ptrs.ra.data[idx].parent)
+    if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[idx].fd.mr_type_ext)
+      if (NULL == mr_ic_add (&mr_save_data->ptrs.ra.data[idx].union_discriminator, ud_find->ptr, mr_save_data))
+	break;
 
   return (fdp ? fdp : mr_union_discriminator_by_name (tdp, NULL)); /* fdp might be NULL */
 }

@@ -698,17 +698,16 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_TRAILING_RECORD */
 	    mr_fd_t * fields[fields_count];
 	    /*
-	      0  1  2  3  4  5  6
-	      F1 AH U1 U2 AE F2 T
+	      0  1  2  3  4  5  6  7  8
+	      F1 AH U1 U2 AE F2 F3 F4 T
 	      i = 1
 	      j = 4
 	      first = 2
 	      fields_count = 3
-	      count = 6
+	      count = 8
 	    */
-
 	    memcpy (fields, first, fields_count * sizeof (first[0]));
-	    memcpy (first, &first[fields_count], (count - j) * sizeof (first[0]));
+	    memmove (first, &first[fields_count], (count - j) * sizeof (first[0])); /* blocks overlap possible */
 	    memcpy (&first[count - j], fields, fields_count * sizeof (first[0]));
 
 	    tdp_->size = 0;
