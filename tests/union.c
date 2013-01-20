@@ -15,6 +15,11 @@
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
+MR_START_TEST (embed_anon_union, "embeded anonymous union") {
+  struct_embed_anon_union_t orig = { 0, { { -1 } }, };
+  ALL_METHODS (ASSERT_SAVE_LOAD, struct_embed_anon_union_t, &orig);
+} END_TEST
+
 MR_START_TEST (anon_union, "anonymous union") {
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_FLOAT, STRUCT_X_CMP);
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_INT32, STRUCT_X_CMP);

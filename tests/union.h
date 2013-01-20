@@ -11,6 +11,16 @@ TYPEDEF_ENUM (enum16_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligne
 TYPEDEF_ENUM (enum32_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint32_t))))), (U32D_FLOAT, , "x"), (U32D_INT32, , "y"))
 TYPEDEF_ENUM (enum64_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint64_t))))), (U64D_FLOAT, , "x"), (U64D_INT32, , "y"))
 
+TYPEDEF_STRUCT (struct_embed_anon_union_t,
+		int dummy,
+		ANON_UNION (),
+		ANON_UNION (),
+		int32_t y,
+		END_ANON_UNION (),
+		float x,
+		END_ANON_UNION (),
+		)
+
 TYPEDEF_STRUCT (struct_anon_union_enum_t,
 		int dummy,
 		ANON_UNION (),
