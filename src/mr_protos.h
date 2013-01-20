@@ -258,10 +258,6 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, ptr_type, , "union discriminator"),
 		) /* type descriptor */
 
-TYPEDEF_STRUCT (mr_td_ptr_t,
-		(mr_td_t *, tdp, , "wrapper for mr_td_t pointer type")
-		)
-
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
 		(void *, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
