@@ -3,6 +3,7 @@
 /* This file is part of Metaresc project */
 
 #include <setjmp.h>
+#include <string.h>
 
 #include <metaresc.h>
 #include <mr_tsearch.h>
@@ -91,8 +92,35 @@ mr_ic_none_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 int
 mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
+  mr_ic_rarray_t * copy;
   mr_ic_none_free (ic, context);
-  ic->ext.ptr = rarray;
+  
+  if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
+      (0 != strcmp (MR_IC_NONE_TYPE_T, rarray->ra.ptr_type)))
+    {
+      ic->ext.ptr = rarray;
+      return (EXIT_SUCCESS);
+    }
+  
+  copy = MR_MALLOC (sizeof (*copy));
+  if (NULL == copy)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (EXIT_FAILURE);
+    }
+
+  *copy = *rarray;
+  copy->ra.ext.ptr = NULL;
+  copy->ra.data = MR_MALLOC (copy->ra.size);
+  if (NULL == copy->ra.data)
+    {
+      MR_FREE (copy);
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (EXIT_FAILURE);
+    }
+  
+  memcpy (copy->ra.data, rarray->ra.data, copy->ra.size);
+  ic->ext.ptr = copy;
   return (EXIT_SUCCESS);
 }
   
@@ -406,14 +434,18 @@ mr_ic_hash_index_inner (mr_ic_t * ic, mr_ic_hash_t * index, int count, const voi
 int
 mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
+  int status;
   mr_ic_t ic_none;
   mr_ic_hash_t * index = ic->ext.ptr;
+  
   if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn) || (NULL == rarray))
     return (EXIT_FAILURE);
 
   mr_ic_none_new (&ic_none, ic->compar_fn, ic->key_type);
   mr_ic_none_index (&ic_none, rarray, context);
-  return (mr_ic_hash_index_inner (&ic_none, index, rarray->ra.size / sizeof (rarray->ra.data[0]), context));
+  status = mr_ic_hash_index_inner (&ic_none, index, rarray->ra.size / sizeof (rarray->ra.data[0]), context);
+  mr_ic_free (&ic_none, context);
+  return (status);
 }
 
 mr_ptr_t *
