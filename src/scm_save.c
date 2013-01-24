@@ -337,7 +337,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	      if (MR_SCM_NAMED_FIELDS == named_node)
 		{
 		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START "%s" MR_SCM_NAMED_FIELD_END,
-				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
+				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra.data[idx].fd.name.str) < 0)
 		    return (NULL);
 		}
 	      else
@@ -383,7 +383,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)
 		return (NULL);
 	      if (MR_SCM_NAMED_FIELDS == named_node)
-		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra.data[idx].fd.hashed_name.name) < 0)
+		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra.data[idx].fd.name.str) < 0)
 		  return (NULL);
 	    }
 	  idx = ptrs->ra.data[idx].next;

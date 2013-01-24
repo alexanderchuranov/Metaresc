@@ -28,7 +28,7 @@ int main ()
     {
       mr_fd_t * fdp = tdp->fields.data[i].fdp;
       printf("\t%u: name = %s, type = %s, size = %u bytes\n",
-	     i, fdp->hashed_name.name, fdp->type, fdp->size);
+	     i, fdp->name.name, fdp->type, fdp->size);
     }  
   
   return (EXIT_SUCCESS);

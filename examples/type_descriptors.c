@@ -35,7 +35,7 @@ int main ()
 	}
     
       printf ("\t%s is %s\n", type, type_class);
-      printf ("\tit's declared name is '%s'\n", td->hashed_name.name);
+      printf ("\tit's declared name is '%s'\n", td->name.name);
       printf ("\tvariables of this type occupy %i bytes of memory\n", td->size);
     }
   else

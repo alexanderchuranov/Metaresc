@@ -368,8 +368,8 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   memset (ptrdes, 0, sizeof (*ptrdes));
   ptrdes->data = NULL;
   ptrdes->fd.type = NULL;
-  ptrdes->fd.hashed_name.name = NULL;
-  ptrdes->fd.hashed_name.hash_value = 0;
+  ptrdes->fd.name.str = NULL;
+  ptrdes->fd.name.hash_value = 0;
   ptrdes->fd.size = 0;
   ptrdes->fd.offset = 0;
   ptrdes->fd.mr_type = MR_TYPE_VOID;
@@ -511,7 +511,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    if (ptrs.ra.data[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.hashed_name.name);
+			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name.str);
 		return (0);
 	      }
 	    /* rarrays require allocation of memoty chunk according alloc_size field */
@@ -610,31 +610,31 @@ mr_hash_str (char * str)
 }
 
 unsigned int
-mr_hashed_name_get_hash (mr_ptr_t x, const void * context)
+mr_hashed_string_get_hash (mr_ptr_t x, const void * context)
 {
-  mr_hashed_name_t * x_ = x.ptr;
+  mr_hashed_string_t * x_ = x.ptr;
   if (0 == x_->hash_value)
-    x_->hash_value = mr_hash_str (x_->name);
+    x_->hash_value = mr_hash_str (x_->str);
   return (x_->hash_value);
 }
 
 /**
- * Comparator for mr_hashed_name_t
- * @param a pointer on one mr_hashed_name_t
- * @param b pointer on another mr_hashed_name_t
+ * Comparator for mr_hashed_string_t
+ * @param a pointer on one mr_hashed_string_t
+ * @param b pointer on another mr_hashed_string_t
  * @return comparation sign
  */
 int
-mr_hashed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+mr_hashed_string_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_hashed_name_t * x_ = x.ptr;
-  const mr_hashed_name_t * y_ = y.ptr;
-  uint64_t x_hash_value = mr_hashed_name_get_hash ((mr_ptr_t)x, context);
-  uint64_t y_hash_value = mr_hashed_name_get_hash ((mr_ptr_t)y, context);
+  const mr_hashed_string_t * x_ = x.ptr;
+  const mr_hashed_string_t * y_ = y.ptr;
+  uint64_t x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x, context);
+  uint64_t y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y, context);
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
-  return (strcmp (x_->name, y_->name));
+  return (strcmp (x_->str, y_->str));
 }
 
 /**
@@ -645,8 +645,8 @@ mr_hashed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 mr_td_t *
 mr_get_td_by_name (char * type)
 {
-  mr_hashed_name_t hashed_name = { .name = type, .hash_value = mr_hash_str (type), };
-  mr_ptr_t * result = mr_ic_find (&mr_conf.lookup_by_name, &hashed_name, NULL);
+  mr_hashed_string_t name = { .str = type, .hash_value = mr_hash_str (type), };
+  mr_ptr_t * result = mr_ic_find (&mr_conf.lookup_by_name, &name, NULL);
   return (result ? result->ptr : NULL);
 }
 
@@ -715,8 +715,8 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    last = tdp->fields.data[count].fdp;	  
 	    last->mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
 	    tdp_->mr_type = fdp->mr_type; /*MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
-	    sprintf (tdp_->hashed_name.name, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
-	    tdp_->hashed_name.hash_value = mr_hash_str (tdp_->hashed_name.name);
+	    sprintf (tdp_->name.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
+	    tdp_->name.hash_value = mr_hash_str (tdp_->name.str);
 	    tdp_->attr = fdp->comment; /* anonymous union stringified attributes are saved into comments field */
 	    tdp_->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
 	    tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
@@ -724,16 +724,16 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    fdp->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
 	    tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
 	    count -= fields_count;
-	    fdp->type = tdp_->hashed_name.name;
+	    fdp->type = tdp_->name.str;
 	    fdp->size = tdp_->size;
 	    /* set name of anonymous union to temporary type name */
-	    if ((NULL == fdp->hashed_name.name) || (0 == fdp->hashed_name.name[0]))
-	      fdp->hashed_name.name = fdp->type;
-	    fdp->hashed_name.hash_value = mr_hash_str (fdp->hashed_name.name);
+	    if ((NULL == fdp->name.str) || (0 == fdp->name.str[0]))
+	      fdp->name.str = fdp->type;
+	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
 	    if (EXIT_SUCCESS != mr_add_type (tdp_, NULL, NULL))
 	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->hashed_name.name);
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->name.str);
 		return (EXIT_FAILURE);
 	      }
 	  }
@@ -820,7 +820,7 @@ mr_add_enum (mr_td_t * tdp)
       if (result->ptr != key.ptr)
 	{
 	  mr_fd_t * fdp = result->ptr;
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->hashed_name.name, key.ptr);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, key.ptr);
 	  return (EXIT_FAILURE);
 	}
     }
@@ -852,7 +852,7 @@ mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 mr_fd_t *
 mr_get_enum_by_name (char * name)
 {
-  mr_hashed_name_t hashed_name = { .name = name, .hash_value = mr_hash_str (name), };
+  mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), };
   mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, &hashed_name, NULL);
   return (result ? result->ptr : NULL);
 }
@@ -985,7 +985,7 @@ mr_check_fields (mr_td_t * tdp)
 	Check names of the fileds.
 	MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
       */
-      char * name = fdp->hashed_name.name;
+      char * name = fdp->name.str;
       if (name)
 	{
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
@@ -1193,7 +1193,7 @@ mr_detect_fields_types (mr_td_t * tdp)
 mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
-  mr_hashed_name_t hashed_name = { .name = name, .hash_value = mr_hash_str (name), };
+  mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), };
   mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_name, &hashed_name, NULL);
   return (result ? result->ptr : NULL);
 }
@@ -1212,7 +1212,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   if (NULL == union_tdp)
     return (EXIT_FAILURE);
   /*check that requested type is already registered */
-  if (NULL != mr_get_fd_by_name (union_tdp, tdp->hashed_name.name))
+  if (NULL != mr_get_fd_by_name (union_tdp, tdp->name.str))
     return (EXIT_SUCCESS);
   
   /* statically allocated trailing record is used for field descriptor */
@@ -1224,8 +1224,8 @@ mr_register_type_pointer (mr_td_t * tdp)
     }
   
   memset (fdp, 0, sizeof (*fdp));
-  fdp->type = tdp->hashed_name.name;
-  fdp->hashed_name = tdp->hashed_name;
+  fdp->type = tdp->name.str;
+  fdp->name = tdp->name;
   fdp->size = tdp->size;
   fdp->offset = 0;
   fdp->mr_type = tdp->mr_type;
@@ -1240,13 +1240,13 @@ mr_ic_hashed_name_new (mr_ic_t * ic, char * key_type)
   switch (MR_IC_HASH)
     {
       /* sample run: compares 168952 matches 9703 ratio: 17.41 */
-    case MR_IC_NONE: return (mr_ic_none_new (ic, mr_hashed_name_cmp, key_type));
+    case MR_IC_NONE: return (mr_ic_none_new (ic, mr_hashed_string_cmp, key_type));
       /* sample run: compares 57272 matches 12029 ratio: 4.76 */
-    case MR_IC_RBTREE: return (mr_ic_rbtree_new (ic, mr_hashed_name_cmp, key_type));
+    case MR_IC_RBTREE: return (mr_ic_rbtree_new (ic, mr_hashed_string_cmp, key_type));
       /* sample run: compares 54947 matches 10987 ratio: 5.00 */
-    case MR_IC_SORTED_ARRAY: return (mr_ic_sorted_array_new (ic, mr_hashed_name_cmp, key_type));
+    case MR_IC_SORTED_ARRAY: return (mr_ic_sorted_array_new (ic, mr_hashed_string_cmp, key_type));
       /* sample run: compares 15453 matches 14019 ratio: 1.10 */
-    case MR_IC_HASH: return (mr_ic_hash_new (ic, mr_hashed_name_get_hash, mr_hashed_name_cmp, key_type));
+    case MR_IC_HASH: return (mr_ic_hash_new (ic, mr_hashed_string_get_hash, mr_hashed_string_cmp, key_type));
     default: return (EXIT_FAILURE);
     }
 }
@@ -1268,7 +1268,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL == tdp)
     return (EXIT_FAILURE); /* assert */
   /* check whether this type is already in the list */
-  if (mr_get_td_by_name (tdp->hashed_name.name))
+  if (mr_get_td_by_name (tdp->name.str))
     return (EXIT_SUCCESS); /* this type is already registered */
 
   va_start (args, comment);

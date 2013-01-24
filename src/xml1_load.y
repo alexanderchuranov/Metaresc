@@ -80,7 +80,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.substr.size -= i + 1;
       $2.substr.data += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.hashed_name.name = mr_unquote (&$2);
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = mr_unquote (&$2);
   mr_load->ptrs->ra.data[mr_load->parent].value = MR_STRDUP ("");
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
 }
@@ -111,7 +111,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.substr.size -= i + 1;
       $2.substr.data += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.hashed_name.name = mr_unquote (&$2);
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = mr_unquote (&$2);
   mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$4);;
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
  }

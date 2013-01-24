@@ -469,7 +469,7 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
   func = dlsym (RTLD_DEFAULT, value);
   if (NULL == func)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_FUNC_FAILED, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_FUNC_FAILED, mr_load_data->ptrs.ra.data[idx].fd.name.str);
       return (0);
     }
   *(void**)mr_load_data->ptrs.ra.data[idx].data = func;
@@ -517,24 +517,24 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
     }
 
   /* for C init style we can get union descriptor only from type cast */
-  if ((0 == strcmp (tdp->hashed_name.name, "mr_ptr_t")) && (first_child >= 0) &&
-      mr_load_data->ptrs.ra.data[first_child].fd.type && (NULL == mr_load_data->ptrs.ra.data[first_child].fd.hashed_name.name))
+  if ((0 == strcmp (tdp->name.str, "mr_ptr_t")) && (first_child >= 0) &&
+      mr_load_data->ptrs.ra.data[first_child].fd.type && (NULL == mr_load_data->ptrs.ra.data[first_child].fd.name.str))
     {
-      mr_load_data->ptrs.ra.data[first_child].fd.hashed_name.name = mr_load_data->ptrs.ra.data[first_child].fd.type;
+      mr_load_data->ptrs.ra.data[first_child].fd.name.str = mr_load_data->ptrs.ra.data[first_child].fd.type;
       mr_load_data->ptrs.ra.data[first_child].fd.type = NULL;
     }
 
   /* loop on all subnodes */
   for (idx = first_child; idx >= 0; idx = mr_load_data->ptrs.ra.data[idx].next)
     {
-      if (mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name)
-	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
+      if (mr_load_data->ptrs.ra.data[idx].fd.name.str)
+	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra.data[idx].fd.name.str);
       else
 	fdp = mr_load_struct_next_field (tdp, fdp);
       
       if (NULL == fdp)
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->hashed_name.name, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->name.str, mr_load_data->ptrs.ra.data[idx].fd.name.str);
 	  return (0);
 	}
       
@@ -587,7 +587,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
       /* check if array index is in range */
       if ((i < 0) || (i >= count))
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RANGE_CHECK, fd_.hashed_name.name);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (0);
 	}
       /* load recursively */
@@ -609,7 +609,7 @@ mr_load_rarray_data (int idx, mr_load_data_t * mr_load_data)
   for (i = mr_load_data->ptrs.ra.data[idx].first_child; i >= 0; i = mr_load_data->ptrs.ra.data[i].next)
     ++count;
   fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-  fd_.hashed_name = mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].fd.hashed_name;
+  fd_.name = mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].fd.name;
 
   ra->size = ra->alloc_size = count * fd_.size;
   ra->data = NULL;
@@ -654,7 +654,7 @@ mr_load_rarray_type (mr_fd_t * fdp, int (*action) (mr_td_t *, void *), void * co
       for (i = 0; i < fields_count; ++i)
 	{
 	  data_fdp = fields_data[i].fdp;
-	  if (0 == strcmp ("data", data_fdp->hashed_name.name))
+	  if (0 == strcmp ("data", data_fdp->name.str))
 	    break;
 	}
       if (i >= fields_count)
@@ -663,12 +663,13 @@ mr_load_rarray_type (mr_fd_t * fdp, int (*action) (mr_td_t *, void *), void * co
 	{
 	  fd = *fdp; /* make a copy of 'data' field descriptor */
 	  fd.mr_type_ext = MR_TYPE_EXT_RARRAY_DATA;
-	  fd.hashed_name = data_fdp->hashed_name;
+	  fd.name = data_fdp->name;
 	  fd.offset = data_fdp->offset;
 	  fields_data[i].fdp = &fd; /* replace 'data' descriptor on a local copy */
-	  mr_ic_none_new (&td.lookup_by_name, mr_hashed_name_cmp, "mr_fd_t");
+	  mr_ic_none_new (&td.lookup_by_name, mr_hashed_string_cmp, "mr_fd_t");
 	  mr_ic_index (&td.lookup_by_name, (mr_ic_rarray_t*)&td.fields, NULL);
 	  status = action (&td, context);
+	  mr_ic_free (&td.lookup_by_name, NULL);
 	}
     }
   return (status);
@@ -785,10 +786,10 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
   int next = mr_load_data->ptrs.ra.data[idx].next;
   if ((mr_load_data->ptrs.ra.data[idx].first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
       mr_load_data->ptrs.ra.data[idx].value && (0 == mr_load_data->ptrs.ra.data[idx].value[0]) && /* content must be an empty string */
-      (next >= 0) && (NULL == mr_load_data->ptrs.ra.data[next].fd.hashed_name.name)) /* there should be a next node without name */
+      (next >= 0) && (NULL == mr_load_data->ptrs.ra.data[next].fd.name.str)) /* there should be a next node without name */
     {
-      if (mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name) /* sainity check - this field can't be NULL */
-	mr_load_data->ptrs.ra.data[next].fd.hashed_name.name = MR_STRDUP (mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
+      if (mr_load_data->ptrs.ra.data[idx].fd.name.str) /* sainity check - this field can't be NULL */
+	mr_load_data->ptrs.ra.data[next].fd.name.str = MR_STRDUP (mr_load_data->ptrs.ra.data[idx].fd.name.str);
       return (!0); /* now next node has a name and will be loaded by top level procedure */
     }
   return (mr_load_struct (idx, mr_load_data));
@@ -814,9 +815,9 @@ mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
 	  if (ptrs.ra.data[i].fd.type)
 	    MR_FREE (ptrs.ra.data[i].fd.type);
 	  ptrs.ra.data[i].fd.type = NULL;
-	  if (ptrs.ra.data[i].fd.hashed_name.name)
-	    MR_FREE (ptrs.ra.data[i].fd.hashed_name.name);
-	  ptrs.ra.data[i].fd.hashed_name.name = NULL;
+	  if (ptrs.ra.data[i].fd.name.str)
+	    MR_FREE (ptrs.ra.data[i].fd.name.str);
+	  ptrs.ra.data[i].fd.name.str = NULL;
 	}
       MR_FREE (ptrs.ra.data);
       ptrs.ra.data = NULL;
@@ -892,10 +893,10 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
     }
   
   mr_load_data->ptrs.ra.data[idx].data = data;
-  if (mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name && fdp->hashed_name.name)
-    if (strcmp (fdp->hashed_name.name, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name))
+  if (mr_load_data->ptrs.ra.data[idx].fd.name.str && fdp->name.str)
+    if (strcmp (fdp->name.str, mr_load_data->ptrs.ra.data[idx].fd.name.str))
       {
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->hashed_name.name, mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name);
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, mr_load_data->ptrs.ra.data[idx].fd.name.str);
 	return (0);
       }
 
@@ -906,8 +907,8 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	return (0);
       }
   
-  if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name) && (fdp->hashed_name.name))
-    mr_load_data->ptrs.ra.data[idx].fd.hashed_name.name = MR_STRDUP (fdp->hashed_name.name);
+  if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.name.str) && (fdp->name.str))
+    mr_load_data->ptrs.ra.data[idx].fd.name.str = MR_STRDUP (fdp->name.str);
   if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.type) && (fdp->type))
     mr_load_data->ptrs.ra.data[idx].fd.type = MR_STRDUP (fdp->type);
   mr_load_data->ptrs.ra.data[idx].fd.size = fdp->size;

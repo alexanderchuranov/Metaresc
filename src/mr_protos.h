@@ -177,9 +177,9 @@ TYPEDEF_FUNC (void, mr_free_fn_t, (mr_ptr_t /* nodep */, __const void * /* conte
 
 TYPEDEF_FUNC (unsigned int, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
-TYPEDEF_STRUCT (mr_hashed_name_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
-		(char *, name, , "key field"),
-		(unsigned int, hash_value, , "hash value of 'name'"),
+TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
+		(char *, str, , "key field"),
+		(unsigned int, hash_value, , "hash value of 'str'"),
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t,
@@ -216,7 +216,7 @@ TYPEDEF_STRUCT (mr_ic_hash_t,
 		)		
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
-		(mr_hashed_name_t, hashed_name, , "must be the first field"),
+		(mr_hashed_string_t, name, , "must be the first field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_type_ext_t, mr_type_ext, , "Metaresc type extension"),
@@ -244,7 +244,7 @@ TYPEDEF_STRUCT (mr_fd_ptr_t,
 		)
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
-		(mr_hashed_name_t, hashed_name, , "must be the first field"),
+		(mr_hashed_string_t, name, , "must be the first field"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(int, size, , "size of type"),
@@ -279,8 +279,8 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (
 	      )
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
-		(mr_hashed_name_t, type, , "union type name"),
-		(mr_hashed_name_t, discriminator, , "union discriminator"),
+		(mr_hashed_string_t, type, , "union type name"),
+		(mr_hashed_string_t, discriminator, , "union discriminator"),
 		(mr_fd_t *, fdp, , "discriminated union field descriptor"),
 		)
 

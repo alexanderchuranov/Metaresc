@@ -182,9 +182,9 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
       {
 	uint64_t value = mr_get_enum_value (ptrdes);
 	mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
-	if (fdp && fdp->hashed_name.name)
-	  return (MR_STRDUP (fdp->hashed_name.name));
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->hashed_name.name, ptrdes->fd.hashed_name.name);
+	if (fdp && fdp->name.str)
+	  return (MR_STRDUP (fdp->name.str));
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->name.str, ptrdes->fd.name.str);
       }
     }
   /* save as integer otherwise */
@@ -271,7 +271,7 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
   if (0 == value)
     {
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
-      return (MR_STRDUP (fdp && fdp->hashed_name.name ? fdp->hashed_name.name : "0"));
+      return (MR_STRDUP (fdp && fdp->name.str ? fdp->name.str : "0"));
     }
   
   /* decompose value on bitmask */
@@ -282,9 +282,9 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
       if ((value & fdp->param.enum_value) && !(~value & fdp->param.enum_value))
 	{
 	  if (NULL == str)
-	    str = MR_STRDUP (fdp->hashed_name.name);
+	    str = MR_STRDUP (fdp->name.str);
 	  else
-	    str = mr_decompose_bitmask_add (str, bitmask_or_delimiter, fdp->hashed_name.name);
+	    str = mr_decompose_bitmask_add (str, bitmask_or_delimiter, fdp->name.str);
 	  if (NULL == str)
 	    break;
 	  value &= ~fdp->param.enum_value;

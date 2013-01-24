@@ -99,7 +99,7 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   mr_load->ptrs->ra.data[child].prev = prev;
   
   mr_load->ptrs->ra.data[child].parent = parent;
-  mr_load->ptrs->ra.data[child].fd.hashed_name.name = name;
+  mr_load->ptrs->ra.data[child].fd.name.str = name;
   mr_load->parent = child;
 }
 

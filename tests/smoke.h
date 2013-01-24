@@ -36,10 +36,10 @@
 	}								\
       else if ((MR_TYPE_EXT_NONE == ptrs.ra.data[i].fd.mr_type_ext) &&	\
 	       (MR_TYPE_STRUCT == ptrs.ra.data[i].fd.mr_type) &&	\
-	       (0 == strcmp ("mr_hashed_name_t", ptrs.ra.data[i].fd.type))) \
+	       (0 == strcmp ("mr_hashed_string_t", ptrs.ra.data[i].fd.type))) \
 	{								\
-	  mr_hashed_name_t * mr_hashed_name = ptrs.ra.data[i].data;	\
-	  mr_hashed_name->hash_value = mr_hash_str (mr_hashed_name->name); \
+	  mr_hashed_string_t * mr_hashed_name = ptrs.ra.data[i].data;	\
+	  mr_hashed_name->hash_value = mr_hash_str (mr_hashed_name->str); \
 	}								\
     MR_FREE (ptrs.ra.data);						\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \

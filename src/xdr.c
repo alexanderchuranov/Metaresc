@@ -570,7 +570,7 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
   
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->hashed_name.name);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->name.str);
       return (0);
     }
   
@@ -619,7 +619,7 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   };
   
   if (ptrs->ra.data[idx].first_child >= 0)
-    ptrdes.data = &ptrs->ra.data[ptrs->ra.data[idx].first_child].fd.hashed_name.name;
+    ptrdes.data = &ptrs->ra.data[ptrs->ra.data[idx].first_child].fd.name.str;
   
   mr_ra_mr_ptrdes_t ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_save_string (xdrs, 0, &ptrs_));
@@ -647,7 +647,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (NULL == tdp)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
   else if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_UNION, tdp->hashed_name.name);
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_UNION, tdp->name.str);
   else if (!xdr_load_string (xdrs, 0, &ptrs_))
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else if (NULL == discriminator)

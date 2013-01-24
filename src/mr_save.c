@@ -178,11 +178,11 @@ int
 mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  int diff = mr_hashed_name_cmp (&mr_save_data->mr_ra_ud.data[x.long_int_t].type,
+  int diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud.data[x.long_int_t].type,
 				 &mr_save_data->mr_ra_ud.data[y.long_int_t].type, NULL);
   if (diff)
     return (diff);
-  return (mr_hashed_name_cmp (&mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator,
+  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator,
 			      &mr_save_data->mr_ra_ud.data[y.long_int_t].discriminator, NULL));
 }
 
@@ -190,8 +190,8 @@ unsigned int __attribute__ ((unused))
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  return ((mr_hashed_name_get_hash (&mr_save_data->mr_ra_ud.data[x.long_int_t].type, NULL) << 1) +
-	  mr_hashed_name_get_hash (&mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator, NULL));
+  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud.data[x.long_int_t].type, NULL) << 1) +
+	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud.data[x.long_int_t].discriminator, NULL));
 }
 
 /**
@@ -261,7 +261,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
       mr_save_data->ptrs.ra.data[parent].first_child = -1;
       mr_save_data->ptrs.ra.data[parent].last_child = -1;
       mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
-      mr_save_data->ptrs.ra.data[ref_idx].fd.hashed_name.name = fdp->hashed_name.name;
+      mr_save_data->ptrs.ra.data[ref_idx].fd.name.str = fdp->name.str;
       mr_add_child (mr_save_data->parent, ref_idx, &mr_save_data->ptrs);
       return;
     }
@@ -341,7 +341,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
   
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->hashed_name.name);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->name.str);
       return;
     }
 
@@ -507,8 +507,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud.size -= sizeof (mr_save_data->mr_ra_ud.data[0]);
   ud_idx.long_int_t = mr_save_data->mr_ra_ud.size / sizeof (mr_save_data->mr_ra_ud.data[0]); /* index of lookup record */
-  ud->type.name = mr_save_data->ptrs.ra.data[idx].fd.type; /* union type */
-  ud->discriminator.name = mr_save_data->ptrs.ra.data[idx].fd.comment; /* union discriminator */
+  ud->type.str = mr_save_data->ptrs.ra.data[idx].fd.type; /* union type */
+  ud->discriminator.str = mr_save_data->ptrs.ra.data[idx].fd.comment; /* union discriminator */
 
   /* traverse through parent up to root node */
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
@@ -585,7 +585,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
     }
   if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->hashed_name.name);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->name.str);
       return;
     }
 
@@ -648,7 +648,7 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
 
   /* lookup for subnode .data */
   for (data_idx = mr_save_data->ptrs.ra.data[idx].first_child; data_idx >= 0; data_idx = mr_save_data->ptrs.ra.data[data_idx].next)
-    if (0 == strcmp ("data", mr_save_data->ptrs.ra.data[data_idx].fd.hashed_name.name))
+    if (0 == strcmp ("data", mr_save_data->ptrs.ra.data[data_idx].fd.name.str))
       break;
 
   if (data_idx < 0)
