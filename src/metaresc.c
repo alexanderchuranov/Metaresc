@@ -19,6 +19,7 @@
 
 #include <mr_tsearch.h>
 #include <metaresc.h>
+#include <mr_save.h>
 #include <mr_ic.h>
 #include <mr_stringify.h>
 
@@ -460,6 +461,18 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
   return (!0);
 }
 
+static int
+calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+{
+  /* is new address is not set yet, then it could be calculated as relative address from the parent node */
+  if (NULL == ptrs->ra.data[idx].ext.ptr)
+    {
+      int parent = ptrs->ra.data[idx].parent;
+      ptrs->ra.data[idx].ext.ptr = &((char*)ptrs->ra.data[parent].ext.ptr)[ptrs->ra.data[idx].data - ptrs->ra.data[parent].data];
+    }
+  return (0);
+}
+
 /**
  * Recursively copy 
  * @param ptrs resizable array with serialized data
@@ -546,25 +559,8 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
   ptrs.ra.data[0].ext.ptr = dst;
 
   /* depth search thru the graph and calculate new addresses for all nodes */
-  i = 0;
-  while (i >= 0)
-    {
-      /* is new address is not set yet, then it could be calculated as relative address from the parent node */
-      if (NULL == ptrs.ra.data[i].ext.ptr)
-	{
-	  int parent = ptrs.ra.data[i].parent;
-	  ptrs.ra.data[i].ext.ptr = &((char*)ptrs.ra.data[parent].ext.ptr)[ptrs.ra.data[i].data - ptrs.ra.data[parent].data];
-	}
-      /* depth search iterator */
-      if (ptrs.ra.data[i].first_child >= 0)
-	i = ptrs.ra.data[i].first_child;
-      else
-	{
-	  while ((ptrs.ra.data[i].next < 0) && (ptrs.ra.data[i].parent >= 0))
-	    i = ptrs.ra.data[i].parent;
-	  i = ptrs.ra.data[i].next;
-	}
-    }      
+  mr_ptrs_ds (&ptrs, calc_relative_addr, NULL);
+      
   /* now we should update pointers in a copy */
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     if ((ptrs.ra.data[i].idx >= 0) && !ptrs.ra.data[i].flags.is_null) /* skip NULL and invalid nodes */
@@ -1170,7 +1166,6 @@ mr_detect_field_type (mr_fd_t * fdp)
 
 /**
  * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
- * Called on each new type registration for all already registered types.
  * @param tdp pointer on a type descriptor
  * @param args auxiliary arguments
  * @return status EXIT_SUCCESS or EXIT_FAILURE
