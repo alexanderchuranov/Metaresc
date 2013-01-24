@@ -17,8 +17,8 @@
 #include <ctype.h>
 #include <limits.h>
 
-#include <mr_tsearch.h>
 #include <metaresc.h>
+#include <mr_tsearch.h>
 #include <mr_save.h>
 #include <mr_ic.h>
 #include <mr_stringify.h>
@@ -1206,7 +1206,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   /* check that mr_ptr_t is already a registered type */
   if (NULL == union_tdp)
     return (EXIT_FAILURE);
-  /*check that requested type is already registered */
+  /* check that requested type is already registered */
   if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
     return (EXIT_SUCCESS);
   
