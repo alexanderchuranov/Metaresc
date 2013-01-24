@@ -34,7 +34,7 @@ int main ()
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields.data[i].fdp;
-      printf ("%d: %s = %" PRId64 "\n", i, fdp->name.name, fdp->param.enum_value);
+      printf ("%d: %s = %" PRId64 "\n", i, fdp->name.str, fdp->param.enum_value);
     }  
   return (EXIT_SUCCESS);
 }

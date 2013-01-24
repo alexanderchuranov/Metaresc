@@ -341,7 +341,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
   
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->name.str);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type.str);
       return;
     }
 
@@ -585,7 +585,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
     }
   if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->name.str);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->type.str);
       return;
     }
 

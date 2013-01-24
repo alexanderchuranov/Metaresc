@@ -715,8 +715,8 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    last = tdp->fields.data[count].fdp;	  
 	    last->mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
 	    tdp_->mr_type = fdp->mr_type; /*MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
-	    sprintf (tdp_->name.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
-	    tdp_->name.hash_value = mr_hash_str (tdp_->name.str);
+	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
+	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
 	    tdp_->attr = fdp->comment; /* anonymous union stringified attributes are saved into comments field */
 	    tdp_->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
 	    tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
@@ -724,7 +724,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    fdp->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
 	    tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
 	    count -= fields_count;
-	    fdp->type = tdp_->name.str;
+	    fdp->type = tdp_->type.str;
 	    fdp->size = tdp_->size;
 	    /* set name of anonymous union to temporary type name */
 	    if ((NULL == fdp->name.str) || (0 == fdp->name.str[0]))
@@ -733,7 +733,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
 	    if (EXIT_SUCCESS != mr_add_type (tdp_, NULL, NULL))
 	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->name.str);
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->type.str);
 		return (EXIT_FAILURE);
 	      }
 	  }
@@ -1212,7 +1212,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   if (NULL == union_tdp)
     return (EXIT_FAILURE);
   /*check that requested type is already registered */
-  if (NULL != mr_get_fd_by_name (union_tdp, tdp->name.str))
+  if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
     return (EXIT_SUCCESS);
   
   /* statically allocated trailing record is used for field descriptor */
@@ -1224,8 +1224,8 @@ mr_register_type_pointer (mr_td_t * tdp)
     }
   
   memset (fdp, 0, sizeof (*fdp));
-  fdp->type = tdp->name.str;
-  fdp->name = tdp->name;
+  fdp->type = tdp->type.str;
+  fdp->name = tdp->type;
   fdp->size = tdp->size;
   fdp->offset = 0;
   fdp->mr_type = tdp->mr_type;
@@ -1268,7 +1268,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL == tdp)
     return (EXIT_FAILURE); /* assert */
   /* check whether this type is already in the list */
-  if (mr_get_td_by_name (tdp->name.str))
+  if (mr_get_td_by_name (tdp->type.str))
     return (EXIT_SUCCESS); /* this type is already registered */
 
   va_start (args, comment);

@@ -517,7 +517,7 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
     }
 
   /* for C init style we can get union descriptor only from type cast */
-  if ((0 == strcmp (tdp->name.str, "mr_ptr_t")) && (first_child >= 0) &&
+  if ((0 == strcmp (tdp->type.str, "mr_ptr_t")) && (first_child >= 0) &&
       mr_load_data->ptrs.ra.data[first_child].fd.type && (NULL == mr_load_data->ptrs.ra.data[first_child].fd.name.str))
     {
       mr_load_data->ptrs.ra.data[first_child].fd.name.str = mr_load_data->ptrs.ra.data[first_child].fd.type;
@@ -534,7 +534,7 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
       
       if (NULL == fdp)
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->name.str, mr_load_data->ptrs.ra.data[idx].fd.name.str);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, mr_load_data->ptrs.ra.data[idx].fd.name.str);
 	  return (0);
 	}
       

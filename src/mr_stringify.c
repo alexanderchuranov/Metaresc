@@ -184,7 +184,7 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
 	mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
 	if (fdp && fdp->name.str)
 	  return (MR_STRDUP (fdp->name.str));
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->name.str, ptrdes->fd.name.str);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
       }
     }
   /* save as integer otherwise */

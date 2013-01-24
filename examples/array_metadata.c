@@ -34,7 +34,7 @@ int print_array_field_info (mr_td_t * td, char name[])
   size_t const total_items = fd->param.array_param.count;
   size_t const rows = fd->param.array_param.row_count;
   
-  printf("field declaration: %s %s", fd->type, fd->name.name);
+  printf("field declaration: %s %s", fd->type, fd->name.str);
   
   if (rows == 1) // 1-dimensional
     printf("[%zd]\n", total_items);

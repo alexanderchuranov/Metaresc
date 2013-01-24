@@ -244,7 +244,7 @@ TYPEDEF_STRUCT (mr_fd_ptr_t,
 		)
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
-		(mr_hashed_string_t, name, , "must be the first field"),
+		(mr_hashed_string_t, type, , "must be the first field"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(int, size, , "size of type"),

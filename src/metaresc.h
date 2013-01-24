@@ -694,7 +694,7 @@
 	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .comment = #__VA_ARGS__,					\
-	     .ext = { (mr_td_t[]){ { .name = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
+	     .ext = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
 	     .ptr_type = "mr_td_t",					\
 		} } },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) {	\
@@ -731,7 +731,7 @@
 
 #define MR_TYPEDEF_DESC(MR_TYPE_NAME, MR_TYPE, /* ATTR */ ...)		\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME) = {	\
-    .name = { .str = #MR_TYPE_NAME, .hash_value = 0, },		\
+    .type = { .str = #MR_TYPE_NAME, .hash_value = 0, },		\
     .mr_type = MR_TYPE,							\
     .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),			\
     .size = sizeof (MR_TYPE_NAME),					\
