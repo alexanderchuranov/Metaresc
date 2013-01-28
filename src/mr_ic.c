@@ -17,7 +17,7 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   mr_ptr_t * add;
   
   if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
-      (0 != strcmp (MR_IC_NONE_TYPE_T, rarray->ra.ptr_type)))
+      (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
     {
       mr_ic_rarray_t * rarray_ = MR_MALLOC (sizeof (*rarray));
       if (NULL == rarray_)
@@ -44,7 +44,7 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 	memcpy (rarray_->ra.data, rarray->ra.data, rarray_->ra.size);
       
       rarray_->ra.ext.ptr = NULL;
-      rarray_->ra.ptr_type = MR_IC_NONE_TYPE_T;
+      rarray_->ra.ptr_type = MR_IC_NONE_TYPE_T_STR;
       ic->ext.ptr = rarray = rarray_;
     }
   
@@ -96,7 +96,7 @@ mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
   mr_ic_none_free (ic, context);
   
   if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
-      (0 != strcmp (MR_IC_NONE_TYPE_T, rarray->ra.ptr_type)))
+      (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
     {
       ic->ext.ptr = rarray;
       return (EXIT_SUCCESS);
@@ -132,7 +132,7 @@ mr_ic_none_free (mr_ic_t * ic, const void * context)
   ic->ext.ptr = NULL;
 
   if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
-      (0 != strcmp (MR_IC_NONE_TYPE_T, rarray->ra.ptr_type)))
+      (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
     return;
 
   if (NULL != rarray->ra.data)
