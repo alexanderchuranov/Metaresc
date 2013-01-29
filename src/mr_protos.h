@@ -216,10 +216,10 @@ TYPEDEF_STRUCT (mr_ic_hash_t,
 		)		
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
-		(mr_hashed_string_t, name, , "must be the first field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_type_ext_t, mr_type_ext, , "Metaresc type extension"),
+		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(char *, type, , "stringified type name"),
 		(int, offset, , "offset in structure"),
 		(int, size, , "size of field"),
@@ -244,9 +244,9 @@ TYPEDEF_STRUCT (mr_fd_ptr_t,
 		)
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
-		(mr_hashed_string_t, type, , "must be the first field"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
+		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(int, size, , "size of type"),
 		(char *, attr, , "stringified typedef attributes"),
 		(int, size_effective, , "effective size"),

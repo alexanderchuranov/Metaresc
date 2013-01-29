@@ -666,7 +666,7 @@ mr_load_rarray_type (mr_fd_t * fdp, int (*action) (mr_td_t *, void *), void * co
 	  fd.name = data_fdp->name;
 	  fd.offset = data_fdp->offset;
 	  fields_data[i].fdp = &fd; /* replace 'data' descriptor on a local copy */
-	  mr_ic_none_new (&td.lookup_by_name, mr_hashed_string_cmp, "mr_fd_t");
+	  mr_ic_none_new (&td.lookup_by_name, mr_fd_name_cmp, "mr_fd_t");
 	  mr_ic_index (&td.lookup_by_name, (mr_ic_rarray_t*)&td.fields, NULL);
 	  status = action (&td, context);
 	  mr_ic_free (&td.lookup_by_name, NULL);

@@ -1223,6 +1223,7 @@ extern char * xml_unquote_string (char*, int);
 extern void mr_init_save_xml (void);
 
 extern unsigned int mr_hash_str (char*);
+extern int mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern int mr_hashed_string_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
 extern unsigned int mr_hashed_string_get_hash (mr_ptr_t, const void *);
 

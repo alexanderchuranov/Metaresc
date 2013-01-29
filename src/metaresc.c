@@ -42,6 +42,11 @@ mr_conf_t mr_conf = {
   },
   .log_level = MR_LL_ALL, /**< default log level ALL */
   .msg_handler = NULL, /**< pointer on user defined message handler */
+  .lookup_by_name = {
+    .ic_type = MR_IC_NONE,
+    .find = NULL,
+    .ext = { .ptr = NULL, },
+  },
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
 };
 
@@ -597,7 +602,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 unsigned int
 mr_hash_str (char * str)
 {
-  uint64_t hash_value = 0;
+  unsigned int hash_value = 0;
   if (NULL == str)
     return (hash_value);
   while (*str)
@@ -625,12 +630,54 @@ mr_hashed_string_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_hashed_string_t * x_ = x.ptr;
   const mr_hashed_string_t * y_ = y.ptr;
-  uint64_t x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x, context);
-  uint64_t y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y, context);
+  typeof (((mr_hashed_string_t*)NULL)->hash_value) x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x, context);
+  typeof (((mr_hashed_string_t*)NULL)->hash_value) y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y, context);
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
   return (strcmp (x_->str, y_->str));
+}
+
+static unsigned int
+mr_fd_name_get_hash (mr_ptr_t x, const void * context)
+{
+  mr_fd_t * x_ = x.ptr;
+  return (mr_hashed_string_get_hash (&x_->name, context));
+}
+
+/**
+ * Comparator for mr_fd_t
+ * @param a pointer on one mr_fd_t
+ * @param b pointer on another mr_fd_t
+ * @return comparation sign
+ */
+int
+mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_fd_t * x_ = x.ptr;
+  const mr_fd_t * y_ = y.ptr;
+  return (mr_hashed_string_cmp ((void*)&x_->name, (void*)&y_->name, context));
+}
+
+static unsigned int
+mr_td_name_get_hash (mr_ptr_t x, const void * context)
+{
+  mr_td_t * x_ = x.ptr;
+  return (mr_hashed_string_get_hash (&x_->type, context));
+}
+
+/**
+ * Comparator for mr_td_t
+ * @param a pointer on one mr_td_t
+ * @param b pointer on another mr_td_t
+ * @return comparation sign
+ */
+int
+mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_td_t * x_ = x.ptr;
+  const mr_td_t * y_ = y.ptr;
+  return (mr_hashed_string_cmp ((void*)&x_->type, (void*)&y_->type, context));
 }
 
 /**
@@ -641,8 +688,8 @@ mr_hashed_string_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 mr_td_t *
 mr_get_td_by_name (char * type)
 {
-  mr_hashed_string_t name = { .str = type, .hash_value = mr_hash_str (type), };
-  mr_ptr_t * result = mr_ic_find (&mr_conf.lookup_by_name, &name, NULL);
+  mr_td_t td = { .type = { .str = type, .hash_value = mr_hash_str (type), } };
+  mr_ptr_t * result = mr_ic_find (&mr_conf.lookup_by_name, &td, NULL);
   return (result ? result->ptr : NULL);
 }
 
@@ -848,8 +895,8 @@ mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 mr_fd_t *
 mr_get_enum_by_name (char * name)
 {
-  mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), };
-  mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, &hashed_name, NULL);
+  mr_fd_t fd = { .name = { .str = name, .hash_value = mr_hash_str (name), } };
+  mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, &fd, NULL);
   return (result ? result->ptr : NULL);
 }
 
@@ -1188,8 +1235,8 @@ mr_detect_fields_types (mr_td_t * tdp)
 mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
-  mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), };
-  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_name, &hashed_name, NULL);
+  mr_fd_t fd = { .name = { .str = name, .hash_value = mr_hash_str (name), } };
+  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_name, &fd, NULL);
   return (result ? result->ptr : NULL);
 }
 
@@ -1227,23 +1274,6 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->mr_type_aux = MR_TYPE_VOID;
   fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
   return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp, NULL)) ? EXIT_SUCCESS : EXIT_FAILURE);
-}
-
-static int
-mr_ic_hashed_name_new (mr_ic_t * ic, char * key_type)
-{
-  switch (MR_IC_HASH)
-    {
-      /* sample run: compares 168952 matches 9703 ratio: 17.41 */
-    case MR_IC_NONE: return (mr_ic_none_new (ic, mr_hashed_string_cmp, key_type));
-      /* sample run: compares 57272 matches 12029 ratio: 4.76 */
-    case MR_IC_RBTREE: return (mr_ic_rbtree_new (ic, mr_hashed_string_cmp, key_type));
-      /* sample run: compares 54947 matches 10987 ratio: 5.00 */
-    case MR_IC_SORTED_ARRAY: return (mr_ic_sorted_array_new (ic, mr_hashed_string_cmp, key_type));
-      /* sample run: compares 15453 matches 14019 ratio: 1.10 */
-    case MR_IC_HASH: return (mr_ic_hash_new (ic, mr_hashed_string_get_hash, mr_hashed_string_cmp, key_type));
-    default: return (EXIT_FAILURE);
-    }
 }
 
 /**
@@ -1294,15 +1324,20 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (EXIT_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
     return (EXIT_FAILURE);
   
+  /* MR_IC_NONE: compares 168952 matches 9703 ratio: 17.41 */
+  /* MR_IC_RBTREE: compares 57272 matches 12029 ratio: 4.76 */
+  /* MR_IC_SORTED_ARRAY: compares 54947 matches 10987 ratio: 5.00 */
+  /* MR_IC_HASH: compares 15453 matches 14019 ratio: 1.10 */
+  
   mr_check_fields (tdp);
-  mr_ic_hashed_name_new (&tdp->lookup_by_name, "mr_fd_t");
+  mr_ic_hash_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t");
   mr_ic_index (&tdp->lookup_by_name, (mr_ic_rarray_t*)&tdp->fields, NULL);
   
   if (NULL == mr_conf.enum_by_name.find)
-    mr_ic_hashed_name_new (&mr_conf.enum_by_name, "mr_fd_t");
+    mr_ic_hash_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t");
 
   if (NULL == mr_conf.lookup_by_name.find)
-    mr_ic_hashed_name_new (&mr_conf.lookup_by_name, "mr_td_t");
+    mr_ic_hash_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t");
   
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
     return (EXIT_FAILURE);
