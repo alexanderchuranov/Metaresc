@@ -127,5 +127,5 @@ extern Suite * suite;
     srunner_free (srunner);						\
     return ((number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE);	\
   }									\
-  
+
 #endif /* _REGRESSION_H_ */
