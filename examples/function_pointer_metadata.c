@@ -14,7 +14,7 @@ TYPEDEF_STRUCT (ops,
 int print_func_field_signature (mr_fd_t const * fd)
 {
   int i;
-  
+
   if (fd->mr_type != MR_TYPE_FUNC)
     {
       fprintf(stderr,
@@ -22,20 +22,20 @@ int print_func_field_signature (mr_fd_t const * fd)
 	      fd->name.str);
       return (EXIT_FAILURE);
     }
-  
+
   size_t const num_args = fd->param.func_param.size / sizeof (fd->param.func_param.data[0]);
-  
+
   printf ("%s (*) (", fd->param.func_param.data[0].type);
-  
+
   for (i = 1; i < num_args; ++i)
     {
       if (i > 1)
 	printf(", ");
-    
+
       mr_fd_t const* arg_type = &fd->param.func_param.data[i];
       printf ("%s", arg_type->type);
     }
-  
+
   printf (")\n");
   return (EXIT_SUCCESS);
 }
@@ -44,9 +44,9 @@ int main ()
 {
   char type_name[] = "ops";
   char field_name[] = "subtract";
-  
+
   mr_td_t * td = mr_get_td_by_name (type_name);
-  
+
   if (NULL == td)
     {
       fprintf (stderr,
@@ -54,9 +54,9 @@ int main ()
 	       type_name);
       return (EXIT_FAILURE);
     }
-  
+
   mr_fd_t const * fd = mr_get_fd_by_name (td, field_name);
-  
+
   if (NULL == fd)
     {
       fprintf (stderr,
@@ -64,7 +64,7 @@ int main ()
 	       field_name, type_name);
       return (EXIT_FAILURE);
     }
-  
+
   printf ("field '%s' has type name '%s'\n", field_name, fd->type);
   printf ("the actual type: ");
   return (print_func_field_signature (fd));

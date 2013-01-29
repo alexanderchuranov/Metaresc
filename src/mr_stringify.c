@@ -128,7 +128,7 @@ mr_stringify_func (mr_ptrdes_t * ptrdes)
 	{
 	  if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
 	    return (MR_STRDUP (info.dli_sname));
-	}	  
+	}
 #endif /* HAVE_LIBDL */
       sprintf (str, "%p", func);
       return (MR_STRDUP (str));
@@ -236,7 +236,7 @@ mr_decompose_bitmask_add (char * str, char * bitmask_or_delimiter, char * token)
       strcat (str_, token);
     }
   return (str_);
-}  
+}
 
 /**
  * MR_BITMASK type saving handler. Look up type descriptor and save as
@@ -252,14 +252,14 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
   uint64_t value = 0;
   char * str = NULL;
   mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
-  
+
   /* check whether type descriptor was found */
   if (NULL == tdp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->fd.type);
       return (mr_stringify_uint (ptrdes));
     }
-  
+
   if (MR_TYPE_ENUM != tdp->mr_type)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
@@ -267,13 +267,13 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
     }
 
   value = mr_get_enum_value (ptrdes);
-  
+
   if (0 == value)
     {
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
       return (MR_STRDUP (fdp && fdp->name.str ? fdp->name.str : "0"));
     }
-  
+
   /* decompose value on bitmask */
   count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
@@ -344,7 +344,7 @@ xml_quote_string (char * str)
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
-  
+
   length = 0;
   for (; *str; ++str)
     if (map[(unsigned char)*str])
@@ -398,13 +398,13 @@ xml_unquote_string (char * str, int length)
 	  }
       inited = !0;
     }
-  
+
   if (NULL == str_)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
-  
+
   for (j = 0; j < length; ++j)
     if (str[j] != '&')
       str_[length_++] = str[j];
@@ -442,4 +442,4 @@ xml_unquote_string (char * str, int length)
       }
   str_[length_] = 0;
   return (str_);
-}  
+}

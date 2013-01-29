@@ -120,8 +120,8 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 
 /**
  * Redirect message to user defined handler or output message to stderr.
- * @param file_name file name 
- * @param func_name function name 
+ * @param file_name file name
+ * @param func_name function name
  * @param line line number
  * @param log_level logging level of message
  * @param message_id message template string ID
@@ -202,7 +202,7 @@ strndup (const char * str, size_t size)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
-    }    
+    }
   memcpy (copy, str, size);
   copy[size] = 0;
   return (copy);
@@ -291,7 +291,7 @@ mr_rarray_append (mr_rarray_t * rarray, int size)
 	  rarray->alloc_size = rarray->size = size;
 	}
       return (rarray->data);
-    }    
+    }
 
   rarray->size += size;
   if (rarray->size > rarray->alloc_size)
@@ -479,7 +479,7 @@ calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 }
 
 /**
- * Recursively copy 
+ * Recursively copy
  * @param ptrs resizable array with serialized data
  * @return status, 0 - failure, !0 - success
  */
@@ -494,14 +494,14 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     ptrs.ra.data[i].ext.ptr = NULL;
 
-  /* NB index 0 is excluded */  
+  /* NB index 0 is excluded */
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     /*
       skip nodes that are not in final save graph (ptrs.ra.data[i].idx >= 0)
       nodes are references on other nodes (ptrs.ra.data[i].ref_idx < 0)
       or NULL pointers !ptrs.ra.data[i].flags.is_null
     */
-    if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0) && !ptrs.ra.data[i].flags.is_null) 
+    if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0) && !ptrs.ra.data[i].flags.is_null)
       switch (ptrs.ra.data[i].fd.mr_type_ext)
 	{
 	case MR_TYPE_EXT_NONE:
@@ -565,7 +565,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 
   /* depth search thru the graph and calculate new addresses for all nodes */
   mr_ptrs_ds (&ptrs, calc_relative_addr, NULL);
-      
+
   /* now we should update pointers in a copy */
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     if ((ptrs.ra.data[i].idx >= 0) && !ptrs.ra.data[i].flags.is_null) /* skip NULL and invalid nodes */
@@ -599,10 +599,10 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
  * @param str a pointer on null terminated string
  * @return Hash function value.
  */
-unsigned int
+mr_hash_value_t
 mr_hash_str (char * str)
 {
-  unsigned int hash_value = 0;
+  mr_hash_value_t hash_value = 0;
   if (NULL == str)
     return (hash_value);
   while (*str)
@@ -610,7 +610,7 @@ mr_hash_str (char * str)
   return (hash_value);
 }
 
-unsigned int
+mr_hash_value_t
 mr_hashed_string_get_hash (mr_ptr_t x, const void * context)
 {
   mr_hashed_string_t * x_ = x.ptr;
@@ -630,15 +630,15 @@ mr_hashed_string_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_hashed_string_t * x_ = x.ptr;
   const mr_hashed_string_t * y_ = y.ptr;
-  typeof (((mr_hashed_string_t*)NULL)->hash_value) x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x, context);
-  typeof (((mr_hashed_string_t*)NULL)->hash_value) y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y, context);
+  mr_hash_value_t x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x, context);
+  mr_hash_value_t y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y, context);
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
   return (strcmp (x_->str, y_->str));
 }
 
-static unsigned int
+mr_hash_value_t
 mr_fd_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
@@ -659,7 +659,7 @@ mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (mr_hashed_string_cmp ((void*)&x_->name, (void*)&y_->name, context));
 }
 
-static unsigned int
+mr_hash_value_t
 mr_td_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_td_t * x_ = x.ptr;
@@ -755,7 +755,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		  tdp_->size = fields[j]->size; /* find union max size member */
 	      }
 
-	    last = tdp->fields.data[count].fdp;	  
+	    last = tdp->fields.data[count].fdp;
 	    last->mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
 	    tdp_->mr_type = fdp->mr_type; /*MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
@@ -792,7 +792,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @param context pointer on a context
  * @return hash value
  */
-unsigned int
+mr_hash_value_t
 mr_enumfd_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * fdp = x.ptr;
@@ -848,7 +848,7 @@ mr_add_enum (mr_td_t * tdp)
     default:
       tdp->size_effective = tdp->size;
       break;
-    }  
+    }
 
   mr_ic_hash_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t");
   mr_ic_index (&tdp->lookup_by_value, (mr_ic_rarray_t*)&tdp->fields, NULL);
@@ -857,7 +857,7 @@ mr_add_enum (mr_td_t * tdp)
     {
       /* adding to global lookup table by enum literal names */
       mr_ptr_t key = { .ptr = tdp->fields.data[i].fdp };
-      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key, NULL);  
+      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key, NULL);
       if (NULL == result)
 	return (EXIT_FAILURE);
       if (result->ptr != key.ptr)
@@ -934,7 +934,7 @@ mr_normalize_type (mr_fd_t * fdp)
   char * ptr;
   int prev_is_space = 0;
   int modified = 0;
-  
+
   for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
     {
       int length = strlen (keywords[i]);
@@ -984,14 +984,14 @@ mr_init_bitfield (mr_fd_t * fdp)
   if ((NULL == fdp->param.bitfield_param.bitfield.data) ||
       (0 == fdp->param.bitfield_param.bitfield.size))
     return (EXIT_SUCCESS);
-  
+
   for (i = 0; i < fdp->param.bitfield_param.bitfield.size; ++i)
     if (fdp->param.bitfield_param.bitfield.data[i])
       break;
   /* if bitmask is clear then there is no need to initialize anything */
   if (!fdp->param.bitfield_param.bitfield.data[i])
     return (EXIT_SUCCESS);
-  
+
   fdp->offset = i;
   for (i = 0; i < CHAR_BIT; ++i)
     if (fdp->param.bitfield_param.bitfield.data[fdp->offset] & (1 << i))
@@ -1074,7 +1074,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
       [MR_TYPE_ANON_UNION] = sizeof (void),
       [MR_TYPE_NAMED_ANON_UNION] = sizeof (void),
     };
-  
+
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);
   /* check if type is in registery */
   if (tdp)
@@ -1118,7 +1118,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
 
 	    default:
 	      break;
-	    }		    
+	    }
 	}
     }
   return (EXIT_SUCCESS);
@@ -1195,16 +1195,16 @@ mr_detect_field_type (mr_fd_t * fdp)
 	    fdp->size = tdp->size;
 	}
       break;
-	
+
     case MR_TYPE_NONE: /* MR_AUTO type resolution */
       mr_auto_field_detect (fdp);
       break;
-	  
+
     case MR_TYPE_FUNC:
       fdp->size = sizeof (void*);
       mr_func_field_detect (fdp);
       break;
-	  
+
     default:
       break;
     }
@@ -1256,7 +1256,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   /* check that requested type is already registered */
   if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
     return (EXIT_SUCCESS);
-  
+
   /* statically allocated trailing record is used for field descriptor */
   fdp = tdp->fields.data[tdp->fields.size / sizeof (tdp->fields.data[0])].fdp;
   if (NULL == fdp)
@@ -1264,7 +1264,7 @@ mr_register_type_pointer (mr_td_t * tdp)
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (EXIT_FAILURE);
     }
-  
+
   memset (fdp, 0, sizeof (*fdp));
   fdp->type = tdp->type.str;
   fdp->name = tdp->type;
@@ -1314,7 +1314,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   tdp->fields.size = count * sizeof (tdp->fields.data[0]);
   tdp->fields.alloc_size = -1;
   tdp->fields.ext.ptr = NULL;
-  
+
   if ((NULL != comment) && comment[0])
     tdp->comment = comment;
 
@@ -1323,22 +1323,22 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
 
   if (EXIT_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
     return (EXIT_FAILURE);
-  
+
   /* MR_IC_NONE: compares 168952 matches 9703 ratio: 17.41 */
   /* MR_IC_RBTREE: compares 57272 matches 12029 ratio: 4.76 */
   /* MR_IC_SORTED_ARRAY: compares 54947 matches 10987 ratio: 5.00 */
   /* MR_IC_HASH: compares 15453 matches 14019 ratio: 1.10 */
-  
+
   mr_check_fields (tdp);
   mr_ic_hash_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t");
   mr_ic_index (&tdp->lookup_by_name, (mr_ic_rarray_t*)&tdp->fields, NULL);
-  
+
   if (NULL == mr_conf.enum_by_name.find)
     mr_ic_hash_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t");
 
   if (NULL == mr_conf.lookup_by_name.find)
     mr_ic_hash_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t");
-  
+
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
     return (EXIT_FAILURE);
 
@@ -1356,7 +1356,7 @@ mr_conf_init_visitor (mr_ptr_t key, const void * context)
   mr_detect_fields_types (tdp);
   mr_register_type_pointer (tdp);
   return (EXIT_SUCCESS);
-}  
+}
 
 static void
 mr_conf_init ()
@@ -1381,25 +1381,26 @@ mr_detect_type (mr_fd_t * fdp)
   mr_td_t * tdp;
 
   mr_conf_init ();
-  
-  switch (fdp->mr_type)						
-    {								
-    case MR_TYPE_UINT8:						
-    case MR_TYPE_INT8:						
-    case MR_TYPE_UINT16:						
-    case MR_TYPE_INT16:						
-    case MR_TYPE_UINT32:						
-    case MR_TYPE_INT32:						
-    case MR_TYPE_UINT64:						
+
+  switch (fdp->mr_type)
+    {
+    case MR_TYPE_UINT8:
+    case MR_TYPE_INT8:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_INT16:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_INT32:
+    case MR_TYPE_UINT64:
     case MR_TYPE_INT64:
     case MR_TYPE_NONE:
       /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
-      tdp = mr_get_td_by_name (fdp->type);		
-      if (tdp)							
-	fdp->mr_type = tdp->mr_type;				
-      break;							
-    default: break;							
-    }								
+      tdp = mr_get_td_by_name (fdp->type);
+      if (tdp)
+	fdp->mr_type = tdp->mr_type;
+      break;
+    default:
+      break;
+    }
 }
 
 /**
@@ -1410,10 +1411,10 @@ mr_detect_type (mr_fd_t * fdp)
 int
 mr_parse_add_node (mr_load_t * mr_load)
 {
-  int idx = mr_add_ptr_to_list ((mr_ra_mr_ptrdes_t*)mr_load->ptrs);
+  int idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (idx < 0)
     return (idx);
-  mr_add_child (mr_load->parent, idx, (mr_ra_mr_ptrdes_t*)mr_load->ptrs);
+  mr_add_child (mr_load->parent, idx, mr_load->ptrs);
   return (idx);
 }
 
@@ -1440,7 +1441,7 @@ mr_read_xml_doc (FILE * fd)
       return (NULL);
     }
   size = -1;
-  
+
   for (;;)
     {
       int c = fgetc (fd);
@@ -1450,7 +1451,7 @@ mr_read_xml_doc (FILE * fd)
 	  MR_FREE (str);
 	  return (NULL);
 	}
-      
+
       str[++size] = c;
       if (size == max_size - 1)
 	{

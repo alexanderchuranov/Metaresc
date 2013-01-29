@@ -28,6 +28,6 @@ int main ()
       printf ("%s", xml);
       MR_FREE (xml);
     }
-  
+
   return (EXIT_SUCCESS);
 }

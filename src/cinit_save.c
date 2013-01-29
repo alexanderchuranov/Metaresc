@@ -36,7 +36,7 @@ static int cinit_named_node[MR_TYPE_LAST] = {
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -47,9 +47,9 @@ cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 /**
  * MR_XXX type saving handler. Make a string from *(XXX_t*)data.
  * \@param idx an index of node in ptrs
- * \@param ptrs resizeable array with pointers descriptors 
+ * \@param ptrs resizeable array with pointers descriptors
  * \@param data structure that argregates evrything required for saving
- * \@return status 
+ * \@return status
  */
 #define CINIT_SAVE_TYPE(TYPE, EXT...) static int cinit_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data) { data->content = mr_stringify_ ## TYPE (&ptrs->ra.data[idx] EXT); return (0); }
 
@@ -91,7 +91,7 @@ cinit_quote_string (char * str, char quote)
   int length = 0;
   char * str_;
   char * ptr;
-  
+
   for (ptr = str; *ptr; ++ptr)
     {
       if ((quote == *ptr) || (map[(unsigned char)*ptr] >= 0))
@@ -120,7 +120,7 @@ cinit_quote_string (char * str, char quote)
 	{
 	  str_[length++] = '\\';
 	  str_[length++] = map[(unsigned char)*ptr];
-	}      
+	}
       else if (isprint (*ptr))
 	str_[length++] = *ptr;
       else
@@ -138,9 +138,9 @@ cinit_quote_string (char * str, char quote)
 /**
  * MR_CHAR type saving handler. Stringify char.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -157,9 +157,9 @@ cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 /**
  * MR_CHAR_ARRAY type saving handler. Saves char array.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -171,9 +171,9 @@ cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 /**
  * MR_STRING type saving handler. Saves string.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -189,9 +189,9 @@ cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data
 /**
  * MR_STRING type saving handler. Saves string.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -221,9 +221,9 @@ cinit_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 /**
  * MR_STRUCT type saving handler. Saves struct.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_struct (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -236,9 +236,9 @@ cinit_save_struct (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data
 /**
  * MR_ANON_UNION type saving handler. Saves anonymous unions.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -251,9 +251,9 @@ cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 /**
  * MR_TYPE_EXT_RARRAY_DATA type saving handler. Saves resizeable array content.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -273,7 +273,7 @@ cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t *
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -284,7 +284,7 @@ cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * dat
     {
       data->prefix = "(" MR_CINIT_TYPE_NAME_TEMPLATE "){\n";
       data->suffix = "}";
-    }    
+    }
   else
     {
       data->prefix = "(" MR_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
@@ -296,9 +296,9 @@ cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * dat
 /**
  * MR_TYPE_EXT_ARRAY type saving handler. Saves arrays content in JSON.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -311,9 +311,9 @@ json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 /**
  * MR_TYPE_EXT_RARRAY_DATA type saving handler. Saves resizeable array content in JSON.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -331,9 +331,9 @@ json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 /**
  * MR_TYPE_EXT_POINTER type saving handler. Saves pointer in JSON.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @param data structure that argregates evrything required for saving
- * @return status 
+ * @return status
  */
 static int
 json_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
@@ -439,7 +439,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 
   if (NULL == mr_ra_str.data)
     return (NULL);
-  
+
   while (idx >= 0)
     {
       int level = 0;
@@ -453,43 +453,43 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	{
 	  int named_node = MR_CINIT_UNNAMED_FIELDS;
 	  level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
-	  
+
 	  if (ptrs->ra.data[idx].level > 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 	      return (NULL);
-	  
+
 	  if ((ptrs->ra.data[idx].parent >= 0) && (MR_TYPE_EXT_NONE == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type_ext))
 	    named_node = cinit_named_node[ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type];
-	  
+
 	  if ((MR_CINIT_NAMED_FIELDS == named_node) && (save_data.named_field_template))
 	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra.data[idx].fd.name.str) < 0)
 	      return (NULL);
-	  
+
 	  if (ptrs->ra.data[idx].ref_idx >= 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT,
 			      (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			      ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	      return (NULL);
-	  
+
 	  if (ptrs->ra.data[idx].flags.is_referenced)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	      return (NULL);
-	  
+
 	  if (save_data.prefix)
 	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.type) < 0)
 	      return (NULL);
-	  
+
 	  if (save_data.content)
 	    {
 	      if (mr_ra_printf (&mr_ra_str, "%s", save_data.content) < 0)
 		return (NULL);
 	      MR_FREE (save_data.content);
 	    }
-	  
+
 	  ptrs->ra.data[idx].ext.ptr = save_data.suffix;
 	  ptrs->ra.data[idx].ptr_type = "string_t";
 	}
-      
+
       if (ptrs->ra.data[idx].first_child >= 0)
 	idx = ptrs->ra.data[idx].first_child;
       else
@@ -523,7 +523,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	  idx = ptrs->ra.data[idx].next;
 	}
     }
-  
+
   return (mr_ra_str.data);
 }
 
@@ -534,7 +534,7 @@ cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_ty
   if ((fdp->mr_type != MR_TYPE_ANON_UNION) && /* anonymous unions should be unnamed for CINIT */
       ((ptrs->ra.data[idx].parent >= 0) && strcmp ("mr_ptr_t", ptrs->ra.data[ptrs->ra.data[idx].parent].fd.type))) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
     save_data->named_field_template = MR_CINIT_NAMED_FIELD_TEMPLATE;
-  
+
   if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_cinit_save_handler[fdp->mr_type_ext])
     skip_node = ext_cinit_save_handler[fdp->mr_type_ext] (idx, ptrs, save_data);
   else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST) && cinit_save_handler[fdp->mr_type])
@@ -543,7 +543,7 @@ cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_ty
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
   return (skip_node);
 }
-  
+
 char *
 cinit_save (mr_ra_mr_ptrdes_t * _ptrs_)
 {
@@ -563,7 +563,7 @@ json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_typ
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
   return (skip_node);
 }
-  
+
 char *
 json_save (mr_ra_mr_ptrdes_t * _ptrs_)
 {

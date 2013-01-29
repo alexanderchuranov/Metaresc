@@ -73,8 +73,8 @@ value
 
 value:
 compaund
-| named_node 
-| TOK_SCM_HASH compaund 
+| named_node
+| TOK_SCM_HASH compaund
 | TOK_SCM_VALUE { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$1); }
 | TOK_SCM_ID { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$1); }
 
@@ -97,7 +97,7 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   if (prev >= 0)
     mr_load->ptrs->ra.data[prev].next = child;
   mr_load->ptrs->ra.data[child].prev = prev;
-  
+
   mr_load->ptrs->ra.data[child].parent = parent;
   mr_load->ptrs->ra.data[child].fd.name.str = name;
   mr_load->parent = child;

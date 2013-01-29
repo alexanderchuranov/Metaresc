@@ -19,6 +19,6 @@ main (int argc, char * argv[])
       printf ("%s", xml);
       MR_FREE (xml);
     }
-  
+
   return (EXIT_SUCCESS);
 }

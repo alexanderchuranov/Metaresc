@@ -14,7 +14,7 @@ int main ()
     }
   };
   char * xml = MR_SAVE_XML (basics_t, &b);
-  
+
   if (NULL == xml)
     printf ("Serialization failed\n");
   else

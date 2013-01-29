@@ -20,7 +20,7 @@ main (int argc, char * argv[])
     "<lastname>Doe</lastname>"
     "<salary>123456</salary>"
     "</employee>";
-  
+
   employee_t employee = MR_LOAD_XML (employee_t, source);
   printf ("%11s: %s\n"
 	  "%11s: %s\n"

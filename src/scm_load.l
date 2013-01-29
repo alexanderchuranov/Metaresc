@@ -10,13 +10,13 @@
 %{
 #include <string.h>
 #include <ctype.h>
-   
+
 #include <metaresc.h>
-#include <lexer.h>  
+#include <lexer.h>
 #include <scm_load.tab.h>
 
 #define MR_SCM_BIT_OR "bit-or"
-   
+
    static char * unquote (char*, int);
    static char * encode_char (char*, int);
    static char * encode_bitmask (char*, int);
@@ -171,7 +171,7 @@ append (char * tok, int tok_size, int tok_count, void * context)
   memcpy (*end_ptr, tok, tok_size);
   *end_ptr += tok_size;
 }
-  
+
 static char *
 encode_bitmask (char * str, int length)
 {
@@ -193,7 +193,7 @@ encode_bitmask (char * str, int length)
       return (NULL);
     }
   end = bitmask;
-  
+
   tokenize (str, length, append, &end);
   *end = 0;
   return (bitmask);

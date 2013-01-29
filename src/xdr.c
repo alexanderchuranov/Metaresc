@@ -214,7 +214,7 @@ xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
       .x_putint32 = xdrra_putint32,
 #endif /* HAVE_STRUCT_XDR_OPS_X_PUTINT32 */
     };
-  
+
   xdrs->x_op = op;
   xdrs->x_ops = &xdrra_ops;
   xdrs->x_private = (caddr_t)ra;
@@ -241,7 +241,7 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 	else
 	  {
 	    void * data;
-	
+
 	    if (ptrs->ra.data[i].flags.is_content_reference)
 	      data = *(void**)(ptrs->ra.data[ptrs->ra.data[i].ref_idx].data);
 	    else
@@ -284,7 +284,7 @@ bool_t xdr_char (xdrs, cp)
      char *cp;
 {
   int i;
- 
+
   i = (*cp);
   if (!xdr_int (xdrs, &i)) {
     return (FALSE);
@@ -462,9 +462,9 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       if ((str_len > max_size) && (0 != strcmp (ptrs->ra.data[idx].fd.type, "string_t")))
 	str_len = max_size;
     }
-  
+
   xdr_uint32_t (xdrs, &str_len);
-  
+
   if (XDR_DECODE == xdrs->x_op)
     {
       if (0 == strcmp (ptrs->ra.data[idx].fd.type, "string_t"))
@@ -542,7 +542,7 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (0);
-	}    
+	}
       memset (*str, 0, size + 1);
       return (xdr_opaque (xdrs, *str, size));
     }
@@ -567,13 +567,13 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
       return (0);
     }
-  
+
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type.str);
       return (0);
     }
-  
+
   count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
     {
@@ -617,10 +617,10 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     .ref_idx = -1,
     .flags = { .is_null = MR_FALSE, .is_referenced = MR_FALSE, .is_content_reference = MR_FALSE, },
   };
-  
+
   if (ptrs->ra.data[idx].first_child >= 0)
     ptrdes.data = &ptrs->ra.data[ptrs->ra.data[idx].first_child].fd.name.str;
-  
+
   mr_ra_mr_ptrdes_t ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_save_string (xdrs, 0, &ptrs_));
 }
@@ -666,7 +666,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	}
       MR_FREE (discriminator);
     }
-  
+
   return (status);
 }
 
@@ -785,9 +785,9 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       status = 0;
       break;
     }
-  
+
   MR_FREE (ptrdes.value);
-  
+
   return (status);
 }
 
@@ -859,7 +859,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   mr_fd_t fd_ = ptrs->ra.data[idx].fd;
   int count = fd_.param.array_param.count;
   int row_count = fd_.param.array_param.row_count;
-  
+
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type_ext = MR_TYPE_EXT_NONE; /* set extended type property to MR_NONE in copy of field descriptor */
   else
@@ -910,7 +910,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
   if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
     return (0);
-  
+
   if (ptrs->ra.data[idx].flags.is_null)
     *data = NULL;
   else
@@ -945,7 +945,7 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
     return (0);
-  
+
   if (ptrs->ra.data[idx].ref_idx >= 0)
     return (xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
   else
@@ -962,10 +962,10 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)&ra->size); break;
 	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)&ra->size); break;
 	}
-      
+
       if (!status)
 	return (0);
-      
+
       if (ptrs->ra.data[idx].flags.is_opaque_data)
 	return (xdr_opaque (xdrs, ra->data, ra->size)); /* content saved as opaque data */
       return (!0);
@@ -1000,7 +1000,7 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)&ra->size); break;
 	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)&ra->size); break;
 	}
-      
+
       if (!status)
 	return (0);
 
@@ -1020,7 +1020,7 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	      return (0);
 	    }
 	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-	  
+
 	  memset (ra->data, 0, ra->size);
 	  if (ptrs->ra.data[idx].flags.is_opaque_data)
 	    return (xdr_opaque (xdrs, ra->data, ra->size));
@@ -1030,7 +1030,7 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 		return (0);
 	}
     }
-  
+
   return (!0);
 }
 
@@ -1065,13 +1065,13 @@ xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     .idx = idx,
     .ptrs = ptrs,
   };
-  
+
   memset (ra, 0, sizeof (*ra));
   if (!mr_load_rarray_type (&ptrs->ra.data[idx].fd, xdr_load_rarray_inner, &xdr_load_rarray_struct))
     return (0);
   /* alloc_size is loaded from XDRS, but it should reflect amount of memory really allocated for data */
   ra->alloc_size = ra->size;
-  
+
   return (!0);
 }
 
@@ -1095,8 +1095,8 @@ has_opaque_rarrays (mr_ra_mr_ptrdes_t * ptrs)
  */
 static xdr_save_handler_t xdr_save_handler[] =
   {
-    [MR_TYPE_NONE] = xdr_none, 
-    [MR_TYPE_VOID] = xdr_none, 
+    [MR_TYPE_NONE] = xdr_none,
+    [MR_TYPE_VOID] = xdr_none,
     [MR_TYPE_ENUM] = xdr_save_enum,
     [MR_TYPE_BITFIELD] = xdr_save_bitfield,
     [MR_TYPE_BITMASK] = xdr_save_bitmask,
@@ -1108,25 +1108,25 @@ static xdr_save_handler_t xdr_save_handler[] =
     [MR_TYPE_UINT32] = xdr_uint_,
     [MR_TYPE_INT64] = xdr_int_,
     [MR_TYPE_UINT64] = xdr_uint_,
-    [MR_TYPE_FLOAT] = xdr_float_, 
-    [MR_TYPE_DOUBLE] = xdr_double_, 
+    [MR_TYPE_FLOAT] = xdr_float_,
+    [MR_TYPE_DOUBLE] = xdr_double_,
     [MR_TYPE_LONG_DOUBLE] = xdr_long_double,
-    [MR_TYPE_CHAR] = xdr_int_, 
-    [MR_TYPE_CHAR_ARRAY] = xdr_char_array_, 
+    [MR_TYPE_CHAR] = xdr_int_,
+    [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_save_string,
-    [MR_TYPE_STRUCT] = xdr_none, 
-    [MR_TYPE_FUNC] = xdr_save_func, 
-    [MR_TYPE_FUNC_TYPE] = xdr_save_func, 
-    [MR_TYPE_UNION] = xdr_save_union, 
-    [MR_TYPE_ANON_UNION] = xdr_save_union, 
-    [MR_TYPE_NAMED_ANON_UNION] = xdr_save_union, 
+    [MR_TYPE_STRUCT] = xdr_none,
+    [MR_TYPE_FUNC] = xdr_save_func,
+    [MR_TYPE_FUNC_TYPE] = xdr_save_func,
+    [MR_TYPE_UNION] = xdr_save_union,
+    [MR_TYPE_ANON_UNION] = xdr_save_union,
+    [MR_TYPE_NAMED_ANON_UNION] = xdr_save_union,
   };
 
 static xdr_save_handler_t ext_xdr_save_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = xdr_none,
-    [MR_TYPE_EXT_RARRAY_DATA] = xdr_save_rarray_data, 
-    [MR_TYPE_EXT_POINTER] = xdr_save_pointer, 
+    [MR_TYPE_EXT_RARRAY_DATA] = xdr_save_rarray_data,
+    [MR_TYPE_EXT_POINTER] = xdr_save_pointer,
   };
 
 static int
@@ -1148,7 +1148,7 @@ xdr_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
     }
   else
     {
-      MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
+      MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
       return (!0);
     }
   return (0);
@@ -1176,8 +1176,8 @@ xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
  */
 static xdr_load_handler_t xdr_load_handler[] =
   {
-    [MR_TYPE_NONE] = xdr_none, 
-    [MR_TYPE_VOID] = xdr_none, 
+    [MR_TYPE_NONE] = xdr_none,
+    [MR_TYPE_VOID] = xdr_none,
     [MR_TYPE_ENUM] = xdr_load_stringified_type,
     [MR_TYPE_BITFIELD] = xdr_load_bitfield,
     [MR_TYPE_BITMASK] = xdr_load_stringified_type,
@@ -1189,26 +1189,26 @@ static xdr_load_handler_t xdr_load_handler[] =
     [MR_TYPE_UINT32] = xdr_uint_,
     [MR_TYPE_INT64] = xdr_int_,
     [MR_TYPE_UINT64] = xdr_uint_,
-    [MR_TYPE_FLOAT] = xdr_float_, 
-    [MR_TYPE_DOUBLE] = xdr_double_, 
-    [MR_TYPE_LONG_DOUBLE] = xdr_long_double, 
-    [MR_TYPE_CHAR] = xdr_int_, 
-    [MR_TYPE_CHAR_ARRAY] = xdr_char_array_, 
+    [MR_TYPE_FLOAT] = xdr_float_,
+    [MR_TYPE_DOUBLE] = xdr_double_,
+    [MR_TYPE_LONG_DOUBLE] = xdr_long_double,
+    [MR_TYPE_CHAR] = xdr_int_,
+    [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_load_string,
-    [MR_TYPE_STRUCT] = xdr_load_struct, 
-    [MR_TYPE_FUNC] = xdr_load_stringified_type, 
-    [MR_TYPE_FUNC_TYPE] = xdr_load_stringified_type, 
-    [MR_TYPE_UNION] = xdr_load_union, 
-    [MR_TYPE_ANON_UNION] = xdr_load_union, 
-    [MR_TYPE_NAMED_ANON_UNION] = xdr_load_union, 
+    [MR_TYPE_STRUCT] = xdr_load_struct,
+    [MR_TYPE_FUNC] = xdr_load_stringified_type,
+    [MR_TYPE_FUNC_TYPE] = xdr_load_stringified_type,
+    [MR_TYPE_UNION] = xdr_load_union,
+    [MR_TYPE_ANON_UNION] = xdr_load_union,
+    [MR_TYPE_NAMED_ANON_UNION] = xdr_load_union,
   };
 
 static xdr_load_handler_t ext_xdr_load_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = xdr_load_array,
-    [MR_TYPE_EXT_RARRAY] = xdr_load_rarray, 
-    [MR_TYPE_EXT_RARRAY_DATA] = xdr_load_rarray_data, 
-    [MR_TYPE_EXT_POINTER] = xdr_load_pointer, 
+    [MR_TYPE_EXT_RARRAY] = xdr_load_rarray,
+    [MR_TYPE_EXT_RARRAY_DATA] = xdr_load_rarray_data,
+    [MR_TYPE_EXT_POINTER] = xdr_load_pointer,
   };
 
 int
@@ -1220,13 +1220,13 @@ xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 
   if (NULL == ptrs)
     ptrs = &ptrs_;
-  
+
   idx = mr_add_ptr_to_list (ptrs);
   if (idx < 0)
     return (idx);
   ptrs->ra.data[idx].data = data;
   ptrs->ra.data[idx].fd = *fdp;
-  
+
   if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
       && ext_xdr_load_handler[fdp->mr_type_ext])
     status = ext_xdr_load_handler[fdp->mr_type_ext] (xdrs, idx, ptrs);
@@ -1234,7 +1234,7 @@ xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 	   && xdr_load_handler[fdp->mr_type])
     status = xdr_load_handler[fdp->mr_type] (xdrs, idx, ptrs);
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
   if (status && (0 == idx))
     status = mr_set_crossrefs (ptrs);

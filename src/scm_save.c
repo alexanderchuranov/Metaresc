@@ -79,7 +79,7 @@ SCM_SAVE_TYPE (bitfield);
  * MR_BITMASK type saving handler. Look up type descriptor and save as
  * stringified bitmask value or as integer otherwise.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return stringified enum value
  */
 static char *
@@ -93,7 +93,7 @@ scm_save_bitmask (int idx, mr_ra_mr_ptrdes_t * ptrs)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (NULL);
-	}	
+	}
       sprintf (str_, MR_SCM_BITMASK_TEMPLATE, str);
       MR_FREE (str);
       str = str_;
@@ -104,7 +104,7 @@ scm_save_bitmask (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return stringified float value
  */
 static char *
@@ -119,7 +119,7 @@ scm_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * MR_CHAR type saving handler. Stringify char.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return stringified float value
  */
 static char *
@@ -149,7 +149,7 @@ scm_quote_string (char * str, char quote)
   int length = 0;
   char * str_;
   char * ptr;
-  
+
   for (ptr = str; *ptr; ++ptr)
     {
       if ((quote == *ptr) || ('\\' == *ptr))
@@ -187,7 +187,7 @@ scm_quote_string (char * str, char quote)
 /**
  * MR_CHAR_ARRAY type saving handler. Save char array.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return char array value
  */
 static char *
@@ -199,7 +199,7 @@ scm_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * MR_STRING type saving handler. Save string.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return string value
  */
 static char *
@@ -220,7 +220,7 @@ scm_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
  */
 static char *
 scm_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs)
-{ 
+{
   return (MR_STRDUP (MR_SCM_FALSE));
 }
 
@@ -232,7 +232,7 @@ scm_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs)
  */
 static char *
 scm_save_empty (int idx, mr_ra_mr_ptrdes_t * ptrs)
-{ 
+{
   return (MR_STRDUP (MR_SCM_EMPTY));
 }
 
@@ -288,7 +288,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 
   if (NULL == mr_ra_str.data)
     return (NULL);
-  
+
   while (idx >= 0)
     {
       mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
@@ -319,7 +319,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	  else
 	    in_comment = !0;
 	}
-	    
+
       if (ptrs->ra.data[idx].first_child < 0)
 	{
 	  /* route saving handler */
@@ -330,7 +330,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 		   && scm_save_handler[fdp->mr_type])
 	    content = scm_save_handler[fdp->mr_type] (idx, ptrs);
 	  else
-	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
+	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
 	  if (content)
 	    {
@@ -365,7 +365,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_START) < 0)
 	    return (NULL);
 	}
-      
+
       if (ptrs->ra.data[idx].first_child >= 0)
 	idx = ptrs->ra.data[idx].first_child;
       else
@@ -379,7 +379,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 
 	      if (parent >= 0)
 		named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
-	      
+
 	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)
 		return (NULL);
 	      if (MR_SCM_NAMED_FIELDS == named_node)

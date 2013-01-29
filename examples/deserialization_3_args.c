@@ -20,9 +20,9 @@ main (int argc, char * argv[])
     "<lastname>Doe</lastname>"
     "<salary>123456</salary>"
     "</employee>";
-  
+
   employee_t employee;
-  
+
   if (0 == MR_LOAD_XML (employee_t, source, &employee))
     fprintf (stderr, "De-serialization error has occurred.\n");
   else

@@ -15,7 +15,7 @@
 #define YYLEX_PARAM YYPARSE_PARAM
 #define MR_LOAD (mr_xml1_get_extra (YYPARSE_PARAM))
 #define mr_xml1_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, xml1)
-  
+
   static inline int tail_is_not_blank (mr_substr_t * substr, int offset)
   {
     if (offset > substr->substr.size)
@@ -57,12 +57,12 @@
 
 xml: TOK_XML_DOC_OPEN_TAG doc_properties TOK_XML_DOC_CLOSE_TAG tag
 
-doc_properties: | doc_properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE 
+doc_properties: | doc_properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
 
 tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
   mr_load_t * mr_load = MR_LOAD;
   int i;
-  
+
   for (i = 0; i < $4.substr.size; ++i)
     if (!isspace ($4.substr.data[i]))
       break;
@@ -70,7 +70,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
     {
       mr_xml1_error ("Unexpected charecters after closing tag!");
       YYERROR;
-    }  
+    }
 
   for (i = 0; i < $2.substr.size; ++i)
     if (':' == $2.substr.data[i])
@@ -87,7 +87,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {
   mr_load_t * mr_load = MR_LOAD;
   int i;
-  
+
   if (($2.substr.size != $6.substr.size) || (0 != strncmp ($2.substr.data, $6.substr.data, $2.substr.size)))
     {
       mr_xml1_error ("Open and close tags names do not match!");
@@ -101,7 +101,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
     {
       mr_xml1_error ("Unexpected charecters after closing tag!");
       YYERROR;
-    }  
+    }
 
   for (i = 0; i < $2.substr.size; ++i)
     if (':' == $2.substr.data[i])
@@ -124,7 +124,7 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
   mr_load_t * mr_load = MR_LOAD;
   char * error = NULL;
   int offset = 0;
-  
+
   if (0 == mr_substrcmp (MR_REF_IDX, &$3))
     {
       if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))

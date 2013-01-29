@@ -20,7 +20,7 @@ TYPEDEF_STRUCT (update_t,
 		string_t Modified,
 		string_t Salary,
 		)
-     
+
 TYPEDEF_STRUCT (person_t,
 		string_t Person,
 		string_t Email,

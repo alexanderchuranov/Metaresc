@@ -14,7 +14,7 @@ sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * 
   int idx1;
   char x[size];
   memcpy (x, &array[idx0 * size], size);
-  
+
   for (idx1 = (idx0 << 1) + 1; idx1 < count; idx1 = (idx1 << 1) + 1)
     {
       if (compar_fn (&array[idx1 * size], &array[(idx1 + 1) * size], context) <= 0)
@@ -39,7 +39,7 @@ hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void *
 
   if (0 == count)
     return;
-  
+
   for (i = --count >> 1; i > 0; --i)
     sift (array, count, size, compar_fn, context, i);
 

@@ -12,7 +12,7 @@ int main ()
     .bg = BLACK,
     .fg = WHITE
   };
-  
+
   char * xml = MR_SAVE_XML (screen_t, &screen);
 
   if (NULL == xml)
@@ -22,7 +22,7 @@ int main ()
       printf ("%s", xml);
       MR_FREE (xml);
     }
-  
+
   // TODO: loading unmatched enum value
   return (EXIT_SUCCESS);
 }

@@ -24,18 +24,18 @@ int main (int argc, char * argv[])
     "  \"lastname\" : \"Doe\","   "\n"
     "  \"salary\" : 123456,"      "\n"
     "}"                       "\n";
-  
+
   employee_t employee = MR_LOAD_JSON (employee_t, serialized);
-  
+
   print_info (&employee);
   MR_FREE_RECURSIVELY (employee_t, &employee);
-  
+
   char corrupted[] = "this is not a Scheme language text";
-  
+
   if (MR_LOAD_JSON (employee_t, corrupted, &employee))
     printf ("Parsing successfull (unexpected behavior)\n");
-  else 
+  else
     printf ("Parsing error (expected behavior)\n");
-  
+
   return (EXIT_SUCCESS);
 }

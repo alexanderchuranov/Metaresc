@@ -25,7 +25,7 @@
 /**
  * MR_NONE type saving handler.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return stringified representation of object
  */
 static char *
@@ -37,7 +37,7 @@ xml_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * MR_XXX type saving handler. Saves ptrs->ra.data[idx] as string into newly allocaeted XML node.
  * \@param idx an index of node in ptrs
- * \@param ptrs resizeable array with pointers descriptors 
+ * \@param ptrs resizeable array with pointers descriptors
  * \@return stringified representation of object
  */
 #define XML_SAVE_TYPE(TYPE, ...)				      \
@@ -65,7 +65,7 @@ XML_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
 /**
  * MR_CHAR type saving handler. Stringify char.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return stringified character value
  */
 static char *
@@ -83,7 +83,7 @@ xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * MR_CHAR_ARRAY type saving handler. Save char array as XML node.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return XML escaped string content
  */
 static char *
@@ -95,7 +95,7 @@ xml_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * MR_STRING type saving handler. Save string as XML node.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return XML escaped string content
  */
 static char *
@@ -104,14 +104,14 @@ xml1_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
   char * str = *(char**)ptrs->ra.data[idx].data;
   if ((NULL == str) || (ptrs->ra.data[idx].ref_idx >= 0))
     return (MR_STRDUP (""));
-  else 
+  else
     return (xml_quote_string (str));
 }
 
 /**
  * dummy stub for compaund types
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return empty string
  */
 static char *
@@ -133,7 +133,7 @@ static xml_save_handler_t ext_xml_save_handler[] =
 static xml_save_handler_t xml1_save_handler[] =
   {
     [MR_TYPE_STRING] = xml1_save_string,
-    
+
     [MR_TYPE_NONE] = xml_save_none,
     [MR_TYPE_VOID] = xml_save_none,
     [MR_TYPE_ENUM] = xml_save_enum,
@@ -173,7 +173,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 
   if (NULL == mr_ra_str.data)
     return (NULL);
-  
+
   while (idx >= 0)
     {
       int level = 0;
@@ -189,7 +189,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 	       && xml1_save_handler[fdp->mr_type])
 	content = xml1_save_handler[fdp->mr_type] (idx, ptrs);
       else
-	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
+	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
       level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
       empty_tag = (ptrs->ra.data[idx].first_child < 0) && ((NULL == content) || (0 == content[0]));
@@ -206,7 +206,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
       if (ptrs->ra.data[idx].flags.is_null)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
 	  return (NULL);
-	  
+
       if (empty_tag)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_XML1_OPEN_EMPTY_TAG_END) < 0)
@@ -219,7 +219,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 	}
       if (content)
 	MR_FREE (content);
-      
+
       if (ptrs->ra.data[idx].first_child >= 0)
 	idx = ptrs->ra.data[idx].first_child;
       else
@@ -246,7 +246,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 /**
  * XML string quote handler. Uses libxml encoding function.
  * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return XML escaped string content
  */
 static char *
@@ -255,7 +255,7 @@ xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
   xmlDocPtr doc = ptrs->ra.ext.ptr;
   xmlChar * encoded_content;
   char * content = *(char**)ptrs->ra.data[idx].data;
-  
+
   if ((NULL == content) || (ptrs->ra.data[idx].ref_idx >= 0))
     content = "";
   encoded_content = xmlEncodeEntitiesReentrant (doc, BAD_CAST content);
@@ -275,7 +275,7 @@ xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static xml_save_handler_t xml2_save_handler[] =
   {
     [MR_TYPE_STRING] = xml2_save_string,
-    
+
     [MR_TYPE_NONE] = xml_save_none,
     [MR_TYPE_VOID] = xml_save_none,
     [MR_TYPE_ENUM] = xml_save_enum,
@@ -310,14 +310,14 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   char number[MR_INT_TO_STRING_BUF_SIZE];
   char * content = NULL;
   xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name.str);
-	  
+
   ptrs->ra.data[idx].ext.ptr = node;
   if (NULL == node)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (!0);
     }
-  
+
   node->_private = (void*)(long)idx;
 
   /* route saving handler */
@@ -328,7 +328,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 	   && xml2_save_handler[fdp->mr_type])
     content = xml2_save_handler[fdp->mr_type] (idx, ptrs);
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    	  
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
   if (content)
     {
@@ -362,14 +362,14 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 
 /**
  * Public function. Save scheduler. Save any object as XML node.
- * @param ptrs resizeable array with pointers descriptors 
+ * @param ptrs resizeable array with pointers descriptors
  * @return XML document
  */
 xmlDocPtr
 xml2_save (mr_ra_mr_ptrdes_t * ptrs)
 {
   xmlDocPtr doc = xmlNewDoc (BAD_CAST "1.0");
-  
+
   if (NULL == doc)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XML_SAVE_FAILED);
@@ -381,7 +381,7 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
 
   if ((ptrs->ra.size > 0) && (NULL != ptrs->ra.data[0].ext.ptr))
     xmlDocSetRootElement (doc, ptrs->ra.data[0].ext.ptr);
-  
+
   return (doc);
 }
 #endif /* HAVE_LIBXML2 */

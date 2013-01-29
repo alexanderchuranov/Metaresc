@@ -16,10 +16,10 @@ int main ()
     .address = 0x43214321,
     .port = 443
   };
-  
+
   filter_t filter1 = { 123 };
   filter_t __attribute__ ((unused)) filter2 = { 321 };
-  
+
   policy_t policy = {
     .server_a = &server1,
     .server_b = &server2,
@@ -35,6 +35,6 @@ int main ()
       printf ("%s", xml);
       MR_FREE (xml);
     }
-  
+
   return (EXIT_SUCCESS);
 }

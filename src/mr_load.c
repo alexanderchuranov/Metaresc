@@ -70,7 +70,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 	      data = *(void**)(mr_load_data->ptrs.ra.data[idx].data);
 	    else
 	      data = mr_load_data->ptrs.ra.data[idx].data;
-	    
+
 	    if ((MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[i].fd.mr_type_ext) ||
 		(MR_TYPE_EXT_RARRAY_DATA == mr_load_data->ptrs.ra.data[i].fd.mr_type_ext) ||
 		(MR_TYPE_STRING == mr_load_data->ptrs.ra.data[i].fd.mr_type))
@@ -88,11 +88,11 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
  * @return A pointer on the rest of parsed string
  */
 static char *
-mr_get_enum (uint64_t * data, char * str)  
+mr_get_enum (uint64_t * data, char * str)
 {
   char * name = str;
   int size;
-	  
+
   while (isalnum (*str) || (*str == '_'))
     ++str;
   size = str - name;
@@ -146,14 +146,14 @@ mr_get_int (uint64_t * data, char * str)
 	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
 	      return (NULL);
 	    }
-	}	
+	}
       str += offset;
     }
   else
     {
       if ((1 == sscanf (str, "%" SCNu64 "%n", data, &offset)) || (1 == sscanf (str, "%" SCNd64 "%n", data, &offset)))
 	str += offset;
-      else 
+      else
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
 	  return (NULL);
@@ -185,7 +185,7 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 {
   char * str = mr_load_data->ptrs.ra.data[idx].value;
   uint64_t value;
-  
+
   if (NULL == str)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, mr_load_data->ptrs.ra.data[idx].value);
@@ -279,7 +279,7 @@ mr_load_bitmask (int idx, mr_load_data_t * mr_load_data)
 {
   char * str = mr_load_data->ptrs.ra.data[idx].value;
   int64_t value = 0;
-  
+
   if (NULL == str)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_BITMASK, mr_load_data->ptrs.ra.data[idx].value);
@@ -351,7 +351,7 @@ static int
 mr_load_char (int idx, mr_load_data_t * mr_load_data)
 {
   char * str = mr_load_data->ptrs.ra.data[idx].value;
-  
+
   if (NULL == str)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
@@ -381,7 +381,7 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
       *(char*)mr_load_data->ptrs.ra.data[idx].data = val;
     }
   return (!0);
-}     
+}
 
 /**
  * MR_STRING load handler. Allocate memory for a string.
@@ -461,7 +461,7 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
     return (!0);
   if (0 == value[0])
     return (!0);
-  
+
   if (isdigit (value[0]))
     return (mr_load_integer (idx, mr_load_data));
 
@@ -490,7 +490,7 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
       return (tdp->fields.data[i].fdp);
     else if (tdp->fields.data[i].fdp == fdp)
       fdp = NULL;
-      
+
   return (NULL);
 }
 
@@ -508,7 +508,7 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
   char * data = mr_load_data->ptrs.ra.data[idx].data;
   int first_child = mr_load_data->ptrs.ra.data[idx].first_child;
   mr_fd_t * fdp = NULL;
-  
+
   /* get pointer on structure descriptor */
   if (NULL == tdp)
     {
@@ -531,13 +531,13 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
 	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra.data[idx].fd.name.str);
       else
 	fdp = mr_load_struct_next_field (tdp, fdp);
-      
+
       if (NULL == fdp)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, mr_load_data->ptrs.ra.data[idx].fd.name.str);
 	  return (0);
 	}
-      
+
       /* recursively load subnode */
       if (!mr_load (&data[fdp->offset], fdp, idx, mr_load_data))
 	return (0);
@@ -572,7 +572,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
   int i = 0;
-  
+
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type_ext = MR_TYPE_EXT_NONE; /* prepare copy of filed descriptor for array elements loading */
   else
@@ -580,7 +580,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
       fd_.param.array_param.count = row_count;
       fd_.param.array_param.row_count = 1;
     }
-  
+
   /* loop on subnodes */
   for (idx = mr_load_data->ptrs.ra.data[idx].first_child; idx >= 0; idx = mr_load_data->ptrs.ra.data[idx].next)
     {
@@ -648,7 +648,7 @@ mr_load_rarray_type (mr_fd_t * fdp, int (*action) (mr_td_t *, void *), void * co
       mr_fd_t * data_fdp;
       mr_fd_t fd;
       int i;
-      
+
       memcpy (fields_data, td.fields.data, td.fields.size);
       td.fields.data = fields_data;
       for (i = 0; i < fields_count; ++i)
@@ -705,7 +705,7 @@ mr_load_rarray (int idx, mr_load_data_t * mr_load_data)
   };
 
   memset (ra, 0, sizeof (*ra));
-  
+
   if (!mr_load_rarray_type (&mr_load_data->ptrs.ra.data[idx].fd, mr_load_rarray_inner, &mr_load_rarray_struct))
     return (0);
   ra->alloc_size = ra->size;
@@ -885,13 +885,13 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
       mr_load_data->mr_ra_idx.size = 0;
       mr_load_data->mr_ra_idx.alloc_size = 0;
     }
-  
+
   if ((idx < 0) || (idx >= mr_load_data->ptrs.ra.size / sizeof (mr_load_data->ptrs.ra.data[0])))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SAVE_IDX_RANGE_CHECK);
       return (0);
     }
-  
+
   mr_load_data->ptrs.ra.data[idx].data = data;
   if (mr_load_data->ptrs.ra.data[idx].fd.name.str && fdp->name.str)
     if (strcmp (fdp->name.str, mr_load_data->ptrs.ra.data[idx].fd.name.str))
@@ -906,7 +906,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->type, mr_load_data->ptrs.ra.data[idx].fd.type);
 	return (0);
       }
-  
+
   if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.name.str) && (fdp->name.str))
     mr_load_data->ptrs.ra.data[idx].fd.name.str = MR_STRDUP (fdp->name.str);
   if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.type) && (fdp->type))
@@ -916,7 +916,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra.data[idx].fd.mr_type_aux = fdp->mr_type_aux;
   mr_load_data->ptrs.ra.data[idx].fd.mr_type_ext = fdp->mr_type_ext;
   mr_load_data->ptrs.ra.data[idx].fd.param = fdp->param;
-  
+
   /* route loading */
   if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
       && mr_ext_load_handler[fdp->mr_type_ext])
@@ -925,7 +925,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	   && mr_load_handler[fdp->mr_type])
     status = mr_load_handler[fdp->mr_type] (idx, mr_load_data);
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);    
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
   /* set cross references at the upper level */
   if (0 == idx)
@@ -945,6 +945,6 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	  mr_load_data->mr_ra_idx.alloc_size = 0;
 	}
     }
-  
+
   return (status);
-}     
+}

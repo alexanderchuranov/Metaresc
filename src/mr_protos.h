@@ -175,11 +175,11 @@ TYPEDEF_FUNC (int, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* conte
 
 TYPEDEF_FUNC (void, mr_free_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
-TYPEDEF_FUNC (unsigned int, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
 		(char *, str, , "key field"),
-		(unsigned int, hash_value, , "hash value of 'str'"),
+		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t,
@@ -191,7 +191,7 @@ TYPEDEF_ENUM (mr_ic_type_t,
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,
 		RARRAY (mr_ptr_t, ra, "key_type"),
-		)		
+		)
 
 TYPEDEF_STRUCT (mr_ic_t,
 		(mr_ic_type_t, ic_type),
@@ -207,13 +207,13 @@ TYPEDEF_STRUCT (mr_ic_t,
 
 TYPEDEF_STRUCT (mr_rb_tree_t,
 		(mr_red_black_tree_node_t *, root),
-		)		
+		)
 
 TYPEDEF_STRUCT (mr_ic_hash_t,
 		(int, count),
 		(mr_hash_fn_t, hash_fn),
 		RARRAY (mr_rb_tree_t, index),
-		)		
+		)
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"),
@@ -318,7 +318,7 @@ TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
 		(int, column, , "parser location - column number"),
 		(int, offset, , "parser location - offset in string"),
 		)
-  
+
 TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
 		(mr_lloc_t, start, , "start of the token"),
 		(mr_lloc_t, end, , "end of the token"),

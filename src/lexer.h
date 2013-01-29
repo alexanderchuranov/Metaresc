@@ -48,7 +48,7 @@ static inline char * mr_unquote (mr_substr_t * substr)
 	return (strndup (substr->substr.data, substr->substr.size));
     }
 }
-  
+
 static inline void mr_get_id (mr_substr_t * substr, char * start)
 {
   char * stop;

@@ -2,14 +2,14 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-%option 8bit reentrant bison-bridge bison-locations 
+%option 8bit reentrant bison-bridge bison-locations
 %option warn nounput never-interactive noyywrap
 %option extra-type="mr_load_t*"
 %option prefix="mr_cinit_"
 %{
 #include <string.h>
 #include <ctype.h>
-   
+
 #include <metaresc.h>
 #include <lexer.h>
 #include <cinit_load.tab.h>
@@ -63,7 +63,7 @@ NUMBER_OR_ID {NUMBER}|{ID}
 "/*"			  { BEGIN(in_comment); }
 <in_comment>[^*\n]*        /* eat anything that's not a '*' */
 <in_comment>"*"+[^*/\n]*   /* eat up '*'s not followed by '/'s */
-<in_comment>\n             
+<in_comment>\n
 <in_comment>"*"+"/"       { BEGIN(INITIAL); }
 
 "{"       { return (TOK_CINIT_LBRACE); }

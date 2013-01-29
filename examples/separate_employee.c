@@ -11,10 +11,10 @@ employee_t create_employee (
   int salary)
 {
   employee_t employee;
-  
+
   employee.firstname = firstname;
   employee.lastname  = lastname;
   employee.salary    = salary;
-  
+
   return (employee);
 }

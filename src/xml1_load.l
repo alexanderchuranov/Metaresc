@@ -2,7 +2,7 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-%option 8bit reentrant bison-bridge bison-locations 
+%option 8bit reentrant bison-bridge bison-locations
 %option warn nounput never-interactive noyywrap
 %option extra-type="mr_load_t*"
 %option prefix="mr_xml1_"
@@ -10,7 +10,7 @@
 #define __USE_GNU
 #include <string.h>
 #include <ctype.h>
-   
+
 #include <metaresc.h>
 #include <lexer.h>
 #include <xml1_load.tab.h>

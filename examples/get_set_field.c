@@ -21,37 +21,37 @@ void print_employee_info (employee_t const * employee)
 int main ()
 {
   employee_t employee = { "John", "Smith", 7350 };
-  
+
   char type_name[] = "employee_t";
   char field_name[] = "salary";
-  
+
   mr_td_t * td = mr_get_td_by_name (type_name);
-  
+
   if (NULL == td)
     {
       printf("error: can't obtain type information for '%s'\n", type_name);
       return (EXIT_FAILURE);
     }
-  
+
   mr_fd_t * fd = mr_get_fd_by_name (td, field_name);
-  
+
   if (NULL == fd)
     {
       printf("error: can't obtain type information for field '%s' in '%s'\n",
 	     field_name, type_name);
       return (EXIT_FAILURE);
     }
-  
+
   size_t const offset = fd->offset;
-  
+
   printf ("the value of field '%s' in variable employee is: %i\n",
 	  field_name, *(int*)(((char*)&employee) + offset));
-  
+
   printf ("setting field '%s' in variable employee...\n", field_name);
   *(int*)(((char*)&employee) + offset) = 9170;
-  
+
   puts ("printing variable employee...");
   print_employee_info (&employee);
-  
+
   return (EXIT_SUCCESS);
 }

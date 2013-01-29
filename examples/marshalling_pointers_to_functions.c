@@ -10,7 +10,7 @@ int main ()
     .func = puts
   };
   char * xml = MR_SAVE_XML (with_functions_t, &with_functions);
-  
+
   if (NULL == xml)
     printf ("Serialization failed\n");
   else
@@ -18,6 +18,6 @@ int main ()
       printf ("%s", xml);
       MR_FREE (xml);
     }
-  
+
   return (EXIT_SUCCESS);
 }

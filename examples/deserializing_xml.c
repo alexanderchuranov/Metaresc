@@ -20,12 +20,12 @@ main (int argc, char * argv[])
       "<lastname>Doe</lastname>"
       "<salary>123456</salary>"
     "</employee>";
-  
+
   employee_t employee = MR_LOAD_XML (employee_t, xml);
-  
+
   printf (
 	  "First name: %s\nLast name: %s\nSalary: %u\n",
 	  employee.firstname, employee.lastname, employee.salary);
-  
+
   return (EXIT_SUCCESS);
 }

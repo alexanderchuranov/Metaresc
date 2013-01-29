@@ -15,7 +15,7 @@ main (int argc, char * argv[])
 {
   employee_t employee = { "John", "Doe", 123456 };
   char * employee_serialized = MR_SAVE_JSON (employee_t, &employee);
-  
+
   if (NULL == employee_serialized)
       printf("Serialization error has occurred.\n");
   else

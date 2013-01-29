@@ -18,10 +18,10 @@ int main ()
       printf ("color_t enum desciptor\n%s\n", serialized);
       MR_FREE (serialized);
     }
-  
+
   printf("BLACK: %i\nRED: %i\nGREEN: %i\nYELLOW: %i\nBLUE: %i\nMAGENTA: %i\nCYAN: %i\nWHITE: %i\n",
          BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE);
-  
+
   character_place_t place = { 'A', WHITE, BLUE };
   serialized = MR_SAVE_CINIT (character_place_t, &place);
   if (serialized)

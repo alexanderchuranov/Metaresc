@@ -720,7 +720,7 @@
 		} } },
 #define MR_END_ENUM_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_FUNC_ARG_PTR(...) { (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) } }, 
+#define MR_FUNC_ARG_PTR(...) { (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) } },
 
 #define MR_TYPEDEF_CHAR_ARRAY_DESC(MR_TYPE_NAME, SIZE, /* ATTR */ ...) MR_TYPEDEF_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
 #define MR_TYPEDEF_CHAR_ARRAY_DESC_(MR_TYPE_NAME, SIZE, ATTR, /* COMMENTS */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY, ATTR) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
@@ -857,7 +857,7 @@
 #define MR_SAVE_CINIT_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_CINIT, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_JSON, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_SCM, MR_TYPE_NAME, S_PTR)
-  
+
 #define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR) ({			\
       int __status__ = 0;						\
       XDR * __xdrs__ = (XDRS);						\
@@ -1138,6 +1138,9 @@
 
 #endif /* HAVE_LIBXML2 */
 
+typedef long double long_double_t;
+typedef unsigned int mr_hash_value_t;
+
 #ifndef MR_MODE
 #define MR_MODE_UNDEFINED
 #define MR_MODE PROTO
@@ -1149,8 +1152,6 @@
 #endif
 
 #include <mr_tsearch.h>
-
-typedef long double long_double_t;
 
 extern mr_conf_t mr_conf;
 
@@ -1222,9 +1223,12 @@ extern char * xml_quote_string (char*);
 extern char * xml_unquote_string (char*, int);
 extern void mr_init_save_xml (void);
 
-extern unsigned int mr_hash_str (char*);
+extern mr_hash_value_t mr_hash_str (char*);
 extern int mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern mr_hash_value_t mr_fd_name_get_hash (const mr_ptr_t x, const void * context);
+extern int mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern mr_hash_value_t mr_td_name_get_hash (const mr_ptr_t x, const void * context);
 extern int mr_hashed_string_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
-extern unsigned int mr_hashed_string_get_hash (mr_ptr_t, const void *);
+extern mr_hash_value_t mr_hashed_string_get_hash (mr_ptr_t, const void *);
 
 #endif /* _METARESC_H_ */

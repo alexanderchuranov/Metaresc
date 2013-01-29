@@ -17,7 +17,7 @@ int main ()
       printf ("%s", xml);
       MR_FREE (xml);
     }
-  
+
   xml = MR_SAVE_XML (array2d_t, &a2d);
 
   if (NULL == xml)
@@ -27,6 +27,6 @@ int main ()
       printf ("%s", xml);
       MR_FREE (xml);
     }
-  
+
   return (EXIT_SUCCESS);
 }

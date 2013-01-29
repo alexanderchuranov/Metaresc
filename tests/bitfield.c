@@ -47,7 +47,7 @@ MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
   mr_conf.msg_handler = msg_handler;
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, -1, CMP_STRUCT_);
   mr_conf.msg_handler = save_msg_handler;
-  
+
   ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
 } END_TEST
 

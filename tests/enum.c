@@ -59,7 +59,7 @@ TYPEDEF_STRUCT (struct_mr_bitmask_t, BITMASK (mr_bitmask_t, x))
   sizeof (mr_enum_uintXX_t) is determined by alignment attribute, but real size if sizeof (uint8_t) due to attribute packed.
   That's why we can't compare results by MEM_CMP macro, which uses object size.
  */
-  
+
 MR_START_TEST (zero_mr_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, SCALAR_CMP); } END_TEST
 MR_START_TEST (zero_mr_struct_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, STRUCT_X_CMP); } END_TEST
 
@@ -86,7 +86,7 @@ MR_START_TEST (invalid_mr_enum_t, "invalid enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, -1, CMP_ENUMS);
   ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, -1, CMP_STRUCT_ENUMS);
   mr_conf.msg_handler = save_msg_handler;
-  
+
   ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
 } END_TEST
 

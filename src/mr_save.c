@@ -69,7 +69,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
   return (0);
 }
 
-static unsigned int __attribute__ ((unused))
+static mr_hash_value_t __attribute__ ((unused))
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
@@ -84,7 +84,7 @@ mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (mr_cmp_ptrdes (&ptrs->ra.data[x.long_int_t], &ptrs->ra.data[y.long_int_t]));
 }
 
-unsigned int __attribute__ ((unused))
+mr_hash_value_t __attribute__ ((unused))
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
@@ -136,7 +136,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   int same_ptr = count;
   mr_ptr_t * search_result;
 
-  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, count, ptrs);  
+  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, count, ptrs);
   if (NULL == search_result) /* out of memory */
     return (-1);
 
@@ -186,7 +186,7 @@ mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 			      &mr_save_data->mr_ra_ud.data[y.long_int_t].discriminator, NULL));
 }
 
-unsigned int __attribute__ ((unused))
+mr_hash_value_t __attribute__ ((unused))
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
@@ -245,13 +245,13 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ra.data[idx].data = data;
   mr_save_data->ptrs.ra.data[idx].fd = *fdp;
   mr_save_data->ptrs.ra.data[idx].parent = mr_save_data->parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
-  
+
 #ifdef MR_HASH_PTR_RESOLUTION
   mr_ic_hash_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t");
 #else /* MR_HASH_PTR_RESOLUTION */
   mr_ic_rbtree_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_cmp, "long_int_t");
 #endif /* MR_HASH_PTR_RESOLUTION */
-  
+
   /* forward reference resolving */
   ref_idx = mr_resolve_typed_forward_ref (mr_save_data);
   if (ref_idx >= 0)
@@ -332,13 +332,13 @@ mr_save_struct (mr_save_data_t * mr_save_data)
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type);
   char * data = mr_save_data->ptrs.ra.data[idx].data;
   int i, count;
-  
+
   if (NULL == tdp) /* check whether type descriptor was found */
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra.data[idx].fd.type);
       return;
     }
-  
+
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type.str);
@@ -428,7 +428,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	int64_t enum_value = 0;
 	mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
 	mr_fd_t * enum_fdp;
-			
+
 	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
 	  {
 	    /*
@@ -502,7 +502,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   /* create a record for further lookups in parent nodes for discriminator value */
   if (NULL == ud)
     return (mr_union_discriminator_by_name (tdp, NULL));
-  
+
   memset (ud, 0, sizeof (*ud));
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud.size -= sizeof (mr_save_data->mr_ra_ud.data[0]);
@@ -577,7 +577,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   char * data = mr_save_data->ptrs.ra.data[idx].data;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type); /* look up for type descriptor */
   mr_fd_t * fdp;
-  
+
   if (NULL == tdp) /* check whether type descriptor was found */
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra.data[idx].fd.type);
@@ -691,14 +691,14 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
   void ** data = mr_save_data->ptrs.ra.data[idx].data;
   mr_fd_t fd_ = mr_save_data->ptrs.ra.data[idx].fd;
   int ref_idx;
-  
+
   if (NULL == *data)
     mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* return empty node if pointer is NULL */
   else
     {
       /* set extended type property to NONE in copy of field descriptor */
       fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-  
+
       /* check if this pointer is already saved */
       ref_idx = mr_check_ptr_in_list (mr_save_data, *data, &fd_);
       if (ref_idx >= 0)
@@ -733,7 +733,7 @@ mr_ptrs_ds (mr_ra_mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * co
     {
       if (processor (ptrs, idx, context))
 	return (!0);
-      
+
       if (ptrs->ra.data[idx].first_child >= 0)
 	idx = ptrs->ra.data[idx].first_child;
       else
@@ -742,7 +742,7 @@ mr_ptrs_ds (mr_ra_mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * co
 	    idx = ptrs->ra.data[idx].parent;
 	  idx = ptrs->ra.data[idx].next;
 	}
-    }      
+    }
   return (0);
 }
 

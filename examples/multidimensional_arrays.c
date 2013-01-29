@@ -27,9 +27,9 @@ int main ()
   box_t box = { .name = "some name", .creation_time = time (NULL) };
 
   memset (&space, 0, sizeof(space));
-  
+
   space.planes[0].points[0][0].pbox = &box;
-  
+
   // here we will serialize and print to console
   char * space_serialized = MR_SAVE_CINIT (space_t, &space);
   if (NULL == space_serialized)

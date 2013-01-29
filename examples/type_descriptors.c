@@ -13,12 +13,12 @@ int main ()
 {
   char type[] = "employee_t";
   mr_td_t const * td = mr_get_td_by_name (type);
-  
+
   if (td)
     {
       printf ("information for '%s':\n", type);
       char const * type_class = NULL;
-    
+
       switch (td->mr_type)
 	{
 	case MR_TYPE_STRUCT:
@@ -33,7 +33,7 @@ int main ()
 	default:
 	  type_class = "an unknown type";
 	}
-    
+
       printf ("\t%s is %s\n", type, type_class);
       printf ("\tit's declared name is '%s'\n", td->type.str);
       printf ("\tvariables of this type occupy %i bytes of memory\n", td->size);
@@ -42,6 +42,6 @@ int main ()
     {
       printf ("error: can't obtain type information for type '%s'\n", type);
     }
-  
+
   return (EXIT_SUCCESS);
 }

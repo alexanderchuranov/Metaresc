@@ -15,7 +15,7 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
   mr_ptr_t * add;
-  
+
   if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
       (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
     {
@@ -39,20 +39,20 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (NULL);
 	}
-      
+
       if (NULL != rarray)
 	memcpy (rarray_->ra.data, rarray->ra.data, rarray_->ra.size);
-      
+
       rarray_->ra.ext.ptr = NULL;
       rarray_->ra.ptr_type = MR_IC_NONE_TYPE_T_STR;
       ic->ext.ptr = rarray = rarray_;
     }
-  
+
   add = mr_rarray_append ((mr_rarray_t*)&rarray->ra, sizeof (rarray->ra.data[0]));
 
   if (NULL == add)
     return (NULL);
-  
+
   *add = key;
   return (add);
 }
@@ -62,7 +62,7 @@ mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
   int i, count;
-  
+
   if (NULL == rarray)
     return (NULL);
 
@@ -78,7 +78,7 @@ mr_ic_none_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
   int i, count;
-  
+
   if ((NULL == rarray) || (NULL == visit_fn))
     return (EXIT_FAILURE);
 
@@ -94,14 +94,14 @@ mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
   mr_ic_rarray_t * copy;
   mr_ic_none_free (ic, context);
-  
+
   if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
       (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
     {
       ic->ext.ptr = rarray;
       return (EXIT_SUCCESS);
     }
-  
+
   copy = MR_MALLOC (sizeof (*copy));
   if (NULL == copy)
     {
@@ -118,17 +118,17 @@ mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (EXIT_FAILURE);
     }
-  
+
   memcpy (copy->ra.data, rarray->ra.data, copy->ra.size);
   ic->ext.ptr = copy;
   return (EXIT_SUCCESS);
 }
-  
+
 void
 mr_ic_none_free (mr_ic_t * ic, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
-  
+
   ic->ext.ptr = NULL;
 
   if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
@@ -145,7 +145,7 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
   if ((NULL == ic) || (NULL == compar_fn))
     return (EXIT_FAILURE);
-  
+
   ic->ic_type = MR_IC_NONE;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
@@ -179,7 +179,7 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 	break;
     }
   rarray->ra.data[i] = key;
-  
+
   return (&rarray->ra.data[i]);
 }
 
@@ -188,7 +188,7 @@ mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
   int up, down;
-  
+
   if (NULL == rarray)
     return (NULL);
 
@@ -227,7 +227,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray_, const void * c
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
   mr_sort_key_t mr_sort_key = { .context = context, .ic = ic, };
-  
+
   if (NULL == rarray)
     return (EXIT_FAILURE);
 
@@ -252,7 +252,7 @@ void
 mr_ic_sorted_array_free (mr_ic_t * ic, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
-  
+
   if (NULL == rarray)
     return;
 
@@ -266,7 +266,7 @@ int
 mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
   mr_ic_rarray_t * rarray;
-  
+
   if ((NULL == ic) || (NULL == compar_fn))
     return (EXIT_FAILURE);
 
@@ -279,7 +279,7 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   memset (rarray, 0, sizeof (*rarray));
   rarray->ra.data = NULL;
   rarray->ra.size = rarray->ra.alloc_size = 0;
-  
+
   ic->ic_type = MR_IC_SORTED_ARRAY;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
@@ -316,7 +316,7 @@ void
 mr_ic_hash_free (mr_ic_t * ic, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
-  
+
   if (NULL == index)
     return;
 
@@ -328,14 +328,14 @@ mr_ic_hash_free (mr_ic_t * ic, const void * context)
 static inline mr_ptr_t *
 mr_ic_hash_add_inner (mr_ic_hash_t * index, mr_ptr_t key, const void * context, mr_compar_fn_t compar_fn)
 {
-  unsigned int hash_value = index->hash_fn (key, context);
+  mr_hash_value_t hash_value = index->hash_fn (key, context);
   int hash_size = index->index.size / sizeof (index->index.data[0]);
   if (hash_size <= 0)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INCORRECT_HASH_SIZE, hash_size);
       return (NULL);
     }
-  
+
   return (mr_tsearch (key, &index->index.data[hash_value % hash_size].root, compar_fn, context));
 }
 
@@ -362,13 +362,13 @@ mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
     .context = context,
   };
   int i;
-  
+
   if ((NULL == index) || (NULL == visit_fn))
     return (EXIT_FAILURE);
 
   if (0 != setjmp (mr_ic_rbtree_foreach_context.jmp_buf))
     return (EXIT_FAILURE);
-  
+
   for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)
     mr_twalk (index->index.data[i].root, visit_node, &mr_ic_rbtree_foreach_context);
   return (EXIT_SUCCESS);
@@ -387,13 +387,13 @@ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
     (mr_ic_hash_index_context->index, key,
      mr_ic_hash_index_context->context,
      mr_ic_hash_index_context->compar_fn);
-  
+
   if (NULL == add)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (EXIT_FAILURE);
     }
-  
+
   if (0 == memcmp (add, &key, sizeof (key)))
     ++mr_ic_hash_index_context->index->count;
   return (EXIT_SUCCESS);
@@ -407,17 +407,17 @@ mr_ic_hash_index_inner (mr_ic_t * ic, mr_ic_hash_t * index, int count, const voi
     .compar_fn = ic->compar_fn,
     .context = context,
   };
-  
+
   if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn))
     return (EXIT_FAILURE);
-  
+
   mr_ic_hash_free_inner (index, context);
 
   index->count = count;
-  
+
   if (0 == index->count)
     return (EXIT_SUCCESS);
-  
+
   index->index.size = index->index.alloc_size = ((int)(index->count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (index->index.data[0]);
   index->index.data = MR_MALLOC (index->index.alloc_size);
   if (NULL == index->index.data)
@@ -437,7 +437,7 @@ mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
   int status;
   mr_ic_t ic_none;
   mr_ic_hash_t * index = ic->ext.ptr;
-  
+
   if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn) || (NULL == rarray))
     return (EXIT_FAILURE);
 
@@ -452,7 +452,7 @@ mr_ptr_t *
 mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
-  
+
   if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn))
     return (NULL);
 
@@ -478,7 +478,7 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
     return (NULL);
   else
     {
-      unsigned int hash_value = index->hash_fn (key, context);
+      mr_hash_value_t hash_value = index->hash_fn (key, context);
       int hash_size = index->index.size / sizeof (index->index.data[0]);
       if (hash_size <= 0)
 	return (NULL);
@@ -493,17 +493,17 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
 
   if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
     return (EXIT_FAILURE);
-  
+
   index = MR_MALLOC (sizeof (*index));
   if (NULL == index)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (EXIT_FAILURE);
     }
-  
+
   memset (index, 0, sizeof (*index));
   index->hash_fn = hash_fn;
-  
+
   ic->ic_type = MR_IC_HASH;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
@@ -546,13 +546,13 @@ mr_ic_rbtree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context
     .visit_fn = visit_fn,
     .context = context,
   };
-  
+
   if (NULL == visit_fn)
     return (EXIT_FAILURE);
 
   if (0 != setjmp (mr_ic_rbtree_foreach_context.jmp_buf))
     return (EXIT_FAILURE);
-  
+
   mr_twalk (ic->ext.ptr, visit_node, &mr_ic_rbtree_foreach_context);
   return (EXIT_SUCCESS);
 }
@@ -593,7 +593,7 @@ mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   mr_ptr_t * find = mr_ic_find (ic, key, context);
   if (NULL != find)
     return (find);
-  
+
   if (NULL == ic)
     return (NULL);
 

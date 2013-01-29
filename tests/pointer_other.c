@@ -41,7 +41,7 @@ MR_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, (_enum_t[]){ -1 }, CMP_ENUMS);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, packed_enum_ptr_t, (packed_enum_t[]){ -1 }, CMP_ENUMS);
   mr_conf.msg_handler = save_msg_handler;
-  
+
   ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
 } END_TEST
 
@@ -104,7 +104,7 @@ MR_START_TEST (self_ref_string, "self referenced strings") {
 TYPEDEF_STRUCT (rtfr_struct_t,
 		int x,
 		int y);
-  
+
 TYPEDEF_STRUCT (resolve_typed_forward_ref_t,
 		(rtfr_struct_t *, x),
 		(int *, y) /* pointers are loaded via stack, so one level ponters will be loaded in a reverse order */
