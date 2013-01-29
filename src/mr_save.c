@@ -69,7 +69,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
   return (0);
 }
 
-static mr_hash_value_t __attribute__ ((unused))
+mr_hash_value_t __attribute__ ((unused))
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
