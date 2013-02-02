@@ -918,11 +918,9 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra.data[idx].fd.param = fdp->param;
 
   /* route loading */
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-      && mr_ext_load_handler[fdp->mr_type_ext])
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && mr_ext_load_handler[fdp->mr_type_ext])
     status = mr_ext_load_handler[fdp->mr_type_ext] (idx, mr_load_data);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-	   && mr_load_handler[fdp->mr_type])
+  else if ((fdp->mr_type < MR_TYPE_LAST) && mr_load_handler[fdp->mr_type])
     status = mr_load_handler[fdp->mr_type] (idx, mr_load_data);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);

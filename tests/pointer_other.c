@@ -33,7 +33,7 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 
 MR_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
   int checked = 0;
-  void (*save_msg_handler) (const char*, const char*, int, mr_log_level_t, mr_message_id_t, va_list) = mr_conf.msg_handler;
+  mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
 
 #define CMP_ENUMS(TYPE, X, Y, ...) ({ ++checked; (*((X)->x) != *((Y)->x));})
 

@@ -34,19 +34,19 @@ MR_START_TEST (named_anon_union, "named anonymous union") {
 
 MR_START_TEST (union_enum_float, "union discriminated by enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_FLOAT, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum8_t, UD_FLOAT, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum16_t, UD_FLOAT, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum32_t, UD_FLOAT, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum64_t, UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum8_t, (int)UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum16_t, (int)UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum32_t, (int)UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum64_t, (int)UD_FLOAT, STRUCT_XY_X_CMP);
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_bitfield_t, UD_FLOAT, STRUCT_XY_X_CMP);
 } END_TEST
 
 MR_START_TEST (union_enum_int32, "union discriminated by enum") {
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_INT32, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum8_t, UD_INT32, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum16_t, UD_INT32, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum32_t, UD_INT32, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum64_t, UD_INT32, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum8_t, (int)UD_INT32, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum16_t, (int)UD_INT32, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum32_t, (int)UD_INT32, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum64_t, (int)UD_INT32, STRUCT_XY_X_CMP);
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_bitfield_t, UD_INT32, STRUCT_XY_X_CMP);
 } END_TEST
 

@@ -110,7 +110,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 	}
     }
 
-  if ((message_id >= 0) && (message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
+  if ((message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
     format = messages[message_id];
 
   int __attribute__ ((unused)) unused = vasprintf (&message, format, args);
@@ -143,7 +143,7 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
       static const char * log_level_str[] =
 	{ LL_INIT (ALL), LL_INIT (TRACE), LL_INIT (DEBUG), LL_INIT (INFO), LL_INIT (WARN), LL_INIT (ERROR), LL_INIT (FATAL), LL_INIT (OFF) };
 
-      if ((log_level >= 0) && (log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])) && log_level_str[log_level])
+      if ((log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])) && log_level_str[log_level])
 	log_level_str_ = log_level_str[log_level];
 
       message = mr_message_format (message_id, args);

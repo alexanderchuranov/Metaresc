@@ -323,11 +323,9 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
       if (ptrs->ra.data[idx].first_child < 0)
 	{
 	  /* route saving handler */
-	  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-	      && ext_scm_save_handler[fdp->mr_type_ext])
+	  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_scm_save_handler[fdp->mr_type_ext])
 	    content = ext_scm_save_handler[fdp->mr_type_ext] (idx, ptrs);
-	  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-		   && scm_save_handler[fdp->mr_type])
+	  else if ((fdp->mr_type < MR_TYPE_LAST) && scm_save_handler[fdp->mr_type])
 	    content = scm_save_handler[fdp->mr_type] (idx, ptrs);
 	  else
 	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);

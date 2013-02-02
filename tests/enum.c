@@ -63,8 +63,8 @@ TYPEDEF_STRUCT (struct_mr_bitmask_t, BITMASK (mr_bitmask_t, x))
 MR_START_TEST (zero_mr_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, SCALAR_CMP); } END_TEST
 MR_START_TEST (zero_mr_struct_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, STRUCT_X_CMP); } END_TEST
 
-MR_START_TEST (three_mr_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, THREE, SCALAR_CMP); } END_TEST
-MR_START_TEST (three_mr_struct_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, THREE, STRUCT_X_CMP); } END_TEST
+MR_START_TEST (three_mr_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, (int)THREE, SCALAR_CMP); } END_TEST
+MR_START_TEST (three_mr_struct_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, (int)THREE, STRUCT_X_CMP); } END_TEST
 
 static int warnings = 0;
 
@@ -77,8 +77,8 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 
 MR_START_TEST (invalid_mr_enum_t, "invalid enum") {
   int checked = 0;
-  void (*save_msg_handler) (const char*, const char*, int, mr_log_level_t, mr_message_id_t, va_list) = mr_conf.msg_handler;
-
+  mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
+  
 #define CMP_ENUMS(...) ({ ++checked; SCALAR_CMP (__VA_ARGS__);})
 #define CMP_STRUCT_ENUMS(...) ({ ++checked; STRUCT_X_CMP (__VA_ARGS__);})
 

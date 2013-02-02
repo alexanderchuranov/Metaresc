@@ -88,10 +88,12 @@ extern Suite * suite;
 
 #define ASSERT_SAVE_LOAD__(METHOD, TYPE, X, TYPE_CMP, ...) ({		\
       mr_rarray_t serialized = MR_SAVE_ ## METHOD ## _RA (TYPE, X);	\
-      int orig_eq_restored;						\
+      int orig_eq_restored, load_success;				\
       TYPE METHOD ## _restored;						\
-      if (0 == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)) \
-	ck_abort_msg ("load for method " #METHOD " on type " #TYPE " failed"); \
+      memset (&METHOD ## _restored, 0, sizeof (TYPE));			\
+      load_success = !(0 == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)); \
+      ck_assert_msg (load_success,							\
+		     "load for method " #METHOD " on type " #TYPE " failed"); \
       if (serialized.data)						\
 	MR_FREE (serialized.data);					\
       orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &METHOD ## _restored, __VA_ARGS__)); \

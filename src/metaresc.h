@@ -580,8 +580,8 @@
 	     .param =							\
 	     {								\
 	       .array_param = {						\
-		 .count = sizeof (TYPE) == 0 ? 0 :			\
-		 sizeof (((MR_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),	\
+		 .count = sizeof (((MR_TYPE_NAME*)NULL)->NAME) /	\
+		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
 		 .row_count = 1,					\
 	       },							\
 	     },								\
@@ -609,10 +609,10 @@
 	     .param =							\
 	     {								\
 	       .array_param = {						\
-		 .count = sizeof (TYPE) == 0 ? 0 :			\
-		 sizeof (((MR_TYPE_NAME*)NULL)->NAME) / sizeof (TYPE),	\
-		 .row_count = sizeof (TYPE) == 0 ? 0 :			\
-		 sizeof (((MR_TYPE_NAME*)NULL)->NAME[0]) / sizeof (TYPE), \
+		 .count = sizeof (((MR_TYPE_NAME*)NULL)->NAME) /	\
+		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
+		 .row_count = sizeof (((MR_TYPE_NAME*)NULL)->NAME[0]) /	\
+		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
 	       },							\
 	     },								\
 	     .comment = "" __VA_ARGS__,					\

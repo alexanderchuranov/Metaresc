@@ -535,9 +535,9 @@ cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_ty
       ((ptrs->ra.data[idx].parent >= 0) && strcmp ("mr_ptr_t", ptrs->ra.data[ptrs->ra.data[idx].parent].fd.type))) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
     save_data->named_field_template = MR_CINIT_NAMED_FIELD_TEMPLATE;
 
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_cinit_save_handler[fdp->mr_type_ext])
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_cinit_save_handler[fdp->mr_type_ext])
     skip_node = ext_cinit_save_handler[fdp->mr_type_ext] (idx, ptrs, save_data);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST) && cinit_save_handler[fdp->mr_type])
+  else if ((fdp->mr_type < MR_TYPE_LAST) && cinit_save_handler[fdp->mr_type])
     skip_node = cinit_save_handler[fdp->mr_type] (idx, ptrs, save_data);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
@@ -555,9 +555,9 @@ json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_typ
 {
   int skip_node = 0;
   save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_json_save_handler[fdp->mr_type_ext])
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_json_save_handler[fdp->mr_type_ext])
     skip_node = ext_json_save_handler[fdp->mr_type_ext] (idx, ptrs, save_data);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST) && json_save_handler[fdp->mr_type])
+  else if ((fdp->mr_type < MR_TYPE_LAST) && json_save_handler[fdp->mr_type])
     skip_node = json_save_handler[fdp->mr_type] (idx, ptrs, save_data);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);

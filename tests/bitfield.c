@@ -1,3 +1,5 @@
+#include <limits.h>
+
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
@@ -13,7 +15,7 @@ TYPEDEF_STRUCT (struct_bitfield_uint32_t, BITFIELD (uint32_t, x, :31))
 TYPEDEF_STRUCT (struct_bitfield_int64_t, BITFIELD (int64_t, x, :63))
 TYPEDEF_STRUCT (struct_bitfield_uint64_t, BITFIELD (uint64_t, x, :63))
 
-TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (enum_t) * 8 - 1))
+TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (enum_t) * CHAR_BIT - 1))
 
 #define ASSERT_SAVE_LOAD_BITFIELD(METHOD, VALUE, ...) ({		\
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_bitfield_int8_t, VALUE, __VA_ARGS__); \
@@ -40,7 +42,7 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 
 MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
   int checked = 0;
-  void (*save_msg_handler) (const char*, const char*, int, mr_log_level_t, mr_message_id_t, va_list) = mr_conf.msg_handler;
+  mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
 
 #define CMP_STRUCT_(...) ({ ++checked; STRUCT_X_CMP (__VA_ARGS__);})
 

@@ -270,9 +270,9 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_add_child (mr_save_data->parent, idx, &mr_save_data->ptrs);
 
   /* route saving handler */
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_mr_save_handler[fdp->mr_type_ext])
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_mr_save_handler[fdp->mr_type_ext])
     ext_mr_save_handler[fdp->mr_type_ext] (mr_save_data);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST) && mr_save_handler[fdp->mr_type])
+  else if ((fdp->mr_type < MR_TYPE_LAST) && mr_save_handler[fdp->mr_type])
     mr_save_handler[fdp->mr_type] (mr_save_data);
 }
 

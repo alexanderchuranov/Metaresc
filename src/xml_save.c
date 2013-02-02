@@ -182,11 +182,9 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
       mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
 
       /* route saving handler */
-      if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-	  && ext_xml_save_handler[fdp->mr_type_ext])
+      if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xml_save_handler[fdp->mr_type_ext])
 	content = ext_xml_save_handler[fdp->mr_type_ext] (idx, ptrs);
-      else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-	       && xml1_save_handler[fdp->mr_type])
+      else if ((fdp->mr_type < MR_TYPE_LAST) && xml1_save_handler[fdp->mr_type])
 	content = xml1_save_handler[fdp->mr_type] (idx, ptrs);
       else
 	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);

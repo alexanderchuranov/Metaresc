@@ -1134,14 +1134,12 @@ xdr_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   XDR * xdrs = context;
   mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-      && ext_xdr_save_handler[fdp->mr_type_ext])
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xdr_save_handler[fdp->mr_type_ext])
     {
       if (!ext_xdr_save_handler[fdp->mr_type_ext] (xdrs, idx, ptrs))
 	return (!0);
     }
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-	   && xdr_save_handler[fdp->mr_type])
+  else if ((fdp->mr_type < MR_TYPE_LAST) && xdr_save_handler[fdp->mr_type])
     {
       if (!xdr_save_handler[fdp->mr_type] (xdrs, idx, ptrs))
 	return (!0);
@@ -1227,11 +1225,9 @@ xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
   ptrs->ra.data[idx].data = data;
   ptrs->ra.data[idx].fd = *fdp;
 
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-      && ext_xdr_load_handler[fdp->mr_type_ext])
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xdr_load_handler[fdp->mr_type_ext])
     status = ext_xdr_load_handler[fdp->mr_type_ext] (xdrs, idx, ptrs);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-	   && xdr_load_handler[fdp->mr_type])
+  else if ((fdp->mr_type < MR_TYPE_LAST) && xdr_load_handler[fdp->mr_type])
     status = xdr_load_handler[fdp->mr_type] (xdrs, idx, ptrs);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
