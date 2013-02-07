@@ -4,6 +4,8 @@
 
 #include <metaresc.h>
 
+TYPEDEF_FUNC (char *, scm_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
+
 #define MR_SCM_EMPTY "()"
 #define MR_SCM_FALSE "#f"
 #define MR_SCM_TRUE "#t"

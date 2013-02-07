@@ -1404,21 +1404,6 @@ mr_detect_type (mr_fd_t * fdp)
 }
 
 /**
- * Helper function for building tree within parsing.
- * @param mr_load structure with current parsing context
- * @return index of newly allocated element in mr_load->ptrs resizeable array
- */
-int
-mr_parse_add_node (mr_load_t * mr_load)
-{
-  int idx = mr_add_ptr_to_list (mr_load->ptrs);
-  if (idx < 0)
-    return (idx);
-  mr_add_child (mr_load->parent, idx, mr_load->ptrs);
-  return (idx);
-}
-
-/**
  * Read into newly allocated string one xml object.
  * @param fd file descriptor
  * @return Newly allocated string with xml or NULL in case of any errors

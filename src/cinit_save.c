@@ -8,6 +8,15 @@
 
 #include <metaresc.h>
 
+TYPEDEF_STRUCT (mr_save_type_data_t, ATTRIBUTES ( , "serialization of the node"),
+		(char *, named_field_template, , "statically allocated string"),
+		(char *, prefix, , "statically allocated string"),
+		(char *, content, , "dynamically formed string. Need to be freed."),
+		(char *, suffix, , "statically allocated string"),
+		)
+
+TYPEDEF_FUNC (int, cinit_json_save_handler_t, (int, mr_ra_mr_ptrdes_t *, mr_save_type_data_t *))
+
 #define MR_CINIT_NULL "NULL"
 #define MR_CINIT_INDENT_SPACES (2)
 #define MR_CINIT_INDENT_TEMPLATE "%*s"

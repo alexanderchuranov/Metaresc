@@ -16,6 +16,9 @@
 #include <mr_load.h>
 #include <mr_save.h>
 
+TYPEDEF_FUNC (int, xdr_load_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
+TYPEDEF_FUNC (int, xdr_save_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
+
 static xdr_load_handler_t xdr_load_handler[];
 static xdr_save_handler_t xdr_save_handler[];
 

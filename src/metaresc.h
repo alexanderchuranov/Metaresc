@@ -1193,7 +1193,6 @@ extern int mr_free_ptrs (mr_ra_mr_ptrdes_t);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t*, char*);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t*, int64_t);
 extern mr_fd_t * mr_get_enum_by_name (char*);
-extern int mr_parse_add_node (mr_load_t*);
 extern int mr_load_bitfield_value (mr_ptrdes_t*, uint64_t*);
 extern int mr_save_bitfield_value (mr_ptrdes_t*, uint64_t*);
 extern mr_td_t * mr_get_td_by_name (char*);
