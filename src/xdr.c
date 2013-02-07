@@ -391,48 +391,6 @@ xdr_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_double (xdrs, ptrs->ra.data[idx].data));
 }
 
-/*
-  need to substract double from long double, but agruments should be strictly casted to their types.
-  that's why we pass them as pointers and make a public function for optimization workaround.
-*/
-/**
- * Helper function for compiler optimization blocking. Returns difference between long double and its value casted to double.
- * @param ldp pointer on a long double
- * @param dp pointer on double
- * @return difference *ldp - *dp
- */
-double xdr_sub_doubles (long double * ldp, double * dp) { return (*ldp - *dp); }
-
-/**
- * Handler for type long double. Saves into 2 double entities.
- * @param xdrs XDR stream descriptor
- * @param idx index of node in ptrs
- * @param ptrs array with descriptor of loaded data
- * @return status
- */
-static int
- __attribute__ ((unused)) xdr_long_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
-{
-  long double * ldp = ptrs->ra.data[idx].data;
-  if (xdrs->x_op == XDR_ENCODE)
-    {
-      double high = *ldp;
-      double low = xdr_sub_doubles (ldp, &high); /* we can't substract with inline code because compiler will optimize this operation and result will be 0 */
-      return (xdr_double (xdrs, &high) && xdr_double (xdrs, &low));
-    }
-  else if (xdrs->x_op == XDR_DECODE)
-    {
-      double high;
-      double low;
-      int retval = xdr_double (xdrs, &high) && xdr_double (xdrs, &low);
-      *ldp = (long_double_t)low + (long_double_t)high;
-      return (retval);
-    }
-  else if (xdrs->x_op == XDR_FREE)
-    return (!0);
-  return (0);
-}
-
 /**
  * Handler for type long double. Saves as opaque data binary representation of long double in memeory. Assumes that CPU uses ieee854 standard.
  * @param xdrs XDR stream descriptor
@@ -441,7 +399,7 @@ static int
  * @return status
  */
 static int
-__attribute__ ((unused)) xdr_long_double (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
+xdr_long_double (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   return xdr_opaque (xdrs, ptrs->ra.data[idx].data, MR_SIZEOF_LONG_DOUBLE);
 }
