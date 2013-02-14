@@ -19,7 +19,7 @@ if HAVE_LIBXML2
   check_PROGRAMS += smoke_xml2
 endif
 
-  check_PROGRAMS += long_double double float rarray string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other mr_copy
+  check_PROGRAMS += long_double double float rarray string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other mr_copy bool
 endif
 
 TESTS=$(check_PROGRAMS)
