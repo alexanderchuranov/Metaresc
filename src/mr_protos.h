@@ -306,37 +306,6 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 		RARRAY (mr_ptrdes_t, ra, "resizable array with mr_ptrdes_t"),
 		)
 
-TYPEDEF_STRUCT (mr_save_type_data_t, ATTRIBUTES ( , "serialization of the node"),
-		(char *, named_field_template, , "statically allocated string"),
-		(char *, prefix, , "statically allocated string"),
-		(char *, content, , "dynamically formed string. Need to be freed."),
-		(char *, suffix, , "statically allocated string"),
-		)
-
-TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
-		(int, lineno, , "parser location - line number"),
-		(int, column, , "parser location - column number"),
-		(int, offset, , "parser location - offset in string"),
-		)
-
-TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
-		(mr_lloc_t, start, , "start of the token"),
-		(mr_lloc_t, end, , "end of the token"),
-		)
-
-TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
-		(mr_lloc_t, lloc, , "current location of parser"),
-		(char *, str, , "string to parse"),
-		(char *, buf, , "parser internal buffer"),
-		(int, parent, , "index of current parent"),
-		(mr_ra_mr_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
-		)
-
-TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
-		RARRAY (char, substr, "substring descriptor"),
-		(char *, unquote, (char *, int), "unquote handler"),
-		)
-
 TYPEDEF_STRUCT (mr_load_data_t,
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
 		RARRAY (int, mr_ra_idx, "indexes of postponed nodes"),
@@ -351,20 +320,6 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		RARRAY (mr_union_discriminator_t, mr_ra_ud, "allocation of union discriminators"),
 		)
 
-TYPEDEF_FUNC (int, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
-
-TYPEDEF_FUNC (int, cinit_json_save_handler_t, (int, mr_ra_mr_ptrdes_t *, mr_save_type_data_t *))
-
-TYPEDEF_FUNC (int, xdr_load_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
-
-TYPEDEF_FUNC (int, xdr_save_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
-
-TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
-
-TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
-
-TYPEDEF_FUNC (char *, scm_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
-
 TYPEDEF_FUNC (char *, mr_output_format_t, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
 
 TYPEDEF_FUNC (void, mr_msg_handler_t, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), ATTRIBUTES ( , "handler for error messages"))
@@ -377,4 +332,3 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
 		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)
-

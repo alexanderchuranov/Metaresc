@@ -5,6 +5,30 @@
 #ifndef _LEXER_H_
 #define _LEXER_H_
 
+TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
+		(int, lineno, , "parser location - line number"),
+		(int, column, , "parser location - column number"),
+		(int, offset, , "parser location - offset in string"),
+		)
+
+TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
+		(mr_lloc_t, start, , "start of the token"),
+		(mr_lloc_t, end, , "end of the token"),
+		)
+
+TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
+		(mr_lloc_t, lloc, , "current location of parser"),
+		(char *, str, , "string to parse"),
+		(char *, buf, , "parser internal buffer"),
+		(int, parent, , "index of current parent"),
+		(mr_ra_mr_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
+		)
+
+TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
+		RARRAY (char, substr, "substring descriptor"),
+		(char *, unquote, (char *, int), "unquote handler"),
+		)
+
 #define MR_PARSE_ERROR(ERROR_MSG, SCANNER, LANG) ({			\
       YYLTYPE * lloc = mr_## LANG ## _get_lloc (SCANNER);		\
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,	\
@@ -12,6 +36,20 @@
     })
 
 #define YYLTYPE mr_token_lloc_t
+
+/**
+ * Helper function for building tree within parsing.
+ * @param mr_load structure with current parsing context
+ * @return index of newly allocated element in mr_load->ptrs resizeable array
+ */
+static inline int mr_parse_add_node (mr_load_t * mr_load)
+{
+  int idx = mr_add_ptr_to_list (mr_load->ptrs);
+  if (idx < 0)
+    return (idx);
+  mr_add_child (mr_load->parent, idx, mr_load->ptrs);
+  return (idx);
+}
 
 static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
 {

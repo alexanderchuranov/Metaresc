@@ -17,6 +17,8 @@
 #include <mr_ic.h>
 #include <mr_save.h>
 
+TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
+
 static mr_save_handler_t mr_save_handler[];
 static mr_save_handler_t ext_mr_save_handler[];
 

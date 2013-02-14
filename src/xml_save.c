@@ -8,6 +8,8 @@
 #include <metaresc.h>
 #include <mr_save.h>
 
+TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
+
 #define MR_XML1_DOCUMENT_HEADER "<?xml version=\"1.0\"?>"
 
 #define MR_XML1_INDENT_SPACES (2)

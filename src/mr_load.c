@@ -16,6 +16,8 @@
 #include <mr_ic.h>
 #include <mr_load.h>
 
+TYPEDEF_FUNC (int, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
+
 /**
  * Post load references setting. If node was marked as references
  * it should be substitude with actual pointer. This substition
