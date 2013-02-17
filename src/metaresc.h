@@ -17,6 +17,7 @@
 #endif /* _GNU_SOURCE */
 #include <stdio.h> /* for FILE */
 #include <stddef.h> /* for offsetof */
+#include <stdbool.h> /* for bool */
 #include <string.h> /* for strlen () & memset () */
 #include <ctype.h> /* for isspace () */
 #include <stdarg.h> /* for va_list */
@@ -111,6 +112,7 @@
 #define MR_TYPE_DETECT3(PREFIX, TYPE, SUFFIX)				\
   (0 /* MR_TYPE_NONE */							\
    | (__builtin_types_compatible_p (PREFIX void SUFFIX, TYPE) ? MR_TYPE_VOID : 0) \
+   | (__builtin_types_compatible_p (PREFIX bool SUFFIX, TYPE) ? MR_TYPE_BOOL : 0) \
    | (__builtin_types_compatible_p (PREFIX int8_t SUFFIX, TYPE) ? MR_TYPE_INT8 : 0) \
    | (__builtin_types_compatible_p (PREFIX uint8_t SUFFIX, TYPE) ? MR_TYPE_UINT8 : 0) \
    | (__builtin_types_compatible_p (PREFIX int16_t SUFFIX, TYPE) ? MR_TYPE_INT16 : 0) \
@@ -380,6 +382,8 @@
 #define P00_COMMA_long AUTO_BI, long,
 #define P00_COMMA_float AUTO_BI, float,
 #define P00_COMMA_double AUTO_BI, double,
+#define P00_COMMA_bool AUTO_BI, bool,
+#define P00_COMMA__Bool AUTO_BI, _Bool,
 #define P00_COMMA_int8_t AUTO_BI, int8_t,
 #define P00_COMMA_uint8_t AUTO_BI, uint8_t,
 #define P00_COMMA_int16_t AUTO_BI, int16_t,
@@ -421,6 +425,8 @@
 #define MR_IS_BUILTIN_long long,
 #define MR_IS_BUILTIN_float float,
 #define MR_IS_BUILTIN_double double,
+#define MR_IS_BUILTIN_bool bool,
+#define MR_IS_BUILTIN__Bool _Bool,
 #define MR_IS_BUILTIN_int8_t int8_t,
 #define MR_IS_BUILTIN_uint8_t uint8_t,
 #define MR_IS_BUILTIN_int16_t int16_t,
@@ -480,6 +486,7 @@
 #define MR_ENUM(...) MR_UNFOLD (MR_ENUM, __VA_ARGS__)
 #define MR_BITFIELD(...) MR_UNFOLD (MR_BITFIELD, __VA_ARGS__)
 #define MR_BITMASK(...) MR_UNFOLD (MR_BITMASK, __VA_ARGS__)
+#define MR_BOOL(...) MR_UNFOLD (MR_BOOL, __VA_ARGS__)
 #define MR_INT8(...) MR_UNFOLD (MR_INT8, __VA_ARGS__)
 #define MR_UINT8(...) MR_UNFOLD (MR_UINT8, __VA_ARGS__)
 #define MR_INT16(...) MR_UNFOLD (MR_INT16, __VA_ARGS__)
@@ -530,6 +537,7 @@
 #define MR_ENUM_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
 #define MR_BITFIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, SUFFIX)
 #define MR_BITMASK_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
+#define MR_BOOL_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, bool, NAME, )
 #define MR_INT8_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, int8_t, NAME, )
 #define MR_UINT8_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, uint8_t, NAME, )
 #define MR_INT16_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, int16_t, NAME, )
@@ -655,6 +663,7 @@
 
 #define MR_ENUM_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_ENUM, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_BOOL_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, bool, NAME, , MR_TYPE_BOOL, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_INT8_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int8_t, NAME, , MR_TYPE_INT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_UINT8_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint8_t, NAME, , MR_TYPE_UINT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_INT16_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int16_t, NAME, , MR_TYPE_INT16, MR_TYPE_EXT_NONE, __VA_ARGS__)
@@ -1202,22 +1211,6 @@ extern void mr_message_unsupported_node_type (mr_fd_t*);
 extern void * mr_rarray_append (mr_rarray_t*, int);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t*, const char*, ...);
 
-extern char * mr_stringify_int8_t (mr_ptrdes_t*);
-extern char * mr_stringify_uint8_t (mr_ptrdes_t*);
-extern char * mr_stringify_int16_t (mr_ptrdes_t*);
-extern char * mr_stringify_uint16_t (mr_ptrdes_t*);
-extern char * mr_stringify_int32_t (mr_ptrdes_t*);
-extern char * mr_stringify_uint32_t (mr_ptrdes_t*);
-extern char * mr_stringify_int64_t (mr_ptrdes_t*);
-extern char * mr_stringify_uint64_t (mr_ptrdes_t*);
-extern char * mr_stringify_float (mr_ptrdes_t*);
-extern char * mr_stringify_double (mr_ptrdes_t*);
-extern char * mr_stringify_long_double_t (mr_ptrdes_t*);
-extern char * mr_stringify_enum (mr_ptrdes_t*);
-extern char * mr_stringify_bitfield (mr_ptrdes_t*);
-extern char * mr_stringify_bitmask (mr_ptrdes_t*, char*);
-extern char * mr_stringify_func (mr_ptrdes_t*);
-
 extern char * xml_quote_string (char*);
 extern char * xml_unquote_string (char*, int);
 extern void mr_init_save_xml (void);
@@ -1229,5 +1222,7 @@ extern int mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * cont
 extern mr_hash_value_t mr_td_name_get_hash (const mr_ptr_t x, const void * context);
 extern int mr_hashed_string_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
 extern mr_hash_value_t mr_hashed_string_get_hash (mr_ptr_t, const void *);
+extern mr_hash_value_t mr_enumfd_get_hash (mr_ptr_t x, const void * context);
+extern int cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context);
 
 #endif /* _METARESC_H_ */

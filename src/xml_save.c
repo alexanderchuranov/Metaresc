@@ -6,6 +6,7 @@
 #include <stdarg.h>
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 #include <mr_save.h>
 
 TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
@@ -48,6 +49,7 @@ xml_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
     return (mr_stringify_ ## TYPE (&ptrs->ra.data[idx] __VA_ARGS__)); \
   }
 
+XML_SAVE_TYPE (bool);
 XML_SAVE_TYPE (int8_t);
 XML_SAVE_TYPE (uint8_t);
 XML_SAVE_TYPE (int16_t);
@@ -141,6 +143,7 @@ static xml_save_handler_t xml1_save_handler[] =
     [MR_TYPE_ENUM] = xml_save_enum,
     [MR_TYPE_BITFIELD] = xml_save_bitfield,
     [MR_TYPE_BITMASK] = xml_save_bitmask,
+    [MR_TYPE_BOOL] = xml_save_bool,
     [MR_TYPE_INT8] = xml_save_int8_t,
     [MR_TYPE_UINT8] = xml_save_uint8_t,
     [MR_TYPE_INT16] = xml_save_int16_t,
@@ -281,6 +284,7 @@ static xml_save_handler_t xml2_save_handler[] =
     [MR_TYPE_ENUM] = xml_save_enum,
     [MR_TYPE_BITFIELD] = xml_save_bitfield,
     [MR_TYPE_BITMASK] = xml_save_bitmask,
+    [MR_TYPE_BOOL] = xml_save_bool,
     [MR_TYPE_INT8] = xml_save_int8_t,
     [MR_TYPE_UINT8] = xml_save_uint8_t,
     [MR_TYPE_INT16] = xml_save_int16_t,

@@ -7,6 +7,7 @@
 #include <limits.h>
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 
 TYPEDEF_STRUCT (mr_save_type_data_t, ATTRIBUTES ( , "serialization of the node"),
 		(char *, named_field_template, , "statically allocated string"),
@@ -62,6 +63,7 @@ cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
  */
 #define CINIT_SAVE_TYPE(TYPE, EXT...) static int cinit_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data) { data->content = mr_stringify_ ## TYPE (&ptrs->ra.data[idx] EXT); return (0); }
 
+CINIT_SAVE_TYPE (bool);
 CINIT_SAVE_TYPE (int8_t);
 CINIT_SAVE_TYPE (uint8_t);
 CINIT_SAVE_TYPE (int16_t);
@@ -367,6 +369,7 @@ static cinit_json_save_handler_t cinit_save_handler[] =
     [MR_TYPE_ENUM] = cinit_save_enum,
     [MR_TYPE_BITFIELD] = cinit_save_bitfield,
     [MR_TYPE_BITMASK] = cinit_save_bitmask,
+    [MR_TYPE_BOOL] = cinit_save_bool,
     [MR_TYPE_INT8] = cinit_save_int8_t,
     [MR_TYPE_UINT8] = cinit_save_uint8_t,
     [MR_TYPE_INT16] = cinit_save_int16_t,
@@ -403,6 +406,7 @@ static cinit_json_save_handler_t json_save_handler[] =
     [MR_TYPE_ENUM] = cinit_save_enum,
     [MR_TYPE_BITFIELD] = cinit_save_bitfield,
     [MR_TYPE_BITMASK] = cinit_save_bitmask,
+    [MR_TYPE_BOOL] = cinit_save_bool,
     [MR_TYPE_INT8] = cinit_save_int8_t,
     [MR_TYPE_UINT8] = cinit_save_uint8_t,
     [MR_TYPE_INT16] = cinit_save_int16_t,

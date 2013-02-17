@@ -3,6 +3,7 @@
 /* This file is part of Metaresc project */
 
 #include <math.h>
+#include <stdbool.h>
 #ifdef HAVE_CONFIG_H
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
@@ -19,6 +20,12 @@
 
 #include <metaresc.h>
 #include <mr_ic.h>
+
+char *
+mr_output_format_bool (mr_ptrdes_t * ptrdes)
+{
+  return (*(bool*)ptrdes->data ? MR_STRDUP ("TRUE") : MR_STRDUP ("FALSE"));
+}
 
 #define MR_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   char * mr_output_format_ ## TYPE (mr_ptrdes_t * ptrdes) {		\
@@ -44,6 +51,7 @@ MR_OUTPUT_FORMAT_TYPE (long_double_t, "%.20Lg");
  */
 void __attribute__((constructor)) mr_init_output_format (void)
 {
+  mr_conf.output_format[MR_TYPE_BOOL] = mr_output_format_bool;
   mr_conf.output_format[MR_TYPE_INT8] = mr_output_format_int8_t;
   mr_conf.output_format[MR_TYPE_UINT8] = mr_output_format_uint8_t;
   mr_conf.output_format[MR_TYPE_INT16] = mr_output_format_int16_t;
@@ -69,6 +77,7 @@ void __attribute__((constructor)) mr_init_output_format (void)
     return (mr_output_format_ ## TYPE (ptrdes));			\
   }
 
+MR_STRINGIFY_TYPE (bool, MR_TYPE_BOOL);
 MR_STRINGIFY_TYPE (int8_t, MR_TYPE_INT8);
 MR_STRINGIFY_TYPE (uint8_t, MR_TYPE_UINT8);
 MR_STRINGIFY_TYPE (int16_t, MR_TYPE_INT16);
@@ -208,6 +217,7 @@ mr_stringify_bitfield (mr_ptrdes_t * ptrdes)
 
   switch (ptrdes->fd.mr_type_aux)
     {
+    case MR_TYPE_BOOL: return (mr_stringify_bool (&ptrdes_));
     case MR_TYPE_INT8: return (mr_stringify_int8_t (&ptrdes_));
     case MR_TYPE_UINT8: return (mr_stringify_uint8_t (&ptrdes_));
     case MR_TYPE_INT16: return (mr_stringify_int16_t (&ptrdes_));

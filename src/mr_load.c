@@ -177,6 +177,25 @@ mr_load_none (int idx, mr_load_data_t * mr_load_data)
 }
 
 /**
+ * MR_BOOL load handler
+ * @param idx node index
+ * @param mr_load_data structures that holds context of loading
+ * @return Status of read (0 - failure, !0 - success)
+ */
+static int
+mr_load_bool (int idx, mr_load_data_t * mr_load_data)
+{
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
+  if (0 == strcmp (str, "FALSE"))
+    *(bool*)mr_load_data->ptrs.ra.data[idx].data = FALSE;
+  else if (0 == strcmp (str, "TRUE"))
+    *(bool*)mr_load_data->ptrs.ra.data[idx].data = TRUE;
+  else
+    return (0);
+  return (!0);
+}
+
+/**
  * MR_INTEGER load handler
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
@@ -838,6 +857,7 @@ static mr_load_handler_t mr_load_handler[] =
     [MR_TYPE_ENUM] = mr_load_enum,
     [MR_TYPE_BITFIELD] = mr_load_bitfield,
     [MR_TYPE_BITMASK] = mr_load_bitmask,
+    [MR_TYPE_BOOL] = mr_load_bool,
     [MR_TYPE_INT8] = mr_load_integer,
     [MR_TYPE_UINT8] = mr_load_integer,
     [MR_TYPE_INT16] = mr_load_integer,

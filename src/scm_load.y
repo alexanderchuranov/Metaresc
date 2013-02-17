@@ -5,16 +5,17 @@
 %{
 #include <stdio.h>
 
-#include <metaresc.h>
-#include <lexer.h>
-#include <scm_load.tab.h>
-#include <scm_load.lex.h>
-
 /* Pass the argument to yyparse through to yylex. */
 #define YYPARSE_PARAM scanner
 #define YYLEX_PARAM YYPARSE_PARAM
 #define MR_LOAD (mr_scm_get_extra (YYPARSE_PARAM))
 #define mr_scm_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, scm)
+
+#include <metaresc.h>
+#include <lexer.h>
+#include <scm_load.tab.h>
+#include <scm_load.lex.h>
+
 %}
 
 %name-prefix="mr_scm_"

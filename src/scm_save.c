@@ -3,6 +3,7 @@
 /* This file is part of Metaresc project */
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 
 TYPEDEF_FUNC (char *, scm_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
 
@@ -60,6 +61,7 @@ scm_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
  */
 #define SCM_SAVE_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_stringify_ ## TYPE (&ptrs->ra.data[idx])); }
 
+SCM_SAVE_TYPE (bool);
 SCM_SAVE_TYPE (int8_t);
 SCM_SAVE_TYPE (uint8_t);
 SCM_SAVE_TYPE (int16_t);
@@ -248,6 +250,7 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_ENUM] = scm_save_enum,
     [MR_TYPE_BITFIELD] = scm_save_bitfield,
     [MR_TYPE_BITMASK] = scm_save_bitmask,
+    [MR_TYPE_BOOL] = scm_save_bool,
     [MR_TYPE_INT8] = scm_save_int8_t,
     [MR_TYPE_UINT8] = scm_save_uint8_t,
     [MR_TYPE_INT16] = scm_save_int16_t,

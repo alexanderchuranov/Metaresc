@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
@@ -1055,6 +1056,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
       [0 ... MR_TYPE_LAST - 1] = 0,
       [MR_TYPE_NONE] = 0,
       [MR_TYPE_VOID] = sizeof (void),
+      [MR_TYPE_BOOL] = sizeof (bool),
       [MR_TYPE_INT8] = sizeof (int8_t),
       [MR_TYPE_UINT8] = sizeof (uint8_t),
       [MR_TYPE_INT16] = sizeof (int16_t),

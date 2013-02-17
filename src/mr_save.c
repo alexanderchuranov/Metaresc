@@ -45,6 +45,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_CHAR:
     case MR_TYPE_NONE:
     case MR_TYPE_VOID:
+    case MR_TYPE_BOOL:
     case MR_TYPE_INT8:
     case MR_TYPE_UINT8:
     case MR_TYPE_INT16:
@@ -390,6 +391,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
   /* switch over basic types */
   switch (parent_fdp->mr_type)
     {
+    case MR_TYPE_BOOL:
+      return (mr_union_discriminator_by_idx (tdp, *(bool*)discriminator));
     case MR_TYPE_UINT8:
       return (mr_union_discriminator_by_idx (tdp, *(uint8_t*)discriminator));
     case MR_TYPE_INT8:

@@ -12,6 +12,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 #include <mr_ic.h>
 #include <mr_load.h>
 #include <mr_save.h>
@@ -1061,6 +1062,7 @@ static xdr_save_handler_t xdr_save_handler[] =
     [MR_TYPE_ENUM] = xdr_save_enum,
     [MR_TYPE_BITFIELD] = xdr_save_bitfield,
     [MR_TYPE_BITMASK] = xdr_save_bitmask,
+    [MR_TYPE_BOOL] = xdr_int_,
     [MR_TYPE_INT8] = xdr_int_,
     [MR_TYPE_UINT8] = xdr_uint_,
     [MR_TYPE_INT16] = xdr_int_,
@@ -1140,6 +1142,7 @@ static xdr_load_handler_t xdr_load_handler[] =
     [MR_TYPE_ENUM] = xdr_load_stringified_type,
     [MR_TYPE_BITFIELD] = xdr_load_bitfield,
     [MR_TYPE_BITMASK] = xdr_load_stringified_type,
+    [MR_TYPE_BOOL] = xdr_int_,
     [MR_TYPE_INT8] = xdr_int_,
     [MR_TYPE_UINT8] = xdr_uint_,
     [MR_TYPE_INT16] = xdr_int_,

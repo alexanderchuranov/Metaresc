@@ -5,16 +5,16 @@
 %{
 #include <stdio.h>
 
-#include <metaresc.h>
-#include <lexer.h>
-#include <xml1_load.tab.h>
-#include <xml1_load.lex.h>
-
 /* Pass the argument to yyparse through to yylex. */
 #define YYPARSE_PARAM scanner
 #define YYLEX_PARAM YYPARSE_PARAM
 #define MR_LOAD (mr_xml1_get_extra (YYPARSE_PARAM))
 #define mr_xml1_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, xml1)
+
+#include <metaresc.h>
+#include <lexer.h>
+#include <xml1_load.tab.h>
+#include <xml1_load.lex.h>
 
   static inline int tail_is_not_blank (mr_substr_t * substr, int offset)
   {

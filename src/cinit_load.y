@@ -5,16 +5,16 @@
 %{
 #include <stdio.h>
 
-#include <metaresc.h>
-#include <lexer.h>
-#include <cinit_load.tab.h>
-#include <cinit_load.lex.h>
-
 /* Pass the argument to yyparse through to yylex. */
 #define YYPARSE_PARAM scanner
 #define YYLEX_PARAM YYPARSE_PARAM
 #define MR_LOAD (mr_cinit_get_extra (YYPARSE_PARAM))
 #define mr_cinit_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, cinit)
+
+#include <metaresc.h>
+#include <lexer.h>
+#include <cinit_load.tab.h>
+#include <cinit_load.lex.h>
 
 %}
 

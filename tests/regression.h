@@ -79,7 +79,7 @@ extern Suite * suite;
 
 #define ASSERT_SAVE_LOAD(METHOD, TYPE, X, ...)		\
   MR_IF_ELSE (MR_PASTE2 (SKIP_METHOD_, METHOD))		\
-  (ASSERT_SAVE_LOAD_(METHOD, TYPE, X, __VA_ARGS__)) (memcmp (X, X, 1))
+  (ASSERT_SAVE_LOAD_(METHOD, TYPE, X, __VA_ARGS__)) (0)
 
 #define ASSERT_SAVE_LOAD_(METHOD, TYPE, X, TYPE_CMP, ...)		\
   MR_IF_ELSE (MR_PASTE3 (MR_IS__EQ_, TYPE_CMP, _))			\
