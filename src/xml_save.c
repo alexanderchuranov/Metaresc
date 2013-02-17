@@ -325,11 +325,9 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   node->_private = (void*)(long)idx;
 
   /* route saving handler */
-  if ((fdp->mr_type_ext >= 0) && (fdp->mr_type_ext < MR_TYPE_EXT_LAST)
-      && ext_xml_save_handler[fdp->mr_type_ext])
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xml_save_handler[fdp->mr_type_ext])
     content = ext_xml_save_handler[fdp->mr_type_ext] (idx, ptrs);
-  else if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST)
-	   && xml2_save_handler[fdp->mr_type])
+  else if ((fdp->mr_type < MR_TYPE_LAST) && xml2_save_handler[fdp->mr_type])
     content = xml2_save_handler[fdp->mr_type] (idx, ptrs);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
