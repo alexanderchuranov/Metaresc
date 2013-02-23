@@ -9,12 +9,12 @@
 
 #define ASSERT_SAVE_LOAD_LONG_DOUBLE(METHOD, VALUE) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, long double, VALUE, SCALAR_DOUBLE); \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double, VALUE, SCALAR_DOUBLE); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double_t, VALUE, SCALAR_DOUBLE); \
     })
 
 #define LD_NAN ((ieee_long_double_t){ { .long_double = 0, .ieee_854_long_double_nan = { .quiet_nan = !0, .one = 1, .exponent = -1, }, }, }).long_double
 
-TYPEDEF_STRUCT (struct_long_double, long_double_t x)
+TYPEDEF_STRUCT (struct_long_double_t, long_double_t x)
 
 MR_START_TEST (zero_long_double, "zero long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, 0); } END_TEST
 MR_START_TEST (nan_long_double, "NAN long_double") { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, LD_NAN); } END_TEST

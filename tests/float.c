@@ -8,10 +8,10 @@
 
 #define ASSERT_SAVE_LOAD_FLOAT(METHOD, VALUE) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE, MEM_CMP);		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float, VALUE, MEM_CMP);	\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float_t, VALUE, MEM_CMP);	\
     })
 
-TYPEDEF_STRUCT (struct_float, float x)
+TYPEDEF_STRUCT (struct_float_t, float x)
 
 MR_START_TEST (zero_float, "zero float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, 0); } END_TEST
 MR_START_TEST (nan_float, "NAN float") { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, NAN); } END_TEST
