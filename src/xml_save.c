@@ -60,6 +60,7 @@ XML_SAVE_TYPE (int64_t);
 XML_SAVE_TYPE (uint64_t);
 XML_SAVE_TYPE (enum);
 XML_SAVE_TYPE (float);
+XML_SAVE_TYPE (complex_float);
 XML_SAVE_TYPE (double);
 XML_SAVE_TYPE (long_double_t);
 XML_SAVE_TYPE (bitfield);
@@ -153,6 +154,7 @@ static xml_save_handler_t xml1_save_handler[] =
     [MR_TYPE_INT64] = xml_save_int64_t,
     [MR_TYPE_UINT64] = xml_save_uint64_t,
     [MR_TYPE_FLOAT] = xml_save_float,
+    [MR_TYPE_COMPLEX_FLOAT] = xml_save_complex_float,
     [MR_TYPE_DOUBLE] = xml_save_double,
     [MR_TYPE_LONG_DOUBLE] = xml_save_long_double_t,
     [MR_TYPE_CHAR] = xml_save_char,
@@ -294,6 +296,7 @@ static xml_save_handler_t xml2_save_handler[] =
     [MR_TYPE_INT64] = xml_save_int64_t,
     [MR_TYPE_UINT64] = xml_save_uint64_t,
     [MR_TYPE_FLOAT] = xml_save_float,
+    [MR_TYPE_COMPLEX_FLOAT] = xml_save_complex_float,
     [MR_TYPE_DOUBLE] = xml_save_double,
     [MR_TYPE_LONG_DOUBLE] = xml_save_long_double_t,
     [MR_TYPE_CHAR] = xml_save_char,

@@ -19,6 +19,7 @@
 #endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 #include <mr_ic.h>
 
 char *
@@ -29,7 +30,7 @@ mr_output_format_bool (mr_ptrdes_t * ptrdes)
 
 #define MR_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   char * mr_output_format_ ## TYPE (mr_ptrdes_t * ptrdes) {		\
-    char str[MR_MAX(MR_INT_TO_STRING_BUF_SIZE, MR_FLOAT_TO_STRING_BUF_SIZE)]; \
+    char str[MR_FLOAT_TO_STRING_BUF_SIZE] = "";				\
     sprintf (str, FORMAT, *(TYPE*)ptrdes->data);			\
     return (MR_STRDUP (str));						\
   }
@@ -46,6 +47,27 @@ MR_OUTPUT_FORMAT_TYPE (float, "%.8g");
 MR_OUTPUT_FORMAT_TYPE (double, "%.17g");
 MR_OUTPUT_FORMAT_TYPE (long_double_t, "%.20Lg");
 
+char *
+mr_output_format_complex_float (mr_ptrdes_t * ptrdes)
+{
+  char str[2 * MR_FLOAT_TO_STRING_BUF_SIZE] = "";
+  mr_ptrdes_t real_ptrdes = *ptrdes;
+  mr_ptrdes_t imag_ptrdes = *ptrdes;
+  real_ptrdes.data = &__real__ *(complex float*)ptrdes->data;
+  real_ptrdes.fd.mr_type = MR_TYPE_FLOAT;
+  imag_ptrdes.data = &__imag__ *(complex float*)ptrdes->data;
+  imag_ptrdes.fd.mr_type = MR_TYPE_FLOAT;
+  char * real_str = mr_stringify_float (&real_ptrdes);
+  char * imag_str = mr_stringify_float (&imag_ptrdes);
+  if (real_str && imag_str)
+    sprintf (str, "%s + %si", real_str, imag_str);
+  if (real_str)
+    MR_FREE (real_str);
+  if (imag_str)
+    MR_FREE (imag_str);
+  return (MR_STRDUP (str));
+}
+
 /**
  * Init IO handlers Table
  */
@@ -61,6 +83,7 @@ void __attribute__((constructor)) mr_init_output_format (void)
   mr_conf.output_format[MR_TYPE_INT64] = mr_output_format_int64_t;
   mr_conf.output_format[MR_TYPE_UINT64] = mr_output_format_uint64_t;
   mr_conf.output_format[MR_TYPE_FLOAT] = mr_output_format_float;
+  mr_conf.output_format[MR_TYPE_COMPLEX_FLOAT] = mr_output_format_complex_float;
   mr_conf.output_format[MR_TYPE_DOUBLE] = mr_output_format_double;
   mr_conf.output_format[MR_TYPE_LONG_DOUBLE] = mr_output_format_long_double_t;
 }
@@ -93,6 +116,7 @@ MR_STRINGIFY_TYPE (uint64_t, MR_TYPE_UINT64);
  * \@return stringified float value
  */
 MR_STRINGIFY_TYPE (float, MR_TYPE_FLOAT);
+MR_STRINGIFY_TYPE (complex_float, MR_TYPE_COMPLEX_FLOAT);
 MR_STRINGIFY_TYPE (double, MR_TYPE_DOUBLE);
 MR_STRINGIFY_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
 

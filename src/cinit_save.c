@@ -74,6 +74,7 @@ CINIT_SAVE_TYPE (int64_t);
 CINIT_SAVE_TYPE (uint64_t);
 CINIT_SAVE_TYPE (enum);
 CINIT_SAVE_TYPE (float);
+CINIT_SAVE_TYPE (complex_float);
 CINIT_SAVE_TYPE (double);
 CINIT_SAVE_TYPE (long_double_t);
 CINIT_SAVE_TYPE (bitfield);
@@ -379,6 +380,7 @@ static cinit_json_save_handler_t cinit_save_handler[] =
     [MR_TYPE_INT64] = cinit_save_int64_t,
     [MR_TYPE_UINT64] = cinit_save_uint64_t,
     [MR_TYPE_FLOAT] = cinit_save_float,
+    [MR_TYPE_COMPLEX_FLOAT] = cinit_save_complex_float,
     [MR_TYPE_DOUBLE] = cinit_save_double,
     [MR_TYPE_LONG_DOUBLE] = cinit_save_long_double_t,
     [MR_TYPE_CHAR] = cinit_save_char,
@@ -416,6 +418,7 @@ static cinit_json_save_handler_t json_save_handler[] =
     [MR_TYPE_INT64] = cinit_save_int64_t,
     [MR_TYPE_UINT64] = cinit_save_uint64_t,
     [MR_TYPE_FLOAT] = cinit_save_float,
+    [MR_TYPE_COMPLEX_FLOAT] = cinit_save_complex_float,
     [MR_TYPE_DOUBLE] = cinit_save_double,
     [MR_TYPE_LONG_DOUBLE] = cinit_save_long_double_t,
     [MR_TYPE_CHAR] = cinit_save_char,

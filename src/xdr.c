@@ -379,6 +379,16 @@ xdr_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_float (xdrs, ptrs->ra.data[idx].data));
 }
 
+static int
+xdr_complex_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  if (!xdr_float (xdrs, &__real__ *(complex float*)ptrs->ra.data[idx].data))
+    return (0);
+  if (!xdr_float (xdrs, &__imag__ *(complex float*)ptrs->ra.data[idx].data))
+    return (0);
+  return (!0);
+}
+
 /**
  * Handler for type double.
  * @param xdrs XDR stream descriptor
@@ -1072,6 +1082,7 @@ static xdr_save_handler_t xdr_save_handler[] =
     [MR_TYPE_INT64] = xdr_int_,
     [MR_TYPE_UINT64] = xdr_uint_,
     [MR_TYPE_FLOAT] = xdr_float_,
+    [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float_,
     [MR_TYPE_DOUBLE] = xdr_double_,
     [MR_TYPE_LONG_DOUBLE] = xdr_long_double,
     [MR_TYPE_CHAR] = xdr_int_,
@@ -1152,6 +1163,7 @@ static xdr_load_handler_t xdr_load_handler[] =
     [MR_TYPE_INT64] = xdr_int_,
     [MR_TYPE_UINT64] = xdr_uint_,
     [MR_TYPE_FLOAT] = xdr_float_,
+    [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float_,
     [MR_TYPE_DOUBLE] = xdr_double_,
     [MR_TYPE_LONG_DOUBLE] = xdr_long_double,
     [MR_TYPE_CHAR] = xdr_int_,

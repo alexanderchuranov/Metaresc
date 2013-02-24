@@ -22,6 +22,7 @@
 #include <ctype.h> /* for isspace () */
 #include <stdarg.h> /* for va_list */
 #include <inttypes.h> /* for int8_t, int16_t, int32_t, int64_t, SCNxXX, etc */
+#include <complex.h> /* for complex */
 #ifdef HAVE_LIBXML2
 # include <libxml/xmlmemory.h>
 # include <libxml/parser.h>
@@ -124,6 +125,7 @@
    | (__builtin_types_compatible_p (PREFIX MR_UNCOVERED_TYPE SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
    | (__builtin_types_compatible_p (PREFIX unsigned MR_UNCOVERED_TYPE SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
    | (__builtin_types_compatible_p (PREFIX float SUFFIX, TYPE) ? MR_TYPE_FLOAT : 0) \
+   | (__builtin_types_compatible_p (PREFIX complex float SUFFIX, TYPE) ? MR_TYPE_COMPLEX_FLOAT : 0) \
    | (__builtin_types_compatible_p (PREFIX double SUFFIX, TYPE) ? MR_TYPE_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX long double SUFFIX, TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
@@ -384,6 +386,8 @@
 #define P00_COMMA_double AUTO_BI, double,
 #define P00_COMMA_bool AUTO_BI, bool,
 #define P00_COMMA__Bool AUTO_BI, _Bool,
+#define P00_COMMA_complex AUTO_BI, complex,
+#define P00_COMMA__Complex AUTO_BI, _Complex,
 #define P00_COMMA_int8_t AUTO_BI, int8_t,
 #define P00_COMMA_uint8_t AUTO_BI, uint8_t,
 #define P00_COMMA_int16_t AUTO_BI, int16_t,
@@ -427,6 +431,8 @@
 #define MR_IS_BUILTIN_double double,
 #define MR_IS_BUILTIN_bool bool,
 #define MR_IS_BUILTIN__Bool _Bool,
+#define MR_IS_BUILTIN_complex complex,
+#define MR_IS_BUILTIN__Complex _Complex,
 #define MR_IS_BUILTIN_int8_t int8_t,
 #define MR_IS_BUILTIN_uint8_t uint8_t,
 #define MR_IS_BUILTIN_int16_t int16_t,

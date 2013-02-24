@@ -13,6 +13,7 @@ extern char * mr_output_format_uint32_t (mr_ptrdes_t*);
 extern char * mr_output_format_int64_t (mr_ptrdes_t*);
 extern char * mr_output_format_uint64_t (mr_ptrdes_t*);
 extern char * mr_output_format_float (mr_ptrdes_t*);
+extern char * mr_output_format_complex_float (mr_ptrdes_t*);
 extern char * mr_output_format_double (mr_ptrdes_t*);
 extern char * mr_output_format_long_double_t (mr_ptrdes_t*);
 
@@ -26,6 +27,7 @@ extern char * mr_stringify_uint32_t (mr_ptrdes_t*);
 extern char * mr_stringify_int64_t (mr_ptrdes_t*);
 extern char * mr_stringify_uint64_t (mr_ptrdes_t*);
 extern char * mr_stringify_float (mr_ptrdes_t*);
+extern char * mr_stringify_complex_float (mr_ptrdes_t*);
 extern char * mr_stringify_double (mr_ptrdes_t*);
 extern char * mr_stringify_long_double_t (mr_ptrdes_t*);
 extern char * mr_stringify_enum (mr_ptrdes_t*);

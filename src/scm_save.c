@@ -72,6 +72,7 @@ SCM_SAVE_TYPE (int64_t);
 SCM_SAVE_TYPE (uint64_t);
 SCM_SAVE_TYPE (enum);
 SCM_SAVE_TYPE (float);
+SCM_SAVE_TYPE (complex_float);
 SCM_SAVE_TYPE (double);
 SCM_SAVE_TYPE (long_double_t);
 SCM_SAVE_TYPE (bitfield);
@@ -109,7 +110,7 @@ scm_save_bitmask (int idx, mr_ra_mr_ptrdes_t * ptrs)
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
- * @return stringified float value
+ * @return stringified function name
  */
 static char *
 scm_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs)
@@ -124,7 +125,7 @@ scm_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs)
  * MR_CHAR type saving handler. Stringify char.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
- * @return stringified float value
+ * @return stringified char
  */
 static char *
 scm_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
@@ -260,6 +261,7 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_INT64] = scm_save_int64_t,
     [MR_TYPE_UINT64] = scm_save_uint64_t,
     [MR_TYPE_FLOAT] = scm_save_float,
+    [MR_TYPE_COMPLEX_FLOAT] = scm_save_complex_float,
     [MR_TYPE_DOUBLE] = scm_save_double,
     [MR_TYPE_LONG_DOUBLE] = scm_save_long_double_t,
     [MR_TYPE_CHAR] = scm_save_char,

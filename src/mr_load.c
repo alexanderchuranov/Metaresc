@@ -362,6 +362,46 @@ MR_LOAD_FLOAT_TYPE (float, "%f", MR_MESSAGE_READ_FLOAT)
 MR_LOAD_FLOAT_TYPE (double, "%lg", MR_MESSAGE_READ_DOUBLE)
 MR_LOAD_FLOAT_TYPE (long_double_t, "%Lg", MR_MESSAGE_READ_LONG_DOUBLE)
 
+static int
+mr_load_complex_long_double (int idx, mr_load_data_t * mr_load_data, complex long double * x)
+{
+  char * str = mr_load_data->ptrs.ra.data[idx].value;
+  int offset;
+  long double real, imag;
+  if (NULL == str)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, mr_load_data->ptrs.ra.data[idx].value);
+      return (0);
+    }
+  if (2 != sscanf (str, "%Lg + %Lgi%n", &real, &imag, &offset))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, mr_load_data->ptrs.ra.data[idx].value);
+      return (0);
+    }
+  __real__ *x = real;
+  __imag__ *x = imag;
+  str += offset;
+  while (isspace (*str))
+    ++str;
+  if (*str != 0)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, mr_load_data->ptrs.ra.data[idx].value);
+      return (0);
+    }
+  return (!0);
+}
+
+static int
+mr_load_complex_float (int idx, mr_load_data_t * mr_load_data)
+{
+  complex long double x;
+  int status = mr_load_complex_long_double (idx, mr_load_data, &x);
+  if (!status)
+    return (status);
+  *(complex float*)mr_load_data->ptrs.ra.data[idx].data = x;
+  return (!0);
+}
+
 /**
  * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
@@ -867,6 +907,7 @@ static mr_load_handler_t mr_load_handler[] =
     [MR_TYPE_INT64] = mr_load_integer,
     [MR_TYPE_UINT64] = mr_load_integer,
     [MR_TYPE_FLOAT] = mr_load_float,
+    [MR_TYPE_COMPLEX_FLOAT] = mr_load_complex_float,
     [MR_TYPE_DOUBLE] = mr_load_double,
     [MR_TYPE_LONG_DOUBLE] = mr_load_long_double_t,
     [MR_TYPE_CHAR] = mr_load_char,
