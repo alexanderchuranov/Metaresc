@@ -28,17 +28,18 @@ INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER (0x|0X)[[:xdigit:]]+
 NUMBER {INT_NUMBER}|{HEX_NUMBER}
 NUMBER_OR_ID {NUMBER}|{ID}
+FLOAT_NAN [+-]?[Nn][Aa][Nn]
+FLOAT_INF [+-]?[Ii][Nn][Ff]
+FLOAT_VAL {INT_NUMBER}|{INT_NUMBER}"."[[:digit:]]*
+FLOAT_EXP_VAL {FLOAT_VAL}[eE]{INT_NUMBER}
+FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{FLOAT_VAL}|{FLOAT_EXP_VAL}
+IMAGENARY_NUMBER {FLOAT_NUMBER}"i"
+COMPLEX_NUMBER {FLOAT_NUMBER}|{IMAGENARY_NUMBER}|{FLOAT_NUMBER}{WS}"+"{WS}{IMAGENARY_NUMBER}|{IMAGENARY_NUMBER}{WS}"+"{WS}{FLOAT_NUMBER}
 %%
 
 [[:space:]]+  { return (TOK_SCM_WS); }
 
-{NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
-
-[+-]?[Nn][Aa][Nn] |
-[+-]?[Ii][Nn][Ff] |
-[+-]?[[:digit:]]+"."[[:digit:]]*  |
-[+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
-[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
+{NUMBER}|{FLOAT_NUMBER}|{COMPLEX_NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
 
 #f { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_SCM_VALUE); }
 

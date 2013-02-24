@@ -26,23 +26,26 @@ WS	[[:space:]]*
 ID	[_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER (0x|0X)[[:xdigit:]]+
-NUMBER ({INT_NUMBER}|{HEX_NUMBER})
+NUMBER {INT_NUMBER}|{HEX_NUMBER}
 NUMBER_OR_ID {NUMBER}|{ID}
+FLOAT_NAN [+-]?[Nn][Aa][Nn]
+FLOAT_INF [+-]?[Ii][Nn][Ff]
+FLOAT_VAL {INT_NUMBER}|{INT_NUMBER}"."[[:digit:]]*
+FLOAT_EXP_VAL {FLOAT_VAL}[eE]{INT_NUMBER}
+FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{FLOAT_VAL}|{FLOAT_EXP_VAL}
+IMAGENARY_NUMBER {FLOAT_NUMBER}"i"
+COMPLEX_NUMBER {FLOAT_NUMBER}|{IMAGENARY_NUMBER}|{FLOAT_NUMBER}{WS}"+"{WS}{IMAGENARY_NUMBER}|{IMAGENARY_NUMBER}{WS}"+"{WS}{FLOAT_NUMBER}
 %%
 
 {WS}  { /* eat up whitespace */ }
 
-{NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
-
-[+-]?[Nn][Aa][Nn] |
-[+-]?[Ii][Nn][Ff] |
-[+-]?[[:digit:]]+"."[[:digit:]]*  |
-[+-]?[[:digit:]]+[eE][+-]?[[:digit:]]* |
-[+-]?[[:digit:]]+"."[[:digit:]]*[eE][+-]?[[:digit:]]* { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
-
 "NULL" { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_CINIT_VALUE); }
 
-{ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
+{NUMBER}|{FLOAT_NUMBER}|{COMPLEX_NUMBER}|{ID}|({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
+
+"\""([^\"\\]|\\.)*"\"" { mr_set_lval (&yylval->string, yytext, unquote); return (TOK_CINIT_VALUE); }
+
+"\'"([^\'\\]|\\.)*"\'" { mr_set_lval (&yylval->string, yytext, unquote_char); return (TOK_CINIT_VALUE); }
 
 "."{WS}{ID}{WS}"=" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
@@ -51,12 +54,6 @@ NUMBER_OR_ID {NUMBER}|{ID}
 "("{WS}({ID}{WS})*{ID}{WS}\*?{WS}("["{WS}"]")?{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
 "/*"{WS}"("{WS}({ID}{WS})*{ID}{WS}\*?{WS}"["{WS}"]"{WS}")"{WS}"*/" { get_type (&yylval->string, strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
-
-({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
-
-"\""([^\"\\]|\\.)*"\"" { mr_set_lval (&yylval->string, yytext, unquote); return (TOK_CINIT_VALUE); }
-
-"\'"([^\'\\]|\\.)*"\'" { mr_set_lval (&yylval->string, yytext, unquote_char); return (TOK_CINIT_VALUE); }
 
 "/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { mr_get_id (&yylval->id_ivalue.id, &yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
 
