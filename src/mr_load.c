@@ -391,17 +391,23 @@ mr_load_complex_long_double (int idx, mr_load_data_t * mr_load_data, complex lon
   return (!0);
 }
 
-static int
-mr_load_complex_float (int idx, mr_load_data_t * mr_load_data)
-{
-  complex long double x;
-  int status = mr_load_complex_long_double (idx, mr_load_data, &x);
-  if (!status)
-    return (status);
-  *(complex float*)mr_load_data->ptrs.ra.data[idx].data = x;
-  return (!0);
-}
+#define MR_LOAD_COMPLEX(TYPE)						\
+  static int mr_load_complex_ ## TYPE (int idx, mr_load_data_t * mr_load_data) { \
+    complex long double x;						\
+    int status = mr_load_complex_long_double (idx, mr_load_data, &x);	\
+    if (!status)							\
+      return (status);							\
+    *(complex TYPE*)mr_load_data->ptrs.ra.data[idx].data = x;		\
+    return (!0);							\
+  }
 
+MR_LOAD_COMPLEX (float);
+MR_LOAD_COMPLEX (double);
+
+static int mr_load_complex_long_double_t (int idx, mr_load_data_t * mr_load_data)
+{ 
+  return (mr_load_complex_long_double (idx, mr_load_data, (complex long double*)mr_load_data->ptrs.ra.data[idx].data));
+}
 /**
  * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
@@ -909,7 +915,9 @@ static mr_load_handler_t mr_load_handler[] =
     [MR_TYPE_FLOAT] = mr_load_float,
     [MR_TYPE_COMPLEX_FLOAT] = mr_load_complex_float,
     [MR_TYPE_DOUBLE] = mr_load_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = mr_load_complex_double,
     [MR_TYPE_LONG_DOUBLE] = mr_load_long_double_t,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = mr_load_complex_long_double_t,
     [MR_TYPE_CHAR] = mr_load_char,
     [MR_TYPE_CHAR_ARRAY] = mr_load_char_array,
     [MR_TYPE_STRING] = mr_load_string,

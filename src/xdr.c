@@ -379,15 +379,30 @@ xdr_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_float (xdrs, ptrs->ra.data[idx].data));
 }
 
-static int
-xdr_complex_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
-{
-  if (!xdr_float (xdrs, &__real__ *(complex float*)ptrs->ra.data[idx].data))
-    return (0);
-  if (!xdr_float (xdrs, &__imag__ *(complex float*)ptrs->ra.data[idx].data))
-    return (0);
-  return (!0);
-}
+#define XDR_COMPLEX(NAME_SUFFIX, TYPE_NAME)					\
+  static int xdr_complex_ ## NAME_SUFFIX (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs) { \
+    TYPE_NAME real, imag;						\
+    complex TYPE_NAME x;						\
+    if (XDR_ENCODE == xdrs->x_op)					\
+      {									\
+	x = *(complex TYPE_NAME*)ptrs->ra.data[idx].data;		\
+	real = __real__ x;						\
+	imag = __imag__ x;						\
+      }									\
+    if (!xdr_ ## NAME_SUFFIX (xdrs, &real))				\
+      return (0);							\
+    if (!xdr_ ## NAME_SUFFIX (xdrs, &imag))				\
+      return (0);							\
+    if (XDR_DECODE == xdrs->x_op)					\
+      {									\
+	__real__ x = real;						\
+	__imag__ x = imag;						\
+	*(complex TYPE_NAME*)ptrs->ra.data[idx].data = x;		\
+      }									\
+    return (!0);							\
+  }
+
+XDR_COMPLEX (float, float);
 
 /**
  * Handler for type double.
@@ -402,6 +417,8 @@ xdr_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (xdr_double (xdrs, ptrs->ra.data[idx].data));
 }
 
+XDR_COMPLEX (double, double);
+
 /**
  * Handler for type long double. Saves as opaque data binary representation of long double in memeory. Assumes that CPU uses ieee854 standard.
  * @param xdrs XDR stream descriptor
@@ -410,10 +427,18 @@ xdr_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @return status
  */
 static int
-xdr_long_double (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
+xdr_long_double (XDR * xdrs, long double * data)
 {
-  return xdr_opaque (xdrs, ptrs->ra.data[idx].data, MR_SIZEOF_LONG_DOUBLE);
+  return (xdr_opaque (xdrs, (void*)data, MR_SIZEOF_LONG_DOUBLE));
 }
+
+static int
+xdr_long_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  return (xdr_long_double (xdrs, ptrs->ra.data[idx].data));
+}
+
+XDR_COMPLEX (long_double, long double);
 
 /**
  * Handler for char arrays.
@@ -1082,9 +1107,11 @@ static xdr_save_handler_t xdr_save_handler[] =
     [MR_TYPE_INT64] = xdr_int_,
     [MR_TYPE_UINT64] = xdr_uint_,
     [MR_TYPE_FLOAT] = xdr_float_,
-    [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float_,
+    [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float,
     [MR_TYPE_DOUBLE] = xdr_double_,
-    [MR_TYPE_LONG_DOUBLE] = xdr_long_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = xdr_complex_double,
+    [MR_TYPE_LONG_DOUBLE] = xdr_long_double_,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = xdr_complex_long_double,
     [MR_TYPE_CHAR] = xdr_int_,
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_save_string,
@@ -1163,9 +1190,11 @@ static xdr_load_handler_t xdr_load_handler[] =
     [MR_TYPE_INT64] = xdr_int_,
     [MR_TYPE_UINT64] = xdr_uint_,
     [MR_TYPE_FLOAT] = xdr_float_,
-    [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float_,
+    [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float,
     [MR_TYPE_DOUBLE] = xdr_double_,
-    [MR_TYPE_LONG_DOUBLE] = xdr_long_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = xdr_complex_double,
+    [MR_TYPE_LONG_DOUBLE] = xdr_long_double_,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = xdr_complex_long_double,
     [MR_TYPE_CHAR] = xdr_int_,
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_load_string,

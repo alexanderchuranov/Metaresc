@@ -62,7 +62,9 @@ XML_SAVE_TYPE (enum);
 XML_SAVE_TYPE (float);
 XML_SAVE_TYPE (complex_float);
 XML_SAVE_TYPE (double);
+XML_SAVE_TYPE (complex_double);
 XML_SAVE_TYPE (long_double_t);
+XML_SAVE_TYPE (complex_long_double_t);
 XML_SAVE_TYPE (bitfield);
 XML_SAVE_TYPE (func);
 XML_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
@@ -156,7 +158,9 @@ static xml_save_handler_t xml1_save_handler[] =
     [MR_TYPE_FLOAT] = xml_save_float,
     [MR_TYPE_COMPLEX_FLOAT] = xml_save_complex_float,
     [MR_TYPE_DOUBLE] = xml_save_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = xml_save_complex_double,
     [MR_TYPE_LONG_DOUBLE] = xml_save_long_double_t,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = xml_save_complex_long_double_t,
     [MR_TYPE_CHAR] = xml_save_char,
     [MR_TYPE_CHAR_ARRAY] = xml_save_char_array,
     [MR_TYPE_STRUCT] = xml_save_empty,
@@ -298,7 +302,9 @@ static xml_save_handler_t xml2_save_handler[] =
     [MR_TYPE_FLOAT] = xml_save_float,
     [MR_TYPE_COMPLEX_FLOAT] = xml_save_complex_float,
     [MR_TYPE_DOUBLE] = xml_save_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = xml_save_complex_double,
     [MR_TYPE_LONG_DOUBLE] = xml_save_long_double_t,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = xml_save_complex_long_double_t,
     [MR_TYPE_CHAR] = xml_save_char,
     [MR_TYPE_CHAR_ARRAY] = xml_save_char_array,
     [MR_TYPE_STRUCT] = xml_save_empty,

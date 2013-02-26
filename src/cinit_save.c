@@ -76,7 +76,9 @@ CINIT_SAVE_TYPE (enum);
 CINIT_SAVE_TYPE (float);
 CINIT_SAVE_TYPE (complex_float);
 CINIT_SAVE_TYPE (double);
+CINIT_SAVE_TYPE (complex_double);
 CINIT_SAVE_TYPE (long_double_t);
+CINIT_SAVE_TYPE (complex_long_double_t);
 CINIT_SAVE_TYPE (bitfield);
 CINIT_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
 
@@ -382,7 +384,9 @@ static cinit_json_save_handler_t cinit_save_handler[] =
     [MR_TYPE_FLOAT] = cinit_save_float,
     [MR_TYPE_COMPLEX_FLOAT] = cinit_save_complex_float,
     [MR_TYPE_DOUBLE] = cinit_save_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = cinit_save_complex_double,
     [MR_TYPE_LONG_DOUBLE] = cinit_save_long_double_t,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = cinit_save_complex_long_double_t,
     [MR_TYPE_CHAR] = cinit_save_char,
     [MR_TYPE_CHAR_ARRAY] = cinit_save_char_array,
     [MR_TYPE_STRING] = cinit_save_string,
@@ -420,7 +424,9 @@ static cinit_json_save_handler_t json_save_handler[] =
     [MR_TYPE_FLOAT] = cinit_save_float,
     [MR_TYPE_COMPLEX_FLOAT] = cinit_save_complex_float,
     [MR_TYPE_DOUBLE] = cinit_save_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = cinit_save_complex_double,
     [MR_TYPE_LONG_DOUBLE] = cinit_save_long_double_t,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = cinit_save_complex_long_double_t,
     [MR_TYPE_CHAR] = cinit_save_char,
     [MR_TYPE_CHAR_ARRAY] = cinit_save_char_array,
     [MR_TYPE_STRING] = cinit_save_string,

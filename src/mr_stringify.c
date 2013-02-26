@@ -47,26 +47,31 @@ MR_OUTPUT_FORMAT_TYPE (float, "%.8g");
 MR_OUTPUT_FORMAT_TYPE (double, "%.17g");
 MR_OUTPUT_FORMAT_TYPE (long_double_t, "%.20Lg");
 
-char *
-mr_output_format_complex_float (mr_ptrdes_t * ptrdes)
-{
-  char str[2 * MR_FLOAT_TO_STRING_BUF_SIZE] = "";
-  mr_ptrdes_t real_ptrdes = *ptrdes;
-  mr_ptrdes_t imag_ptrdes = *ptrdes;
-  real_ptrdes.data = &__real__ *(complex float*)ptrdes->data;
-  real_ptrdes.fd.mr_type = MR_TYPE_FLOAT;
-  imag_ptrdes.data = &__imag__ *(complex float*)ptrdes->data;
-  imag_ptrdes.fd.mr_type = MR_TYPE_FLOAT;
-  char * real_str = mr_stringify_float (&real_ptrdes);
-  char * imag_str = mr_stringify_float (&imag_ptrdes);
-  if (real_str && imag_str)
-    sprintf (str, "%s + %si", real_str, imag_str);
-  if (real_str)
-    MR_FREE (real_str);
-  if (imag_str)
-    MR_FREE (imag_str);
-  return (MR_STRDUP (str));
-}
+#define MR_OUTPUT_FORMAT_COMPLEX(NAME_SUFFIX, TYPE_NAME, MR_TYPE)	\
+  char * mr_output_format_complex_ ## NAME_SUFFIX (mr_ptrdes_t * ptrdes) { \
+    char str[2 * MR_FLOAT_TO_STRING_BUF_SIZE] = "";			\
+    mr_ptrdes_t real_ptrdes = *ptrdes;					\
+    mr_ptrdes_t imag_ptrdes = *ptrdes;					\
+    TYPE_NAME real = __real__ *(complex TYPE_NAME *)ptrdes->data;	\
+    TYPE_NAME imag = __imag__ *(complex TYPE_NAME *)ptrdes->data;	\
+    real_ptrdes.data = &real;						\
+    real_ptrdes.fd.mr_type = MR_TYPE;					\
+    imag_ptrdes.data = &imag;						\
+    imag_ptrdes.fd.mr_type = MR_TYPE;					\
+    char * real_str = mr_stringify_ ## NAME_SUFFIX (&real_ptrdes);	\
+    char * imag_str = mr_stringify_ ## NAME_SUFFIX (&imag_ptrdes);	\
+    if (real_str && imag_str)						\
+      sprintf (str, "%s + %si", real_str, imag_str);			\
+    if (real_str)							\
+      MR_FREE (real_str);						\
+    if (imag_str)							\
+      MR_FREE (imag_str);						\
+    return (MR_STRDUP (str));						\
+  }
+
+MR_OUTPUT_FORMAT_COMPLEX (float, float, MR_TYPE_FLOAT);
+MR_OUTPUT_FORMAT_COMPLEX (double, double, MR_TYPE_DOUBLE);
+MR_OUTPUT_FORMAT_COMPLEX (long_double_t, long double, MR_TYPE_LONG_DOUBLE);
 
 /**
  * Init IO handlers Table
@@ -85,7 +90,9 @@ void __attribute__((constructor)) mr_init_output_format (void)
   mr_conf.output_format[MR_TYPE_FLOAT] = mr_output_format_float;
   mr_conf.output_format[MR_TYPE_COMPLEX_FLOAT] = mr_output_format_complex_float;
   mr_conf.output_format[MR_TYPE_DOUBLE] = mr_output_format_double;
+  mr_conf.output_format[MR_TYPE_COMPLEX_DOUBLE] = mr_output_format_complex_double;
   mr_conf.output_format[MR_TYPE_LONG_DOUBLE] = mr_output_format_long_double_t;
+  mr_conf.output_format[MR_TYPE_COMPLEX_LONG_DOUBLE] = mr_output_format_complex_long_double_t;
 }
 
 /**
@@ -118,7 +125,9 @@ MR_STRINGIFY_TYPE (uint64_t, MR_TYPE_UINT64);
 MR_STRINGIFY_TYPE (float, MR_TYPE_FLOAT);
 MR_STRINGIFY_TYPE (complex_float, MR_TYPE_COMPLEX_FLOAT);
 MR_STRINGIFY_TYPE (double, MR_TYPE_DOUBLE);
+MR_STRINGIFY_TYPE (complex_double, MR_TYPE_COMPLEX_DOUBLE);
 MR_STRINGIFY_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
+MR_STRINGIFY_TYPE (complex_long_double_t, MR_TYPE_COMPLEX_LONG_DOUBLE);
 
 /**
  * Stringify integer value.

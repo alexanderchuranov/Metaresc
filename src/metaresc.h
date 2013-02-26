@@ -127,7 +127,9 @@
    | (__builtin_types_compatible_p (PREFIX float SUFFIX, TYPE) ? MR_TYPE_FLOAT : 0) \
    | (__builtin_types_compatible_p (PREFIX complex float SUFFIX, TYPE) ? MR_TYPE_COMPLEX_FLOAT : 0) \
    | (__builtin_types_compatible_p (PREFIX double SUFFIX, TYPE) ? MR_TYPE_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX complex double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX long double SUFFIX, TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX complex long double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
    | (__builtin_types_compatible_p (PREFIX char MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) () ((SUFFIX)) [], TYPE) ? MR_TYPE_CHAR_ARRAY : 0) \
    | ((__builtin_types_compatible_p (PREFIX char * SUFFIX, TYPE)	\

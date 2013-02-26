@@ -74,7 +74,9 @@ SCM_SAVE_TYPE (enum);
 SCM_SAVE_TYPE (float);
 SCM_SAVE_TYPE (complex_float);
 SCM_SAVE_TYPE (double);
+SCM_SAVE_TYPE (complex_double);
 SCM_SAVE_TYPE (long_double_t);
+SCM_SAVE_TYPE (complex_long_double_t);
 SCM_SAVE_TYPE (bitfield);
 
 #define MR_SCM_BITMASK_OR_DELIMITER " "
@@ -263,7 +265,9 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_FLOAT] = scm_save_float,
     [MR_TYPE_COMPLEX_FLOAT] = scm_save_complex_float,
     [MR_TYPE_DOUBLE] = scm_save_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = scm_save_complex_double,
     [MR_TYPE_LONG_DOUBLE] = scm_save_long_double_t,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = scm_save_complex_long_double_t,
     [MR_TYPE_CHAR] = scm_save_char,
     [MR_TYPE_CHAR_ARRAY] = scm_save_char_array,
     [MR_TYPE_STRING] = scm_save_string,
