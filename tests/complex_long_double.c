@@ -6,8 +6,16 @@
 #include <regression.h>
 #include <flt_values.h>
 
-#define SCALAR_DOUBLE(TYPE, X, Y, ...) memcmp (X, Y, MR_SIZEOF_LONG_DOUBLE)
-//(memcmp (&__real__ *(X), &__real__ *(Y), MR_SIZEOF_LONG_DOUBLE) || memcmp (&__imag__ *X, &__imag__ *Y, MR_SIZEOF_LONG_DOUBLE))
+#define SCALAR_DOUBLE(TYPE, X, Y, ...) ({				\
+      complex long double _x_cld_ = *(complex long double*)X;		\
+      complex long double _y_cld_ = *(complex long double*)Y;		\
+      long double _x_real_ = __real__ _x_cld_;				\
+      long double _x_imag_ = __imag__ _x_cld_;				\
+      long double _y_real_ = __real__ _y_cld_;				\
+      long double _y_imag_ = __imag__ _y_cld_;				\
+      (memcmp (&_x_real_, &_y_real_, MR_SIZEOF_LONG_DOUBLE) != 0) ||	\
+	(memcmp (&_x_imag_, &_y_imag_, MR_SIZEOF_LONG_DOUBLE) != 0);	\
+    })
 
 #define ASSERT_SAVE_LOAD_COMPLEX_LONG_DOUBLE(METHOD, VALUE) ({		\
       ASSERT_SAVE_LOAD_TYPE (METHOD, complex long double, VALUE, SCALAR_DOUBLE); \
