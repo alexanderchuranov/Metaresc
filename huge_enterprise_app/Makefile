@@ -22,7 +22,7 @@ file_%.h:
 	sed -e s/@FILENO@/$(patsubst file_%.h,%,$@)/ < file.h.in > $@
 
 main.h: $(patsubst %.c, %.h, $(patsubst main.c, , ${SOURCES})) 
-	echo -e "#ifndef _MAIN_H_\n#define _MAIN_H_\n" $(patsubst %,"#include \"%\"\n", $?) "#endif\n" > main.h
+	echo "#ifndef _MAIN_H_\n#define _MAIN_H_\n" $(patsubst %,"#include \"%\"\n", $?) "#endif\n" > main.h
 	
 clean:
 	@${RM} ${BINARY} *.o

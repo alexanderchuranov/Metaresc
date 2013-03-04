@@ -3,6 +3,5 @@
         
 void f@FILENO@(void)
 {
-  struct_@FILENO@_t s;
-  s.a = 0;
+  struct_@FILENO@_t __attribute__((unused)) s;
 }

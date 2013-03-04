@@ -9,14 +9,17 @@
 /builtins
 /builtins_auto
 /decl_rarray
+/deserialization_2_args
 /deserialization_3_args
 /deserializing_xml
+/double_pointer
 /emptystruct
 /enums
 /enums_metadata
 /field_types
 /function_pointer_metadata
 /function_pointers
+/function_type
 /get_set_field
 /gjobs
 /justabuiltin

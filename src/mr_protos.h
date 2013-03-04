@@ -332,7 +332,7 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(mr_msg_handler_t, msg_handler),
-		(mr_ic_t, lookup_by_name, , "index over types descriptors"),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
+		(mr_ic_t, lookup_by_name, , "index over types descriptors"),
 		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)

@@ -413,6 +413,7 @@ static int mr_load_complex_long_double_t (int idx, mr_load_data_t * mr_load_data
 { 
   return (mr_load_complex_long_double (idx, mr_load_data, (complex long double*)mr_load_data->ptrs.ra.data[idx].data));
 }
+
 /**
  * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
