@@ -186,6 +186,11 @@ static int
 mr_load_bool (int idx, mr_load_data_t * mr_load_data)
 {
   char * str = mr_load_data->ptrs.ra.data[idx].value;
+  if (NULL == str)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (0);
+    }
   if (0 == strcmp (str, "FALSE"))
     *(bool*)mr_load_data->ptrs.ra.data[idx].data = FALSE;
   else if (0 == strcmp (str, "TRUE"))

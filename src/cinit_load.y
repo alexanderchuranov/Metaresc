@@ -26,6 +26,7 @@
 
  /* a more advanced semantic type */
 %union {
+  mr_value_t value;
   mr_substr_t string;
   struct {
     mr_substr_t id;
