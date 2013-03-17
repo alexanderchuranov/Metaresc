@@ -4,6 +4,7 @@
 
 %{
 #include <stdio.h>
+#include <stdbool.h>
 
 /* Pass the argument to yyparse through to yylex. */
 #define YYPARSE_PARAM scanner
@@ -13,6 +14,7 @@
 
 #include <metaresc.h>
 #include <lexer.h>
+#include <mr_value.h>
 #include <cinit_load.tab.h>
 #include <cinit_load.lex.h>
 
@@ -36,15 +38,12 @@
 
 /* Bison declarations.  */
 %token <id_ivalue> TOK_CINIT_ID_IVALUE
-%token <string> TOK_CINIT_VALUE
-%token <string> TOK_CINIT_FIELD_PREFIX
-%token <string> TOK_CINIT_FIELD_CAST
-%token TOK_CINIT_LBRACE
-%token TOK_CINIT_RBRACE
-%token TOK_CINIT_LBRACKET
-%token TOK_CINIT_RBRACKET
-%token TOK_CINIT_COMMA
-%token TOK_CINIT_ERROR
+%token <value> TOK_CINIT_NUMBER TOK_CINIT_STRING
+%token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST
+%token TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_LBRACKET TOK_CINIT_RBRACKET TOK_CINIT_COMMA TOK_CINIT_ERROR
+
+%left TOK_CINIT_PLUS TOK_CINIT_MINUS TOK_CINIT_MUL TOK_CINIT_DIV TOK_CINIT_MOD TOK_CINIT_BIT_OR TOK_CINIT_BIT_AND TOK_CINIT_BIT_XOR NEG
+%type <value> expr
 
 %start cinit
 
@@ -74,11 +73,25 @@ casted_value
 
 casted_value:
 value
-| TOK_CINIT_FIELD_CAST value { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].fd.type = mr_unquote (&$1); }
+| TOK_CINIT_FIELD_CAST value { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].fd.type = strndup ($1.substr.data, $1.substr.size); }
 
 value:
 compaund
-| TOK_CINIT_VALUE { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$1); }
+| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
+| TOK_CINIT_STRING { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
+
+expr:
+TOK_CINIT_NUMBER { $$ = $1; }
+| expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
+| expr TOK_CINIT_MINUS expr { mr_value_sub (&$$, &$1, &$3); }
+| expr TOK_CINIT_MUL expr { mr_value_mul (&$$, &$1, &$3); }
+| expr TOK_CINIT_DIV expr { mr_value_div (&$$, &$1, &$3); }
+| expr TOK_CINIT_MOD expr { mr_value_mod (&$$, &$1, &$3); }
+| expr TOK_CINIT_BIT_OR expr { mr_value_bit_or (&$$, &$1, &$3); }
+| expr TOK_CINIT_BIT_AND expr { mr_value_bit_and (&$$, &$1, &$3); }
+| expr TOK_CINIT_BIT_XOR expr { mr_value_bit_xor (&$$, &$1, &$3); }
+| TOK_CINIT_MINUS expr %prec NEG { mr_value_neg (&$$, &$2); }
+| TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
 
 compaund:
 TOK_CINIT_LBRACE list TOK_CINIT_RBRACE
@@ -89,7 +102,7 @@ list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
 nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->ptrs->ra.data[mr_load->parent].last_child].fd.name.str = mr_unquote (&$1); }
+| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->ptrs->ra.data[mr_load->parent].last_child].fd.name.str = strndup ($1.substr.data, $1.substr.size); }
 
 %%
 

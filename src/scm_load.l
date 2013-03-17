@@ -19,7 +19,6 @@
 
    static char * unquote (char*, int);
    static char * encode_char (char*, int);
-   static char * encode_bitmask (char*, int);
 %}
 
 WS	[[:space:]]*
@@ -27,25 +26,19 @@ ID	[_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER (0x|0X)[[:xdigit:]]+
 NUMBER {INT_NUMBER}|{HEX_NUMBER}
-NUMBER_OR_ID {NUMBER}|{ID}
 FLOAT_NAN [+-]?[Nn][Aa][Nn]
 FLOAT_INF [+-]?[Ii][Nn][Ff]
-FLOAT_VAL {INT_NUMBER}|{INT_NUMBER}"."[[:digit:]]*
-FLOAT_EXP_VAL {FLOAT_VAL}[eE]{INT_NUMBER}
-FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{FLOAT_VAL}|{FLOAT_EXP_VAL}
-IMAGENARY_NUMBER {FLOAT_NUMBER}"i"
-COMPLEX_NUMBER {FLOAT_NUMBER}|{IMAGENARY_NUMBER}|{FLOAT_NUMBER}{WS}"+"{WS}{IMAGENARY_NUMBER}|{IMAGENARY_NUMBER}{WS}"+"{WS}{FLOAT_NUMBER}
+FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?
+IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 %%
 
 [[:space:]]+  { return (TOK_SCM_WS); }
 
-{NUMBER}|{FLOAT_NUMBER}|{COMPLEX_NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
+{NUMBER}|{FLOAT_NUMBER}|{IMAGENARY_NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
 
 #f { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_SCM_VALUE); }
 
 {ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_ID); }
-
-"("{WS}"bit-or"{WS}{NUMBER_OR_ID}([[:space:]]+{NUMBER_OR_ID})*{WS}")" { mr_set_lval (&yylval->string, yytext, encode_bitmask); return (TOK_SCM_VALUE); }
 
 "\""([^\"\\]|\\.)*"\"" { mr_set_lval (&yylval->string, yytext, unquote); return (TOK_SCM_VALUE); }
 
@@ -127,77 +120,6 @@ static char * unquote (char * str, int length)
     }
   str_[length_] = 0;
   return (str_);
-}
-
-static int
-tokenize (char * str, int length, void (*handler) (char * token, int token_size, int token_count, void * context), void * context)
-{
-  int tok_count = 0;
-  char * end = strchr (str, ')');
-  if (NULL == end)
-    end = &str[length];
-  while (str < end)
-    {
-      char * tok;
-      while (isspace (*str))
-	str++;
-      tok = str;
-      while (!isspace (*tok) && (')' != *tok))
-	tok++;
-      if (tok != str)
-	handler (str, tok - str, tok_count++, context);
-      str = tok;
-    }
-  return (tok_count);
-}
-
-static void
-calc_size (char * tok, int tok_size, int tok_count, void * context)
-{
-  int * size_ptr = context;
-  if (tok_count > 0)
-    *size_ptr += sizeof (MR_BITMASK_OR_DELIMITER) - 1;
-  *size_ptr += tok_size;
-}
-
-static void
-append (char * tok, int tok_size, int tok_count, void * context)
-{
-  char ** end_ptr = context;
-  if (tok_count > 0)
-    {
-      memcpy (*end_ptr, MR_BITMASK_OR_DELIMITER, sizeof (MR_BITMASK_OR_DELIMITER) - 1);
-      *end_ptr += sizeof (MR_BITMASK_OR_DELIMITER) - 1;
-    }
-  memcpy (*end_ptr, tok, tok_size);
-  *end_ptr += tok_size;
-}
-
-static char *
-encode_bitmask (char * str, int length)
-{
-  int size = 0;
-  char * bitmask;
-  char * end;
-
-  str = strstr (str, MR_SCM_BIT_OR);
-  if (NULL == str)
-    return (NULL);
-  str += sizeof (MR_SCM_BIT_OR) - 1;
-
-  tokenize (str, length, calc_size, &size);
-
-  bitmask = MR_MALLOC (size + 1);
-  if (NULL == bitmask)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
-  end = bitmask;
-
-  tokenize (str, length, append, &end);
-  *end = 0;
-  return (bitmask);
 }
 
 static char *

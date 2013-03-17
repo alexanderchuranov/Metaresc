@@ -39,17 +39,8 @@
 }
 
 /* Bison declarations.  */
-%token <string> TOK_XML_OPEN_TAG
-%token <string> TOK_XML_CLOSE_TAG
-%token <string> TOK_XML_CLOSE_EMPTY_TAG
-%token <string> TOK_XML_CONTENT
-%token <string> TOK_XML_ID
-%token <string> TOK_XML_PROP_VALUE
-%token TOK_XML_DOC_OPEN_TAG
-%token TOK_XML_DOC_CLOSE_TAG
-%token TOK_XML_WS
-%token TOK_XML_ASSIGN
-%token TOK_XML_ERROR
+%token <string> TOK_XML_OPEN_TAG TOK_XML_CLOSE_TAG TOK_XML_CLOSE_EMPTY_TAG TOK_XML_CONTENT TOK_XML_ID TOK_XML_PROP_VALUE
+%token TOK_XML_DOC_OPEN_TAG TOK_XML_DOC_CLOSE_TAG TOK_XML_WS TOK_XML_ASSIGN TOK_XML_ERROR
 
 %start xml
 
@@ -80,8 +71,10 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.substr.size -= i + 1;
       $2.substr.data += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = mr_unquote (&$2);
-  mr_load->ptrs->ra.data[mr_load->parent].value = MR_STRDUP ("");
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.substr.data, $2.substr.size);
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.substr.data = NULL;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.substr.size = 0;
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
 }
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {
@@ -111,8 +104,9 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.substr.size -= i + 1;
       $2.substr.data += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = mr_unquote (&$2);
-  mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$4);;
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.substr.data, $2.substr.size);
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = $4;
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
  }
 

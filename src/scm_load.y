@@ -76,8 +76,8 @@ value:
 compaund
 | named_node
 | TOK_SCM_HASH compaund
-| TOK_SCM_VALUE { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$1); }
-| TOK_SCM_ID { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].value = mr_unquote (&$1); }
+| TOK_SCM_VALUE { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_INT; }
+| TOK_SCM_ID { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_INT; }
 
 compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS
 
@@ -87,7 +87,7 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   int parent = mr_load->ptrs->ra.data[self].parent;
   int prev = mr_load->ptrs->ra.data[self].prev;
   int child = mr_load->ptrs->ra.data[self].first_child;
-  char * name = mr_unquote (&$4);
+  char * name = strndup ($4.substr.data, $4.substr.size);
   if (parent >= 0)
     {
       if (mr_load->ptrs->ra.data[parent].first_child == self)

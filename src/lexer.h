@@ -24,28 +24,6 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_ra_mr_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 
-TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
-		RARRAY (char, substr, "substring descriptor"),
-		(char *, unquote, (char *, int), "unquote handler"),
-		)
-
-TYPEDEF_ENUM (mr_value_type_t,
-	      (MR_VT_INT, , "vt_int"),
-	      (MR_VT_FLOAT, , "vt_float"),
-	      (MR_VT_COMPLEX, , "vt_complex"),
-	      (MR_VT_STRING, , "vt_string"),
-	      )
-
-TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
-		(mr_value_type_t, value_type),
-		ANON_UNION (),
-		long long int vt_int,
-		long double vt_float,
-		complex long double vt_complex,
-		(mr_substr_t, string),
-		END_ANON_UNION ("value_type"),
-		)
-
 #define MR_PARSE_ERROR(ERROR_MSG, SCANNER, LANG) ({			\
       YYLTYPE * lloc = mr_## LANG ## _get_lloc (SCANNER);		\
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,	\
@@ -89,19 +67,6 @@ static inline int mr_substrcmp (char * str, mr_substr_t * substr)
   if (str_len != substr->substr.size)
     return (str_len - substr->substr.size);
   return (strncmp (str, substr->substr.data, str_len));
-}
-
-static inline char * mr_unquote (mr_substr_t * substr)
-{
-  if (NULL == substr->substr.data)
-    return (NULL);
-  else
-    {
-      if (substr->unquote)
-	return (substr->unquote (substr->substr.data, substr->substr.size));
-      else
-	return (strndup (substr->substr.data, substr->substr.size));
-    }
 }
 
 static inline void mr_get_id (mr_substr_t * substr, char * start)

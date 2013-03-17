@@ -77,6 +77,8 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_INVALID_INDEX, , "Invalid index for internal representation."),
 	      (MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA, , "Unexpected data for string save."),
 	      (MR_MESSAGE_INCORRECT_HASH_SIZE, , "Incorrect hash size %d."),
+	      (MR_MESSAGE_WRONG_RESULT_TYPE, , "Wrong result type."),
+	      (MR_MESSAGE_DIVISION_BY_ZERO, , "Division by zero."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -288,6 +290,31 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 		(mr_fd_t *, fdp, , "discriminated union field descriptor"),
 		)
 
+TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
+		RARRAY (char, substr, "substring descriptor"),
+		(char *, unquote, (char *, int), "unquote handler"),
+		)
+
+TYPEDEF_ENUM (mr_value_type_t,
+	      (MR_VT_UNKNOWN, = 0, "vt_string"),
+	      (MR_VT_INT, , "vt_int"),
+	      (MR_VT_FLOAT, , "vt_float"),
+	      (MR_VT_COMPLEX, , "vt_complex"),
+	      (MR_VT_STRING, , "vt_string"),
+	      (MR_VT_CHAR, , "vt_string"),
+	      )
+
+TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
+		(mr_value_type_t, value_type),
+		ANON_UNION (),
+		NONE (uint8_t, vt_none),
+		long long int vt_int,
+		long double vt_float,
+		complex long double vt_complex,
+		(mr_substr_t, vt_string),
+		END_ANON_UNION ("value_type"),
+		)
+
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(void *, data, , "pointer on binary data"),
 		(mr_fd_t, fd, , "field descriptor"),
@@ -301,7 +328,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, next, , "next sibling index"),
 		(mr_ptrdes_flags_t, flags),
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
-		(char *, value, , "stringified value"),
+		(mr_value_t, mr_value),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
 		)

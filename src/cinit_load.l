@@ -8,15 +8,22 @@
 %option prefix="mr_cinit_"
 %{
 #include <string.h>
+#include <complex.h>
+#include <math.h>
 #include <ctype.h>
+#ifdef HAVE_DLFCN_H
+#define __USE_GNU
+#include <dlfcn.h>
+#endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
 #include <lexer.h>
 #include <cinit_load.tab.h>
 
-   static char * unquote (char*, int);
+   static char * unquote_str (char*, int);
    static char * unquote_char (char*, int);
    static void get_type (mr_substr_t*, char*);
+   static void mr_value_id (mr_value_t*, char*);
 
 %}
 
@@ -27,25 +34,45 @@ ID	[_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER (0x|0X)[[:xdigit:]]+
 NUMBER {INT_NUMBER}|{HEX_NUMBER}
-NUMBER_OR_ID {NUMBER}|{ID}
 FLOAT_NAN [+-]?[Nn][Aa][Nn]
 FLOAT_INF [+-]?[Ii][Nn][Ff]
-FLOAT_VAL {INT_NUMBER}|{INT_NUMBER}"."[[:digit:]]*
-FLOAT_EXP_VAL {FLOAT_VAL}[eE]{INT_NUMBER}
-FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{FLOAT_VAL}|{FLOAT_EXP_VAL}
-IMAGENARY_NUMBER {FLOAT_NUMBER}"i"
-COMPLEX_NUMBER {FLOAT_NUMBER}|{IMAGENARY_NUMBER}|{FLOAT_NUMBER}{WS}"+"{WS}{IMAGENARY_NUMBER}|{IMAGENARY_NUMBER}{WS}"+"{WS}{FLOAT_NUMBER}
+FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?
+IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 %%
 
 {WS}  { /* eat up whitespace */ }
 
-"NULL" { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_CINIT_VALUE); }
+"NULL" { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_CINIT_STRING); }
+"FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = FALSE; return (TOK_CINIT_NUMBER); }
+"TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = TRUE; return (TOK_CINIT_NUMBER); }
+"I" { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = I; return (TOK_CINIT_NUMBER); }
 
-{NUMBER}|{FLOAT_NUMBER}|{COMPLEX_NUMBER}|{ID}|({NUMBER_OR_ID}{WS}"|"{WS})*{NUMBER_OR_ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_CINIT_VALUE); }
+{NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtol (yytext, NULL, 0); return (TOK_CINIT_NUMBER); }
+{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_CINIT_NUMBER); }
+{IMAGENARY_NUMBER} {
+  yylval->value.value_type = MR_VT_COMPLEX;
+  __real__ yylval->value.vt_complex = 0;
+  __imag__ yylval->value.vt_complex = strtold (yytext, NULL);
+  return (TOK_CINIT_NUMBER);
+}
 
-"\""([^\"\\]|\\.)*"\"" { mr_set_lval (&yylval->string, yytext, unquote); return (TOK_CINIT_VALUE); }
+{ID} { mr_value_id (&yylval->value, yytext); }
 
-"\'"([^\'\\]|\\.)*"\'" { mr_set_lval (&yylval->string, yytext, unquote_char); return (TOK_CINIT_VALUE); }
+"\""([^\"\\]|\\.)*"\"" {
+  yylval->value.value_type = MR_VT_STRING;
+  yylval->value.vt_string.substr.data = yytext;
+  yylval->value.vt_string.substr.size = strlen (yytext);
+  yylval->value.vt_string.unquote = unquote_str;
+  return (TOK_CINIT_STRING);
+}
+
+"\'"([^\'\\]|\\.)*"\'" {
+  yylval->value.value_type = MR_VT_CHAR;
+  yylval->value.vt_string.substr.data = yytext;
+  yylval->value.vt_string.substr.size = strlen (yytext);
+  yylval->value.vt_string.unquote = unquote_char;
+  return (TOK_CINIT_STRING);
+}
 
 "."{WS}{ID}{WS}"=" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
@@ -63,8 +90,19 @@ COMPLEX_NUMBER {FLOAT_NUMBER}|{IMAGENARY_NUMBER}|{FLOAT_NUMBER}{WS}"+"{WS}{IMAGE
 <in_comment>\n
 <in_comment>"*"+"/"       { BEGIN(INITIAL); }
 
+"+"       { return (TOK_CINIT_PLUS); }
+"-"       { return (TOK_CINIT_MINUS); }
+"*"       { return (TOK_CINIT_MUL); }
+"/"       { return (TOK_CINIT_DIV); }
+"%"       { return (TOK_CINIT_MOD); }
+"|"       { return (TOK_CINIT_BIT_OR); }
+"&"       { return (TOK_CINIT_BIT_AND); }
+"^"       { return (TOK_CINIT_BIT_XOR); }
+
 "{"       { return (TOK_CINIT_LBRACE); }
 "}"       { return (TOK_CINIT_RBRACE); }
+"("       { return (TOK_CINIT_LPAREN); }
+")"       { return (TOK_CINIT_RPAREN); }
 "["       { return (TOK_CINIT_LBRACKET); }
 "]"       { return (TOK_CINIT_RBRACKET); }
 ","       { return (TOK_CINIT_COMMA); }
@@ -84,7 +122,8 @@ static int map[ESC_CHAR_MAP_SIZE] = {
   [(unsigned char)'\\'] = (unsigned char)'\\',
 };
 
-static char * unquote (char * str, int length)
+char *
+unquote_str (char * str, int length)
 {
   int length_ = 0;
   char * str_;
@@ -139,7 +178,8 @@ static char * unquote (char * str, int length)
   return (str_);
 }
 
-static char * unquote_char (char * str, int length)
+char *
+unquote_char (char * str, int length)
 {
   char * str_ = (char*)MR_MALLOC (length - 1);
 
@@ -178,3 +218,22 @@ static void get_type (mr_substr_t * substr, char * start)
   substr->unquote = NULL;
 }
 
+static void mr_value_id (mr_value_t * result, char * id)
+{
+  mr_fd_t * fdp = mr_get_enum_by_name (id);
+  result->value_type = MR_VT_INT;
+  result->vt_int = 0;
+  if (fdp != NULL)
+    result->vt_int = fdp->param.enum_value;
+  else
+    {
+      void * func = NULL;
+#ifdef HAVE_LIBDL
+      func = dlsym (RTLD_DEFAULT, value);
+#endif /* HAVE_LIBDL */
+      if (NULL == func)
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, id);
+      else
+	result->vt_int = (long)func;
+    }
+}

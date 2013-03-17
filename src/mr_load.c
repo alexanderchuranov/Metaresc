@@ -15,6 +15,7 @@
 #include <metaresc.h>
 #include <mr_ic.h>
 #include <mr_load.h>
+#include <mr_value.h>
 
 TYPEDEF_FUNC (int, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
 
@@ -84,87 +85,6 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 }
 
 /**
- * Read enum value from string
- * @param data pointer on place to save value
- * @param str string with enum
- * @return A pointer on the rest of parsed string
- */
-static char *
-mr_get_enum (uint64_t * data, char * str)
-{
-  char * name = str;
-  int size;
-
-  while (isalnum (*str) || (*str == '_'))
-    ++str;
-  size = str - name;
-
-  {
-    char name_[size + 1];
-    mr_fd_t * fdp;
-    memcpy (name_, name, size);
-    name_[size] = 0;
-
-    fdp = mr_get_enum_by_name (name_);
-    if (fdp)
-      {
-	*data = fdp->param.enum_value;
-	return (str);
-      }
-
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
-    return (NULL);
-  }
-}
-
-/**
- * Read int value from string (may be as ENUM)
- * @param data pointer on place to save int
- * @param str string with int
- * @return A pointer on the rest of parsed string
- */
-static char *
-mr_get_int (uint64_t * data, char * str)
-{
-  int offset;
-  while (isspace (*str))
-    ++str;
-  if (isalpha (*str))
-    str = mr_get_enum (data, str);
-  else if ('0' == *str)
-    {
-      if ('x' == str[1])
-	{
-	  if (1 != sscanf (str, "%" SCNx64 "%n", data, &offset))
-	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
-	      return (NULL);
-	    }
-	}
-      else
-	{
-	  if (1 != sscanf (str, "%" SCNo64 "%n", data, &offset))
-	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
-	      return (NULL);
-	    }
-	}
-      str += offset;
-    }
-  else
-    {
-      if ((1 == sscanf (str, "%" SCNu64 "%n", data, &offset)) || (1 == sscanf (str, "%" SCNd64 "%n", data, &offset)))
-	str += offset;
-      else
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
-	  return (NULL);
-	}
-    }
-  return (str);
-}
-
-/**
  * MR_NONE load handler (dummy)
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
@@ -177,30 +97,6 @@ mr_load_none (int idx, mr_load_data_t * mr_load_data)
 }
 
 /**
- * MR_BOOL load handler
- * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read (0 - failure, !0 - success)
- */
-static int
-mr_load_bool (int idx, mr_load_data_t * mr_load_data)
-{
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-  if (NULL == str)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (0);
-    }
-  if (0 == strcmp (str, "FALSE"))
-    *(bool*)mr_load_data->ptrs.ra.data[idx].data = FALSE;
-  else if (0 == strcmp (str, "TRUE"))
-    *(bool*)mr_load_data->ptrs.ra.data[idx].data = TRUE;
-  else
-    return (0);
-  return (!0);
-}
-
-/**
  * MR_INTEGER load handler
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
@@ -209,65 +105,70 @@ mr_load_bool (int idx, mr_load_data_t * mr_load_data)
 static int
 mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-  uint64_t value;
-
-  if (NULL == str)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, mr_load_data->ptrs.ra.data[idx].value);
-      return (0);
-    }
-  str = mr_get_int (&value, str);
-  if (str)
-    {
-      while (isspace (*str))
-	++str;
-    }
-  if ((NULL == str) || (*str != 0))
-    {
-      if (str)
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, mr_load_data->ptrs.ra.data[idx].value);
-      return (0);
-    }
-  memcpy (mr_load_data->ptrs.ra.data[idx].data, &value, mr_load_data->ptrs.ra.data[idx].fd.size);
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  
+  if (EXIT_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
+    return (0);
+  else
+    switch (ptrdes->fd.mr_type)
+      {
+      case MR_TYPE_BOOL:
+	*(bool*)ptrdes->data = ptrdes->mr_value.vt_int;
+	break;
+      case MR_TYPE_ENUM:
+      case MR_TYPE_INT8:
+      case MR_TYPE_UINT8:
+      case MR_TYPE_INT16:
+      case MR_TYPE_UINT16:
+      case MR_TYPE_INT32:
+      case MR_TYPE_UINT32:
+      case MR_TYPE_INT64:
+      case MR_TYPE_UINT64:
+	switch (ptrdes->fd.size)
+	  {
+	  case sizeof (uint8_t):
+	    *(uint8_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	    break;
+	  case sizeof (uint16_t):
+	    *(uint16_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	    break;
+	  case sizeof (uint32_t):
+	    *(uint32_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	    break;
+	  case sizeof (uint64_t):
+	    *(uint64_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	    break;
+	  default:
+	    memcpy (ptrdes->data, &ptrdes->mr_value.vt_int,
+		    MR_MIN (ptrdes->fd.size, sizeof (ptrdes->mr_value.vt_int)));
+	    break;
+	  }
+	break;
+      default:
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	return (0);
+      }
   return (!0);
 }
 
 /**
- * MR_ENUM load handler
+ * MR_FUNC load handler
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
-int
-mr_load_enum (int idx, mr_load_data_t * mr_load_data)
+static int
+mr_load_func (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-  char * tail;
-  mr_td_t * tdp = mr_get_td_by_name (mr_load_data->ptrs.ra.data[idx].fd.type);
-  mr_fd_t * fdp;
-
-  if (NULL == str)
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  
+  if (MR_VT_INT != ptrdes->mr_value.value_type)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_ENUM, mr_load_data->ptrs.ra.data[idx].value);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);
       return (0);
     }
-  if (tdp)
-    {
-      while (isspace (*str))
-	++str;
-      tail = &str[strlen (str) - 1];
-      while ((tail > str) && isspace (*tail))
-	--tail;
-      *++tail = 0;
-      fdp = mr_get_fd_by_name (tdp, str);
-      if (fdp)
-	{
-	  memcpy (mr_load_data->ptrs.ra.data[idx].data, &fdp->param.enum_value, mr_load_data->ptrs.ra.data[idx].fd.size);
-	  return (!0);
-	}
-    }
-  return (mr_load_integer (idx, mr_load_data));
+  *(void**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
+  return (!0);
 }
 
 /**
@@ -282,156 +183,84 @@ mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
   uint64_t value = 0;
-  char * str = mr_get_int (&value, ptrdes->value);
 
-  if ((NULL == str) || (*str != 0))
-    {
-      if (str)
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, ptrdes->value);
-      return (0);
-    }
+  if (EXIT_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
+    value = ptrdes->mr_value.vt_int;
+  else
+    return (0);
 
   return (EXIT_SUCCESS == mr_load_bitfield_value (ptrdes, &value));
 }
 
-/**
- * MR_BITMASK load handler. Handles logical OR operation.
- * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read (0 - failure, !0 - success)
- */
-int
-mr_load_bitmask (int idx, mr_load_data_t * mr_load_data)
+static int
+mr_load_float (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-  int64_t value = 0;
-
-  if (NULL == str)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_BITMASK, mr_load_data->ptrs.ra.data[idx].value);
-      return (0);
-    }
-  for (;;)
-    {
-      uint64_t bit;
-      str = mr_get_int (&bit, str);
-      if (NULL == str)
-	return (0);
-      value |= bit;
-      while (isspace (*str))
-	++str;
-      if (*str != '|')
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  if (EXIT_SUCCESS != mr_value_cast (MR_VT_FLOAT, &ptrdes->mr_value))
+    return (0);
+  else
+    switch (ptrdes->fd.mr_type)
+      {
+      case MR_TYPE_FLOAT:
+	*(float*)ptrdes->data = ptrdes->mr_value.vt_float;
 	break;
-      ++str;
-    }
-  if (*str != 0)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_BITMASK, mr_load_data->ptrs.ra.data[idx].value);
-      return (0);
-    }
-  memcpy (mr_load_data->ptrs.ra.data[idx].data, &value, mr_load_data->ptrs.ra.data[idx].fd.size);
+      case MR_TYPE_DOUBLE:
+	*(double*)ptrdes->data = ptrdes->mr_value.vt_float;
+	break;
+      case MR_TYPE_LONG_DOUBLE:
+	*(long double*)ptrdes->data = ptrdes->mr_value.vt_float;
+	break;
+      default:
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	return (0);
+      }
   return (!0);
 }
 
-/**
- * MR_FLOAT, MR_DOUBLE, MR_LONG_DOUBLE load handler.
- */
-#define MR_LOAD_FLOAT_TYPE(TYPE, FORMAT, ERROR_ENUM)			\
-  static int								\
-  mr_load_ ## TYPE (int idx, mr_load_data_t * mr_load_data)		\
-  {									\
-    char * str = mr_load_data->ptrs.ra.data[idx].value;			\
-    int offset;								\
-    if (NULL == str)							\
-      {									\
-	MR_MESSAGE (MR_LL_ERROR, ERROR_ENUM, mr_load_data->ptrs.ra.data[idx].value); \
-	return (0);							\
-      }									\
-    if (1 != sscanf (str, FORMAT "%n", (TYPE*)mr_load_data->ptrs.ra.data[idx].data, &offset)) \
-      {									\
-	MR_MESSAGE (MR_LL_ERROR, ERROR_ENUM, mr_load_data->ptrs.ra.data[idx].value); \
-	return (0);							\
-      }									\
-    str += offset;							\
-    while (isspace (*str))						\
-      ++str;								\
-    if (*str != 0)							\
-      {									\
-	MR_MESSAGE (MR_LL_ERROR, ERROR_ENUM, mr_load_data->ptrs.ra.data[idx].value); \
-	return (0);							\
-      }									\
-    return (!0);							\
-  }
-
-MR_LOAD_FLOAT_TYPE (float, "%f", MR_MESSAGE_READ_FLOAT)
-MR_LOAD_FLOAT_TYPE (double, "%lg", MR_MESSAGE_READ_DOUBLE)
-MR_LOAD_FLOAT_TYPE (long_double_t, "%Lg", MR_MESSAGE_READ_LONG_DOUBLE)
-
 static int
-mr_load_complex_long_double (int idx, mr_load_data_t * mr_load_data, complex long double * x)
+mr_load_complex (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-  int offset;
-  long double real, imag;
-  if (NULL == str)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, mr_load_data->ptrs.ra.data[idx].value);
-      return (0);
-    }
-  if (2 != sscanf (str, "%Lg + %Lgi%n", &real, &imag, &offset))
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, mr_load_data->ptrs.ra.data[idx].value);
-      return (0);
-    }
-  __real__ *x = real;
-  __imag__ *x = imag;
-  str += offset;
-  while (isspace (*str))
-    ++str;
-  if (*str != 0)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, mr_load_data->ptrs.ra.data[idx].value);
-      return (0);
-    }
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  if (EXIT_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->mr_value))
+    return (0);
+  else
+    switch (ptrdes->fd.mr_type)
+      {
+      case MR_TYPE_COMPLEX_FLOAT:
+	*(complex float*)ptrdes->data = ptrdes->mr_value.vt_complex;
+	break;
+      case MR_TYPE_COMPLEX_DOUBLE:
+	*(complex double*)ptrdes->data = ptrdes->mr_value.vt_complex;
+	break;
+      case MR_TYPE_COMPLEX_LONG_DOUBLE:
+	*(complex long double*)ptrdes->data = ptrdes->mr_value.vt_complex;
+	break;
+      default:
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	return (0);
+      }
   return (!0);
 }
 
-#define MR_LOAD_COMPLEX(TYPE)						\
-  static int mr_load_complex_ ## TYPE (int idx, mr_load_data_t * mr_load_data) { \
-    complex long double x;						\
-    int status = mr_load_complex_long_double (idx, mr_load_data, &x);	\
-    if (!status)							\
-      return (status);							\
-    *(complex TYPE*)mr_load_data->ptrs.ra.data[idx].data = x;		\
-    return (!0);							\
-  }
-
-MR_LOAD_COMPLEX (float);
-MR_LOAD_COMPLEX (double);
-
-static int mr_load_complex_long_double_t (int idx, mr_load_data_t * mr_load_data)
-{ 
-  return (mr_load_complex_long_double (idx, mr_load_data, (complex long double*)mr_load_data->ptrs.ra.data[idx].data));
+static inline char *
+mr_unquote (mr_substr_t * substr)
+{
+  if (NULL == substr->substr.data)
+    return (NULL);
+  else
+    {
+      if (substr->unquote)
+	return (substr->unquote (substr->substr.data, substr->substr.size));
+      else
+	return (strndup (substr->substr.data, substr->substr.size));
+    }
 }
 
-/**
- * MR_CHAR load handler. Handles nonprint characters in octal format.
- * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read (0 - failure, !0 - success)
- */
 static int
-mr_load_char (int idx, mr_load_data_t * mr_load_data)
+mr_get_char (char * str, char * result)
 {
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-
-  if (NULL == str)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
-      return (0);
-    }
-  else if ((0 == *str) || (0 == str[1]))
-    *(char*)mr_load_data->ptrs.ra.data[idx].data = str[0];
+  if ((0 == str[0]) || (0 == str[1]))
+    *result = str[0];
   else if ('\\' != *str)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
@@ -451,9 +280,47 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
 	  return (0);
 	}
-      *(char*)mr_load_data->ptrs.ra.data[idx].data = val;
+      *result = val;
     }
   return (!0);
+}
+
+/**
+ * MR_CHAR load handler. Handles nonprint characters in octal format.
+ * @param idx node index
+ * @param mr_load_data structures that holds context of loading
+ * @return Status of read (0 - failure, !0 - success)
+ */
+static int
+mr_load_char (int idx, mr_load_data_t * mr_load_data)
+{
+  int status = !0;
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  
+  switch (ptrdes->mr_value.value_type)
+    {
+    case MR_VT_UNKNOWN:
+    case MR_VT_CHAR:
+      {
+	char * str = mr_unquote (&ptrdes->mr_value.vt_string);
+	if (str == NULL)
+	  status = 0;
+	else
+	  {
+	    status = mr_get_char (str, ptrdes->data);
+	    MR_FREE (str);
+	  }
+	break;
+      }
+    default:
+      if (EXIT_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
+	*(char*)ptrdes->data = ptrdes->mr_value.vt_int;
+      else
+	status = 0;
+      break;
+    }
+
+  return (status);
 }
 
 /**
@@ -465,11 +332,14 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
 static int
 mr_load_string (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-  if ((mr_load_data->ptrs.ra.data[idx].flags.is_null) || (mr_load_data->ptrs.ra.data[idx].ref_idx >= 0))
-    *(char**)mr_load_data->ptrs.ra.data[idx].data = NULL;
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  if (ptrdes->flags.is_null || (ptrdes->ref_idx >= 0))
+    *(char**)ptrdes->data = NULL;
+  else if ((MR_VT_STRING == ptrdes->mr_value.value_type) ||
+	   (MR_VT_UNKNOWN == ptrdes->mr_value.value_type))
+    *(char**)ptrdes->data = mr_unquote (&ptrdes->mr_value.vt_string);
   else
-    *(char**)mr_load_data->ptrs.ra.data[idx].data = str ? MR_STRDUP (str) : NULL;
+    return (0);
   return (!0);
 }
 
@@ -483,74 +353,44 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
 static int
 mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 {
-  char * str = mr_load_data->ptrs.ra.data[idx].value;
-  int max_size = mr_load_data->ptrs.ra.data[idx].fd.param.array_param.count * mr_load_data->ptrs.ra.data[idx].fd.size;
-  if (str)
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  int max_size = ptrdes->fd.param.array_param.count * ptrdes->fd.size;
+  int status = 0;
+  
+  memset (ptrdes->data, 0, max_size);
+  if ((MR_VT_STRING == ptrdes->mr_value.value_type) ||
+      (MR_VT_UNKNOWN == ptrdes->mr_value.value_type))
     {
-      int str_len = strlen (str);
-      if ((0 == strcmp (mr_load_data->ptrs.ra.data[idx].fd.type, "string_t")) &&
-	  (mr_load_data->ptrs.ra.data[idx].parent >= 0) &&
-	  (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].fd.mr_type_ext))
+      char * str = mr_unquote (&ptrdes->mr_value.vt_string);
+      if (NULL != str)
 	{
-	  void * data = MR_REALLOC (mr_load_data->ptrs.ra.data[idx].data, str_len + 1);
-	  mr_load_data->ptrs.ra.data[idx].data = data;
-	  *(void**)mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].data = data;
-	  if (NULL == data)
+	  int str_len = strlen (str);
+	  status = !0;
+	  if ((0 == strcmp (ptrdes->fd.type, "string_t")) &&
+	      (ptrdes->parent >= 0) &&
+	      (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[ptrdes->parent].fd.mr_type_ext))
 	    {
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      return (0);
+	      ptrdes->data = MR_REALLOC (ptrdes->data, str_len + 1);
+	      *(void**)mr_load_data->ptrs.ra.data[ptrdes->parent].data = ptrdes->data;
+	      if (NULL == ptrdes->data)
+		{
+		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+		  status = 0;
+		}
 	    }
+	  else if (str_len >= max_size)
+	    {
+	      str[max_size - 1] = 0;
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
+	    }
+	  if (ptrdes->data)
+	    strcpy (ptrdes->data, str);
+	  MR_FREE (str);
 	}
-      else if (str_len >= max_size)
-	{
-	  str[max_size - 1] = 0;
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
-	}
-      strcpy (mr_load_data->ptrs.ra.data[idx].data, str);
     }
   else
-    *(char*)mr_load_data->ptrs.ra.data[idx].data = 0;
-  return (!0);
-}
-
-/**
- * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE load handler.
- * Pointer to function loader. It might be a symbol name or an integer casted to void*
- * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read (0 - failure, !0 - success)
- */
-int
-mr_load_func (int idx, mr_load_data_t * mr_load_data)
-{
-  char * value = mr_load_data->ptrs.ra.data[idx].value;
-  void * func = NULL;
-
-  *(void**)mr_load_data->ptrs.ra.data[idx].data = NULL;
-
-  if (MR_TRUE == mr_load_data->ptrs.ra.data[idx].flags.is_null)
-    return (!0);
-  if (NULL == value)
-    return (!0);
-  if (0 == value[0])
-    return (!0);
-
-  if (isdigit (value[0]))
-    return (mr_load_integer (idx, mr_load_data));
-
-#ifdef HAVE_LIBDL
-  func = dlsym (RTLD_DEFAULT, value);
-  if (NULL == func)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_FUNC_FAILED, mr_load_data->ptrs.ra.data[idx].fd.name.str);
-      return (0);
-    }
-  *(void**)mr_load_data->ptrs.ra.data[idx].data = func;
-  return (!0);
-#else /* ! HAVE_LIBDL */
-  return (0);
-#endif /* HAVE_LIBDL */
-
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
+  return (status);
 }
 
 static mr_fd_t *
@@ -850,15 +690,16 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
 static int
 mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
 {
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
   /*
     Anonimous unions in C init style saved as named field folowed by union itself. Named field has type of zero length static string and must be inited by empty string. Here is an example.
     .anon_union_79 = "", {
     .union_float = 3.1415927410,
     },
   */
-  int next = mr_load_data->ptrs.ra.data[idx].next;
-  if ((mr_load_data->ptrs.ra.data[idx].first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
-      mr_load_data->ptrs.ra.data[idx].value && (0 == mr_load_data->ptrs.ra.data[idx].value[0]) && /* content must be an empty string */
+  int next = ptrdes->next;
+  if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
+      (MR_VT_STRING == ptrdes->mr_value.value_type) && (0 == ptrdes->mr_value.vt_string.substr.size) && /* content must be an empty string */
       (next >= 0) && (NULL == mr_load_data->ptrs.ra.data[next].fd.name.str)) /* there should be a next node without name */
     {
       if (mr_load_data->ptrs.ra.data[idx].fd.name.str) /* sainity check - this field can't be NULL */
@@ -882,9 +723,6 @@ mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
       int i;
       for (i = 0; i < count; ++i)
 	{
-	  if (ptrs.ra.data[i].value)
-	    MR_FREE (ptrs.ra.data[i].value);
-	  ptrs.ra.data[i].value = NULL;
 	  if (ptrs.ra.data[i].fd.type)
 	    MR_FREE (ptrs.ra.data[i].fd.type);
 	  ptrs.ra.data[i].fd.type = NULL;
@@ -906,10 +744,10 @@ static mr_load_handler_t mr_load_handler[] =
   {
     [MR_TYPE_NONE] = mr_load_none,
     [MR_TYPE_VOID] = mr_load_none,
-    [MR_TYPE_ENUM] = mr_load_enum,
+    [MR_TYPE_ENUM] = mr_load_integer,
     [MR_TYPE_BITFIELD] = mr_load_bitfield,
-    [MR_TYPE_BITMASK] = mr_load_bitmask,
-    [MR_TYPE_BOOL] = mr_load_bool,
+    [MR_TYPE_BITMASK] = mr_load_integer,
+    [MR_TYPE_BOOL] = mr_load_integer,
     [MR_TYPE_INT8] = mr_load_integer,
     [MR_TYPE_UINT8] = mr_load_integer,
     [MR_TYPE_INT16] = mr_load_integer,
@@ -919,11 +757,11 @@ static mr_load_handler_t mr_load_handler[] =
     [MR_TYPE_INT64] = mr_load_integer,
     [MR_TYPE_UINT64] = mr_load_integer,
     [MR_TYPE_FLOAT] = mr_load_float,
-    [MR_TYPE_COMPLEX_FLOAT] = mr_load_complex_float,
-    [MR_TYPE_DOUBLE] = mr_load_double,
-    [MR_TYPE_COMPLEX_DOUBLE] = mr_load_complex_double,
-    [MR_TYPE_LONG_DOUBLE] = mr_load_long_double_t,
-    [MR_TYPE_COMPLEX_LONG_DOUBLE] = mr_load_complex_long_double_t,
+    [MR_TYPE_COMPLEX_FLOAT] = mr_load_complex,
+    [MR_TYPE_DOUBLE] = mr_load_float,
+    [MR_TYPE_COMPLEX_DOUBLE] = mr_load_complex,
+    [MR_TYPE_LONG_DOUBLE] = mr_load_float,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = mr_load_complex,
     [MR_TYPE_CHAR] = mr_load_char,
     [MR_TYPE_CHAR_ARRAY] = mr_load_char_array,
     [MR_TYPE_STRING] = mr_load_string,

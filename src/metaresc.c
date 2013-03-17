@@ -399,7 +399,7 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->flags.is_referenced = MR_FALSE;
   ptrdes->flags.is_content_reference = MR_FALSE;
   ptrdes->flags.is_opaque_data = MR_FALSE;
-  ptrdes->value = NULL;
+  ptrdes->mr_value.value_type = MR_VT_UNKNOWN;
   ptrdes->ext.ptr = NULL;
   ptrdes->ptr_type = NULL;
   return (ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1);
@@ -1066,8 +1066,11 @@ mr_auto_field_detect (mr_fd_t * fdp)
       [MR_TYPE_INT64] = sizeof (int64_t),
       [MR_TYPE_UINT64] = sizeof (uint64_t),
       [MR_TYPE_FLOAT] = sizeof (float),
+      [MR_TYPE_COMPLEX_FLOAT] = sizeof (complex float),
       [MR_TYPE_DOUBLE] = sizeof (double),
+      [MR_TYPE_COMPLEX_DOUBLE] = sizeof (complex double),
       [MR_TYPE_LONG_DOUBLE] = sizeof (long double),
+      [MR_TYPE_COMPLEX_LONG_DOUBLE] = sizeof (complex long double),
       [MR_TYPE_CHAR] = sizeof (char),
       [MR_TYPE_CHAR_ARRAY] = sizeof (char),
       [MR_TYPE_STRING] = sizeof (char*),

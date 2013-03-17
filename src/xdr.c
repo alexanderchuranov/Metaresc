@@ -691,6 +691,7 @@ xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
   return (status);
 }
 
+#if 0
 /**
  * Loads temporary string from XDR stream.
  * @param xdrs XDR stream descriptor
@@ -704,6 +705,7 @@ xdr_load_temp_string (XDR * xdrs, char ** str)
   mr_ra_mr_ptrdes_t ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_load_string (xdrs, 0, &ptrs));
 }
+#endif
 
 /**
  * Saves enum value as a string.
@@ -757,7 +759,8 @@ xdr_save_func (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static int
 xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  int status;
+  int status = 0;
+#if 0 //  FIXME
   mr_ptrdes_t ptrdes = { .fd = ptrs->ra.data[idx].fd, .data = ptrs->ra.data[idx].data, };
   mr_load_data_t mr_load_data = { .ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, } } };
 
@@ -784,6 +787,7 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 
   MR_FREE (ptrdes.value);
+#endif
 
   return (status);
 }
