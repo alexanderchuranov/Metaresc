@@ -14,5 +14,8 @@ MR_START_TEST (parse_int_zero, "parse int 1") { ASSERT_LOAD_TYPE (CINIT, int, 1)
 MR_START_TEST (parse_int_paren, "parse int x = (1)") { ASSERT_LOAD_TYPE (CINIT, int, (1)); } END_TEST
 MR_START_TEST (parse_int_sum, "parse int x = 1 + 1") { ASSERT_LOAD_TYPE (CINIT, int, 1 + 1); } END_TEST
 MR_START_TEST (parse_complex_sum, "parse float complex x = 1 + 1i") { ASSERT_LOAD_TYPE (CINIT, complex float, 1 + 1i); } END_TEST
+MR_START_TEST (parse_float_op1, "parse float x = (1. + 1i) / 2") { ASSERT_LOAD_TYPE (CINIT, float, (1. + 1i) / 2); } END_TEST
+MR_START_TEST (parse_float_op2, "parse float x = M_PI + 2 * M_E") { ASSERT_LOAD_TYPE (CINIT, float, 3.14159265358979323846 + 2 * 2.7182818284590452354); } END_TEST
+MR_START_TEST (parse_bits_op, "parse float x = 2 + 2 * 2") { ASSERT_LOAD_TYPE (CINIT, int, 7 & 5 * 8); } END_TEST
 
 MAIN ();

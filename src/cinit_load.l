@@ -109,7 +109,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 .         { return (TOK_CINIT_ERROR); }
 %%
 
-#define ESC_CHAR_MAP_SIZE (1 << 8)
+#define ESC_CHAR_MAP_SIZE (1 << CHAR_BIT)
 static int map[ESC_CHAR_MAP_SIZE] = {
   [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
   [(unsigned char)'f'] = (unsigned char)'\f',
