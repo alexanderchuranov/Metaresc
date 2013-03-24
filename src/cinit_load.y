@@ -18,6 +18,76 @@
 #include <cinit_load.tab.h>
 #include <cinit_load.lex.h>
 
+static char *
+unquote_str (mr_substr_t * substr)
+{
+  int length_ = 0;
+  char * str_;
+  int i;
+  static int map[1 << CHAR_BIT] = {
+    [0 ... (1 << CHAR_BIT) - 1] = -1,
+    [(unsigned char)'f'] = (unsigned char)'\f',
+    [(unsigned char)'n'] = (unsigned char)'\n',
+    [(unsigned char)'r'] = (unsigned char)'\r',
+    [(unsigned char)'t'] = (unsigned char)'\t',
+    [(unsigned char)'v'] = (unsigned char)'\v',
+    [(unsigned char)'\''] = (unsigned char)'\'',
+    [(unsigned char)'\"'] = (unsigned char)'\"',
+    [(unsigned char)'\\'] = (unsigned char)'\\',
+  };
+
+  if (NULL == substr->str)
+    return (NULL);
+
+  for (i = 1; i < substr->length - 1;)
+    {
+      if ('\\' == substr->str[i++])
+	{
+	  int c = map[(unsigned char)substr->str[i]];
+	  if (c > 0)
+	    ++i;
+	  else
+	    {
+	      int count = 3;
+	      while ((substr->str[i] >= '0') && (substr->str[i] < '8') && (--count >= 0))
+		++i;
+	    }
+	}
+      ++length_;
+    }
+  str_ = MR_MALLOC (length_ + 1);
+  if (NULL == str_)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (NULL);
+    }
+
+  length_ = 0;
+  for (i = 1; i < substr->length - 1; ++i)
+    {
+      if ('\\' == substr->str[i])
+	{
+	  int c = map[(unsigned char)substr->str[++i]];
+	  if (c > 0)
+	    str_[length_++] = c;
+	  else if (1 == sscanf (&substr->str[i], "%o", &c))
+	    {
+	      int count = 3;
+	      while ((substr->str[i] >= '0') && (substr->str[i] < '8') && (--count >= 0))
+		++i;
+	      --i;
+	      str_[length_++] = c;
+	    }
+	  else
+	    str_[length_++] = substr->str[i];
+	}
+      else
+	str_[length_++] = substr->str[i];
+    }
+  str_[length_] = 0;
+  return (str_);
+}
+
 %}
 
 %name-prefix="mr_cinit_"
@@ -60,7 +130,7 @@ cinit_stmt:
 casted_value
 | TOK_CINIT_ID_IVALUE cinit_stmt {
   mr_load_t * mr_load = MR_LOAD;
-  if ($1.id.substr.data && $1.id.substr.size)
+  if ($1.id.str && $1.id.length)
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
 	mr_load->ptrs->ra.data[mr_load->parent].ref_idx = $1.ivalue;
@@ -76,12 +146,12 @@ casted_value
 
 casted_value:
 value
-| TOK_CINIT_FIELD_CAST value { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].fd.type = strndup ($1.substr.data, $1.substr.size); }
+| TOK_CINIT_FIELD_CAST value { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].fd.type = strndup ($1.str, $1.length); }
 
 value:
 compaund
 | expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
-| TOK_CINIT_STRING { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
+| TOK_CINIT_STRING { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.str = unquote_str (&$1.vt_string); }
 
 expr:
 TOK_CINIT_NUMBER { $$ = $1; }
@@ -105,7 +175,7 @@ list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
 nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->ptrs->ra.data[mr_load->parent].last_child].fd.name.str = strndup ($1.substr.data, $1.substr.size); }
+| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->ptrs->ra.data[mr_load->parent].last_child].fd.name.str = strndup ($1.str, $1.length); }
 
 %%
 

@@ -58,7 +58,7 @@ scm_stmt:
 value
 | TOK_SCM_ID_IVALUE scm_stmt {
   mr_load_t * mr_load = MR_LOAD;
-  if ($1.id.substr.data && $1.id.substr.size)
+  if ($1.id.str && $1.id.length)
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
 	mr_load->ptrs->ra.data[mr_load->parent].ref_idx = $1.ivalue;
@@ -87,7 +87,7 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   int parent = mr_load->ptrs->ra.data[self].parent;
   int prev = mr_load->ptrs->ra.data[self].prev;
   int child = mr_load->ptrs->ra.data[self].first_child;
-  char * name = strndup ($4.substr.data, $4.substr.size);
+  char * name = strndup ($4.str, $4.length);
   if (parent >= 0)
     {
       if (mr_load->ptrs->ra.data[parent].first_child == self)

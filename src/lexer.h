@@ -64,9 +64,9 @@ static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
 static inline int mr_substrcmp (char * str, mr_substr_t * substr)
 {
   int str_len = strlen (str);
-  if (str_len != substr->substr.size)
-    return (str_len - substr->substr.size);
-  return (strncmp (str, substr->substr.data, str_len));
+  if (str_len != substr->length)
+    return (str_len - substr->length);
+  return (strncmp (str, substr->str, str_len));
 }
 
 static inline void mr_get_id (mr_substr_t * substr, char * start)
@@ -77,16 +77,8 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
   stop = start;
   while (isalnum (*stop) || ('_' == *stop))
     ++stop;
-  substr->substr.data = start;
-  substr->substr.size = stop - start;
-  substr->unquote = NULL;
-}
-
-static inline void mr_set_lval (mr_substr_t * substr, char * str, char * (*unquote_func) (char*, int))
-{
-  substr->substr.data = str;
-  substr->substr.size = (str ? strlen (str) : -1);
-  substr->unquote = unquote_func;
+  substr->str = start;
+  substr->length = stop - start;
 }
 
 #define YY_USER_ACTION ({			\

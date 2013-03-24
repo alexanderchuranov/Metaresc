@@ -79,6 +79,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_INCORRECT_HASH_SIZE, , "Incorrect hash size %d."),
 	      (MR_MESSAGE_WRONG_RESULT_TYPE, , "Wrong result type."),
 	      (MR_MESSAGE_DIVISION_BY_ZERO, , "Division by zero."),
+	      (MR_MESSAGE_UNEXPECTED_TARGET_TYPE, , "Unexpected target type for integer loading (%d)."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -290,9 +291,9 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 		(mr_fd_t *, fdp, , "discriminated union field descriptor"),
 		)
 
-TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring and postprocessor"),
-		RARRAY (char, substr, "substring descriptor"),
-		(char *, unquote, (char *, int), "unquote handler"),
+TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
+		(char *, str),
+		(int, length),
 		)
 
 TYPEDEF_ENUM (mr_value_type_t,

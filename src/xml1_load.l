@@ -22,24 +22,46 @@ ID	[_[:alpha:]][_[:alnum:]]*(:[_[:alpha:]][_[:alnum:]]*)?
 
 [[:space:]]+  { return (TOK_XML_WS); }
 
-{ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_XML_ID); }
+{ID} {
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
+  return (TOK_XML_ID);
+}
 
 [[:space:]]*"="[[:space:]]* { return (TOK_XML_ASSIGN); }
 
 "\""[^\"]*"\"" {
-  yylval->string.substr.data = &yytext[1];
-  yylval->string.substr.size = strlen (yytext) - 2;
-  yylval->string.unquote = NULL;
+  yylval->string.str = &yytext[1];
+  yylval->string.length = strlen (yytext) - 2;
   return (TOK_XML_PROP_VALUE);
 }
 
 "<?xml"  { return (TOK_XML_DOC_OPEN_TAG); }
 [[:space:]]*"?>"[^<]* { return (TOK_XML_DOC_CLOSE_TAG); }
 
-"<"{ID}  { mr_set_lval (&yylval->string, &yytext[1], NULL); return (TOK_XML_OPEN_TAG); }
-"</"{ID} { mr_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_XML_CLOSE_TAG); }
-[[:space:]]*"/>"[^<]* { mr_set_lval (&yylval->string, strchr (yytext, '>') + 1, NULL); return (TOK_XML_CLOSE_EMPTY_TAG); }
-[[:space:]]*">"[^<]* { mr_set_lval (&yylval->string, strchr (yytext, '>') + 1, xml_unquote_string); return (TOK_XML_CONTENT); }
+"<"{ID}  {
+  yylval->string.str = &yytext[1];
+  yylval->string.length = strlen (&yytext[1]);
+  return (TOK_XML_OPEN_TAG);
+}
+  
+"</"{ID} {
+  yylval->string.str = &yytext[2];
+  yylval->string.length = strlen (&yytext[2]);
+  return (TOK_XML_CLOSE_TAG);
+}
+  
+[[:space:]]*"/>"[^<]* {
+  yylval->string.str = strchr (yytext, '>') + 1;
+  yylval->string.length = strlen (yylval->string.str);
+  return (TOK_XML_CLOSE_EMPTY_TAG);
+}
+
+[[:space:]]*">"[^<]* {
+  yylval->string.str = strchr (yytext, '>') + 1;
+  yylval->string.length = strlen (yylval->string.str);
+  return (TOK_XML_CONTENT);
+}
 
 .         { return (TOK_XML_ERROR); }
 %%

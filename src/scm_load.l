@@ -17,8 +17,10 @@
 
 #define MR_SCM_BIT_OR "bit-or"
 
-   static char * unquote (char*, int);
-   static char * encode_char (char*, int);
+#define mr_set_lval(...)
+   
+   char * unquote (char*, int);
+   char * encode_char (char*, int);
 %}
 
 WS	[[:space:]]*
@@ -48,7 +50,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 
 ";"+{WS}"("{WS}{ID}[[:space:]]+[[:digit:]]+{WS}")"{WS} {
   mr_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
-  sscanf (&yylval->id_ivalue.id.substr.data[yylval->id_ivalue.id.substr.size], "%d", &yylval->id_ivalue.ivalue);
+  sscanf (&yylval->id_ivalue.id.str[yylval->id_ivalue.id.length], "%d", &yylval->id_ivalue.ivalue);
   return (TOK_SCM_ID_IVALUE); }
 
 ";"[^\n]*{WS}			  { }
@@ -65,7 +67,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 
 %%
 
-static char * unquote (char * str, int length)
+char * unquote (char * str, int length)
 {
   int length_ = 0;
   char * str_;
@@ -122,7 +124,7 @@ static char * unquote (char * str, int length)
   return (str_);
 }
 
-static char *
+char *
 encode_char (char * str, int length)
 {
   char * str_ = MR_MALLOC (2);

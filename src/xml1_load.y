@@ -18,12 +18,12 @@
 
   static inline int tail_is_not_blank (mr_substr_t * substr, int offset)
   {
-    if (offset > substr->substr.size)
+    if (offset > substr->length)
       return (!0);
-    for ( ; offset < substr->substr.size; ++offset)
-      if (!isspace (substr->substr.data[offset]))
+    for ( ; offset < substr->length; ++offset)
+      if (!isspace (substr->str[offset]))
 	break;
-    return (offset < substr->substr.size);
+    return (offset < substr->length);
   }
 %}
 
@@ -54,57 +54,57 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
   mr_load_t * mr_load = MR_LOAD;
   int i;
 
-  for (i = 0; i < $4.substr.size; ++i)
-    if (!isspace ($4.substr.data[i]))
+  for (i = 0; i < $4.length; ++i)
+    if (!isspace ($4.str[i]))
       break;
-  if (i < $4.substr.size)
+  if (i < $4.length)
     {
       mr_xml1_error ("Unexpected charecters after closing tag!");
       YYERROR;
     }
 
-  for (i = 0; i < $2.substr.size; ++i)
-    if (':' == $2.substr.data[i])
+  for (i = 0; i < $2.length; ++i)
+    if (':' == $2.str[i])
       break;
-  if (i < $2.substr.size)
+  if (i < $2.length)
     {
-      $2.substr.size -= i + 1;
-      $2.substr.data += i + 1;
+      $2.length -= i + 1;
+      $2.str += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.substr.data, $2.substr.size);
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
   mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.substr.data = NULL;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.substr.size = 0;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.str = NULL;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.length = 0;
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
 }
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {
   mr_load_t * mr_load = MR_LOAD;
   int i;
 
-  if (($2.substr.size != $6.substr.size) || (0 != strncmp ($2.substr.data, $6.substr.data, $2.substr.size)))
+  if (($2.length != $6.length) || (0 != strncmp ($2.str, $6.str, $2.length)))
     {
       mr_xml1_error ("Open and close tags names do not match!");
       YYERROR;
     }
 
-  for (i = 0; i < $7.substr.size; ++i)
-    if (!isspace ($7.substr.data[i]))
+  for (i = 0; i < $7.length; ++i)
+    if (!isspace ($7.str[i]))
       break;
-  if (i < $7.substr.size)
+  if (i < $7.length)
     {
       mr_xml1_error ("Unexpected charecters after closing tag!");
       YYERROR;
     }
 
-  for (i = 0; i < $2.substr.size; ++i)
-    if (':' == $2.substr.data[i])
+  for (i = 0; i < $2.length; ++i)
+    if (':' == $2.str[i])
       break;
-  if (i < $2.substr.size)
+  if (i < $2.length)
     {
-      $2.substr.size -= i + 1;
-      $2.substr.data += i + 1;
+      $2.length -= i + 1;
+      $2.str += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.substr.data, $2.substr.size);
+  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
   mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
   mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = $4;
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
@@ -121,17 +121,17 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
 
   if (0 == mr_substrcmp (MR_REF_IDX, &$3))
     {
-      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = "Can't read " MR_REF_IDX " property.";
     }
   else if (0 == mr_substrcmp (MR_REF, &$3))
     {
-      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = "Can't read " MR_REF " property.";
     }
   else if (0 == mr_substrcmp (MR_REF_CONTENT, &$3))
     {
-      if ((1 != sscanf ($5.substr.data, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = "Can't read " MR_REF " property.";
       else
 	mr_load->ptrs->ra.data[mr_load->parent].flags.is_content_reference = MR_TRUE;
