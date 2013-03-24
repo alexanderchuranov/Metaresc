@@ -184,11 +184,10 @@ mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
   uint64_t value = 0;
 
-  if (EXIT_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
-    value = ptrdes->mr_value.vt_int;
-  else
+  if (EXIT_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
     return (0);
 
+  value = ptrdes->mr_value.vt_int;
   return (EXIT_SUCCESS == mr_load_bitfield_value (ptrdes, &value));
 }
 
@@ -198,22 +197,22 @@ mr_load_float (int idx, mr_load_data_t * mr_load_data)
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
   if (EXIT_SUCCESS != mr_value_cast (MR_VT_FLOAT, &ptrdes->mr_value))
     return (0);
-  else
-    switch (ptrdes->fd.mr_type)
-      {
-      case MR_TYPE_FLOAT:
-	*(float*)ptrdes->data = ptrdes->mr_value.vt_float;
-	break;
-      case MR_TYPE_DOUBLE:
-	*(double*)ptrdes->data = ptrdes->mr_value.vt_float;
-	break;
-      case MR_TYPE_LONG_DOUBLE:
-	*(long double*)ptrdes->data = ptrdes->mr_value.vt_float;
-	break;
-      default:
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	return (0);
-      }
+
+  switch (ptrdes->fd.mr_type)
+    {
+    case MR_TYPE_FLOAT:
+      *(float*)ptrdes->data = ptrdes->mr_value.vt_float;
+      break;
+    case MR_TYPE_DOUBLE:
+      *(double*)ptrdes->data = ptrdes->mr_value.vt_float;
+      break;
+    case MR_TYPE_LONG_DOUBLE:
+      *(long double*)ptrdes->data = ptrdes->mr_value.vt_float;
+      break;
+    default:
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (0);
+    }
   return (!0);
 }
 
@@ -223,22 +222,22 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
   if (EXIT_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->mr_value))
     return (0);
-  else
-    switch (ptrdes->fd.mr_type)
-      {
-      case MR_TYPE_COMPLEX_FLOAT:
-	*(complex float*)ptrdes->data = ptrdes->mr_value.vt_complex;
-	break;
-      case MR_TYPE_COMPLEX_DOUBLE:
-	*(complex double*)ptrdes->data = ptrdes->mr_value.vt_complex;
-	break;
-      case MR_TYPE_COMPLEX_LONG_DOUBLE:
-	*(complex long double*)ptrdes->data = ptrdes->mr_value.vt_complex;
-	break;
-      default:
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	return (0);
-      }
+
+  switch (ptrdes->fd.mr_type)
+    {
+    case MR_TYPE_COMPLEX_FLOAT:
+      *(complex float*)ptrdes->data = ptrdes->mr_value.vt_complex;
+      break;
+    case MR_TYPE_COMPLEX_DOUBLE:
+      *(complex double*)ptrdes->data = ptrdes->mr_value.vt_complex;
+      break;
+    case MR_TYPE_COMPLEX_LONG_DOUBLE:
+      *(complex long double*)ptrdes->data = ptrdes->mr_value.vt_complex;
+      break;
+    default:
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (0);
+    }
   return (!0);
 }
 
@@ -247,13 +246,11 @@ mr_unquote (mr_substr_t * substr)
 {
   if (NULL == substr->substr.data)
     return (NULL);
-  else
-    {
-      if (substr->unquote)
-	return (substr->unquote (substr->substr.data, substr->substr.size));
-      else
-	return (strndup (substr->substr.data, substr->substr.size));
-    }
+
+  if (substr->unquote)
+    return (substr->unquote (substr->substr.data, substr->substr.size));
+
+  return (strndup (substr->substr.data, substr->substr.size));
 }
 
 static int
@@ -261,7 +258,7 @@ mr_get_char (char * str, char * result)
 {
   if ((0 == str[0]) || (0 == str[1]))
     *result = str[0];
-  else if ('\\' != *str)
+  else if ('\\' != str[0])
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
       return (0);

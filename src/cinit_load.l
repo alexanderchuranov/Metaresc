@@ -21,7 +21,6 @@
 #include <cinit_load.tab.h>
 
    static char * unquote_str (char*, int);
-   static char * unquote_char (char*, int);
    static void get_type (mr_substr_t*, char*);
    static void mr_value_id (mr_value_t*, char*);
 
@@ -47,7 +46,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 "TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = TRUE; return (TOK_CINIT_NUMBER); }
 "I" { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = I; return (TOK_CINIT_NUMBER); }
 
-{NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtol (yytext, NULL, 0); return (TOK_CINIT_NUMBER); }
+{NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (yytext, NULL, 0); return (TOK_CINIT_NUMBER); }
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_CINIT_NUMBER); }
 {IMAGENARY_NUMBER} {
   yylval->value.value_type = MR_VT_COMPLEX;
@@ -56,7 +55,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
   return (TOK_CINIT_NUMBER);
 }
 
-{ID} { mr_value_id (&yylval->value, yytext); }
+{ID} { mr_value_id (&yylval->value, yytext); return (TOK_CINIT_NUMBER); }
 
 "\""([^\"\\]|\\.)*"\"" {
   yylval->value.value_type = MR_VT_STRING;
@@ -70,7 +69,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
   yylval->value.value_type = MR_VT_CHAR;
   yylval->value.vt_string.substr.data = yytext;
   yylval->value.vt_string.substr.size = strlen (yytext);
-  yylval->value.vt_string.unquote = unquote_char;
+  yylval->value.vt_string.unquote = unquote_str;
   return (TOK_CINIT_STRING);
 }
 
@@ -175,30 +174,6 @@ unquote_str (char * str, int length)
 	str_[length_++] = str[i];
     }
   str_[length_] = 0;
-  return (str_);
-}
-
-char *
-unquote_char (char * str, int length)
-{
-  char * str_ = (char*)MR_MALLOC (length - 1);
-
-  if (NULL == str_)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
-  ++str;
-  if (('\\' == str[0]) && (map[(unsigned char)str[1]] > 0))
-    {
-      str_[0] = map[(unsigned char)str[1]];
-      str_[1] = 0;
-    }
-  else
-    {
-      memcpy (str_, str, length - 2);
-      str_[length - 2] = 0;
-    }
   return (str_);
 }
 
