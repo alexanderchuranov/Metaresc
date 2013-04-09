@@ -73,8 +73,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
     }
   mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
   mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.str = NULL;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.length = 0;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = NULL;
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
 }
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {
@@ -106,7 +105,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
     }
   mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
   mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = $4;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = xml_unquote_string (&$4);
   mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
  }
 

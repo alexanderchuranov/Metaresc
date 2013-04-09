@@ -108,8 +108,8 @@ unquote_str (mr_substr_t * substr)
 
 /* Bison declarations.  */
 %token <id_ivalue> TOK_CINIT_ID_IVALUE
-%token <value> TOK_CINIT_NUMBER TOK_CINIT_STRING
-%token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST
+%token <value> TOK_CINIT_NUMBER
+%token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST TOK_CINIT_STRING TOK_CINIT_CHAR
 %token TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_LBRACKET TOK_CINIT_RBRACKET TOK_CINIT_COMMA TOK_CINIT_ERROR
 
 %left TOK_CINIT_BIT_OR TOK_CINIT_BIT_AND TOK_CINIT_BIT_XOR
@@ -151,7 +151,26 @@ value
 value:
 compaund
 | expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
-| TOK_CINIT_STRING { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string.str = unquote_str (&$1.vt_string); }
+| TOK_CINIT_STRING {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_STRING;
+  }
+| TOK_CINIT_CHAR {
+  mr_load_t * mr_load = MR_LOAD;
+  char * vt_char_str = unquote_str (&$1);
+  char vt_char = 0;
+  if (vt_char_str)
+    {
+      int vt_char_str_length = strlen (vt_char_str);
+      vt_char = vt_char_str[0];
+      MR_FREE (vt_char_str);
+      if (vt_char_str_length > 1)
+	yyerror ("unexpected characters at char definition");
+    }
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_char = vt_char;
+  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_CHAR;
+  }
 
 expr:
 TOK_CINIT_NUMBER { $$ = $1; }

@@ -40,7 +40,12 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 
 {WS}  { /* eat up whitespace */ }
 
-"NULL" { yylval->value.value_type = MR_VT_STRING; yylval->value.vt_string.str = NULL; yylval->value.vt_string.length = 0; return (TOK_CINIT_STRING); }
+"NULL" {
+  yylval->string.str = NULL;
+  yylval->string.length = 0;
+  return (TOK_CINIT_STRING);
+}
+
 "FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = FALSE; return (TOK_CINIT_NUMBER); }
 "TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = TRUE; return (TOK_CINIT_NUMBER); }
 "I" { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = I; return (TOK_CINIT_NUMBER); }
@@ -57,17 +62,15 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 {ID} { mr_value_id (&yylval->value, yytext); return (TOK_CINIT_NUMBER); }
 
 "\""([^\"\\]|\\.)*"\"" {
-  yylval->value.value_type = MR_VT_STRING;
-  yylval->value.vt_string.str = yytext;
-  yylval->value.vt_string.length = strlen (yytext);
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
   return (TOK_CINIT_STRING);
 }
 
 "\'"([^\'\\]|\\.)*"\'" {
-  yylval->value.value_type = MR_VT_CHAR;
-  yylval->value.vt_string.str = yytext;
-  yylval->value.vt_string.length = strlen (yytext);
-  return (TOK_CINIT_STRING);
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
+  return (TOK_CINIT_CHAR);
 }
 
 "."{WS}{ID}{WS}"=" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }

@@ -312,7 +312,8 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		long long int vt_int,
 		long double vt_float,
 		complex long double vt_complex,
-		(mr_substr_t, vt_string),
+		string_t vt_string,
+		char vt_char,
 		END_ANON_UNION ("value_type"),
 		)
 

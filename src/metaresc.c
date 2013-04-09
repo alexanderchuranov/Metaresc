@@ -17,6 +17,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <limits.h>
+#include <execinfo.h>
 
 #include <metaresc.h>
 #include <mr_tsearch.h>
@@ -147,6 +148,24 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
       if ((log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])) && log_level_str[log_level])
 	log_level_str_ = log_level_str[log_level];
 
+      if (log_level <= MR_LL_DEBUG)
+	{
+	  void * array[8];
+	  size_t size;
+	  char ** strings;
+	  size_t i;
+
+	  size = backtrace (array, sizeof (array) / sizeof (array[0]));
+	  strings = backtrace_symbols (array, size);
+	  fprintf (stderr, "Obtained %zd stack frames.\n", size);
+	  if (strings)
+	    {
+	      for (i = 0; i < size; ++i)
+		fprintf (stderr, "%s\n", strings[i]);
+	      free (strings);
+	    }
+	}
+      
       message = mr_message_format (message_id, args);
       if (message)
 	{
@@ -758,7 +777,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
 	    last = tdp->fields.data[count].fdp;
 	    last->mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
-	    tdp_->mr_type = fdp->mr_type; /*MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
+	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
 	    tdp_->attr = fdp->comment; /* anonymous union stringified attributes are saved into comments field */

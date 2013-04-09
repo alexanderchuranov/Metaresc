@@ -259,7 +259,7 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
-static int
+int
 mr_get_char (char * str, char * result)
 {
   if (NULL == str)
@@ -306,11 +306,11 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
   switch (ptrdes->mr_value.value_type)
     {
     case MR_VT_UNKNOWN:
+      /* NB! todo */
+      break;
     case MR_VT_CHAR:
-      {
-	status = mr_get_char (ptrdes->mr_value.vt_string.str, ptrdes->data);
-	break;
-      }
+      *(char*)ptrdes->data = ptrdes->mr_value.vt_char;
+      break;
     default:
       if (EXIT_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
 	*(char*)ptrdes->data = ptrdes->mr_value.vt_int;
@@ -337,8 +337,8 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
   else if ((MR_VT_STRING == ptrdes->mr_value.value_type) ||
 	   (MR_VT_UNKNOWN == ptrdes->mr_value.value_type))
     {
-      *(char**)ptrdes->data = ptrdes->mr_value.vt_string.str;
-      ptrdes->mr_value.vt_string.str = NULL;
+      *(char**)ptrdes->data = ptrdes->mr_value.vt_string;
+      ptrdes->mr_value.vt_string = NULL;
     }
   else
     return (0);
@@ -363,7 +363,7 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
   if ((MR_VT_STRING == ptrdes->mr_value.value_type) ||
       (MR_VT_UNKNOWN == ptrdes->mr_value.value_type))
     {
-      char * str = ptrdes->mr_value.vt_string.str;
+      char * str = ptrdes->mr_value.vt_string;
       if (NULL != str)
 	{
 	  int str_len = strlen (str);
@@ -698,13 +698,13 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
     .union_float = 3.1415927410,
     },
   */
-  int next = ptrdes->next;
   if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
-      (MR_VT_STRING == ptrdes->mr_value.value_type) && (0 == ptrdes->mr_value.vt_string.length) && /* content must be an empty string */
-      (next >= 0) && (NULL == mr_load_data->ptrs.ra.data[next].fd.name.str)) /* there should be a next node without name */
+      (MR_VT_STRING == ptrdes->mr_value.value_type) && (NULL != ptrdes->mr_value.vt_string)
+      && (0 == ptrdes->mr_value.vt_string[0]) && /* content must be an empty string */
+      (ptrdes->next >= 0) && (NULL == mr_load_data->ptrs.ra.data[ptrdes->next].fd.name.str)) /* there should be a next node without name */
     {
       if (mr_load_data->ptrs.ra.data[idx].fd.name.str) /* sainity check - this field can't be NULL */
-	mr_load_data->ptrs.ra.data[next].fd.name.str = MR_STRDUP (mr_load_data->ptrs.ra.data[idx].fd.name.str);
+	mr_load_data->ptrs.ra.data[ptrdes->next].fd.name.str = MR_STRDUP (mr_load_data->ptrs.ra.data[idx].fd.name.str);
       return (!0); /* now next node has a name and will be loaded by top level procedure */
     }
   return (mr_load_struct (idx, mr_load_data));
@@ -731,12 +731,11 @@ mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
 	    MR_FREE (ptrs.ra.data[i].fd.name.str);
 	  ptrs.ra.data[i].fd.name.str = NULL;
 	  if ((MR_VT_UNKNOWN == ptrs.ra.data[i].mr_value.value_type)
-	      || (MR_VT_STRING == ptrs.ra.data[i].mr_value.value_type)
-	      || (MR_VT_CHAR == ptrs.ra.data[i].mr_value.value_type))
+	      || (MR_VT_STRING == ptrs.ra.data[i].mr_value.value_type))
 	    {
-	      if (ptrs.ra.data[i].mr_value.vt_string.str)
-		MR_FREE (ptrs.ra.data[i].mr_value.vt_string.str);
-	      ptrs.ra.data[i].mr_value.vt_string.str = NULL;
+	      if (ptrs.ra.data[i].mr_value.vt_string)
+		MR_FREE (ptrs.ra.data[i].mr_value.vt_string);
+	      ptrs.ra.data[i].mr_value.vt_string = NULL;
 	    }
 	}
       MR_FREE (ptrs.ra.data);
