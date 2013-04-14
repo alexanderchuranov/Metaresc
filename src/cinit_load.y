@@ -109,7 +109,7 @@ unquote_str (mr_substr_t * substr)
 /* Bison declarations.  */
 %token <id_ivalue> TOK_CINIT_ID_IVALUE
 %token <value> TOK_CINIT_NUMBER
-%token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST TOK_CINIT_STRING TOK_CINIT_CHAR
+%token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST TOK_CINIT_STRING TOK_CINIT_CHAR TOK_CINIT_ID
 %token TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_LBRACKET TOK_CINIT_RBRACKET TOK_CINIT_COMMA TOK_CINIT_ERROR
 
 %left TOK_CINIT_BIT_OR TOK_CINIT_BIT_AND TOK_CINIT_BIT_XOR
@@ -146,7 +146,10 @@ casted_value
 
 casted_value:
 value
-| TOK_CINIT_FIELD_CAST value { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].fd.type = strndup ($1.str, $1.length); }
+| TOK_CINIT_FIELD_CAST value {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_load->ptrs->ra.data[mr_load->parent].fd.type = strndup ($1.str, $1.length);
+}
 
 value:
 compaund
@@ -174,6 +177,10 @@ compaund
 
 expr:
 TOK_CINIT_NUMBER { $$ = $1; }
+| TOK_CINIT_ID {
+  $$.vt_string = strndup ($1.str, $1.length);
+  $$.value_type = MR_VT_ID;
+  }
 | expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
 | expr TOK_CINIT_MINUS expr { mr_value_sub (&$$, &$1, &$3); }
 | expr TOK_CINIT_MUL expr { mr_value_mul (&$$, &$1, &$3); }

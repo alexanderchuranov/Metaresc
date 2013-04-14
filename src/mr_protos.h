@@ -79,7 +79,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_INCORRECT_HASH_SIZE, , "Incorrect hash size %d."),
 	      (MR_MESSAGE_WRONG_RESULT_TYPE, , "Wrong result type."),
 	      (MR_MESSAGE_DIVISION_BY_ZERO, , "Division by zero."),
-	      (MR_MESSAGE_UNEXPECTED_TARGET_TYPE, , "Unexpected target type for integer loading (%d)."),
+	      (MR_MESSAGE_UNEXPECTED_TARGET_TYPE, , "Unexpected target type (%d)."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -303,6 +303,7 @@ TYPEDEF_ENUM (mr_value_type_t,
 	      (MR_VT_COMPLEX, , "vt_complex"),
 	      (MR_VT_STRING, , "vt_string"),
 	      (MR_VT_CHAR, , "vt_string"),
+	      (MR_VT_ID, , "vt_string"),
 	      )
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),

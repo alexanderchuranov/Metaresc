@@ -15,17 +15,12 @@
 #include <complex.h>
 #include <math.h>
 #include <ctype.h>
-#ifdef HAVE_DLFCN_H
-#define __USE_GNU
-#include <dlfcn.h>
-#endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
 #include <lexer.h>
 #include <cinit_load.tab.h>
 
    static void get_type (mr_substr_t*, char*);
-   static void mr_value_id (mr_value_t*, char*);
 
 %}
 
@@ -63,7 +58,11 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
   return (TOK_CINIT_NUMBER);
 }
 
-{ID} { mr_value_id (&yylval->value, yytext); return (TOK_CINIT_NUMBER); }
+{ID} {
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
+  return (TOK_CINIT_ID);
+}
 
 "\""([^\"\\]|\\.)*"\"" {
   yylval->string.str = yytext;
@@ -127,21 +126,3 @@ static void get_type (mr_substr_t * substr, char * start)
   substr->length = stop - start;
 }
 
-static void mr_value_id (mr_value_t * result, char * id)
-{
-  mr_fd_t * fdp = mr_get_enum_by_name (id);
-  result->value_type = MR_VT_INT;
-  result->vt_int = 0;
-  if (fdp != NULL)
-    result->vt_int = fdp->param.enum_value;
-  else
-    {
-      void * func = NULL;
-#ifdef HAVE_LIBDL
-      func = dlsym (RTLD_DEFAULT, id);
-#endif /* HAVE_LIBDL */
-      if (NULL == func)
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, id);
-      result->vt_int = (long)func;
-    }
-}

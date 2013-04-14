@@ -6,14 +6,41 @@
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
 #include <string.h>
+#ifdef HAVE_DLFCN_H
+#define __USE_GNU
+#include <dlfcn.h>
+#endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
 #include <mr_value.h>
+
+static void
+mr_value_id (mr_value_t * value)
+{
+  if (MR_VT_ID != value->value_type)
+    return;
+
+  value->value_type = MR_VT_INT;
+  if (NULL == value->vt_string)
+    value->vt_int = 0;
+  else
+    {
+      mr_fd_t * fdp = mr_get_enum_by_name (value->vt_string);
+      typeof (value->vt_int) vt_int = 0;
+      if (NULL == fdp)
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, value->vt_string);
+      else
+	vt_int = fdp->param.enum_value;
+      MR_FREE (value->vt_string);
+      value->vt_int = vt_int;
+    }
+}
 
 int
 mr_value_cast (mr_value_type_t value_type, mr_value_t * value)
 {
   int status = EXIT_SUCCESS;
+  mr_value_id (value);
   switch (value_type)
     {
     case MR_VT_INT:
@@ -66,6 +93,7 @@ int
 mr_value_neg (mr_value_t * result, mr_value_t * value)
 {
   memset (result, 0, sizeof (*result));
+  mr_value_id (value);
   switch (value->value_type)
     {
     case MR_VT_INT: value->vt_int = -value->vt_int; break;
@@ -107,6 +135,8 @@ mr_value_neg (mr_value_t * result, mr_value_t * value)
   int mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
     memset (result, 0, sizeof (*result));				\
+    mr_value_id (left);							\
+    mr_value_id (right);						\
     if ((left->value_type != MR_VT_INT) || (right->value_type != MR_VT_INT)) \
       {									\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\

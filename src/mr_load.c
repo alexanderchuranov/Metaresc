@@ -179,6 +179,7 @@ static int
 mr_load_func (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
+  *(void**)ptrdes->data = NULL;
   switch (ptrdes->mr_value.value_type)
     {
     case MR_VT_INT:
@@ -187,10 +188,18 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
     case MR_VT_STRING:
       *(void**)ptrdes->data = ptrdes->mr_value.vt_string;
       break;
-
+    case MR_VT_ID:
+      if (NULL != ptrdes->mr_value.vt_string)
+	{
+#ifdef HAVE_LIBDL
+	  *(void**)ptrdes->data = dlsym (RTLD_DEFAULT, ptrdes->mr_value.vt_string);
+#endif /* HAVE_LIBDL */
+	  MR_FREE (ptrdes->mr_value.vt_string);
+	  ptrdes->mr_value.vt_string = NULL;
+	}
+      break;
     default:
-      fprintf (stderr, "func name '%s' type %d\n", ptrdes->fd.name.str, ptrdes->mr_value.value_type);
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->mr_value.value_type);
       return (0);
     }
   return (!0);
@@ -738,7 +747,8 @@ mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
 	    MR_FREE (ptrs.ra.data[i].fd.name.str);
 	  ptrs.ra.data[i].fd.name.str = NULL;
 	  if ((MR_VT_UNKNOWN == ptrs.ra.data[i].mr_value.value_type)
-	      || (MR_VT_STRING == ptrs.ra.data[i].mr_value.value_type))
+	      || (MR_VT_STRING == ptrs.ra.data[i].mr_value.value_type)
+	      || (MR_VT_ID == ptrs.ra.data[i].mr_value.value_type))
 	    {
 	      if (ptrs.ra.data[i].mr_value.vt_string)
 		MR_FREE (ptrs.ra.data[i].mr_value.vt_string);
