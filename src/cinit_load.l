@@ -7,6 +7,10 @@
 %option extra-type="mr_load_t*"
 %option prefix="mr_cinit_"
 %{
+#ifdef HAVE_CONFIG_H
+# include <mr_config.h>
+#endif /* HAVE_CONFIG_H */
+
 #include <string.h>
 #include <complex.h>
 #include <math.h>
@@ -134,11 +138,10 @@ static void mr_value_id (mr_value_t * result, char * id)
     {
       void * func = NULL;
 #ifdef HAVE_LIBDL
-      func = dlsym (RTLD_DEFAULT, value);
+      func = dlsym (RTLD_DEFAULT, id);
 #endif /* HAVE_LIBDL */
       if (NULL == func)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, id);
-      else
-	result->vt_int = (long)func;
+      result->vt_int = (long)func;
     }
 }

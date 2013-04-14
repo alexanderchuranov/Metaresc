@@ -179,13 +179,20 @@ static int
 mr_load_func (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
-  
-  if (MR_VT_INT != ptrdes->mr_value.value_type)
+  switch (ptrdes->mr_value.value_type)
     {
+    case MR_VT_INT:
+      *(void**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
+      break;
+    case MR_VT_STRING:
+      *(void**)ptrdes->data = ptrdes->mr_value.vt_string;
+      break;
+
+    default:
+      fprintf (stderr, "func name '%s' type %d\n", ptrdes->fd.name.str, ptrdes->mr_value.value_type);
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);
       return (0);
     }
-  *(void**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
   return (!0);
 }
 
