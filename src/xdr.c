@@ -381,7 +381,8 @@ xdr_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
 #define XDR_COMPLEX(NAME_SUFFIX, TYPE_NAME)					\
   static int xdr_complex_ ## NAME_SUFFIX (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs) { \
-    TYPE_NAME real, imag;						\
+    TYPE_NAME real = 0;							\
+    TYPE_NAME imag = 0;							\
     complex TYPE_NAME x;						\
     if (XDR_ENCODE == xdrs->x_op)					\
       {									\
@@ -691,7 +692,6 @@ xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
   return (status);
 }
 
-#if 0
 /**
  * Loads temporary string from XDR stream.
  * @param xdrs XDR stream descriptor
@@ -705,7 +705,6 @@ xdr_load_temp_string (XDR * xdrs, char ** str)
   mr_ra_mr_ptrdes_t ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
   return (xdr_load_string (xdrs, 0, &ptrs));
 }
-#endif
 
 /**
  * Saves enum value as a string.
@@ -760,22 +759,20 @@ static int
 xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   int status = 0;
-#if 0 //  FIXME
   mr_ptrdes_t ptrdes = { .fd = ptrs->ra.data[idx].fd, .data = ptrs->ra.data[idx].data, };
   mr_load_data_t mr_load_data = { .ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, } } };
 
-  if (!xdr_load_temp_string (xdrs, &ptrdes.value))
+  if (!xdr_load_temp_string (xdrs, &ptrdes.mr_value.vt_string))
     return (0);
-  if (NULL == ptrdes.value)
+  if (NULL == ptrdes.mr_value.vt_string)
     return (0);
 
+  ptrdes.mr_value.value_type = MR_VT_UNKNOWN;
   switch (ptrs->ra.data[idx].fd.mr_type)
     {
     case MR_TYPE_ENUM:
-      status = mr_load_enum (0, &mr_load_data);
-      break;
     case MR_TYPE_BITMASK:
-      status = mr_load_bitmask (0, &mr_load_data);
+      status = mr_load_integer (0, &mr_load_data);
       break;
     case MR_TYPE_FUNC:
     case MR_TYPE_FUNC_TYPE:
@@ -785,9 +782,8 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       status = 0;
       break;
     }
-
-  MR_FREE (ptrdes.value);
-#endif
+  if (MR_VT_UNKNOWN == ptrdes.mr_value.value_type)
+    MR_FREE (ptrdes.mr_value.vt_string);
 
   return (status);
 }

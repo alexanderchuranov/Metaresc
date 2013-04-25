@@ -53,6 +53,24 @@ scm_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (NULL);
 }
 
+#define MR_SCM_BITMASK_OR_DELIMITER " "
+#define MR_SCM_BITMASK_TEMPLATE "(logior %s)"
+#define MR_SCM_COMPLEX_FLOAT_TEMPLATE "(+ %s %si)"
+
+static char * mr_stringify_float_scm (mr_ptrdes_t * ptrdes) { return (mr_output_format_float (ptrdes)); }
+static char * mr_stringify_double_scm (mr_ptrdes_t * ptrdes) { return (mr_output_format_double (ptrdes)); }
+static char * mr_stringify_long_double_t_scm (mr_ptrdes_t * ptrdes) { return (mr_output_format_long_double_t (ptrdes)); }
+
+static MR_OUTPUT_FORMAT_COMPLEX (float_scm, float, MR_TYPE_FLOAT, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
+static MR_OUTPUT_FORMAT_COMPLEX (double_scm, double, MR_TYPE_DOUBLE, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
+static MR_OUTPUT_FORMAT_COMPLEX (long_double_t_scm, long double, MR_TYPE_LONG_DOUBLE, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
+
+#define SCM_SAVE_COMPLEX_FLOAT_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_output_format_ ## TYPE (&ptrs->ra.data[idx])); }
+
+SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_float_scm);
+SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_double_scm);
+SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_long_double_t_scm);
+
 /**
  * MR_XXX type saving handler. Make a string from *(XXX_t*)data.
  * \@param idx an index of node in ptrs
@@ -61,7 +79,6 @@ scm_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
  */
 #define SCM_SAVE_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_stringify_ ## TYPE (&ptrs->ra.data[idx])); }
 
-SCM_SAVE_TYPE (bool);
 SCM_SAVE_TYPE (int8_t);
 SCM_SAVE_TYPE (uint8_t);
 SCM_SAVE_TYPE (int16_t);
@@ -72,15 +89,15 @@ SCM_SAVE_TYPE (int64_t);
 SCM_SAVE_TYPE (uint64_t);
 SCM_SAVE_TYPE (enum);
 SCM_SAVE_TYPE (float);
-SCM_SAVE_TYPE (complex_float);
 SCM_SAVE_TYPE (double);
-SCM_SAVE_TYPE (complex_double);
 SCM_SAVE_TYPE (long_double_t);
-SCM_SAVE_TYPE (complex_long_double_t);
 SCM_SAVE_TYPE (bitfield);
 
-#define MR_SCM_BITMASK_OR_DELIMITER " "
-#define MR_SCM_BITMASK_TEMPLATE "(bit-or %s)"
+static char *
+scm_save_bool (int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  return (*(bool*)ptrs->ra.data[idx].data ? MR_STRDUP (MR_SCM_TRUE) : MR_STRDUP (MR_SCM_FALSE));
+}
 
 /**
  * MR_BITMASK type saving handler. Look up type descriptor and save as
@@ -140,7 +157,7 @@ scm_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
       str[3] = 0;
     }
   else
-    sprintf (&str[3], "%02x", (int)(unsigned char)c);
+    sprintf (str, "#\\x%02x", (int)(unsigned char)c);
   return (MR_STRDUP (str));
 }
 
@@ -263,11 +280,11 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_INT64] = scm_save_int64_t,
     [MR_TYPE_UINT64] = scm_save_uint64_t,
     [MR_TYPE_FLOAT] = scm_save_float,
-    [MR_TYPE_COMPLEX_FLOAT] = scm_save_complex_float,
+    [MR_TYPE_COMPLEX_FLOAT] = scm_save_complex_float_scm,
     [MR_TYPE_DOUBLE] = scm_save_double,
-    [MR_TYPE_COMPLEX_DOUBLE] = scm_save_complex_double,
+    [MR_TYPE_COMPLEX_DOUBLE] = scm_save_complex_double_scm,
     [MR_TYPE_LONG_DOUBLE] = scm_save_long_double_t,
-    [MR_TYPE_COMPLEX_LONG_DOUBLE] = scm_save_complex_long_double_t,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = scm_save_complex_long_double_t_scm,
     [MR_TYPE_CHAR] = scm_save_char,
     [MR_TYPE_CHAR_ARRAY] = scm_save_char_array,
     [MR_TYPE_STRING] = scm_save_string,

@@ -189,7 +189,7 @@ TOK_CINIT_NUMBER { $$ = $1; }
 | expr TOK_CINIT_BIT_OR expr { mr_value_bit_or (&$$, &$1, &$3); }
 | expr TOK_CINIT_BIT_AND expr { mr_value_bit_and (&$$, &$1, &$3); }
 | expr TOK_CINIT_BIT_XOR expr { mr_value_bit_xor (&$$, &$1, &$3); }
-| TOK_CINIT_MINUS expr %prec NEG { mr_value_neg (&$$, &$2); }
+| TOK_CINIT_MINUS expr %prec NEG { $$ = $2; mr_value_neg (&$$); }
 | TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
 
 compaund:

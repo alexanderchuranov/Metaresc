@@ -36,6 +36,41 @@ mr_value_id (mr_value_t * value)
     }
 }
 
+#define MR_VALUE_CAST(VT_VALUE)						\
+   switch (value->value_type)						\
+     {									\
+     case MR_VT_INT: value->VT_VALUE = value->vt_int; break;		\
+     case MR_VT_FLOAT: value->VT_VALUE = value->vt_float; break;	\
+     case MR_VT_COMPLEX: value->VT_VALUE = value->vt_complex; break;	\
+     case MR_VT_UNKNOWN:						\
+       if (NULL == value->vt_string)					\
+	 {								\
+	   MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
+	   status = EXIT_FAILURE;					\
+	 }								\
+       else								\
+	 {								\
+	   char * unknown = value->vt_string;				\
+	   typeof (value->VT_VALUE) vt_value;				\
+	   if (0 == MR_LOAD_CINIT (typeof (value->VT_VALUE), unknown, &vt_value)) \
+	     {								\
+	       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_EXPRESSION, unknown); \
+	       status = EXIT_FAILURE;					\
+	     }								\
+	   else								\
+	     {								\
+	       value->VT_VALUE = vt_value;				\
+	       MR_FREE (unknown);					\
+	     }								\
+	 }								\
+       break;								\
+     default:								\
+       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
+       status = EXIT_FAILURE;						\
+       break;								\
+     }
+
+
 int
 mr_value_cast (mr_value_type_t value_type, mr_value_t * value)
 {
@@ -44,41 +79,17 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * value)
   switch (value_type)
     {
     case MR_VT_INT:
-      switch (value->value_type)
-	{
-	case MR_VT_INT: value->vt_int = value->vt_int; break;
-	case MR_VT_FLOAT: value->vt_int = value->vt_float; break;
-	case MR_VT_COMPLEX: value->vt_int = value->vt_complex; break;
-	default:
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
-	  status = EXIT_FAILURE;
-	  break;
-	}
+      MR_VALUE_CAST (vt_int);
       break;
+      
     case MR_VT_FLOAT:
-      switch (value->value_type)
-	{
-	case MR_VT_INT: value->vt_float = value->vt_int; break;
-	case MR_VT_FLOAT: value->vt_float = value->vt_float; break;
-	case MR_VT_COMPLEX: value->vt_float = value->vt_complex; break;
-	default:
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
-	  status = EXIT_FAILURE;
-	  break;
-	}
+      MR_VALUE_CAST (vt_float);
       break;
+      
     case MR_VT_COMPLEX:
-      switch (value->value_type)
-	{
-	case MR_VT_INT: value->vt_complex = value->vt_int; break;
-	case MR_VT_FLOAT: value->vt_complex = value->vt_float; break;
-	case MR_VT_COMPLEX: value->vt_complex = value->vt_complex; break;
-	default:
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
-	  status = EXIT_FAILURE;
-	  break;
-	}
+      MR_VALUE_CAST (vt_complex);
       break;
+      
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
       status = EXIT_FAILURE;
@@ -90,9 +101,8 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * value)
 }
 
 int
-mr_value_neg (mr_value_t * result, mr_value_t * value)
+mr_value_neg (mr_value_t * value)
 {
-  memset (result, 0, sizeof (*result));
   mr_value_id (value);
   switch (value->value_type)
     {

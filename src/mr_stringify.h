@@ -3,6 +3,31 @@
 
 #include <metaresc.h>
 
+#define CINIT_COMPLEX_FLOAT_QUOTE "%s + %si"
+#define CINIT_CHAR_QUOTE "\\%03o"
+
+#define MR_OUTPUT_FORMAT_COMPLEX(NAME_SUFFIX, TYPE_NAME, MR_TYPE, TMPL)	\
+  char * mr_output_format_complex_ ## NAME_SUFFIX (mr_ptrdes_t * ptrdes) { \
+    char str[2 * MR_FLOAT_TO_STRING_BUF_SIZE] = "";			\
+    mr_ptrdes_t real_ptrdes = *ptrdes;					\
+    mr_ptrdes_t imag_ptrdes = *ptrdes;					\
+    TYPE_NAME real = __real__ *(complex TYPE_NAME *)ptrdes->data;	\
+    TYPE_NAME imag = __imag__ *(complex TYPE_NAME *)ptrdes->data;	\
+    real_ptrdes.data = &real;						\
+    real_ptrdes.fd.mr_type = MR_TYPE;					\
+    imag_ptrdes.data = &imag;						\
+    imag_ptrdes.fd.mr_type = MR_TYPE;					\
+    char * real_str = mr_stringify_ ## NAME_SUFFIX (&real_ptrdes);	\
+    char * imag_str = mr_stringify_ ## NAME_SUFFIX (&imag_ptrdes);	\
+    if (real_str && imag_str)						\
+      sprintf (str, TMPL, real_str, imag_str);				\
+    if (real_str)							\
+      MR_FREE (real_str);						\
+    if (imag_str)							\
+      MR_FREE (imag_str);						\
+    return (MR_STRDUP (str));						\
+  }
+
 extern char * mr_output_format_bool (mr_ptrdes_t*);
 extern char * mr_output_format_int8_t (mr_ptrdes_t*);
 extern char * mr_output_format_uint8_t (mr_ptrdes_t*);

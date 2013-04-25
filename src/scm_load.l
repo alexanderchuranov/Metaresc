@@ -15,12 +15,6 @@
 #include <lexer.h>
 #include <scm_load.tab.h>
 
-#define MR_SCM_BIT_OR "bit-or"
-
-#define mr_set_lval(...)
-   
-   char * unquote (char*, int);
-   char * encode_char (char*, int);
 %}
 
 WS	[[:space:]]*
@@ -36,105 +30,68 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 
 [[:space:]]+  { return (TOK_SCM_WS); }
 
-{NUMBER}|{FLOAT_NUMBER}|{IMAGENARY_NUMBER} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_VALUE); }
+{NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (yytext, NULL, 0); return (TOK_SCM_NUMBER); }
+{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_SCM_NUMBER); }
+{IMAGENARY_NUMBER} {
+  yylval->value.value_type = MR_VT_COMPLEX;
+  __real__ yylval->value.vt_complex = 0;
+  __imag__ yylval->value.vt_complex = strtold (yytext, NULL);
+  return (TOK_SCM_NUMBER);
+}
 
-#f { mr_set_lval (&yylval->string, NULL, NULL); return (TOK_SCM_VALUE); }
+#f { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = FALSE; return (TOK_SCM_NUMBER); }
+#t { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = TRUE; return (TOK_SCM_NUMBER); }
 
-{ID} { mr_set_lval (&yylval->string, yytext, NULL); return (TOK_SCM_ID); }
+"\""([^\"\\]|\\.)*"\"" {
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
+  return (TOK_SCM_STRING);
+}
 
-"\""([^\"\\]|\\.)*"\"" { mr_set_lval (&yylval->string, yytext, unquote); return (TOK_SCM_VALUE); }
+"#\\". {
+  yylval->value.value_type = MR_VT_CHAR;
+  yylval->value.vt_char = yytext[2];
+  return (TOK_SCM_CHAR);
+}
 
-"#\\". { mr_set_lval (&yylval->string, &yytext[2], NULL); return (TOK_SCM_VALUE); }
-
-"#\\x"[[:xdigit:]]{2} { mr_set_lval (&yylval->string, &yytext[3], encode_char); return (TOK_SCM_VALUE); }
+"#\\x"[[:xdigit:]]{2} {
+  int code;
+  sscanf (yytext, "#\\x%x", &code);
+  yylval->value.value_type = MR_VT_CHAR;
+  yylval->value.vt_char = code;
+  return (TOK_SCM_CHAR);
+}
 
 ";"+{WS}"("{WS}{ID}[[:space:]]+[[:digit:]]+{WS}")"{WS} {
   mr_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
   sscanf (&yylval->id_ivalue.id.str[yylval->id_ivalue.id.length], "%d", &yylval->id_ivalue.ivalue);
-  return (TOK_SCM_ID_IVALUE); }
+  return (TOK_SCM_ID_IVALUE);
+					       }
 
-";"[^\n]*{WS}			  { }
+";"[^\n]*{WS} { }
 
 "("{WS}       { return (TOK_SCM_LPARENTHESIS); }
 
 {WS}")"       { return (TOK_SCM_RPARENTHESIS); }
 
 "#"           { return (TOK_SCM_HASH); }
+"+"           { return (TOK_SCM_PLUS); }
+"-"           { return (TOK_SCM_MINUS); }
+"*"           { return (TOK_SCM_MUL); }
+"/"           { return (TOK_SCM_DIV); } 
+"%"           { return (TOK_SCM_MOD); } 
+"logior"      { return (TOK_SCM_BIT_OR); } 
+"logand"      { return (TOK_SCM_BIT_AND); }
+"logxor"      { return (TOK_SCM_BIT_XOR); } 
+
+{ID} {
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
+  return (TOK_SCM_ID);
+}
 
 [[:space:]]+"."[[:space:]]+         { return (TOK_SCM_DOT); }
 
 .             { return (TOK_SCM_ERROR); }
 
 %%
-
-char * unquote (char * str, int length)
-{
-  int length_ = 0;
-  char * str_;
-  int i;
-#define ESC_CHAR_MAP_SIZE (256)
-  static int map[ESC_CHAR_MAP_SIZE] = {
-    [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
-    [(unsigned char)'f'] = (unsigned char)'\f',
-    [(unsigned char)'n'] = (unsigned char)'\n',
-    [(unsigned char)'r'] = (unsigned char)'\r',
-    [(unsigned char)'t'] = (unsigned char)'\t',
-    [(unsigned char)'v'] = (unsigned char)'\v',
-    [(unsigned char)'\''] = (unsigned char)'\'',
-    [(unsigned char)'\"'] = (unsigned char)'\"',
-    [(unsigned char)'\\'] = (unsigned char)'\\',
-  };
-
-  for (i = 1; i < length - 1; ++i) /* we need to skip quotes at the begging and end */
-    {
-      if ('\\' == str[i])
-	{
-	  ++i;
-	  if (('x' == str[i]) && isalnum (str[i + 1]) && isalnum (str[i + 2]) && (';' == str[i + 3]))
-	    i += 3;
-	}
-      ++length_;
-    }
-  str_ = MR_MALLOC (length_ + 1);
-  if (NULL == str_)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
-  length_ = 0;
-  for (i = 1; i < length - 1; ++i)
-    {
-      if ('\\' == str[i])
-	{
-	  int c = map[(unsigned char)str[++i]];
-	  if (c > 0)
-	    str_[length_++] = c;
-	  else if (1 == sscanf (&str[i], "x%x;", &c))
-	    {
-	      i += 3;
-	      str_[length_++] = c;
-	    }
-	  else
-	    str_[length_++] = str[i];
-	}
-      else
-	str_[length_++] = str[i];
-    }
-  str_[length_] = 0;
-  return (str_);
-}
-
-char *
-encode_char (char * str, int length)
-{
-  char * str_ = MR_MALLOC (2);
-  int code;
-  sscanf (str, "%x", &code);
-  if (str_)
-    {
-      str_[0] = code;
-      str_[1] = 0;
-    }
-  return (str_);
-}
-

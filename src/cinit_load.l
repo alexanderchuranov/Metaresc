@@ -20,7 +20,21 @@
 #include <lexer.h>
 #include <cinit_load.tab.h>
 
-   static void get_type (mr_substr_t*, char*);
+static void
+get_type (mr_substr_t * substr, char * start)
+{
+  char * stop;
+  while (isspace (*start))
+    ++start;
+  stop = strchr (start, ')');
+  if (stop)
+    while (isspace (stop[-1]) || ('[' == stop[-1]) || (']' == stop[-1]))
+      --stop;
+  else
+    stop = strchr (start, 0);
+  substr->str = start;
+  substr->length = stop - start;
+}
 
 %}
 
@@ -111,18 +125,4 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 .         { return (TOK_CINIT_ERROR); }
 %%
 
-static void get_type (mr_substr_t * substr, char * start)
-{
-  char * stop;
-  while (isspace (*start))
-    ++start;
-  stop = strchr (start, ')');
-  if (stop)
-    while (isspace (stop[-1]) || ('[' == stop[-1]) || (']' == stop[-1]))
-      --stop;
-  else
-    stop = strchr (start, 0);
-  substr->str = start;
-  substr->length = stop - start;
-}
 

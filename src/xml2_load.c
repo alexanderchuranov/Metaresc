@@ -52,7 +52,8 @@ xml2_load (xmlNodePtr node, mr_ra_mr_ptrdes_t * ptrs)
   for (node_ = node->xmlChildrenNode; node_ && !content; node_ = node_->next)
     content = (char*)XML_GET_CONTENT (node_);
 
-  // FIXME ptrs->ra.data[idx].value = content ? MR_STRDUP (content) : MR_STRDUP ("");
+  ptrs->ra.data[idx].mr_value.value_type = MR_VT_UNKNOWN;
+  ptrs->ra.data[idx].mr_value.vt_string = content ? MR_STRDUP (content) : MR_STRDUP ("");
   ptrs->ra.data[idx].fd.name.str = MR_STRDUP ((char*)node->name);
 
   /* loop on subnodes */

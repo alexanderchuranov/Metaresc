@@ -1219,7 +1219,6 @@ extern void mr_message_unsupported_node_type (mr_fd_t*);
 extern void * mr_rarray_append (mr_rarray_t*, int);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t*, const char*, ...);
 
-extern char * xml_quote_string (char*);
 extern char * xml_unquote_string (mr_substr_t*);
 extern void mr_init_save_xml (void);
 

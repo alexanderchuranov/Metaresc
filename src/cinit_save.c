@@ -139,9 +139,8 @@ cinit_quote_string (char * str, char quote)
 	str_[length++] = *ptr;
       else
 	{
-	  str_[length++] = '\\';
-	  sprintf (&str_[length], "%03o", (int)(unsigned char)*ptr);
-	  length += 3;
+	  sprintf (&str_[length], CINIT_CHAR_QUOTE, (int)(unsigned char)*ptr);
+	  length += strlen (&str_[length]);
 	}
     }
   str_[length++] = quote;

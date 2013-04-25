@@ -25,6 +25,146 @@ TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
 #define MR_XML1_OPEN_EMPTY_TAG_END "/>"
 #define MR_XML1_CLOSE_TAG "</%s>"
 
+#define XML_NONPRINT_ESC "&#x%X;"
+#define ESC_SIZE (sizeof (XML_NONPRINT_ESC))
+#define ESC_CHAR_MAP_SIZE (256)
+static char * map[ESC_CHAR_MAP_SIZE] = {
+  [0 ... ESC_CHAR_MAP_SIZE - 1] = NULL,
+  [(unsigned char)'\t'] = "\t",
+  [(unsigned char)'\n'] = "\n",
+  [(unsigned char)'&'] = "&amp;",
+  [(unsigned char)'<'] = "&lt;",
+  [(unsigned char)'>'] = "&gt;",
+};
+
+/**
+ * XML quote function. Escapes XML special characters.
+ * @param str input string
+ * @return XML quoted string
+ */
+static char *
+xml_quote_string (char * str)
+{
+  int length = 0;
+  char * str_;
+
+  if (NULL == str)
+    return (NULL);
+
+  for (str_ = str; *str_; ++str_)
+    if (map[(unsigned char)*str_])
+      length += strlen (map[(unsigned char)*str_]);
+    else if (isprint (*str_))
+      ++length;
+    else
+      length += sizeof (XML_NONPRINT_ESC) - 1;
+
+  str_ = MR_MALLOC (length + 1);
+  if (NULL == str)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (NULL);
+    }
+
+  length = 0;
+  for (; *str; ++str)
+    if (map[(unsigned char)*str])
+      {
+	strcpy (&str_[length], map[(unsigned char)*str]);
+	length += strlen (&str_[length]);
+      }
+    else if (isprint (*str))
+      str_[length++] = *str;
+    else
+      {
+	sprintf (&str_[length], XML_NONPRINT_ESC, (int)(unsigned char)*str);
+	length += strlen (&str_[length]);
+      }
+  str_[length] = 0;
+  return (str_);
+}
+
+/**
+ * XML unquote function. Replace XML special characters aliases on a source characters.
+ * @param str input string
+ * @param length length of the input string
+ * @return XML unquoted string
+ */
+char *
+xml_unquote_string (mr_substr_t * substr)
+{
+  char * str_ = MR_MALLOC (substr->length + 1);
+  int length_ = 0;
+  int i, j;
+
+  static int inited = 0;
+  static char map_c[ESC_CHAR_MAP_SIZE];
+  static char * map_cp[ESC_CHAR_MAP_SIZE];
+  static int map_s[ESC_CHAR_MAP_SIZE];
+  static int map_size = 0;
+
+  if (0 == inited)
+    {
+      for (i = 0; i < ESC_CHAR_MAP_SIZE; ++i)
+	if (map[i])
+	  {
+	    int size = strlen (map[i]);
+	    if (size > 1)
+	      {
+		map_c[map_size] = i;
+		map_cp[map_size] = map[i];
+		map_s[map_size] = size;
+		++map_size;
+	      }
+	  }
+      inited = !0;
+    }
+
+  if (NULL == str_)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (NULL);
+    }
+
+  for (j = 0; j < substr->length; ++j)
+    if (substr->str[j] != '&')
+      str_[length_++] = substr->str[j];
+    else
+      {
+	char esc[ESC_SIZE];
+	strncpy (esc, &substr->str[j], sizeof (esc) - 1);
+	if ('#' == substr->str[j + 1])
+	  {
+	    int32_t code = 0;
+	    int size = 0;
+	    if (1 != sscanf (&substr->str[j], XML_NONPRINT_ESC "%n", &code, &size))
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_XML_ESC, esc);
+	    else
+	      {
+		j += size - 1; /* one more +1 in the loop */
+		str_[length_++] = code;
+	      }
+	  }
+	else
+	  {
+	    for (i = 0; i < map_size; ++i)
+	      if (0 == strncasecmp (&substr->str[j], map_cp[i], map_s[i]))
+		{
+		  str_[length_++] = map_c[i];
+		  j += map_s[i] - 1; /* one more increase in the loop */
+		  break;
+		}
+	    if (i >= map_size)
+	      {
+		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_XML_ESC, esc);
+		str_[length_++] = substr->str[j];
+	      }
+	  }
+      }
+  str_[length_] = 0;
+  return (str_);
+}
+
 /**
  * MR_NONE type saving handler.
  * @param idx an index of node in ptrs
@@ -79,12 +219,11 @@ static char *
 xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char str[MR_CHAR_TO_STRING_BUF_SIZE] = " ";
-  unsigned char c = *(char*)ptrs->ra.data[idx].data;
-  if (isprint (c))
-    str[0] = c;
-  else
-    sprintf (str, "\\%03o", c);
-  return (xml_quote_string (str));
+  str[0] = *(char*)ptrs->ra.data[idx].data;
+  if (isprint (str[0]))
+    return (xml_quote_string (str));
+  sprintf (str, CINIT_CHAR_QUOTE, (int)(unsigned char)str[0]);
+  return (MR_STRDUP (str));
 }
 
 /**

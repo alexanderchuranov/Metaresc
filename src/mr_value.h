@@ -4,7 +4,7 @@
 #include <metaresc.h>
 
 extern int mr_value_cast (mr_value_type_t value_type, mr_value_t * value);
-extern int mr_value_neg (mr_value_t * result, mr_value_t * value);
+extern int mr_value_neg (mr_value_t * value);
 extern int mr_value_is_zero (mr_value_t * value);
 extern int mr_value_add (mr_value_t * result, mr_value_t * left, mr_value_t * right);
 extern int mr_value_sub (mr_value_t * result, mr_value_t * left, mr_value_t * right);

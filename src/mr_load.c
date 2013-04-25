@@ -13,6 +13,7 @@
 #endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 #include <mr_ic.h>
 #include <mr_load.h>
 #include <mr_value.h>
@@ -102,7 +103,7 @@ mr_load_none (int idx, mr_load_data_t * mr_load_data)
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
-static int
+int
 mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
@@ -175,7 +176,7 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
-static int
+int
 mr_load_func (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
@@ -187,16 +188,16 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
       break;
     case MR_VT_STRING:
       *(void**)ptrdes->data = ptrdes->mr_value.vt_string;
+      ptrdes->mr_value.vt_string = NULL;
       break;
     case MR_VT_ID:
-      if (NULL != ptrdes->mr_value.vt_string)
-	{
+    case MR_VT_UNKNOWN:
+      if (NULL == ptrdes->mr_value.vt_string)
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
 #ifdef HAVE_LIBDL
-	  *(void**)ptrdes->data = dlsym (RTLD_DEFAULT, ptrdes->mr_value.vt_string);
+      else
+	*(void**)ptrdes->data = dlsym (RTLD_DEFAULT, ptrdes->mr_value.vt_string);
 #endif /* HAVE_LIBDL */
-	  MR_FREE (ptrdes->mr_value.vt_string);
-	  ptrdes->mr_value.vt_string = NULL;
-	}
       break;
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->mr_value.value_type);
@@ -275,38 +276,6 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
   return (!0);
 }
 
-int
-mr_get_char (char * str, char * result)
-{
-  if (NULL == str)
-    return (0);
-  
-  if ((0 == str[0]) || (0 == str[1]))
-    *result = str[0];
-  else if ('\\' != str[0])
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
-      return (0);
-    }
-  else
-    {
-      int offset;
-      int val = 0;
-      if (1 != sscanf (str + 1, "%o%n", &val, &offset))
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
-	  return (0);
-	}
-      else if (str[offset + 1] != 0)
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, str);
-	  return (0);
-	}
-      *result = val;
-    }
-  return (!0);
-}
-
 /**
  * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
@@ -322,11 +291,36 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
   switch (ptrdes->mr_value.value_type)
     {
     case MR_VT_UNKNOWN:
-      /* NB! todo */
+      if (NULL == ptrdes->mr_value.vt_string)
+	status = 0;
+      else if (strlen (ptrdes->mr_value.vt_string) <= 1)
+	*(char*)ptrdes->data = ptrdes->mr_value.vt_string[0];
+      else
+	{
+	  int32_t code = 0;
+	  int size = 0;
+	  if (1 != sscanf (ptrdes->mr_value.vt_string, CINIT_CHAR_QUOTE "%n", &code, &size))
+	    status = 0;
+	  else
+	    {
+	      while (isspace (ptrdes->mr_value.vt_string[size]))
+		++size;
+	      if (0 == ptrdes->mr_value.vt_string[size])
+		*(char*)ptrdes->data = code;
+	      else
+		status = 0;
+	    }
+	}
+      
+      if (0 == status)
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, ptrdes->mr_value.vt_string);
+      
       break;
+      
     case MR_VT_CHAR:
       *(char*)ptrdes->data = ptrdes->mr_value.vt_char;
       break;
+      
     default:
       if (EXIT_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
 	*(char*)ptrdes->data = ptrdes->mr_value.vt_int;
@@ -350,14 +344,22 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
   if (ptrdes->flags.is_null || (ptrdes->ref_idx >= 0))
     *(char**)ptrdes->data = NULL;
-  else if ((MR_VT_STRING == ptrdes->mr_value.value_type) ||
-	   (MR_VT_UNKNOWN == ptrdes->mr_value.value_type))
-    {
-      *(char**)ptrdes->data = ptrdes->mr_value.vt_string;
-      ptrdes->mr_value.vt_string = NULL;
-    }
   else
-    return (0);
+    {
+      switch (ptrdes->mr_value.value_type)
+	{
+	case MR_VT_STRING:
+	case MR_VT_UNKNOWN:
+	  *(char**)ptrdes->data = ptrdes->mr_value.vt_string;
+	  ptrdes->mr_value.vt_string = NULL;
+	  break;
+	case MR_VT_INT:
+	  *(char**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
+	  break;
+	default:
+	  return (0);
+	}
+    }
   return (!0);
 }
 
