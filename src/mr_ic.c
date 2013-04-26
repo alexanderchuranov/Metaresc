@@ -48,7 +48,7 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
       ic->ext.ptr = rarray = rarray_;
     }
 
-  add = mr_rarray_append ((mr_rarray_t*)&rarray->ra, sizeof (rarray->ra.data[0]));
+  add = mr_rarray_append ((mr_rarray_t*)(void*)&rarray->ra, sizeof (rarray->ra.data[0]));
 
   if (NULL == add)
     return (NULL);
@@ -168,7 +168,7 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (NULL == rarray)
     return (NULL);
 
-  add = mr_rarray_append ((mr_rarray_t*)&rarray->ra, sizeof (rarray->ra.data[0]));
+  add = mr_rarray_append ((mr_rarray_t*)(void*)&rarray->ra, sizeof (rarray->ra.data[0]));
   if (NULL == add)
     return (NULL);
 
@@ -527,7 +527,7 @@ mr_ic_rbtree_free (mr_ic_t * ic, const void * context)
 mr_ptr_t *
 mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  mr_ptr_t * add = mr_tsearch (key, (mr_red_black_tree_node_t**)&ic->ext.ptr, ic->compar_fn, context);
+  mr_ptr_t * add = mr_tsearch (key, (mr_red_black_tree_node_t**)(void*)&ic->ext.ptr, ic->compar_fn, context);
   if (NULL == add)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
   return (add);
@@ -536,7 +536,7 @@ mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 mr_ptr_t *
 mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  return (mr_tfind (key, (mr_red_black_tree_node_t**)&ic->ext.ptr, ic->compar_fn, context));
+  return (mr_tfind (key, (mr_red_black_tree_node_t**)(void*)&ic->ext.ptr, ic->compar_fn, context));
 }
 
 int

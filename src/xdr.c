@@ -383,7 +383,7 @@ xdr_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   static int xdr_complex_ ## NAME_SUFFIX (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs) { \
     TYPE_NAME real = 0;							\
     TYPE_NAME imag = 0;							\
-    complex TYPE_NAME x;						\
+    complex TYPE_NAME x = 0;						\
     if (XDR_ENCODE == xdrs->x_op)					\
       {									\
 	x = *(complex TYPE_NAME*)ptrs->ra.data[idx].data;		\
@@ -954,10 +954,10 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	return (0);
       switch (sizeof (ra->size))
 	{
-	case sizeof (int8_t): status = xdr_int8_t (xdrs, (int8_t*)&ra->size); break;
-	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)&ra->size); break;
-	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)&ra->size); break;
-	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)&ra->size); break;
+	case sizeof (int8_t): status = xdr_int8_t (xdrs, (void*)&ra->size); break;
+	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size); break;
+	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size); break;
+	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size); break;
 	}
 
       if (!status)
@@ -992,10 +992,10 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
       switch (sizeof (ra->size))
 	{
-	case sizeof (int8_t): status = xdr_int8_t (xdrs, (int8_t*)&ra->size); break;
-	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)&ra->size); break;
-	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)&ra->size); break;
-	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)&ra->size); break;
+	case sizeof (int8_t): status = xdr_int8_t (xdrs, (void*)&ra->size); break;
+	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size); break;
+	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size); break;
+	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size); break;
 	}
 
       if (!status)

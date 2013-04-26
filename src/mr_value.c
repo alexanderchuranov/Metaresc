@@ -51,7 +51,7 @@ mr_value_id (mr_value_t * value)
        else								\
 	 {								\
 	   char * unknown = value->vt_string;				\
-	   typeof (value->VT_VALUE) vt_value;				\
+	   typeof (value->VT_VALUE) vt_value = 0;			\
 	   if (0 == MR_LOAD_CINIT (typeof (value->VT_VALUE), unknown, &vt_value)) \
 	     {								\
 	       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_EXPRESSION, unknown); \
