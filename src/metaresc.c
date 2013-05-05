@@ -145,7 +145,9 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
       static const char * log_level_str[] =
 	{ LL_INIT (ALL), LL_INIT (TRACE), LL_INIT (DEBUG), LL_INIT (INFO), LL_INIT (WARN), LL_INIT (ERROR), LL_INIT (FATAL), LL_INIT (OFF) };
 
-      if ((log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])) && log_level_str[log_level])
+      if (((int)log_level >= 0)
+	  && ((int)log_level <= sizeof (log_level_str) / sizeof (log_level_str[0]))
+	  && log_level_str[log_level])
 	log_level_str_ = log_level_str[log_level];
 
       if (log_level <= MR_LL_DEBUG)
@@ -170,7 +172,6 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
       if (message)
 	{
 	  fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
-	  fflush (stderr);
 	  free (message);
 	}
     }
