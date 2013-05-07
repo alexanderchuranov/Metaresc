@@ -1224,6 +1224,7 @@ extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t*, c
 extern char * xml_unquote_string (mr_substr_t*);
 extern void mr_init_save_xml (void);
 
+extern int64_t mr_get_enum_value (mr_td_t * tdp, void * data);
 extern mr_hash_value_t mr_hash_str (char*);
 extern int mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_hash_value_t mr_fd_name_get_hash (const mr_ptr_t x, const void * context);

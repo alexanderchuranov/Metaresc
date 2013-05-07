@@ -808,6 +808,41 @@ mr_anon_unions_extract (mr_td_t * tdp)
 }
 
 /**
+ * Gets enum value as integer
+ * @param ptrdes descriptor of the saved field
+ * @return enum value
+ */
+int64_t
+mr_get_enum_value (mr_td_t * tdp, void * data)
+{
+  int64_t enum_value = 0;
+  /*
+    GCC caluculates sizeof for the type according alignment, but initialize only effective bytes
+    i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
+    sizeof (enum_t) == 2, but type has size only 1 byte
+  */
+  switch (tdp->mr_type_effective)
+    {
+    case MR_TYPE_UINT8: enum_value = *(uint8_t*)data; break;
+    case MR_TYPE_INT8: enum_value = *(int8_t*)data; break;
+    case MR_TYPE_UINT16: enum_value = *(uint16_t*)data; break;
+    case MR_TYPE_INT16: enum_value = *(int16_t*)data; break;
+    case MR_TYPE_UINT32: enum_value = *(uint32_t*)data; break;
+    case MR_TYPE_INT32: enum_value = *(int32_t*)data; break;
+    case MR_TYPE_UINT64: enum_value = *(uint64_t*)data; break;
+    case MR_TYPE_INT64: enum_value = *(int64_t*)data; break;
+    default:
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+      memcpy (&enum_value, data, MR_MIN (tdp->size_effective, sizeof (enum_value)));
+#else
+#error Support for non little endian architectures to be implemented
+#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
+      break;
+    }
+  return (enum_value);
+}
+
+/**
  * calculate a hash value for mr_fd_t
  * @param x pointer on mr_fd_t
  * @param context pointer on a context

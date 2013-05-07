@@ -15,6 +15,7 @@
 
 #include <metaresc.h>
 #include <mr_ic.h>
+#include <mr_stringify.h>
 #include <mr_save.h>
 
 TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
@@ -430,33 +431,11 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
       return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
     case MR_TYPE_ENUM:
       {
-	int64_t enum_value = 0;
 	mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
-	mr_fd_t * enum_fdp;
-
 	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
 	  {
-	    /*
-	      GCC caluculates sizeof for the type according alignment, but initialize only effective bytes
-	      i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
-	      sizeof (enum_t) == 2, but type has size only 1 byte
-	    */
-	    switch (enum_tdp->size_effective)
-	      {
-	      case sizeof (uint8_t): enum_value = *(uint8_t*)discriminator; break;
-	      case sizeof (uint16_t): enum_value = *(uint16_t*)discriminator; break;
-	      case sizeof (uint32_t): enum_value = *(uint32_t*)discriminator; break;
-	      case sizeof (uint64_t): enum_value = *(uint64_t*)discriminator; break;
-	      default:
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		memcpy (&enum_value, discriminator, MR_MIN (enum_tdp->size_effective, sizeof (enum_value)));
-#else
-#error Support for non little endian architectures to be implemented
-#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
-		break;
-	      }
-	    /* get named discriminator from enum value comment */
-	    enum_fdp = mr_get_enum_by_value (enum_tdp, enum_value);
+	    int64_t value = mr_get_enum_value (enum_tdp, discriminator);
+	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value comment */
 	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->comment : NULL));
 	  }
 	break;

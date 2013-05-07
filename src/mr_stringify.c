@@ -156,32 +156,6 @@ mr_stringify_func (mr_ptrdes_t * ptrdes)
 }
 
 /**
- * Gets enum value as integer
- * @param ptrdes descriptor of the saved field
- * @return enum value
- */
-static uint64_t
-mr_get_enum_value (mr_ptrdes_t * ptrdes)
-{
-  uint64_t value = 0;
-  switch (ptrdes->fd.size)
-    {
-    case sizeof (uint8_t): value = * (uint8_t*) ptrdes->data; break;
-    case sizeof (uint16_t): value = * (uint16_t*) ptrdes->data; break;
-    case sizeof (uint32_t): value = * (uint32_t*) ptrdes->data; break;
-    case sizeof (uint64_t): value = * (uint64_t*) ptrdes->data; break;
-    default:
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-      memcpy (&value, ptrdes->data, MR_MIN (ptrdes->fd.size, sizeof (value))); /* NB: only for little endian */
-#else
-#error Support for non little endian architectures to be implemented
-#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
-      break;
-    }
-  return (value);
-}
-
-/**
  * MR_ENUM type saving handler. Look up enum descriptor and save as
  * stringified enum value or as integer otherwise.
  * @param ptrdes descriptor of the saved field
@@ -198,14 +172,11 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
   else
     {
-      ptrdes->fd.size = tdp->size_effective;
-      {
-	uint64_t value = mr_get_enum_value (ptrdes);
-	mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
-	if (fdp && fdp->name.str)
-	  return (MR_STRDUP (fdp->name.str));
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
-      }
+      int64_t value = mr_get_enum_value (tdp, ptrdes->data);
+      mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
+      if (fdp && fdp->name.str)
+	return (MR_STRDUP (fdp->name.str));
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
     }
   /* save as integer otherwise */
   return (mr_stringify_uint (ptrdes));
@@ -287,7 +258,7 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
       return (mr_stringify_uint (ptrdes));
     }
 
-  value = mr_get_enum_value (ptrdes);
+  value = mr_get_enum_value (tdp, ptrdes->data);
 
   if (0 == value)
     {
