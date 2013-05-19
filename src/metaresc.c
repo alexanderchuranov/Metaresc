@@ -63,7 +63,7 @@ TYPEDEF_STRUCT (mr_ra_void_t, RARRAY (void, ra));
 
 /*
   if this assert fails then mr_rarray_t definition in mr_protos.h differs from MR_RARRAY_PROTO define in metaresc.h
- */
+*/
 MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void_t, ra.data, ra.size, ra.alloc_size, ra.ext, ra.ptr_type));
 
 static int

@@ -177,6 +177,7 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
       if (fdp && fdp->name.str)
 	return (MR_STRDUP (fdp->name.str));
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
+      ptrdes->fd.size = tdp->size_effective;
     }
   /* save as integer otherwise */
   return (mr_stringify_uint (ptrdes));
@@ -288,9 +289,13 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
   if (value != 0)
     {
       /* save non-matched part as integer */
-      char number[MR_INT_TO_STRING_BUF_SIZE];
-      sprintf (number, "%" SCNu64, value);
-      str = mr_decompose_bitmask_add (str, bitmask_or_delimiter, number);
+      mr_ptrdes_t ptrdes = { .data = &value, };
+      char * number = mr_stringify_uint64_t (&ptrdes);
+      if (number != NULL)
+	{
+	  str = mr_decompose_bitmask_add (str, bitmask_or_delimiter, number);
+	  MR_FREE (number);
+	}
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_BITMASK, value);
     }
   return (str);
