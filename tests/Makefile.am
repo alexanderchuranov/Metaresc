@@ -12,14 +12,14 @@ if HAVE_CHECK
   check_PROGRAMS = smoke_xdr
 
 if HAVE_BISON_FLEX
-  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 
+  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr
 endif
 
 if HAVE_LIBXML2
   check_PROGRAMS += smoke_xml2
 endif
 
-  check_PROGRAMS += long_double double float rarray string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other mr_copy bool complex_float complex_double complex_long_double expr
+  check_PROGRAMS += long_double double float rarray string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other mr_copy bool complex_float complex_double complex_long_double
 endif
 
 TESTS=$(check_PROGRAMS)

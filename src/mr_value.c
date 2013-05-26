@@ -192,7 +192,7 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
   return (!0);
 }
 
-#endif
+#endif /* HAVE_BISON_FLEX */
 
 #define MR_VALUE_CAST(VT_VALUE)						\
    switch (value->value_type)						\
@@ -211,10 +211,7 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
 	   char * unknown = value->vt_string;				\
 	   typeof (value->VT_VALUE) vt_value = 0;			\
 	   if (0 == MR_LOAD_VAR (vt_value, unknown))			\
-	     {								\
-	       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_EXPRESSION, unknown); \
-	       status = EXIT_FAILURE;					\
-	     }								\
+	     status = EXIT_FAILURE;					\
 	   else								\
 	     {								\
 	       value->VT_VALUE = vt_value;				\
