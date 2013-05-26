@@ -5,7 +5,10 @@
 #ifdef HAVE_CONFIG_H
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
+
 #include <string.h>
+#include <stdbool.h>
+
 #ifdef HAVE_DLFCN_H
 #define __USE_GNU
 #include <dlfcn.h>
@@ -13,6 +16,218 @@
 
 #include <metaresc.h>
 #include <mr_value.h>
+
+#ifdef HAVE_BISON_FLEX
+#define MR_LOAD_VAR(VAR, STR) MR_LOAD_CINIT (typeof (VAR), STR, &VAR)
+#else
+#define MR_LOAD_VAR(VAR, STR) mr_load_var (MR_TYPE_DETECT (typeof (VAR)), STR, &VAR)
+
+/**
+ * Read enum value from string
+ * @param data pointer on place to save value
+ * @param str string with enum
+ * @return A pointer on the rest of parsed string
+ */
+static char *
+mr_get_enum (char * str, uint64_t * data)
+{
+  char * name = str;
+  int size;
+
+  while (isalnum (*str) || (*str == '_'))
+    ++str;
+  size = str - name;
+
+  {
+    char name_[size + 1];
+    memcpy (name_, name, size);
+    name_[size] = 0;
+
+    if (0 == strcmp ("FALSE", name_))
+      *data = FALSE;
+    else if (0 == strcmp ("TRUE", name_))
+      *data = TRUE;
+    else
+      {
+	mr_fd_t * fdp = mr_get_enum_by_name (name_);
+	if (NULL == fdp)
+	  {
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
+	    return (NULL);
+	  }
+	*data = fdp->param.enum_value;
+      }
+  }
+  return (str);
+}
+
+/**
+ * Read int value from string (may be as ENUM)
+ * @param str string with int
+ * @param data pointer on place to save int
+ * @return A pointer on the rest of parsed string
+ */
+static char *
+mr_get_int (char * str, uint64_t * data)
+{
+  int offset;
+  while (isspace (*str))
+    ++str;
+  if (isalpha (*str))
+    str = mr_get_enum (str, data);
+  else if ('0' == *str)
+    {
+      if ('x' == str[1])
+	{
+	  if (1 != sscanf (str, "%" SCNx64 "%n", data, &offset))
+	    {
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
+	      return (NULL);
+	    }
+	}
+      else
+	{
+	  if (1 != sscanf (str, "%" SCNo64 "%n", data, &offset))
+	    {
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
+	      return (NULL);
+	    }
+	}
+      str += offset;
+    }
+  else
+    {
+      if ((1 == sscanf (str, "%" SCNu64 "%n", data, &offset)) || (1 == sscanf (str, "%" SCNd64 "%n", data, &offset)))
+	str += offset;
+      else
+	{
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
+	  return (NULL);
+	}
+    }
+  return (str);
+}
+
+static char * 
+mr_load_bitmask (char * str, uint64_t * data)
+{
+  *data = 0;
+  for (;;)
+    {
+      uint64_t value;
+      str = mr_get_int (str, &value);
+      if (NULL == str)
+	return (NULL);
+      *data |= value;
+      while (isspace (*str))
+	++str;
+      if (*str != '|')
+	break;
+      ++str;
+    }
+  return (str);
+}
+
+static char *
+mr_load_long_double (char * str, long double * data)
+{
+  int offset;
+  if (1 != sscanf (str, "%Lg%n", data, &offset))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, str);
+      return (NULL);
+    }
+  return (&str[offset]);
+}
+
+static char *
+mr_load_complex_long_double (char * str, complex long double * x)
+{
+  int offset;
+  long double real, imag;
+  if (2 != sscanf (str, "%Lg + %Lgi%n", &real, &imag, &offset))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
+      return (NULL);
+    }
+  __real__ * x = real;
+  __imag__ * x = imag;
+  return (&str[offset]);
+}
+
+static int
+mr_load_var (mr_type_t mr_type, char * str, void * var)
+{
+  if ((NULL == str) || (NULL == var))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (0);
+    }
+  
+  switch (mr_type)
+    {
+    case MR_TYPE_INT64:
+    case MR_TYPE_UINT64:
+      str = mr_load_bitmask (str, var);
+      break;
+    case MR_TYPE_LONG_DOUBLE:
+      str = mr_load_long_double (str, var);
+      break;
+    case MR_TYPE_COMPLEX_LONG_DOUBLE:
+      str = mr_load_complex_long_double (str, var);
+      break;
+    default:
+      break;
+    }
+  
+  if (NULL == str)
+    return (0);
+  while (isspace (*str))
+    ++str;
+  if (*str != 0)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, str);
+      return (0);
+    }
+  return (!0);
+}
+
+#endif
+
+#define MR_VALUE_CAST(VT_VALUE)						\
+   switch (value->value_type)						\
+     {									\
+     case MR_VT_INT: value->VT_VALUE = value->vt_int; break;		\
+     case MR_VT_FLOAT: value->VT_VALUE = value->vt_float; break;	\
+     case MR_VT_COMPLEX: value->VT_VALUE = value->vt_complex; break;	\
+     case MR_VT_UNKNOWN:						\
+       if (NULL == value->vt_string)					\
+	 {								\
+	   MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
+	   status = EXIT_FAILURE;					\
+	 }								\
+       else								\
+	 {								\
+	   char * unknown = value->vt_string;				\
+	   typeof (value->VT_VALUE) vt_value = 0;			\
+	   if (0 == MR_LOAD_VAR (vt_value, unknown))			\
+	     {								\
+	       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_EXPRESSION, unknown); \
+	       status = EXIT_FAILURE;					\
+	     }								\
+	   else								\
+	     {								\
+	       value->VT_VALUE = vt_value;				\
+	       MR_FREE (unknown);					\
+	     }								\
+	 }								\
+       break;								\
+     default:								\
+       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
+       status = EXIT_FAILURE;						\
+       break;								\
+     }
+
 
 static void
 mr_value_id (mr_value_t * value)
@@ -35,41 +250,6 @@ mr_value_id (mr_value_t * value)
       value->vt_int = vt_int;
     }
 }
-
-#define MR_VALUE_CAST(VT_VALUE)						\
-   switch (value->value_type)						\
-     {									\
-     case MR_VT_INT: value->VT_VALUE = value->vt_int; break;		\
-     case MR_VT_FLOAT: value->VT_VALUE = value->vt_float; break;	\
-     case MR_VT_COMPLEX: value->VT_VALUE = value->vt_complex; break;	\
-     case MR_VT_UNKNOWN:						\
-       if (NULL == value->vt_string)					\
-	 {								\
-	   MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
-	   status = EXIT_FAILURE;					\
-	 }								\
-       else								\
-	 {								\
-	   char * unknown = value->vt_string;				\
-	   typeof (value->VT_VALUE) vt_value = 0;			\
-	   if (0 == MR_LOAD_CINIT (typeof (value->VT_VALUE), unknown, &vt_value)) \
-	     {								\
-	       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_EXPRESSION, unknown); \
-	       status = EXIT_FAILURE;					\
-	     }								\
-	   else								\
-	     {								\
-	       value->VT_VALUE = vt_value;				\
-	       MR_FREE (unknown);					\
-	     }								\
-	 }								\
-       break;								\
-     default:								\
-       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
-       status = EXIT_FAILURE;						\
-       break;								\
-     }
-
 
 int
 mr_value_cast (mr_value_type_t value_type, mr_value_t * value)

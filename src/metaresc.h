@@ -1016,7 +1016,7 @@
       if (NULL == _check_type_)						\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
       else if (NULL == __str__)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_STRING_IS_NULL);		\
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
       else								\
 	{								\
 	  xmlDocPtr __doc__ = xmlParseMemory (__str__, strlen (__str__)); \
@@ -1059,7 +1059,7 @@
       if (NULL == _check_type_)						\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
       else if (NULL == _str_)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_STRING_IS_NULL);		\
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
       else								\
 	{								\
 	  mr_load_data_t _load_data_ = {				\

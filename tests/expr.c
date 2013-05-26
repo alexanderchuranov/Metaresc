@@ -5,7 +5,7 @@
 #include <metaresc.h>
 #include <regression.h>
 
-#define ASSERT_LOAD_TYPE_CINIT(TYPE, VALUE)					\
+#define ASSERT_LOAD_TYPE_CINIT(TYPE, VALUE)				\
   ck_assert_msg (((TYPE)(VALUE) == MR_LOAD_CINIT (TYPE, #VALUE)),	\
 		 "restored value mismatched original for method CINIT on expression " #VALUE)
 
@@ -46,6 +46,7 @@ MR_START_TEST (scm_logxor_3args, "parse int ( logxor 1 2 3 )") { ASSERT_LOAD_TYP
 MR_START_TEST (scm_logxor_1arg, "parse int ( logxor 2 )") { ASSERT_LOAD_TYPE_SCM (int, "( logxor 2 )", 2); } END_TEST
 MR_START_TEST (scm_logxor_0args, "parse int ( logxor )") { ASSERT_LOAD_TYPE_SCM (int, "( logxor )", 0); } END_TEST
 
-MR_START_TEST (scm_complex_expr, "parse complex expr") { ASSERT_LOAD_TYPE_SCM (int, "( + ( * 2 3 ) ( % 12 5 ) ( logior 1 2 ) ( logxor 1 2 ) )", 14); } END_TEST
+MR_START_TEST (scm_complex_expr, "parse complex double") { ASSERT_LOAD_TYPE_SCM (complex, "( + 2 1i )", 2 + 1i); } END_TEST
+MR_START_TEST (scm_mix_expr, "parse all operation") { ASSERT_LOAD_TYPE_SCM (complex, "( + ( * 2 3 1i ) ( % 12 5 ) ( logior 1 2 ) ( logxor 1 2 ) )", 8 + 6i); } END_TEST
 
 MAIN ();
