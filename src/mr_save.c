@@ -662,7 +662,7 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
 	    }
 	}
     }
-    }
+}
 
 /**
  * Saves pointer into internal representation.
