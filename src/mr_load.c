@@ -543,14 +543,17 @@ mr_load_rarray_data (int idx, mr_load_data_t * mr_load_data)
   fd_.mr_type_ext = MR_TYPE_EXT_NONE;
   fd_.name = mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].fd.name;
 
-  ra->size = ra->alloc_size = count * fd_.size;
+  ra->alloc_size = ra->size = 0;
   ra->data = NULL;
+  
   if ((mr_load_data->ptrs.ra.data[idx].ref_idx < 0) && (count > 0))
     {
+      ra->alloc_size = ra->size = count * fd_.size;
       ra->data = MR_MALLOC (ra->size);
       if (NULL == ra->data)
 	{
 	  ra->alloc_size = ra->size = 0;
+	  ra->data = NULL;
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (0);
 	}

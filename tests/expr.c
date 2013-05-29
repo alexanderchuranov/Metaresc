@@ -5,24 +5,26 @@
 #include <metaresc.h>
 #include <regression.h>
 
-#define ASSERT_LOAD_TYPE_CINIT(TYPE, VALUE)				\
+#define ASSERT_LOAD_EXPR(TYPE, VALUE)					\
   ck_assert_msg (((TYPE)(VALUE) == MR_LOAD_CINIT (TYPE, #VALUE)),	\
-		 "restored value mismatched original for method CINIT on expression " #VALUE)
+		 "restored value mismatched original for method CINIT on expression " #VALUE); \
+  ck_assert_msg (((TYPE)(VALUE) == MR_LOAD_XML (TYPE, "<?xml version='1.0'?><x>" #VALUE "</x>")), \
+		 "restored value mismatched original for method XML on expression " #VALUE) 
 
 #define ASSERT_LOAD_TYPE_SCM(TYPE, VALUE, RESULT)			\
   ck_assert_msg (((TYPE)(RESULT) == MR_LOAD_SCM (TYPE, VALUE)),		\
 		 "restored value mismatched original for method SCM on expression " VALUE)
 
-MR_START_TEST (parse_bool_true, "parse bool TRUE = (0)") { ASSERT_LOAD_TYPE_CINIT (bool, TRUE); } END_TEST
-MR_START_TEST (parse_int_zero, "parse int 1") { ASSERT_LOAD_TYPE_CINIT (int, 1); } END_TEST
-MR_START_TEST (parse_int_paren, "parse int x = (1)") { ASSERT_LOAD_TYPE_CINIT (int, (1)); } END_TEST
-MR_START_TEST (parse_unary_minus, "parse int x = (1 + -1)") { ASSERT_LOAD_TYPE_CINIT (int, (1 + -1)); } END_TEST
-MR_START_TEST (parse_int_sum, "parse int x = 1 + 1") { ASSERT_LOAD_TYPE_CINIT (int, 1 + 1); } END_TEST
-MR_START_TEST (parse_complex_sum, "parse float complex x = 1 + 1i") { ASSERT_LOAD_TYPE_CINIT (complex float, 1 + 1i); } END_TEST
-MR_START_TEST (parse_float_op1, "parse float x = (1. + 1i) / 2") { ASSERT_LOAD_TYPE_CINIT (float, (1. + 1i) / 2); } END_TEST
-MR_START_TEST (parse_float_op2, "parse float x = M_PI + 2 * M_E") { ASSERT_LOAD_TYPE_CINIT (float, 3.14159265358979323846 + 2 * 2.7182818284590452354); } END_TEST
-MR_START_TEST (parse_bits_op1, "parse float x = 7 & 5 * 8") { ASSERT_LOAD_TYPE_CINIT (int, 7 & 5 * 8); } END_TEST
-MR_START_TEST (parse_bits_op2, "parse float x = 2 | 5 * 8") { ASSERT_LOAD_TYPE_CINIT (int, 2 | 5 * 8); } END_TEST
+MR_START_TEST (parse_bool_true, "parse bool TRUE = (0)") { ASSERT_LOAD_EXPR (bool, TRUE); } END_TEST
+MR_START_TEST (parse_int_zero, "parse int 1") { ASSERT_LOAD_EXPR (int, 1); } END_TEST
+MR_START_TEST (parse_int_paren, "parse int x = (1)") { ASSERT_LOAD_EXPR (int, (1)); } END_TEST
+MR_START_TEST (parse_unary_minus, "parse int x = (1 + -1)") { ASSERT_LOAD_EXPR (int, (1 + -1)); } END_TEST
+MR_START_TEST (parse_int_sum, "parse int x = 1 + 1") { ASSERT_LOAD_EXPR (int, 1 + 1); } END_TEST
+MR_START_TEST (parse_complex_sum, "parse float complex x = 1 + 1i") { ASSERT_LOAD_EXPR (complex float, 1 + 1i); } END_TEST
+MR_START_TEST (parse_float_op1, "parse float x = (1. + 1i) / 2") { ASSERT_LOAD_EXPR (float, (1. + 1i) / 2); } END_TEST
+MR_START_TEST (parse_float_op2, "parse float x = M_PI + 2 * M_E") { ASSERT_LOAD_EXPR (float, 3.14159265358979323846 + 2 * 2.7182818284590452354); } END_TEST
+MR_START_TEST (parse_bits_op1, "parse int x = 7 ^ 5 * 8") { ASSERT_LOAD_EXPR (int, 7 ^ 5 * 8); } END_TEST
+MR_START_TEST (parse_bits_op2, "parse int x = 2 | 5 * 8") { ASSERT_LOAD_EXPR (int, 2 | 5 * 8); } END_TEST
 
 MR_START_TEST (scm_add_3args, "parse int ( + 1 2 3)") { ASSERT_LOAD_TYPE_SCM (int, "( + 1 2 3)", 6); } END_TEST
 MR_START_TEST (scm_add_1arg, "parse int ( + 1)") { ASSERT_LOAD_TYPE_SCM (int, "( + 1)", 1); } END_TEST
