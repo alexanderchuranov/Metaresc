@@ -66,13 +66,13 @@ TYPEDEF_STRUCT (mr_ra_void_t, RARRAY (void, ra));
 */
 MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void_t, ra.data, ra.size, ra.alloc_size, ra.ext, ra.ptr_type));
 
-static int
+static mr_status_t
 mr_td_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_ic_free (&tdp->lookup_by_name, NULL);
   mr_ic_free (&tdp->lookup_by_value, NULL);
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -1409,13 +1409,13 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   return (EXIT_SUCCESS);
 }
 
-static int
+static mr_status_t
 mr_conf_init_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_detect_fields_types (tdp);
   mr_register_type_pointer (tdp);
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 static void

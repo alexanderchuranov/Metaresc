@@ -129,6 +129,11 @@ TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable arr
 		(char *, ptr_type, , "union discriminator"),
 		)
 
+TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
+	      (MR_SUCCESS, = 0),
+	      (MR_FAILURE, = !0),
+	      )
+
 TYPEDEF_ENUM (mr_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (unsigned char)))), "Red/Black enum"),
 	      (MR_BLACK, = 0),
 	      (MR_RED, = 1),
@@ -170,7 +175,7 @@ TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /
 
 TYPEDEF_FUNC (void, mr_action_fn_t, (__const mr_red_black_tree_node_t * /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
 
-TYPEDEF_FUNC (int, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_FUNC (void, mr_free_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 

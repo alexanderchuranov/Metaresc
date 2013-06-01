@@ -379,7 +379,7 @@ TYPEDEF_STRUCT (mr_ic_hash_index_context_t,
 		(mr_compar_fn_t, compar_fn),
 		(const void *, context))
 
-static int
+static mr_status_t
 mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
 {
   const mr_ic_hash_index_context_t * mr_ic_hash_index_context = context;
@@ -391,12 +391,12 @@ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
   if (NULL == add)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (EXIT_FAILURE);
+      return (MR_FAILURE);
     }
 
   if (0 == memcmp (add, &key, sizeof (key)))
     ++mr_ic_hash_index_context->index->count;
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 int
