@@ -140,7 +140,7 @@ mr_ic_none_free (mr_ic_t * ic, const void * context)
   MR_FREE (rarray);
 }
 
-int
+mr_status_t
 mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
   if ((NULL == ic) || (NULL == compar_fn))
@@ -262,7 +262,7 @@ mr_ic_sorted_array_free (mr_ic_t * ic, const void * context)
   ic->ext.ptr = NULL;
 }
 
-int
+mr_status_t
 mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
   mr_ic_rarray_t * rarray;
@@ -486,7 +486,7 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
     }
 }
 
-int
+mr_status_t
 mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type)
 {
   mr_ic_hash_t * index;
@@ -568,7 +568,7 @@ mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
   return (MR_SUCCESS);
 }
 
-int
+mr_status_t
 mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
   if ((NULL == ic) || (NULL == compar_fn))
