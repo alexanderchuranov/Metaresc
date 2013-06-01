@@ -8,8 +8,8 @@
 
 extern mr_ptr_t * mr_ic_add (mr_ic_t *, mr_ptr_t, const void *);
 extern mr_ptr_t * mr_ic_find (mr_ic_t *, mr_ptr_t, const void *);
-extern int mr_ic_foreach (mr_ic_t *, mr_visit_fn_t, const void *);
-extern int mr_ic_index (mr_ic_t *, mr_ic_rarray_t *, const void *);
+extern mr_status_t mr_ic_foreach (mr_ic_t *, mr_visit_fn_t, const void *);
+extern mr_status_t mr_ic_index (mr_ic_t *, mr_ic_rarray_t *, const void *);
 extern void mr_ic_free (mr_ic_t *, const void *);
 
 extern mr_ptr_t * mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context);

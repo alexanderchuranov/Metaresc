@@ -612,7 +612,7 @@ mr_ic_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
   return (NULL);
 }
 
-int
+mr_status_t
 mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   if ((NULL == ic) || (NULL == visit_fn))
@@ -622,7 +622,7 @@ mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
   return (MR_FAILURE);
 }
 
-int
+mr_status_t
 mr_ic_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
   int i, count;
