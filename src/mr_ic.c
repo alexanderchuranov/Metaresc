@@ -89,7 +89,7 @@ mr_ic_none_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
   return (MR_SUCCESS);
 }
 
-int
+mr_status_t
 mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
   mr_ic_rarray_t * copy;
@@ -222,7 +222,7 @@ mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (mr_sort_key->ic->compar_fn (*x_, *y_, mr_sort_key->context));
 }
 
-int
+mr_status_t
 mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray_, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->ext.ptr;
@@ -431,7 +431,7 @@ mr_ic_hash_index_inner (mr_ic_t * ic, mr_ic_hash_t * index, int count, const voi
   return (mr_ic_foreach (ic, mr_ic_hash_index_visitor, &mr_ic_hash_index_context));
 }
 
-int
+mr_status_t
 mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
   int status;
@@ -557,7 +557,7 @@ mr_ic_rbtree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context
   return (MR_SUCCESS);
 }
 
-int
+mr_status_t
 mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
   int i;
