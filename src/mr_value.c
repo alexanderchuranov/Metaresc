@@ -155,13 +155,13 @@ mr_load_complex_long_double (char * str, complex long double * x)
   return (&str[offset]);
 }
 
-static int
+static mr_status_t
 mr_load_var (mr_type_t mr_type, char * str, void * var)
 {
   if ((NULL == str) || (NULL == var))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (0);
+      return (MR_FAILURE);
     }
   
   switch (mr_type)
@@ -181,49 +181,49 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
     }
   
   if (NULL == str)
-    return (0);
+    return (MR_FAILURE);
   while (isspace (*str))
     ++str;
   if (*str != 0)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, str);
-      return (0);
+      return (MR_FAILURE);
     }
-  return (!0);
+  return (MR_SUCCESS);
 }
 
 #endif /* HAVE_BISON_FLEX */
 
 #define MR_VALUE_CAST(VT_VALUE)						\
-   switch (value->value_type)						\
-     {									\
-     case MR_VT_INT: value->VT_VALUE = value->vt_int; break;		\
-     case MR_VT_FLOAT: value->VT_VALUE = value->vt_float; break;	\
-     case MR_VT_COMPLEX: value->VT_VALUE = value->vt_complex; break;	\
-     case MR_VT_UNKNOWN:						\
-       if (NULL == value->vt_string)					\
-	 {								\
-	   MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
-	   status = EXIT_FAILURE;					\
-	 }								\
-       else								\
-	 {								\
-	   char * unknown = value->vt_string;				\
-	   typeof (value->VT_VALUE) vt_value = 0;			\
-	   if (0 == MR_LOAD_VAR (vt_value, unknown))			\
-	     status = EXIT_FAILURE;					\
-	   else								\
-	     {								\
-	       value->VT_VALUE = vt_value;				\
-	       MR_FREE (unknown);					\
-	     }								\
-	 }								\
-       break;								\
-     default:								\
-       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
-       status = EXIT_FAILURE;						\
-       break;								\
-     }
+  switch (value->value_type)						\
+    {									\
+    case MR_VT_INT: value->VT_VALUE = value->vt_int; break;		\
+    case MR_VT_FLOAT: value->VT_VALUE = value->vt_float; break;		\
+    case MR_VT_COMPLEX: value->VT_VALUE = value->vt_complex; break;	\
+    case MR_VT_UNKNOWN:							\
+      if (NULL == value->vt_string)					\
+	{								\
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
+	  status = MR_FAILURE;						\
+	}								\
+      else								\
+	{								\
+	  char * unknown = value->vt_string;				\
+	  typeof (value->VT_VALUE) vt_value = 0;			\
+	  status = MR_LOAD_VAR (vt_value, unknown);			\
+	  if (MR_SUCCESS == status)					\
+	    {								\
+	      value->VT_VALUE = vt_value;				\
+	      value->value_type = value_type;				\
+	      MR_FREE (unknown);					\
+	    }								\
+	}								\
+      break;								\
+    default:								\
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
+      status = MR_FAILURE;						\
+      break;								\
+    }
 
 
 static void
@@ -248,10 +248,10 @@ mr_value_id (mr_value_t * value)
     }
 }
 
-int
+mr_status_t
 mr_value_cast (mr_value_type_t value_type, mr_value_t * value)
 {
-  int status = EXIT_SUCCESS;
+  mr_status_t status = MR_SUCCESS;
   mr_value_id (value);
   switch (value_type)
     {
@@ -269,15 +269,13 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * value)
       
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
-      status = EXIT_FAILURE;
+      status = MR_FAILURE;
       break;
     }
-  if (EXIT_SUCCESS == status)
-    value->value_type = value_type;
   return (status);
 }
 
-int
+mr_status_t
 mr_value_neg (mr_value_t * value)
 {
   mr_value_id (value);
@@ -288,21 +286,21 @@ mr_value_neg (mr_value_t * value)
     case MR_VT_COMPLEX: value->vt_complex = -value->vt_complex; break;
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
-      return (EXIT_FAILURE);
+      return (MR_FAILURE);
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 #define MR_VALUE_OP(OP_NAME, OP, ...)					\
-  int mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
+  mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
     mr_value_type_t result_type = MR_MAX (left->value_type, right->value_type);	\
     memset (result, 0, sizeof (*result));				\
-    if ((EXIT_SUCCESS != mr_value_cast (result_type, left)) ||		\
-	(EXIT_SUCCESS != mr_value_cast (result_type, right)))		\
+    if ((MR_SUCCESS != mr_value_cast (result_type, left)) ||		\
+	(MR_SUCCESS != mr_value_cast (result_type, right)))		\
       {									\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
-	return (EXIT_FAILURE);						\
+	return (MR_FAILURE);						\
       }									\
     result->value_type = result_type;					\
     __VA_ARGS__;							\
@@ -313,13 +311,13 @@ mr_value_neg (mr_value_t * value)
       case MR_VT_COMPLEX: result->vt_complex = left->vt_complex OP right->vt_complex; break; \
       default:								\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
-	return (EXIT_FAILURE);						\
+	return (MR_FAILURE);						\
       }									\
-    return (EXIT_SUCCESS);						\
+    return (MR_SUCCESS);						\
   }
 
 #define MR_INT_VALUE_OP(OP_NAME, OP, ...)				\
-  int mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
+  mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
     memset (result, 0, sizeof (*result));				\
     mr_value_id (left);							\
@@ -327,15 +325,15 @@ mr_value_neg (mr_value_t * value)
     if ((left->value_type != MR_VT_INT) || (right->value_type != MR_VT_INT)) \
       {									\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
-	return (EXIT_FAILURE);						\
+	return (MR_FAILURE);						\
       }									\
     result->value_type = MR_VT_INT;					\
     __VA_ARGS__;							\
     result->vt_int = left->vt_int OP right->vt_int;			\
-    return (EXIT_SUCCESS);						\
+    return (MR_SUCCESS);						\
   }
 
-int
+bool
 mr_value_is_zero (mr_value_t * value)
 {
   switch (value->value_type)
@@ -351,8 +349,8 @@ mr_value_is_zero (mr_value_t * value)
 MR_VALUE_OP (add, +);
 MR_VALUE_OP (sub, -);
 MR_VALUE_OP (mul, *);
-MR_VALUE_OP (div, /, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_DIVISION_BY_ZERO); return (EXIT_FAILURE); });
-MR_INT_VALUE_OP (mod, %, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_DIVISION_BY_ZERO); return (EXIT_FAILURE); });
+MR_VALUE_OP (div, /, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
+MR_INT_VALUE_OP (mod, %, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
 MR_INT_VALUE_OP (bit_or, |);
 MR_INT_VALUE_OP (bit_and, &);
 MR_INT_VALUE_OP (bit_xor, ^);

@@ -26,8 +26,8 @@
     mr_conf_t mr_conf_saved = mr_conf;					\
     mr_ra_mr_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);		\
     int i;								\
-    if ((0 == ptrs.ra.size) || (NULL == ptrs.ra.data))			\
-      ck_abort_msg ("save into internal representation failed");	\
+    ck_assert_msg (((0 != ptrs.ra.size) && (NULL != ptrs.ra.data)),	\
+		   "save into internal representation failed");		\
     for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)	\
       if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)	\
 	{								\
@@ -43,20 +43,20 @@
 	}								\
     MR_FREE (ptrs.ra.data);						\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-    if ((0 == mr_conf_serialized.size) || (NULL == mr_conf_serialized.data)) \
-      ck_abort_msg ("save for method " #METHOD " failed");		\
+      ck_assert_msg (((0 != mr_conf_serialized.size) && (NULL != mr_conf_serialized.data)), \
+		     "save for method " #METHOD " failed");		\
     mr_conf_t mr_conf_loaded;						\
-    if (0 == MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded)) \
-      ck_abort_msg ("load for method " #METHOD " failed");		\
+    ck_assert_msg (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded), \
+		   "load for method " #METHOD " failed");		\
     ptrs = MR_SAVE (mr_conf_t, &mr_conf_loaded);			\
-    if ((0 == ptrs.ra.size) || (NULL == ptrs.ra.data))			\
-      ck_abort_msg ("save into internal representation failed");	\
+    ck_assert_msg (((0 != ptrs.ra.size) && (NULL != ptrs.ra.data)),	\
+		   "save into internal representation failed");		\
     MR_FREE (ptrs.ra.data);						\
     mr_conf = mr_conf_loaded;						\
     mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-    if ((mr_conf_serialized.size != mr_conf_serialized_.size) ||	\
-	(0 != memcmp (mr_conf_serialized.data, mr_conf_serialized_.data, mr_conf_serialized.size))) \
-      ck_abort_msg ("restored mr_conf mismatched original dump for method " #METHOD); \
+      ck_assert_msg ((mr_conf_serialized.size == mr_conf_serialized_.size) && \
+		     (0 == memcmp (mr_conf_serialized.data, mr_conf_serialized_.data, mr_conf_serialized.size)), \
+		     "restored mr_conf mismatched original dump for method " #METHOD); \
     MR_FREE (mr_conf_serialized_.data);					\
     MR_FREE (mr_conf_serialized.data);					\
     mr_conf = mr_conf_saved;						\

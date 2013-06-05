@@ -454,7 +454,7 @@ static xml_save_handler_t xml2_save_handler[] =
     [MR_TYPE_NAMED_ANON_UNION] = xml_save_empty,
   };
 
-static int
+static mr_status_t
 xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
@@ -467,7 +467,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   if (NULL == node)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (!0);
+      return (MR_FAILURE);
     }
 
   node->_private = (void*)(long)idx;
@@ -507,7 +507,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   if (parent >= 0)
     xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
 
-  return (0);
+  return (MR_SUCCESS);
 }
 
 /**

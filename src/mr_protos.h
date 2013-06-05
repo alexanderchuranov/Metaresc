@@ -72,6 +72,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_DIVISION_BY_ZERO, , "Division by zero."),
 	      (MR_MESSAGE_UNEXPECTED_TARGET_TYPE, , "Unexpected target type (%d)."),
 	      (MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, , "Unexpected data at the end of the string '%s'."),
+	      (MR_MESSAGE_SERIALIZATION_FAILED, , "Serialization failed."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -130,8 +131,8 @@ TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable arr
 		)
 
 TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
-	      (MR_SUCCESS, = 0),
-	      (MR_FAILURE, = !0),
+	      MR_SUCCESS,
+	      MR_FAILURE,
 	      )
 
 TYPEDEF_ENUM (mr_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (unsigned char)))), "Red/Black enum"),
@@ -275,7 +276,7 @@ TYPEDEF_ENUM (mr_bool_t, ATTRIBUTES ( , "boolean type"),
 	      (MR_TRUE, = !0),
 	      )
 
-TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))), "ponter descriptor flag bitfield values"),
+TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint32_t)))), "ponter descriptor flag bitfield values"),
 		BITFIELD (mr_bool_t, is_null, :1),
 		BITFIELD (mr_bool_t, is_referenced, :1),
 		BITFIELD (mr_bool_t, is_content_reference, :1),
@@ -319,8 +320,8 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(void *, data, , "pointer on binary data"),
 		(mr_fd_t, fd, , "field descriptor"),
 		(int, level, , "level from the root element"),
-		(int, idx, , "public index"),
-		(int, ref_idx, , "reference index (internal enumeration)"),
+		(int32_t, idx, , "public index"),
+		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
 		(int, first_child, , "first child index"),
 		(int, last_child, , "last child index"),

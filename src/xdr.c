@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 #include <rpc/types.h>
 #include <rpc/xdr.h>
 #include <netinet/in.h>
@@ -17,8 +18,8 @@
 #include <mr_load.h>
 #include <mr_save.h>
 
-TYPEDEF_FUNC (int, xdr_load_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
-TYPEDEF_FUNC (int, xdr_save_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
+TYPEDEF_FUNC (mr_status_t, xdr_load_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
+TYPEDEF_FUNC (mr_status_t, xdr_save_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
 
 static xdr_load_handler_t xdr_load_handler[];
 static xdr_save_handler_t xdr_save_handler[];
@@ -230,7 +231,7 @@ xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 {
   int count = ptrs->ra.size / sizeof (ptrs->ra.data[0]);
@@ -264,7 +265,7 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 	      }
 	  }
       }
-  return (!0);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -274,10 +275,10 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_none (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (xdr_void ());
+  return (xdr_void () ? MR_SUCCESS : MR_FAILURE);
 }
 
 /*
@@ -306,17 +307,17 @@ bool_t xdr_char (xdrs, cp)
  * @param cp pointer on char
  * @return status
  */
-static int __attribute__((unused))
+static mr_status_t __attribute__((unused))
 xdr_char_ (XDR * xdrs, char * cp)
 {
   int32_t x = 0;
   if (XDR_ENCODE == xdrs->x_op)
     x = *cp;
   if (!xdr_int (xdrs, &x))
-    return (0);
+    return (MR_FAILURE);
   if (XDR_DECODE == xdrs->x_op)
     *cp = x;
-  return (!0);
+  return (MR_SUCCESS);
 }
 
 #ifndef HAVE_XDR_UINT8_T
@@ -333,17 +334,26 @@ xdr_char_ (XDR * xdrs, char * cp)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_uint_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
+  bool_t status = 0;
   switch (ptrs->ra.data[idx].fd.size)
     {
-    case sizeof (uint8_t): return (xdr_uint8_t (xdrs, ptrs->ra.data[idx].data));
-    case sizeof (uint16_t): return (xdr_uint16_t (xdrs, ptrs->ra.data[idx].data));
-    case sizeof (uint32_t): return (xdr_uint32_t (xdrs, ptrs->ra.data[idx].data));
-    case sizeof (uint64_t): return (xdr_uint64_t (xdrs, ptrs->ra.data[idx].data));
-    default: return (0);
+    case sizeof (uint8_t):
+      status = xdr_uint8_t (xdrs, ptrs->ra.data[idx].data);
+      break;
+    case sizeof (uint16_t):
+      status = xdr_uint16_t (xdrs, ptrs->ra.data[idx].data);
+      break;
+    case sizeof (uint32_t):
+      status = xdr_uint32_t (xdrs, ptrs->ra.data[idx].data);
+      break;
+    case sizeof (uint64_t):
+      status = xdr_uint64_t (xdrs, ptrs->ra.data[idx].data);
+      break;
     }
+  return (status ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -353,17 +363,26 @@ xdr_uint_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_int_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
+  bool_t status = FALSE;
   switch (ptrs->ra.data[idx].fd.size)
     {
-    case sizeof (int8_t): return (xdr_int8_t (xdrs, ptrs->ra.data[idx].data));
-    case sizeof (int16_t): return (xdr_int16_t (xdrs, ptrs->ra.data[idx].data));
-    case sizeof (int32_t): return (xdr_int32_t (xdrs, ptrs->ra.data[idx].data));
-    case sizeof (int64_t): return (xdr_int64_t (xdrs, ptrs->ra.data[idx].data));
-    default: return (0);
+    case sizeof (uint8_t):
+      status = xdr_int8_t (xdrs, ptrs->ra.data[idx].data);
+      break;
+    case sizeof (uint16_t):
+      status = xdr_int16_t (xdrs, ptrs->ra.data[idx].data);
+      break;
+    case sizeof (uint32_t):
+      status = xdr_int32_t (xdrs, ptrs->ra.data[idx].data);
+      break;
+    case sizeof (uint64_t):
+      status = xdr_int64_t (xdrs, ptrs->ra.data[idx].data);
+      break;
     }
+  return (status ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -373,14 +392,14 @@ xdr_int_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (xdr_float (xdrs, ptrs->ra.data[idx].data));
+  return (xdr_float (xdrs, ptrs->ra.data[idx].data) ? MR_SUCCESS : MR_FAILURE);
 }
 
 #define XDR_COMPLEX(NAME_SUFFIX, TYPE_NAME)					\
-  static int xdr_complex_ ## NAME_SUFFIX (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs) { \
+  static mr_status_t xdr_complex_ ## NAME_SUFFIX (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs) { \
     TYPE_NAME real = 0;							\
     TYPE_NAME imag = 0;							\
     complex TYPE_NAME x = 0;						\
@@ -391,16 +410,16 @@ xdr_float_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	imag = __imag__ x;						\
       }									\
     if (!xdr_ ## NAME_SUFFIX (xdrs, &real))				\
-      return (0);							\
+      return (MR_FAILURE);						\
     if (!xdr_ ## NAME_SUFFIX (xdrs, &imag))				\
-      return (0);							\
+      return (MR_FAILURE);						\
     if (XDR_DECODE == xdrs->x_op)					\
       {									\
 	__real__ x = real;						\
 	__imag__ x = imag;						\
 	*(complex TYPE_NAME*)ptrs->ra.data[idx].data = x;		\
       }									\
-    return (!0);							\
+    return (MR_SUCCESS);						\
   }
 
 XDR_COMPLEX (float, float);
@@ -412,10 +431,10 @@ XDR_COMPLEX (float, float);
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (xdr_double (xdrs, ptrs->ra.data[idx].data));
+  return (xdr_double (xdrs, ptrs->ra.data[idx].data) ? MR_SUCCESS : MR_FAILURE);
 }
 
 XDR_COMPLEX (double, double);
@@ -427,16 +446,16 @@ XDR_COMPLEX (double, double);
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_long_double (XDR * xdrs, long double * data)
 {
   return (xdr_opaque (xdrs, (void*)data, MR_SIZEOF_LONG_DOUBLE));
 }
 
-static int
+static mr_status_t
 xdr_long_double_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (xdr_long_double (xdrs, ptrs->ra.data[idx].data));
+  return (xdr_long_double (xdrs, ptrs->ra.data[idx].data) ? MR_SUCCESS : MR_FAILURE);
 }
 
 XDR_COMPLEX (long_double, long double);
@@ -448,7 +467,7 @@ XDR_COMPLEX (long_double, long double);
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   uint32_t str_len;
@@ -461,7 +480,8 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	str_len = max_size;
     }
 
-  xdr_uint32_t (xdrs, &str_len);
+  if (!xdr_uint32_t (xdrs, &str_len))
+    return (MR_FAILURE);
 
   if (XDR_DECODE == xdrs->x_op)
     {
@@ -473,11 +493,11 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	  if (NULL == data)
 	    {
 	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      return (0);
+	      return (MR_FAILURE);
 	    }
 	}
       }
-  return (xdr_opaque (xdrs, ptrs->ra.data[idx].data, str_len));
+  return (xdr_opaque (xdrs, ptrs->ra.data[idx].data, str_len) ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -487,28 +507,32 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_save_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   if (ptrs->ra.data[idx].ref_idx >= 0)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx))
-	return (0);
-      return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
+	return (MR_FAILURE);
+      if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+	return (MR_FAILURE);
+      return (MR_SUCCESS);
     }
   else
     {
       void ** str = ptrs->ra.data[idx].data;
       int32_t size = -1;
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
-	return (0);
+	return (MR_FAILURE);
       if (NULL != *str)
 	size = strlen (*str);
       if (!xdr_int32_t (xdrs, &size))
-	return (0);
+	return (MR_FAILURE);
       if (size < 0)
-	return (!0);
-      return (xdr_opaque (xdrs, *str, size));
+	return (MR_SUCCESS);
+      if (!xdr_opaque (xdrs, *str, size))
+	return (MR_FAILURE);
+      return (MR_SUCCESS);
     }
 }
 
@@ -519,30 +543,36 @@ xdr_save_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
-    return (0);
+    return (MR_FAILURE);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags));
+    {
+      if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+	return (MR_FAILURE);
+      return (MR_SUCCESS);
+    }
   else
     {
       char ** str = ptrs->ra.data[idx].data;
       int32_t size = -1;
       *str = NULL;
       if (!xdr_int32_t (xdrs, &size))
-	return (0);
+	return (MR_FAILURE);
       if (size < 0)
-	return (!0);
+	return (MR_SUCCESS);
       *str = MR_MALLOC (size + 1);
       if (NULL == *str)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (0);
+	  return (MR_FAILURE);
 	}
       memset (*str, 0, size + 1);
-      return (xdr_opaque (xdrs, *str, size));
+      if (!xdr_opaque (xdrs, *str, size))
+	return (MR_FAILURE);
+      return (MR_SUCCESS);
     }
 }
 
@@ -554,7 +584,7 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param tdp type descriptor
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * tdp)
 {
   char * data = ptrs->ra.data[idx].data;
@@ -563,23 +593,23 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
   if (NULL == tdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
-      return (0);
+      return (MR_FAILURE);
     }
 
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type.str);
-      return (0);
+      return (MR_FAILURE);
     }
 
   count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields.data[i].fdp;
-      if (!xdr_load (&data[fdp->offset], fdp, xdrs, ptrs))
-	return (0);
+      if (MR_SUCCESS != xdr_load (&data[fdp->offset], fdp, xdrs, ptrs))
+	return (MR_FAILURE);
     }
-  return (!0);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -589,10 +619,10 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_struct (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return xdr_load_struct_inner (xdrs, idx, ptrs, mr_get_td_by_name (ptrs->ra.data[idx].fd.type));
+  return (xdr_load_struct_inner (xdrs, idx, ptrs, mr_get_td_by_name (ptrs->ra.data[idx].fd.type)));
 }
 
 /*
@@ -605,7 +635,7 @@ xdr_load_struct (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   /* save union branch field name as string */
@@ -630,14 +660,14 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   mr_td_t * tdp = mr_get_td_by_name (ptrs->ra.data[idx].fd.type); /* look up for type descriptor */
   char * data = ptrs->ra.data[idx].data;
   char * discriminator = NULL;
   mr_fd_t * fdp;
-  int status = 0;
+  mr_status_t status = MR_FAILURE;
   mr_ptrdes_t ptrdes = { .data = &discriminator, }; /* temporary pointer descriptor for union discriminator string */
   mr_ra_mr_ptrdes_t ptrs_ = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
 
@@ -646,14 +676,14 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra.data[idx].fd.type);
   else if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_UNION, tdp->type.str);
-  else if (!xdr_load_string (xdrs, 0, &ptrs_))
+  else if (MR_SUCCESS != xdr_load_string (xdrs, 0, &ptrs_))
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else if (NULL == discriminator)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else
     {
       if (0 == tdp->fields.size) /* check for an empty union */
-	status = !0;
+	status = MR_SUCCESS;
       else
 	{
 	  fdp = mr_get_fd_by_name (tdp, discriminator);
@@ -674,10 +704,10 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param str pointer on a string
  * @return status
  */
-static int
+static mr_status_t
 xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
 {
-  int status = 0;
+  mr_status_t status = MR_FAILURE;
   if (NULL != str)
     {
       mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
@@ -698,7 +728,7 @@ xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
  * @param str pointer on a string
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_temp_string (XDR * xdrs, char ** str)
 {
   mr_ptrdes_t ptrdes = { .data = str, }; /* temporary pointer descriptor for union discriminator string */
@@ -713,7 +743,7 @@ xdr_load_temp_string (XDR * xdrs, char ** str)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_save_enum (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char * value = mr_stringify_enum (&ptrs->ra.data[idx]);
@@ -727,7 +757,7 @@ xdr_save_enum (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char * value = mr_stringify_bitmask (&ptrs->ra.data[idx], MR_BITMASK_OR_DELIMITER);
@@ -741,7 +771,7 @@ xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_save_func (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char * value = mr_stringify_func (&ptrs->ra.data[idx]);
@@ -755,17 +785,17 @@ xdr_save_func (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  int status = 0;
+  mr_status_t status = MR_FAILURE;
   mr_ptrdes_t ptrdes = { .fd = ptrs->ra.data[idx].fd, .data = ptrs->ra.data[idx].data, };
   mr_load_data_t mr_load_data = { .ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, } } };
 
-  if (!xdr_load_temp_string (xdrs, &ptrdes.mr_value.vt_string))
-    return (0);
+  if (MR_SUCCESS != xdr_load_temp_string (xdrs, &ptrdes.mr_value.vt_string))
+    return (MR_FAILURE);
   if (NULL == ptrdes.mr_value.vt_string)
-    return (0);
+    return (MR_FAILURE);
 
   ptrdes.mr_value.value_type = MR_VT_UNKNOWN;
   switch (ptrs->ra.data[idx].fd.mr_type)
@@ -779,7 +809,7 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       status = mr_load_func (0, &mr_load_data);
       break;
     default:
-      status = 0;
+      status = MR_FAILURE;
       break;
     }
   if (MR_VT_UNKNOWN == ptrdes.mr_value.value_type)
@@ -795,7 +825,7 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param data pointer on data
  * @return status
  */
-static int
+static mr_status_t
 xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
 {
   mr_ptrdes_t ptrdes = { .fd = *fdp, .data = data, };
@@ -806,7 +836,7 @@ xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
   else if (XDR_DECODE == xdrs->x_op)
     return (xdr_load_handler[ptrdes.fd.mr_type] (xdrs, 0, &ptrs));
   else
-    return (!0);
+    return (MR_SUCCESS);
 }
 
 /**
@@ -816,12 +846,12 @@ xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_save_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   uint64_t value;
-  if (EXIT_SUCCESS != mr_save_bitfield_value (&ptrs->ra.data[idx], &value))
-    return (0);
+  if (MR_SUCCESS != mr_save_bitfield_value (&ptrs->ra.data[idx], &value))
+    return (MR_FAILURE);
   return (xdr_bitfield_value (xdrs, &ptrs->ra.data[idx].fd, &value));
 }
 
@@ -832,13 +862,13 @@ xdr_save_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   uint64_t value;
-  if (!xdr_bitfield_value (xdrs, &ptrs->ra.data[idx].fd, &value))
-    return (0);
-  return (EXIT_SUCCESS == mr_load_bitfield_value (&ptrs->ra.data[idx], &value));
+  if (MR_SUCCESS != xdr_bitfield_value (xdrs, &ptrs->ra.data[idx].fd, &value))
+    return (MR_FAILURE);
+  return (mr_load_bitfield_value (&ptrs->ra.data[idx], &value));
 }
 
 /**
@@ -848,7 +878,7 @@ xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static int
+static mr_status_t
 xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   int i;
@@ -866,9 +896,9 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 
   for (i = 0; i < count; i += row_count)
-    if (!xdr_load (&data[i * fd_.size], &fd_, xdrs, ptrs))
-      return (0);
-  return (!0);
+    if (MR_SUCCESS != xdr_load (&data[i * fd_.size], &fd_, xdrs, ptrs))
+      return (MR_FAILURE);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -879,17 +909,19 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs resizeable array with pointers descriptors
  * @return status of operation. 0 - failure, !0 - success.
  */
-static int
+static mr_status_t
 xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
-    return (0);
+  bool_t status = FALSE;
+  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+    return (MR_FAILURE);
   if (ptrs->ra.data[idx].flags.is_null)
-    return (!0);
+    return (MR_SUCCESS);
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
+    status = xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
   else
-    return (xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx));
+    status = xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx);
+  return (status ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -897,37 +929,37 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param xdrs XDR stream descriptor
  * @param idx index of the node in nodes collection
  * @param ptrs resizeable array with pointers descriptors
- * @return status of operation. 0 - failure, !0 - success.
+ * @return status of operation
  */
-static int
+static mr_status_t
 xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   void ** data = ptrs->ra.data[idx].data;
   mr_fd_t fd_ = ptrs->ra.data[idx].fd;
 
-  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
-    return (0);
+  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+    return (MR_FAILURE);
 
   if (ptrs->ra.data[idx].flags.is_null)
     *data = NULL;
   else
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
-	return (0);
+	return (MR_FAILURE);
       if (ptrs->ra.data[idx].ref_idx < 0)
 	{
 	  *data = MR_MALLOC (fd_.size);
 	  if (NULL == *data)
 	    {
 	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      return (0);
+	      return (MR_FAILURE);
 	    }
 	  memset (*data, 0, fd_.size);
 	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
 	  return (xdr_load (*data, &fd_, xdrs, ptrs));
 	}
     }
-  return (!0);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -935,38 +967,48 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param xdrs XDR stream descriptor
  * @param idx index of the node in nodes collection
  * @param ptrs resizeable array with pointers descriptors
- * @return status of operation. 0 - failure, !0 - success.
+ * @return status of operation
  */
-static int
+static mr_status_t
 xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
-    return (0);
+  bool_t status = FALSE;
+  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+    return (MR_FAILURE);
 
   if (ptrs->ra.data[idx].ref_idx >= 0)
-    return (xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx));
+    status = xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
   else
     {
       char * ra_data = ptrs->ra.data[idx].data;
       mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
-      int status = 0;
       if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
-	return (0);
+	return (MR_FAILURE);
       switch (sizeof (ra->size))
 	{
-	case sizeof (int8_t): status = xdr_int8_t (xdrs, (void*)&ra->size); break;
-	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size); break;
-	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size); break;
-	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size); break;
+	case sizeof (int8_t):
+	  status = xdr_int8_t (xdrs, (void*)&ra->size);
+	  break;
+	case sizeof (int16_t):
+	  status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size);
+	  break;
+	case sizeof (int32_t):
+	  status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size);
+	  break;
+	case sizeof (int64_t):
+	  status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size);
+	  break;
 	}
 
       if (!status)
-	return (0);
+	return (MR_FAILURE);
 
-      if (ptrs->ra.data[idx].flags.is_opaque_data)
-	return (xdr_opaque (xdrs, ra->data, ra->size)); /* content saved as opaque data */
-      return (!0);
+      if (ptrs->ra.data[idx].flags.is_opaque_data) /* content saved as opaque data */
+	status = xdr_opaque (xdrs, ra->data, ra->size);
+      else
+	status = TRUE;
     }
+  return (status ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -974,32 +1016,40 @@ xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @param xdrs XDR stream descriptor
  * @param idx index of the node in nodes collection
  * @param ptrs resizeable array with pointers descriptors
- * @return status of operation. 0 - failure, !0 - success.
+ * @return status of operation
  */
-static int
+static mr_status_t
 xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  if (!xdr_uint8_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
-    return (0);
+  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+    return (MR_FAILURE);
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
-    return (0);
+    return (MR_FAILURE);
   if (ptrs->ra.data[idx].ref_idx < 0)
     {
       mr_fd_t fd_ = ptrs->ra.data[idx].fd;
       char * ra_data = ptrs->ra.data[idx].data;
       mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
-      int status = 0;
+      bool_t status = FALSE;
 
       switch (sizeof (ra->size))
 	{
-	case sizeof (int8_t): status = xdr_int8_t (xdrs, (void*)&ra->size); break;
-	case sizeof (int16_t): status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size); break;
-	case sizeof (int32_t): status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size); break;
-	case sizeof (int64_t): status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size); break;
+	case sizeof (int8_t):
+	  status = xdr_int8_t (xdrs, (void*)&ra->size);
+	  break;
+	case sizeof (int16_t):
+	  status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size);
+	  break;
+	case sizeof (int32_t):
+	  status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size);
+	  break;
+	case sizeof (int64_t):
+	  status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size);
+	  break;
 	}
 
       if (!status)
-	return (0);
+	return (MR_FAILURE);
 
       /* .size and .alloc_size will be loaded once again as fields of mr_rarray_t */
       ra->alloc_size = ra->size;
@@ -1014,21 +1064,21 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	  if (NULL == ra->data)
 	    {
 	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      return (0);
+	      return (MR_FAILURE);
 	    }
 	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
 
 	  memset (ra->data, 0, ra->size);
 	  if (ptrs->ra.data[idx].flags.is_opaque_data)
-	    return (xdr_opaque (xdrs, ra->data, ra->size));
+	    return (xdr_opaque (xdrs, ra->data, ra->size) ? MR_SUCCESS : MR_FAILURE);
 	  else
 	    for (i = 0; i < count; ++i)
-	      if (!xdr_load (((char*)ra->data) + i * fd_.size, &fd_, xdrs, ptrs))
-		return (0);
+	      if (MR_SUCCESS != xdr_load (((char*)ra->data) + i * fd_.size, &fd_, xdrs, ptrs))
+		return (MR_FAILURE);
 	}
     }
 
-  return (!0);
+  return (MR_SUCCESS);
 }
 
 TYPEDEF_STRUCT (xdr_load_rarray_struct_t,
@@ -1036,7 +1086,7 @@ TYPEDEF_STRUCT (xdr_load_rarray_struct_t,
 		int idx,
 		(mr_ra_mr_ptrdes_t *, ptrs))
 
-static int
+static mr_status_t
 xdr_load_rarray_inner (mr_td_t * tdp, void * context)
 {
   xdr_load_rarray_struct_t * xdr_load_rarray_struct = context;
@@ -1051,9 +1101,9 @@ xdr_load_rarray_inner (mr_td_t * tdp, void * context)
  * @param xdrs XDR stream descriptor
  * @param idx index of the node in nodes collection
  * @param ptrs resizeable array with pointers descriptors
- * @return status of operation. 0 - failure, !0 - success.
+ * @return status of operation
  */
-static int
+static mr_status_t
 xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   mr_rarray_t * ra = ptrs->ra.data[idx].data;
@@ -1064,25 +1114,25 @@ xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   };
 
   memset (ra, 0, sizeof (*ra));
-  if (!mr_load_rarray_type (&ptrs->ra.data[idx].fd, xdr_load_rarray_inner, &xdr_load_rarray_struct))
-    return (0);
+  if (MR_SUCCESS != mr_load_rarray_type (&ptrs->ra.data[idx].fd, xdr_load_rarray_inner, &xdr_load_rarray_struct))
+    return (MR_FAILURE);
   /* alloc_size is loaded from XDRS, but it should reflect amount of memory really allocated for data */
   ra->alloc_size = ra->size;
 
-  return (!0);
+  return (MR_SUCCESS);
 }
 
-static int
+static bool
 has_opaque_rarrays (mr_ra_mr_ptrdes_t * ptrs)
 {
   int i;
-  int has_opaque_rarrays_flag = 0;
+  bool has_opaque_rarrays_flag = FALSE;
   for (i = ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1; i >= 0; --i)
     if (MR_TRUE == ptrs->ra.data[i].flags.is_opaque_data)
       {
 	/* do not save sub-nodes */
 	ptrs->ra.data[i].first_child = ptrs->ra.data[i].last_child = -1;
-	has_opaque_rarrays_flag = !0;
+	has_opaque_rarrays_flag = TRUE;
       }
   return (has_opaque_rarrays_flag);
 }
@@ -1130,27 +1180,27 @@ static xdr_save_handler_t ext_xdr_save_handler[] =
     [MR_TYPE_EXT_POINTER] = xdr_save_pointer,
   };
 
-static int
+static mr_status_t
 xdr_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   XDR * xdrs = context;
   mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xdr_save_handler[fdp->mr_type_ext])
     {
-      if (!ext_xdr_save_handler[fdp->mr_type_ext] (xdrs, idx, ptrs))
-	return (!0);
+      if (MR_SUCCESS != ext_xdr_save_handler[fdp->mr_type_ext] (xdrs, idx, ptrs))
+	return (MR_FAILURE);
     }
   else if ((fdp->mr_type < MR_TYPE_LAST) && xdr_save_handler[fdp->mr_type])
     {
-      if (!xdr_save_handler[fdp->mr_type] (xdrs, idx, ptrs))
-	return (!0);
+      if (MR_SUCCESS != xdr_save_handler[fdp->mr_type] (xdrs, idx, ptrs))
+	return (MR_FAILURE);
     }
   else
     {
       MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
-      return (!0);
+      return (MR_FAILURE);
     }
-  return (0);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -1159,7 +1209,7 @@ xdr_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
  * @param ptrs resizeable array with pointers descriptors
  * @return status
  */
-int
+mr_status_t
 xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 {
   if (has_opaque_rarrays (ptrs))
@@ -1167,7 +1217,7 @@ xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
       int idx_ = 0;
       mr_ptrs_ds (ptrs, mr_renumber_node, &idx_);
     }
-  return (!mr_ptrs_ds (ptrs, xdr_save_node, xdrs));
+  return (mr_ptrs_ds (ptrs, xdr_save_node, xdrs));
 }
 
 /**
@@ -1214,11 +1264,11 @@ static xdr_load_handler_t ext_xdr_load_handler[] =
     [MR_TYPE_EXT_POINTER] = xdr_load_pointer,
   };
 
-int
+mr_status_t
 xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 {
   mr_ra_mr_ptrdes_t ptrs_ = { .ra = { .size = 0, .alloc_size = 0, .data = NULL } };
-  int status = !0;
+  mr_status_t status = MR_SUCCESS;
   int idx;
 
   if (NULL == ptrs)
@@ -1226,7 +1276,7 @@ xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 
   idx = mr_add_ptr_to_list (ptrs);
   if (idx < 0)
-    return (idx);
+    return (MR_FAILURE);
   ptrs->ra.data[idx].data = data;
   ptrs->ra.data[idx].fd = *fdp;
 
@@ -1237,7 +1287,7 @@ xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
-  if (status && (0 == idx))
+  if ((MR_SUCCESS == status) && (0 == idx))
     status = mr_set_crossrefs (ptrs);
 
   if (ptrs_.ra.data)

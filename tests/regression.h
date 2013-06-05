@@ -55,6 +55,8 @@ extern Suite * suite;
 	    printf (#TYPE " %s = %s;\n"					\
 		    #TYPE " %s = %s;\n", &#X[1], x_, &#Y[1], y_);	\
 	}								\
+      else								\
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SERIALIZATION_FAILED);	\
       if (x_)								\
 	MR_FREE (x_);							\
       if (y_)								\
@@ -91,7 +93,7 @@ extern Suite * suite;
       int orig_eq_restored, load_success;				\
       TYPE METHOD ## _restored;						\
       memset (&METHOD ## _restored, 0, sizeof (TYPE));			\
-      load_success = !(0 == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)); \
+      load_success = (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)); \
       ck_assert_msg (load_success,							\
 		     "load for method " #METHOD " on type " #TYPE " failed"); \
       if (serialized.data)						\

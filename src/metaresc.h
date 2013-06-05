@@ -229,7 +229,7 @@
 #define MR_IS_MR_MODE_EQ_MR_MODE 0
 #define P00_TYPEDEF(...)						\
   MR_IF_ELSE (MR_PASTE2 (MR_IS_MR_MODE_EQ_, MR_MODE))			\
-  (P00_TYPEDEF_MODE (MR_MODE, __VA_ARGS__))				\
+    (P00_TYPEDEF_MODE (MR_MODE, __VA_ARGS__))				\
   (P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__))
 
 #define P00_IS_ATTRIBUTES_EQ_ATTRIBUTES(...) 0 /* help macro for ATTRIBUTES test IF clause */
@@ -331,7 +331,7 @@
 #define P00_FIELD_UNFOLD__(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA, ...) \
   MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
   (P00_UNFOLD (MR_, UNKNOWN, P00_GET_MODE P00_MODE_TYPE_NAME, , FIELD))	\
-  (P00_UNFOLD (MR_, P00_FIELD_COMMA, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (__VA_ARGS__)))
+    (P00_UNFOLD (MR_, P00_FIELD_COMMA, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (__VA_ARGS__)))
 
 /* produce compilation error for unkown field qualifiers */
 #define MR_UNKNOWN_PROTO(P00_TYPE_NAME, ...) int _1[#__VA_ARGS__()];
@@ -746,13 +746,13 @@
 #define MR_TYPEDEF_FUNC_DESC(RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
 #define MR_TYPEDEF_FUNC_DESC_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* COMMENTS */ ...) \
   MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_FUNC_TYPE, ATTR)		\
-  MR_FUNC_ARG_PTR (RET_TYPE, "return value")				\
-  MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))			\
-  MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
+    MR_FUNC_ARG_PTR (RET_TYPE, "return value")				\
+    MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))		\
+    MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_TYPEDEF_DESC(MR_TYPE_NAME, MR_TYPE, /* ATTR */ ...)		\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME) = {	\
-    .type = { .str = #MR_TYPE_NAME, .hash_value = 0, },		\
+    .type = { .str = #MR_TYPE_NAME, .hash_value = 0, },			\
     .mr_type = MR_TYPE,							\
     .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),			\
     .size = sizeof (MR_TYPE_NAME),					\
@@ -823,7 +823,7 @@
     })
 
 #define MR_SAVE_XDR(MR_TYPE_NAME, XDRS, S_PTR) ({			\
-      int __status__ = 0;						\
+      mr_status_t __status__ = MR_FAILURE;				\
       XDR * __xdrs__ = (XDRS);						\
       if (XDR_ENCODE != __xdrs__->x_op)					\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
@@ -843,7 +843,7 @@
       XDR _xdrs_;							\
       mr_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, }; \
       xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
-      if (0 == MR_SAVE_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR))		\
+      if (MR_SUCCESS != MR_SAVE_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR))	\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_SAVE_FAILED);		\
       _ra_;								\
     })
@@ -878,7 +878,7 @@
 #define MR_SAVE_SCM_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_SCM, MR_TYPE_NAME, S_PTR)
 
 #define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR) ({			\
-      int __status__ = 0;						\
+      mr_status_t __status__ = MR_FAILURE;				\
       XDR * __xdrs__ = (XDRS);						\
       if (XDR_DECODE != __xdrs__->x_op)					\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
@@ -910,11 +910,11 @@
     })
 
 #define MR_LOAD_XDR_ARG2_(MR_TYPE_NAME, XDRS) ({			\
-      int _status_ = 0;							\
+      mr_status_t _status_ = MR_FAILURE;				\
       MR_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
       _status_ = MR_LOAD_XDR_ARG3 (MR_TYPE_NAME, XDRS, &__result__);	\
-      if (0 == _status_)						\
+      if (MR_SUCCESS != _status_)					\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_LOAD_FAILED);		\
       __result__;							\
     })
@@ -956,7 +956,7 @@
     })
 
 #define MR_LOAD_XML2_NODE_ARG3(MR_TYPE_NAME, XML, S_PTR) ({		\
-      int __status__ = 0;						\
+      mr_status_t __status__ = MR_FAILURE;				\
       int __idx__ = -1;							\
       mr_load_data_t __load_data__ = {					\
 	.ptrs = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }, \
@@ -995,11 +995,11 @@
     })
 
 #define MR_LOAD_XML2_NODE_ARG2_(MR_TYPE_NAME, XML) ({			\
-      int _status_ = 0;							\
+      mr_status_t _status_ = MR_FAILURE;				\
       MR_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
       _status_ = MR_LOAD_XML2_NODE_ARG3 (MR_TYPE_NAME, XML, &__result__); \
-      if (0 == _status_)						\
+      if (MR_SUCCESS != _status_)					\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_STRUCT_FAILED);	\
       __result__;							\
     })
@@ -1009,7 +1009,7 @@
 #define MR_LOAD_XML2_NODE_ARG2(MR_TYPE_NAME, XML, S_PTR) MR_LOAD_XML2_NODE_ARG2_ (MR_TYPE_NAME, XML)
 
 #define MR_LOAD_XML2_ARG3(MR_TYPE_NAME, STR, S_PTR) ({			\
-      int _status_ = 0;							\
+      mr_status_t _status_ = MR_FAILURE;				\
       MR_TYPE_NAME * _check_type_ = S_PTR + 0;				\
       char * __str__ = (STR);						\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
@@ -1031,11 +1031,11 @@
     })
 
 #define MR_LOAD_XML2_ARG2_(MR_TYPE_NAME, STR) ({			\
-      int ___status___ = 0;						\
+      mr_status_t ___status___ = MR_FAILURE;				\
       MR_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
       ___status___ = MR_LOAD_XML2_ARG3 (MR_TYPE_NAME, STR, &__result__); \
-      if (0 == ___status___)						\
+      if (MR_SUCCESS != ___status___)					\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_STRUCT_FAILED);	\
       __result__;							\
     })
@@ -1052,7 +1052,7 @@
 #ifdef HAVE_BISON_FLEX
 
 #define MR_LOAD_METHOD_ARG3(METHOD, MR_TYPE_NAME, STR, S_PTR) ({	\
-      int _status_ = 0;							\
+      mr_status_t _status_ = MR_FAILURE;				\
       MR_TYPE_NAME * _check_type_ = S_PTR + 0;				\
       char * _str_ = (STR);						\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
@@ -1066,7 +1066,7 @@
 	    .ptrs = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }, \
 	    .mr_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, }; \
 	  _status_ = METHOD (_str_, &_load_data_.ptrs);			\
-	  if (_status_)							\
+	  if (MR_SUCCESS == _status_)					\
 	    {								\
 	      mr_fd_t _fd_ = {						\
 		.type = #MR_TYPE_NAME,					\
@@ -1091,11 +1091,11 @@
     })
 
 #define MR_LOAD_METHOD_ARG2_(METHOD, MR_TYPE_NAME, STR) ({		\
-      int _status_ = 0;							\
+      mr_status_t _status_ = MR_FAILURE;				\
       MR_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
       _status_ = MR_LOAD_METHOD_ARG3 (METHOD, MR_TYPE_NAME, STR, &__result__); \
-      if (0 == _status_)						\
+      if (MR_SUCCESS != _status_)					\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_STRUCT_FAILED);	\
       __result__;							\
     })
@@ -1174,46 +1174,42 @@ typedef unsigned int mr_hash_value_t;
 
 extern mr_conf_t mr_conf;
 
-extern int __attribute__ ((sentinel(0))) mr_add_type (mr_td_t*, char*, ...);
+extern mr_status_t __attribute__ ((sentinel(0))) mr_add_type (mr_td_t*, char*, ...);
 extern char * mr_read_xml_doc (FILE*);
 
 extern void mr_save (void*, mr_fd_t*, mr_save_data_t*);
-extern int mr_load (void*, mr_fd_t*, int, mr_load_data_t*);
+extern mr_status_t mr_load (void*, mr_fd_t*, int, mr_load_data_t*);
 #ifdef HAVE_LIBXML2
 extern xmlDocPtr xml2_save (mr_ra_mr_ptrdes_t*);
 extern int xml2_load (xmlNodePtr, mr_ra_mr_ptrdes_t*);
 #endif /* HAVE_LIBXML2 */
-extern int xdr_save (XDR*, mr_ra_mr_ptrdes_t*);
-extern int xdr_load (void*, mr_fd_t*, XDR*, mr_ra_mr_ptrdes_t*);
+extern mr_status_t xdr_save (XDR*, mr_ra_mr_ptrdes_t*);
+extern mr_status_t xdr_load (void*, mr_fd_t*, XDR*, mr_ra_mr_ptrdes_t*);
 extern void xdrra_create (XDR*, mr_rarray_t*, enum xdr_op);
 
 extern char * xml1_save (mr_ra_mr_ptrdes_t*);
-#ifdef HAVE_BISON_FLEX
-extern int xml1_load (char*, mr_ra_mr_ptrdes_t*);
-#endif /* HAVE_BISON_FLEX */
 extern char * cinit_save (mr_ra_mr_ptrdes_t*);
-#ifdef HAVE_BISON_FLEX
-extern int cinit_load (char*, mr_ra_mr_ptrdes_t*);
-#endif /* HAVE_BISON_FLEX */
 extern char * json_save (mr_ra_mr_ptrdes_t*);
-
 extern char * scm_save (mr_ra_mr_ptrdes_t*);
+
 #ifdef HAVE_BISON_FLEX
-extern int scm_load (char*, mr_ra_mr_ptrdes_t*);
+extern mr_status_t xml1_load (char*, mr_ra_mr_ptrdes_t*);
+extern mr_status_t cinit_load (char*, mr_ra_mr_ptrdes_t*);
+extern mr_status_t scm_load (char*, mr_ra_mr_ptrdes_t*);
 #endif /* HAVE_BISON_FLEX */
 
 extern int mr_add_ptr_to_list (mr_ra_mr_ptrdes_t*);
 extern void mr_add_child (int, int, mr_ra_mr_ptrdes_t*);
 extern void mr_detect_type (mr_fd_t*);
 extern char * mr_normalize_name (char*);
-extern int mr_free_recursively (mr_ra_mr_ptrdes_t);
-extern int mr_copy_recursively (mr_ra_mr_ptrdes_t, void*);
-extern int mr_free_ptrs (mr_ra_mr_ptrdes_t);
+extern mr_status_t mr_free_recursively (mr_ra_mr_ptrdes_t);
+extern mr_status_t mr_copy_recursively (mr_ra_mr_ptrdes_t, void*);
+extern mr_status_t mr_free_ptrs (mr_ra_mr_ptrdes_t);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t*, char*);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t*, int64_t);
 extern mr_fd_t * mr_get_enum_by_name (char*);
-extern int mr_load_bitfield_value (mr_ptrdes_t*, uint64_t*);
-extern int mr_save_bitfield_value (mr_ptrdes_t*, uint64_t*);
+extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t*, uint64_t*);
+extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t*, uint64_t*);
 extern mr_td_t * mr_get_td_by_name (char*);
 extern char * mr_message_format (mr_message_id_t, va_list);
 extern void mr_message (const char*, const char*, int, mr_log_level_t, mr_message_id_t, ...);

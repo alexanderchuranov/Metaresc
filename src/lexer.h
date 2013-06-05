@@ -113,15 +113,15 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
 #define YYMAXDEPTH (1 << 31)
 
 #define MR_LOAD_FUNC(METHOD)						\
-  int METHOD ## _load (char * str, mr_ra_mr_ptrdes_t * ptrs) {		\
-  int status;								\
-  yyscan_t scanner;							\
-  mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \
-  mr_ ## METHOD ## _lex_init_extra (&mr_load, &scanner);		\
-  mr_ ## METHOD ## __scan_string (str, scanner);			\
-  status = !mr_ ## METHOD ## _parse (scanner);				\
-  mr_ ## METHOD ## _lex_destroy (scanner);				\
-  return (status);							\
-}
+  mr_status_t METHOD ## _load (char * str, mr_ra_mr_ptrdes_t * ptrs) {	\
+    mr_status_t status;							\
+    yyscan_t scanner;							\
+    mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \
+    mr_ ## METHOD ## _lex_init_extra (&mr_load, &scanner);		\
+    mr_ ## METHOD ## __scan_string (str, scanner);			\
+    status = (0 == mr_ ## METHOD ## _parse (scanner)) ? MR_SUCCESS : MR_FAILURE; \
+    mr_ ## METHOD ## _lex_destroy (scanner);				\
+    return (status);							\
+  }
 
 #endif /* _LEXER_H_ */

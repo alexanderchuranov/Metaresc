@@ -96,7 +96,7 @@ char *
 mr_message_format (mr_message_id_t message_id, va_list args)
 {
   static const char * messages[MR_MESSAGE_LAST + 1] = { [0 ... MR_MESSAGE_LAST] = NULL };
-  static int messages_inited = 0;
+  static bool messages_inited = FALSE;
   const char * format = "Unknown MR_MESSAGE_ID.";
   char * message = NULL;
 
@@ -108,7 +108,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 	  int i;
 	  for (i = 0; MR_TYPE_ENUM_VALUE == tdp->fields.data[i].fdp->mr_type; ++i)
 	    messages[tdp->fields.data[i].fdp->param.enum_value] = tdp->fields.data[i].fdp->comment;
-	  messages_inited = !0;
+	  messages_inited = TRUE;
 	}
     }
 
@@ -234,9 +234,9 @@ strndup (const char * str, size_t size)
  * Extract bits of bit-field, extend sign bits if needed.
  * @param ptrdes pointer descriptor
  * @param value pointer on variable for bit-field value
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status 
  */
-int
+mr_status_t
 mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
   uint8_t * ptr = ptrdes->data;
@@ -259,16 +259,16 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
     default:
       break;
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
  * Saves bit-field into memory
  * @param ptrdes pointer descriptor
  * @param value pointer on a memory for a bit-field store
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-int
+mr_status_t
 mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
   uint8_t * ptr = ptrdes->data;
@@ -288,7 +288,7 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 	*ptr &= -1 - ((1 << (ptrdes->fd.param.bitfield_param.width - i)) - 1);
 	*ptr++ |= *value >> i;
       }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -458,15 +458,15 @@ mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs)
 /**
  * Recursively free all allocated memory. Needs to be done from bottom to top.
  * @param ptrs resizable array with serialized data
- * @return status, EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-int
+mr_status_t
 mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 {
   int i;
 
   if (NULL == ptrs.ra.data)
-    return (0);
+    return (MR_FAILURE);
 
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
     {
@@ -484,10 +484,10 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
       MR_FREE (ptrs.ra.data[i].ext.ptr);
 
   MR_FREE (ptrs.ra.data);
-  return (!0);
+  return (MR_SUCCESS);
 }
 
-static int
+static mr_status_t
 calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   /* is new address is not set yet, then it could be calculated as relative address from the parent node */
@@ -496,21 +496,21 @@ calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
       int parent = ptrs->ra.data[idx].parent;
       ptrs->ra.data[idx].ext.ptr = &((char*)ptrs->ra.data[parent].ext.ptr)[ptrs->ra.data[idx].data - ptrs->ra.data[parent].data];
     }
-  return (0);
+  return (MR_SUCCESS);
 }
 
 /**
  * Recursively copy
  * @param ptrs resizable array with serialized data
- * @return status, 0 - failure, !0 - success
+ * @return status
  */
-int
+mr_status_t
 mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 {
   int i;
 
   if ((NULL == ptrs.ra.data) || (NULL == dst))
-    return (0);
+    return (MR_FAILURE);
 
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
     ptrs.ra.data[i].ext.ptr = NULL;
@@ -536,7 +536,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	      (*(void**)ptrs.ra.data[i].data != ptrs.ra.data[i + 1].data))
 	    {
 	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA);
-	      return (0);
+	      return (MR_FAILURE);
 	    }
 	  /* link it back. we need to save address of allocated memory into this node */
 	  ptrs.ra.data[i].first_child = ptrs.ra.data[i].last_child = i + 1;
@@ -551,7 +551,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
 			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name.str);
-		return (0);
+		return (MR_FAILURE);
 	      }
 	    /* rarrays require allocation of memoty chunk according alloc_size field */
 	    if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)
@@ -566,7 +566,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    if (NULL == copy)
 	      {
 		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-		return (0);
+		return (MR_FAILURE);
 	      }
 	    /* copy data from source */
 	    memcpy (copy, *(void**)ptrs.ra.data[i].data, ptrs.ra.data[i].fd.size);
@@ -612,7 +612,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	  break;
 	}
   MR_FREE (ptrs.ra.data);
-  return (!0);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -642,8 +642,8 @@ mr_hashed_string_get_hash (mr_ptr_t x, const void * context)
 
 /**
  * Comparator for mr_hashed_string_t
- * @param a pointer on one mr_hashed_string_t
- * @param b pointer on another mr_hashed_string_t
+ * @param x pointer on one mr_hashed_string_t
+ * @param y pointer on another mr_hashed_string_t
  * @return comparation sign
  */
 int
@@ -668,8 +668,8 @@ mr_fd_name_get_hash (mr_ptr_t x, const void * context)
 
 /**
  * Comparator for mr_fd_t
- * @param a pointer on one mr_fd_t
- * @param b pointer on another mr_fd_t
+ * @param x pointer on one mr_fd_t
+ * @param y pointer on another mr_fd_t
  * @return comparation sign
  */
 int
@@ -717,9 +717,9 @@ mr_get_td_by_name (char * type)
 /**
  * Preprocessign of a new type. Anonymous unions should be extracted into new independant types.
  * @param tdp pointer on a new type descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_anon_unions_extract (mr_td_t * tdp)
 {
   int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
@@ -747,7 +747,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		  break;
 	    }
 	  if (j >= count)
-	    return (EXIT_FAILURE);
+	    return (MR_FAILURE);
 
 	  {
 	    int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_TRAILING_RECORD */
@@ -795,16 +795,16 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	      fdp->name.str = fdp->type;
 	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
-	    if (EXIT_SUCCESS != mr_add_type (tdp_, NULL, NULL))
+	    if (MR_SUCCESS != mr_add_type (tdp_, NULL, NULL))
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->type.str);
-		return (EXIT_FAILURE);
+		return (MR_FAILURE);
 	      }
 	  }
 
 	}
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -872,9 +872,9 @@ cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context)
 /**
  * New enum descriptor preprocessing. Enum literal values should be added to global lookup table and enum type descriptor should have a lookup by enum values.
  * @param tdp pointer on a new enum type descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_add_enum (mr_td_t * tdp)
 {
   int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
@@ -915,16 +915,16 @@ mr_add_enum (mr_td_t * tdp)
       mr_ptr_t key = { .ptr = tdp->fields.data[i].fdp };
       mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key, NULL);
       if (NULL == result)
-	return (EXIT_FAILURE);
+	return (MR_FAILURE);
       if (result->ptr != key.ptr)
 	{
 	  mr_fd_t * fdp = result->ptr;
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, key.ptr);
-	  return (EXIT_FAILURE);
+	  return (MR_FAILURE);
 	}
     }
 
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -946,7 +946,7 @@ mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
  * Enum literal name lookup function.
  * @param value address for enum value to store
  * @param name literal name of enum to lookup
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
 mr_fd_t *
 mr_get_enum_by_name (char * name)
@@ -959,9 +959,9 @@ mr_get_enum_by_name (char * name)
 /**
  * Type name clean up. We need to drop all key words.
  * @param fdp pointer on a field descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_normalize_type (mr_fd_t * fdp)
 {
   static char * keywords[] =
@@ -979,17 +979,17 @@ mr_normalize_type (mr_fd_t * fdp)
       "__restrict",
       "__restrict__",
     };
-  static int isdelimiter [1 << (CHAR_BIT * sizeof (uint8_t))] =
+  static bool isdelimiter [1 << (CHAR_BIT * sizeof (uint8_t))] =
     {
-      [0 ... (1 << (CHAR_BIT * sizeof (char))) - 1] = 0,
-      [0] = !0,
-      [(uint8_t)' '] = !0,
-      [(uint8_t)'*'] = !0,
+      [0 ... (1 << (CHAR_BIT * sizeof (char))) - 1] = FALSE,
+      [0] = TRUE,
+      [(uint8_t)' '] = TRUE,
+      [(uint8_t)'*'] = TRUE,
     };
   int i;
   char * ptr;
   int prev_is_space = 0;
-  int modified = 0;
+  bool modified = FALSE;
 
   for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
     {
@@ -1003,7 +1003,7 @@ mr_normalize_type (mr_fd_t * fdp)
 	  if (isdelimiter[(uint8_t)found[length]] && ((found == fdp->type) || isdelimiter[(uint8_t)found[-1]]))
 	    {
 	      memset (found, ' ', length); /* replaced all keywords on spaces */
-	      modified = !0;
+	      modified = TRUE;
 	    }
 	  ++ptr; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
 	}
@@ -1025,28 +1025,28 @@ mr_normalize_type (mr_fd_t * fdp)
 	  }
       *ptr = 0;
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
  * Bitfield initialization. We need to calculate offset and shift. Width was initialized by macro.
  * @param fdp pointer on a field descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_init_bitfield (mr_fd_t * fdp)
 {
   int i, j;
   if ((NULL == fdp->param.bitfield_param.bitfield.data) ||
       (0 == fdp->param.bitfield_param.bitfield.size))
-    return (EXIT_SUCCESS);
+    return (MR_SUCCESS);
 
   for (i = 0; i < fdp->param.bitfield_param.bitfield.size; ++i)
     if (fdp->param.bitfield_param.bitfield.data[i])
       break;
   /* if bitmask is clear then there is no need to initialize anything */
   if (!fdp->param.bitfield_param.bitfield.data[i])
-    return (EXIT_SUCCESS);
+    return (MR_SUCCESS);
 
   fdp->offset = i;
   for (i = 0; i < CHAR_BIT; ++i)
@@ -1065,15 +1065,15 @@ mr_init_bitfield (mr_fd_t * fdp)
 	break;
       i = 0;
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
  * New type descriptor preprocessing. Check fields names duplocation, nornalize types name, initialize bitfields. Called once for each type.
  * @param tdp pointer on a type descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_check_fields (mr_td_t * tdp)
 {
   int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
@@ -1095,15 +1095,15 @@ mr_check_fields (mr_td_t * tdp)
       if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_init_bitfield (fdp);
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
  * Initialize AUTO fields. Detect types, size, pointers etc.
  * @param fdp pointer on a field descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_auto_field_detect (mr_fd_t * fdp)
 {
   static size_t types_sizes[] =
@@ -1181,15 +1181,15 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	    }
 	}
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
  * Initialize fields that are pointers on functions. Detects types of arguments.
  * @param fdp pointer on a field descriptor
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
@@ -1214,10 +1214,10 @@ mr_func_field_detect (mr_fd_t * fdp)
 	}
     }
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.data[0]);
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
-static int
+static mr_status_t
 mr_detect_field_type (mr_fd_t * fdp)
 {
   mr_td_t * tdp;
@@ -1268,22 +1268,22 @@ mr_detect_field_type (mr_fd_t * fdp)
     default:
       break;
     }
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
  * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
  * @param tdp pointer on a type descriptor
  * @param args auxiliary arguments
- * @return status EXIT_SUCCESS or EXIT_FAILURE
+ * @return status
  */
-static int
+static mr_status_t
 mr_detect_fields_types (mr_td_t * tdp)
 {
   int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
   for (i = 0; i < count; ++i)
     mr_detect_field_type (tdp->fields.data[i].fdp);
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -1305,24 +1305,24 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
  * @param tdp a pointer on statically initialized type descriptor
  * @return status
  */
-static int
+static mr_status_t
 mr_register_type_pointer (mr_td_t * tdp)
 {
   mr_fd_t * fdp;
   mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
   /* check that mr_ptr_t is already a registered type */
   if (NULL == union_tdp)
-    return (EXIT_FAILURE);
+    return (MR_FAILURE);
   /* check that requested type is already registered */
   if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
-    return (EXIT_SUCCESS);
+    return (MR_SUCCESS);
 
   /* statically allocated trailing record is used for field descriptor */
   fdp = tdp->fields.data[tdp->fields.size / sizeof (tdp->fields.data[0])].fdp;
   if (NULL == fdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (EXIT_FAILURE);
+      return (MR_FAILURE);
     }
 
   memset (fdp, 0, sizeof (*fdp));
@@ -1333,7 +1333,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->mr_type = tdp->mr_type;
   fdp->mr_type_aux = MR_TYPE_VOID;
   fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
-  return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp, NULL)) ? EXIT_SUCCESS : EXIT_FAILURE);
+  return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp, NULL)) ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -1341,9 +1341,9 @@ mr_register_type_pointer (mr_td_t * tdp)
  * @param tdp a pointer on statically initialized type descriptor
  * @param comment comments
  * @param ... auxiliary void pointer
- * @return status, 0 - new type was added, !0 - type was already registered
+ * @return status
  */
-int
+mr_status_t
 mr_add_type (mr_td_t * tdp, char * comment, ...)
 {
   va_list args;
@@ -1351,10 +1351,10 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   int count;
 
   if (NULL == tdp)
-    return (EXIT_FAILURE); /* assert */
+    return (MR_FAILURE); /* assert */
   /* check whether this type is already in the list */
   if (mr_get_td_by_name (tdp->type.str))
-    return (EXIT_SUCCESS); /* this type is already registered */
+    return (MR_SUCCESS); /* this type is already registered */
 
   va_start (args, comment);
   ext = va_arg (args, void*);
@@ -1366,7 +1366,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
       if (NULL == fdp)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	  return (EXIT_FAILURE);
+	  return (MR_FAILURE);
 	}
       if (MR_TYPE_TRAILING_RECORD == fdp->mr_type)
 	break;
@@ -1381,8 +1381,8 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (NULL != ext)
     tdp->ext.ptr = ext;
 
-  if (EXIT_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
-    return (EXIT_FAILURE);
+  if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
+    return (MR_FAILURE);
 
   /* MR_IC_NONE: compares 168952 matches 9703 ratio: 17.41 */
   /* MR_IC_RBTREE: compares 57272 matches 12029 ratio: 4.76 */
@@ -1400,13 +1400,13 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
     mr_ic_hash_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t");
 
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
-    return (EXIT_FAILURE);
+    return (MR_FAILURE);
 
   memset (&tdp->lookup_by_value, 0, sizeof (tdp->lookup_by_value));
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 
-  return (EXIT_SUCCESS);
+  return (MR_SUCCESS);
 }
 
 static mr_status_t
@@ -1421,11 +1421,11 @@ mr_conf_init_visitor (mr_ptr_t key, const void * context)
 static void
 mr_conf_init ()
 {
-  static int initialized = 0;
+  static bool initialized = FALSE;
   if (!initialized)
     {
       mr_ic_foreach (&mr_conf.lookup_by_name, mr_conf_init_visitor, NULL);
-      initialized = !0;
+      initialized = TRUE;
     }
 }
 

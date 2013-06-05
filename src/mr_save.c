@@ -710,14 +710,14 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
     }
 }
 
-int
+mr_status_t
 mr_ptrs_ds (mr_ra_mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
 {
   int idx = 0;
   while (idx >= 0)
     {
-      if (processor (ptrs, idx, context))
-	return (!0);
+      if (MR_SUCCESS != processor (ptrs, idx, context))
+	return (MR_FAILURE);
 
       if (ptrs->ra.data[idx].first_child >= 0)
 	idx = ptrs->ra.data[idx].first_child;
@@ -728,18 +728,18 @@ mr_ptrs_ds (mr_ra_mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * co
 	  idx = ptrs->ra.data[idx].next;
 	}
     }
-  return (0);
+  return (MR_SUCCESS);
 }
 
-int
+mr_status_t
 mr_renumber_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   int * idx_ = context;
   ptrs->ra.data[idx].idx = (*idx_)++;
-  return (0);
+  return (MR_SUCCESS);
 }
 
-static int
+static mr_status_t
 mr_post_process_node  (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_save_data_t * mr_save_data = context;
@@ -785,7 +785,7 @@ mr_post_process_node  (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
       (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[idx].fd.mr_type_ext))
     mr_save_data->ptrs.ra.data[idx].first_child = mr_save_data->ptrs.ra.data[idx].last_child = -1;
 
-  return (0);
+  return (MR_SUCCESS);
 }
 
 /**
