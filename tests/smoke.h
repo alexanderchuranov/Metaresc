@@ -77,7 +77,7 @@
     memset (&array, 0, sizeof (array));					\
     array.ra.size = count * sizeof (array.ra.data[0]);			\
     array.ra.data = MR_MALLOC (array.ra.size);				\
-    if (array.ra.data)							\
+    if (NULL != array.ra.data)						\
       {									\
 	int i;								\
 	int count_ = array.ra.size / sizeof (array.ra.data[0]);		\
@@ -93,7 +93,8 @@
 	if ((ra.size > 0) && (ra.data != NULL))				\
 	  {								\
 	    typed_list_t list_;						\
-	    if (MR_LOAD_ ## METHOD ## _RA (typed_list_t, &ra, &list_))	\
+	    if (MR_SUCCESS ==						\
+		MR_LOAD_ ## METHOD ## _RA (typed_list_t, &ra, &list_))	\
 	      MR_FREE_RECURSIVELY (typed_list_t, &list_);		\
 	    MR_FREE (ra.data);						\
 	  }								\
@@ -102,7 +103,8 @@
 	if ((ra.size > 0) && (ra.data != NULL))				\
 	  {								\
 	    array_t array_;						\
-	    if (MR_LOAD_ ## METHOD ## _RA (array_t, &ra, &array_))	\
+	    if (MR_SUCCESS ==						\
+		MR_LOAD_ ## METHOD ## _RA (array_t, &ra, &array_))	\
 	      MR_FREE_RECURSIVELY (array_t, &array_);			\
 	    MR_FREE (ra.data);						\
 	  }								\
@@ -117,8 +119,7 @@
     do size += size >> 1; while (0 == test_run (size));			\
     int x1 = test_run (size * MULTIPLE);				\
     int x2 = test_run (size * MULTIPLE * 4);				\
-    if ((double)x2 / (double)x1 > 5)					\
-      ck_abort_msg ("performance issue for method " #METHOD);		\
+    ck_assert_msg (((double)x2 / (double)x1 < 5), "performance issue for method " #METHOD); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
   {									\
