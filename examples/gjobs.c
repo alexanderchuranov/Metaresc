@@ -106,7 +106,7 @@ main (int argc, char * argv[])
   else
     {
       memset (&helping, 0, sizeof (helping));
-      if (0 == MR_LOAD_XML (helping_t, xml, &helping))
+      if (MR_SUCCESS != MR_LOAD_XML (helping_t, xml, &helping))
 	printf ("Load failed\n");
       else
 	print_helping (&helping);

@@ -32,7 +32,7 @@ int main (int argc, char * argv[])
 
   char corrupted[] = "this is not a Scheme language text";
 
-  if (MR_LOAD_JSON (employee_t, corrupted, &employee))
+  if (MR_SUCCESS == MR_LOAD_JSON (employee_t, corrupted, &employee))
     printf ("Parsing successfull (unexpected behavior)\n");
   else
     printf ("Parsing error (expected behavior)\n");
