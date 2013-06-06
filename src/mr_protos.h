@@ -281,7 +281,7 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (
 		BITFIELD (mr_bool_t, is_referenced, :1),
 		BITFIELD (mr_bool_t, is_content_reference, :1),
 		BITFIELD (mr_bool_t, is_opaque_data, :1),
-	      )
+		)
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
 		(mr_hashed_string_t, type, , "union type name"),
