@@ -42,8 +42,8 @@
 #define MR_SIZEOF_LONG_DOUBLE (10)
 
 #define MR_MAX_INDENT_LEVEL (30) /* the same constant as in libxml2 */
-#define MR_MIN(X,Y) ({ typeof(X) _x_ = (X); typeof(Y) _y_ = (Y); (_x_ < _y_) ? _x_ : _y_; })
-#define MR_MAX(X,Y) ({ typeof(X) _x_ = (X); typeof(Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
+#define MR_MIN(X,Y) ({ typeof (X) _x_ = (X); typeof (Y) _y_ = (Y); (_x_ < _y_) ? _x_ : _y_; })
+#define MR_MAX(X,Y) ({ typeof (X) _x_ = (X); typeof (Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
 #define MR_LIMIT_LEVEL(LEVEL) MR_MIN (LEVEL, MR_MAX_INDENT_LEVEL)
 
 /* each refereed structure will have REF_IDX property */

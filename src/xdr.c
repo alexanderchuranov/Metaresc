@@ -235,6 +235,7 @@ static mr_status_t
 mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 {
   int count = ptrs->ra.size / sizeof (ptrs->ra.data[0]);
+  mr_status_t status = MR_SUCCESS;
   int i;
 
   /* set all cross refernces */
@@ -242,7 +243,10 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
     if (ptrs->ra.data[i].ref_idx >= 0)
       {
 	if (ptrs->ra.data[i].ref_idx >= count)
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNDEFINED_REF_IDX, "ref_idx", ptrs->ra.data[i].ref_idx);
+	  {
+	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNDEFINED_REF_IDX, "ref_idx", ptrs->ra.data[i].ref_idx);
+	    status = MR_FAILURE;
+	  }
 	else
 	  {
 	    void * data;
@@ -265,7 +269,7 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 	      }
 	  }
       }
-  return (MR_SUCCESS);
+  return (status);
 }
 
 /**
@@ -307,17 +311,17 @@ bool_t xdr_char (xdrs, cp)
  * @param cp pointer on char
  * @return status
  */
-static mr_status_t __attribute__((unused))
+static bool_t __attribute__((unused))
 xdr_char_ (XDR * xdrs, char * cp)
 {
   int32_t x = 0;
   if (XDR_ENCODE == xdrs->x_op)
     x = *cp;
   if (!xdr_int (xdrs, &x))
-    return (MR_FAILURE);
+    return (FALSE);
   if (XDR_DECODE == xdrs->x_op)
     *cp = x;
-  return (MR_SUCCESS);
+  return (TRUE);
 }
 
 #ifndef HAVE_XDR_UINT8_T
@@ -337,7 +341,7 @@ xdr_char_ (XDR * xdrs, char * cp)
 static mr_status_t
 xdr_uint_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  bool_t status = 0;
+  bool_t status = FALSE;
   switch (ptrs->ra.data[idx].fd.size)
     {
     case sizeof (uint8_t):
@@ -446,7 +450,7 @@ XDR_COMPLEX (double, double);
  * @param ptrs array with descriptor of loaded data
  * @return status
  */
-static mr_status_t
+static bool_t
 xdr_long_double (XDR * xdrs, long double * data)
 {
   return (xdr_opaque (xdrs, (void*)data, MR_SIZEOF_LONG_DOUBLE));
@@ -699,13 +703,13 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
- * Saves temporary string into XDR stream and free it.
+ * Saves temporary string into XDR stream.
  * @param xdrs XDR stream descriptor
  * @param str pointer on a string
  * @return status
  */
 static mr_status_t
-xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
+xdr_save_temp_string (XDR * xdrs, char ** str)
 {
   mr_status_t status = MR_FAILURE;
   if (NULL != str)
@@ -717,7 +721,6 @@ xdr_save_temp_string_and_free (XDR * xdrs, char ** str)
       };
       mr_ra_mr_ptrdes_t ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
       status = xdr_save_string (xdrs, 0, &ptrs);
-      MR_FREE (*str);
     }
   return (status);
 }
@@ -747,7 +750,10 @@ static mr_status_t
 xdr_save_enum (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char * value = mr_stringify_enum (&ptrs->ra.data[idx]);
-  return (xdr_save_temp_string_and_free (xdrs, &value));
+  mr_status_t status = xdr_save_temp_string (xdrs, &value);
+  if (NULL != value)
+    MR_FREE (value);
+  return (status);
 }
 
 /**
@@ -761,7 +767,10 @@ static mr_status_t
 xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char * value = mr_stringify_bitmask (&ptrs->ra.data[idx], MR_BITMASK_OR_DELIMITER);
-  return (xdr_save_temp_string_and_free (xdrs, &value));
+  mr_status_t status = xdr_save_temp_string (xdrs, &value);
+  if (NULL != value)
+    MR_FREE (value);
+  return (status);
 }
 
 /**
@@ -775,7 +784,10 @@ static mr_status_t
 xdr_save_func (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char * value = mr_stringify_func (&ptrs->ra.data[idx]);
-  return (xdr_save_temp_string_and_free (xdrs, &value));
+  mr_status_t status = xdr_save_temp_string (xdrs, &value);
+  if (NULL != value)
+    MR_FREE (value);
+  return (status);
 }
 
 /**
