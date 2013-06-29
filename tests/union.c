@@ -6,12 +6,12 @@
 #include <union.h>
 
 #define ASSERT_SAVE_LOAD_ANON_UNION(METHOD, TYPE, VALUE, ...) ({	\
-      TYPE x = { 0, "", { M_PI }, VALUE };				\
+      TYPE x = { .dummy = 0, "", { M_PI }, VALUE };			\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
 #define ASSERT_SAVE_LOAD_UNION(METHOD, TYPE, VALUE, ...) ({		\
-      TYPE x = { 0, { M_PI }, VALUE };					\
+      TYPE x = { .dummy = 0, { M_PI }, VALUE };				\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
