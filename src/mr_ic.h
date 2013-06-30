@@ -40,4 +40,6 @@ extern mr_status_t mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, co
 extern void mr_ic_rbtree_free (mr_ic_t * ic, const void * context);
 extern mr_status_t mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type);
 
+extern mr_status_t mr_ic_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_ic_type_t mr_ic_type);
+
 #endif /* _MR_IC_H_ */

@@ -645,3 +645,21 @@ mr_ic_free (mr_ic_t * ic, const void * context)
   if (ic->free)
     ic->free (ic, context);
 }
+
+mr_status_t
+mr_ic_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_ic_type_t mr_ic_type)
+{
+  switch (mr_ic_type)
+    {
+    case MR_IC_NONE:
+      return (mr_ic_none_new (ic, compar_fn, key_type));
+    case MR_IC_RBTREE:
+      return (mr_ic_rbtree_new (ic, compar_fn, key_type));
+    case MR_IC_SORTED_ARRAY:
+      return (mr_ic_sorted_array_new (ic, compar_fn, key_type));
+    case MR_IC_HASH:
+      return (mr_ic_hash_new (ic, hash_fn, compar_fn, key_type));
+    default:
+      return (MR_FAILURE);
+    }
+}

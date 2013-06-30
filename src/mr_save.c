@@ -250,11 +250,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ra.data[idx].fd = *fdp;
   mr_save_data->ptrs.ra.data[idx].parent = mr_save_data->parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
 
-#ifdef MR_HASH_PTR_RESOLUTION
-  mr_ic_hash_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t");
-#else /* MR_HASH_PTR_RESOLUTION */
-  mr_ic_rbtree_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_cmp, "long_int_t");
-#endif /* MR_HASH_PTR_RESOLUTION */
+  mr_ic_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_RBTREE);
 
   /* forward reference resolving */
   ref_idx = mr_resolve_typed_forward_ref (mr_save_data);
@@ -822,13 +818,9 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   int i;
 
   mr_save_data->parent = -1;
-#ifdef MR_HASH_PTR_RESOLUTION
-  mr_ic_hash_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t");
-  mr_ic_hash_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t");
-#else /* MR_HASH_PTR_RESOLUTION */
-  mr_ic_rbtree_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_cmp, "long_int_t");
-  mr_ic_rbtree_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_cmp, "long_int_t");
-#endif /* MR_HASH_PTR_RESOLUTION */
+  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_RBTREE);
+  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_RBTREE);
+
   mr_save_data->mr_ra_ud.size = 0;
   mr_save_data->mr_ra_ud.data = NULL;
   mr_save_data->mr_ra_idx.size = 0;
