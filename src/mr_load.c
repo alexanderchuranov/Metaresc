@@ -543,10 +543,15 @@ mr_load_rarray_data (int idx, mr_load_data_t * mr_load_data)
   fd_.mr_type_ext = MR_TYPE_EXT_NONE;
   fd_.name = mr_load_data->ptrs.ra.data[mr_load_data->ptrs.ra.data[idx].parent].fd.name;
 
-  ra->alloc_size = ra->size = 0;
-  ra->data = NULL;
+  if (mr_load_data->ptrs.ra.data[idx].ref_idx >= 0)
+    return (MR_SUCCESS);
   
-  if ((mr_load_data->ptrs.ra.data[idx].ref_idx < 0) && (count > 0))
+  if (0 == count)
+    {
+      ra->alloc_size = ra->size = 0;
+      ra->data = NULL;
+    }
+  else
     {
       ra->alloc_size = ra->size = count * fd_.size;
       ra->data = MR_MALLOC (ra->size);

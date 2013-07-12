@@ -94,7 +94,7 @@ extern Suite * suite;
       TYPE METHOD ## _restored;						\
       memset (&METHOD ## _restored, 0, sizeof (TYPE));			\
       load_success = (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)); \
-      ck_assert_msg (load_success,							\
+      ck_assert_msg (load_success,					\
 		     "load for method " #METHOD " on type " #TYPE " failed"); \
       if (serialized.data)						\
 	MR_FREE (serialized.data);					\
