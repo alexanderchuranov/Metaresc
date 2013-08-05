@@ -399,7 +399,7 @@ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
-int
+mr_status_t
 mr_ic_hash_index_inner (mr_ic_t * ic, mr_ic_hash_t * index, int count, const void * context)
 {
   mr_ic_hash_index_context_t mr_ic_hash_index_context = {
@@ -434,7 +434,7 @@ mr_ic_hash_index_inner (mr_ic_t * ic, mr_ic_hash_t * index, int count, const voi
 mr_status_t
 mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
-  int status;
+  mr_status_t status;
   mr_ic_t ic_none;
   mr_ic_hash_t * index = ic->ext.ptr;
 
