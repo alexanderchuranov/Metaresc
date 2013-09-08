@@ -31,7 +31,7 @@
 /* MR_IC_NONE:        ( / 1120378 15763.0) ratio: 71.0764 */
 /* MR_IC_RBTREE:      ( / 1104234 21480.0) ratio: 51.4075 */
 /* MR_IC_SORTED_ARRAY: ( / 928419 18905.0) ratio: 49.1097 */
-/* MR_IC_HASH_NEXT:    ( / 985616 20748.0) ratio: 47.50 */
+/* MR_IC_HASH_NEXT:    ( / 983300 20748.0) ratio: 47.39 */
 /* MR_IC_HASH_TREE:   ( / 1277467 27831.0) ratio: 45.90 */
 
 #define MR_DEFAULT_IC_TYPE MR_IC_HASH_NEXT
