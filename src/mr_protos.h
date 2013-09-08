@@ -49,7 +49,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_UNKNOWN_SUBNODE, , "Struct type '%s': unknown subnode '%s'."),
 	      (MR_MESSAGE_SAVE_IDX_RANGE_CHECK, , "Save node index is out of range."),
 	      (MR_MESSAGE_NODE_NAME_MISSMATCH, , "Node name mismatch: expected '%s' got '%s'."),
-	      (MR_MESSAGE_NODE_TYPE_MISSMATCH, , "Node type mismatch: expected '%s' got '%s'."),
+	      (MR_MESSAGE_NODE_TYPE_MISSMATCH, , "Node '%s' type mismatch: expected '%s' got '%s'."),
 	      (MR_MESSAGE_UNSUPPORTED_NODE_TYPE, , "Unsupported node type: %s(%d):%s(%d)."),
 	      (MR_MESSAGE_RANGE_CHECK, , "Range check error in array '%s'."),
 	      (MR_MESSAGE_READ_REF, , "Can't read '%s' as index."),

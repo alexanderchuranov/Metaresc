@@ -219,7 +219,7 @@ cinit_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 	}
       else if (isdigit (func_str[0])) /* pointer serialized as int */
 	{
-	  char * type = (MR_TYPE_FUNC == ptrs->ra.data[idx].fd.mr_type) ? "void*" : ptrs->ra.data[idx].fd.type;
+	  char * type = (MR_TYPE_FUNC == ptrs->ra.data[idx].fd.mr_type) ? MR_VOIDP_T_STR : ptrs->ra.data[idx].fd.type;
 	  char buf[strlen (type) + strlen (func_str) + sizeof ("()")];
 	  sprintf (buf, "(%s)%s", type, func_str);
 	  MR_FREE (func_str);

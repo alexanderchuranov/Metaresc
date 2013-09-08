@@ -853,10 +853,12 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 
   if (mr_load_data->ptrs.ra.data[idx].fd.type && fdp->type)
     if (strcmp (fdp->type, mr_load_data->ptrs.ra.data[idx].fd.type))
-      {
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->type, mr_load_data->ptrs.ra.data[idx].fd.type);
-	return (MR_FAILURE);
-      }
+      if (!((0 == strcmp (MR_VOIDP_T_STR, mr_load_data->ptrs.ra.data[idx].fd.type)) &&
+	    ('*' == fdp->type[strlen (fdp->type) - 1])))
+	{
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, mr_load_data->ptrs.ra.data[idx].fd.type);
+	  return (MR_FAILURE);
+	}
 
   if ((NULL == mr_load_data->ptrs.ra.data[idx].fd.name.str) && (fdp->name.str))
     mr_load_data->ptrs.ra.data[idx].fd.name.str = MR_STRDUP (fdp->name.str);
