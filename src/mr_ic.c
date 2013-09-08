@@ -294,24 +294,6 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 
 #define MR_HASH_TABLE_SIZE_MULT (1.3)
 
-static void
-dummy_free_fn (mr_ptr_t key, const void * context)
-{
-}
-
-static inline void
-mr_ic_hash_free_inner (mr_ic_hash_t * index, const void * context)
-{
-  if (NULL != index->index.data)
-    {
-      int i;
-      for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)
-	mr_tdestroy (index->index.data[i].root, dummy_free_fn, context);
-      MR_FREE (index->index.data);
-      index->index.data = NULL;
-    }
-}
-
 void
 mr_ic_hash_free (mr_ic_t * ic, const void * context)
 {
@@ -320,23 +302,121 @@ mr_ic_hash_free (mr_ic_t * ic, const void * context)
   if (NULL == index)
     return;
 
-  mr_ic_hash_free_inner (index, context);
+  index->index_free (ic, context);
   MR_FREE (index);
   ic->ext.ptr = NULL;
 }
 
-static inline mr_ptr_t *
-mr_ic_hash_add_inner (mr_ic_hash_t * index, mr_ptr_t key, const void * context, mr_compar_fn_t compar_fn)
+static int
+mr_ic_hash_get_backet (mr_ic_hash_t * index, mr_ptr_t key, const void * context)
 {
   mr_hash_value_t hash_value = index->hash_fn (key, context);
   int hash_size = index->index.size / sizeof (index->index.data[0]);
   if (hash_size <= 0)
+    return (-1);
+  return (hash_value % hash_size);
+}
+
+static mr_ptr_t *
+mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  mr_ic_hash_t * index = ic->ext.ptr;
+  int bucket = mr_ic_hash_get_backet (index, key, context);
+  if (bucket < 0)
+    return (NULL);
+  return (index->index_add (ic, key, context, bucket));
+}
+
+TYPEDEF_STRUCT (mr_ic_hash_index_context_t,
+		(mr_ic_t *, ic),
+		(const void *, context))
+
+static mr_status_t
+mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
+{
+  const mr_ic_hash_index_context_t * mr_ic_hash_index_context = context;
+  mr_ptr_t * add = mr_ic_find (mr_ic_hash_index_context->ic, key, mr_ic_hash_index_context->context);
+
+  if (NULL == add)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INCORRECT_HASH_SIZE, hash_size);
-      return (NULL);
+      mr_ic_hash_t * index = mr_ic_hash_index_context->ic->ext.ptr;
+      ++index->items_count;
+      add = mr_ic_hash_add_inner (mr_ic_hash_index_context->ic, key, mr_ic_hash_index_context->context);
     }
 
-  return (mr_tsearch (key, &index->index.data[hash_value % hash_size].root, compar_fn, context));
+  return ((NULL == add) ? MR_FAILURE : MR_SUCCESS);
+}
+
+static mr_status_t
+mr_ic_hash_index_inner (mr_ic_t * src_ic, mr_ic_t * dst_ic, int items_count, const void * context)
+{
+  mr_ic_hash_t * index = dst_ic->ext.ptr;
+  mr_ic_hash_index_context_t mr_ic_hash_index_context = {
+    .ic = dst_ic,
+    .context = context,
+  };
+
+  index->index_free (dst_ic, context);
+
+  index->items_count = items_count;
+
+  if (0 == index->items_count)
+    return (MR_SUCCESS);
+
+  index->index.alloc_size = index->index.size = ((int)(index->items_count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (index->index.data[0]);
+  index->index.data = MR_MALLOC (index->index.alloc_size);
+  if (NULL == index->index.data)
+    return (MR_FAILURE);
+
+  memset (index->index.data, 0, index->index.alloc_size);
+
+  index->items_count = 0;
+  return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, &mr_ic_hash_index_context));
+}
+
+mr_status_t
+mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
+{
+  mr_status_t status;
+  mr_ic_t ic_none;
+  mr_ic_hash_t * index = ic->ext.ptr;
+
+  if ((NULL == index) || (NULL == rarray))
+    return (MR_FAILURE);
+
+  mr_ic_none_new (&ic_none, ic->compar_fn, ic->key_type);
+  mr_ic_none_index (&ic_none, rarray, context);
+  status = mr_ic_hash_index_inner (&ic_none, ic, rarray->ra.size / sizeof (rarray->ra.data[0]), context);
+  mr_ic_free (&ic_none, context);
+  return (status);
+}
+
+mr_ptr_t *
+mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  mr_ic_hash_t * index = ic->ext.ptr;
+
+  if (NULL == index)
+    return (NULL);
+
+  mr_ptr_t * find = mr_ic_find (ic, key, context);
+  if (find != NULL)
+    return (find);
+  
+  if (index->index.size / sizeof (index->index.data[0]) <= ++index->items_count * MR_HASH_TABLE_SIZE_MULT)
+    {
+      mr_ic_hash_t ic_hash = *index;
+      mr_ic_t dst_ic = *ic;
+      memset (&ic_hash.index, 0, sizeof (ic_hash.index));
+      dst_ic.ext.ptr = &ic_hash;
+      
+      if (MR_SUCCESS != mr_ic_hash_index_inner (ic, &dst_ic, index->items_count, context))
+	return (NULL);
+      
+      index->index_free (ic, context);
+      *index = ic_hash;
+    }
+  return (mr_ic_hash_add_inner (ic, key, context));
 }
 
 TYPEDEF_STRUCT (mr_ic_rbtree_foreach_context_t,
@@ -354,7 +434,7 @@ visit_node (const mr_red_black_tree_node_t * node, mr_rb_visit_order_t order, in
 }
 
 mr_status_t
-mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+mr_ic_hash_tree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
   mr_ic_rbtree_foreach_context_t mr_ic_rbtree_foreach_context = {
@@ -370,124 +450,70 @@ mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
     return (MR_FAILURE);
 
   for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)
-    mr_twalk (index->index.data[i].root, visit_node, &mr_ic_rbtree_foreach_context);
+    mr_twalk (index->index.data[i].ptr, visit_node, &mr_ic_rbtree_foreach_context);
   return (MR_SUCCESS);
 }
 
-TYPEDEF_STRUCT (mr_ic_hash_index_context_t,
-		(mr_ic_hash_t *, index),
-		(mr_compar_fn_t, compar_fn),
-		(const void *, context))
-
-static mr_status_t
-mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
+mr_ptr_t *
+mr_ic_hash_tree_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  const mr_ic_hash_index_context_t * mr_ic_hash_index_context = context;
-  mr_ptr_t * add = mr_ic_hash_add_inner
-    (mr_ic_hash_index_context->index, key,
-     mr_ic_hash_index_context->context,
-     mr_ic_hash_index_context->compar_fn);
+  mr_ic_hash_t * index = ic->ext.ptr;
+  int bucket;
+  
+  if (NULL == index)
+    return (NULL);
 
-  if (NULL == add)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
-    }
-
-  if (0 == memcmp (add, &key, sizeof (key)))
-    ++mr_ic_hash_index_context->index->count;
-  return (MR_SUCCESS);
+  bucket = mr_ic_hash_get_backet (index, key, context);
+  if (bucket < 0)
+    return (NULL);
+  return (mr_tfind (key, (mr_red_black_tree_node_t**)&index->index.data[bucket].ptr, ic->compar_fn, context));
 }
 
-mr_status_t
-mr_ic_hash_index_inner (mr_ic_t * ic, mr_ic_hash_t * index, int count, const void * context)
+static void
+dummy_free_fn (mr_ptr_t key, const void * context)
 {
-  mr_ic_hash_index_context_t mr_ic_hash_index_context = {
-    .index = index,
-    .compar_fn = ic->compar_fn,
-    .context = context,
-  };
-
-  if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn))
-    return (MR_FAILURE);
-
-  mr_ic_hash_free_inner (index, context);
-
-  index->count = count;
-
-  if (0 == index->count)
-    return (MR_SUCCESS);
-
-  index->index.size = index->index.alloc_size = ((int)(index->count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (index->index.data[0]);
-  index->index.data = MR_MALLOC (index->index.alloc_size);
-  if (NULL == index->index.data)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
-    }
-  memset (index->index.data, 0, index->index.size);
-
-  index->count = 0;
-  return (mr_ic_foreach (ic, mr_ic_hash_index_visitor, &mr_ic_hash_index_context));
 }
 
-mr_status_t
-mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
+void
+mr_ic_hash_tree_index_free (mr_ic_t * ic, const void * context)
 {
-  mr_status_t status;
-  mr_ic_t ic_none;
   mr_ic_hash_t * index = ic->ext.ptr;
 
-  if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn) || (NULL == rarray))
-    return (MR_FAILURE);
-
-  mr_ic_none_new (&ic_none, ic->compar_fn, ic->key_type);
-  mr_ic_none_index (&ic_none, rarray, context);
-  status = mr_ic_hash_index_inner (&ic_none, index, rarray->ra.size / sizeof (rarray->ra.data[0]), context);
-  mr_ic_free (&ic_none, context);
-  return (status);
+  if (ic->ic_type != MR_IC_HASH_TREE)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_IC_TYPE);
+      return;
+    }
+  
+  if (NULL != index->index.data)
+    {
+      int i;
+      for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)
+	mr_tdestroy (index->index.data[i].ptr, dummy_free_fn, context);
+      MR_FREE (index->index.data);
+    }
+  memset (&index->index, 0, sizeof (index->index));
 }
 
 mr_ptr_t *
-mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
+mr_ic_hash_tree_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
 
-  if ((NULL == index) || (NULL == index->hash_fn) || (NULL == ic->compar_fn))
-    return (NULL);
-
-  if (index->index.size / sizeof (index->index.data[0]) <= ++index->count * MR_HASH_TABLE_SIZE_MULT)
+  if (ic->ic_type != MR_IC_HASH_TREE)
     {
-      mr_ic_hash_t ic_hash;
-      memset (&ic_hash, 0, sizeof (ic_hash));
-      ic_hash.hash_fn = index->hash_fn;
-      if (MR_SUCCESS != mr_ic_hash_index_inner (ic, &ic_hash, index->count, context))
-	return (NULL);
-      mr_ic_hash_free_inner (index, context);
-      index->index = ic_hash.index;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_IC_TYPE);
+      return (NULL);
     }
-  return (mr_ic_hash_add_inner (index, key, context, ic->compar_fn));
-}
-
-mr_ptr_t *
-mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
-{
-  mr_ic_hash_t * index = ic->ext.ptr;
-
-  if ((NULL == index) || (NULL == index->hash_fn))
-    return (NULL);
-  else
-    {
-      mr_hash_value_t hash_value = index->hash_fn (key, context);
-      int hash_size = index->index.size / sizeof (index->index.data[0]);
-      if (hash_size <= 0)
-	return (NULL);
-      return (mr_tfind (key, &index->index.data[hash_value % hash_size].root, ic->compar_fn, context));
-    }
+  
+  mr_ptr_t * find = mr_tsearch (key, (mr_red_black_tree_node_t**)&index->index.data[bucket].ptr, ic->compar_fn, context);
+  if (NULL == find)
+    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+  return (find);
 }
 
 mr_status_t
-mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type)
+mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type)
 {
   mr_ic_hash_t * index;
 
@@ -502,14 +528,18 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
     }
 
   memset (index, 0, sizeof (*index));
+  index->items_count = 0;
   index->hash_fn = hash_fn;
+  index->index_add = mr_ic_hash_tree_index_add;
+  index->index_free = mr_ic_hash_tree_index_free;
+  index->bucket_type = "mr_red_black_tree_node_t";
 
-  ic->ic_type = MR_IC_HASH;
+  ic->ic_type = MR_IC_HASH_TREE;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
   ic->add = mr_ic_hash_add;
-  ic->find = mr_ic_hash_find;
-  ic->foreach = mr_ic_hash_foreach;
+  ic->find = mr_ic_hash_tree_find;
+  ic->foreach = mr_ic_hash_tree_foreach;
   ic->index = mr_ic_hash_index;
   ic->free = mr_ic_hash_free;
   ic->ext.ptr = index;
@@ -587,6 +617,64 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   return (MR_SUCCESS);
 }
 
+void
+mr_ic_hash_next_index_free (mr_ic_t * ic, const void * context)
+{
+}
+
+mr_ptr_t *
+mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
+{
+  return (NULL);
+}
+
+mr_ptr_t *
+mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
+{
+  return (NULL);
+}
+
+mr_status_t
+mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+{
+  return (MR_SUCCESS);
+}
+
+mr_status_t
+mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type)
+{
+  mr_ic_hash_t * index;
+  
+  if ((NULL == ic) || (NULL == compar_fn))
+    return (MR_FAILURE);
+
+  index = MR_MALLOC (sizeof (*index));
+  if (NULL == index)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (MR_FAILURE);
+    }
+  
+  memset (index, 0, sizeof (*index));
+  index->items_count = 0;
+  index->hash_fn = hash_fn;
+  index->index_add = mr_ic_hash_next_index_add;
+  index->index_free = mr_ic_hash_next_index_free;
+  index->bucket_type = key_type;
+  
+  ic->ic_type = MR_IC_HASH_NEXT;
+  ic->key_type = key_type;
+  ic->compar_fn = compar_fn;
+  ic->add = mr_ic_hash_add;
+  ic->find = mr_ic_hash_next_find;
+  ic->foreach = mr_ic_hash_next_foreach;
+  ic->index = mr_ic_hash_index;
+  ic->free = mr_ic_hash_free;
+  ic->ext.ptr = index;
+
+  return (MR_SUCCESS);
+}
+
 mr_ptr_t *
 mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
@@ -657,8 +745,10 @@ mr_ic_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * 
       return (mr_ic_rbtree_new (ic, compar_fn, key_type));
     case MR_IC_SORTED_ARRAY:
       return (mr_ic_sorted_array_new (ic, compar_fn, key_type));
-    case MR_IC_HASH:
-      return (mr_ic_hash_new (ic, hash_fn, compar_fn, key_type));
+    case MR_IC_HASH_TREE:
+      return (mr_ic_hash_tree_new (ic, hash_fn, compar_fn, key_type));
+    case MR_IC_HASH_NEXT:
+      return (mr_ic_hash_next_new (ic, hash_fn, compar_fn, key_type));
     default:
       return (MR_FAILURE);
     }

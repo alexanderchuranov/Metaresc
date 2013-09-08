@@ -67,12 +67,12 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_POINTER_NODE_CHILD_MISSING, , "Pointer node child missing: type '%s' name '%s'."),
 	      (MR_MESSAGE_UNEXPECTED_NULL_POINTER, , "Unexpected NULL pointer."),
 	      (MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA, , "Unexpected data for string save."),
-	      (MR_MESSAGE_INCORRECT_HASH_SIZE, , "Incorrect hash size %d."),
 	      (MR_MESSAGE_WRONG_RESULT_TYPE, , "Wrong result type."),
 	      (MR_MESSAGE_DIVISION_BY_ZERO, , "Division by zero."),
 	      (MR_MESSAGE_UNEXPECTED_TARGET_TYPE, , "Unexpected target type (%d)."),
 	      (MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, , "Unexpected data at the end of the string '%s'."),
 	      (MR_MESSAGE_SERIALIZATION_FAILED, , "Serialization failed."),
+	      (MR_MESSAGE_UNEXPECTED_IC_TYPE, , "Unexpected indexed collection type."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -191,7 +191,8 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      (MR_IC_NONE, , "mr_ic_rarray_t"),
 	      (MR_IC_RBTREE, , "mr_red_black_tree_node_t"),
 	      (MR_IC_SORTED_ARRAY, , "mr_ic_rarray_t"),
-	      (MR_IC_HASH, , "mr_ic_hash_t"),
+	      (MR_IC_HASH_TREE, , "mr_ic_hash_t"),
+	      (MR_IC_HASH_NEXT, , "mr_ic_hash_t"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,
@@ -210,14 +211,13 @@ TYPEDEF_STRUCT (mr_ic_t,
 		(void, free, (mr_ic_t * /* ic */, __const void * /* context */)),
 		)
 
-TYPEDEF_STRUCT (mr_rb_tree_t,
-		(mr_red_black_tree_node_t *, root),
-		)
-
 TYPEDEF_STRUCT (mr_ic_hash_t,
-		(int, count),
+		(int, items_count),
 		(mr_hash_fn_t, hash_fn),
-		RARRAY (mr_rb_tree_t, index),
+		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
+		(void, index_free, (mr_ic_t * /* ic */, __const void * /* context */)),
+		(char *, bucket_type),
+		RARRAY (mr_ptr_t, index, "bucket_type"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),

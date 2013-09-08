@@ -102,7 +102,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 
   if (!messages_inited)
     {
-      mr_td_t * tdp = mr_get_td_by_name ("mr_message_id_t");
+      mr_td_t * tdp = &MR_DESCRIPTOR_PREFIX (mr_message_id_t);
       if (tdp)
 	{
 	  int i;
@@ -906,7 +906,7 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH);
+  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_TREE);
   mr_ic_index (&tdp->lookup_by_value, (mr_ic_rarray_t*)(void*)&tdp->fields, NULL);
 
   for (i = 0; i < count; ++i)
@@ -1390,14 +1390,14 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   /* MR_IC_HASH: compares 15453 matches 14019 ratio: 1.10 */
 
   mr_check_fields (tdp);
-  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH);
+  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_TREE);
   mr_ic_index (&tdp->lookup_by_name, (mr_ic_rarray_t*)(void*)&tdp->fields, NULL);
 
   if (NULL == mr_conf.enum_by_name.find)
-    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH);
+    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_TREE);
 
   if (NULL == mr_conf.lookup_by_name.find)
-    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH);
+    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_TREE);
 
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
     return (MR_FAILURE);
