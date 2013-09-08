@@ -28,6 +28,14 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
+/* MR_IC_NONE:        ( / 1120378 15763.0) ratio: 71.0764 */
+/* MR_IC_RBTREE:      ( / 1104234 21480.0) ratio: 51.4075 */
+/* MR_IC_SORTED_ARRAY: ( / 928419 18905.0) ratio: 49.1097 */
+/* MR_IC_HASH_NEXT:    ( / 985616 20748.0) ratio: 47.50 */
+/* MR_IC_HASH_TREE:   ( / 1277467 27831.0) ratio: 45.90 */
+
+#define MR_DEFAULT_IC_TYPE MR_IC_HASH_NEXT
+
 void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
 void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
 char * mr_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
@@ -906,7 +914,7 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_TREE);
+  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_DEFAULT_IC_TYPE);
   mr_ic_index (&tdp->lookup_by_value, (mr_ic_rarray_t*)(void*)&tdp->fields, NULL);
 
   for (i = 0; i < count; ++i)
@@ -1384,20 +1392,15 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
     return (MR_FAILURE);
 
-  /* MR_IC_NONE: compares 168952 matches 9703 ratio: 17.41 */
-  /* MR_IC_RBTREE: compares 57272 matches 12029 ratio: 4.76 */
-  /* MR_IC_SORTED_ARRAY: compares 54947 matches 10987 ratio: 5.00 */
-  /* MR_IC_HASH: compares 15453 matches 14019 ratio: 1.10 */
-
   mr_check_fields (tdp);
-  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_TREE);
+  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_DEFAULT_IC_TYPE);
   mr_ic_index (&tdp->lookup_by_name, (mr_ic_rarray_t*)(void*)&tdp->fields, NULL);
 
   if (NULL == mr_conf.enum_by_name.find)
-    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_TREE);
+    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_DEFAULT_IC_TYPE);
 
   if (NULL == mr_conf.lookup_by_name.find)
-    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_TREE);
+    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_DEFAULT_IC_TYPE);
 
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
     return (MR_FAILURE);

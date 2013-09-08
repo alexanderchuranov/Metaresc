@@ -292,7 +292,15 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   return (MR_SUCCESS);
 }
 
-#define MR_HASH_TABLE_SIZE_MULT (1.3)
+#define MR_HASH_TABLE_SIZE_MULT (1.05)
+/* MR_HASH_TABLE_SIZE_MULT: HASH_NEXT ( / cmp matched) ratio, HASH_TREE ( / cmp matched) ratio */
+/* 1.5 ( / 1050008 22904.0) 45.84 ( / 1366426 30009.0) 45.53 */
+/* 1.4 ( / 1020647 22312.0) 45.74 ( / 1329262 29417.0) 45.18 */
+/* 1.3 ( / 1013628 21872.0) 46.34 ( / 1320209 28969.0) 45.57 */
+/* 1.2 ( / 1003236 21392.0) 46.89 ( / 1295439 28470.0) 45.50 */
+/* 1.1 ( / 1005402 20952.0) 47.98 ( / 1283147 28012.0) 45.80 */
+/* 1.05 ( / 984455 20748.0) 47.44 ( / 1278280 27831.0) 45.93 */
+/* 1.0 ( / 1012156 20624.0) 49.07 ( / 1278339 27685.0) 46.17 */
 
 void
 mr_ic_hash_free (mr_ic_t * ic, const void * context)
@@ -399,10 +407,6 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (NULL == index)
     return (NULL);
 
-  mr_ptr_t * find = mr_ic_find (ic, key, context);
-  if (find != NULL)
-    return (find);
-  
   if (index->index.size / sizeof (index->index.data[0]) <= ++index->items_count * MR_HASH_TABLE_SIZE_MULT)
     {
       mr_ic_hash_t ic_hash = *index;
@@ -478,12 +482,6 @@ void
 mr_ic_hash_tree_index_free (mr_ic_t * ic, const void * context)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
-
-  if (ic->ic_type != MR_IC_HASH_TREE)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_IC_TYPE);
-      return;
-    }
   
   if (NULL != index->index.data)
     {
@@ -499,13 +497,6 @@ mr_ptr_t *
 mr_ic_hash_tree_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
 {
   mr_ic_hash_t * index = ic->ext.ptr;
-
-  if (ic->ic_type != MR_IC_HASH_TREE)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_IC_TYPE);
-      return (NULL);
-    }
-  
   mr_ptr_t * find = mr_tsearch (key, (mr_red_black_tree_node_t**)&index->index.data[bucket].ptr, ic->compar_fn, context);
   if (NULL == find)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -620,23 +611,84 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 void
 mr_ic_hash_next_index_free (mr_ic_t * ic, const void * context)
 {
+  mr_ic_hash_t * index = ic->ext.ptr;
+  if (NULL != index->index.data)
+    MR_FREE (index->index.data);
+  memset (&index->index, 0, sizeof (index->index));
 }
 
 mr_ptr_t *
 mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
 {
+  mr_ic_hash_t * index = ic->ext.ptr;
+  int i, count = index->index.size / sizeof (index->index.data[0]);
+  
+  if (0 == key.long_int_t)
+    {
+      index->index.ptr_type = "has zero";
+      return (&index->index.ext);
+    }
+
+  for (i = bucket; ;)
+    {
+      if (0 == index->index.data[i].long_int_t)
+	{
+	  index->index.data[i] = key;
+	  return (&index->index.data[i]);
+	}
+      if (++i >= count)
+	i = 0;
+      if (i == bucket)
+	break;
+    }
+  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
   return (NULL);
 }
 
 mr_ptr_t *
 mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
+  mr_ic_hash_t * index = ic->ext.ptr;
+  int i, bucket, count = index->index.size / sizeof (index->index.data[0]);
+  
+  if (0 == key.long_int_t)
+    return ((index->index.ptr_type != NULL) ? &index->index.ext : NULL);
+
+  bucket = mr_ic_hash_get_backet (index, key, context);
+  if (bucket < 0)
+    return (NULL);
+
+  for (i = bucket; ;)
+    {
+      if (0 == index->index.data[i].long_int_t)
+	return (NULL);
+      if (0 == ic->compar_fn (key, index->index.data[i], context))
+	return (&index->index.data[i]);
+      if (++i >= count)
+	i = 0;
+      if (i == bucket)
+	break;
+    }
   return (NULL);
 }
 
 mr_status_t
 mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
+  mr_ic_hash_t * index = ic->ext.ptr;
+  int i;
+
+  if (NULL == index)
+    return (MR_FAILURE);
+  
+  if (index->index.ptr_type != NULL)
+    if (MR_SUCCESS != visit_fn (&index->index.ext, context))
+      return (MR_FAILURE);
+
+  for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)
+    if (0 != index->index.data[i].long_int_t)
+      if (MR_SUCCESS != visit_fn (index->index.data[i], context))
+	return (MR_FAILURE);
   return (MR_SUCCESS);
 }
 
