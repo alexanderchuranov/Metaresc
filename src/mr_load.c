@@ -194,10 +194,19 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
     case MR_VT_UNKNOWN:
       if (NULL == ptrdes->mr_value.vt_string)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-#ifdef HAVE_LIBDL
       else
-	*(void**)ptrdes->data = dlsym (RTLD_DEFAULT, ptrdes->mr_value.vt_string);
+	{
+	  if (isdigit (ptrdes->mr_value.vt_string[0]))
+	    {
+	      if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
+		return (MR_FAILURE);
+	      *(void**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
+	    }
+#ifdef HAVE_LIBDL
+	  else
+	    *(void**)ptrdes->data = dlsym (RTLD_DEFAULT, ptrdes->mr_value.vt_string);
 #endif /* HAVE_LIBDL */
+	}
       break;
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->mr_value.value_type);
