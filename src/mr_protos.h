@@ -189,11 +189,11 @@ TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup o
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t,
-	      (MR_IC_NONE, , "mr_ic_rarray_t"),
-	      (MR_IC_RBTREE, , "mr_red_black_tree_node_t"),
-	      (MR_IC_SORTED_ARRAY, , "mr_ic_rarray_t"),
-	      (MR_IC_HASH_TREE, , "mr_ic_hash_t"),
-	      (MR_IC_HASH_NEXT, , "mr_ic_hash_t"),
+	      (MR_IC_NONE, , "rarray"),
+	      (MR_IC_RBTREE, , "tree"),
+	      (MR_IC_SORTED_ARRAY, , "rarray"),
+	      (MR_IC_HASH_TREE, , "hash"),
+	      (MR_IC_HASH_NEXT, , "hash"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,
@@ -203,7 +203,15 @@ TYPEDEF_STRUCT (mr_ic_rarray_t,
 TYPEDEF_STRUCT (mr_ic_t,
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
-		(mr_ptr_t, ext, , "ic_type"),
+
+		ANON_UNION (type_specific),
+		(mr_ptr_t, ext, , "ext_type"),
+		(mr_ic_rarray_t *, rarray),
+		(struct mr_ic_hash_t *, hash),
+		(mr_red_black_tree_node_t *, tree),
+		END_ANON_UNION ("ic_type"),
+		(char *, ext_type, , "type specifier for extended IC types"),
+		
 		(mr_compar_fn_t, compar_fn),
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
