@@ -389,15 +389,15 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 
 /* ----------------------- MR_IC_HASH ----------------------- */
 
-#define MR_HASH_TABLE_SIZE_MULT (1.05)
+#define MR_HASH_TABLE_SIZE_MULT (1.4)
 /* MR_HASH_TABLE_SIZE_MULT: HASH_NEXT ( / cmp matched) ratio, HASH_TREE ( / cmp matched) ratio */
-/* 1.5 ( / 1050741 22904.0) 45.87 ( / 1366426 30009.0) 45.53 */
-/* 1.4 ( / 1019403 22312.0) 45.68 ( / 1329262 29417.0) 45.18 */
-/* 1.3 ( / 1012786 21872.0) 46.30 ( / 1320209 28969.0) 45.57 */
-/* 1.2 ( / 1002371 21392.0) 46.85 ( / 1295439 28470.0) 45.50 */
-/* 1.1 ( / 1004327 20952.0) 47.93 ( / 1283147 28012.0) 45.80 */
-/* 1.05 ( / 983300 20748.0) 47.39 ( / 1278280 27831.0) 45.93 */
-/* 1.0 ( / 1014354 20624.0) 49.18 ( / 1278339 27685.0) 46.17 */
+/* 1.5  ( / 24151 15217.0) 1.58 ( / 31483 20344.0) 1.54 */
+/* 1.4  ( / 17783 14921.0) 1.19 ( / 22681 20048.0) 1.13 */
+/* 1.3  ( / 18459 14701.0) 1.25 ( / 23180 19820.0) 1.16 */
+/* 1.2  ( / 38973 14461.0) 2.69 ( / 24962 19561.0) 1.27 */
+/* 1.1  ( / 48032 14241.0) 3.37 ( / 29766 19323.0) 1.54 */
+/* 1.05 ( / 30735 14139.0) 2.17 ( / 28792 19244.0) 1.49 */
+/* 1.0  ( / 62538 14077.0) 4.44 ( / 29668 19160.0) 1.54 */
 
 void
 mr_ic_hash_free (mr_ic_t * ic, const void * context)
@@ -694,7 +694,7 @@ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
     return (MR_FAILURE);
   
   if (index->index.ptr_type != NULL)
-    if (MR_SUCCESS != visit_fn (&index->index.ext, context))
+    if (MR_SUCCESS != visit_fn (index->index.ext, context))
       return (MR_FAILURE);
 
   for (i = index->index.size / sizeof (index->index.data[0]) - 1; i >= 0; --i)

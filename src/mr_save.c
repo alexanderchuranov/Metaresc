@@ -18,6 +18,12 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
+/* MR_IC_RBTREE   ( / 1001626 7396.0) ratio: 135.42 */
+/* MR_IC_HASH_NEXT ( / 237032 9368.0) ratio: 25.30 */
+/* MR_IC_HASH_TREE  ( / 51574 7396.0) ratio: 6.97 */
+
+#define MR_IC_DYNAMIC_DEFAULT MR_IC_HASH_TREE
+
 TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
 
 static mr_save_handler_t mr_save_handler[];
@@ -250,7 +256,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ra.data[idx].fd = *fdp;
   mr_save_data->ptrs.ra.data[idx].parent = mr_save_data->parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
 
-  mr_ic_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_RBTREE);
+  mr_ic_new (&mr_save_data->ptrs.ra.data[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
 
   /* forward reference resolving */
   ref_idx = mr_resolve_typed_forward_ref (mr_save_data);
@@ -818,8 +824,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   int i;
 
   mr_save_data->parent = -1;
-  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_RBTREE);
-  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_RBTREE);
+  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
+  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
 
   mr_save_data->mr_ra_ud.size = 0;
   mr_save_data->mr_ra_ud.data = NULL;
