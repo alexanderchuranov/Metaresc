@@ -844,7 +844,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_post_process (mr_save_data);
 
   for (i = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1; i >= 0; --i)
-    mr_ic_free (&mr_save_data->ptrs.ra.data[i].union_discriminator, NULL);
+    mr_ic_free (&mr_save_data->ptrs.ra.data[i].union_discriminator);
   if (mr_save_data->mr_ra_ud.data)
     MR_FREE (mr_save_data->mr_ra_ud.data);
   mr_save_data->mr_ra_ud.data = NULL;
@@ -852,8 +852,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     MR_FREE (mr_save_data->mr_ra_idx.data);
   mr_save_data->mr_ra_idx.data = NULL;
 
-  mr_ic_free (&mr_save_data->typed_ptrs, NULL);
-  mr_ic_free (&mr_save_data->untyped_ptrs, NULL);
+  mr_ic_free (&mr_save_data->typed_ptrs);
+  mr_ic_free (&mr_save_data->untyped_ptrs);
 }
 
 /**

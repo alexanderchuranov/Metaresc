@@ -619,7 +619,7 @@ mr_load_rarray_type (mr_fd_t * fdp, mr_status_t (*action) (mr_td_t *, void *), v
 	  mr_ic_new (&td.lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_NONE);
 	  mr_ic_index (&td.lookup_by_name, (mr_ic_rarray_t*)(void*)&td.fields, NULL);
 	  status = action (&td, context);
-	  mr_ic_free (&td.lookup_by_name, NULL);
+	  mr_ic_free (&td.lookup_by_name);
 	}
     }
   return (status);

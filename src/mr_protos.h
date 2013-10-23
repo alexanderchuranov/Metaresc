@@ -4,7 +4,7 @@
 
 #include <metaresc.h>
 
-TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)) , "pointer on any type"),
+TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
 	       (void *, ptr, , "default void pointer"),
 	       (long, long_int_t),
 	       )
@@ -122,7 +122,7 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 	      MR_TYPE_EXT_LAST,  /* keep it last */
 	      )
 
-/* mr_rarray_t defenition should be syncroonized with MR_RARRAY_PROTO macro */
+/* mr_rarray_t defenition should be synchronized with MR_RARRAY_PROTO macro */
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
 		(void *, data, , "pointer on data array"),
 		(int64_t, size, , "used space in bytes"),
@@ -214,17 +214,19 @@ TYPEDEF_STRUCT (mr_ic_t,
 		
 		(mr_compar_fn_t, compar_fn),
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
+		(mr_status_t, del, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_status_t, foreach, (mr_ic_t * /* ic */, mr_visit_fn_t /* visit_fn */, __const void * /* context */)),
 		(mr_status_t, index, (mr_ic_t * /* ic */, mr_ic_rarray_t * /* rarray */, __const void * /* context */)),
-		(void, free, (mr_ic_t * /* ic */, __const void * /* context */)),
+		(void, reset, (mr_ic_t * /* ic */)),
+		(void, free, (mr_ic_t * /* ic */)),
 		)
 
 TYPEDEF_STRUCT (mr_ic_hash_t,
 		(int, items_count),
 		(mr_hash_fn_t, hash_fn),
 		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
-		(void, index_free, (mr_ic_t * /* ic */, __const void * /* context */)),
+		(void, index_free, (mr_ic_t * /* ic */)),
 		(char *, bucket_type),
 		RARRAY (mr_ptr_t, index, "bucket_type"),
 		)

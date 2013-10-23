@@ -78,8 +78,8 @@ static mr_status_t
 mr_td_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  mr_ic_free (&tdp->lookup_by_name, NULL);
-  mr_ic_free (&tdp->lookup_by_value, NULL);
+  mr_ic_free (&tdp->lookup_by_name);
+  mr_ic_free (&tdp->lookup_by_value);
   return (MR_SUCCESS);
 }
 
@@ -90,8 +90,8 @@ static void __attribute__((destructor))
 mr_cleanup (void)
 {
   mr_ic_foreach (&mr_conf.lookup_by_name, mr_td_visitor, NULL);
-  mr_ic_free (&mr_conf.enum_by_name, NULL);
-  mr_ic_free (&mr_conf.lookup_by_name, NULL);
+  mr_ic_free (&mr_conf.enum_by_name);
+  mr_ic_free (&mr_conf.lookup_by_name);
 }
 
 /**
