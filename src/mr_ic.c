@@ -472,10 +472,13 @@ mr_ic_hash_reset (mr_ic_t * ic)
 {
   mr_ic_hash_t * hash = ic->hash;
 
-  if (NULL == hash)
+  if ((NULL == hash) || (NULL == hash->index.data))
     return;
 
-  hash->index_free (ic);
+  memset (hash->index.data, 0, hash->index.size);
+  hash->index.ext.ptr = NULL;
+  hash->index.ptr_type = NULL;
+  hash->items_count = 0;
 }
 
 void
@@ -578,6 +581,10 @@ mr_ptr_t *
 mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * hash = ic->hash;
+  mr_ptr_t * find = mr_ic_find (ic, key, context);
+
+  if (find != NULL)
+    return (find);
 
   if (NULL == hash)
     return (NULL);
@@ -594,6 +601,7 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
       
       hash->index_free (ic);
       *hash = ic_hash;
+      ++hash->items_count;
     }
   return (mr_ic_hash_add_inner (ic, key, context));
 }
@@ -766,7 +774,22 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (0 == key.long_int_t)
     hash->index.ptr_type = NULL;
   else
-    find->long_int_t = 0;
+    {
+      int i, count = hash->index.size / sizeof (hash->index.data[0]);
+      
+      find->long_int_t = 0;
+      for (i = find - hash->index.data; ;)
+	{
+	  mr_ptr_t mr_ptr;
+	  if (++i >= count)
+	    i = 0;
+	  if (0 == hash->index.data[i].long_int_t)
+	    break;
+	  mr_ptr = hash->index.data[i];
+	  hash->index.data[i].long_int_t = 0;
+	  mr_ic_hash_next_index_add (ic, mr_ptr, context, mr_ic_hash_get_backet (hash, mr_ptr, context));
+	}
+    }
   
   return (MR_SUCCESS);
 }
