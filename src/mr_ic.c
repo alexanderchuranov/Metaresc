@@ -17,6 +17,9 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_rarray_t * rarray = ic->rarray;
   mr_ptr_t * add;
+  mr_ptr_t * find = mr_ic_find (ic, key, context);
+  if (find != NULL)
+    return (find);
 
   if ((rarray == NULL) ||
       (rarray->ra.size + sizeof (rarray->ra.data[0]) > rarray->ra.alloc_size))
@@ -308,6 +311,9 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   mr_ic_rarray_t * rarray = ic->rarray;
   mr_ptr_t * add;
   int i;
+  mr_ptr_t * find = mr_ic_find (ic, key, context);
+  if (find != NULL)
+    return (find);
 
   if (NULL == rarray)
     return (NULL);
@@ -582,7 +588,6 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * hash = ic->hash;
   mr_ptr_t * find = mr_ic_find (ic, key, context);
-
   if (find != NULL)
     return (find);
 

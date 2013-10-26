@@ -76,13 +76,8 @@ mr_ic_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 static inline mr_ptr_t *
 mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  mr_ptr_t * find = mr_ic_find (ic, key, context);
-  if (NULL != find)
-    return (find);
-
   if (NULL == ic)
     return (NULL);
-
   if (ic->add)
     return (ic->add (ic, key, context));
   return (NULL);
