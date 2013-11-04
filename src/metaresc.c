@@ -480,7 +480,8 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
     {
       ptrs.ra.data[i].ext.ptr = NULL;
       if ((ptrs.ra.data[i].ref_idx < 0) && (ptrs.ra.data[i].idx >= 0))
-	if ((MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext) ||
+	if (((MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext) &&
+	     (MR_TYPE_VOID != ptrs.ra.data[i].fd.mr_type))||
 	    (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext) ||
 	    ((MR_TYPE_EXT_NONE == ptrs.ra.data[i].fd.mr_type_ext) &&
 	     (MR_TYPE_STRING == ptrs.ra.data[i].fd.mr_type)))
@@ -1459,7 +1460,10 @@ mr_detect_type (mr_fd_t * fdp)
       /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
       tdp = mr_get_td_by_name (fdp->type);
       if (tdp)
-	fdp->mr_type = tdp->mr_type;
+	{
+	  fdp->mr_type = tdp->mr_type;
+	  fdp->size = tdp->size;
+	}
       break;
     default:
       break;

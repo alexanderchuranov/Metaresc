@@ -823,6 +823,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 {
   int i;
 
+  memset (mr_save_data, 0, sizeof (*mr_save_data));
   mr_save_data->parent = -1;
   mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
   mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);

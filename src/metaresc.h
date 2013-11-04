@@ -796,7 +796,8 @@
 #define MR_COPY_RECURSIVELY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_TYPE_NAME dst; mr_copy_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR), &dst); dst; })
 #define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) mr_free_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR))
 
-#define MR_SAVE(MR_TYPE_NAME, S_PTR) ({					\
+#define MR_SAVE MR_SAVE_TYPED
+#define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR) ({				\
       mr_fd_t __fd__ =							\
 	{								\
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
@@ -821,6 +822,26 @@
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
       else								\
 	mr_save (check_type, &__fd__, &__mr_save_data__);		\
+      __mr_save_data__.ptrs;						\
+    })
+
+#define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
+      mr_fd_t __fd__ =							\
+	{								\
+	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
+	  .type = MR_TYPE_NAME_STR,					\
+	  .mr_type = MR_TYPE_NONE,					\
+	  .mr_type_ext = MR_TYPE_EXT_NONE,				\
+	  .size = 0,							\
+	};								\
+      void * __ptr__ = S_PTR;						\
+      mr_save_data_t __mr_save_data__;					\
+      mr_detect_type (&__fd__);						\
+      __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
+      if (__ptr__ == NULL)						\
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
+      else								\
+	mr_save (__ptr__, &__fd__, &__mr_save_data__);			\
       __mr_save_data__.ptrs;						\
     })
 
