@@ -130,8 +130,8 @@ TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable arr
 		(void *, data, , "pointer on data array"),
 		(int64_t, size, , "used space in bytes"),
 		(int64_t, alloc_size, , "allocated space in bytes"),
-		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
-		(char *, ptr_type, , "union discriminator"),
+		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
+		(char *, res_type, , "union discriminator"),
 		)
 
 TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
@@ -245,7 +245,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_fd_param_t, param, , "mr_type"),
 		(char *, meta, , "field meta info"),
 		/*
-		  ext field can be used by user for extended information
+		  res field can be used by user for extended information
 		  placed after meta field for tricky intialization
 		  sample:
 		  NONE (void *, ptr, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
@@ -254,8 +254,8 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		  or
 		  NONE (void *, ptr, , "user extended info", { "one more extra string" }, "string_t")
 		*/
-		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
-		(char *, ptr_type, , "union discriminator"),
+		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
+		(char *, res_type, , "union discriminator"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_ptr_t,
@@ -273,8 +273,8 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_ic_t, lookup_by_value, , "lookup by enum values"),
 		RARRAY (mr_fd_ptr_t, fields, "fields or enums descriptors"),
 		(char *, meta, , "type meta info"),
-		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
-		(char *, ptr_type, , "union discriminator"),
+		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
+		(char *, res_type, , "union discriminator"),
 		) /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
@@ -344,8 +344,8 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptrdes_flags_t, flags),
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
 		(mr_value_t, mr_value),
-		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
-		(char *, ptr_type, , "union discriminator"),
+		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
+		(char *, res_type, , "union discriminator"),
 		)
 
 TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),

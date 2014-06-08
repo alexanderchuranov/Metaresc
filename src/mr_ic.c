@@ -23,8 +23,8 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   if ((rarray == NULL) ||
       (rarray->ra.size + sizeof (rarray->ra.data[0]) > rarray->ra.alloc_size))
-    if ((NULL == rarray->ra.ptr_type) ||
-	(0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
+    if ((NULL == rarray->ra.res_type) ||
+	(0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.res_type)))
       {
 	mr_ic_rarray_t * rarray_ = MR_MALLOC (sizeof (*rarray));
 	if (NULL == rarray_)
@@ -50,8 +50,8 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 	if (NULL != rarray)
 	  memcpy (rarray_->ra.data, rarray->ra.data, rarray_->ra.size);
 
-	rarray_->ra.ext.ptr = NULL;
-	rarray_->ra.ptr_type = MR_IC_NONE_TYPE_T_STR;
+	rarray_->ra.res.ptr = NULL;
+	rarray_->ra.res_type = MR_IC_NONE_TYPE_T_STR;
 	ic->rarray = rarray = rarray_;
       }
 
@@ -114,8 +114,8 @@ mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
   mr_ic_rarray_t * copy;
   mr_ic_none_free (ic);
 
-  if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
-      (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
+  if ((NULL == rarray) || (NULL == rarray->ra.res_type) ||
+      (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.res_type)))
     {
       ic->rarray = rarray;
       return (MR_SUCCESS);
@@ -129,7 +129,7 @@ mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
     }
 
   *copy = *rarray;
-  copy->ra.ext.ptr = NULL;
+  copy->ra.res.ptr = NULL;
   copy->ra.data = MR_MALLOC (copy->ra.size);
   if (NULL == copy->ra.data)
     {
@@ -151,8 +151,8 @@ mr_ic_none_reset (mr_ic_t * ic)
   if (NULL == rarray)
     return;
   
-  if ((NULL != rarray->ra.ptr_type) &&
-      (0 == strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
+  if ((NULL != rarray->ra.res_type) &&
+      (0 == strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.res_type)))
     rarray->ra.size = 0;
   else
     ic->rarray = NULL;
@@ -165,8 +165,8 @@ mr_ic_none_free (mr_ic_t * ic)
 
   ic->rarray = NULL;
 
-  if ((NULL == rarray) || (NULL == rarray->ra.ptr_type) ||
-      (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.ptr_type)))
+  if ((NULL == rarray) || (NULL == rarray->ra.res_type) ||
+      (0 != strcmp (MR_IC_NONE_TYPE_T_STR, rarray->ra.res_type)))
     return;
 
   if (NULL != rarray->ra.data)
@@ -482,8 +482,8 @@ mr_ic_hash_reset (mr_ic_t * ic)
     return;
 
   memset (hash->index.data, 0, hash->index.size);
-  hash->index.ext.ptr = NULL;
-  hash->index.ptr_type = NULL;
+  hash->index.res.ptr = NULL;
+  hash->index.res_type = NULL;
   hash->items_count = 0;
 }
 
@@ -746,8 +746,8 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int
   
   if (0 == key.long_int_t)
     {
-      hash->index.ptr_type = "has zero";
-      return (&hash->index.ext);
+      hash->index.res_type = "has zero";
+      return (&hash->index.res);
     }
 
   for (i = bucket; ;)
@@ -777,7 +777,7 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   --hash->items_count;
   if (0 == key.long_int_t)
-    hash->index.ptr_type = NULL;
+    hash->index.res_type = NULL;
   else
     {
       int i, count = hash->index.size / sizeof (hash->index.data[0]);
@@ -806,7 +806,7 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
   int i, bucket, count = hash->index.size / sizeof (hash->index.data[0]);
   
   if (0 == key.long_int_t)
-    return ((hash->index.ptr_type != NULL) ? &hash->index.ext : NULL);
+    return ((hash->index.res_type != NULL) ? &hash->index.res : NULL);
 
   bucket = mr_ic_hash_get_backet (hash, key, context);
   if (bucket < 0)
@@ -835,8 +835,8 @@ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
   if (NULL == hash)
     return (MR_FAILURE);
   
-  if (hash->index.ptr_type != NULL)
-    if (MR_SUCCESS != visit_fn (hash->index.ext, context))
+  if (hash->index.res_type != NULL)
+    if (MR_SUCCESS != visit_fn (hash->index.res, context))
       return (MR_FAILURE);
 
   for (i = hash->index.size / sizeof (hash->index.data[0]) - 1; i >= 0; --i)

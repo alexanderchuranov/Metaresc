@@ -51,8 +51,8 @@ MR_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"
       .data = (string_t[]){ "0", "1", },
       .size = 2 * sizeof (string_t),
       .alloc_size = 2 * sizeof (string_t),
-      .ext = { "string_t" },
-      .ptr_type = "string_t",
+      .res = { "string_t" },
+      .res_type = "string_t",
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
@@ -65,8 +65,8 @@ MR_START_TEST (rarray_referenced_content, "referenced content") {
       .data = (string_t[]){ "string_t", "string_t", },
       .size = 2 * sizeof (string_t),
       .alloc_size = 2 * sizeof (string_t),
-      .ext = { "string_t" },
-      .ptr_type = "string_t",
+      .res = { "string_t" },
+      .res_type = "string_t",
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
@@ -81,9 +81,9 @@ MR_START_TEST (rarray_referenced_elements, "referenced elements") {
       .alloc_size = 2 * sizeof (string_t),
     },
   };
-  orig.x.ext.ptr = &orig.x.data[1];
+  orig.x.res.ptr = &orig.x.data[1];
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
-  orig.x.ext.ptr = &orig.x.data[0];
+  orig.x.res.ptr = &orig.x.data[0];
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
 } END_TEST
 
@@ -106,8 +106,8 @@ MR_START_TEST (rarray_opaque_data, "rarray with opaque data") {
       .data = (int[]){ 1, 2 },
       .size = 2 * sizeof (int),
       .alloc_size = 2 * sizeof (int),
-      .ext = { NULL },
-      .ptr_type = MR_RARRAY_OPAQUE_DATA_T_STR,
+      .res = { NULL },
+      .res_type = MR_RARRAY_OPAQUE_DATA_T_STR,
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, int_rarray_t, &orig);

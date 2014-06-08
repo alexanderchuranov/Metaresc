@@ -311,7 +311,7 @@ static scm_save_handler_t ext_scm_save_handler[] =
 char *
 scm_save (mr_ra_mr_ptrdes_t * ptrs)
 {
-  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = { NULL }, };
+  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .res = { NULL }, };
   int idx = 0;
 
   if (NULL == mr_ra_str.data)

@@ -72,7 +72,7 @@ TYPEDEF_STRUCT (mr_ra_void_t, RARRAY (void, ra));
 /*
   if this assert fails then mr_rarray_t definition in mr_protos.h differs from MR_RARRAY_PROTO define in metaresc.h
 */
-MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void_t, ra.data, ra.size, ra.alloc_size, ra.ext, ra.ptr_type));
+MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void_t, ra.data, ra.size, ra.alloc_size, ra.res, ra.res_type));
 
 static mr_status_t
 mr_td_visitor (mr_ptr_t key, const void * context)
@@ -413,8 +413,8 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->fd.param.array_param.row_count = 0;
   ptrdes->fd.param.enum_value = 0;
   ptrdes->fd.meta = NULL;
-  ptrdes->fd.ext.ptr = NULL;
-  ptrdes->fd.ptr_type = NULL;
+  ptrdes->fd.res.ptr = NULL;
+  ptrdes->fd.res_type = NULL;
   ptrdes->level = 0;
   ptrdes->idx = -1; /* NB! To be initialized in depth search in mr_save */
   ptrdes->ref_idx = -1;
@@ -428,8 +428,8 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->flags.is_content_reference = MR_FALSE;
   ptrdes->flags.is_opaque_data = MR_FALSE;
   ptrdes->mr_value.value_type = MR_VT_UNKNOWN;
-  ptrdes->ext.ptr = NULL;
-  ptrdes->ptr_type = NULL;
+  ptrdes->res.ptr = NULL;
+  ptrdes->res_type = NULL;
   return (ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1);
 }
 
@@ -478,19 +478,19 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
     {
-      ptrs.ra.data[i].ext.ptr = NULL;
+      ptrs.ra.data[i].res.ptr = NULL;
       if ((ptrs.ra.data[i].ref_idx < 0) && (ptrs.ra.data[i].idx >= 0))
 	if (((MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext) &&
 	     (MR_TYPE_VOID != ptrs.ra.data[i].fd.mr_type))||
 	    (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext) ||
 	    ((MR_TYPE_EXT_NONE == ptrs.ra.data[i].fd.mr_type_ext) &&
 	     (MR_TYPE_STRING == ptrs.ra.data[i].fd.mr_type)))
-	  ptrs.ra.data[i].ext.ptr = *(void**)ptrs.ra.data[i].data;
+	  ptrs.ra.data[i].res.ptr = *(void**)ptrs.ra.data[i].data;
     }
 
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)
-    if (ptrs.ra.data[i].ext.ptr)
-      MR_FREE (ptrs.ra.data[i].ext.ptr);
+    if (ptrs.ra.data[i].res.ptr)
+      MR_FREE (ptrs.ra.data[i].res.ptr);
 
   MR_FREE (ptrs.ra.data);
   return (MR_SUCCESS);
@@ -500,10 +500,10 @@ static mr_status_t
 calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   /* is new address is not set yet, then it could be calculated as relative address from the parent node */
-  if (NULL == ptrs->ra.data[idx].ext.ptr)
+  if (NULL == ptrs->ra.data[idx].res.ptr)
     {
       int parent = ptrs->ra.data[idx].parent;
-      ptrs->ra.data[idx].ext.ptr = &((char*)ptrs->ra.data[parent].ext.ptr)[ptrs->ra.data[idx].data - ptrs->ra.data[parent].data];
+      ptrs->ra.data[idx].res.ptr = &((char*)ptrs->ra.data[parent].res.ptr)[ptrs->ra.data[idx].data - ptrs->ra.data[parent].data];
     }
   return (MR_SUCCESS);
 }
@@ -522,7 +522,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
     return (MR_FAILURE);
 
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
-    ptrs.ra.data[i].ext.ptr = NULL;
+    ptrs.ra.data[i].res.ptr = NULL;
 
   /* NB index 0 is excluded */
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
@@ -583,7 +583,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    memset (&copy[ptrs.ra.data[i].fd.size], 0, alloc_size - ptrs.ra.data[i].fd.size);
 	    /* go thru all childs and calculate their addresses in newly allocated chunk */
 	    for (idx = ptrs.ra.data[i].first_child; idx >= 0; idx = ptrs.ra.data[idx].next)
-	      ptrs.ra.data[idx].ext.ptr = &copy[(char*)ptrs.ra.data[idx].data - *(char**)ptrs.ra.data[i].data];
+	      ptrs.ra.data[idx].res.ptr = &copy[(char*)ptrs.ra.data[idx].data - *(char**)ptrs.ra.data[i].data];
 	  }
 	  break;
 	default:
@@ -591,7 +591,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	}
   /* copy first level struct */
   memcpy (dst, ptrs.ra.data[0].data, ptrs.ra.data[0].fd.size);
-  ptrs.ra.data[0].ext.ptr = dst;
+  ptrs.ra.data[0].res.ptr = dst;
 
   /* depth search thru the graph and calculate new addresses for all nodes */
   mr_ptrs_ds (&ptrs, calc_relative_addr, NULL);
@@ -614,7 +614,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    else
 	      ptr_idx = ptrs.ra.data[i].flags.is_content_reference ? ptrs.ra.data[ptrs.ra.data[i].ref_idx].first_child : ptrs.ra.data[i].ref_idx;
 	    /* update pointer in the copy */
-	    *(void**)ptrs.ra.data[i].ext.ptr = ptrs.ra.data[ptr_idx].ext.ptr;
+	    *(void**)ptrs.ra.data[i].res.ptr = ptrs.ra.data[ptr_idx].res.ptr;
 	  }
 	  break;
 	default:
@@ -740,7 +740,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
       if ((MR_TYPE_ANON_UNION == fdp->mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->mr_type))
 	{
 	  static int mr_type_anonymous_union_cnt = 0;
-	  mr_td_t * tdp_ = fdp->ext.ptr; /* statically allocated memory for new type descriptor */
+	  mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
 	  mr_fd_t ** first = &tdp->fields.data[i + 1].fdp;
 	  mr_fd_t * last;
 	  int opened = 1;
@@ -1356,7 +1356,7 @@ mr_status_t
 mr_add_type (mr_td_t * tdp, char * meta, ...)
 {
   va_list args;
-  void * ext;
+  void * res;
   int count;
 
   if (NULL == tdp)
@@ -1366,7 +1366,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     return (MR_SUCCESS); /* this type is already registered */
 
   va_start (args, meta);
-  ext = va_arg (args, void*);
+  res = va_arg (args, void*);
   va_end (args);
 
   for (count = 0; ; ++count)
@@ -1382,13 +1382,13 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     }
   tdp->fields.size = count * sizeof (tdp->fields.data[0]);
   tdp->fields.alloc_size = -1;
-  tdp->fields.ext.ptr = NULL;
+  tdp->fields.res.ptr = NULL;
 
   if ((NULL != meta) && meta[0])
     tdp->meta = meta;
 
-  if (NULL != ext)
-    tdp->ext.ptr = ext;
+  if (NULL != res)
+    tdp->res.ptr = res;
 
   if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
     return (MR_FAILURE);

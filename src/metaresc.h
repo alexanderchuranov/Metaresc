@@ -343,7 +343,7 @@
   Check for empty trailing enum definition
   Enums definition might be in two forms.
   1. just a enum name
-  2. (ENUM_NAME, RIGHT_HAND_SIDE..., COMMENT..., EXT...) enum and some extra information in parentheses
+  2. (ENUM_NAME, RIGHT_HAND_SIDE..., META..., RESOURCE...) enum and some extra information in parentheses
   both unfolds into MR_ENUM_DEF_{PROTO|DESC} (P00_TYPE_NAME, ARGS)
 */
 #define P00_ENUM_DEF(P00_MODE_TYPE_NAME, FIELD, I)			\
@@ -569,7 +569,7 @@
 #define MR_POINTER_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE *, NAME, )
 #define MR_POINTER_STRUCT_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct MR_TYPEDEF_PREFIX (TYPE) *, NAME, )
 /* rarray defenition should be syncroonized with mr_rarray_t type definition */
-#define MR_RARRAY_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; typeof (((mr_rarray_t*)NULL)->size) size; typeof (((mr_rarray_t*)NULL)->alloc_size) alloc_size; typeof (((mr_rarray_t*)NULL)->ext) ext; typeof (((mr_rarray_t*)NULL)->ptr_type) ptr_type;}, NAME, )
+#define MR_RARRAY_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; typeof (((mr_rarray_t*)NULL)->size) size; typeof (((mr_rarray_t*)NULL)->alloc_size) alloc_size; typeof (((mr_rarray_t*)NULL)->res) res; typeof (((mr_rarray_t*)NULL)->res_type) res_type;}, NAME, )
 #define MR_FUNC_PROTO(MR_TYPE_NAME, TYPE, NAME, ARGS, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, (*NAME), ARGS)
 
 #define MR_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, ... /* ATTR */) MR_IF_ELSE (MR_IS_EMPTY (NAME)) () (char NAME[0];) union __VA_ARGS__ {
@@ -662,7 +662,7 @@
 	      .size = sizeof (MR_TYPE_NAME),				\
 	      .alloc_size = -1,						\
 	      .data = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }),	\
-	      .ptr_type = MR_RARRAY_OPAQUE_DATA_T_STR,			\
+	      .res_type = MR_RARRAY_OPAQUE_DATA_T_STR,			\
 	    }, }, },							\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
@@ -717,8 +717,8 @@
 	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .meta = #__VA_ARGS__,					\
-	     .ext = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
-	     .ptr_type = "mr_td_t",					\
+	     .res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
+	     .res_type = "mr_td_t",					\
 		} } },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...) {	\
     (mr_fd_t[]){ {							\
@@ -776,7 +776,7 @@
   MR_ADD_TYPE(foo_t, "TMI", "One more TMI");
   MR_ADD_TYPE(foo_t, "TMI", &meta_info_struct);
   MR_ADD_TYPE(foo_t, "TMI", &meta_info_struct, unused, unused, unused);
-  By default meta and .ext void pointer could initialized in MR_END_STRUCT & MR_END_ENUM.
+  By default meta and res fields could initialized in MR_END_STRUCT & MR_END_ENUM.
   Arguments in MR_ADD_TYPE will override those settings.
 */
 #define MR_ADD_TYPE(MR_TYPE_NAME, /* META */ ...) mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME), "" __VA_ARGS__, NULL)

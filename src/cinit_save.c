@@ -455,7 +455,7 @@ static cinit_json_save_handler_t ext_json_save_handler[] =
 static char *
 cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, mr_ra_mr_ptrdes_t*, mr_save_type_data_t*))
 {
-  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .ext = { NULL }, };
+  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .res = { NULL }, };
   int idx = 0;
 
   if (NULL == mr_ra_str.data)
@@ -507,8 +507,8 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	      MR_FREE (save_data.content);
 	    }
 
-	  ptrs->ra.data[idx].ext.ptr = save_data.suffix;
-	  ptrs->ra.data[idx].ptr_type = "string_t";
+	  ptrs->ra.data[idx].res.ptr = save_data.suffix;
+	  ptrs->ra.data[idx].res_type = "string_t";
 	}
 
       if (ptrs->ra.data[idx].first_child >= 0)
@@ -529,12 +529,12 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra.data[idx].parent;
-	      if (ptrs->ra.data[idx].ext.ptr)
+	      if (ptrs->ra.data[idx].res.ptr)
 		{
 		  level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
 		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 		    return (NULL);
-		  if (mr_ra_printf (&mr_ra_str, "%s", (char*)ptrs->ra.data[idx].ext.ptr) < 0)
+		  if (mr_ra_printf (&mr_ra_str, "%s", (char*)ptrs->ra.data[idx].res.ptr) < 0)
 		    return (NULL);
 		  if (idx != 0)
 		    if (mr_ra_printf (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)

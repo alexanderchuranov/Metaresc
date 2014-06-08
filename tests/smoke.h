@@ -95,7 +95,7 @@
 		     "Deserialization for method " #METHOD " failed.");	\
       MR_FREE_RECURSIVELY (typed_list_t, &list_);			\
       MR_FREE (ra.data);						\
-      array.ra.ptr_type = "string_t";					\
+      array.ra.res_type = "string_t";					\
       ra = MR_SAVE_ ## METHOD ## _RA (array_t, &array);			\
 	ck_assert_msg ((ra.size > 0) && (ra.data != NULL),		\
 		       "Serialization for method " #METHOD " failed.");	\

@@ -318,7 +318,7 @@ static xml_save_handler_t xml1_save_handler[] =
 char *
 xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 {
-  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (MR_XML1_DOCUMENT_HEADER), .size = sizeof (MR_XML1_DOCUMENT_HEADER), .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER), .ext = { NULL }, };
+  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (MR_XML1_DOCUMENT_HEADER), .size = sizeof (MR_XML1_DOCUMENT_HEADER), .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER), .res = { NULL }, };
   int idx = 0;
 
   if (NULL == mr_ra_str.data)
@@ -400,7 +400,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 static char *
 xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  xmlDocPtr doc = ptrs->ra.ext.ptr;
+  xmlDocPtr doc = ptrs->ra.res.ptr;
   xmlChar * encoded_content;
   char * content = *(char**)ptrs->ra.data[idx].data;
 
@@ -463,7 +463,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   char * content = NULL;
   xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name.str);
 
-  ptrs->ra.data[idx].ext.ptr = node;
+  ptrs->ra.data[idx].res.ptr = node;
   if (NULL == node)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -505,7 +505,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
     xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
   if (parent >= 0)
-    xmlAddChild (ptrs->ra.data[parent].ext.ptr, node);
+    xmlAddChild (ptrs->ra.data[parent].res.ptr, node);
 
   return (MR_SUCCESS);
 }
@@ -526,11 +526,11 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
       return (NULL);
     }
 
-  ptrs->ra.ext.ptr = doc;
+  ptrs->ra.res.ptr = doc;
   mr_ptrs_ds (ptrs, xml2_save_node, NULL);
 
-  if ((ptrs->ra.size > 0) && (NULL != ptrs->ra.data[0].ext.ptr))
-    xmlDocSetRootElement (doc, ptrs->ra.data[0].ext.ptr);
+  if ((ptrs->ra.size > 0) && (NULL != ptrs->ra.data[0].res.ptr))
+    xmlDocSetRootElement (doc, ptrs->ra.data[0].res.ptr);
 
   return (doc);
 }
