@@ -420,9 +420,9 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
 	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
 	  {
-	    /* if bitfield is a enumeration then get named discriminator from enum value comment */
+	    /* if bitfield is a enumeration then get named discriminator from enum value meta field */
 	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
-	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->comment : NULL));
+	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
 	  }
 	else
 	  return (mr_union_discriminator_by_idx (tdp, value));
@@ -437,8 +437,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
 	  {
 	    int64_t value = mr_get_enum_value (enum_tdp, discriminator);
-	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value comment */
-	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->comment : NULL));
+	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
+	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
 	  }
 	break;
       }
@@ -450,7 +450,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 
 /**
  * Checks that string is a valid field name [_a-zA-A][_a-zA-Z0-9]*
- * @param name union comment string
+ * @param name union meta field
  */
 static int
 mr_is_valid_field_name (char * name)
@@ -480,8 +480,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   mr_union_discriminator_t * ud;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[idx].fd.type); /* look up for type descriptor */
 
-  /* if union comment is a valid field name, then traverse thruogh parents and look for union discriminator */
-  if (!mr_is_valid_field_name (mr_save_data->ptrs.ra.data[idx].fd.comment))
+  /* if union meta field is a valid field name, then traverse thruogh parents and look for union discriminator */
+  if (!mr_is_valid_field_name (mr_save_data->ptrs.ra.data[idx].fd.meta))
     return (mr_union_discriminator_by_name (tdp, NULL));
 
   ud = mr_rarray_append ((void*)&mr_save_data->mr_ra_ud, sizeof (mr_save_data->mr_ra_ud.data[0]));
@@ -494,7 +494,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   mr_save_data->mr_ra_ud.size -= sizeof (mr_save_data->mr_ra_ud.data[0]);
   ud_idx.long_int_t = mr_save_data->mr_ra_ud.size / sizeof (mr_save_data->mr_ra_ud.data[0]); /* index of lookup record */
   ud->type.str = mr_save_data->ptrs.ra.data[idx].fd.type; /* union type */
-  ud->discriminator.str = mr_save_data->ptrs.ra.data[idx].fd.comment; /* union discriminator */
+  ud->discriminator.str = mr_save_data->ptrs.ra.data[idx].fd.meta; /* union discriminator */
 
   /* traverse through parent up to root node */
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
@@ -514,7 +514,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	if (NULL == parent_tdp)
 	  continue;
 	/* lookup for a discriminator field in this parent */
-	parent_fdp = mr_get_fd_by_name (parent_tdp, mr_save_data->ptrs.ra.data[idx].fd.comment);
+	parent_fdp = mr_get_fd_by_name (parent_tdp, mr_save_data->ptrs.ra.data[idx].fd.meta);
 	if (NULL == parent_fdp)
 	  continue; /* continue traverse if it doesn't */
 

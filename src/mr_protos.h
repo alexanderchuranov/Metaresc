@@ -22,7 +22,7 @@ TYPEDEF_ENUM (mr_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      MR_LL_OFF,
 	      )
 
-TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string saved in .comment field of meta info"),
+TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string saved in .meta field"),
 	      (MR_MESSAGE_OUT_OF_MEMORY, , "Out of memory."),
 	      (MR_MESSAGE_UNEXPECTED_END, , "Unexpected end of file or end of string."),
 	      (MR_MESSAGE_UNEXPECTED_DATA, , "Unexpected data in stream."),
@@ -104,7 +104,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      MR_TYPE_STRUCT,
 	      MR_TYPE_ENUM,
 	      MR_TYPE_FUNC_TYPE,
-	      (MR_TYPE_ENUM_VALUE, , "enum_value"), /* comment refers to union member in mr_fd_param_t */
+	      (MR_TYPE_ENUM_VALUE, , "enum_value"), /* meta field refers to union member in mr_fd_param_t */
 	      (MR_TYPE_FUNC, , "func_param"),
 	      (MR_TYPE_BITFIELD, , "bitfield_param"),
 	      MR_TYPE_BITMASK,
@@ -243,10 +243,10 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(int, offset, , "offset in structure"),
 		(int, size, , "size of field"),
 		(mr_fd_param_t, param, , "mr_type"),
-		(char *, comment, , "field comments"),
+		(char *, meta, , "field meta info"),
 		/*
 		  ext field can be used by user for extended information
-		  placed after comments for tricky intialization
+		  placed after meta field for tricky intialization
 		  sample:
 		  NONE (void *, ptr, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
 		  or
@@ -272,7 +272,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_ic_t, lookup_by_name, , "lookup by enum values"),
 		(mr_ic_t, lookup_by_value, , "lookup by enum values"),
 		RARRAY (mr_fd_ptr_t, fields, "fields or enums descriptors"),
-		(char *, comment, , "type comments"),
+		(char *, meta, , "type meta info"),
 		(mr_ptr_t, ext, , "ptr_type"), /* extra pointer for user data */
 		(char *, ptr_type, , "union discriminator"),
 		) /* type descriptor */

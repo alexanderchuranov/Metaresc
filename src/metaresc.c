@@ -115,7 +115,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 	{
 	  int i;
 	  for (i = 0; MR_TYPE_ENUM_VALUE == tdp->fields.data[i].fdp->mr_type; ++i)
-	    messages[tdp->fields.data[i].fdp->param.enum_value] = tdp->fields.data[i].fdp->comment;
+	    messages[tdp->fields.data[i].fdp->param.enum_value] = tdp->fields.data[i].fdp->meta;
 	  messages_inited = TRUE;
 	}
     }
@@ -412,7 +412,7 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->fd.param.array_param.count = 0;
   ptrdes->fd.param.array_param.row_count = 0;
   ptrdes->fd.param.enum_value = 0;
-  ptrdes->fd.comment = NULL;
+  ptrdes->fd.meta = NULL;
   ptrdes->fd.ext.ptr = NULL;
   ptrdes->fd.ptr_type = NULL;
   ptrdes->level = 0;
@@ -790,11 +790,11 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
-	    tdp_->attr = fdp->comment; /* anonymous union stringified attributes are saved into comments field */
-	    tdp_->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
+	    tdp_->attr = fdp->meta; /* anonymous union stringified attributes are saved into metas field */
+	    tdp_->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
 	    tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
 
-	    fdp->comment = last->comment; /* copy comment from MR_END_ANON_UNION record */
+	    fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
 	    tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
 	    count -= fields_count;
 	    fdp->type = tdp_->type.str;
@@ -1348,12 +1348,12 @@ mr_register_type_pointer (mr_td_t * tdp)
 /**
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
- * @param comment comments
+ * @param meta meta info for the type
  * @param ... auxiliary void pointer
  * @return status
  */
 mr_status_t
-mr_add_type (mr_td_t * tdp, char * comment, ...)
+mr_add_type (mr_td_t * tdp, char * meta, ...)
 {
   va_list args;
   void * ext;
@@ -1365,7 +1365,7 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   if (mr_get_td_by_name (tdp->type.str))
     return (MR_SUCCESS); /* this type is already registered */
 
-  va_start (args, comment);
+  va_start (args, meta);
   ext = va_arg (args, void*);
   va_end (args);
 
@@ -1384,8 +1384,8 @@ mr_add_type (mr_td_t * tdp, char * comment, ...)
   tdp->fields.alloc_size = -1;
   tdp->fields.ext.ptr = NULL;
 
-  if ((NULL != comment) && comment[0])
-    tdp->comment = comment;
+  if ((NULL != meta) && meta[0])
+    tdp->meta = meta;
 
   if (NULL != ext)
     tdp->ext.ptr = ext;

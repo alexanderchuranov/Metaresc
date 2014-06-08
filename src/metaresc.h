@@ -237,7 +237,7 @@
 #define P00_IS_ATTRIBUTES_EQ_ATTRIBUTES(...) 0 /* help macro for ATTRIBUTES test IF clause */
 #define P00_REMOVE_ATTRIBUTES(...) __VA_ARGS__
 #define P00_GET_FIRST_ATTRIBUTES(FIRST, ...) FIRST /* extract typedef attributes */
-#define P00_GET_OTHER_ATTRIBUTES(FIRST, ...) __VA_ARGS__ /* extract typedef comments and extended meta information */
+#define P00_GET_OTHER_ATTRIBUTES(FIRST, ...) __VA_ARGS__ /* extract typedef meta information */
 
 /* Outputs only arguments that start with ATTRIBUTES. Removes key word ATTRIBUTES and parenthesis. */
 #define P00_EXTRACT_ATTRIBUTES(ARG)					\
@@ -254,7 +254,7 @@
 
 /*
   TYPEDEF_{STRUCT|UNION|ENUM|CHAR_ARRAY|FUNC} might have one of arguments with prefix ATTRIBUTES (...).
-  This key word denotes type attributes, comments and extended meta information.
+  This key word denotes type attributes and meta information.
   Next macro moves ATTRIBUTES argument to first position in arguments list.
 */
 #define P00_TYPEDEF_MODE(P00_MODE, P00_TYPE, ...)			\
@@ -605,20 +605,20 @@
 		 .row_count = 1,					\
 	       },							\
 	     },								\
-	     .comment = "" __VA_ARGS__,					\
+	     .meta = "" __VA_ARGS__,					\
 		} } },
 
-#define MR_POINTER_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENT */ ...) { \
+#define MR_POINTER_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .mr_type = MR_TYPE_STRUCT,					\
 	     .mr_type_ext = MR_TYPE_EXT_POINTER,			\
-	     .comment = "" __VA_ARGS__,					\
+	     .meta = "" __VA_ARGS__,					\
 	     } } },
 
-#define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...) { \
+#define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
 	  .type = MR_STRINGIFY (TYPE),					\
@@ -635,20 +635,20 @@
 		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
 	       },							\
 	     },								\
-	     .comment = "" __VA_ARGS__,					\
+	     .meta = "" __VA_ARGS__,					\
 		} } },
 
-#define MR_NONE_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...) { \
+#define MR_NONE_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     .mr_type = MR_TYPE_VOID,					\
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
-	     .comment = "" __VA_ARGS__,					\
+	     .meta = "" __VA_ARGS__,					\
 	     } } },
 
-#define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENT */ ...) { \
+#define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
@@ -664,50 +664,50 @@
 	      .data = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }),	\
 	      .ptr_type = MR_RARRAY_OPAQUE_DATA_T_STR,			\
 	    }, }, },							\
-	     .comment = "" __VA_ARGS__,					\
+	     .meta = "" __VA_ARGS__,					\
 		} } },
 
-#define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_DETECT (TYPE, ((MR_TYPE_NAME*)NULL)->NAME), __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE))
+#define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_DETECT (TYPE, ((MR_TYPE_NAME*)NULL)->NAME), __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE))
 
 #define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_NONE_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_NONE_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 
-#define MR_ENUM_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_ENUM, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_BOOL_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, bool, NAME, , MR_TYPE_BOOL, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT8_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int8_t, NAME, , MR_TYPE_INT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT8_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint8_t, NAME, , MR_TYPE_UINT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT16_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int16_t, NAME, , MR_TYPE_INT16, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT16_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint16_t, NAME, , MR_TYPE_UINT16, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT32_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int32_t, NAME, , MR_TYPE_INT32, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT32_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint32_t, NAME, , MR_TYPE_UINT32, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT64_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int64_t, NAME, , MR_TYPE_INT64, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT64_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint64_t, NAME, , MR_TYPE_UINT64, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_FLOAT_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, float, NAME, , MR_TYPE_FLOAT, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_DOUBLE_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, double, NAME, , MR_TYPE_DOUBLE, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_LONG_DOUBLE_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, long double, NAME, , MR_TYPE_LONG_DOUBLE, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_CHAR_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, char, NAME, , MR_TYPE_CHAR, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_STRING_DESC(MR_TYPE_NAME, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, char *, NAME, , MR_TYPE_STRING, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_STRUCT, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UNION_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_UNION, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_POINTER, __VA_ARGS__)
-#define MR_RARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_RARRAY, __VA_ARGS__)
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* COMMENTS */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, MR_TYPE_EXT_NONE, __VA_ARGS__, .param = { .func_param = { .alloc_size = -1, .size = 0, .data = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
-#define MR_FUNC_ARG(TYPE, /* COMMENTS */ ...) {			\
+#define MR_ENUM_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_ENUM, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_BOOL_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, bool, NAME, , MR_TYPE_BOOL, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_INT8_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int8_t, NAME, , MR_TYPE_INT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_UINT8_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint8_t, NAME, , MR_TYPE_UINT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_INT16_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int16_t, NAME, , MR_TYPE_INT16, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_UINT16_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint16_t, NAME, , MR_TYPE_UINT16, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_INT32_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int32_t, NAME, , MR_TYPE_INT32, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_UINT32_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint32_t, NAME, , MR_TYPE_UINT32, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_INT64_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int64_t, NAME, , MR_TYPE_INT64, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_UINT64_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint64_t, NAME, , MR_TYPE_UINT64, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_FLOAT_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, float, NAME, , MR_TYPE_FLOAT, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_DOUBLE_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, double, NAME, , MR_TYPE_DOUBLE, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_LONG_DOUBLE_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, long double, NAME, , MR_TYPE_LONG_DOUBLE, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_CHAR_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, char, NAME, , MR_TYPE_CHAR, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_STRING_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, char *, NAME, , MR_TYPE_STRING, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_STRUCT, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_UNION_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_UNION, MR_TYPE_EXT_NONE, __VA_ARGS__)
+#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_POINTER, __VA_ARGS__)
+#define MR_RARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_RARRAY, __VA_ARGS__)
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, MR_TYPE_EXT_NONE, __VA_ARGS__, .param = { .func_param = { .alloc_size = -1, .size = 0, .data = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
+#define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
     .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
       .type = MR_STRINGIFY (TYPE),				\
 	 .size = sizeof (TYPE),					\
 	 .mr_type = MR_TYPE_DETECT (TYPE),			\
 	 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),		\
 	 .mr_type_ext = MR_TYPE_EXT_NONE,			\
-	 .comment = "" __VA_ARGS__,				\
+	 .meta = "" __VA_ARGS__,				\
 	 },
-#define MR_END_STRUCT_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
+#define MR_END_STRUCT_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_TYPEDEF_UNION_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_UNION, __VA_ARGS__)
-#define MR_END_UNION_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
+#define MR_END_UNION_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, ... /* ATTR */) {	\
     (mr_fd_t[]){ {							\
@@ -716,37 +716,37 @@
 	     .offset = 0,						\
 	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
-	     .comment = #__VA_ARGS__,					\
+	     .meta = #__VA_ARGS__,					\
 	     .ext = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
 	     .ptr_type = "mr_td_t",					\
 		} } },
-#define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) {	\
+#define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...) {	\
     (mr_fd_t[]){ {							\
 	.type = "",							\
 	  .mr_type = MR_TYPE_END_ANON_UNION,				\
 	  .mr_type_ext = MR_TYPE_EXT_NONE,				\
-	  .comment = "" __VA_ARGS__,					\
+	  .meta = "" __VA_ARGS__,					\
 	  } } },
 
 #define MR_TYPEDEF_ENUM_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_ENUM, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
-#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* COMMENTS */ ...) { \
+#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
 	  .name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .mr_type = MR_TYPE_ENUM_VALUE,				\
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .param = { .enum_value = NAME, },				\
-	     .comment = "" __VA_ARGS__,					\
+	     .meta = "" __VA_ARGS__,					\
 		} } },
-#define MR_END_ENUM_DESC(MR_TYPE_NAME, /* COMMENTS */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
+#define MR_END_ENUM_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_FUNC_ARG_PTR(...) { (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) } },
 
 #define MR_TYPEDEF_CHAR_ARRAY_DESC(MR_TYPE_NAME, SIZE, /* ATTR */ ...) MR_TYPEDEF_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
-#define MR_TYPEDEF_CHAR_ARRAY_DESC_(MR_TYPE_NAME, SIZE, ATTR, /* COMMENTS */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY, ATTR) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
+#define MR_TYPEDEF_CHAR_ARRAY_DESC_(MR_TYPE_NAME, SIZE, ATTR, /* META */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY, ATTR) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 #define MR_TYPEDEF_FUNC_DESC(RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
-#define MR_TYPEDEF_FUNC_DESC_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* COMMENTS */ ...) \
+#define MR_TYPEDEF_FUNC_DESC_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) \
   MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_FUNC_TYPE, ATTR)		\
   MR_FUNC_ARG_PTR (RET_TYPE, "return value")				\
   MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))			\
@@ -760,12 +760,12 @@
     .size = sizeof (MR_TYPE_NAME),					\
     .attr = #__VA_ARGS__,						\
     .fields = { .alloc_size = -1, .size = 0, .data = (mr_fd_ptr_t[]){
-#define MR_TYPEDEF_END_DESC(MR_TYPE_NAME, /* COMMENTS */ ...){		\
+#define MR_TYPEDEF_END_DESC(MR_TYPE_NAME, /* META */ ...){		\
     (mr_fd_t[]){ {							\
 	.type = #MR_TYPE_NAME,						\
 	  .mr_type = MR_TYPE_TRAILING_RECORD,				\
 	  } } } } },							\
-    .comment = "" __VA_ARGS__ };					\
+    .meta = "" __VA_ARGS__ };					\
   static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (MR_TYPE_NAME) (void) { MR_ADD_TYPE (MR_TYPE_NAME); }
 
 /*
@@ -776,10 +776,10 @@
   MR_ADD_TYPE(foo_t, "TMI", "One more TMI");
   MR_ADD_TYPE(foo_t, "TMI", &meta_info_struct);
   MR_ADD_TYPE(foo_t, "TMI", &meta_info_struct, unused, unused, unused);
-  By default comment and .ext void pointer could initialized in MR_END_STRUCT & MR_END_ENUM.
+  By default meta and .ext void pointer could initialized in MR_END_STRUCT & MR_END_ENUM.
   Arguments in MR_ADD_TYPE will override those settings.
 */
-#define MR_ADD_TYPE(MR_TYPE_NAME, /* COMMENTS */ ...) mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME), "" __VA_ARGS__, NULL)
+#define MR_ADD_TYPE(MR_TYPE_NAME, /* META */ ...) mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME), "" __VA_ARGS__, NULL)
 
 /*
   User can turn off strict types checking for Metaresc macroses, so compilation will produce only warnings.
