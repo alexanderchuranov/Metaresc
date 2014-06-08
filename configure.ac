@@ -3,7 +3,7 @@
 
 #AC_PREREQ(2.63)
 AC_INIT([META data and RESource library for C language], [1.0], [hnarkaytis@gmail.com])
-AM_INIT_AUTOMAKE([metaresc], [1.0])
+AM_INIT_AUTOMAKE([1.0])
 AC_CONFIG_SRCDIR([src/mr_protos.h])
 AC_CONFIG_HEADERS([src/mr_config.h src/mr_export.h])
 AC_CONFIG_MACRO_DIR([m4])

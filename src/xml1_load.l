@@ -13,7 +13,10 @@
 
 #include <metaresc.h>
 #include <lexer.h>
+#define MR_XML1_LTYPE mr_token_lloc_t
 #include <xml1_load.tab.h>
+#define YYSTYPE MR_XML1_STYPE
+#define YYLTYPE MR_XML1_LTYPE
 
 %}
 

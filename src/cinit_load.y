@@ -2,22 +2,29 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-%{
+%code top {
 #include <stdio.h>
 #include <stdbool.h>
 
 /* Pass the argument to yyparse through to yylex. */
-#define YYPARSE_PARAM scanner
-#define YYLEX_PARAM YYPARSE_PARAM
-#define MR_LOAD (mr_cinit_get_extra (YYPARSE_PARAM))
-#define mr_cinit_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, cinit)
+#define MR_CINIT_LTYPE mr_token_lloc_t
+#define MR_LOAD (mr_cinit_get_extra (scanner))
+#define mr_cinit_error MR_PARSE_ERROR
 
 #include <metaresc.h>
 #include <lexer.h>
 #include <mr_value.h>
 #include <cinit_load.tab.h>
+#define YYSTYPE MR_CINIT_STYPE
+#define YYLTYPE MR_CINIT_LTYPE
 #include <cinit_load.lex.h>
+#undef YYSTYPE
+#undef YYLTYPE
 
+}
+
+%code {
+  
 static char *
 unquote_str (mr_substr_t * substr)
 {
@@ -88,10 +95,11 @@ unquote_str (mr_substr_t * substr)
   return (str_);
 }
 
-%}
+}
 
-%name-prefix="mr_cinit_"
-%pure-parser
+%define api.prefix {mr_cinit_}
+%define api.pure full
+%param {void * scanner}
 %locations
  /* generate include-file with symbols and types */
 %defines
@@ -167,9 +175,11 @@ compaund
     {
       int vt_char_str_length = strlen (vt_char_str);
       vt_char = vt_char_str[0];
+      if (vt_char_str_length > 1)
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, vt_char_str);
       MR_FREE (vt_char_str);
       if (vt_char_str_length > 1)
-	yyerror ("unexpected characters at char definition");
+	YYERROR;
     }
   mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_char = vt_char;
   mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_CHAR;

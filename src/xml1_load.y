@@ -2,20 +2,25 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-%{
+%code top {
 #include <stdio.h>
 
 /* Pass the argument to yyparse through to yylex. */
-#define YYPARSE_PARAM scanner
-#define YYLEX_PARAM YYPARSE_PARAM
-#define MR_LOAD (mr_xml1_get_extra (YYPARSE_PARAM))
-#define mr_xml1_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, xml1)
+#define MR_XML1_LTYPE mr_token_lloc_t
+#define MR_LOAD (mr_xml1_get_extra (scanner))
+#define mr_xml1_error MR_PARSE_ERROR
 
 #include <metaresc.h>
 #include <lexer.h>
 #include <xml1_load.tab.h>
+#define YYSTYPE MR_XML1_STYPE
+#define YYLTYPE MR_XML1_LTYPE
 #include <xml1_load.lex.h>
+#undef YYSTYPE
+#undef YYLTYPE
+}
 
+%code {
   static inline int tail_is_not_blank (mr_substr_t * substr, int offset)
   {
     if (offset > substr->length)
@@ -25,18 +30,20 @@
 	break;
     return (offset < substr->length);
   }
-%}
-
-%name-prefix="mr_xml1_"
-%pure-parser
-%locations
- /* generate include-file with symbols and types */
-%defines
+}
 
  /* a more advanced semantic type */
 %union {
   mr_substr_t string;
 }
+
+%define api.prefix {mr_xml1_}
+%define api.pure full
+%param {void * scanner}
+%locations
+
+ /* generate include-file with symbols and types */
+%defines
 
 /* Bison declarations.  */
 %token <string> TOK_XML_OPEN_TAG TOK_XML_CLOSE_TAG TOK_XML_CLOSE_EMPTY_TAG TOK_XML_CONTENT TOK_XML_ID TOK_XML_PROP_VALUE
@@ -59,7 +66,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $4.length)
     {
-      mr_xml1_error ("Unexpected charecters after closing tag!");
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
       YYERROR;
     }
 
@@ -82,7 +89,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
 
   if (($2.length != $6.length) || (0 != strncmp ($2.str, $6.str, $2.length)))
     {
-      mr_xml1_error ("Open and close tags names do not match!");
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TAGS_DONT_MATCH);
       YYERROR;
     }
 
@@ -91,7 +98,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $7.length)
     {
-      mr_xml1_error ("Unexpected charecters after closing tag!");
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
       YYERROR;
     }
 
@@ -121,17 +128,17 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
   if (0 == mr_substrcmp (MR_REF_IDX, &$3))
     {
       if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
-	error = "Can't read " MR_REF_IDX " property.";
+	error = MR_REF_IDX;
     }
   else if (0 == mr_substrcmp (MR_REF, &$3))
     {
       if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
-	error = "Can't read " MR_REF " property.";
+	error = MR_REF;
     }
   else if (0 == mr_substrcmp (MR_REF_CONTENT, &$3))
     {
       if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
-	error = "Can't read " MR_REF " property.";
+	error = MR_REF;
       else
 	mr_load->ptrs->ra.data[mr_load->parent].flags.is_content_reference = MR_TRUE;
     }
@@ -142,7 +149,7 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
 
   if (error)
     {
-      mr_xml1_error (error);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_CANT_READ_PROPERTY, error);
       YYERROR;
     }
  }

@@ -74,6 +74,9 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_SERIALIZATION_FAILED, , "Serialization failed."),
 	      (MR_MESSAGE_UNEXPECTED_IC_TYPE, , "Unexpected indexed collection type."),
 	      (MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR, , "Unexpected error in hash table."),
+	      (MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG, , "Unexpected charecters after closing tag."),
+	      (MR_MESSAGE_TAGS_DONT_MATCH, , "Open and close tags names do not match."),
+	      (MR_MESSAGE_CANT_READ_PROPERTY, , "Can't read %s property."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 

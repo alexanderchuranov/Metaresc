@@ -2,21 +2,26 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-%{
+%code top {
 #include <stdio.h>
 
 /* Pass the argument to yyparse through to yylex. */
-#define YYPARSE_PARAM scanner
-#define YYLEX_PARAM YYPARSE_PARAM
-#define MR_LOAD (mr_scm_get_extra (YYPARSE_PARAM))
-#define mr_scm_error(ERROR) MR_PARSE_ERROR (ERROR, YYPARSE_PARAM, scm)
+#define MR_SCM_LTYPE mr_token_lloc_t
+#define MR_LOAD (mr_scm_get_extra (scanner))
+#define mr_scm_error MR_PARSE_ERROR
 
 #include <metaresc.h>
 #include <lexer.h>
 #include <mr_value.h>
 #include <scm_load.tab.h>
+#define YYSTYPE MR_SCM_STYPE
+#define YYLTYPE MR_SCM_LTYPE
 #include <scm_load.lex.h>
+#undef YYSTYPE
+#undef YYLTYPE
+}
 
+%code {
   char * unquote_str (mr_substr_t * substr)
   {
     int length_ = 0;
@@ -75,10 +80,11 @@
     return (str_);
   }
  
-%}
+}
 
-%name-prefix="mr_scm_"
-%pure-parser
+%define api.prefix {mr_scm_}
+%define api.pure full
+%param {void * scanner}
 %locations
  /* generate include-file with symbols and types */
 %defines

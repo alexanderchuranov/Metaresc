@@ -13,7 +13,10 @@
 
 #include <metaresc.h>
 #include <lexer.h>
+#define MR_SCM_LTYPE mr_token_lloc_t
 #include <scm_load.tab.h>
+#define YYSTYPE MR_SCM_STYPE
+#define YYLTYPE MR_SCM_LTYPE
 
 %}
 

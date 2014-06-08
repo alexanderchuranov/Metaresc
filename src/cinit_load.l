@@ -18,7 +18,10 @@
 
 #include <metaresc.h>
 #include <lexer.h>
+#define MR_CINIT_LTYPE mr_token_lloc_t
 #include <cinit_load.tab.h>
+#define YYSTYPE MR_CINIT_STYPE
+#define YYLTYPE MR_CINIT_LTYPE
 
 static void
 get_type (mr_substr_t * substr, char * start)

@@ -24,13 +24,9 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_ra_mr_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 
-#define MR_PARSE_ERROR(ERROR_MSG, SCANNER, LANG) ({			\
-      YYLTYPE * lloc = mr_## LANG ## _get_lloc (SCANNER);		\
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,	\
-		  lloc->start.lineno, lloc->start.column, lloc->end.lineno, lloc->end.column); \
-    })
-
-#define YYLTYPE mr_token_lloc_t
+#define MR_PARSE_ERROR(LLOC, SCANNER, ERROR_MSG)			\
+  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
+	      LLOC.start.lineno, LLOC.start.column, LLOC.end.lineno, LLOC.end.column)
 
 /**
  * Helper function for building tree within parsing.
@@ -91,7 +87,7 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
 
 #define YYLLOC_DEFAULT(Current, Rhs, N)					\
   ({									\
-    if (YYID (N))							\
+    if (N)								\
       {									\
 	(Current).start.lineno = YYRHSLOC (Rhs, 1).start.lineno;	\
 	(Current).start.column = YYRHSLOC (Rhs, 1).start.column;	\
