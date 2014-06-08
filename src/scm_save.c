@@ -324,7 +324,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
       int named_node = MR_SCM_UNNAMED_FIELDS;
       int parent = ptrs->ra.data[idx].parent;
       char * content = NULL;
-      int in_comment = 0;
+      int in_comment = MR_FALSE;
 
       if (parent >= 0)
 	named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
@@ -337,7 +337,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 			    ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
 	    return (NULL);
 	  else
-	    in_comment = !0;
+	    in_comment = MR_TRUE;
 	}
       if (ptrs->ra.data[idx].flags.is_referenced)
 	{
@@ -345,7 +345,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	    return (NULL);
 	  else
-	    in_comment = !0;
+	    in_comment = MR_TRUE;
 	}
 
       if (ptrs->ra.data[idx].first_child < 0)
