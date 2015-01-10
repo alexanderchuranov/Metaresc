@@ -92,8 +92,8 @@ MR_START_TEST (rarray_packed_enum, "packed enum - sizeof != used bytes") {
     .x =
     {
       .data = (typeof (orig.x.data[0])[]){ ONE, TWO, },
-      .size = sizeof (orig.x.data),
-      .alloc_size = sizeof (orig.x.data),
+      .size = 2 * sizeof (orig.x.data[0]), /* sizeof returns more then compiler really initialize */
+      .alloc_size = 2 * sizeof (orig.x.data[0]),
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_rarray_t, &orig);
