@@ -116,4 +116,22 @@ MR_START_TEST (resolve_typed_forward_ref, "test of forvard reference resolution"
   ALL_METHODS (ASSERT_SAVE_LOAD, resolve_typed_forward_ref_t, &x);
 } END_TEST
 
+TYPEDEF_STRUCT (resizable_array_t,
+		int size,
+		int alloc_size,
+		(_enum_t *, data, , "size", { "alloc_size" }, "string_t")
+		);
+
+#define CMP_RA(TYPE, X, Y, ...) (((X)->size != (Y)->size) || ((X)->alloc_size != (Y)->alloc_size) || memcmp ((X)->data, (Y)->data, (X)->size))
+
+MR_START_TEST (resizable_array, "test pointer as a resizable array") {
+  resizable_array_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ ZERO, ONE, },
+      .size = sizeof (orig.data),
+      .alloc_size = sizeof (orig.data),
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_t, &orig, CMP_RA);
+} END_TEST
+
 MAIN ();
