@@ -24,7 +24,7 @@ MR_START_TEST (rarray_self_referred, "self referred rarray") {
   self_referred_rarray_t orig = {
     .x =
     {
-      .data = (self_referred_rarray_t[]){
+      .data = (typeof (orig.x.data[0])[]){
 	{
 	  .x =
 	  {
@@ -48,9 +48,9 @@ MR_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"
   string_rarray_t orig = {
     .x =
     {
-      .data = (string_t[]){ "0", "1", },
-      .size = 2 * sizeof (string_t),
-      .alloc_size = 2 * sizeof (string_t),
+      .data = (typeof (orig.x.data[0])[]){ "0", "1", },
+      .size = sizeof (orig.x.data),
+      .alloc_size = sizeof (orig.x.data),
       .res = { "string_t" },
       .res_type = "string_t",
     },
@@ -62,9 +62,9 @@ MR_START_TEST (rarray_referenced_content, "referenced content") {
   string_rarray_t orig = {
     .x =
     {
-      .data = (string_t[]){ "string_t", "string_t", },
-      .size = 2 * sizeof (string_t),
-      .alloc_size = 2 * sizeof (string_t),
+      .data = (typeof (orig.x.data[0])[]){ "string_t", "string_t", },
+      .size = sizeof (orig.x.data),
+      .alloc_size = sizeof (orig.x.data),
       .res = { "string_t" },
       .res_type = "string_t",
     },
@@ -76,9 +76,9 @@ MR_START_TEST (rarray_referenced_elements, "referenced elements") {
   string_rarray_t orig = {
     .x =
     {
-      .data = (string_t[]){ "0", "1", },
-      .size = 2 * sizeof (string_t),
-      .alloc_size = 2 * sizeof (string_t),
+      .data = (typeof (orig.x.data[0])[]){ "0", "1", },
+      .size = sizeof (orig.x.data),
+      .alloc_size = sizeof (orig.x.data),
     },
   };
   orig.x.res.ptr = &orig.x.data[1];
@@ -91,9 +91,9 @@ MR_START_TEST (rarray_packed_enum, "packed enum - sizeof != used bytes") {
   packed_enum_rarray_t orig = {
     .x =
     {
-      .data = (packed_enum_t[]){ ONE, TWO, },
-      .size = 2 * sizeof (packed_enum_t),
-      .alloc_size = 2 * sizeof (packed_enum_t),
+      .data = (typeof (orig.x.data[0])[]){ ONE, TWO, },
+      .size = sizeof (orig.x.data),
+      .alloc_size = sizeof (orig.x.data),
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, packed_enum_rarray_t, &orig);
@@ -103,9 +103,9 @@ MR_START_TEST (rarray_opaque_data, "rarray with opaque data") {
   int_rarray_t orig = {
     .x =
     {
-      .data = (int[]){ 1, 2 },
-      .size = 2 * sizeof (int),
-      .alloc_size = 2 * sizeof (int),
+      .data = (typeof (orig.x.data[0])[]){ 1, 2 },
+      .size = sizeof (orig.x.data),
+      .alloc_size = sizeof (orig.x.data),
       .res = { NULL },
       .res_type = MR_RARRAY_OPAQUE_DATA_T_STR,
     },
