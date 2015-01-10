@@ -1,7 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-#AC_PREREQ(2.63)
+AC_PREREQ([2.63])
 AC_INIT([META data and RESource library for C language], [1.0], [hnarkaytis@gmail.com])
 AM_INIT_AUTOMAKE([1.0])
 AC_CONFIG_SRCDIR([src/mr_protos.h])
@@ -17,7 +17,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_LIBTOOL
-YACC=bison
+test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
 AC_PROG_LEX
 
@@ -59,21 +59,21 @@ CFLAGS=${save_CFLAGS}
 
 AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
 
-AC_CHECK_PROG(HAVE_BISON, $YACC, yes)
-AC_CHECK_PROG(HAVE_FLEX, $LEX, yes)
-
 dnl The dlopen() function is in the C library for *BSD and in libdl on GLIBC-based systems
 AC_SEARCH_LIBS([dladdr], [dl dld], [AC_DEFINE(HAVE_LIBDL, [], [define if dl is present])], [])
   
-AM_CONDITIONAL(HAVE_BISON_FLEX, test x${HAVE_BISON} = xyes && test x${HAVE_FLEX} = xyes)
-if test x${HAVE_BISON} = xyes && test x${HAVE_FLEX} = xyes; then
+AC_CHECK_PROG(HAVE_BISON, ${YACC}, yes)
+AC_CHECK_PROG(HAVE_FLEX, ${LEX}, yes)
+
+AM_CONDITIONAL(HAVE_BISON_FLEX, test x${HAVE_BISON}${HAVE_FLEX} = xyesyes)
+if [[ x${HAVE_BISON}${HAVE_FLEX} = xyesyes ]]; then
   AC_DEFINE(HAVE_BISON_FLEX, [], [Bison & Flex found])
 fi
 
 # Checks for libraries.
 PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
 AM_CONDITIONAL(HAVE_LIBXML2, test x${HAVE_LIBXML2} = xyes)
-if test x${HAVE_LIBXML2} = xyes ; then
+if [[ x${HAVE_LIBXML2} = xyes ]]; then
   AC_DEFINE(HAVE_LIBXML2, [], [define if libxml2 is present])
 fi
 
