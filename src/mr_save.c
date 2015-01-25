@@ -392,59 +392,60 @@ static mr_fd_t *
 mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * discriminator)
 {
   /* switch over basic types */
-  switch (parent_fdp->mr_type)
-    {
-    case MR_TYPE_BOOL:
-      return (mr_union_discriminator_by_idx (tdp, *(bool*)discriminator));
-    case MR_TYPE_UINT8:
-      return (mr_union_discriminator_by_idx (tdp, *(uint8_t*)discriminator));
-    case MR_TYPE_INT8:
-      return (mr_union_discriminator_by_idx (tdp, *(int8_t*)discriminator));
-    case MR_TYPE_UINT16:
-      return (mr_union_discriminator_by_idx (tdp, *(uint16_t*)discriminator));
-    case MR_TYPE_INT16:
-      return (mr_union_discriminator_by_idx (tdp, *(int16_t*)discriminator));
-    case MR_TYPE_UINT32:
-      return (mr_union_discriminator_by_idx (tdp, *(uint32_t*)discriminator));
-    case MR_TYPE_INT32:
-      return (mr_union_discriminator_by_idx (tdp, *(int32_t*)discriminator));
-    case MR_TYPE_UINT64:
-      return (mr_union_discriminator_by_idx (tdp, *(uint64_t*)discriminator));
-    case MR_TYPE_INT64:
-      return (mr_union_discriminator_by_idx (tdp, *(int64_t*)discriminator));
-    case MR_TYPE_BITFIELD:
+  if (discriminator)
+    switch (parent_fdp->mr_type)
       {
-	uint64_t value = 0;
-	mr_ptrdes_t ptrdes = { .data = discriminator, .fd = *parent_fdp, };
-	mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
-	mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
-	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
-	  {
-	    /* if bitfield is a enumeration then get named discriminator from enum value meta field */
-	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
-	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
-	  }
-	else
-	  return (mr_union_discriminator_by_idx (tdp, value));
-      }
-    case MR_TYPE_CHAR_ARRAY:
-      return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
-    case MR_TYPE_STRING:
-      return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
-    case MR_TYPE_ENUM:
-      {
-	mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
-	if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
-	  {
-	    int64_t value = mr_get_enum_value (enum_tdp, discriminator);
-	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
-	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
-	  }
+      case MR_TYPE_BOOL:
+	return (mr_union_discriminator_by_idx (tdp, *(bool*)discriminator));
+      case MR_TYPE_UINT8:
+	return (mr_union_discriminator_by_idx (tdp, *(uint8_t*)discriminator));
+      case MR_TYPE_INT8:
+	return (mr_union_discriminator_by_idx (tdp, *(int8_t*)discriminator));
+      case MR_TYPE_UINT16:
+	return (mr_union_discriminator_by_idx (tdp, *(uint16_t*)discriminator));
+      case MR_TYPE_INT16:
+	return (mr_union_discriminator_by_idx (tdp, *(int16_t*)discriminator));
+      case MR_TYPE_UINT32:
+	return (mr_union_discriminator_by_idx (tdp, *(uint32_t*)discriminator));
+      case MR_TYPE_INT32:
+	return (mr_union_discriminator_by_idx (tdp, *(int32_t*)discriminator));
+      case MR_TYPE_UINT64:
+	return (mr_union_discriminator_by_idx (tdp, *(uint64_t*)discriminator));
+      case MR_TYPE_INT64:
+	return (mr_union_discriminator_by_idx (tdp, *(int64_t*)discriminator));
+      case MR_TYPE_BITFIELD:
+	{
+	  uint64_t value = 0;
+	  mr_ptrdes_t ptrdes = { .data = discriminator, .fd = *parent_fdp, };
+	  mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
+	  mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
+	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
+	    {
+	      /* if bitfield is a enumeration then get named discriminator from enum value meta field */
+	      mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
+	      return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
+	    }
+	  else
+	    return (mr_union_discriminator_by_idx (tdp, value));
+	}
+      case MR_TYPE_CHAR_ARRAY:
+	return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
+      case MR_TYPE_STRING:
+	return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
+      case MR_TYPE_ENUM:
+	{
+	  mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
+	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
+	    {
+	      int64_t value = mr_get_enum_value (enum_tdp, discriminator);
+	      mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
+	      return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
+	    }
+	  break;
+	}
+      default:
 	break;
       }
-    default:
-      break;
-    }
   return (mr_union_discriminator_by_name (tdp, NULL));
 }
 
@@ -452,17 +453,17 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
  * Checks that string is a valid field name [_a-zA-A][_a-zA-Z0-9]*
  * @param name union meta field
  */
-static int
+static bool
 mr_is_valid_field_name (char * name)
 {
   if (NULL == name)
-    return (0);
+    return (FALSE);
   if (!isalpha (*name) && ('_' != *name))
-    return (0);
+    return (FALSE);
   for (++name; *name; ++name)
     if (!isalnum (*name) && ('_' != *name))
-      return (0);
-  return (!0);
+      return (FALSE);
+  return (TRUE);
 }
 
 /**
@@ -496,7 +497,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   ud->type.str = mr_save_data->ptrs.ra.data[idx].fd.type; /* union type */
   ud->discriminator.str = mr_save_data->ptrs.ra.data[idx].fd.meta; /* union discriminator */
 
-  /* traverse through parent up to root node */
+  /* traverse through parents up to root node */
   for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext)
       {
@@ -666,8 +667,111 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
     }
 }
 
+static void
+mr_get_size_field (ssize_t * size, char * size_field_name, int parent, mr_save_data_t * mr_save_data)
+{
+  void * size_ptr;
+  mr_fd_t * parent_fdp;
+  mr_td_t * parent_tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[parent].fd.type);
+  
+  if (NULL == parent_tdp)
+    return;
+
+  /* lookup for a size field in this parent */
+  parent_fdp = mr_get_fd_by_name (parent_tdp, size_field_name);
+	      
+  if (NULL == parent_fdp)
+    return;
+
+  size_ptr = (char*)mr_save_data->ptrs.ra.data[parent].data + parent_fdp->offset; /* get an address of size field */
+		  
+  switch (parent_fdp->mr_type)
+    {
+    case MR_TYPE_BOOL:
+      *size = *(bool*)size_ptr;
+      break;
+    case MR_TYPE_UINT8:
+      *size = *(uint8_t*)size_ptr;
+      break;
+    case MR_TYPE_INT8:
+      *size = *(int8_t*)size_ptr;
+      break;
+    case MR_TYPE_UINT16:
+      *size = *(uint16_t*)size_ptr;
+      break;
+    case MR_TYPE_INT16:
+      *size = *(int16_t*)size_ptr;
+      break;
+    case MR_TYPE_UINT32:
+      *size = *(uint32_t*)size_ptr;
+      break;
+    case MR_TYPE_INT32:
+      *size = *(int32_t*)size_ptr;
+      break;
+    case MR_TYPE_UINT64:
+      *size = *(uint64_t*)size_ptr;
+      break;
+    case MR_TYPE_INT64:
+      *size = *(int64_t*)size_ptr;
+      break;
+    case MR_TYPE_BITFIELD:
+      {
+	uint64_t value = 0;
+	mr_ptrdes_t ptrdes = { .data = size_ptr, .fd = *parent_fdp, };
+	mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
+	*size = value;
+      }
+    default:
+      break;
+    }
+}
+
+static void
+mr_pointer_get_size (ssize_t * size, char * name, int idx, mr_save_data_t * mr_save_data)
+{
+  if (mr_is_valid_field_name (name))
+    {
+      int parent;
+      /* traverse through parents up to first structure */
+      for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
+	if ((MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext) &&
+	    (MR_TYPE_STRUCT == mr_save_data->ptrs.ra.data[parent].fd.mr_type))
+	  break;
+      
+      if (parent >= 0)
+	mr_get_size_field (size, mr_save_data->ptrs.ra.data[idx].fd.meta, parent, mr_save_data);
+    }
+}
+
 /**
  * Saves pointer into internal representation.
+ * @param idx node index
+ * @param mr_save_data save routines data and lookup structures
+ */
+static void
+mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
+{
+  char ** data = mr_save_data->ptrs.ra.data[idx].data;
+  int count = mr_save_data->ptrs.ra.data[idx].size / mr_save_data->ptrs.ra.data[idx].fd.size;
+  
+  /* add each array element to this node */
+  if (count <= 0)
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* return empty node if pointer is NULL */
+  else
+    {
+      int i;
+      mr_fd_t fd_ = mr_save_data->ptrs.ra.data[idx].fd;
+      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+      
+      mr_save_data->parent = idx;
+      for (i = 0; i < count; ++i)
+	mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data);
+      mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
+    }
+}
+
+/**
+ * Check if pointer points on data that could be saved and was not saved before
  * @param postpone flag for postponed saving
  * @param idx node index
  * @param mr_save_data save routines data and lookup structures
@@ -676,24 +780,43 @@ static void
 mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 {
   void ** data = mr_save_data->ptrs.ra.data[idx].data;
-  mr_fd_t fd_ = mr_save_data->ptrs.ra.data[idx].fd;
-  int ref_idx;
 
   if (NULL == *data)
     mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* return empty node if pointer is NULL */
   else
     {
-      /* set extended type property to NONE in copy of field descriptor */
-      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+      int ref_idx;
+      mr_type_t mr_type = mr_save_data->ptrs.ra.data[idx].fd.mr_type;
+      {
+	mr_fd_t fd_ = mr_save_data->ptrs.ra.data[idx].fd;
+	/* set extended type property to NONE in copy of field descriptor */
+	fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+	/* check if this pointer is already saved */
+	ref_idx = mr_check_ptr_in_list (mr_save_data, *data, &fd_);
+      }
 
-      /* check if this pointer is already saved */
-      ref_idx = mr_check_ptr_in_list (mr_save_data, *data, &fd_);
+      if (postpone)
+	{
+	  if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID))
+	    mr_save_data->ptrs.ra.data[idx].size = mr_save_data->ptrs.ra.data[idx].fd.size;
+	  else
+	    mr_save_data->ptrs.ra.data[idx].size = 0;
+	  mr_pointer_get_size (&mr_save_data->ptrs.ra.data[idx].size, mr_save_data->ptrs.ra.data[idx].fd.meta, idx, mr_save_data);
+	}
+      
       if (ref_idx >= 0)
 	{
 	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
 	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
 	}
-      else if ((fd_.mr_type != MR_TYPE_NONE) && (fd_.mr_type != MR_TYPE_VOID))
+      else if (0 == strcmp (mr_save_data->ptrs.ra.data[idx].fd.name.str, MR_OPAQUE_DATA_STR))
+	{
+	  if (mr_save_data->ptrs.ra.data[idx].size <= 0)
+	    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE;
+	  else
+	    mr_save_data->ptrs.ra.data[idx].flags.is_opaque_data = MR_TRUE;
+	}
+      else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
 	{
 	  if (postpone)
 	    {
@@ -703,11 +826,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	      *idx_ = idx;
 	    }
 	  else
-	    {
-	      mr_save_data->parent = idx;
-	      mr_save_inner (*data, &fd_, mr_save_data); /* save referenced content */
-	      mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
-	    }
+	    mr_save_pointer_content (idx, mr_save_data);
 	}
     }
 }

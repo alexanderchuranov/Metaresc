@@ -913,6 +913,23 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   return (MR_SUCCESS);
 }
 
+static bool_t
+xdr_ssize_t (XDR * xdrs, ssize_t * size)
+{
+  switch (sizeof (*size))
+    {
+    case sizeof (int8_t):
+      return (xdr_int8_t (xdrs, (int8_t*)size));
+    case sizeof (int16_t):
+      return (xdr_int16_t (xdrs, (int16_t*)size));
+    case sizeof (int32_t):
+      return (xdr_int32_t (xdrs, (int32_t*)size));
+    case sizeof (int64_t):
+      return (xdr_int64_t (xdrs, (int64_t*)size));
+    }
+  return (FALSE);
+}
+
 /**
  * Saves pointer into binary XDR stream. First goes flags of the node
  * and if pointer is not NULL, then ref_idx goes next.
@@ -924,16 +941,24 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static mr_status_t
 xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  bool_t status = FALSE;
-  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+  if (!xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags))
     return (MR_FAILURE);
+
+  if (ptrs->ra.data[idx].ref_idx >= 0)
+    return (xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) ? MR_SUCCESS : MR_FAILURE);
+
+  if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
+    return (MR_FAILURE);
+  
   if (ptrs->ra.data[idx].flags.is_null)
     return (MR_SUCCESS);
-  if (ptrs->ra.data[idx].ref_idx >= 0)
-    status = xdr_int32_t (xdrs, &ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx);
-  else
-    status = xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx);
-  return (status ? MR_SUCCESS : MR_FAILURE);
+      
+  if (!xdr_ssize_t (xdrs, &ptrs->ra.data[idx].size))
+    return (MR_FAILURE);
+  
+  if (ptrs->ra.data[idx].flags.is_opaque_data && (ptrs->ra.data[idx].size > 0))
+    return (xdr_opaque (xdrs, ptrs->ra.data[idx].data, ptrs->ra.data[idx].size) ? MR_SUCCESS : MR_FAILURE);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -946,31 +971,55 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  void ** data = ptrs->ra.data[idx].data;
+  char ** data = ptrs->ra.data[idx].data;
   mr_fd_t fd_ = ptrs->ra.data[idx].fd;
 
-  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra.data[idx].flags))
+  *data = NULL;
+  
+  if (!xdr_int32_t (xdrs, (int32_t*)&ptrs->ra.data[idx].flags))
     return (MR_FAILURE);
 
+  if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
+    return (MR_FAILURE);
+  
   if (ptrs->ra.data[idx].flags.is_null)
-    *data = NULL;
-  else
+    return (MR_SUCCESS);
+      
+  if (ptrs->ra.data[idx].ref_idx < 0)
     {
-      if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
+      int i, count = 0;
+      
+      if (!xdr_ssize_t (xdrs, &ptrs->ra.data[idx].size))
 	return (MR_FAILURE);
-      if (ptrs->ra.data[idx].ref_idx < 0)
+
+      if (!ptrs->ra.data[idx].flags.is_opaque_data)
 	{
-	  *data = MR_MALLOC (fd_.size);
-	  if (NULL == *data)
-	    {
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      return (MR_FAILURE);
-	    }
-	  memset (*data, 0, fd_.size);
+	  count = ptrs->ra.data[idx].size / fd_.size;
+	  ptrs->ra.data[idx].size = count * fd_.size;
+	}
+
+      if (ptrs->ra.data[idx].size <= 0)
+	return (MR_FAILURE);
+      
+      *data = MR_MALLOC (ptrs->ra.data[idx].size);
+      if (NULL == *data)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (MR_FAILURE);
+	}
+      memset (*data, 0, ptrs->ra.data[idx].size);
+      
+      if (ptrs->ra.data[idx].flags.is_opaque_data)
+	return (xdr_opaque (xdrs, *data, ptrs->ra.data[idx].size) ? MR_SUCCESS : MR_FAILURE);
+      else
+	{
 	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-	  return (xdr_load (*data, &fd_, xdrs, ptrs));
+	  for (i = 0; i < count; ++i)
+	    if (MR_SUCCESS != xdr_load (*data + i * fd_.size, &fd_, xdrs, ptrs))
+	      return (MR_FAILURE);
 	}
     }
+  
   return (MR_SUCCESS);
 }
 
@@ -1197,6 +1246,7 @@ xdr_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   XDR * xdrs = context;
   mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
+  
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xdr_save_handler[fdp->mr_type_ext])
     {
       if (MR_SUCCESS != ext_xdr_save_handler[fdp->mr_type_ext] (xdrs, idx, ptrs))

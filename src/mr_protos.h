@@ -332,6 +332,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(void *, data, , "pointer on binary data"),
+		(ssize_t, size, , "size of dynamic array"),
 		(mr_fd_t, fd, , "field descriptor"),
 		(int, level, , "level from the root element"),
 		(int32_t, idx, , "public index"),

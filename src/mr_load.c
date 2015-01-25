@@ -673,23 +673,35 @@ mr_load_rarray (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 {
-  void ** data = mr_load_data->ptrs.ra.data[idx].data;
+  char ** data = mr_load_data->ptrs.ra.data[idx].data;
   mr_fd_t fd_ = mr_load_data->ptrs.ra.data[idx].fd;
+  int count = 0;
+  int node;
+  
+  for (node = mr_load_data->ptrs.ra.data[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra.data[node].next)
+    ++count;
+  if (0 == count)
+    return (MR_SUCCESS);
+  
   fd_.mr_type_ext = MR_TYPE_EXT_NONE;
   /* allocate memory */
-  *data = MR_MALLOC (fd_.size);
+  *data = MR_MALLOC (count * fd_.size);
   if (NULL == *data)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
-  memset (*data, 0, fd_.size);
+  memset (*data, 0, count * fd_.size);
   /* load recursively */
-  return (mr_load (*data, &fd_, mr_load_data->ptrs.ra.data[idx].first_child, mr_load_data));
+  count = 0;
+  for (node = mr_load_data->ptrs.ra.data[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra.data[node].next)
+    if (MR_SUCCESS != mr_load (*data + count++ * fd_.size, &fd_, node, mr_load_data))
+      return (MR_FAILURE);
+  return (MR_SUCCESS);
 }
 
 /**
- * MR_POINTER_STRUCT load handler. Schedule element postponed loading via stack.
+ * MR_TYPE_EXT_POINTER load handler. Schedule element postponed loading via stack.
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
  * @return Status of read
