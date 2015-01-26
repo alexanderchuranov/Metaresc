@@ -668,11 +668,11 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
 }
 
 static void
-mr_get_size_field (ssize_t * size, char * size_field_name, int parent, mr_save_data_t * mr_save_data)
+mr_get_size_field (ssize_t * size, char * size_field_name, int parent, mr_ra_mr_ptrdes_t * ptrs)
 {
   void * size_ptr;
   mr_fd_t * parent_fdp;
-  mr_td_t * parent_tdp = mr_get_td_by_name (mr_save_data->ptrs.ra.data[parent].fd.type);
+  mr_td_t * parent_tdp = mr_get_td_by_name (ptrs->ra.data[parent].fd.type);
   
   if (NULL == parent_tdp)
     return;
@@ -683,7 +683,7 @@ mr_get_size_field (ssize_t * size, char * size_field_name, int parent, mr_save_d
   if (NULL == parent_fdp)
     return;
 
-  size_ptr = (char*)mr_save_data->ptrs.ra.data[parent].data + parent_fdp->offset; /* get an address of size field */
+  size_ptr = (char*)ptrs->ra.data[parent].data + parent_fdp->offset; /* get an address of size field */
 		  
   switch (parent_fdp->mr_type)
     {
@@ -726,20 +726,20 @@ mr_get_size_field (ssize_t * size, char * size_field_name, int parent, mr_save_d
     }
 }
 
-static void
-mr_pointer_get_size (ssize_t * size, char * name, int idx, mr_save_data_t * mr_save_data)
+void
+mr_pointer_get_size (ssize_t * size, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   if (mr_is_valid_field_name (name))
     {
       int parent;
       /* traverse through parents up to first structure */
-      for (parent = mr_save_data->ptrs.ra.data[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra.data[parent].parent)
-	if ((MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[parent].fd.mr_type_ext) &&
-	    (MR_TYPE_STRUCT == mr_save_data->ptrs.ra.data[parent].fd.mr_type))
+      for (parent = ptrs->ra.data[idx].parent; parent >= 0; parent = ptrs->ra.data[parent].parent)
+	if ((MR_TYPE_EXT_NONE == ptrs->ra.data[parent].fd.mr_type_ext) &&
+	    (MR_TYPE_STRUCT == ptrs->ra.data[parent].fd.mr_type))
 	  break;
       
       if (parent >= 0)
-	mr_get_size_field (size, mr_save_data->ptrs.ra.data[idx].fd.meta, parent, mr_save_data);
+	mr_get_size_field (size, name, parent, ptrs);
     }
 }
 
@@ -801,7 +801,8 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	    mr_save_data->ptrs.ra.data[idx].size = mr_save_data->ptrs.ra.data[idx].fd.size;
 	  else
 	    mr_save_data->ptrs.ra.data[idx].size = 0;
-	  mr_pointer_get_size (&mr_save_data->ptrs.ra.data[idx].size, mr_save_data->ptrs.ra.data[idx].fd.meta, idx, mr_save_data);
+	  mr_pointer_get_size (&mr_save_data->ptrs.ra.data[idx].size, mr_save_data->ptrs.ra.data[idx].fd.meta,
+			       idx, &mr_save_data->ptrs);
 	}
       
       if (ref_idx >= 0)

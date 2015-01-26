@@ -555,28 +555,43 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	  {
 	    int idx;
 	    char * copy;
-	    int alloc_size = ptrs.ra.data[i].fd.size; /* default allocation size */
+	    ssize_t alloc_size = ptrs.ra.data[i].fd.size; /* default allocation size */
 	    if (ptrs.ra.data[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
 			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name.str);
 		return (MR_FAILURE);
 	      }
-	    /* rarrays require allocation of memoty chunk according alloc_size field */
+	    /* rarrays require allocation of memory chunk according alloc_size field */
 	    if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)
 	      {
 		mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)];
 		ptrs.ra.data[i].fd.size = ra->size;
 		/* statically allocated rarrays has negative alloc_size */
-		if (ra->alloc_size > ra->size)
+		if (alloc_size < ra->alloc_size)
 		  alloc_size = ra->alloc_size;
 	      }
+	    
+	    if (MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext)
+	      {
+		if ((ptrs.ra.data[i].fd.res_type != NULL) &&
+		    (0 == strcmp ("string_t", ptrs.ra.data[i].fd.res_type)))
+		  mr_pointer_get_size (&alloc_size, ptrs.ra.data[i].fd.res.ptr, i, &ptrs);
+		
+		if (alloc_size < ptrs.ra.data[i].size)
+		  alloc_size = ptrs.ra.data[i].size;
+	      }
+	    if ((MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext) && (MR_TYPE_CHAR_ARRAY == ptrs.ra.data[i].fd.mr_type)
+		&& (0 == strcmp ("string_t", ptrs.ra.data[i].fd.type)))
+	      alloc_size = ptrs.ra.data[i].fd.size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
+	    
 	    copy = MR_MALLOC (alloc_size);
 	    if (NULL == copy)
 	      {
 		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 		return (MR_FAILURE);
 	      }
+
 	    /* copy data from source */
 	    memcpy (copy, *(void**)ptrs.ra.data[i].data, ptrs.ra.data[i].fd.size);
 	    /* zeros the rest of allocated memeory (only for rarrays) */
