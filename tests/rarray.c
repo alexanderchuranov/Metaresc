@@ -34,8 +34,8 @@ MR_START_TEST (rarray_self_referred, "self referred rarray") {
 	  },
 	}
       },
-      .size = sizeof (self_referred_rarray_t),
-      .alloc_size = sizeof (self_referred_rarray_t),
+      .size = sizeof (orig.x.data[0]),
+      .alloc_size = sizeof (orig.x.data[0]),
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, self_referred_rarray_t, &orig);
@@ -49,8 +49,8 @@ MR_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"
     .x =
     {
       .data = (typeof (orig.x.data[0])[]){ "0", "1", },
-      .size = sizeof (orig.x.data),
-      .alloc_size = sizeof (orig.x.data),
+      .size = 2 * sizeof (orig.x.data[0]),
+      .alloc_size = 2 * sizeof (orig.x.data[0]),
       .res = { "string_t" },
       .res_type = "string_t",
     },
@@ -63,8 +63,8 @@ MR_START_TEST (rarray_referenced_content, "referenced content") {
     .x =
     {
       .data = (typeof (orig.x.data[0])[]){ "string_t", "string_t", },
-      .size = sizeof (orig.x.data),
-      .alloc_size = sizeof (orig.x.data),
+      .size = 2 * sizeof (orig.x.data[0]),
+      .alloc_size = 2 * sizeof (orig.x.data[0]),
       .res = { "string_t" },
       .res_type = "string_t",
     },
@@ -77,8 +77,8 @@ MR_START_TEST (rarray_referenced_elements, "referenced elements") {
     .x =
     {
       .data = (typeof (orig.x.data[0])[]){ "0", "1", },
-      .size = sizeof (orig.x.data),
-      .alloc_size = sizeof (orig.x.data),
+      .size = 2 * sizeof (orig.x.data[0]),
+      .alloc_size = 2 * sizeof (orig.x.data[0]),
     },
   };
   orig.x.res.ptr = &orig.x.data[1];
@@ -104,8 +104,8 @@ MR_START_TEST (rarray_opaque_data, "rarray with opaque data") {
     .x =
     {
       .data = (typeof (orig.x.data[0])[]){ 1, 2 },
-      .size = sizeof (orig.x.data),
-      .alloc_size = sizeof (orig.x.data),
+      .size = 2 * sizeof (orig.x.data[0]),
+      .alloc_size = 2 * sizeof (orig.x.data[0]),
       .res = { NULL },
       .res_type = MR_RARRAY_OPAQUE_DATA_T_STR,
     },

@@ -128,8 +128,8 @@ MR_START_TEST (resizable_array, "test pointer as a resizable array") {
   resizable_array_t orig = 
     {
       .data = (typeof (orig.data[0])[]){ ZERO, ONE, },
-      .size = sizeof (orig.data),
-      .alloc_size = sizeof (orig.data),
+      .size = 2 * sizeof (orig.data[0]),
+      .alloc_size = 2 * sizeof (orig.data[0]),
     };
   ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_t, &orig, CMP_RA);
 } END_TEST
