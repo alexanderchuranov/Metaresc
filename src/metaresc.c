@@ -1334,7 +1334,7 @@ mr_register_type_pointer (mr_td_t * tdp)
       return (MR_FAILURE);
     }
 
-  memset (fdp, 0, sizeof (*fdp));
+  *fdp = *union_tdp->fields.data[0].fdp;
   fdp->type = tdp->type.str;
   fdp->name = tdp->type;
   fdp->size = tdp->size;

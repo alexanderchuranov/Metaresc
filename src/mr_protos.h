@@ -5,8 +5,9 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , "default void pointer"),
-	       (long, long_int_t),
+	       (void *, ptr, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
+	       (void *, MR_OPAQUE_DATA, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
+	       (long, long_int_t, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
 	       )
 
 TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
@@ -240,8 +241,8 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_ext_t, mr_type_ext, , "Metaresc type extension"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(char *, type, , "stringified type name"),
-		(int, offset, , "offset in structure"),
-		(int, size, , "size of field"),
+		(typeof (offsetof (mr_array_param_t, count)), offset, , "offset in structure"),
+		(typeof (sizeof (0)), size, , "size of field"),
 		(mr_fd_param_t, param, , "mr_type"),
 		(char *, meta, , "field meta info"),
 		/*
@@ -266,9 +267,9 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
-		(int, size, , "size of type"),
+		(typeof (sizeof (0)), size, , "size of type"),
+		(typeof (sizeof (0)), size_effective, , "effective size"),
 		(char *, attr, , "stringified typedef attributes"),
-		(int, size_effective, , "effective size"),
 		(mr_ic_t, lookup_by_name, , "lookup by enum values"),
 		(mr_ic_t, lookup_by_value, , "lookup by enum values"),
 		RARRAY (mr_fd_ptr_t, fields, "fields or enums descriptors"),

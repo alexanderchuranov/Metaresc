@@ -36,7 +36,7 @@ int main ()
 
       printf ("\t%s is %s\n", type, type_class);
       printf ("\tit's declared name is '%s'\n", td->type.str);
-      printf ("\tvariables of this type occupy %i bytes of memory\n", td->size);
+      printf ("\tvariables of this type occupy %zu bytes of memory\n", td->size);
     }
   else
     {
