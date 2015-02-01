@@ -21,7 +21,6 @@
 #endif /* HAVE_VALUES_H */
 
 TYPEDEF_ENUM (sign_t, (PLUS, = 0), (MINUS, = 1))
-TYPEDEF_ENUM (boolean_t, (_FALSE_, = 0), (_TRUE_, = 1))
 
 TYPEDEF_STRUCT (ieee_754_float_t,
 		BITFIELD (unsigned int, mantissa, :23),
@@ -30,7 +29,7 @@ TYPEDEF_STRUCT (ieee_754_float_t,
 
 TYPEDEF_STRUCT (ieee_754_float_nan_t,
 		BITFIELD (unsigned int, mantissa, :22),
-		BITFIELD (boolean_t, quiet_nan, :1),
+		BITFIELD (bool, quiet_nan, :1),
 		BITFIELD (unsigned int, exponent, :8),
 		BITFIELD (sign_t, sign, :1))
 
@@ -42,7 +41,7 @@ TYPEDEF_UNION (ieee_float_t,
 	       float _float,
 	       uint32_t uint32,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (ieee_754_float_nan_enum_t, quiet_nan, :9, , .offset = 22 / 8, .param = { .bitfield_param = { .width = 9, .shift = 22 % 8, .bitfield = { .size = 0 }, }, } ),
+	       BITFIELD (ieee_754_float_nan_enum_t, quiet_nan, :9, , .offset = 22 / 8, .param = { .bitfield_param = { .width = 9, .shift = 22 % 8, .size = 0, }, } ),
 	       )
 
 TYPEDEF_STRUCT (ieee_754_double_t,
@@ -54,7 +53,7 @@ TYPEDEF_STRUCT (ieee_754_double_t,
 TYPEDEF_STRUCT (ieee_754_double_nan_t,
 		BITFIELD (unsigned int, mantissa1, :32),
 		BITFIELD (unsigned int, mantissa0, :19),
-		BITFIELD (boolean_t, quiet_nan, :1),
+		BITFIELD (bool, quiet_nan, :1),
 		BITFIELD (unsigned int, exponent, :11),
 		BITFIELD (sign_t, sign, :1))
 
@@ -66,7 +65,7 @@ TYPEDEF_UNION (ieee_double_t,
 	       double _double,
 	       uint64_t uint64,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (ieee_754_double_nan_enum_t, quiet_nan, :12, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 12, .shift = (32 + 19) % 8, .bitfield = { .size = 0 }, }, } ),
+	       BITFIELD (ieee_754_double_nan_enum_t, quiet_nan, :12, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 12, .shift = (32 + 19) % 8, .size = 0, }, } ),
 	       )
 
 TYPEDEF_STRUCT (ieee_854_long_double_t,
@@ -79,7 +78,7 @@ TYPEDEF_STRUCT (ieee_854_long_double_t,
 TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
 		BITFIELD (unsigned int, mantissa1, :32),
 		BITFIELD (unsigned int, mantissa0, :30),
-		BITFIELD (boolean_t, quiet_nan, :1),
+		BITFIELD (bool, quiet_nan, :1),
 		BITFIELD (unsigned int, one, :1),
 		BITFIELD (unsigned int, exponent, :15),
 		BITFIELD (sign_t, sign, :1),
@@ -96,6 +95,6 @@ TYPEDEF_UNION (ieee_long_double_t,
 	       (ieee_854_long_double_nan_t, ieee_854_long_double_nan),
 	       long double long_double,
 	       END_ANON_UNION ("quiet_nan"),
-	       BITFIELD (ieee_854_long_double_nan_enum_t, quiet_nan, :17, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 17, .shift = (32 + 30) % 8, .bitfield = { .size = 0 }, }, } ),
+	       BITFIELD (ieee_854_long_double_nan_enum_t, quiet_nan, :17, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 17, .shift = (32 + 30) % 8, .size = 0, }, } ),
 	       )
 #endif /* _FLT_VALUES_H_ */
