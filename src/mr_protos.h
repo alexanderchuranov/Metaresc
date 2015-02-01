@@ -167,7 +167,8 @@ TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(int, width, , "bit-field width in bits"),
 		(int, shift, , "bit-field shift in first byte"),
-		RARRAY (uint8_t, bitfield, "zero-struct with flagged bit-fields"),
+		(int, size, , "size of bitfield array"),
+		(uint8_t * , bitfield, , "size"), /* zero-struct with flagged bit-fields */
 		)
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),

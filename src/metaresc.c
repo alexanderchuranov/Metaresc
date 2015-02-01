@@ -1061,27 +1061,27 @@ static mr_status_t
 mr_init_bitfield (mr_fd_t * fdp)
 {
   int i, j;
-  if ((NULL == fdp->param.bitfield_param.bitfield.data) ||
-      (0 == fdp->param.bitfield_param.bitfield.size))
+  if ((NULL == fdp->param.bitfield_param.bitfield) ||
+      (0 == fdp->param.bitfield_param.size))
     return (MR_SUCCESS);
 
-  for (i = 0; i < fdp->param.bitfield_param.bitfield.size; ++i)
-    if (fdp->param.bitfield_param.bitfield.data[i])
+  for (i = 0; i < fdp->param.bitfield_param.size; ++i)
+    if (fdp->param.bitfield_param.bitfield[i])
       break;
   /* if bitmask is clear then there is no need to initialize anything */
-  if (!fdp->param.bitfield_param.bitfield.data[i])
+  if (!fdp->param.bitfield_param.bitfield[i])
     return (MR_SUCCESS);
 
   fdp->offset = i;
   for (i = 0; i < CHAR_BIT; ++i)
-    if (fdp->param.bitfield_param.bitfield.data[fdp->offset] & (1 << i))
+    if (fdp->param.bitfield_param.bitfield[fdp->offset] & (1 << i))
       break;
   fdp->param.bitfield_param.shift = i;
   fdp->param.bitfield_param.width = 0;
-  for (j = fdp->offset; j < fdp->param.bitfield_param.bitfield.size; ++j)
+  for (j = fdp->offset; j < fdp->param.bitfield_param.size; ++j)
     {
       for ( ; i < CHAR_BIT; ++i)
-	if (fdp->param.bitfield_param.bitfield.data[j] & (1 << i))
+	if (fdp->param.bitfield_param.bitfield[j] & (1 << i))
 	  ++fdp->param.bitfield_param.width;
 	else
 	  break;

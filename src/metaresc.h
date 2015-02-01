@@ -664,12 +664,9 @@
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .param = {							\
 	  .bitfield_param = {						\
-	    .bitfield = {						\
-	      .size = sizeof (MR_TYPE_NAME),				\
-	      .alloc_size = -1,						\
-	      .data = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }),	\
-	      .res_type = MR_RARRAY_OPAQUE_DATA_T_STR,			\
-	    }, }, },							\
+	    .size = sizeof (MR_TYPE_NAME),				\
+	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), \
+	  }, },								\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
