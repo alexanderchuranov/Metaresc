@@ -555,7 +555,10 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	  {
 	    int idx;
 	    char * copy;
-	    ssize_t alloc_size = ptrs.ra.data[i].fd.size; /* default allocation size */
+	    ssize_t size, alloc_size;
+
+	    size = alloc_size = ptrs.ra.data[i].fd.size; /* default allocation size */
+	    
 	    if (ptrs.ra.data[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
@@ -566,7 +569,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)
 	      {
 		mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)];
-		ptrs.ra.data[i].fd.size = ra->size;
+		size = ra->size;
 		/* statically allocated rarrays has negative alloc_size */
 		if (alloc_size < ra->alloc_size)
 		  alloc_size = ra->alloc_size;
@@ -577,13 +580,21 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 		if ((ptrs.ra.data[i].fd.res_type != NULL) &&
 		    (0 == strcmp ("string_t", ptrs.ra.data[i].fd.res_type)))
 		  mr_pointer_get_size (&alloc_size, ptrs.ra.data[i].fd.res.ptr, i, &ptrs);
-		
-		if (alloc_size < ptrs.ra.data[i].size)
-		  alloc_size = ptrs.ra.data[i].size;
+
+		size = ptrs.ra.data[i].size;
 	      }
 	    if ((MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext) && (MR_TYPE_CHAR_ARRAY == ptrs.ra.data[i].fd.mr_type)
 		&& (0 == strcmp ("string_t", ptrs.ra.data[i].fd.type)))
-	      alloc_size = ptrs.ra.data[i].fd.size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
+	      size = alloc_size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
+	    
+	    if (alloc_size < size)
+	      alloc_size = size;
+
+	    if ((size < 0) || (alloc_size < 0))
+	      {
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size, alloc_size);
+		return (MR_FAILURE);
+	      }
 	    
 	    copy = MR_MALLOC (alloc_size);
 	    if (NULL == copy)
@@ -593,9 +604,9 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	      }
 
 	    /* copy data from source */
-	    memcpy (copy, *(void**)ptrs.ra.data[i].data, ptrs.ra.data[i].fd.size);
+	    memcpy (copy, *(void**)ptrs.ra.data[i].data, size);
 	    /* zeros the rest of allocated memeory (only for rarrays) */
-	    memset (&copy[ptrs.ra.data[i].fd.size], 0, alloc_size - ptrs.ra.data[i].fd.size);
+	    memset (&copy[ptrs.ra.data[i].fd.size], 0, alloc_size - size);
 	    /* go thru all childs and calculate their addresses in newly allocated chunk */
 	    for (idx = ptrs.ra.data[i].first_child; idx >= 0; idx = ptrs.ra.data[idx].next)
 	      ptrs.ra.data[idx].res.ptr = &copy[(char*)ptrs.ra.data[idx].data - *(char**)ptrs.ra.data[i].data];
@@ -1217,10 +1228,10 @@ static mr_status_t
 mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
-  for (i = 0; fdp->param.func_param.data[i].mr_type != MR_TYPE_TRAILING_RECORD; ++i)
+  for (i = 0; fdp->param.func_param.args[i].mr_type != MR_TYPE_TRAILING_RECORD; ++i)
     {
-      mr_normalize_type (&fdp->param.func_param.data[i]);
-      switch (fdp->param.func_param.data[i].mr_type)
+      mr_normalize_type (&fdp->param.func_param.args[i]);
+      switch (fdp->param.func_param.args[i].mr_type)
 	{
 	case MR_TYPE_NONE:
 	case MR_TYPE_INT8:
@@ -1231,13 +1242,13 @@ mr_func_field_detect (mr_fd_t * fdp)
 	case MR_TYPE_UINT32:
 	case MR_TYPE_INT64:
 	case MR_TYPE_UINT64:
-	  mr_auto_field_detect (&fdp->param.func_param.data[i]);
+	  mr_auto_field_detect (&fdp->param.func_param.args[i]);
 	  break;
 	default:
 	  break;
 	}
     }
-  fdp->param.func_param.size = i * sizeof (fdp->param.func_param.data[0]);
+  fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
   return (MR_SUCCESS);
 }
 

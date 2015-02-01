@@ -78,6 +78,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG, , "Unexpected charecters after closing tag."),
 	      (MR_MESSAGE_TAGS_DONT_MATCH, , "Open and close tags names do not match."),
 	      (MR_MESSAGE_CANT_READ_PROPERTY, , "Can't read %s property."),
+	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) or allocation size (%zd) for dynamics array."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -171,11 +172,16 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(uint8_t * , bitfield, , "size"), /* zero-struct with flagged bit-fields */
 		)
 
+TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
+		(int, size, , "size of args array"),
+		(struct mr_fd_t *, args, , "size"), /* function arguments descriptors */
+		)
+
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       (mr_array_param_t, array_param, , "array parameters - default for serialization"),
 	       (int64_t, enum_value, , "enum value"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
-	       RARRAY (struct mr_fd_t, func_param, "function arguments descriptors"),
+	       (mr_func_param_t, func_param, , "types of function arguments"),
 	       )
 
 TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
