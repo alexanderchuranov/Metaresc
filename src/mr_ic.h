@@ -101,9 +101,9 @@ mr_ic_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
     return (MR_FAILURE);
   if (ic->index)
     return (ic->index (ic, rarray, context));
-  count = rarray->ra.size / sizeof (rarray->ra.data[0]);
+  count = rarray->MR_SIZE / sizeof (rarray->ra[0]);
   for (i = 0; i < count; ++i)
-    if (NULL == mr_ic_add (ic, rarray->ra.data[i], context))
+    if (NULL == mr_ic_add (ic, rarray->ra[i], context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }

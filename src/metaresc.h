@@ -1241,6 +1241,7 @@ extern char * mr_message_format (mr_message_id_t, va_list);
 extern void mr_message (const char*, const char*, int, mr_log_level_t, mr_message_id_t, ...);
 extern void mr_message_unsupported_node_type (mr_fd_t*);
 extern void * mr_rarray_append (mr_rarray_t*, int);
+extern void * mr_rarray_allocate_element (void**, ssize_t*, ssize_t*, int);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t*, const char*, ...);
 
 extern char * xml_unquote_string (mr_substr_t*);

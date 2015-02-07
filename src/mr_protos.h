@@ -208,7 +208,20 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,
-		RARRAY (mr_ptr_t, ra, "key_type"),
+		(mr_ptr_t *, ra, , "key_type"),
+		(ssize_t, MR_SIZE, , "size of array"),
+		(ssize_t, MR_ALLOC_SIZE, , "allocated size for array"),
+		)
+
+typedef struct mr_ic_t mr_ic_t;
+
+TYPEDEF_STRUCT (mr_ic_hash_t,
+		(int, items_count),
+		(mr_hash_fn_t, hash_fn),
+		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
+		(void, index_free, (mr_ic_t * /* ic */)),
+		(char *, bucket_type),
+		RARRAY (mr_ptr_t, index, "bucket_type"),
 		)
 
 TYPEDEF_STRUCT (mr_ic_t,
@@ -217,8 +230,8 @@ TYPEDEF_STRUCT (mr_ic_t,
 
 		ANON_UNION (type_specific),
 		(mr_ptr_t, ext, , "ext_type"),
-		(mr_ic_rarray_t *, rarray),
-		(struct mr_ic_hash_t *, hash),
+		(mr_ic_rarray_t, rarray),
+		(mr_ic_hash_t, hash),
 		(mr_red_black_tree_node_t *, tree),
 		END_ANON_UNION ("ic_type"),
 		(char *, ext_type, , "type specifier for extended IC types"),
@@ -231,15 +244,6 @@ TYPEDEF_STRUCT (mr_ic_t,
 		(mr_status_t, index, (mr_ic_t * /* ic */, mr_ic_rarray_t * /* rarray */, __const void * /* context */)),
 		(void, reset, (mr_ic_t * /* ic */)),
 		(void, free, (mr_ic_t * /* ic */)),
-		)
-
-TYPEDEF_STRUCT (mr_ic_hash_t,
-		(int, items_count),
-		(mr_hash_fn_t, hash_fn),
-		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
-		(void, index_free, (mr_ic_t * /* ic */)),
-		(char *, bucket_type),
-		RARRAY (mr_ptr_t, index, "bucket_type"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),

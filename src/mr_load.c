@@ -601,6 +601,7 @@ mr_load_rarray_type (mr_fd_t * fdp, mr_status_t (*action) (mr_td_t *, void *), v
 
       memcpy (fields_data, td.fields.data, td.fields.size);
       td.fields.data = fields_data;
+      td.fields.alloc_size = -1; /* prevent memory deallocation in mr_ic_free */
       for (i = 0; i < fields_count; ++i)
 	{
 	  data_fdp = fields_data[i].fdp;

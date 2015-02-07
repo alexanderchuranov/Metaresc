@@ -306,45 +306,54 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
  * @return Pointer on a new element of rarray
  */
 void *
-mr_rarray_append (mr_rarray_t * rarray, int size)
+mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, int element_size)
 {
-  if (NULL == rarray->data)
+  if ((NULL == data) || (NULL == size) || (NULL == alloc_size))
+    return (NULL);
+  
+  if (NULL == *data)
     {
-      rarray->alloc_size = rarray->size = 0;
-      rarray->data = MR_MALLOC (size);
-      if (NULL == rarray->data)
+      *alloc_size = *size = 0;
+      *data = MR_MALLOC (element_size);
+      if (NULL == *data)
 	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       else
 	{
-	  memset (rarray->data, 0, size);
-	  rarray->alloc_size = rarray->size = size;
+	  memset (*data, 0, element_size);
+	  *alloc_size = *size = element_size;
 	}
-      return (rarray->data);
+      return (*data);
     }
 
-  rarray->size += size;
-  if (rarray->size > rarray->alloc_size)
+  *size += element_size;
+  if (*size > *alloc_size)
     {
       float mas = mr_conf.mr_mem.mem_alloc_strategy;
-      int alloc_size;
-      void * data;
+      int realloc_size;
+      void * data_;
       if (mas < 1)
 	mas = 1;
       if (mas > 2)
 	mas = 2;
-      alloc_size = (((int)((rarray->alloc_size + 1) * mas) + size - 1) / size) * size;
-      if (rarray->size > alloc_size)
-	alloc_size = rarray->size;
-      data = MR_REALLOC (rarray->data, alloc_size);
-      if (NULL == data)
+      realloc_size = (((int)((*alloc_size + 1) * mas) + *size - 1) / *size) * *size;
+      if (realloc_size < *size)
+	realloc_size = *size;
+      data_ = MR_REALLOC (*data, realloc_size);
+      if (NULL == data_)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (NULL);
 	}
-      rarray->alloc_size = alloc_size;
-      rarray->data = data;
+      *alloc_size = realloc_size;
+      *data = data_;
     }
-  return (&((char*)rarray->data)[rarray->size - size]);
+  return (&((char*)(*data))[*size - element_size]);
+}
+
+void *
+mr_rarray_append (mr_rarray_t * rarray, int size)
+{
+  return (mr_rarray_allocate_element (&rarray->data, &rarray->size, &rarray->alloc_size, size));
 }
 
 /**
