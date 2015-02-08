@@ -220,17 +220,15 @@ TYPEDEF_STRUCT (mr_ic_rarray_t,
 
 typedef struct mr_ic_t mr_ic_t;
 
-TYPEDEF_STRUCT (bucket_mr_ptr_t,
-		(mr_ptr_t, mr_ptr, , "bucket_type"),
-		)
-
 TYPEDEF_STRUCT (mr_ic_hash_t,
 		(int, items_count),
 		(mr_hash_fn_t, hash_fn),
 		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
 		(void, index_free, (mr_ic_t * /* ic */)),
 		(char *, bucket_type),
-		(bucket_mr_ptr_t *, hash_table, , "resizable array for hash table", { "size" }, "char"),
+		/* resizable array for hash table sized by field 'size'
+		   mr_ptr_t typed by 'bucket_type' */
+		(mr_ptr_t *, hash_table, , "bucket_type", { "size" }, "char"),
 		(ssize_t, size, , "size of hash table"),
 		(bool, zero_key),
 		)

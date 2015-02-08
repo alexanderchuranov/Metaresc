@@ -535,7 +535,7 @@ mr_ic_hash_tree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
     return (MR_FAILURE);
 
   for (i = hash->size / sizeof (hash->hash_table[0]) - 1; i >= 0; --i)
-    mr_twalk (hash->hash_table[i].mr_ptr.ptr, visit_node, &mr_ic_rbtree_foreach_context);
+    mr_twalk (hash->hash_table[i].ptr, visit_node, &mr_ic_rbtree_foreach_context);
   return (MR_SUCCESS);
 }
 
@@ -551,7 +551,7 @@ mr_ic_hash_tree_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   --hash->items_count;
   bucket = mr_ic_hash_get_backet (hash, key, context);
-  mr_tdelete (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].mr_ptr.ptr, ic->compar_fn, context);
+  mr_tdelete (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].ptr, ic->compar_fn, context);
   return (MR_SUCCESS);
 }
 
@@ -562,7 +562,7 @@ mr_ic_hash_tree_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
   int bucket = mr_ic_hash_get_backet (hash, key, context);
   if (bucket < 0)
     return (NULL);
-  return (mr_tfind (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].mr_ptr.ptr, ic->compar_fn, context));
+  return (mr_tfind (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].ptr, ic->compar_fn, context));
 }
 
 void
@@ -575,8 +575,8 @@ mr_ic_hash_tree_index_free (mr_ic_t * ic)
       int i;
       for (i = hash->size / sizeof (hash->hash_table[0]) - 1; i >= 0; --i)
 	{
-	  mr_tdestroy (hash->hash_table[i].mr_ptr.ptr, dummy_free_fn, NULL);
-	  hash->hash_table[i].mr_ptr.ptr = NULL;
+	  mr_tdestroy (hash->hash_table[i].ptr, dummy_free_fn, NULL);
+	  hash->hash_table[i].ptr = NULL;
 	}
     }
 }
@@ -585,7 +585,7 @@ mr_ptr_t *
 mr_ic_hash_tree_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
 {
   mr_ic_hash_t * hash = &ic->hash;
-  mr_ptr_t * find = mr_tsearch (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].mr_ptr.ptr, ic->compar_fn, context);
+  mr_ptr_t * find = mr_tsearch (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].ptr, ic->compar_fn, context);
   if (NULL == find)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
   return (find);
@@ -644,10 +644,10 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int
 
   for (i = bucket; ;)
     {
-      if (0 == hash->hash_table[i].mr_ptr.long_int_t)
+      if (0 == hash->hash_table[i].long_int_t)
 	{
-	  hash->hash_table[i].mr_ptr = key;
-	  return (&hash->hash_table[i].mr_ptr);
+	  hash->hash_table[i] = key;
+	  return (&hash->hash_table[i]);
 	}
       if (++i >= count)
 	i = 0;
@@ -675,15 +675,15 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
       int i, count = hash->size / sizeof (hash->hash_table[0]);
       
       find->long_int_t = 0;
-      for (i = (bucket_mr_ptr_t*)find - hash->hash_table; ;) /* need to re-index all elements in sequential block after deleted element */
+      for (i = find - hash->hash_table; ;) /* need to re-index all elements in sequential block after deleted element */
 	{
 	  mr_ptr_t mr_ptr;
 	  if (++i >= count)
 	    i = 0;
-	  if (0 == hash->hash_table[i].mr_ptr.long_int_t)
+	  if (0 == hash->hash_table[i].long_int_t)
 	    break;
-	  mr_ptr = hash->hash_table[i].mr_ptr;
-	  hash->hash_table[i].mr_ptr.long_int_t = 0;
+	  mr_ptr = hash->hash_table[i];
+	  hash->hash_table[i].long_int_t = 0;
 	  mr_ic_hash_next_index_add (ic, mr_ptr, context, mr_ic_hash_get_backet (hash, mr_ptr, context));
 	}
     }
@@ -706,10 +706,10 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   for (i = bucket; ;)
     {
-      if (0 == hash->hash_table[i].mr_ptr.long_int_t)
+      if (0 == hash->hash_table[i].long_int_t)
 	return (NULL);
-      if (0 == ic->compar_fn (key, hash->hash_table[i].mr_ptr, context))
-	return (&hash->hash_table[i].mr_ptr);
+      if (0 == ic->compar_fn (key, hash->hash_table[i], context))
+	return (&hash->hash_table[i]);
       if (++i >= count)
 	i = 0;
       if (i == bucket)
@@ -728,8 +728,8 @@ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
       return (MR_FAILURE);
 
   for (i = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1; i >= 0; --i)
-    if (0 != ic->hash.hash_table[i].mr_ptr.long_int_t)
-      if (MR_SUCCESS != visit_fn (ic->hash.hash_table[i].mr_ptr, context))
+    if (0 != ic->hash.hash_table[i].long_int_t)
+      if (MR_SUCCESS != visit_fn (ic->hash.hash_table[i], context))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
 }
