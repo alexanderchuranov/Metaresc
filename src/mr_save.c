@@ -266,7 +266,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
       mr_save_data->ptrs.ra.data[parent].ref_idx = ref_idx;
       mr_save_data->ptrs.ra.data[parent].first_child = -1;
       mr_save_data->ptrs.ra.data[parent].last_child = -1;
-      mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
+      mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = TRUE;
       mr_save_data->ptrs.ra.data[ref_idx].fd.name.str = fdp->name.str;
       mr_add_child (mr_save_data->parent, ref_idx, &mr_save_data->ptrs);
       return;
@@ -291,7 +291,7 @@ mr_save_func (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1;
   if (NULL == *(void**)mr_save_data->ptrs.ra.data[idx].data)
-    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE;
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = TRUE;
 }
 
 /**
@@ -305,7 +305,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.ra.size / sizeof (mr_save_data->ptrs.ra.data[0]) - 1;
   char * str = *(char**)mr_save_data->ptrs.ra.data[idx].data;
   if (NULL == str)
-    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE;
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = TRUE;
   else
     {
       static mr_fd_t fd_ = {
@@ -316,7 +316,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
       if (ref_idx >= 0)
 	{
 	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
+	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = TRUE;
 	}
       else
 	{
@@ -652,7 +652,7 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
       if (mr_save_data->ptrs.ra.data[data_idx].ref_idx < 0)
 	{
 	  if ((NULL == ra->data) || (0 == count))
-	    mr_save_data->ptrs.ra.data[data_idx].flags.is_null = MR_TRUE;
+	    mr_save_data->ptrs.ra.data[data_idx].flags.is_null = TRUE;
 	  else
 	    {
 	      int i;
@@ -759,7 +759,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   
   /* add each array element to this node */
   if (count <= 0)
-    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* return empty node if pointer is NULL */
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = TRUE; /* return empty node if pointer is NULL */
   else
     {
       int i;
@@ -785,7 +785,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
   void ** data = mr_save_data->ptrs.ra.data[idx].data;
 
   if (NULL == *data)
-    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* return empty node if pointer is NULL */
+    mr_save_data->ptrs.ra.data[idx].flags.is_null = TRUE; /* return empty node if pointer is NULL */
   else
     {
       int ref_idx;
@@ -819,14 +819,14 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
       if (ref_idx >= 0)
 	{
 	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
+	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = TRUE;
 	}
       else if (0 == strcmp (mr_save_data->ptrs.ra.data[idx].fd.name.str, MR_OPAQUE_DATA_STR))
 	{
 	  if (mr_save_data->ptrs.ra.data[idx].size <= 0)
-	    mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE;
+	    mr_save_data->ptrs.ra.data[idx].flags.is_null = TRUE;
 	  else
-	    mr_save_data->ptrs.ra.data[idx].flags.is_opaque_data = MR_TRUE;
+	    mr_save_data->ptrs.ra.data[idx].flags.is_opaque_data = TRUE;
 	}
       else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
 	{
@@ -896,10 +896,10 @@ mr_post_process_node  (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
       if (ref_idx >= 0)
 	{
 	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_idx;
-	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = MR_TRUE;
+	  mr_save_data->ptrs.ra.data[ref_idx].flags.is_referenced = TRUE;
 	}
       else
-	mr_save_data->ptrs.ra.data[idx].flags.is_null = MR_TRUE; /* unresolved void pointers are saved as NULL */
+	mr_save_data->ptrs.ra.data[idx].flags.is_null = TRUE; /* unresolved void pointers are saved as NULL */
     }
 
   if (mr_save_data->ptrs.ra.data[idx].ref_idx >= 0)
@@ -909,8 +909,8 @@ mr_post_process_node  (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 	  && (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra.data[ref_parent].fd.mr_type_ext))
 	{
 	  mr_save_data->ptrs.ra.data[idx].ref_idx = ref_parent;
-	  mr_save_data->ptrs.ra.data[idx].flags.is_content_reference = MR_TRUE;
-	  mr_save_data->ptrs.ra.data[ref_parent].flags.is_referenced = MR_TRUE;
+	  mr_save_data->ptrs.ra.data[idx].flags.is_content_reference = TRUE;
+	  mr_save_data->ptrs.ra.data[ref_parent].flags.is_referenced = TRUE;
 	}
     }
 

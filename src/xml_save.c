@@ -351,7 +351,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
       if (ptrs->ra.data[idx].flags.is_referenced)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
 	  return (NULL);
-      if (ptrs->ra.data[idx].flags.is_null)
+      if (TRUE == ptrs->ra.data[idx].flags.is_null)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
 	  return (NULL);
 
@@ -501,7 +501,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
       sprintf (number, "%" SCNd32, ptrs->ra.data[idx].idx);
       xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
     }
-  if (ptrs->ra.data[idx].flags.is_null)
+  if (TRUE == ptrs->ra.data[idx].flags.is_null)
     xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
   if (parent >= 0)

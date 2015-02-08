@@ -218,15 +218,15 @@ typedef struct mr_ic_t mr_ic_t;
 
 TYPEDEF_STRUCT (mr_ic_hash_t,
 		(int, items_count),
+		(ssize_t, size, , "size of hash table"),
+		(bool, zero_key),
+		(char *, bucket_type),
 		(mr_hash_fn_t, hash_fn),
 		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
 		(void, index_free, (mr_ic_t * /* ic */)),
-		(char *, bucket_type),
 		/* resizable array for hash table sized by field 'size'
 		   mr_ptr_t typed by 'bucket_type' */
 		(mr_ptr_t *, hash_table, , "bucket_type", { "size" }, "char"),
-		(ssize_t, size, , "size of hash table"),
-		(bool, zero_key),
 		)
 
 TYPEDEF_STRUCT (mr_ic_t,
@@ -302,16 +302,11 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(void, free, (const char *, const char *, int, void *), "pointer on free() function"),
 		)
 
-TYPEDEF_ENUM (mr_bool_t, ATTRIBUTES ( , "boolean type"),
-	      (MR_FALSE, = 0),
-	      (MR_TRUE, = !0),
-	      )
-
 TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint32_t)))), "ponter descriptor flag bitfield values"),
-		BITFIELD (mr_bool_t, is_null, :1),
-		BITFIELD (mr_bool_t, is_referenced, :1),
-		BITFIELD (mr_bool_t, is_content_reference, :1),
-		BITFIELD (mr_bool_t, is_opaque_data, :1),
+		BITFIELD (bool, is_null, :1),
+		BITFIELD (bool, is_referenced, :1),
+		BITFIELD (bool, is_content_reference, :1),
+		BITFIELD (bool, is_opaque_data, :1),
 		)
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),

@@ -351,7 +351,7 @@ static mr_status_t
 mr_load_string (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra.data[idx];
-  if (ptrdes->flags.is_null || (ptrdes->ref_idx >= 0))
+  if ((TRUE == ptrdes->flags.is_null) || (ptrdes->ref_idx >= 0))
     *(char**)ptrdes->data = NULL;
   else
     {

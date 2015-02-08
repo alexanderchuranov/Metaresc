@@ -135,7 +135,7 @@ mr_stringify_uint (mr_ptrdes_t * ptrdes)
 char *
 mr_stringify_func (mr_ptrdes_t * ptrdes)
 {
-  if (MR_TRUE == ptrdes->flags.is_null)
+  if (TRUE == ptrdes->flags.is_null)
     return (MR_STRDUP (""));
   else
     {

@@ -435,10 +435,10 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->last_child = -1;
   ptrdes->prev = -1;
   ptrdes->next = -1;
-  ptrdes->flags.is_null = MR_FALSE;
-  ptrdes->flags.is_referenced = MR_FALSE;
-  ptrdes->flags.is_content_reference = MR_FALSE;
-  ptrdes->flags.is_opaque_data = MR_FALSE;
+  ptrdes->flags.is_null = FALSE;
+  ptrdes->flags.is_referenced = FALSE;
+  ptrdes->flags.is_content_reference = FALSE;
+  ptrdes->flags.is_opaque_data = FALSE;
   ptrdes->mr_value.value_type = MR_VT_UNKNOWN;
   ptrdes->res.ptr = NULL;
   ptrdes->res_type = NULL;
@@ -544,7 +544,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
     */
     if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0))
       {
-	if (ptrs.ra.data[i].flags.is_null)
+	if (TRUE == ptrs.ra.data[i].flags.is_null)
 	  {
 	    /* explicitly set to NULL pointers that were attributed as is_null */
 	    *(void**)ptrs.ra.data[i].data = NULL;
@@ -639,7 +639,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 
   /* now we should update pointers in a copy */
   for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i > 0; --i)
-    if ((ptrs.ra.data[i].idx >= 0) && !ptrs.ra.data[i].flags.is_null) /* skip NULL and invalid nodes */
+    if ((ptrs.ra.data[i].idx >= 0) && (TRUE != ptrs.ra.data[i].flags.is_null)) /* skip NULL and invalid nodes */
       switch (ptrs.ra.data[i].fd.mr_type_ext)
 	{
 	case MR_TYPE_EXT_NONE:

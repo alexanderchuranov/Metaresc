@@ -647,7 +647,7 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
     .data = &dummy_str,
     .ref_idx = -1,
-    .flags = { .is_null = MR_FALSE, .is_referenced = MR_FALSE, .is_content_reference = MR_FALSE, },
+    .flags = { .is_null = FALSE, .is_referenced = FALSE, .is_content_reference = FALSE, },
   };
 
   if (ptrs->ra.data[idx].first_child >= 0)
@@ -717,7 +717,7 @@ xdr_save_temp_string (XDR * xdrs, char ** str)
       mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
 	.data = str,
 	.ref_idx = -1,
-	.flags = { .is_null = MR_FALSE, .is_referenced = MR_FALSE, .is_content_reference = MR_FALSE, },
+	.flags = { .is_null = FALSE, .is_referenced = FALSE, .is_content_reference = FALSE, },
       };
       mr_ra_mr_ptrdes_t ptrs = { .ra = { .alloc_size = sizeof (ptrdes), .size = sizeof (ptrdes), .data = &ptrdes, }, }; /* temporary resizeable array */
       status = xdr_save_string (xdrs, 0, &ptrs);
@@ -950,7 +950,7 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (MR_FAILURE);
   
-  if (ptrs->ra.data[idx].flags.is_null)
+  if (TRUE == ptrs->ra.data[idx].flags.is_null)
     return (MR_SUCCESS);
       
   if (!xdr_ssize_t (xdrs, &ptrs->ra.data[idx].size))
@@ -982,7 +982,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra.data[idx].ref_idx))
     return (MR_FAILURE);
   
-  if (ptrs->ra.data[idx].flags.is_null)
+  if (TRUE == ptrs->ra.data[idx].flags.is_null)
     return (MR_SUCCESS);
       
   if (ptrs->ra.data[idx].ref_idx < 0)
@@ -1197,7 +1197,7 @@ has_opaque_rarrays (mr_ra_mr_ptrdes_t * ptrs)
   int i;
   bool has_opaque_rarrays_flag = FALSE;
   for (i = ptrs->ra.size / sizeof (ptrs->ra.data[0]) - 1; i >= 0; --i)
-    if (MR_TRUE == ptrs->ra.data[i].flags.is_opaque_data)
+    if (TRUE == ptrs->ra.data[i].flags.is_opaque_data)
       {
 	/* do not save sub-nodes */
 	ptrs->ra.data[i].first_child = ptrs->ra.data[i].last_child = -1;
