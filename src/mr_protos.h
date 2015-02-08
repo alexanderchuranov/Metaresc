@@ -208,12 +208,8 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      (MR_IC_HASH_NEXT, , "hash"),
 	      )
 
-TYPEDEF_STRUCT (key_mr_ptr_t,
-		(mr_ptr_t, mr_ptr, , "key_type"),
-		)
-
 TYPEDEF_STRUCT (mr_ic_rarray_t,
-		(key_mr_ptr_t *, ra, , "resizable array", { "size" }, "char"),
+		(mr_ptr_t *, ra, , "key_type", { "size" }, "char"),
 		(ssize_t, size, , "size of array"),
 		(ssize_t, alloc_size, , "allocated size for array"),
 		)

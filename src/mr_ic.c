@@ -91,8 +91,8 @@ mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   int i, count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
   for (i = 0; i < count; ++i)
-    if (0 == ic->compar_fn (key, ic->rarray.ra[i].mr_ptr, context))
-      return (&ic->rarray.ra[i].mr_ptr);
+    if (0 == ic->compar_fn (key, ic->rarray.ra[i], context))
+      return (&ic->rarray.ra[i]);
   return (NULL);
 }
 
@@ -101,7 +101,7 @@ mr_ic_none_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   int i, count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
   for (i = 0; i < count; ++i)
-    if (MR_SUCCESS != visit_fn (ic->rarray.ra[i].mr_ptr, context))
+    if (MR_SUCCESS != visit_fn (ic->rarray.ra[i], context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -234,7 +234,7 @@ mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
   int i;
   mr_ic_rbtree_free (ic);
   for (i = rarray->size / sizeof (rarray->ra[0]) - 1; i >= 0; --i)
-    if (NULL == mr_ic_rbtree_add (ic, rarray->ra[i].mr_ptr, context))
+    if (NULL == mr_ic_rbtree_add (ic, rarray->ra[i], context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -278,12 +278,12 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   for (i = ic->rarray.size / sizeof (ic->rarray.ra[0]) - 1; i > 0; --i)
     {
       ic->rarray.ra[i] = ic->rarray.ra[i - 1];
-      if (ic->compar_fn (key, ic->rarray.ra[i].mr_ptr, context) >= 0)
+      if (ic->compar_fn (key, ic->rarray.ra[i], context) >= 0)
 	break;
     }
-  ic->rarray.ra[i].mr_ptr = key;
+  ic->rarray.ra[i] = key;
 
-  return (&ic->rarray.ra[i].mr_ptr);
+  return (&ic->rarray.ra[i]);
 }
 
 mr_status_t
@@ -303,9 +303,9 @@ mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
   while (up != down)
     {
       int mid = (down + up) >> 1;
-      int diff = ic->compar_fn (key, ic->rarray.ra[mid].mr_ptr, context);
+      int diff = ic->compar_fn (key, ic->rarray.ra[mid], context);
       if (0 == diff)
-	return (&ic->rarray.ra[mid].mr_ptr);
+	return (&ic->rarray.ra[mid]);
       if (diff < 0)
 	up = mid;
       else
