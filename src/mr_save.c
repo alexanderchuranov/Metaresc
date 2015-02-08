@@ -800,12 +800,20 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 
       if (postpone)
 	{
+	  /* at first attempt to save pointer we need need to determine size of structure */
 	  if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID))
+	    /* for serializable types we take size of the type as default value */
 	    mr_save_data->ptrs.ra.data[idx].size = mr_save_data->ptrs.ra.data[idx].fd.size;
 	  else
+	    /* unserializable types will have zero size */
 	    mr_save_data->ptrs.ra.data[idx].size = 0;
-	  mr_pointer_get_size (&mr_save_data->ptrs.ra.data[idx].size, mr_save_data->ptrs.ra.data[idx].fd.meta,
-			       idx, &mr_save_data->ptrs);
+	  
+	  /* pointers might have assosiated field with the size for resizable arrays.
+	     name of the size field is stored in 'res' of field meta-data */
+	  if ((NULL != mr_save_data->ptrs.ra.data[idx].fd.res_type) &&
+	      (0 == strcmp ("char", mr_save_data->ptrs.ra.data[idx].fd.res_type)))
+	    mr_pointer_get_size (&mr_save_data->ptrs.ra.data[idx].size, mr_save_data->ptrs.ra.data[idx].fd.res.ptr,
+				 idx, &mr_save_data->ptrs);
 	}
       
       if (ref_idx >= 0)

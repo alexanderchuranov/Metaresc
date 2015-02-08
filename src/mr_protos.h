@@ -5,8 +5,8 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "char"),
-	       (void *, MR_OPAQUE_DATA, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "char"),
+	       (void *, ptr, , , { MR_SIZE_STR }, "char"),
+	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "char"),
 	       (long int, long_int_t),
 	       )
 
@@ -169,12 +169,13 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(int, width, , "bit-field width in bits"),
 		(int, shift, , "bit-field shift in first byte"),
 		(int, size, , "size of bitfield array"),
-		(uint8_t * , bitfield, , "size"), /* zero-struct with flagged bit-fields */
+		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes", { "size" }, "char"), 
 		)
 
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
 		(int, size, , "size of args array"),
-		(struct mr_fd_t *, args, , "size"), /* function arguments descriptors */
+		(struct mr_fd_t *, args, , "function arguments descriptors saved as resizable array of field descriptors",
+		{ "size" }, "char"), 
 		)
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
@@ -212,7 +213,7 @@ TYPEDEF_STRUCT (key_mr_ptr_t,
 		)
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,
-		(key_mr_ptr_t *, ra, , "size", { "alloc_size" }, "char"),
+		(key_mr_ptr_t *, ra, , "resizable array", { "size" }, "char"),
 		(ssize_t, size, , "size of array"),
 		(ssize_t, alloc_size, , "allocated size for array"),
 		)
@@ -229,7 +230,7 @@ TYPEDEF_STRUCT (mr_ic_hash_t,
 		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
 		(void, index_free, (mr_ic_t * /* ic */)),
 		(char *, bucket_type),
-		(bucket_mr_ptr_t *, hash_table, , "size"),
+		(bucket_mr_ptr_t *, hash_table, , "resizable array for hash table", { "size" }, "char"),
 		(ssize_t, size, , "size of hash table"),
 		(bool, zero_key),
 		)
