@@ -51,9 +51,13 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
 }
 
 static mr_ic_rarray_t mr_ic_rarray = {
-  .ra = (mr_ptr_t[]) { { .long_int_t = 1, }, { .long_int_t = 2, }, { .long_int_t = 3, }, },
-  .MR_SIZE = 3 * sizeof (mr_ic_rarray.ra[0]),
-  .MR_ALLOC_SIZE = -1,
+  .ra = (key_mr_ptr_t[]) {
+    { .mr_ptr = { .long_int_t = 1, }, },
+    { .mr_ptr = { .long_int_t = 2, }, },
+    { .mr_ptr = { .long_int_t = 3, }, },
+  },
+  .size = 3 * sizeof (mr_ic_rarray.ra[0]),
+  .alloc_size = -1,
 };
 
 static int ic_empty_cb (mr_ic_t * ic, char * mr_ic_type)
@@ -74,8 +78,8 @@ static int ic_index_cb (mr_ic_t * ic, char * mr_ic_type)
   ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   
-  for (i = 0; i < mr_ic_rarray.MR_SIZE / sizeof (mr_ic_rarray.ra[0]); ++i)
-    sum_ += mr_ic_rarray.ra[i].long_int_t;
+  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
+    sum_ += mr_ic_rarray.ra[i].mr_ptr.long_int_t;
   return (sum_ == sum);
 }
 
@@ -103,8 +107,8 @@ static int ic_add_existing_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
 
-  for (i = 0; i < mr_ic_rarray.MR_SIZE / sizeof (mr_ic_rarray.ra[0]); ++i)
-    sum_ += mr_ic_rarray.ra[i].long_int_t;
+  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
+    sum_ += mr_ic_rarray.ra[i].mr_ptr.long_int_t;
   return (sum_ == sum);
 }
 
@@ -121,8 +125,8 @@ static int ic_add_non_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
 
-  for (i = 0; i < mr_ic_rarray.MR_SIZE / sizeof (mr_ic_rarray.ra[0]); ++i)
-    sum_ += mr_ic_rarray.ra[i].long_int_t;
+  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
+    sum_ += mr_ic_rarray.ra[i].mr_ptr.long_int_t;
   return (sum_ == sum);
 }
 
@@ -147,11 +151,11 @@ static int ic_del_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   int i;
 
   ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
-  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, mr_ic_rarray.ra[0], NULL), "del failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, mr_ic_rarray.ra[0].mr_ptr, NULL), "del failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   
-  for (i = 1; i < mr_ic_rarray.MR_SIZE / sizeof (mr_ic_rarray.ra[0]); ++i)
-    sum_ += mr_ic_rarray.ra[i].long_int_t;
+  for (i = 1; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
+    sum_ += mr_ic_rarray.ra[i].mr_ptr.long_int_t;
   return (sum_ == sum);
 }
 
@@ -163,11 +167,11 @@ static int ic_find_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
 
   ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
   
-  for (i = 0; i < mr_ic_rarray.MR_SIZE / sizeof (mr_ic_rarray.ra[0]); ++i)
+  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
     {
-      mr_ptr_t * find = mr_ic_find (ic, mr_ic_rarray.ra[i], NULL);
+      mr_ptr_t * find = mr_ic_find (ic, mr_ic_rarray.ra[i].mr_ptr, NULL);
       ck_assert_msg (NULL != find, "Failed to find element in indexed data for mr_ic_type_t %s", mr_ic_type);
-      ck_assert_msg (mr_ic_rarray.ra[i].long_int_t == find->long_int_t,
+      ck_assert_msg (mr_ic_rarray.ra[i].mr_ptr.long_int_t == find->long_int_t,
 		     "Found wrong element in indexed data for mr_ic_type_t %s", mr_ic_type);
     }
   return (!0);

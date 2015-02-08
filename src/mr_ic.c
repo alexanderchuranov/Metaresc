@@ -20,29 +20,29 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (find != NULL)
     return (find);
 
-  if (ic->rarray.MR_ALLOC_SIZE < 0)
+  if (ic->rarray.alloc_size < 0)
     {
       void * ra;
-      if (ic->rarray.MR_SIZE < 0)
+      if (ic->rarray.size < 0)
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, ic->rarray.MR_SIZE, ic->rarray.MR_ALLOC_SIZE);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, ic->rarray.size, ic->rarray.alloc_size);
 	  return (NULL);
 	}
       
-      ic->rarray.MR_ALLOC_SIZE = ic->rarray.MR_SIZE + sizeof (ic->rarray.ra[0]);
+      ic->rarray.alloc_size = ic->rarray.size + sizeof (ic->rarray.ra[0]);
 
-      ra = MR_MALLOC (ic->rarray.MR_ALLOC_SIZE);
+      ra = MR_MALLOC (ic->rarray.alloc_size);
       if (NULL == ra)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (NULL);
 	}
 
-      memcpy (ra, ic->rarray.ra, ic->rarray.MR_SIZE);
+      memcpy (ra, ic->rarray.ra, ic->rarray.size);
       ic->rarray.ra = ra;
     }
 
-  add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.MR_SIZE, &ic->rarray.MR_ALLOC_SIZE, sizeof (ic->rarray.ra[0]));
+  add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, sizeof (ic->rarray.ra[0]));
 
   if (NULL == add)
     return (NULL);
@@ -61,15 +61,15 @@ mr_ic_none_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
   
   offset = (char*)find - (char*)ic->rarray.ra;
   
-  if (ic->rarray.MR_ALLOC_SIZE > 0)
+  if (ic->rarray.alloc_size > 0)
     {
-      ic->rarray.MR_SIZE -= sizeof (ic->rarray.ra[0]);
-      memmove (find, &find[1], ic->rarray.MR_SIZE - offset);
+      ic->rarray.size -= sizeof (ic->rarray.ra[0]);
+      memmove (find, &find[1], ic->rarray.size - offset);
     }
   else
     {
       void * ra;
-      typeof (ic->rarray.MR_ALLOC_SIZE) alloc_size = ic->rarray.MR_SIZE - sizeof (ic->rarray.ra[0]);
+      typeof (ic->rarray.alloc_size) alloc_size = ic->rarray.size - sizeof (ic->rarray.ra[0]);
 
       ra = MR_MALLOC (alloc_size);
       if (NULL == ra)
@@ -78,9 +78,9 @@ mr_ic_none_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 	  return (MR_FAILURE);
 	}
 
-      ic->rarray.MR_ALLOC_SIZE = ic->rarray.MR_SIZE = alloc_size;
+      ic->rarray.alloc_size = ic->rarray.size = alloc_size;
       memcpy (ra, ic->rarray.ra, offset);
-      memcpy ((char*)ra + offset, &find[1], ic->rarray.MR_SIZE - offset);
+      memcpy ((char*)ra + offset, &find[1], ic->rarray.size - offset);
       ic->rarray.ra = ra;
     }
   return (MR_SUCCESS);
@@ -89,19 +89,19 @@ mr_ic_none_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 mr_ptr_t *
 mr_ic_none_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  int i, count = ic->rarray.MR_SIZE / sizeof (ic->rarray.ra[0]);
+  int i, count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
   for (i = 0; i < count; ++i)
-    if (0 == ic->compar_fn (key, ic->rarray.ra[i], context))
-      return (&ic->rarray.ra[i]);
+    if (0 == ic->compar_fn (key, ic->rarray.ra[i].mr_ptr, context))
+      return (&ic->rarray.ra[i].mr_ptr);
   return (NULL);
 }
 
 mr_status_t
 mr_ic_none_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
-  int i, count = ic->rarray.MR_SIZE / sizeof (ic->rarray.ra[0]);
+  int i, count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
   for (i = 0; i < count; ++i)
-    if (MR_SUCCESS != visit_fn (ic->rarray.ra[i], context))
+    if (MR_SUCCESS != visit_fn (ic->rarray.ra[i].mr_ptr, context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -118,16 +118,16 @@ mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 void
 mr_ic_none_reset (mr_ic_t * ic)
 {
-  ic->rarray.MR_SIZE = 0;
+  ic->rarray.size = 0;
 }
 
 void
 mr_ic_none_free (mr_ic_t * ic)
 {
-  if ((ic->rarray.MR_ALLOC_SIZE >= 0) && (NULL != ic->rarray.ra))
+  if ((ic->rarray.alloc_size >= 0) && (NULL != ic->rarray.ra))
     MR_FREE (ic->rarray.ra);
   ic->rarray.ra = NULL;
-  ic->rarray.MR_SIZE = ic->rarray.MR_ALLOC_SIZE = 0;
+  ic->rarray.size = ic->rarray.alloc_size = 0;
 }
 
 mr_status_t
@@ -147,7 +147,7 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
   ic->reset = mr_ic_none_reset;
   ic->free = mr_ic_none_free;
   ic->rarray.ra = NULL;
-  ic->rarray.MR_SIZE = ic->rarray.MR_ALLOC_SIZE = 0;
+  ic->rarray.size = ic->rarray.alloc_size = 0;
   return (MR_SUCCESS);
 }
 
@@ -233,8 +233,8 @@ mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
   int i;
   mr_ic_rbtree_free (ic);
-  for (i = rarray->MR_SIZE / sizeof (rarray->ra[0]) - 1; i >= 0; --i)
-    if (NULL == mr_ic_rbtree_add (ic, rarray->ra[i], context))
+  for (i = rarray->size / sizeof (rarray->ra[0]) - 1; i >= 0; --i)
+    if (NULL == mr_ic_rbtree_add (ic, rarray->ra[i].mr_ptr, context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -271,19 +271,19 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (find != NULL)
     return (find);
 
-  add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.MR_SIZE, &ic->rarray.MR_ALLOC_SIZE, sizeof (ic->rarray.ra[0]));
+  add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, sizeof (ic->rarray.ra[0]));
   if (NULL == add)
     return (NULL);
 
-  for (i = ic->rarray.MR_SIZE / sizeof (ic->rarray.ra[0]) - 1; i > 0; --i)
+  for (i = ic->rarray.size / sizeof (ic->rarray.ra[0]) - 1; i > 0; --i)
     {
       ic->rarray.ra[i] = ic->rarray.ra[i - 1];
-      if (ic->compar_fn (key, ic->rarray.ra[i], context) >= 0)
+      if (ic->compar_fn (key, ic->rarray.ra[i].mr_ptr, context) >= 0)
 	break;
     }
-  ic->rarray.ra[i] = key;
+  ic->rarray.ra[i].mr_ptr = key;
 
-  return (&ic->rarray.ra[i]);
+  return (&ic->rarray.ra[i].mr_ptr);
 }
 
 mr_status_t
@@ -298,14 +298,14 @@ mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
   int up, down;
 
   down = 0;
-  up = ic->rarray.MR_SIZE / sizeof (ic->rarray.ra[0]);
+  up = ic->rarray.size / sizeof (ic->rarray.ra[0]);
 
   while (up != down)
     {
       int mid = (down + up) >> 1;
-      int diff = ic->compar_fn (key, ic->rarray.ra[mid], context);
+      int diff = ic->compar_fn (key, ic->rarray.ra[mid].mr_ptr, context);
       if (0 == diff)
-	return (&ic->rarray.ra[mid]);
+	return (&ic->rarray.ra[mid].mr_ptr);
       if (diff < 0)
 	up = mid;
       else
@@ -334,16 +334,16 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * co
 
   mr_ic_sorted_array_free (ic);
 
-  ic->rarray.ra = MR_MALLOC (rarray->MR_SIZE);
+  ic->rarray.ra = MR_MALLOC (rarray->size);
   if (NULL == ic->rarray.ra)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
 
-  ic->rarray.MR_SIZE = ic->rarray.MR_ALLOC_SIZE = rarray->MR_SIZE;
-  memcpy (ic->rarray.ra, rarray->ra, rarray->MR_SIZE);
-  hsort (ic->rarray.ra, ic->rarray.MR_SIZE / sizeof (ic->rarray.ra[0]), sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, &mr_sort_key);
+  ic->rarray.size = ic->rarray.alloc_size = rarray->size;
+  memcpy (ic->rarray.ra, rarray->ra, rarray->size);
+  hsort (ic->rarray.ra, ic->rarray.size / sizeof (ic->rarray.ra[0]), sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, &mr_sort_key);
   return (MR_SUCCESS);
 }
 
@@ -366,7 +366,7 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
     return (MR_FAILURE);
 
   ic->rarray.ra = NULL;
-  ic->rarray.MR_SIZE = ic->rarray.MR_ALLOC_SIZE = 0;
+  ic->rarray.size = ic->rarray.alloc_size = 0;
 
   ic->ic_type = MR_IC_SORTED_ARRAY;
   ic->key_type = key_type;
@@ -396,14 +396,13 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 void
 mr_ic_hash_reset (mr_ic_t * ic)
 {
-  if (NULL == ic->hash.index.data)
+  if (NULL == ic->hash.hash_table)
     return;
 
   ic->hash.index_free (ic);
   
-  memset (ic->hash.index.data, 0, ic->hash.index.size);
-  ic->hash.index.res.ptr = NULL;
-  ic->hash.index.res_type = NULL;
+  memset (ic->hash.hash_table, 0, ic->hash.size);
+  ic->hash.zero_key = FALSE;
   ic->hash.items_count = 0;
 }
 
@@ -411,16 +410,18 @@ void
 mr_ic_hash_free (mr_ic_t * ic)
 {
   ic->hash.index_free (ic);
-  if (NULL != ic->hash.index.data)
-    MR_FREE (ic->hash.index.data);
-  memset (&ic->hash.index, 0, sizeof (ic->hash.index));
+  if (NULL != ic->hash.hash_table)
+    MR_FREE (ic->hash.hash_table);
+  ic->hash.hash_table = NULL;
+  ic->hash.size = 0;
+  ic->hash.zero_key = FALSE;
 }
 
 static int
 mr_ic_hash_get_backet (mr_ic_hash_t * hash, mr_ptr_t key, const void * context)
 {
   mr_hash_value_t hash_value = hash->hash_fn (key, context);
-  int hash_size = hash->index.size / sizeof (hash->index.data[0]);
+  int hash_size = hash->size / sizeof (hash->hash_table[0]);
   if (hash_size <= 0)
     return (-1);
   return (hash_value % hash_size);
@@ -463,13 +464,15 @@ mr_ic_hash_index_inner (mr_ic_t * src_ic, mr_ic_t * dst_ic, int items_count, con
   if (0 == dst_ic->hash.items_count)
     return (MR_SUCCESS);
 
-  dst_ic->hash.index.alloc_size = dst_ic->hash.index.size =
-    ((int)(dst_ic->hash.items_count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (dst_ic->hash.index.data[0]);
-  dst_ic->hash.index.data = MR_MALLOC (dst_ic->hash.index.alloc_size);
-  if (NULL == dst_ic->hash.index.data)
-    return (MR_FAILURE);
+  dst_ic->hash.size = ((int)(dst_ic->hash.items_count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (dst_ic->hash.hash_table[0]);
+  dst_ic->hash.hash_table = MR_MALLOC (dst_ic->hash.size);
+  if (NULL == dst_ic->hash.hash_table)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (MR_FAILURE);
+    }
 
-  memset (dst_ic->hash.index.data, 0, dst_ic->hash.index.alloc_size);
+  memset (dst_ic->hash.hash_table, 0, dst_ic->hash.size);
 
   dst_ic->hash.items_count = 0;
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, &mr_ic_hash_index_context));
@@ -486,7 +489,7 @@ mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 
   mr_ic_none_new (&ic_none, ic->compar_fn, ic->key_type);
   mr_ic_none_index (&ic_none, rarray, context);
-  status = mr_ic_hash_index_inner (&ic_none, ic, rarray->MR_SIZE / sizeof (rarray->ra[0]), context);
+  status = mr_ic_hash_index_inner (&ic_none, ic, rarray->size / sizeof (rarray->ra[0]), context);
   mr_ic_free (&ic_none);
   return (status);
 }
@@ -498,16 +501,17 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (find != NULL)
     return (find);
 
-  if (ic->hash.index.size / sizeof (ic->hash.index.data[0]) <= ++ic->hash.items_count * MR_HASH_TABLE_SIZE_MULT)
+  if (ic->hash.size / sizeof (ic->hash.hash_table[0]) <= (ic->hash.items_count + 1) * MR_HASH_TABLE_SIZE_MULT)
     {
-      mr_ic_t dst_ic = *ic;
-      memset (&dst_ic.hash.index, 0, sizeof (dst_ic.hash.index));
+      mr_ic_t src_ic = *ic;
+      ic->hash.hash_table = NULL;
+      ic->hash.size = 0;
+      ic->hash.zero_key = FALSE;
 
-      if (MR_SUCCESS != mr_ic_hash_index_inner (ic, &dst_ic, ic->hash.items_count, context))
+      if (MR_SUCCESS != mr_ic_hash_index_inner (&src_ic, ic, ic->hash.items_count + 1, context))
 	return (NULL);
       
-      mr_ic_free (ic);
-      ic->hash = dst_ic.hash;
+      mr_ic_free (&src_ic);
     }
   return (mr_ic_hash_add_inner (ic, key, context));
 }
@@ -530,8 +534,8 @@ mr_ic_hash_tree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
   if (0 != setjmp (mr_ic_rbtree_foreach_context.jmp_buf))
     return (MR_FAILURE);
 
-  for (i = hash->index.size / sizeof (hash->index.data[0]) - 1; i >= 0; --i)
-    mr_twalk (hash->index.data[i].ptr, visit_node, &mr_ic_rbtree_foreach_context);
+  for (i = hash->size / sizeof (hash->hash_table[0]) - 1; i >= 0; --i)
+    mr_twalk (hash->hash_table[i].mr_ptr.ptr, visit_node, &mr_ic_rbtree_foreach_context);
   return (MR_SUCCESS);
 }
 
@@ -547,7 +551,7 @@ mr_ic_hash_tree_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   --hash->items_count;
   bucket = mr_ic_hash_get_backet (hash, key, context);
-  mr_tdelete (key, (mr_red_black_tree_node_t**)&hash->index.data[bucket].ptr, ic->compar_fn, context);
+  mr_tdelete (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].mr_ptr.ptr, ic->compar_fn, context);
   return (MR_SUCCESS);
 }
 
@@ -558,7 +562,7 @@ mr_ic_hash_tree_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
   int bucket = mr_ic_hash_get_backet (hash, key, context);
   if (bucket < 0)
     return (NULL);
-  return (mr_tfind (key, (mr_red_black_tree_node_t**)&hash->index.data[bucket].ptr, ic->compar_fn, context));
+  return (mr_tfind (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].mr_ptr.ptr, ic->compar_fn, context));
 }
 
 void
@@ -566,13 +570,13 @@ mr_ic_hash_tree_index_free (mr_ic_t * ic)
 {
   mr_ic_hash_t * hash = &ic->hash;
   
-  if (NULL != hash->index.data)
+  if (NULL != hash->hash_table)
     {
       int i;
-      for (i = hash->index.size / sizeof (hash->index.data[0]) - 1; i >= 0; --i)
+      for (i = hash->size / sizeof (hash->hash_table[0]) - 1; i >= 0; --i)
 	{
-	  mr_tdestroy (hash->index.data[i].ptr, dummy_free_fn, NULL);
-	  hash->index.data[i].ptr = NULL;
+	  mr_tdestroy (hash->hash_table[i].mr_ptr.ptr, dummy_free_fn, NULL);
+	  hash->hash_table[i].mr_ptr.ptr = NULL;
 	}
     }
 }
@@ -581,7 +585,7 @@ mr_ptr_t *
 mr_ic_hash_tree_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
 {
   mr_ic_hash_t * hash = &ic->hash;
-  mr_ptr_t * find = mr_tsearch (key, (mr_red_black_tree_node_t**)&hash->index.data[bucket].ptr, ic->compar_fn, context);
+  mr_ptr_t * find = mr_tsearch (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].mr_ptr.ptr, ic->compar_fn, context);
   if (NULL == find)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
   return (find);
@@ -616,6 +620,8 @@ mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
 
 /* ----------------------- MR_IC_HASH_NEXT ----------------------- */
 
+static mr_ptr_t zero = { .long_int_t = 0, };
+
 void
 mr_ic_hash_next_index_free (mr_ic_t * ic)
 {
@@ -625,20 +631,23 @@ mr_ptr_t *
 mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
 {
   mr_ic_hash_t * hash = &ic->hash;
-  int i, count = hash->index.size / sizeof (hash->index.data[0]);
+  int i, count = hash->size / sizeof (hash->hash_table[0]);
+
+  if (bucket < 0)
+    return (NULL);
   
   if (0 == key.long_int_t)
     {
-      hash->index.res_type = "has zero";
-      return (&hash->index.res);
+      hash->zero_key = TRUE;
+      return (&zero);
     }
 
   for (i = bucket; ;)
     {
-      if (0 == hash->index.data[i].long_int_t)
+      if (0 == hash->hash_table[i].mr_ptr.long_int_t)
 	{
-	  hash->index.data[i] = key;
-	  return (&hash->index.data[i]);
+	  hash->hash_table[i].mr_ptr = key;
+	  return (&hash->hash_table[i].mr_ptr);
 	}
       if (++i >= count)
 	i = 0;
@@ -660,21 +669,21 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   --hash->items_count;
   if (0 == key.long_int_t)
-    hash->index.res_type = NULL;
+    hash->zero_key = FALSE;
   else
     {
-      int i, count = hash->index.size / sizeof (hash->index.data[0]);
+      int i, count = hash->size / sizeof (hash->hash_table[0]);
       
       find->long_int_t = 0;
-      for (i = find - hash->index.data; ;)
+      for (i = (bucket_mr_ptr_t*)find - hash->hash_table; ;) /* need to re-index all elements in sequential block after deleted element */
 	{
 	  mr_ptr_t mr_ptr;
 	  if (++i >= count)
 	    i = 0;
-	  if (0 == hash->index.data[i].long_int_t)
+	  if (0 == hash->hash_table[i].mr_ptr.long_int_t)
 	    break;
-	  mr_ptr = hash->index.data[i];
-	  hash->index.data[i].long_int_t = 0;
+	  mr_ptr = hash->hash_table[i].mr_ptr;
+	  hash->hash_table[i].mr_ptr.long_int_t = 0;
 	  mr_ic_hash_next_index_add (ic, mr_ptr, context, mr_ic_hash_get_backet (hash, mr_ptr, context));
 	}
     }
@@ -686,10 +695,10 @@ mr_ptr_t *
 mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
   mr_ic_hash_t * hash = &ic->hash;
-  int i, bucket, count = hash->index.size / sizeof (hash->index.data[0]);
+  int i, bucket, count = hash->size / sizeof (hash->hash_table[0]);
   
   if (0 == key.long_int_t)
-    return ((hash->index.res_type != NULL) ? &hash->index.res : NULL);
+    return (hash->zero_key ? &zero : NULL);
 
   bucket = mr_ic_hash_get_backet (hash, key, context);
   if (bucket < 0)
@@ -697,10 +706,10 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   for (i = bucket; ;)
     {
-      if (0 == hash->index.data[i].long_int_t)
+      if (0 == hash->hash_table[i].mr_ptr.long_int_t)
 	return (NULL);
-      if (0 == ic->compar_fn (key, hash->index.data[i], context))
-	return (&hash->index.data[i]);
+      if (0 == ic->compar_fn (key, hash->hash_table[i].mr_ptr, context))
+	return (&hash->hash_table[i].mr_ptr);
       if (++i >= count)
 	i = 0;
       if (i == bucket)
@@ -712,19 +721,15 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 mr_status_t
 mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
-  mr_ic_hash_t * hash = &ic->hash;
   int i;
 
-  if (NULL == hash)
-    return (MR_FAILURE);
-  
-  if (hash->index.res_type != NULL)
-    if (MR_SUCCESS != visit_fn (hash->index.res, context))
+  if (ic->hash.zero_key)
+    if (MR_SUCCESS != visit_fn (&zero, context))
       return (MR_FAILURE);
 
-  for (i = hash->index.size / sizeof (hash->index.data[0]) - 1; i >= 0; --i)
-    if (0 != hash->index.data[i].long_int_t)
-      if (MR_SUCCESS != visit_fn (hash->index.data[i], context))
+  for (i = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1; i >= 0; --i)
+    if (0 != ic->hash.hash_table[i].mr_ptr.long_int_t)
+      if (MR_SUCCESS != visit_fn (ic->hash.hash_table[i].mr_ptr, context))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -752,6 +757,9 @@ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
   ic->hash.index_add = mr_ic_hash_next_index_add;
   ic->hash.index_free = mr_ic_hash_next_index_free;
   ic->hash.bucket_type = key_type;
+  ic->hash.hash_table = NULL;
+  ic->hash.size = 0;
+  ic->hash.zero_key = FALSE;
 
   return (MR_SUCCESS);
 }

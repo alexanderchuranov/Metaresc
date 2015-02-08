@@ -7,7 +7,7 @@
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
 	       (void *, ptr, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
 	       (void *, MR_OPAQUE_DATA, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
-	       (long, long_int_t, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
+	       (long int, long_int_t),
 	       )
 
 TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
@@ -207,13 +207,21 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      (MR_IC_HASH_NEXT, , "hash"),
 	      )
 
+TYPEDEF_STRUCT (key_mr_ptr_t,
+		(mr_ptr_t, mr_ptr, , "key_type"),
+		)
+
 TYPEDEF_STRUCT (mr_ic_rarray_t,
-		(mr_ptr_t *, ra, , "key_type"),
-		(ssize_t, MR_SIZE, , "size of array"),
-		(ssize_t, MR_ALLOC_SIZE, , "allocated size for array"),
+		(key_mr_ptr_t *, ra, , "size", { "alloc_size" }, "string_t"),
+		(ssize_t, size, , "size of array"),
+		(ssize_t, alloc_size, , "allocated size for array"),
 		)
 
 typedef struct mr_ic_t mr_ic_t;
+
+TYPEDEF_STRUCT (bucket_mr_ptr_t,
+		(mr_ptr_t, mr_ptr, , "bucket_type"),
+		)
 
 TYPEDEF_STRUCT (mr_ic_hash_t,
 		(int, items_count),
@@ -221,7 +229,9 @@ TYPEDEF_STRUCT (mr_ic_hash_t,
 		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
 		(void, index_free, (mr_ic_t * /* ic */)),
 		(char *, bucket_type),
-		RARRAY (mr_ptr_t, index, "bucket_type"),
+		(bucket_mr_ptr_t *, hash_table, , "size"),
+		(ssize_t, size, , "size of hash table"),
+		(bool, zero_key),
 		)
 
 TYPEDEF_STRUCT (mr_ic_t,

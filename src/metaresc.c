@@ -1441,7 +1441,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
     return (MR_FAILURE);
 
-  memset (&tdp->lookup_by_value, 0, sizeof (tdp->lookup_by_value));
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_add_enum (tdp);
 
