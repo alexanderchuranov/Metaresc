@@ -5,12 +5,12 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
-	       (void *, MR_OPAQUE_DATA, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "string_t"),
+	       (void *, ptr, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "char"),
+	       (void *, MR_OPAQUE_DATA, , MR_SIZE_STR, { MR_ALLOC_SIZE_STR }, "char"),
 	       (long int, long_int_t),
 	       )
 
-TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_CHAR_ARRAY))
+TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_STRING))
 
 TYPEDEF_ENUM (mr_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      (MR_LL_ALL, = 0),
@@ -212,7 +212,7 @@ TYPEDEF_STRUCT (key_mr_ptr_t,
 		)
 
 TYPEDEF_STRUCT (mr_ic_rarray_t,
-		(key_mr_ptr_t *, ra, , "size", { "alloc_size" }, "string_t"),
+		(key_mr_ptr_t *, ra, , "size", { "alloc_size" }, "char"),
 		(ssize_t, size, , "size of array"),
 		(ssize_t, alloc_size, , "allocated size for array"),
 		)
@@ -274,7 +274,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		  or
 		  NONE (void *, ptr, , "user extended info", { (ext_info_t[]){ {.field = XXX} } }, "ext_info_t")
 		  or
-		  NONE (void *, ptr, , "user extended info", { "one more extra string" }, "string_t")
+		  NONE (void *, ptr, , "user extended info", { "one more extra string" }, "char")
 		*/
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),

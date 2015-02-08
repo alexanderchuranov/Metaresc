@@ -9,7 +9,7 @@ TYPEDEF_ENUM (mr_enum_t,
 	      (TWO, = 2 /* set value explicitly */),
 	      (THREE, = 3, "comment on enum value"),
 	      (FOUR, /* value */, /* comment */, { "metadata as a void pointer" }),
-	      (FIVE, /* value */, /* comment */, { "metadata as a void pointer" }, "string_t" /* type of metadata void pointer as string */),
+	      (FIVE, /* value */, /* comment */, { "metadata as a void pointer" }, "char" /* type of metadata void pointer as string */),
 	      (SIX, /* value */, /* comment */, { (mr_enum_t[]){ 2 } }, "mr_enum_t" /* even enum itself */),
 	      SEVEN /* trailing comma is optional */
 	      )

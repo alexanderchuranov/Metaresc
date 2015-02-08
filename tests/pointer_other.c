@@ -117,7 +117,7 @@ MR_START_TEST (resolve_typed_forward_ref, "test of forvard reference resolution"
 } END_TEST
 
 TYPEDEF_STRUCT (resizable_array_t,
-		(_enum_t *, data, , "size", { "alloc_size" }, "string_t"),
+		(_enum_t *, data, , "size", { "alloc_size" }, "char"),
 		int size,
 		int alloc_size,
 		);

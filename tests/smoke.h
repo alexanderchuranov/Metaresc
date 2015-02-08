@@ -72,7 +72,7 @@
     int i;								\
     array_t array, array_;						\
     mr_rarray_t ra;							\
-    typed_list_t list_, typed_list = { .ptr_type = "string_t", };	\
+    typed_list_t list_, typed_list = { .ptr_type = "char", };		\
     struct tms start, end;						\
     times (&start);							\
     memset (&array, 0, sizeof (array));					\
@@ -95,7 +95,7 @@
 		     "Deserialization for method " #METHOD " failed.");	\
       MR_FREE_RECURSIVELY (typed_list_t, &list_);			\
       MR_FREE (ra.data);						\
-      array.ra.res_type = "string_t";					\
+      array.ra.res_type = "char";					\
       ra = MR_SAVE_ ## METHOD ## _RA (array_t, &array);			\
 	ck_assert_msg ((ra.size > 0) && (ra.data != NULL),		\
 		       "Serialization for method " #METHOD " failed.");	\

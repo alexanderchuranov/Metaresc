@@ -752,7 +752,10 @@ static void
 mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 {
   char ** data = mr_save_data->ptrs.ra.data[idx].data;
-  int count = mr_save_data->ptrs.ra.data[idx].size / mr_save_data->ptrs.ra.data[idx].fd.size;
+  int count = 1;
+
+  if (mr_save_data->ptrs.ra.data[idx].fd.size != 0)
+    count = mr_save_data->ptrs.ra.data[idx].size / mr_save_data->ptrs.ra.data[idx].fd.size;
   
   /* add each array element to this node */
   if (count <= 0)

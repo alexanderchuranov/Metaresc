@@ -28,11 +28,14 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
-/* MR_IC_NONE:        ( / 319424 11582.0) ratio: 27.57 */
-/* MR_IC_RBTREE:       ( / 84675 15457.0) ratio: 5.47  */
-/* MR_IC_SORTED_ARRAY: ( / 67162 13329.0) ratio: 5.03  */
-/* MR_IC_HASH_NEXT:    ( / 17783 14921.0) ratio: 1.19  */
-/* MR_IC_HASH_TREE:    ( / 22681 20048.0) ratio: 1.13  */
+/* meta data for type 'char' - required as a descriminator for mr_ptr union */
+MR_TYPEDEF_DESC (char, MR_TYPE_CHAR_ARRAY) MR_TYPEDEF_END_DESC (char, , .size = 0);
+
+/* MR_IC_NONE:        ( / 363893 11767.0) ratio: 30.92 */
+/* MR_IC_RBTREE:       ( / 82415 15641.0) ratio: 5.26  */
+/* MR_IC_SORTED_ARRAY: ( / 80284 15272.0) ratio: 5.25  */
+/* MR_IC_HASH_NEXT:    ( / 39304 30176.0) ratio: 1.30  */
+/* MR_IC_HASH_TREE:    ( / 38277 23013.0) ratio: 1.66  */
 
 #define MR_IC_STATIC_DEFAULT MR_IC_HASH_NEXT
 
@@ -538,92 +541,95 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
     /*
       skip nodes that are not in final save graph (ptrs.ra.data[i].idx >= 0)
       nodes are references on other nodes (ptrs.ra.data[i].ref_idx < 0)
-      or NULL pointers !ptrs.ra.data[i].flags.is_null
     */
-    if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0) && !ptrs.ra.data[i].flags.is_null)
-      switch (ptrs.ra.data[i].fd.mr_type_ext)
-	{
-	case MR_TYPE_EXT_NONE:
-	  if (MR_TYPE_STRING != ptrs.ra.data[i].fd.mr_type)
-	    break;
-	  /* calc string length for further malloc */
-	  ptrs.ra.data[i].fd.size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
-	  /* string node should be followed with unlinked char array node */
-	  if ((ptrs.ra.data[i].first_child >= 0) ||
-	      (ptrs.ra.data[i + 1].parent != i) ||
-	      (*(void**)ptrs.ra.data[i].data != ptrs.ra.data[i + 1].data))
-	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA);
-	      return (MR_FAILURE);
-	    }
-	  /* link it back. we need to save address of allocated memory into this node */
-	  ptrs.ra.data[i].first_child = ptrs.ra.data[i].last_child = i + 1;
-
-	case MR_TYPE_EXT_POINTER:
-	case MR_TYPE_EXT_RARRAY_DATA:
+    if ((ptrs.ra.data[i].idx >= 0) && (ptrs.ra.data[i].ref_idx < 0))
+      {
+	if (ptrs.ra.data[i].flags.is_null)
 	  {
-	    int idx;
-	    char * copy;
-	    ssize_t size, alloc_size;
-
-	    size = alloc_size = ptrs.ra.data[i].fd.size; /* default allocation size */
-	    
-	    if (ptrs.ra.data[i].first_child < 0)
-	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			    ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name.str);
-		return (MR_FAILURE);
-	      }
-	    /* rarrays require allocation of memory chunk according alloc_size field */
-	    if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)
-	      {
-		mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)];
-		size = ra->size;
-		/* statically allocated rarrays has negative alloc_size */
-		if (alloc_size < ra->alloc_size)
-		  alloc_size = ra->alloc_size;
-	      }
-	    
-	    if (MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext)
-	      {
-		if ((ptrs.ra.data[i].fd.res_type != NULL) &&
-		    (0 == strcmp ("string_t", ptrs.ra.data[i].fd.res_type)))
-		  mr_pointer_get_size (&alloc_size, ptrs.ra.data[i].fd.res.ptr, i, &ptrs);
-
-		size = ptrs.ra.data[i].size;
-	      }
-	    if ((MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext) && (MR_TYPE_CHAR_ARRAY == ptrs.ra.data[i].fd.mr_type)
-		&& (0 == strcmp ("string_t", ptrs.ra.data[i].fd.type)))
-	      size = alloc_size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
-	    
-	    if (alloc_size < size)
-	      alloc_size = size;
-
-	    if ((size < 0) || (alloc_size < 0))
-	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size, alloc_size);
-		return (MR_FAILURE);
-	      }
-	    
-	    copy = MR_MALLOC (alloc_size);
-	    if (NULL == copy)
-	      {
-		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-		return (MR_FAILURE);
-	      }
-
-	    /* copy data from source */
-	    memcpy (copy, *(void**)ptrs.ra.data[i].data, size);
-	    /* zeros the rest of allocated memeory (only for rarrays) */
-	    memset (&copy[ptrs.ra.data[i].fd.size], 0, alloc_size - size);
-	    /* go thru all childs and calculate their addresses in newly allocated chunk */
-	    for (idx = ptrs.ra.data[i].first_child; idx >= 0; idx = ptrs.ra.data[idx].next)
-	      ptrs.ra.data[idx].res.ptr = &copy[(char*)ptrs.ra.data[idx].data - *(char**)ptrs.ra.data[i].data];
+	    /* explicitly set to NULL pointers that were attributed as is_null */
+	    *(void**)ptrs.ra.data[i].data = NULL;
+	    continue;
 	  }
-	  break;
-	default:
-	  break;
-	}
+	
+	switch (ptrs.ra.data[i].fd.mr_type_ext)
+	  {
+	  case MR_TYPE_EXT_NONE:
+	    if (MR_TYPE_STRING != ptrs.ra.data[i].fd.mr_type)
+	      break;
+	    /* calc string length for further malloc */
+	    ptrs.ra.data[i].fd.size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
+	    /* string node should be followed with unlinked char array node */
+	    if ((ptrs.ra.data[i].first_child >= 0) ||
+		(ptrs.ra.data[i + 1].parent != i) ||
+		(*(void**)ptrs.ra.data[i].data != ptrs.ra.data[i + 1].data))
+	      {
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA);
+		return (MR_FAILURE);
+	      }
+	    /* link it back. we need to save address of allocated memory into this node */
+	    ptrs.ra.data[i].first_child = ptrs.ra.data[i].last_child = i + 1;
+
+	  case MR_TYPE_EXT_POINTER:
+	  case MR_TYPE_EXT_RARRAY_DATA:
+	    {
+	      int idx;
+	      char * copy;
+	      ssize_t size, alloc_size;
+
+	      size = alloc_size = ptrs.ra.data[i].fd.size; /* default allocation size */
+
+	      if (ptrs.ra.data[i].first_child < 0)
+		{
+		  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
+			      ptrs.ra.data[i].fd.type, ptrs.ra.data[i].fd.name.str);
+		  return (MR_FAILURE);
+		}
+	      /* rarrays require allocation of memory chunk according alloc_size field */
+	      if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)
+		{
+		  mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)];
+		  size = ra->size;
+		  /* statically allocated rarrays has negative alloc_size */
+		  if (alloc_size < ra->alloc_size)
+		    alloc_size = ra->alloc_size;
+		}
+	    
+	      if (MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext)
+		size = ptrs.ra.data[i].size;
+	    
+	      if ((MR_TYPE_EXT_POINTER == ptrs.ra.data[i].fd.mr_type_ext) && (MR_TYPE_CHAR_ARRAY == ptrs.ra.data[i].fd.mr_type)
+		  && (0 ==  ptrs.ra.data[i].fd.size))
+		size = alloc_size = strlen (*(void**)ptrs.ra.data[i].data) + 1;
+	    
+	      if (alloc_size < size)
+		alloc_size = size;
+
+	      if ((size < 0) || (alloc_size < 0))
+		{
+		  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size, alloc_size);
+		  return (MR_FAILURE);
+		}
+	    
+	      copy = MR_MALLOC (alloc_size);
+	      if (NULL == copy)
+		{
+		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+		  return (MR_FAILURE);
+		}
+
+	      /* copy data from source */
+	      memcpy (copy, *(void**)ptrs.ra.data[i].data, size);
+	      /* zeros the rest of allocated memeory (only for rarrays) */
+	      memset (&copy[ptrs.ra.data[i].fd.size], 0, alloc_size - size);
+	      /* go thru all childs and calculate their addresses in newly allocated chunk */
+	      for (idx = ptrs.ra.data[i].first_child; idx >= 0; idx = ptrs.ra.data[idx].next)
+		ptrs.ra.data[idx].res.ptr = &copy[(char*)ptrs.ra.data[idx].data - *(char**)ptrs.ra.data[i].data];
+	    }
+	    break;
+	  default:
+	    break;
+	  }
+      }
   /* copy first level struct */
   memcpy (dst, ptrs.ra.data[0].data, ptrs.ra.data[0].fd.size);
   ptrs.ra.data[0].res.ptr = dst;

@@ -480,7 +480,7 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (XDR_ENCODE == xdrs->x_op)
     {
       str_len = strlen (ptrs->ra.data[idx].data) + 1;
-      if ((str_len > max_size) && (0 != strcmp (ptrs->ra.data[idx].fd.type, "string_t")))
+      if ((max_size > 0) && (str_len > max_size))
 	str_len = max_size;
     }
 
@@ -489,7 +489,7 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
   if (XDR_DECODE == xdrs->x_op)
     {
-      if (0 == strcmp (ptrs->ra.data[idx].fd.type, "string_t"))
+      if (0 == max_size)
 	{
 	  void * data = MR_REALLOC (ptrs->ra.data[idx].data, str_len);
 	  ptrs->ra.data[idx].data = data;
@@ -994,8 +994,16 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
       if (!ptrs->ra.data[idx].flags.is_opaque_data)
 	{
-	  count = ptrs->ra.data[idx].size / fd_.size;
-	  ptrs->ra.data[idx].size = count * fd_.size;
+	  if (fd_.size > 0) /* types with zero size used for dynamics strings allocation */
+	    {
+	      count = ptrs->ra.data[idx].size / fd_.size;
+	      ptrs->ra.data[idx].size = count * fd_.size;
+	    }
+	  else
+	    {
+	      count = 1;
+	      ptrs->ra.data[idx].size = sizeof (char);
+	    }
 	}
 
       if (ptrs->ra.data[idx].size <= 0)

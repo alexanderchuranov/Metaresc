@@ -44,7 +44,7 @@ MR_START_TEST (rarray_self_referred, "self referred rarray") {
   ALL_METHODS (ASSERT_SAVE_LOAD, self_referred_rarray_t, &orig);
 } END_TEST
 
-MR_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"") {
+MR_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"char\"") {
   string_rarray_t orig = {
     .x =
     {
@@ -52,7 +52,7 @@ MR_START_TEST (rarray_ext_eq_ptr_type, "rarray_t .ext = .ptr_type = \"string_t\"
       .size = 2 * sizeof (orig.x.data[0]),
       .alloc_size = 2 * sizeof (orig.x.data[0]),
       .res = { "string_t" },
-      .res_type = "string_t",
+      .res_type = "char",
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);
@@ -66,7 +66,7 @@ MR_START_TEST (rarray_referenced_content, "referenced content") {
       .size = 2 * sizeof (orig.x.data[0]),
       .alloc_size = 2 * sizeof (orig.x.data[0]),
       .res = { "string_t" },
-      .res_type = "string_t",
+      .res_type = "char",
     },
   };
   ALL_METHODS (ASSERT_SAVE_LOAD, string_rarray_t, &orig);

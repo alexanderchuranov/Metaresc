@@ -293,11 +293,6 @@ cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * dat
 {
   if (ptrs->ra.data[idx].first_child < 0)
     data->content = MR_STRDUP (MR_CINIT_NULL);
-  else if ((MR_TYPE_CHAR_ARRAY == ptrs->ra.data[idx].fd.mr_type) && (0 == strcmp ("string_t", ptrs->ra.data[idx].fd.type)))
-    {
-      data->prefix = "(" MR_CINIT_TYPE_NAME_TEMPLATE "){\n";
-      data->suffix = "}";
-    }
   else
     {
       data->prefix = "(" MR_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
@@ -508,7 +503,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	    }
 
 	  ptrs->ra.data[idx].res.ptr = save_data.suffix;
-	  ptrs->ra.data[idx].res_type = "string_t";
+	  ptrs->ra.data[idx].res_type = "char";
 	}
 
       if (ptrs->ra.data[idx].first_child >= 0)

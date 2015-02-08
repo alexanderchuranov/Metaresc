@@ -12,7 +12,7 @@ TYPEDEF_ENUM (color_t,
               (MAGENTA, /* value argument may be empty */,
                         "becomes 5",
                         { "next argument is a type of this poiner" },
-                        "string_t"
+                        "char"
               ),
 
               (CYAN,    /* auto-enumerated */,

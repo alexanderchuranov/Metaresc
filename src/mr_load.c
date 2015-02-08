@@ -395,9 +395,10 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 	{
 	  int str_len = strlen (str);
 	  status = MR_SUCCESS;
-	  if ((0 == strcmp (ptrdes->fd.type, "string_t")) &&
+	  if ((ptrdes->fd.size <= 0) &&
 	      (ptrdes->parent >= 0) &&
-	      (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[ptrdes->parent].fd.mr_type_ext))
+	      (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra.data[ptrdes->parent].fd.mr_type_ext) &&
+	      (MR_TYPE_CHAR_ARRAY == mr_load_data->ptrs.ra.data[ptrdes->parent].fd.mr_type))
 	    {
 	      ptrdes->data = MR_REALLOC (ptrdes->data, str_len + 1);
 	      *(void**)mr_load_data->ptrs.ra.data[ptrdes->parent].data = ptrdes->data;
