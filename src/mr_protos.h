@@ -382,10 +382,12 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(int, parent, , "index of current parent"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
-		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		(ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
-		RARRAY (mr_union_discriminator_t, mr_ra_ud, "allocation of union discriminators"),
+		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
+		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
+		(ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
+		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators", { "mr_ra_ud_size" }, "char"),
 		)
 
 TYPEDEF_FUNC (char *, mr_output_format_t, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
