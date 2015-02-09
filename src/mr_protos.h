@@ -364,8 +364,8 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 
 TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements", { "size" }, "char"),
-		(size_t, size, , "size of resizable array"),
-		(size_t, alloc_size, , "allocated size of resizable array"),
+		(ssize_t, size, , "size of resizable array"),
+		(ssize_t, alloc_size, , "allocated size of resizable array"),
 		(mr_ptr_t, res, , "user data"),
 		(char *, res_type, , "type for 'res'")
 		)

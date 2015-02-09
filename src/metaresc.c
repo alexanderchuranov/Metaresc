@@ -409,7 +409,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 int
 mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = mr_rarray_append ((mr_rarray_t*)ptrs, sizeof (ptrs->ra[0]));
+  mr_ptrdes_t * ptrdes = mr_rarray_allocate_element ((void**)&ptrs->ra, &ptrs->size, &ptrs->alloc_size, sizeof (ptrs->ra[0]));
   if (NULL == ptrdes)
     return (-1);
   memset (ptrdes, 0, sizeof (*ptrdes));
