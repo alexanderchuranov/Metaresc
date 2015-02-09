@@ -130,8 +130,8 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 /* mr_rarray_t defenition should be synchronized with MR_RARRAY_PROTO macro */
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
 		(void *, data, , "pointer on data array"),
-		(int64_t, size, , "used space in bytes"),
-		(int64_t, alloc_size, , "allocated space in bytes"),
+		(ssize_t, size, , "used space in bytes"),
+		(ssize_t, alloc_size, , "allocated space in bytes"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		)
@@ -146,7 +146,7 @@ TYPEDEF_ENUM (mr_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeo
 	      (MR_RED, = 1),
 	      )
 
-TYPEDEF_ENUM (mr_rb_visit_order_t,
+TYPEDEF_ENUM (mr_rb_visit_order_t, ATTRIBUTES ( , "red/black tree traverse states"),
 	      MR_RB_VISIT_PREORDER,
 	      MR_RB_VISIT_POSTORDER,
 	      MR_RB_VISIT_ENDORDER,
@@ -200,7 +200,7 @@ TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup o
 		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
 		)
 
-TYPEDEF_ENUM (mr_ic_type_t,
+TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_NONE, , "rarray"),
 	      (MR_IC_RBTREE, , "tree"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
@@ -208,7 +208,7 @@ TYPEDEF_ENUM (mr_ic_type_t,
 	      (MR_IC_HASH_NEXT, , "hash"),
 	      )
 
-TYPEDEF_STRUCT (mr_ic_rarray_t,
+TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
 		(mr_ptr_t *, ra, , "key_type", { "size" }, "char"),
 		(ssize_t, size, , "size of array"),
 		(ssize_t, alloc_size, , "allocated size for array"),
@@ -216,7 +216,7 @@ TYPEDEF_STRUCT (mr_ic_rarray_t,
 
 typedef struct mr_ic_t mr_ic_t;
 
-TYPEDEF_STRUCT (mr_ic_hash_t,
+TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(int, items_count),
 		(ssize_t, size, , "size of hash table"),
 		(bool, zero_key),
@@ -229,7 +229,7 @@ TYPEDEF_STRUCT (mr_ic_hash_t,
 		(mr_ptr_t *, hash_table, , "bucket_type", { "size" }, "char"),
 		)
 
-TYPEDEF_STRUCT (mr_ic_t,
+TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
 
@@ -275,7 +275,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(char *, res_type, , "union discriminator"),
 		)
 
-TYPEDEF_STRUCT (mr_fd_ptr_t,
+TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "wrapper for mr_fd_t*"),
 		(mr_fd_t *, fdp, , "wrapper for mr_fd_t pointer type")
 		)
 
@@ -321,7 +321,7 @@ TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 		(int, length),
 		)
 
-TYPEDEF_ENUM (mr_value_type_t,
+TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      (MR_VT_UNKNOWN, = 0, "vt_string"),
 	      (MR_VT_INT, , "vt_int"),
 	      (MR_VT_FLOAT, , "vt_float"),
@@ -370,7 +370,7 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 		(char *, res_type, , "type for 'res'")
 		)
 
-TYPEDEF_STRUCT (mr_load_data_t,
+TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
 		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
