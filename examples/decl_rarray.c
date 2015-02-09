@@ -6,13 +6,11 @@
 
 static organization_t firm = {
   .name = "Gen-sys",
-  .employees = {
-    .size = 3 * sizeof (employee_t),
-    .data = (employee_t[]){
-      { "Will", "Rodman", 200000 },
-      { "Static", "Jacobs", 250000 },
-      { "Robert", "Franklin", 170000 },
-    },
+  .size = 3 * sizeof (employee_t),
+  .employees = (employee_t[]){
+    { "Will", "Rodman", 200000 },
+    { "Static", "Jacobs", 250000 },
+    { "Robert", "Franklin", 170000 },
   },
 };
 

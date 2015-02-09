@@ -9,5 +9,6 @@ TYPEDEF_STRUCT (employee_t,
 
 TYPEDEF_STRUCT (organization_t,
                 (char *, name),
-                RARRAY (employee_t, employees)
+		(employee_t *, employees, /* suffix */ , /* meta */ , { "size" }, "char"),
+		(ssize_t, size),
                 )

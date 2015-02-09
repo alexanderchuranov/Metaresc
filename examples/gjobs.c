@@ -36,14 +36,18 @@ TYPEDEF_STRUCT (job_t,
 		string_t Application,
 		string_t Category,
 		(update_t, Update),
-		RARRAY (person_t, Developers),
+		(person_t *, Developers, /* suffix */, /* meta */, { "Developers_size" }, "char"),
+		(ssize_t, Developers_size),
 		(person_t, Contact),
 		string_t Requirements,
 		string_t Skills,
 		string_t Details,
 		)
 
-TYPEDEF_STRUCT (helping_t, RARRAY (job_t, Jobs))
+TYPEDEF_STRUCT (helping_t,
+		(job_t *, Jobs, /* suffix */ , /* meta */, { "Jobs_size" }, "char" ),
+		(ssize_t, Jobs_size),
+		)
 
 static void
 print_person (person_t * person)
@@ -72,11 +76,11 @@ print_job (job_t * job)
   if (job->Application != NULL) printf ("application: %s\n", job->Application);
   if (job->Category != NULL) printf ("category: %s\n", job->Category);
   print_person (&job->Contact);
-  developers = job->Developers.size / sizeof (job->Developers.data[0]);
+  developers = job->Developers_size / sizeof (job->Developers[0]);
   printf ("%d developers\n", developers);
 
   for (i = 0; i < developers; ++i)
-    print_person (&job->Developers.data[i]);
+    print_person (&job->Developers[i]);
   printf ("======= \n");
 }
 
@@ -84,10 +88,10 @@ static void
 print_helping (helping_t * helping)
 {
   int i;
-  int jobs = helping->Jobs.size / sizeof (helping->Jobs.data[0]);
+  int jobs = helping->Jobs_size / sizeof (helping->Jobs[0]);
   printf ("%d Jobs registered\n", jobs);
   for (i = 0; i < jobs; ++i)
-    print_job (&helping->Jobs.data[i]);
+    print_job (&helping->Jobs[i]);
 }
 
 int

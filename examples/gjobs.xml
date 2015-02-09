@@ -17,10 +17,16 @@
 	</gjob:Update>
 	
 	<gjob:Developers>
-	  <gjob:data>
-	    <gjob:Developers>
-	    </gjob:Developers>
-	  </gjob:data>
+	  <gjob:Developers>
+	    <gjob:Person>Jason Vener</gjob:Person>
+	    <gjob:Email>jvener@mirantis.com</gjob:Email>
+	    <gjob:Company>Mirantis, Inc</gjob:Company>
+	    <gjob:Organisation>
+	    </gjob:Organisation>
+	    <gjob:Webpage>http://mirantis.com/</gjob:Webpage>
+	    <gjob:Snailmail>615 National av., Mountain View, CA, 94043</gjob:Snailmail>
+	    <gjob:Phone>+1 (650) 465-8798</gjob:Phone>
+	  </gjob:Developers>
 	</gjob:Developers>
 	
 	<gjob:Contact>
