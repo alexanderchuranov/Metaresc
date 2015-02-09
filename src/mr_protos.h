@@ -372,7 +372,9 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 
 TYPEDEF_STRUCT (mr_load_data_t,
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
-		RARRAY (int, mr_ra_idx, "indexes of postponed nodes"),
+		(int *, mr_ra_idx, , "indexes of postponed nodes", { "size" }, "char"),
+		(ssize_t, size, , "size of 'mr_ra_idx'"),
+		(ssize_t, alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),

@@ -985,7 +985,10 @@
       int __idx__ = -1;							\
       mr_load_data_t __load_data__ = {					\
 	.ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, },		\
-	.mr_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, };	\
+	.mr_ra_idx = NULL,						\
+	.size = 0,							\
+	.alloc_size = 0,						\
+      };								\
       mr_fd_t __fd__ = {						\
 	.type = #MR_TYPE_NAME,						\
 	.name = { .str = NULL, .hash_value = 0, },			\
@@ -1089,7 +1092,10 @@
 	{								\
 	  mr_load_data_t _load_data_ = {				\
 	    .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, },	\
-	    .mr_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, }; \
+	    .mr_ra_idx = NULL,						\
+	    .size = 0,							\
+	    .alloc_size = 0,						\
+	  };								\
 	  _status_ = METHOD (_str_, &_load_data_.ptrs);			\
 	  if (MR_SUCCESS == _status_)					\
 	    {								\

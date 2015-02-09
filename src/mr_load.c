@@ -725,7 +725,9 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
   /* check whether pointer should have offsprings or not */
   if ((MR_TYPE_NONE != mr_load_data->ptrs.ra[idx].fd.mr_type) && (MR_TYPE_VOID != mr_load_data->ptrs.ra[idx].fd.mr_type))
     {
-      int * idx_ = mr_rarray_append ((void*)&mr_load_data->mr_ra_idx, sizeof (mr_load_data->mr_ra_idx.data[0]));
+      int * idx_ = mr_rarray_allocate_element ((void**)&mr_load_data->mr_ra_idx,
+					       &mr_load_data->size, &mr_load_data->alloc_size,
+					       sizeof (mr_load_data->mr_ra_idx[0]));
       if (NULL == idx_)
 	return (MR_FAILURE);
       *idx_ = idx;
