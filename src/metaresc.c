@@ -117,8 +117,8 @@ mr_message_format (mr_message_id_t message_id, va_list args)
       if (tdp)
 	{
 	  int i;
-	  for (i = 0; MR_TYPE_ENUM_VALUE == tdp->fields.data[i].fdp->mr_type; ++i)
-	    messages[tdp->fields.data[i].fdp->param.enum_value] = tdp->fields.data[i].fdp->meta;
+	  for (i = 0; MR_TYPE_ENUM_VALUE == tdp->fields[i].fdp->mr_type; ++i)
+	    messages[tdp->fields[i].fdp->param.enum_value] = tdp->fields[i].fdp->meta;
 	  messages_inited = TRUE;
 	}
     }
@@ -772,23 +772,23 @@ mr_get_td_by_name (char * type)
 static mr_status_t
 mr_anon_unions_extract (mr_td_t * tdp)
 {
-  int count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int count = tdp->fields_size / sizeof (tdp->fields[0]);
   int i, j;
 
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i].fdp;
       if ((MR_TYPE_ANON_UNION == fdp->mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->mr_type))
 	{
 	  static int mr_type_anonymous_union_cnt = 0;
 	  mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
-	  mr_fd_t ** first = &tdp->fields.data[i + 1].fdp;
+	  mr_fd_t ** first = &tdp->fields[i + 1].fdp;
 	  mr_fd_t * last;
 	  int opened = 1;
 
 	  for (j = i + 1; j < count; ++j)
 	    {
-	      mr_fd_t * fdp_ = tdp->fields.data[j].fdp;
+	      mr_fd_t * fdp_ = tdp->fields[j].fdp;
 	      if ((MR_TYPE_ANON_UNION == fdp_->mr_type) ||
 		  (MR_TYPE_NAMED_ANON_UNION == fdp_->mr_type))
 		++opened;
@@ -826,17 +826,17 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		  tdp_->size = fields[j]->size; /* find union max size member */
 	      }
 
-	    last = tdp->fields.data[count].fdp;
+	    last = tdp->fields[count].fdp;
 	    last->mr_type = MR_TYPE_TRAILING_RECORD; /* trailing record */
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
 	    tdp_->attr = fdp->meta; /* anonymous union stringified attributes are saved into metas field */
 	    tdp_->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
-	    tdp_->fields.data = &tdp->fields.data[count - fields_count + 1];
+	    tdp_->fields = &tdp->fields[count - fields_count + 1];
 
 	    fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
-	    tdp->fields.size -= fields_count * sizeof (tdp->fields.data[0]);
+	    tdp->fields_size -= fields_count * sizeof (tdp->fields[0]);
 	    count -= fields_count;
 	    fdp->type = tdp_->type.str;
 	    fdp->size = tdp_->size;
@@ -927,7 +927,8 @@ cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context)
 static mr_status_t
 mr_add_enum (mr_td_t * tdp)
 {
-  int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  mr_ic_rarray_t mr_ic_rarray;
+  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   /*
     Enums with __attribute__((packed, aligned (XXX))) GCC generates size according alignment, but not real size which is 1 byte due to packing.
     Here we determine effective type size.
@@ -957,12 +958,15 @@ mr_add_enum (mr_td_t * tdp)
     }
 
   mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_STATIC_DEFAULT);
-  mr_ic_index (&tdp->lookup_by_value, (mr_ic_rarray_t*)(void*)&tdp->fields, NULL);
+  mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
+  mr_ic_rarray.size = tdp->fields_size;
+  mr_ic_rarray.alloc_size = -1;
+  mr_ic_index (&tdp->lookup_by_value, &mr_ic_rarray, NULL);
 
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
-      mr_ptr_t key = { .ptr = tdp->fields.data[i].fdp };
+      mr_ptr_t key = { .ptr = tdp->fields[i].fdp };
       mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key, NULL);
       if (NULL == result)
 	return (MR_FAILURE);
@@ -1119,17 +1123,17 @@ mr_init_bitfield (mr_fd_t * fdp)
 }
 
 /**
- * New type descriptor preprocessing. Check fields names duplocation, nornalize types name, initialize bitfields. Called once for each type.
+ * New type descriptor preprocessing. Check fields names duplication, nornalize types name, initialize bitfields. Called once for each type.
  * @param tdp pointer on a type descriptor
  * @return status
  */
 static mr_status_t
 mr_check_fields (mr_td_t * tdp)
 {
-  int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i].fdp;
       /*
 	Check names of the fileds.
 	MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
@@ -1330,9 +1334,9 @@ mr_detect_field_type (mr_fd_t * fdp)
 static mr_status_t
 mr_detect_fields_types (mr_td_t * tdp)
 {
-  int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
-    mr_detect_field_type (tdp->fields.data[i].fdp);
+    mr_detect_field_type (tdp->fields[i].fdp);
   return (MR_SUCCESS);
 }
 
@@ -1368,14 +1372,14 @@ mr_register_type_pointer (mr_td_t * tdp)
     return (MR_SUCCESS);
 
   /* statically allocated trailing record is used for field descriptor */
-  fdp = tdp->fields.data[tdp->fields.size / sizeof (tdp->fields.data[0])].fdp;
+  fdp = tdp->fields[tdp->fields_size / sizeof (tdp->fields[0])].fdp;
   if (NULL == fdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (MR_FAILURE);
     }
 
-  *fdp = *union_tdp->fields.data[0].fdp;
+  *fdp = *union_tdp->fields[0].fdp;
   fdp->type = tdp->type.str;
   fdp->name = tdp->type;
   fdp->size = tdp->size;
@@ -1396,6 +1400,7 @@ mr_register_type_pointer (mr_td_t * tdp)
 mr_status_t
 mr_add_type (mr_td_t * tdp, char * meta, ...)
 {
+  mr_ic_rarray_t mr_ic_rarray;
   va_list args;
   void * res;
   int count;
@@ -1412,7 +1417,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 
   for (count = 0; ; ++count)
     {
-      mr_fd_t * fdp = tdp->fields.data[count].fdp;
+      mr_fd_t * fdp = tdp->fields[count].fdp;
       if (NULL == fdp)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
@@ -1421,9 +1426,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
       if (MR_TYPE_TRAILING_RECORD == fdp->mr_type)
 	break;
     }
-  tdp->fields.size = count * sizeof (tdp->fields.data[0]);
-  tdp->fields.alloc_size = -1;
-  tdp->fields.res.ptr = NULL;
+  tdp->fields_size = count * sizeof (tdp->fields[0]);
 
   if ((NULL != meta) && meta[0])
     tdp->meta = meta;
@@ -1436,7 +1439,10 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 
   mr_check_fields (tdp);
   mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT);
-  mr_ic_index (&tdp->lookup_by_name, (mr_ic_rarray_t*)(void*)&tdp->fields, NULL);
+  mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
+  mr_ic_rarray.size = tdp->fields_size;
+  mr_ic_rarray.alloc_size = -1;
+  mr_ic_index (&tdp->lookup_by_name, &mr_ic_rarray, NULL);
 
   if (NULL == mr_conf.enum_by_name.find)
     mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT);

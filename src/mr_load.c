@@ -425,12 +425,12 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 static mr_fd_t *
 mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
 {
-  int i, count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
 
   for (i = 0; i < count; ++i)
     if (NULL == fdp)
-      return (tdp->fields.data[i].fdp);
-    else if (tdp->fields.data[i].fdp == fdp)
+      return (tdp->fields[i].fdp);
+    else if (tdp->fields[i].fdp == fdp)
       fdp = NULL;
 
   return (NULL);
@@ -594,15 +594,15 @@ mr_load_rarray_type (mr_fd_t * fdp, mr_status_t (*action) (mr_td_t *, void *), v
   else
     {
       mr_td_t td = *tdp;
-      int fields_count = td.fields.size / sizeof (td.fields.data[0]);
+      int fields_count = td.fields_size / sizeof (td.fields[0]);
+      mr_ic_rarray_t mr_ic_rarray;
       mr_fd_ptr_t fields_data[fields_count];
       mr_fd_t * data_fdp;
       mr_fd_t fd;
       int i;
 
-      memcpy (fields_data, td.fields.data, td.fields.size);
-      td.fields.data = fields_data;
-      td.fields.alloc_size = -1; /* prevent memory deallocation in mr_ic_free */
+      memcpy (fields_data, td.fields, td.fields_size);
+      td.fields = fields_data;
       for (i = 0; i < fields_count; ++i)
 	{
 	  data_fdp = fields_data[i].fdp;
@@ -618,8 +618,12 @@ mr_load_rarray_type (mr_fd_t * fdp, mr_status_t (*action) (mr_td_t *, void *), v
 	  fd.name = data_fdp->name;
 	  fd.offset = data_fdp->offset;
 	  fields_data[i].fdp = &fd; /* replace 'data' descriptor on a local copy */
+
+	  mr_ic_rarray.ra = (mr_ptr_t*)fields_data;
+	  mr_ic_rarray.size = td.fields_size;
+	  mr_ic_rarray.alloc_size = -1;
 	  mr_ic_new (&td.lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_NONE);
-	  mr_ic_index (&td.lookup_by_name, (mr_ic_rarray_t*)(void*)&td.fields, NULL);
+	  mr_ic_index (&td.lookup_by_name, &mr_ic_rarray, NULL);
 	  status = action (&td, context);
 	  mr_ic_free (&td.lookup_by_name);
 	}

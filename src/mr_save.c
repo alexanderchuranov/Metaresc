@@ -352,10 +352,10 @@ mr_save_struct (mr_save_data_t * mr_save_data)
     }
 
   mr_save_data->parent = idx;
-  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i].fdp;
       mr_save_inner (&data[fdp->offset], fdp, mr_save_data); /* add each child to this node */
     }
   mr_save_data->parent = mr_save_data->ptrs.ra.data[mr_save_data->parent].parent;
@@ -365,10 +365,10 @@ static mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
   /* check that field index in union is valid and reset to default otherwise */
-  if ((idx < 0) || (idx >= tdp->fields.size / sizeof (tdp->fields.data[0])))
+  if ((idx < 0) || (idx >= tdp->fields_size / sizeof (tdp->fields[0])))
     idx = 0;
-  if (tdp->fields.size > 0) /* check for an empty union */
-    return (tdp->fields.data[idx].fdp);
+  if (tdp->fields_size > 0) /* check for an empty union */
+    return (tdp->fields[idx].fdp);
   else
     return (NULL);
 }
@@ -382,8 +382,8 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
       if (NULL != fdp)
 	return (fdp);
     }
-  if (tdp->fields.size > 0) /* check for an empty union */
-    return (tdp->fields.data[0].fdp);
+  if (tdp->fields_size > 0) /* check for an empty union */
+    return (tdp->fields[0].fdp);
   else
     return (NULL);
 }

@@ -268,10 +268,10 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
     }
 
   /* decompose value on bitmask */
-  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i].fdp;
       if ((value & fdp->param.enum_value) && !(~value & fdp->param.enum_value))
 	{
 	  if (NULL == str)

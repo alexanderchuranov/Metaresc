@@ -30,10 +30,10 @@ int main ()
       return (EXIT_FAILURE);
     }
 
-  count = tdp->fields.size / sizeof (tdp->fields.data[0]);
+  count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields.data[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i].fdp;
       printf ("%d: %s = %" PRId64 "\n", i, fdp->name.str, fdp->param.enum_value);
     }
   return (EXIT_SUCCESS);
