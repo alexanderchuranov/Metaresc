@@ -78,10 +78,10 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.length -= i + 1;
       $2.str += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = MR_STRDUP ("");
-  mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
+  mr_load->ptrs->ra[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
+  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
+  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = MR_STRDUP ("");
+  mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
 }
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {
   mr_load_t * mr_load = MR_LOAD;
@@ -110,10 +110,10 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.length -= i + 1;
       $2.str += i + 1;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = xml_unquote_string (&$4);
-  mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent;
+  mr_load->ptrs->ra[mr_load->parent].fd.name.str = strndup ($2.str, $2.length);
+  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
+  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = xml_unquote_string (&$4);
+  mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
  }
 
 start_tag: { MR_LOAD->parent = mr_parse_add_node (MR_LOAD); }
@@ -127,24 +127,24 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
 
   if (0 == mr_substrcmp (MR_REF_IDX, &$3))
     {
-      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = MR_REF_IDX;
     }
   else if (0 == mr_substrcmp (MR_REF, &$3))
     {
-      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = MR_REF;
     }
   else if (0 == mr_substrcmp (MR_REF_CONTENT, &$3))
     {
-      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra.data[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = MR_REF;
       else
-	mr_load->ptrs->ra.data[mr_load->parent].flags.is_content_reference = TRUE;
+	mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = TRUE;
     }
   else if (0 == mr_substrcmp (MR_ISNULL, &$3))
     {
-      mr_load->ptrs->ra.data[mr_load->parent].flags.is_null = TRUE;
+      mr_load->ptrs->ra[mr_load->parent].flags.is_null = TRUE;
     }
 
   if (error)

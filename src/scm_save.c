@@ -65,7 +65,7 @@ static MR_OUTPUT_FORMAT_COMPLEX (float_scm, float, MR_TYPE_FLOAT, MR_SCM_COMPLEX
 static MR_OUTPUT_FORMAT_COMPLEX (double_scm, double, MR_TYPE_DOUBLE, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
 static MR_OUTPUT_FORMAT_COMPLEX (long_double_t_scm, long double, MR_TYPE_LONG_DOUBLE, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
 
-#define SCM_SAVE_COMPLEX_FLOAT_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_output_format_ ## TYPE (&ptrs->ra.data[idx])); }
+#define SCM_SAVE_COMPLEX_FLOAT_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_output_format_ ## TYPE (&ptrs->ra[idx])); }
 
 SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_float_scm);
 SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_double_scm);
@@ -77,7 +77,7 @@ SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_long_double_t_scm);
  * \@param ptrs resizeable array with pointers descriptors
  * \@return stringified int value
  */
-#define SCM_SAVE_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_stringify_ ## TYPE (&ptrs->ra.data[idx])); }
+#define SCM_SAVE_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) { return (mr_stringify_ ## TYPE (&ptrs->ra[idx])); }
 
 SCM_SAVE_TYPE (int8_t);
 SCM_SAVE_TYPE (uint8_t);
@@ -96,7 +96,7 @@ SCM_SAVE_TYPE (bitfield);
 static char *
 scm_save_bool (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (*(bool*)ptrs->ra.data[idx].data ? MR_STRDUP (MR_SCM_TRUE) : MR_STRDUP (MR_SCM_FALSE));
+  return (*(bool*)ptrs->ra[idx].data ? MR_STRDUP (MR_SCM_TRUE) : MR_STRDUP (MR_SCM_FALSE));
 }
 
 /**
@@ -109,7 +109,7 @@ scm_save_bool (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 scm_save_bitmask (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  char * str = mr_stringify_bitmask (&ptrs->ra.data[idx], MR_SCM_BITMASK_OR_DELIMITER);
+  char * str = mr_stringify_bitmask (&ptrs->ra[idx], MR_SCM_BITMASK_OR_DELIMITER);
   if (str)
     {
       char * str_ = MR_MALLOC ((sizeof (MR_SCM_BITMASK_TEMPLATE) - 1) + (strlen (str) - 2) + 1);
@@ -134,10 +134,10 @@ scm_save_bitmask (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 scm_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  if (TRUE == ptrs->ra.data[idx].flags.is_null)
+  if (TRUE == ptrs->ra[idx].flags.is_null)
     return (MR_STRDUP (MR_SCM_FALSE));
   else
-    return (mr_stringify_func (&ptrs->ra.data[idx]));
+    return (mr_stringify_func (&ptrs->ra[idx]));
 }
 
 /**
@@ -149,7 +149,7 @@ scm_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 scm_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  char c = *(char*)ptrs->ra.data[idx].data;
+  char c = *(char*)ptrs->ra[idx].data;
   char str[] = "#\\x00";
   if (isprint (c))
     {
@@ -217,7 +217,7 @@ scm_quote_string (char * str, char quote)
 static char *
 scm_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (scm_quote_string (ptrs->ra.data[idx].data, '"'));
+  return (scm_quote_string (ptrs->ra[idx].data, '"'));
 }
 
 /**
@@ -229,8 +229,8 @@ scm_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 scm_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  char * str = *(char**)ptrs->ra.data[idx].data;
-  if ((NULL == str) || (ptrs->ra.data[idx].ref_idx >= 0))
+  char * str = *(char**)ptrs->ra[idx].data;
+  if ((NULL == str) || (ptrs->ra[idx].ref_idx >= 0))
     return (MR_STRDUP (MR_SCM_FALSE));
   else
     return (scm_quote_string (str, '"'));
@@ -319,36 +319,36 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 
   while (idx >= 0)
     {
-      mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
-      int level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+      mr_fd_t * fdp = &ptrs->ra[idx].fd;
+      int level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
       int named_node = MR_SCM_UNNAMED_FIELDS;
-      int parent = ptrs->ra.data[idx].parent;
+      int parent = ptrs->ra[idx].parent;
       char * content = NULL;
       int in_comment = FALSE;
 
       if (parent >= 0)
-	named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
+	named_node = scm_named_fields[ptrs->ra[parent].fd.mr_type];
 
-      if (ptrs->ra.data[idx].ref_idx >= 0)
+      if (ptrs->ra[idx].ref_idx >= 0)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
 			    level * MR_SCM_INDENT_SPACES, "",
-			    (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-			    ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
+			    (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+			    ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
 	    return (NULL);
 	  else
 	    in_comment = TRUE;
 	}
-      if (ptrs->ra.data[idx].flags.is_referenced)
+      if (ptrs->ra[idx].flags.is_referenced)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
+			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra[idx].idx) < 0)
 	    return (NULL);
 	  else
 	    in_comment = TRUE;
 	}
 
-      if (ptrs->ra.data[idx].first_child < 0)
+      if (ptrs->ra[idx].first_child < 0)
 	{
 	  /* route saving handler */
 	  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_scm_save_handler[fdp->mr_type_ext])
@@ -363,7 +363,7 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	      if (MR_SCM_NAMED_FIELDS == named_node)
 		{
 		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START "%s" MR_SCM_NAMED_FIELD_END,
-				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra.data[idx].fd.name.str) < 0)
+				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra[idx].fd.name.str) < 0)
 		    return (NULL);
 		}
 	      else
@@ -392,27 +392,27 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	    return (NULL);
 	}
 
-      if (ptrs->ra.data[idx].first_child >= 0)
-	idx = ptrs->ra.data[idx].first_child;
+      if (ptrs->ra[idx].first_child >= 0)
+	idx = ptrs->ra[idx].first_child;
       else
 	{
-	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
+	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
-	      idx = ptrs->ra.data[idx].parent;
-	      level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+	      idx = ptrs->ra[idx].parent;
+	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
 	      named_node = MR_SCM_UNNAMED_FIELDS;
-	      parent = ptrs->ra.data[idx].parent;
+	      parent = ptrs->ra[idx].parent;
 
 	      if (parent >= 0)
-		named_node = scm_named_fields[ptrs->ra.data[parent].fd.mr_type];
+		named_node = scm_named_fields[ptrs->ra[parent].fd.mr_type];
 
 	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)
 		return (NULL);
 	      if (MR_SCM_NAMED_FIELDS == named_node)
-		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra.data[idx].fd.name.str) < 0)
+		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra[idx].fd.name.str) < 0)
 		  return (NULL);
 	    }
-	  idx = ptrs->ra.data[idx].next;
+	  idx = ptrs->ra[idx].next;
 	}
     }
 

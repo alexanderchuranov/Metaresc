@@ -113,7 +113,7 @@
 
 ws_scm_ws: ws scm ws
 
-scm: start_node scm_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent; }
+scm: start_node scm_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent; }
 
 start_node: { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_parse_add_node (mr_load); }
 
@@ -124,14 +124,14 @@ value
   if ($1.id.str && $1.id.length)
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
-	mr_load->ptrs->ra.data[mr_load->parent].ref_idx = $1.ivalue;
+	mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
 	{
-	  mr_load->ptrs->ra.data[mr_load->parent].ref_idx = $1.ivalue;
-	  mr_load->ptrs->ra.data[mr_load->parent].flags.is_content_reference = TRUE;
+	  mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
+	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = TRUE;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
-	mr_load->ptrs->ra.data[mr_load->parent].idx = $1.ivalue;
+	mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
     }
 }
 
@@ -139,12 +139,12 @@ value:
 compaund
 | named_node
 | TOK_SCM_HASH compaund
-| TOK_SCM_CHAR { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
-| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
+| TOK_SCM_CHAR { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
+| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_STRING;
+  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
+  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_STRING;
 }
 
 expr:
@@ -194,23 +194,23 @@ compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS
 named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS {
   mr_load_t * mr_load = MR_LOAD;
   int self = mr_load->parent;
-  int parent = mr_load->ptrs->ra.data[self].parent;
-  int prev = mr_load->ptrs->ra.data[self].prev;
-  int child = mr_load->ptrs->ra.data[self].first_child;
+  int parent = mr_load->ptrs->ra[self].parent;
+  int prev = mr_load->ptrs->ra[self].prev;
+  int child = mr_load->ptrs->ra[self].first_child;
   char * name = strndup ($4.str, $4.length);
   if (parent >= 0)
     {
-      if (mr_load->ptrs->ra.data[parent].first_child == self)
-	mr_load->ptrs->ra.data[parent].first_child = child;
-      if (mr_load->ptrs->ra.data[parent].last_child == self)
-	mr_load->ptrs->ra.data[parent].last_child = child;
+      if (mr_load->ptrs->ra[parent].first_child == self)
+	mr_load->ptrs->ra[parent].first_child = child;
+      if (mr_load->ptrs->ra[parent].last_child == self)
+	mr_load->ptrs->ra[parent].last_child = child;
     }
   if (prev >= 0)
-    mr_load->ptrs->ra.data[prev].next = child;
-  mr_load->ptrs->ra.data[child].prev = prev;
+    mr_load->ptrs->ra[prev].next = child;
+  mr_load->ptrs->ra[child].prev = prev;
 
-  mr_load->ptrs->ra.data[child].parent = parent;
-  mr_load->ptrs->ra.data[child].fd.name.str = name;
+  mr_load->ptrs->ra[child].parent = parent;
+  mr_load->ptrs->ra[child].fd.name.str = name;
   mr_load->parent = child;
 }
 

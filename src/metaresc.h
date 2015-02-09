@@ -855,10 +855,10 @@
       else								\
 	{								\
 	  mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
-	  if (__ptrs__.ra.data)						\
+	  if (__ptrs__.ra != NULL)					\
 	    {								\
 	      __status__ = xdr_save (__xdrs__, &__ptrs__);		\
-	      MR_FREE (__ptrs__.ra.data);				\
+	      MR_FREE (__ptrs__.ra);					\
 	    }								\
 	}								\
       __status__;							\
@@ -876,10 +876,10 @@
 #define MR_SAVE_METHOD(METHOD, MR_TYPE_NAME, S_PTR) ({			\
       mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       char * __str__ = NULL;						\
-      if (__ptrs__.ra.data)						\
+      if (__ptrs__.ra != NULL)						\
 	{								\
 	  __str__ = METHOD (&__ptrs__);					\
-	  MR_FREE (__ptrs__.ra.data);					\
+	  MR_FREE (__ptrs__.ra);					\
 	}								\
       __str__;								\
     })
@@ -962,10 +962,10 @@
       char * __str__ = NULL;						\
       xmlChar * __xml_str__ = NULL;					\
       mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
-      if (__ptrs__.ra.data)						\
+      if (__ptrs__.ra != NULL)						\
 	{								\
 	  xmlDocPtr __doc__ = xml2_save (&__ptrs__);			\
-	  MR_FREE (__ptrs__.ra.data);					\
+	  MR_FREE (__ptrs__.ra);					\
 	  if (__doc__)							\
 	    {								\
 	      xmlDocDumpFormatMemory (__doc__, &__xml_str__, &__size__, 1); \
@@ -984,7 +984,7 @@
       mr_status_t __status__ = MR_FAILURE;				\
       int __idx__ = -1;							\
       mr_load_data_t __load_data__ = {					\
-	.ptrs = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }, \
+	.ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, },		\
 	.mr_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, };	\
       mr_fd_t __fd__ = {						\
 	.type = #MR_TYPE_NAME,						\
@@ -1088,7 +1088,7 @@
       else								\
 	{								\
 	  mr_load_data_t _load_data_ = {				\
-	    .ptrs = { .ra = { .alloc_size = 0, .size = 0, .data = NULL, } }, \
+	    .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, },	\
 	    .mr_ra_idx = { .alloc_size = 0, .size = 0, .data = NULL, }, }; \
 	  _status_ = METHOD (_str_, &_load_data_.ptrs);			\
 	  if (MR_SUCCESS == _status_)					\

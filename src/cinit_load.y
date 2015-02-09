@@ -130,7 +130,7 @@ unquote_str (mr_substr_t * substr)
 
 %% /* The grammar follows.  */
 
-cinit: start_node cinit_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra.data[mr_load->parent].parent; }
+cinit: start_node cinit_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent; }
 
 start_node: { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_parse_add_node (mr_load); }
 
@@ -141,14 +141,14 @@ casted_value
   if ($1.id.str && $1.id.length)
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
-	mr_load->ptrs->ra.data[mr_load->parent].ref_idx = $1.ivalue;
+	mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
 	{
-	  mr_load->ptrs->ra.data[mr_load->parent].ref_idx = $1.ivalue;
-	  mr_load->ptrs->ra.data[mr_load->parent].flags.is_content_reference = TRUE;
+	  mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
+	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = TRUE;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
-	mr_load->ptrs->ra.data[mr_load->parent].idx = $1.ivalue;
+	mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
     }
 }
 
@@ -156,16 +156,16 @@ casted_value:
 value
 | TOK_CINIT_FIELD_CAST value {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra.data[mr_load->parent].fd.type = strndup ($1.str, $1.length);
+  mr_load->ptrs->ra[mr_load->parent].fd.type = strndup ($1.str, $1.length);
 }
 
 value:
 compaund
-| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->parent].mr_value = $1; }
+| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
 | TOK_CINIT_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_STRING;
+  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
+  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_STRING;
   }
 | TOK_CINIT_CHAR {
   mr_load_t * mr_load = MR_LOAD;
@@ -181,8 +181,8 @@ compaund
       if (vt_char_str_length > 1)
 	YYERROR;
     }
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.vt_char = vt_char;
-  mr_load->ptrs->ra.data[mr_load->parent].mr_value.value_type = MR_VT_CHAR;
+  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_char = vt_char;
+  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_CHAR;
   }
 
 expr:
@@ -211,7 +211,7 @@ list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
 nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra.data[mr_load->ptrs->ra.data[mr_load->parent].last_child].fd.name.str = strndup ($1.str, $1.length); }
+| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->ptrs->ra[mr_load->parent].last_child].fd.name.str = strndup ($1.str, $1.length); }
 
 %%
 

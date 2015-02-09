@@ -61,7 +61,7 @@ cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
  * \@param data structure that argregates evrything required for saving
  * \@return status
  */
-#define CINIT_SAVE_TYPE(TYPE, EXT...) static int cinit_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data) { data->content = mr_stringify_ ## TYPE (&ptrs->ra.data[idx] EXT); return (0); }
+#define CINIT_SAVE_TYPE(TYPE, EXT...) static int cinit_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data) { data->content = mr_stringify_ ## TYPE (&ptrs->ra[idx] EXT); return (0); }
 
 CINIT_SAVE_TYPE (bool);
 CINIT_SAVE_TYPE (int8_t);
@@ -159,7 +159,7 @@ static int
 cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
   char str[] = " ";
-  str[0] = *(char*)ptrs->ra.data[idx].data;
+  str[0] = *(char*)ptrs->ra[idx].data;
   if (0 == str[0])
     data->content = MR_STRDUP ("'\\000'");
   else
@@ -177,7 +177,7 @@ cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 static int
 cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  data->content = cinit_quote_string (ptrs->ra.data[idx].data, '"');
+  data->content = cinit_quote_string (ptrs->ra[idx].data, '"');
   return (0);
 }
 
@@ -191,8 +191,8 @@ cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 static int
 cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  char * str = *(char**)ptrs->ra.data[idx].data;
-  if ((TRUE == ptrs->ra.data[idx].flags.is_null) || (ptrs->ra.data[idx].ref_idx >= 0))
+  char * str = *(char**)ptrs->ra[idx].data;
+  if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     data->content = cinit_quote_string (str, '"');
@@ -209,17 +209,17 @@ cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data
 static int
 cinit_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  char * func_str = mr_stringify_func (&ptrs->ra.data[idx]);
+  char * func_str = mr_stringify_func (&ptrs->ra[idx]);
   if (func_str)
     {
-      if (TRUE == ptrs->ra.data[idx].flags.is_null)
+      if (TRUE == ptrs->ra[idx].flags.is_null)
 	{
 	  MR_FREE (func_str);
 	  data->content = MR_STRDUP (MR_CINIT_NULL);
 	}
       else if (isdigit (func_str[0])) /* pointer serialized as int */
 	{
-	  char * type = (MR_TYPE_FUNC == ptrs->ra.data[idx].fd.mr_type) ? MR_VOIDP_T_STR : ptrs->ra.data[idx].fd.type;
+	  char * type = (MR_TYPE_FUNC == ptrs->ra[idx].fd.mr_type) ? MR_VOIDP_T_STR : ptrs->ra[idx].fd.type;
 	  char buf[strlen (type) + strlen (func_str) + sizeof ("()")];
 	  sprintf (buf, "(%s)%s", type, func_str);
 	  MR_FREE (func_str);
@@ -271,7 +271,7 @@ cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 static int
 cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  if ((TRUE == ptrs->ra.data[idx].flags.is_null) || (ptrs->ra.data[idx].ref_idx >= 0))
+  if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     {
@@ -291,7 +291,7 @@ cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t *
 static int
 cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  if (ptrs->ra.data[idx].first_child < 0)
+  if (ptrs->ra[idx].first_child < 0)
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     {
@@ -326,7 +326,7 @@ json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 static int
 json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  if ((TRUE == ptrs->ra.data[idx].flags.is_null) || (ptrs->ra.data[idx].ref_idx >= 0))
+  if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     {
@@ -346,7 +346,7 @@ json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 static int
 json_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
-  if (ptrs->ra.data[idx].first_child < 0)
+  if (ptrs->ra[idx].first_child < 0)
     data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     {
@@ -460,7 +460,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
     {
       int level = 0;
       int skip_node;
-      mr_fd_t * fdp = &ptrs->ra.data[idx].fd;
+      mr_fd_t * fdp = &ptrs->ra[idx].fd;
       mr_save_type_data_t save_data = { .named_field_template = NULL, .prefix = NULL, .content = NULL, .suffix = NULL, };
 
       /* route saving handler */
@@ -468,31 +468,31 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
       if (!skip_node)
 	{
 	  int named_node = MR_CINIT_UNNAMED_FIELDS;
-	  level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+	  level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
 
-	  if (ptrs->ra.data[idx].level > 0)
+	  if (ptrs->ra[idx].level > 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 	      return (NULL);
 
-	  if ((ptrs->ra.data[idx].parent >= 0) && (MR_TYPE_EXT_NONE == ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type_ext))
-	    named_node = cinit_named_node[ptrs->ra.data[ptrs->ra.data[idx].parent].fd.mr_type];
+	  if ((ptrs->ra[idx].parent >= 0) && (MR_TYPE_EXT_NONE == ptrs->ra[ptrs->ra[idx].parent].fd.mr_type_ext))
+	    named_node = cinit_named_node[ptrs->ra[ptrs->ra[idx].parent].fd.mr_type];
 
 	  if ((MR_CINIT_NAMED_FIELDS == named_node) && (save_data.named_field_template))
-	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra.data[idx].fd.name.str) < 0)
+	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra[idx].fd.name.str) < 0)
 	      return (NULL);
 
-	  if (ptrs->ra.data[idx].ref_idx >= 0)
+	  if (ptrs->ra[idx].ref_idx >= 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT,
-			      (ptrs->ra.data[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-			      ptrs->ra.data[ptrs->ra.data[idx].ref_idx].idx) < 0)
+			      (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+			      ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
 	      return (NULL);
 
-	  if (ptrs->ra.data[idx].flags.is_referenced)
-	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra.data[idx].idx) < 0)
+	  if (ptrs->ra[idx].flags.is_referenced)
+	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
 	      return (NULL);
 
 	  if (save_data.prefix)
-	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra.data[idx].fd.type) < 0)
+	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra[idx].fd.type) < 0)
 	      return (NULL);
 
 	  if (save_data.content)
@@ -502,17 +502,17 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	      MR_FREE (save_data.content);
 	    }
 
-	  ptrs->ra.data[idx].res.ptr = save_data.suffix;
-	  ptrs->ra.data[idx].res_type = "char";
+	  ptrs->ra[idx].res.ptr = save_data.suffix;
+	  ptrs->ra[idx].res_type = "char";
 	}
 
-      if (ptrs->ra.data[idx].first_child >= 0)
-	idx = ptrs->ra.data[idx].first_child;
+      if (ptrs->ra[idx].first_child >= 0)
+	idx = ptrs->ra[idx].first_child;
       else
 	{
 	  if (save_data.suffix)
 	    {
-	      level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
 	      if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 		return (NULL);
 	      if (mr_ra_printf (&mr_ra_str, "%s", save_data.suffix) < 0)
@@ -521,22 +521,22 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	  if (!skip_node && (idx != 0))
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
 	      return (NULL);
-	  while ((ptrs->ra.data[idx].next < 0) && (ptrs->ra.data[idx].parent >= 0))
+	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
-	      idx = ptrs->ra.data[idx].parent;
-	      if (ptrs->ra.data[idx].res.ptr)
+	      idx = ptrs->ra[idx].parent;
+	      if (ptrs->ra[idx].res.ptr)
 		{
-		  level = MR_LIMIT_LEVEL (ptrs->ra.data[idx].level);
+		  level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
 		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 		    return (NULL);
-		  if (mr_ra_printf (&mr_ra_str, "%s", (char*)ptrs->ra.data[idx].res.ptr) < 0)
+		  if (mr_ra_printf (&mr_ra_str, "%s", (char*)ptrs->ra[idx].res.ptr) < 0)
 		    return (NULL);
 		  if (idx != 0)
 		    if (mr_ra_printf (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
 		      return (NULL);
 		}
 	    }
-	  idx = ptrs->ra.data[idx].next;
+	  idx = ptrs->ra[idx].next;
 	}
     }
 
@@ -548,7 +548,7 @@ cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_ty
 {
   int skip_node = 0;
   if ((fdp->mr_type != MR_TYPE_ANON_UNION) && /* anonymous unions should be unnamed for CINIT */
-      ((ptrs->ra.data[idx].parent >= 0) && strcmp ("mr_ptr_t", ptrs->ra.data[ptrs->ra.data[idx].parent].fd.type))) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
+      ((ptrs->ra[idx].parent >= 0) && strcmp ("mr_ptr_t", ptrs->ra[ptrs->ra[idx].parent].fd.type))) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
     save_data->named_field_template = MR_CINIT_NAMED_FIELD_TEMPLATE;
 
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_cinit_save_handler[fdp->mr_type_ext])

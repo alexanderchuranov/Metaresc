@@ -26,41 +26,41 @@
     mr_conf_t mr_conf_saved = mr_conf;					\
     mr_ra_mr_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);		\
     int i;								\
-    ck_assert_msg (((0 != ptrs.ra.size) && (NULL != ptrs.ra.data)),	\
+    ck_assert_msg (((0 != ptrs.size) && (NULL != ptrs.ra)),		\
 		   "save into internal representation failed");		\
-    for (i = ptrs.ra.size / sizeof (ptrs.ra.data[0]) - 1; i >= 0; --i)	\
-      if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra.data[i].fd.mr_type_ext)	\
+    for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)		\
+      if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra[i].fd.mr_type_ext)		\
 	{								\
-	  mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra.data[i].data)[-offsetof (mr_rarray_t, data)]; \
+	  mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra[i].data)[-offsetof (mr_rarray_t, data)]; \
 	  ra->alloc_size = ra->size;					\
 	}								\
-      else if ((MR_TYPE_EXT_NONE == ptrs.ra.data[i].fd.mr_type_ext) &&	\
-	       (MR_TYPE_STRUCT == ptrs.ra.data[i].fd.mr_type) &&	\
-	       (0 == strcmp ("mr_hashed_string_t", ptrs.ra.data[i].fd.type))) \
+      else if ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&	\
+	       (MR_TYPE_STRUCT == ptrs.ra[i].fd.mr_type) &&		\
+	       (0 == strcmp ("mr_hashed_string_t", ptrs.ra[i].fd.type))) \
 	{								\
-	  mr_hashed_string_t * mr_hashed_name = ptrs.ra.data[i].data;	\
+	  mr_hashed_string_t * mr_hashed_name = ptrs.ra[i].data;	\
 	  mr_hashed_name->hash_value = mr_hash_str (mr_hashed_name->str); \
 	}								\
-    MR_FREE (ptrs.ra.data);						\
+    MR_FREE (ptrs.ra);							\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
       ck_assert_msg (((0 != mr_conf_serialized.size) && (NULL != mr_conf_serialized.data)), \
 		     "save for method " #METHOD " failed");		\
-    mr_conf_t mr_conf_loaded;						\
-    ck_assert_msg (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded), \
-		   "load for method " #METHOD " failed");		\
-    ptrs = MR_SAVE (mr_conf_t, &mr_conf_loaded);			\
-    ck_assert_msg (((0 != ptrs.ra.size) && (NULL != ptrs.ra.data)),	\
-		   "save into internal representation failed");		\
-    MR_FREE (ptrs.ra.data);						\
-    mr_conf = mr_conf_loaded;						\
-    mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-      ck_assert_msg ((mr_conf_serialized.size == mr_conf_serialized_.size) && \
-		     (0 == memcmp (mr_conf_serialized.data, mr_conf_serialized_.data, mr_conf_serialized.size)), \
-		     "restored mr_conf mismatched original dump for method " #METHOD); \
-    MR_FREE (mr_conf_serialized_.data);					\
-    MR_FREE (mr_conf_serialized.data);					\
-    mr_conf = mr_conf_saved;						\
-    MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);			\
+      mr_conf_t mr_conf_loaded;						\
+      ck_assert_msg (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded), \
+		     "load for method " #METHOD " failed");		\
+      ptrs = MR_SAVE (mr_conf_t, &mr_conf_loaded);			\
+      ck_assert_msg (((0 != ptrs.size) && (NULL != ptrs.ra)),		\
+		     "save into internal representation failed");	\
+      MR_FREE (ptrs.ra);						\
+      mr_conf = mr_conf_loaded;						\
+      mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
+	ck_assert_msg ((mr_conf_serialized.size == mr_conf_serialized_.size) && \
+		       (0 == memcmp (mr_conf_serialized.data, mr_conf_serialized_.data, mr_conf_serialized.size)), \
+		       "restored mr_conf mismatched original dump for method " #METHOD); \
+	MR_FREE (mr_conf_serialized_.data);				\
+	MR_FREE (mr_conf_serialized.data);				\
+	mr_conf = mr_conf_saved;					\
+	MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);		\
   } END_TEST								\
   TYPEDEF_STRUCT (mr_empty_t);						\
   TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), NONE (int, y[]));	\
@@ -110,7 +110,7 @@
   }									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
-    int size = 2;							\
+      int size = 2;							\
     do size += size >> 1; while (0 == test_run (size));			\
     int x1 = test_run (size * MULTIPLE);				\
     int x2 = test_run (size * MULTIPLE * 4);				\
