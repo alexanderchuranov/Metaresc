@@ -726,7 +726,7 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
   if ((MR_TYPE_NONE != mr_load_data->ptrs.ra[idx].fd.mr_type) && (MR_TYPE_VOID != mr_load_data->ptrs.ra[idx].fd.mr_type))
     {
       int * idx_ = mr_rarray_allocate_element ((void**)&mr_load_data->mr_ra_idx,
-					       &mr_load_data->size, &mr_load_data->alloc_size,
+					       &mr_load_data->mr_ra_idx_size, &mr_load_data->mr_ra_idx_alloc_size,
 					       sizeof (mr_load_data->mr_ra_idx[0]));
       if (NULL == idx_)
 	return (MR_FAILURE);
@@ -861,9 +861,9 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 
   if (0 == idx)
     {
-      mr_load_data->mr_ra_idx.data = NULL;
-      mr_load_data->mr_ra_idx.size = 0;
-      mr_load_data->mr_ra_idx.alloc_size = 0;
+      mr_load_data->mr_ra_idx = NULL;
+      mr_load_data->mr_ra_idx_size = 0;
+      mr_load_data->mr_ra_idx_alloc_size = 0;
     }
 
   if ((idx < 0) || (idx >= mr_load_data->ptrs.size / sizeof (mr_load_data->ptrs.ra[0])))
@@ -910,19 +910,20 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   /* set cross references at the upper level */
   if (0 == idx)
     {
-      while (mr_load_data->mr_ra_idx.size > 0)
+      while (mr_load_data->mr_ra_idx_size > 0)
 	{
-	  mr_load_data->mr_ra_idx.size -= sizeof (mr_load_data->mr_ra_idx.data[0]);
-	  mr_load_pointer_postponed (mr_load_data->mr_ra_idx.data[mr_load_data->mr_ra_idx.size / sizeof (mr_load_data->mr_ra_idx.data[0])], mr_load_data);
+	  mr_load_data->mr_ra_idx_size -= sizeof (mr_load_data->mr_ra_idx[0]);
+	  mr_load_pointer_postponed (mr_load_data->mr_ra_idx[mr_load_data->mr_ra_idx_size / sizeof (mr_load_data->mr_ra_idx[0])],
+				     mr_load_data);
 	}
       if (MR_SUCCESS == status)
 	status = mr_set_crossrefs (mr_load_data);
-      if (mr_load_data->mr_ra_idx.data)
+      if (mr_load_data->mr_ra_idx != NULL)
 	{
-	  MR_FREE (mr_load_data->mr_ra_idx.data);
-	  mr_load_data->mr_ra_idx.data = NULL;
-	  mr_load_data->mr_ra_idx.size = 0;
-	  mr_load_data->mr_ra_idx.alloc_size = 0;
+	  MR_FREE (mr_load_data->mr_ra_idx);
+	  mr_load_data->mr_ra_idx = NULL;
+	  mr_load_data->mr_ra_idx_size = 0;
+	  mr_load_data->mr_ra_idx_alloc_size = 0;
 	}
     }
 

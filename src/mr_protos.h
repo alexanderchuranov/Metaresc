@@ -372,9 +372,9 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 
 TYPEDEF_STRUCT (mr_load_data_t,
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
-		(int *, mr_ra_idx, , "indexes of postponed nodes", { "size" }, "char"),
-		(ssize_t, size, , "size of 'mr_ra_idx'"),
-		(ssize_t, alloc_size, , "allocated size of 'mr_ra_idx'"),
+		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
+		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
+		(ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
@@ -382,7 +382,9 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(int, parent, , "index of current parent"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
-		RARRAY (int, mr_ra_idx, "indexes of postponed nodes"),
+		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
+		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
+		(ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		RARRAY (mr_union_discriminator_t, mr_ra_ud, "allocation of union discriminators"),
 		)
 

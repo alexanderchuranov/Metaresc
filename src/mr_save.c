@@ -832,7 +832,9 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	{
 	  if (postpone)
 	    {
-	      int * idx_ = mr_rarray_append ((void*)&mr_save_data->mr_ra_idx, sizeof (mr_save_data->mr_ra_idx.data[0]));
+	      int * idx_ = mr_rarray_allocate_element ((void**)&mr_save_data->mr_ra_idx,
+						       &mr_save_data->mr_ra_idx_size, &mr_save_data->mr_ra_idx_alloc_size, 
+						       sizeof (mr_save_data->mr_ra_idx[0]));
 	      if (NULL == idx_)
 		return;
 	      *idx_ = idx;
@@ -961,17 +963,18 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 
   mr_save_data->mr_ra_ud.size = 0;
   mr_save_data->mr_ra_ud.data = NULL;
-  mr_save_data->mr_ra_idx.size = 0;
-  mr_save_data->mr_ra_idx.data = NULL;
+  mr_save_data->mr_ra_idx_size = 0;
+  mr_save_data->mr_ra_idx = NULL;
   mr_save_data->ptrs.size = 0;
   mr_save_data->ptrs.ra = NULL;
 
   mr_save_inner (data, fdp, mr_save_data);
 
-  while (mr_save_data->mr_ra_idx.size > 0)
+  while (mr_save_data->mr_ra_idx_size > 0)
     {
-      mr_save_data->mr_ra_idx.size -= sizeof (mr_save_data->mr_ra_idx.data[0]);
-      mr_save_pointer_postponed (0, mr_save_data->mr_ra_idx.data[mr_save_data->mr_ra_idx.size / sizeof (mr_save_data->mr_ra_idx.data[0])], mr_save_data);
+      mr_save_data->mr_ra_idx_size -= sizeof (mr_save_data->mr_ra_idx[0]);
+      mr_save_pointer_postponed (0, mr_save_data->mr_ra_idx[mr_save_data->mr_ra_idx_size / sizeof (mr_save_data->mr_ra_idx[0])],
+				 mr_save_data);
     }
   mr_post_process (mr_save_data);
 
@@ -980,9 +983,9 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   if (mr_save_data->mr_ra_ud.data)
     MR_FREE (mr_save_data->mr_ra_ud.data);
   mr_save_data->mr_ra_ud.data = NULL;
-  if (mr_save_data->mr_ra_idx.data)
-    MR_FREE (mr_save_data->mr_ra_idx.data);
-  mr_save_data->mr_ra_idx.data = NULL;
+  if (mr_save_data->mr_ra_idx != NULL)
+    MR_FREE (mr_save_data->mr_ra_idx);
+  mr_save_data->mr_ra_idx = NULL;
 
   mr_ic_free (&mr_save_data->typed_ptrs);
   mr_ic_free (&mr_save_data->untyped_ptrs);
