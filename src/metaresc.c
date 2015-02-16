@@ -482,6 +482,23 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
   
   switch (src->fd.mr_type)
     {
+    case MR_TYPE_VOID:
+      switch (src->fd.size)
+	{
+	case sizeof (int8_t):
+	  value = *(int8_t*)src->data;
+	  break;
+	case sizeof (int16_t):
+	  value = *(int16_t*)src->data;
+	  break;
+	case sizeof (int32_t):
+	  value = *(int32_t*)src->data;
+	  break;
+	case sizeof (int64_t):
+	  value = *(int64_t*)src->data;
+	  break;
+	}
+      break;
     case MR_TYPE_BOOL:
       value = *(bool*)src->data;
       break;
@@ -518,6 +535,23 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
   
   switch (dst->fd.mr_type)
     {
+    case MR_TYPE_VOID:
+      switch (dst->fd.size)
+	{
+	case sizeof (int8_t):
+	  *(int8_t*)dst->data = value;
+	  break;
+	case sizeof (int16_t):
+	  *(int16_t*)dst->data = value;
+	  break;
+	case sizeof (int32_t):
+	  *(int32_t*)dst->data = value;
+	  break;
+	case sizeof (int64_t):
+	  *(int64_t*)dst->data = value;
+	  break;
+	}
+      break;
     case MR_TYPE_BOOL:
       *(bool*)dst->data = value;
       break;

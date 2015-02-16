@@ -37,7 +37,7 @@ TYPEDEF_STRUCT (job_t,
 		string_t Category,
 		(update_t, Update),
 		(person_t *, Developers, /* suffix */, /* meta */, { "Developers_size" }, "char"),
-		(ssize_t, Developers_size),
+		NONE (ssize_t, Developers_size),
 		(person_t, Contact),
 		string_t Requirements,
 		string_t Skills,
@@ -46,7 +46,7 @@ TYPEDEF_STRUCT (job_t,
 
 TYPEDEF_STRUCT (helping_t,
 		(job_t *, Jobs, /* suffix */ , /* meta */, { "Jobs_size" }, "char" ),
-		(ssize_t, Jobs_size),
+		NONE (ssize_t, Jobs_size),
 		)
 
 static void

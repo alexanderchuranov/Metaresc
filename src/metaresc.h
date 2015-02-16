@@ -647,6 +647,7 @@
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
+	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	     .mr_type = MR_TYPE_VOID,					\
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .meta = "" __VA_ARGS__,					\
