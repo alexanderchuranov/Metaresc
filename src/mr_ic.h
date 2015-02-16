@@ -129,6 +129,7 @@ mr_ic_free (mr_ic_t * ic)
 static inline mr_status_t
 mr_ic_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_ic_type_t mr_ic_type)
 {
+  memset (ic, 0, sizeof (*ic));
   switch (mr_ic_type)
     {
     case MR_IC_NONE:

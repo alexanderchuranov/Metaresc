@@ -402,8 +402,14 @@ mr_ic_hash_reset (mr_ic_t * ic)
   ic->hash.index_free (ic);
   
   memset (ic->hash.hash_table, 0, ic->hash.size);
-  ic->hash.zero_key = FALSE;
   ic->hash.items_count = 0;
+}
+
+void
+mr_ic_hash_next_reset (mr_ic_t * ic)
+{
+  mr_ic_hash_reset (ic);
+  ic->hash_next.zero_key = FALSE;
 }
 
 void
@@ -414,7 +420,13 @@ mr_ic_hash_free (mr_ic_t * ic)
     MR_FREE (ic->hash.hash_table);
   ic->hash.hash_table = NULL;
   ic->hash.size = 0;
-  ic->hash.zero_key = FALSE;
+}
+
+void
+mr_ic_hash_next_free (mr_ic_t * ic)
+{
+  mr_ic_hash_free (ic);
+  ic->hash_next.zero_key = FALSE;
 }
 
 static int
@@ -503,15 +515,15 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   if (ic->hash.size / sizeof (ic->hash.hash_table[0]) <= (ic->hash.items_count + 1) * MR_HASH_TABLE_SIZE_MULT)
     {
-      mr_ic_t src_ic = *ic;
-      ic->hash.hash_table = NULL;
-      ic->hash.size = 0;
-      ic->hash.zero_key = FALSE;
+      mr_ic_t dst_ic;
+      if (MR_SUCCESS != mr_ic_new (&dst_ic, ic->hash.hash_fn, ic->compar_fn, ic->key_type, ic->ic_type))
+	return (NULL);
 
-      if (MR_SUCCESS != mr_ic_hash_index_inner (&src_ic, ic, ic->hash.items_count + 1, context))
+      if (MR_SUCCESS != mr_ic_hash_index_inner (ic, &dst_ic, ic->hash.items_count + 1, context))
 	return (NULL);
       
-      mr_ic_free (&src_ic);
+      mr_ic_free (ic);
+      *ic = dst_ic;
     }
   return (mr_ic_hash_add_inner (ic, key, context));
 }
@@ -630,7 +642,7 @@ mr_ic_hash_next_index_free (mr_ic_t * ic)
 mr_ptr_t *
 mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket)
 {
-  mr_ic_hash_t * hash = &ic->hash;
+  mr_ic_hash_t * hash = &ic->hash_next.hash;
   int i, count = hash->size / sizeof (hash->hash_table[0]);
 
   if (bucket < 0)
@@ -638,7 +650,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int
   
   if (0 == key.long_int_t)
     {
-      hash->zero_key = TRUE;
+      ic->hash_next.zero_key = TRUE;
       return (&zero);
     }
 
@@ -661,7 +673,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int
 mr_status_t
 mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  mr_ic_hash_t * hash = &ic->hash;
+  mr_ic_hash_t * hash = &ic->hash_next.hash;
   mr_ptr_t * find = mr_ic_find (ic, key, context);
 
   if (NULL == find)
@@ -669,7 +681,7 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   --hash->items_count;
   if (0 == key.long_int_t)
-    hash->zero_key = FALSE;
+    ic->hash_next.zero_key = FALSE;
   else
     {
       int i, count = hash->size / sizeof (hash->hash_table[0]);
@@ -694,11 +706,11 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 mr_ptr_t *
 mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  mr_ic_hash_t * hash = &ic->hash;
+  mr_ic_hash_t * hash = &ic->hash_next.hash;
   int i, bucket, count = hash->size / sizeof (hash->hash_table[0]);
   
   if (0 == key.long_int_t)
-    return (hash->zero_key ? &zero : NULL);
+    return (ic->hash_next.zero_key ? &zero : NULL);
 
   bucket = mr_ic_hash_get_backet (hash, key, context);
   if (bucket < 0)
@@ -721,15 +733,16 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 mr_status_t
 mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
+  mr_ic_hash_t * hash = &ic->hash_next.hash;
   int i;
 
-  if (ic->hash.zero_key)
+  if (ic->hash_next.zero_key)
     if (MR_SUCCESS != visit_fn (&zero, context))
       return (MR_FAILURE);
 
-  for (i = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1; i >= 0; --i)
-    if (0 != ic->hash.hash_table[i].long_int_t)
-      if (MR_SUCCESS != visit_fn (ic->hash.hash_table[i], context))
+  for (i = hash->size / sizeof (hash->hash_table[0]) - 1; i >= 0; --i)
+    if (0 != hash->hash_table[i].long_int_t)
+      if (MR_SUCCESS != visit_fn (hash->hash_table[i], context))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -748,8 +761,8 @@ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
   ic->find = mr_ic_hash_next_find;
   ic->foreach = mr_ic_hash_next_foreach;
   ic->index = mr_ic_hash_index;
-  ic->reset = mr_ic_hash_reset;
-  ic->free = mr_ic_hash_free;
+  ic->reset = mr_ic_hash_next_reset;
+  ic->free = mr_ic_hash_next_free;
 
   memset (&ic->hash, 0, sizeof (ic->hash));
   ic->hash.items_count = 0;
@@ -759,7 +772,7 @@ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
   ic->hash.bucket_type = key_type;
   ic->hash.hash_table = NULL;
   ic->hash.size = 0;
-  ic->hash.zero_key = FALSE;
+  ic->hash_next.zero_key = FALSE;
 
   return (MR_SUCCESS);
 }

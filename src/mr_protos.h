@@ -205,7 +205,7 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_RBTREE, , "tree"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
 	      (MR_IC_HASH_TREE, , "hash"),
-	      (MR_IC_HASH_NEXT, , "hash"),
+	      (MR_IC_HASH_NEXT, , "hash_next"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
@@ -219,7 +219,6 @@ typedef struct mr_ic_t mr_ic_t;
 TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(int, items_count),
 		(ssize_t, size, , "size of hash table"),
-		(bool, zero_key),
 		(char *, bucket_type),
 		(mr_hash_fn_t, hash_fn),
 		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
@@ -229,6 +228,11 @@ TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collect
 		(mr_ptr_t *, hash_table, , "bucket_type", { "size" }, "char"),
 		)
 
+TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "extend mr_ic_hash_t with field specific for MR_IC_HASH_NEXT"),
+		(mr_ic_hash_t, hash, , "derive all fields from basic hash struct"),
+		(bool, zero_key),
+		)
+
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
@@ -236,8 +240,9 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		ANON_UNION (type_specific),
 		(mr_ptr_t, ext, , "ext_type"),
 		(mr_ic_rarray_t, rarray),
-		(mr_ic_hash_t, hash),
 		(mr_red_black_tree_node_t *, tree),
+		(mr_ic_hash_t, hash),
+		(mr_ic_hash_next_t, hash_next),
 		END_ANON_UNION ("ic_type"),
 		(char *, ext_type, , "type specifier for extended IC types"),
 		
