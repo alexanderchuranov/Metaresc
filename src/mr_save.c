@@ -450,23 +450,6 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 }
 
 /**
- * Checks that string is a valid field name [_a-zA-A][_a-zA-Z0-9]*
- * @param name union meta field
- */
-static bool
-mr_is_valid_field_name (char * name)
-{
-  if (NULL == name)
-    return (FALSE);
-  if (!isalpha (*name) && ('_' != *name))
-    return (FALSE);
-  for (++name; *name; ++name)
-    if (!isalnum (*name) && ('_' != *name))
-      return (FALSE);
-  return (TRUE);
-}
-
-/**
  * Finds out union discriminator
  * @param mr_save_data save routines data and lookup structures
  */
@@ -669,82 +652,6 @@ mr_save_rarray (mr_save_data_t * mr_save_data)
     }
 }
 
-static void
-mr_get_size_field (ssize_t * size, char * size_field_name, int parent, mr_ra_mr_ptrdes_t * ptrs)
-{
-  void * size_ptr;
-  mr_fd_t * parent_fdp;
-  mr_td_t * parent_tdp = mr_get_td_by_name (ptrs->ra[parent].fd.type);
-  
-  if (NULL == parent_tdp)
-    return;
-
-  /* lookup for a size field in this parent */
-  parent_fdp = mr_get_fd_by_name (parent_tdp, size_field_name);
-	      
-  if (NULL == parent_fdp)
-    return;
-
-  size_ptr = (char*)ptrs->ra[parent].data + parent_fdp->offset; /* get an address of size field */
-		  
-  switch (parent_fdp->mr_type)
-    {
-    case MR_TYPE_BOOL:
-      *size = *(bool*)size_ptr;
-      break;
-    case MR_TYPE_UINT8:
-      *size = *(uint8_t*)size_ptr;
-      break;
-    case MR_TYPE_INT8:
-      *size = *(int8_t*)size_ptr;
-      break;
-    case MR_TYPE_UINT16:
-      *size = *(uint16_t*)size_ptr;
-      break;
-    case MR_TYPE_INT16:
-      *size = *(int16_t*)size_ptr;
-      break;
-    case MR_TYPE_UINT32:
-      *size = *(uint32_t*)size_ptr;
-      break;
-    case MR_TYPE_INT32:
-      *size = *(int32_t*)size_ptr;
-      break;
-    case MR_TYPE_UINT64:
-      *size = *(uint64_t*)size_ptr;
-      break;
-    case MR_TYPE_INT64:
-      *size = *(int64_t*)size_ptr;
-      break;
-    case MR_TYPE_BITFIELD:
-      {
-	uint64_t value = 0;
-	mr_ptrdes_t ptrdes = { .data = size_ptr, .fd = *parent_fdp, };
-	mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
-	*size = value;
-      }
-    default:
-      break;
-    }
-}
-
-void
-mr_pointer_get_size (ssize_t * size, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs)
-{
-  if (mr_is_valid_field_name (name))
-    {
-      int parent;
-      /* traverse through parents up to first structure */
-      for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
-	if ((MR_TYPE_EXT_NONE == ptrs->ra[parent].fd.mr_type_ext) &&
-	    (MR_TYPE_STRUCT == ptrs->ra[parent].fd.mr_type))
-	  break;
-      
-      if (parent >= 0)
-	mr_get_size_field (size, name, parent, ptrs);
-    }
-}
-
 /**
  * Saves pointer into internal representation.
  * @param idx node index
@@ -814,8 +721,17 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	     name of the size field is stored in 'res' of field meta-data */
 	  if ((NULL != mr_save_data->ptrs.ra[idx].fd.res_type) &&
 	      (0 == strcmp ("char", mr_save_data->ptrs.ra[idx].fd.res_type)))
-	    mr_pointer_get_size (&mr_save_data->ptrs.ra[idx].size, mr_save_data->ptrs.ra[idx].fd.res.ptr,
-				 idx, &mr_save_data->ptrs);
+	    {
+	      mr_ptrdes_t src, dst;
+	      mr_pointer_get_size_ptrdes (&src, mr_save_data->ptrs.ra[idx].fd.res.ptr,
+					  idx, &mr_save_data->ptrs);
+	      if (src.data != NULL)
+		{
+		  dst.data = &mr_save_data->ptrs.ra[idx].size;
+		  dst.fd.mr_type = MR_TYPE_DETECT (typeof (mr_save_data->ptrs.ra[idx].size));
+		  mr_assign_int (&dst, &src);
+		}
+	    }
 	}
       
       if (ref_idx >= 0)

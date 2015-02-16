@@ -1229,7 +1229,10 @@ extern mr_status_t cinit_load (char*, mr_ra_mr_ptrdes_t*);
 extern mr_status_t scm_load (char*, mr_ra_mr_ptrdes_t*);
 #endif /* HAVE_BISON_FLEX */
 
-extern int mr_add_ptr_to_list (mr_ra_mr_ptrdes_t*);
+extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
+extern bool mr_is_valid_field_name (char * name);
+extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs);
+extern int mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs);
 extern void mr_add_child (int, int, mr_ra_mr_ptrdes_t*);
 extern void mr_detect_type (mr_fd_t*);
 extern char * mr_normalize_name (char*);

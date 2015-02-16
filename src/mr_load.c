@@ -703,6 +703,23 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
   for (node = mr_load_data->ptrs.ra[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra[node].next)
     if (MR_SUCCESS != mr_load (*data + count++ * fd_.size, &fd_, node, mr_load_data))
       return (MR_FAILURE);
+
+  mr_load_data->ptrs.ra[idx].size = count * fd_.size;
+  
+  if ((NULL != mr_load_data->ptrs.ra[idx].fd.res_type) &&
+      (0 == strcmp ("char", mr_load_data->ptrs.ra[idx].fd.res_type)))
+    {
+      mr_ptrdes_t src, dst;
+      mr_pointer_get_size_ptrdes (&dst, mr_load_data->ptrs.ra[idx].fd.res.ptr,
+				  idx, &mr_load_data->ptrs);
+      
+      if (dst.data != NULL)
+	{
+	  src.data = &mr_load_data->ptrs.ra[idx].size;
+	  src.fd.mr_type = MR_TYPE_DETECT (typeof (mr_load_data->ptrs.ra[idx].size));
+	  mr_assign_int (&dst, &src);
+	}
+    }  
   return (MR_SUCCESS);
 }
 
@@ -874,7 +891,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 
   mr_load_data->ptrs.ra[idx].data = data;
   if (mr_load_data->ptrs.ra[idx].fd.name.str && fdp->name.str)
-    if (strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].fd.name.str))
+    if (0 != strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].fd.name.str))
       {
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, mr_load_data->ptrs.ra[idx].fd.name.str);
 	return (MR_FAILURE);
@@ -898,6 +915,9 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra[idx].fd.mr_type_aux = fdp->mr_type_aux;
   mr_load_data->ptrs.ra[idx].fd.mr_type_ext = fdp->mr_type_ext;
   mr_load_data->ptrs.ra[idx].fd.param = fdp->param;
+  mr_load_data->ptrs.ra[idx].fd.meta = fdp->meta;
+  mr_load_data->ptrs.ra[idx].fd.res.ptr = fdp->res.ptr;
+  mr_load_data->ptrs.ra[idx].fd.res_type = fdp->res_type;
 
   /* route loading */
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && mr_ext_load_handler[fdp->mr_type_ext])

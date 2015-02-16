@@ -475,6 +475,135 @@ mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs)
   ptrs->ra[parent].last_child = child;
 }
 
+void
+mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
+{
+  uint64_t value = 0;
+  
+  switch (src->fd.mr_type)
+    {
+    case MR_TYPE_BOOL:
+      value = *(bool*)src->data;
+      break;
+    case MR_TYPE_UINT8:
+      value = *(uint8_t*)src->data;
+      break;
+    case MR_TYPE_INT8:
+      value = *(int8_t*)src->data;
+      break;
+    case MR_TYPE_UINT16:
+      value = *(uint16_t*)src->data;
+      break;
+    case MR_TYPE_INT16:
+      value = *(int16_t*)src->data;
+      break;
+    case MR_TYPE_UINT32:
+      value = *(uint32_t*)src->data;
+      break;
+    case MR_TYPE_INT32:
+      value = *(int32_t*)src->data;
+      break;
+    case MR_TYPE_UINT64:
+      value = *(uint64_t*)src->data;
+      break;
+    case MR_TYPE_INT64:
+      value = *(int64_t*)src->data;
+      break;
+    case MR_TYPE_BITFIELD:
+      mr_save_bitfield_value (src, &value); /* get value of the bitfield */
+      break;
+    default:
+      break;
+    }
+  
+  switch (dst->fd.mr_type)
+    {
+    case MR_TYPE_BOOL:
+      *(bool*)dst->data = value;
+      break;
+    case MR_TYPE_UINT8:
+      *(uint8_t*)dst->data = value;
+      break;
+    case MR_TYPE_INT8:
+      *(int8_t*)dst->data = value;
+      break;
+    case MR_TYPE_UINT16:
+      *(uint16_t*)dst->data = value;
+      break;
+    case MR_TYPE_INT16:
+      *(int16_t*)dst->data = value;
+      break;
+    case MR_TYPE_UINT32:
+      *(uint32_t*)dst->data = value;
+      break;
+    case MR_TYPE_INT32:
+      *(int32_t*)dst->data = value;
+      break;
+    case MR_TYPE_UINT64:
+      *(uint64_t*)dst->data = value;
+      break;
+    case MR_TYPE_INT64:
+      *(int64_t*)dst->data = value;
+      break;
+    case MR_TYPE_BITFIELD:
+      mr_load_bitfield_value (dst, &value); /* set value of the bitfield */
+      break;
+    default:
+      break;
+    }
+}
+
+/**
+ * Checks that string is a valid field name [_a-zA-A][_a-zA-Z0-9]*
+ * @param name union meta field
+ */
+bool
+mr_is_valid_field_name (char * name)
+{
+  if (NULL == name)
+    return (FALSE);
+  if (!isalpha (*name) && ('_' != *name))
+    return (FALSE);
+  for (++name; *name; ++name)
+    if (!isalnum (*name) && ('_' != *name))
+      return (FALSE);
+  return (TRUE);
+}
+
+void
+mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  memset (ptrdes, 0, sizeof (*ptrdes));
+  
+  if (mr_is_valid_field_name (name))
+    {
+      int parent;
+      /* traverse through parents up to first structure */
+      for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
+	if ((MR_TYPE_EXT_NONE == ptrs->ra[parent].fd.mr_type_ext) &&
+	    (MR_TYPE_STRUCT == ptrs->ra[parent].fd.mr_type))
+	  break;
+      
+      if (parent >= 0)
+	{
+	  mr_fd_t * parent_fdp;
+	  mr_td_t * parent_tdp = mr_get_td_by_name (ptrs->ra[parent].fd.type);
+  
+	  if (NULL == parent_tdp)
+	    return;
+
+	  /* lookup for a size field in this parent */
+	  parent_fdp = mr_get_fd_by_name (parent_tdp, name);
+	      
+	  if (NULL == parent_fdp)
+	    return;
+
+	  ptrdes->fd = *parent_fdp;
+	  ptrdes->data = (char*)ptrs->ra[parent].data + parent_fdp->offset; /* get an address of size field */
+	}
+    }
+}
+
 /**
  * Recursively free all allocated memory. Needs to be done from bottom to top.
  * @param ptrs resizable array with serialized data
