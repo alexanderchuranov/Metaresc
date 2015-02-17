@@ -270,11 +270,11 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		  res field can be used by user for extended information
 		  placed after meta field for tricky intialization
 		  sample:
-		  NONE (void *, ptr, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
+		  VOID (void *, ptr, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
 		  or
-		  NONE (void *, ptr, , "user extended info", { (ext_info_t[]){ {.field = XXX} } }, "ext_info_t")
+		  VOID (void *, ptr, , "user extended info", { (ext_info_t[]){ {.field = XXX} } }, "ext_info_t")
 		  or
-		  NONE (void *, ptr, , "user extended info", { "one more extra string" }, "char")
+		  VOID (void *, ptr, , "user extended info", { "one more extra string" }, "char")
 		*/
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
@@ -339,7 +339,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
 		ANON_UNION (),
-		NONE (uint8_t, vt_none),
+		VOID (uint8_t, vt_none),
 		long long int vt_int,
 		long double vt_float,
 		complex long double vt_complex,

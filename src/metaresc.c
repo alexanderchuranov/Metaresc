@@ -982,7 +982,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    for (j = 0; j < fields_count - 1; ++j)
 	      {
 		/* offset of union memebers may differ from offset of anonymous union place holder */
-		if (fields[j]->offset != 0) /* MR_NONE and MR_END_ANON_UNION has zero offset */
+		if (fields[j]->offset != 0) /* MR_VOID and MR_END_ANON_UNION has zero offset */
 		  fdp->offset = fields[j]->offset;
 		fields[j]->offset = 0; /* reset offset to zero */
 		if (tdp_->size < fields[j]->size)
@@ -1299,13 +1299,13 @@ mr_check_fields (mr_td_t * tdp)
       mr_fd_t * fdp = tdp->fields[i].fdp;
       /*
 	Check names of the fileds.
-	MR_NONE definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
+	MR_VOID definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
       */
       char * name = fdp->name.str;
       if (name)
 	{
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
-	  if (*name) /* strings with field names might be in read-only memory. For MR_NONE names are saved in writable memory. */
+	  if (*name) /* strings with field names might be in read-only memory. For MR_VOID names are saved in writable memory. */
 	    *name = 0; /* truncate on first invalid charecter */
 	}
       mr_normalize_type (fdp);

@@ -73,7 +73,7 @@ TYPEDEF_STRUCT (ieee_854_long_double_t,
 		BITFIELD (unsigned int, mantissa0, :32),
 		BITFIELD (unsigned int, exponent, :15),
 		BITFIELD (sign_t, sign, :1),
-		NONE (unsigned int, empty, :16))
+		VOID (unsigned int, empty, :16))
 
 TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
 		BITFIELD (unsigned int, mantissa1, :32),
@@ -82,7 +82,7 @@ TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
 		BITFIELD (unsigned int, one, :1),
 		BITFIELD (unsigned int, exponent, :15),
 		BITFIELD (sign_t, sign, :1),
-		NONE (unsigned int, empty, :16))
+		VOID (unsigned int, empty, :16))
 
 TYPEDEF_ENUM (ieee_854_long_double_nan_enum_t,
 	      (IEEE_854_LONG_DOUBLE_NAN_ENUM_T, = (1 << 17) - 1, "ieee_854_long_double_nan"),

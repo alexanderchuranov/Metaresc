@@ -54,8 +54,6 @@
 /* XML attribute for zero length strings */
 #define MR_ISNULL "isnull"
 #define MR_ISNULL_VALUE "true"
-#define MR_IC_NONE_TYPE_T mr_ic_none_type_t
-#define MR_IC_NONE_TYPE_T_STR MR_STRINGIFY_READONLY (MR_IC_NONE_TYPE_T)
 #define MR_RARRAY_OPAQUE_DATA_T mr_rarray_opaque_data_t
 #define MR_RARRAY_OPAQUE_DATA_T_STR MR_STRINGIFY_READONLY (MR_RARRAY_OPAQUE_DATA_T)
 #define MR_OPAQUE_DATA mr_opaque_data
@@ -358,7 +356,7 @@
 /* list of substitutions for P00_FIELD_UNFOLD_ */
 #define P00_COMMA_FIELD FIELD,
 #define P00_COMMA_AUTO AUTO,
-#define P00_COMMA_NONE NONE,
+#define P00_COMMA_VOID VOID,
 #define P00_COMMA_ENUM ENUM,
 #define P00_COMMA_BITFIELD BITFIELD,
 #define P00_COMMA_BITMASK BITMASK,
@@ -498,7 +496,7 @@
 #define MR_TYPEDEF_STRUCT(...) MR_UNFOLD (MR_TYPEDEF_STRUCT, __VA_ARGS__)
 
 #define MR_AUTO(...) MR_UNFOLD (MR_AUTO, __VA_ARGS__)
-#define MR_NONE(...) MR_UNFOLD (MR_NONE, __VA_ARGS__)
+#define MR_VOID(...) MR_UNFOLD (MR_VOID, __VA_ARGS__)
 #define MR_ENUM(...) MR_UNFOLD (MR_ENUM, __VA_ARGS__)
 #define MR_BITFIELD(...) MR_UNFOLD (MR_BITFIELD, __VA_ARGS__)
 #define MR_BITMASK(...) MR_UNFOLD (MR_BITMASK, __VA_ARGS__)
@@ -544,9 +542,9 @@
 #define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef __VA_ARGS__ union MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
 #define MR_END_UNION_PROTO(MR_TYPE_NAME, ...) } MR_TYPE_NAME;
 
-/* next macro adds empty argument. Required for MR_AUTO, MR_NONE, MR_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */
+/* next macro adds empty argument. Required for MR_AUTO, MR_VOID, MR_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */
 #define MR_AUTO_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
-#define MR_NONE_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
+#define MR_VOID_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
 #define MR_CHAR_ARRAY_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
 
 #define MR_FIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) TYPE NAME SUFFIX;
@@ -642,13 +640,14 @@
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
-#define MR_NONE_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
+#define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	     .mr_type = MR_TYPE_VOID,					\
+	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .meta = "" __VA_ARGS__,					\
 	     } } },
@@ -672,7 +671,7 @@
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_DETECT (TYPE, ((MR_TYPE_NAME*)NULL)->NAME), __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE))
 
 #define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-#define MR_NONE_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_NONE_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
+#define MR_VOID_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 
 #define MR_ENUM_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_ENUM, MR_TYPE_EXT_NONE, __VA_ARGS__)

@@ -63,7 +63,7 @@
 	MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);		\
   } END_TEST								\
   TYPEDEF_STRUCT (mr_empty_t);						\
-  TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), NONE (int, y, []));	\
+  TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));	\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
   TYPEDEF_STRUCT (array_t, RARRAY (list_t, ra));			\
