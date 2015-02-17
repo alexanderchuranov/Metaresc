@@ -508,6 +508,9 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_BOOL:
       value = *(bool*)src->data;
       break;
+    case MR_TYPE_CHAR:
+      value = *(char*)src->data;
+      break;
     case MR_TYPE_UINT8:
       value = *(uint8_t*)src->data;
       break;
@@ -565,6 +568,9 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
       break;
     case MR_TYPE_BOOL:
       *(bool*)dst->data = value;
+      break;
+    case MR_TYPE_CHAR:
+      *(char*)dst->data = value;
       break;
     case MR_TYPE_UINT8:
       *(uint8_t*)dst->data = value;
