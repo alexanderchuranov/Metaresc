@@ -699,13 +699,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
     {
       int ref_idx;
       mr_type_t mr_type = mr_save_data->ptrs.ra[idx].fd.mr_type;
-      {
-	mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
-	/* set extended type property to NONE in copy of field descriptor */
-	fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-	/* check if this pointer is already saved */
-	ref_idx = mr_check_ptr_in_list (mr_save_data, *data, &fd_);
-      }
+      mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
 
       if (postpone)
 	{
@@ -718,7 +712,8 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	    mr_save_data->ptrs.ra[idx].size = 0;
 	  
 	  /* pointers might have assosiated field with the size for resizable arrays.
-	     name of the size field is stored in 'res' of field meta-data */
+	     name of the size field is stored in 'res' of field meta-data.
+	     'res_type' in this case will be 'char' */
 	  if ((NULL != mr_save_data->ptrs.ra[idx].fd.res_type) &&
 	      (0 == strcmp ("char", mr_save_data->ptrs.ra[idx].fd.res_type)))
 	    {
@@ -733,6 +728,11 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 		}
 	    }
 	}
+      
+      /* set extended type property to NONE in copy of field descriptor */
+      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+      /* check if this pointer is already saved */
+      ref_idx = mr_check_ptr_in_list (mr_save_data, *data, &fd_);
       
       if (ref_idx >= 0)
 	{

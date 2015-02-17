@@ -479,8 +479,14 @@ void
 mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 {
   uint64_t value = 0;
+  mr_type_t mr_type;
+
+  if (MR_TYPE_VOID == src->fd.mr_type)
+    mr_type = src->fd.mr_type_aux;
+  else
+    mr_type = src->fd.mr_type;
   
-  switch (src->fd.mr_type)
+  switch (mr_type)
     {
     case MR_TYPE_VOID:
       switch (src->fd.size)
@@ -533,7 +539,12 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
       break;
     }
   
-  switch (dst->fd.mr_type)
+  if (MR_TYPE_VOID == dst->fd.mr_type)
+    mr_type = dst->fd.mr_type_aux;
+  else
+    mr_type = dst->fd.mr_type;
+
+  switch (mr_type)
     {
     case MR_TYPE_VOID:
       switch (dst->fd.size)
