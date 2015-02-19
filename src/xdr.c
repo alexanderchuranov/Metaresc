@@ -22,6 +22,7 @@ TYPEDEF_FUNC (mr_status_t, xdr_load_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *)
 TYPEDEF_FUNC (mr_status_t, xdr_save_handler_t, (XDR *, int, mr_ra_mr_ptrdes_t *))
 
 static xdr_load_handler_t xdr_load_handler[];
+static xdr_load_handler_t ext_xdr_load_handler[];
 static xdr_save_handler_t xdr_save_handler[];
 
 /**
@@ -272,6 +273,42 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
   return (status);
 }
 
+static mr_status_t
+xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs, int parent)
+{
+  mr_status_t status = MR_FAILURE;
+  int idx = mr_add_ptr_to_list (ptrs);
+  if (idx < 0)
+    return (MR_FAILURE);
+  
+  ptrs->ra[idx].data = data;
+  ptrs->ra[idx].fd = *fdp;
+  mr_add_child (parent, idx, ptrs);
+
+  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xdr_load_handler[fdp->mr_type_ext])
+    status = ext_xdr_load_handler[fdp->mr_type_ext] (xdrs, idx, ptrs);
+  else if ((fdp->mr_type < MR_TYPE_LAST) && xdr_load_handler[fdp->mr_type])
+    status = xdr_load_handler[fdp->mr_type] (xdrs, idx, ptrs);
+  else
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+
+  return (status);
+}
+
+mr_status_t
+xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
+{
+  mr_ra_mr_ptrdes_t ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, };
+  mr_status_t status = xdr_load_inner (data, fdp, xdrs, &ptrs, -1);
+
+  if (MR_SUCCESS == status)
+    status = mr_set_crossrefs (&ptrs);
+
+  if (ptrs.ra != NULL)
+    MR_FREE (ptrs.ra);
+  return (status);
+}
+
 /**
  * Handler for RL_TYPE_NONE.
  * @param xdrs XDR stream descriptor
@@ -318,6 +355,25 @@ xdr_char_ (XDR * xdrs, char * cp)
   if (XDR_ENCODE == xdrs->x_op)
     x = *cp;
   if (!xdr_int (xdrs, &x))
+    return (FALSE);
+  if (XDR_DECODE == xdrs->x_op)
+    *cp = x;
+  return (TRUE);
+}
+
+/**
+ * Handler for type ssize_t.
+ * @param xdrs XDR stream descriptor
+ * @param cp pointer on ssize_t
+ * @return status
+ */
+static bool_t __attribute__((unused))
+xdr_ssize_t (XDR * xdrs, ssize_t * cp)
+{
+  int64_t x = 0;
+  if (XDR_ENCODE == xdrs->x_op)
+    x = *cp;
+  if (!xdr_int64_t (xdrs, &x))
     return (FALSE);
   if (XDR_DECODE == xdrs->x_op)
     *cp = x;
@@ -610,7 +666,7 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_td_t * 
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
-      if (MR_SUCCESS != xdr_load (&data[fdp->offset], fdp, xdrs, ptrs))
+      if (MR_SUCCESS != xdr_load_inner (&data[fdp->offset], fdp, xdrs, ptrs, idx))
 	return (MR_FAILURE);
     }
   return (MR_SUCCESS);
@@ -694,7 +750,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	  if (NULL == fdp)
 	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
 	  else
-	    status = xdr_load (data + fdp->offset, fdp, xdrs, ptrs);
+	    status = xdr_load_inner (data + fdp->offset, fdp, xdrs, ptrs, idx);
 	}
       MR_FREE (discriminator);
     }
@@ -842,6 +898,7 @@ xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
 {
   mr_ptrdes_t ptrdes = { .fd = *fdp, .data = data, };
   mr_ra_mr_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, };
+  
   ptrdes.fd.mr_type = ptrdes.fd.mr_type_aux;
   if (XDR_ENCODE == xdrs->x_op)
     return (xdr_save_handler[ptrdes.fd.mr_type] (xdrs, 0, &ptrs));
@@ -908,26 +965,9 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     }
 
   for (i = 0; i < count; i += row_count)
-    if (MR_SUCCESS != xdr_load (&data[i * fd_.size], &fd_, xdrs, ptrs))
+    if (MR_SUCCESS != xdr_load_inner (&data[i * fd_.size], &fd_, xdrs, ptrs, idx))
       return (MR_FAILURE);
   return (MR_SUCCESS);
-}
-
-static bool_t
-xdr_ssize_t (XDR * xdrs, ssize_t * size)
-{
-  switch (sizeof (*size))
-    {
-    case sizeof (int8_t):
-      return (xdr_int8_t (xdrs, (int8_t*)size));
-    case sizeof (int16_t):
-      return (xdr_int16_t (xdrs, (int16_t*)size));
-    case sizeof (int32_t):
-      return (xdr_int32_t (xdrs, (int32_t*)size));
-    case sizeof (int64_t):
-      return (xdr_int64_t (xdrs, (int64_t*)size));
-    }
-  return (FALSE);
 }
 
 /**
@@ -952,7 +992,7 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   
   if (TRUE == ptrs->ra[idx].flags.is_null)
     return (MR_SUCCESS);
-      
+
   if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].size))
     return (MR_FAILURE);
   
@@ -1008,6 +1048,8 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
       if (ptrs->ra[idx].size <= 0)
 	return (MR_FAILURE);
+
+      mr_pointer_set_size (idx, ptrs);
       
       *data = MR_MALLOC (ptrs->ra[idx].size);
       if (NULL == *data)
@@ -1023,7 +1065,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	{
 	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
 	  for (i = 0; i < count; ++i)
-	    if (MR_SUCCESS != xdr_load (*data + i * fd_.size, &fd_, xdrs, ptrs))
+	    if (MR_SUCCESS != xdr_load_inner (*data + i * fd_.size, &fd_, xdrs, ptrs, idx))
 	      return (MR_FAILURE);
 	}
     }
@@ -1142,7 +1184,7 @@ xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 	    return (xdr_opaque (xdrs, ra->data, ra->size) ? MR_SUCCESS : MR_FAILURE);
 	  else
 	    for (i = 0; i < count; ++i)
-	      if (MR_SUCCESS != xdr_load (((char*)ra->data) + i * fd_.size, &fd_, xdrs, ptrs))
+	      if (MR_SUCCESS != xdr_load_inner (((char*)ra->data) + i * fd_.size, &fd_, xdrs, ptrs, idx))
 		return (MR_FAILURE);
 	}
     }
@@ -1333,34 +1375,3 @@ static xdr_load_handler_t ext_xdr_load_handler[] =
     [MR_TYPE_EXT_RARRAY_DATA] = xdr_load_rarray_data,
     [MR_TYPE_EXT_POINTER] = xdr_load_pointer,
   };
-
-mr_status_t
-xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
-{
-  mr_ra_mr_ptrdes_t ptrs_ = { .ra = NULL, .size = 0, .alloc_size = 0, };
-  mr_status_t status = MR_SUCCESS;
-  int idx;
-
-  if (NULL == ptrs)
-    ptrs = &ptrs_;
-
-  idx = mr_add_ptr_to_list (ptrs);
-  if (idx < 0)
-    return (MR_FAILURE);
-  ptrs->ra[idx].data = data;
-  ptrs->ra[idx].fd = *fdp;
-
-  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xdr_load_handler[fdp->mr_type_ext])
-    status = ext_xdr_load_handler[fdp->mr_type_ext] (xdrs, idx, ptrs);
-  else if ((fdp->mr_type < MR_TYPE_LAST) && xdr_load_handler[fdp->mr_type])
-    status = xdr_load_handler[fdp->mr_type] (xdrs, idx, ptrs);
-  else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
-
-  if ((MR_SUCCESS == status) && (0 == idx))
-    status = mr_set_crossrefs (ptrs);
-
-  if (ptrs_.ra != NULL)
-    MR_FREE (ptrs_.ra);
-  return (status);
-}

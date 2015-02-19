@@ -705,21 +705,8 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
       return (MR_FAILURE);
 
   mr_load_data->ptrs.ra[idx].size = count * fd_.size;
+  mr_pointer_set_size (idx, &mr_load_data->ptrs);
   
-  if ((NULL != mr_load_data->ptrs.ra[idx].fd.res_type) &&
-      (0 == strcmp ("char", mr_load_data->ptrs.ra[idx].fd.res_type)))
-    {
-      mr_ptrdes_t src, dst;
-      mr_pointer_get_size_ptrdes (&dst, mr_load_data->ptrs.ra[idx].fd.res.ptr,
-				  idx, &mr_load_data->ptrs);
-      
-      if (dst.data != NULL)
-	{
-	  src.data = &mr_load_data->ptrs.ra[idx].size;
-	  src.fd.mr_type = MR_TYPE_DETECT (typeof (mr_load_data->ptrs.ra[idx].size));
-	  mr_assign_int (&dst, &src);
-	}
-    }  
   return (MR_SUCCESS);
 }
 

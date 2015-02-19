@@ -116,40 +116,4 @@ MR_START_TEST (resolve_typed_forward_ref, "test of forvard reference resolution"
   ALL_METHODS (ASSERT_SAVE_LOAD, resolve_typed_forward_ref_t, &x);
 } END_TEST
 
-TYPEDEF_STRUCT (resizable_array_t,
-		(_enum_t *, data, , "size", { "alloc_size" }, "char"),
-		int size,
-		int alloc_size,
-		);
-
-#define CMP_RA(TYPE, X, Y, ...) (((X)->size != (Y)->size) || ((X)->alloc_size != (Y)->alloc_size) || memcmp ((X)->data, (Y)->data, (X)->size))
-
-MR_START_TEST (resizable_array, "test pointer as a resizable array") {
-  resizable_array_t orig = 
-    {
-      .data = (typeof (orig.data[0])[]){ ZERO, ONE, },
-      .size = 2 * sizeof (orig.data[0]),
-      .alloc_size = 2 * sizeof (orig.data[0]),
-    };
-  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_t, &orig, CMP_RA);
-} END_TEST
-
-TYPEDEF_STRUCT (resizable_mr_ptr_t,
-		(mr_ptr_t, data, , "dynamic_type"),
-		int MR_SIZE,
-		(char *, dynamic_type),
-		);
-
-#define CMP_RA_MR_PTR(TYPE, X, Y, ...) (((X)->MR_SIZE != (Y)->MR_SIZE) || memcmp ((X)->data.ptr, (Y)->data.ptr, (X)->MR_SIZE))
-
-MR_START_TEST (resizable_mr_ptr, "test mr_ptr_t as a resizable array") {
-  resizable_mr_ptr_t orig = 
-    {
-      .data = { (_enum_t[]){ ZERO, ONE } },
-      .MR_SIZE = 2 * sizeof (_enum_t),
-      .dynamic_type = "_enum_t",
-    };
-  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_mr_ptr_t, &orig, CMP_RA_MR_PTR);
-} END_TEST
-
 MAIN ();

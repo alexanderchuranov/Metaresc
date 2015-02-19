@@ -7,7 +7,7 @@
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
 	       (void *, ptr, , , { MR_SIZE_STR }, "char"),
 	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "char"),
-	       (long int, long_int_t),
+	       (long_int_t, long_int_t),
 	       )
 
 TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_STRING))
@@ -130,8 +130,8 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 /* mr_rarray_t defenition should be synchronized with MR_RARRAY_PROTO macro */
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
 		(void *, data, , "pointer on data array"),
-		(ssize_t, size, , "used space in bytes"),
-		(ssize_t, alloc_size, , "allocated space in bytes"),
+		(int64_t, size, , "used space in bytes"),
+		(int64_t, alloc_size, , "allocated space in bytes"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		)

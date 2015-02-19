@@ -29,7 +29,7 @@
 #include <mr_protos.h>
 
 /* meta data for type 'char' - required as a descriminator for mr_ptr union */
-MR_TYPEDEF_DESC (char, MR_TYPE_CHAR_ARRAY) MR_TYPEDEF_END_DESC (char, , .size = 0);
+MR_TYPEDEF_DESC (char, MR_TYPE_CHAR_ARRAY) MR_TYPEDEF_END_DESC (char, "type descriptor for 'char'", .size = 0);
 
 /* MR_IC_NONE:        ( / 363893 11767.0) ratio: 30.92 */
 /* MR_IC_RBTREE:       ( / 82415 15641.0) ratio: 5.26  */
@@ -651,6 +651,23 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr
 
 	  ptrdes->fd = *parent_fdp;
 	  ptrdes->data = (char*)ptrs->ra[parent].data + parent_fdp->offset; /* get an address of size field */
+	}
+    }
+}
+
+void
+mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("char", ptrs->ra[idx].fd.res_type)))
+    {
+      mr_ptrdes_t src, dst;
+      mr_pointer_get_size_ptrdes (&dst, ptrs->ra[idx].fd.res.ptr, idx, ptrs);
+      
+      if (dst.data != NULL)
+	{
+	  src.data = &ptrs->ra[idx].size;
+	  src.fd.mr_type = MR_TYPE_DETECT (typeof (ptrs->ra[idx].size));
+	  mr_assign_int (&dst, &src);
 	}
     }
 }

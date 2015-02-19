@@ -927,7 +927,7 @@
 	  mr_detect_type (&__fd__);					\
 	  MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
 	  if (__check_type__ != NULL)					\
-	    __status__ = xdr_load (__check_type__, &__fd__, __xdrs__, NULL); \
+	    __status__ = xdr_load (__check_type__, &__fd__, __xdrs__);	\
 	  else								\
 	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
 	}								\
@@ -1188,6 +1188,7 @@
 
 #endif /* HAVE_LIBXML2 */
 
+typedef long int long_int_t;
 typedef long double long_double_t;
 typedef unsigned int mr_hash_value_t;
 
@@ -1215,7 +1216,7 @@ extern xmlDocPtr xml2_save (mr_ra_mr_ptrdes_t*);
 extern int xml2_load (xmlNodePtr, mr_ra_mr_ptrdes_t*);
 #endif /* HAVE_LIBXML2 */
 extern mr_status_t xdr_save (XDR*, mr_ra_mr_ptrdes_t*);
-extern mr_status_t xdr_load (void*, mr_fd_t*, XDR*, mr_ra_mr_ptrdes_t*);
+extern mr_status_t xdr_load (void*, mr_fd_t*, XDR*);
 extern void xdrra_create (XDR*, mr_rarray_t*, enum xdr_op);
 
 extern char * xml1_save (mr_ra_mr_ptrdes_t*);
@@ -1232,6 +1233,7 @@ extern mr_status_t scm_load (char*, mr_ra_mr_ptrdes_t*);
 extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
 extern bool mr_is_valid_field_name (char * name);
 extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs);
+extern void mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs);
 extern int mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs);
 extern void mr_add_child (int, int, mr_ra_mr_ptrdes_t*);
 extern void mr_detect_type (mr_fd_t*);
