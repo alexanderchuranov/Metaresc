@@ -34,7 +34,7 @@
 /* meta data for type 'char' - required as a descriminator for mr_ptr union */
 MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'", .size = 0);
 /* meta data for all scallar types */
-MR_TYPEDEF_DESC_BI (char_t);
+MR_TYPEDEF_DESC_BI (char_t, "alias for type 'char' for serialization as array of char");
 MR_TYPEDEF_DESC_BI (bool);
 MR_TYPEDEF_DESC_BI (uint8_t);
 MR_TYPEDEF_DESC_BI (int8_t);
