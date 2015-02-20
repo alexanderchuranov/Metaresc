@@ -677,9 +677,7 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
     {
       ptrs.ra[i].res.ptr = NULL;
       if ((ptrs.ra[i].ref_idx < 0) && (ptrs.ra[i].idx >= 0))
-	if (((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) &&
-	     (MR_TYPE_VOID != ptrs.ra[i].fd.mr_type) &&
-	     (MR_TYPE_NONE != ptrs.ra[i].fd.mr_type)) ||
+	if ((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) ||
 	    ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&
 	     (MR_TYPE_STRING == ptrs.ra[i].fd.mr_type)))
 	  ptrs.ra[i].res.ptr = *(void**)ptrs.ra[i].data;
@@ -768,11 +766,11 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 		}
 	    
 	      if (MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext)
-		size = ptrs.ra[i].size;
-	    
-	      if ((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) && (MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type)
-		  && (0 ==  ptrs.ra[i].fd.size))
-		size = strlen (*(void**)ptrs.ra[i].data) + 1;
+		{
+		  size = ptrs.ra[i].size;
+		  if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type) && (0 == ptrs.ra[i].fd.size))
+		    size = strlen (*(void**)ptrs.ra[i].data) + 1;
+		}
 	    
 	      if (size < 0)
 		{
@@ -1018,7 +1016,6 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		return (MR_FAILURE);
 	      }
 	  }
-
 	}
     }
   return (MR_SUCCESS);
@@ -1040,14 +1037,30 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
   */
   switch (tdp->mr_type_effective)
     {
-    case MR_TYPE_UINT8: enum_value = *(uint8_t*)data; break;
-    case MR_TYPE_INT8: enum_value = *(int8_t*)data; break;
-    case MR_TYPE_UINT16: enum_value = *(uint16_t*)data; break;
-    case MR_TYPE_INT16: enum_value = *(int16_t*)data; break;
-    case MR_TYPE_UINT32: enum_value = *(uint32_t*)data; break;
-    case MR_TYPE_INT32: enum_value = *(int32_t*)data; break;
-    case MR_TYPE_UINT64: enum_value = *(uint64_t*)data; break;
-    case MR_TYPE_INT64: enum_value = *(int64_t*)data; break;
+    case MR_TYPE_UINT8:
+      enum_value = *(uint8_t*)data;
+      break;
+    case MR_TYPE_INT8:
+      enum_value = *(int8_t*)data;
+      break;
+    case MR_TYPE_UINT16:
+      enum_value = *(uint16_t*)data;
+      break;
+    case MR_TYPE_INT16:
+      enum_value = *(int16_t*)data;
+      break;
+    case MR_TYPE_UINT32:
+      enum_value = *(uint32_t*)data;
+      break;
+    case MR_TYPE_INT32:
+      enum_value = *(int32_t*)data;
+      break;
+    case MR_TYPE_UINT64:
+      enum_value = *(uint64_t*)data;
+      break;
+    case MR_TYPE_INT64:
+      enum_value = *(int64_t*)data;
+      break;
     default:
 #if __BYTE_ORDER == __LITTLE_ENDIAN
       memcpy (&enum_value, data, MR_MIN (tdp->size_effective, sizeof (enum_value)));
@@ -1465,7 +1478,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       break;
 
       /*
-	MR_POINTER_STRUCT refers to forward declarations of structures and can't calculate type size at compile time.
+	pointer on structure refers to forward declarations and can't calculate type size at compile time.
       */
     case MR_TYPE_STRUCT:
     case MR_TYPE_CHAR_ARRAY:
