@@ -382,7 +382,6 @@ TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a saved tree"),
-		(int, parent, , "index of current parent"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),

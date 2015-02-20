@@ -244,7 +244,7 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
  * @param mr_save_data save routines data and lookup structures
  */
 static void
-mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
+mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
 {
   int idx, ref_idx;
 
@@ -254,7 +254,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     return; /* memory allocation error occured */
   mr_save_data->ptrs.ra[idx].data = data;
   mr_save_data->ptrs.ra[idx].fd = *fdp;
-  mr_save_data->ptrs.ra[idx].parent = mr_save_data->parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
+  mr_save_data->ptrs.ra[idx].parent = parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
 
   mr_ic_new (&mr_save_data->ptrs.ra[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
 
@@ -262,18 +262,18 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   ref_idx = mr_resolve_typed_forward_ref (mr_save_data);
   if (ref_idx >= 0)
     {
-      int parent = mr_save_data->ptrs.ra[ref_idx].parent;
-      mr_save_data->ptrs.ra[parent].ref_idx = ref_idx;
-      mr_save_data->ptrs.ra[parent].first_child = -1;
-      mr_save_data->ptrs.ra[parent].last_child = -1;
+      int ref_parent = mr_save_data->ptrs.ra[ref_idx].parent;
+      mr_save_data->ptrs.ra[ref_parent].ref_idx = ref_idx;
+      mr_save_data->ptrs.ra[ref_parent].first_child = -1;
+      mr_save_data->ptrs.ra[ref_parent].last_child = -1;
       mr_save_data->ptrs.ra[ref_idx].flags.is_referenced = TRUE;
       mr_save_data->ptrs.ra[ref_idx].fd.name.str = fdp->name.str;
-      mr_add_child (mr_save_data->parent, ref_idx, &mr_save_data->ptrs);
+      mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
       return;
     }
   ref_idx = mr_resolve_untyped_forward_ref (mr_save_data);
   /* it is impossible to correctly resolve untyped pointer match so we ignore it */
-  mr_add_child (mr_save_data->parent, idx, &mr_save_data->ptrs);
+  mr_add_child (parent, idx, &mr_save_data->ptrs);
 
   /* route saving handler */
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_mr_save_handler[fdp->mr_type_ext])
@@ -313,16 +313,12 @@ mr_save_string (mr_save_data_t * mr_save_data)
 	.mr_type_ext = MR_TYPE_EXT_NONE,
       };
       int ref_idx = mr_check_ptr_in_list (mr_save_data, str, &fd_);
-      if (ref_idx >= 0)
+      if (ref_idx < 0)
+	mr_save_inner (str, &fd_, mr_save_data, idx);
+      else
 	{
 	  mr_save_data->ptrs.ra[idx].ref_idx = ref_idx;
 	  mr_save_data->ptrs.ra[ref_idx].flags.is_referenced = TRUE;
-	}
-      else
-	{
-	  mr_save_data->parent = idx;
-	  mr_save_inner (str, &fd_, mr_save_data);
-	  mr_save_data->parent = mr_save_data->ptrs.ra[mr_save_data->parent].parent;
 	}
     }
 }
@@ -351,14 +347,12 @@ mr_save_struct (mr_save_data_t * mr_save_data)
       return;
     }
 
-  mr_save_data->parent = idx;
   count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
-      mr_save_inner (&data[fdp->offset], fdp, mr_save_data); /* add each child to this node */
+      mr_save_inner (&data[fdp->offset], fdp, mr_save_data, idx); /* add each child to this node */
     }
-  mr_save_data->parent = mr_save_data->ptrs.ra[mr_save_data->parent].parent;
 }
 
 static mr_fd_t *
@@ -564,11 +558,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   fdp = mr_union_discriminator (mr_save_data);
 
   if (NULL != fdp)
-    {
-      mr_save_data->parent = idx;
-      mr_save_inner (&data[fdp->offset], fdp, mr_save_data);
-      mr_save_data->parent = mr_save_data->ptrs.ra[mr_save_data->parent].parent;
-    }
+    mr_save_inner (&data[fdp->offset], fdp, mr_save_data, idx);
 }
 
 /**
@@ -593,10 +583,8 @@ mr_save_array (mr_save_data_t * mr_save_data)
       fd_.param.array_param.row_count = 1;
     }
   /* add each array element to this node */
-  mr_save_data->parent = idx;
   for (i = 0; i < count; i += row_count)
-    mr_save_inner (data + i * fd_.size, &fd_, mr_save_data);
-  mr_save_data->parent = mr_save_data->ptrs.ra[mr_save_data->parent].parent;
+    mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, idx);
 }
 
 /**
@@ -622,10 +610,8 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
       mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
       fd_.mr_type_ext = MR_TYPE_EXT_NONE;
       
-      mr_save_data->parent = idx;
       for (i = 0; i < count; ++i)
-	mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data);
-      mr_save_data->parent = mr_save_data->ptrs.ra[mr_save_data->parent].parent;
+	mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
     }
 }
 
@@ -822,7 +808,6 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   int i;
 
   memset (mr_save_data, 0, sizeof (*mr_save_data));
-  mr_save_data->parent = -1;
   mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
   mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
 
@@ -833,7 +818,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.size = 0;
   mr_save_data->ptrs.ra = NULL;
 
-  mr_save_inner (data, fdp, mr_save_data);
+  mr_save_inner (data, fdp, mr_save_data, -1);
 
   while (mr_save_data->mr_ra_idx_size > 0)
     {
