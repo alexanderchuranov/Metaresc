@@ -1469,7 +1469,7 @@ mr_func_field_detect (mr_fd_t * fdp)
 }
 
 static mr_status_t
-mr_detect_field_type (mr_fd_t * fdp)
+mr_fd_detect_field_type (mr_fd_t * fdp)
 {
   mr_td_t * tdp;
   switch (fdp->mr_type)
@@ -1522,6 +1522,18 @@ mr_detect_field_type (mr_fd_t * fdp)
   return (MR_SUCCESS);
 }
 
+static mr_status_t
+mr_fd_detect_res_size (mr_fd_t * fdp)
+{
+  if ((0 == fdp->MR_SIZE) && (fdp->res_type != NULL))
+    {
+      mr_td_t * res_tdp = mr_get_td_by_name (fdp->res_type);
+      if (res_tdp != NULL)
+	fdp->MR_SIZE = res_tdp->size;
+    }
+  return (MR_SUCCESS);
+}
+
 /**
  * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
  * @param tdp pointer on a type descriptor
@@ -1533,7 +1545,10 @@ mr_detect_fields_types (mr_td_t * tdp)
 {
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
-    mr_detect_field_type (tdp->fields[i].fdp);
+    {
+      mr_fd_detect_field_type (tdp->fields[i].fdp);
+      mr_fd_detect_res_size (tdp->fields[i].fdp);
+    }
   return (MR_SUCCESS);
 }
 
@@ -1657,11 +1672,24 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 }
 
 static mr_status_t
+mr_td_detect_res_size (mr_td_t * tdp)
+{
+  if ((0 == tdp->MR_SIZE) && (tdp->res_type != NULL))
+    {
+      mr_td_t * res_tdp = mr_get_td_by_name (tdp->res_type);
+      if (res_tdp != NULL)
+	tdp->MR_SIZE = res_tdp->size;
+    }
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
 mr_conf_init_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_detect_fields_types (tdp);
   mr_register_type_pointer (tdp);
+  mr_td_detect_res_size (tdp);
   return (MR_SUCCESS);
 }
 

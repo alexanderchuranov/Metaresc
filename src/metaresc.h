@@ -1230,6 +1230,11 @@ extern mr_status_t cinit_load (char*, mr_ra_mr_ptrdes_t*);
 extern mr_status_t scm_load (char*, mr_ra_mr_ptrdes_t*);
 #endif /* HAVE_BISON_FLEX */
 
+extern void * mr_malloc (const char * filename, const char * function, int line, size_t size);
+extern void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size);
+extern char * mr_strdup (const char * filename, const char * function, int line, const char * str);
+extern void mr_free (const char * filename, const char * function, int line, void * ptr);
+
 extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
 extern bool mr_is_valid_field_name (char * name);
 extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs);

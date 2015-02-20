@@ -44,6 +44,8 @@ extern void mr_ic_hash_reset (mr_ic_t * ic);
 extern void mr_ic_hash_free (mr_ic_t * ic);
 extern mr_status_t mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type);
 
+extern void mr_ic_hash_next_reset (mr_ic_t * ic);
+extern void mr_ic_hash_next_free (mr_ic_t * ic);
 extern mr_ptr_t * mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int bucket);
 extern void mr_ic_hash_next_index_free (mr_ic_t * ic);
 extern mr_status_t mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key, const void * context);

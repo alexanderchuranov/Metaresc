@@ -278,6 +278,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		*/
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
+		(ssize_t, MR_SIZE, , "size of array if pointer"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "wrapper for mr_fd_t*"),
@@ -298,6 +299,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, meta, , "type meta info"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
+		(ssize_t, MR_SIZE, , "size of array if pointer"),
 		) /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),

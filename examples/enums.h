@@ -6,20 +6,28 @@ TYPEDEF_ENUM (color_t,
               (RED),          /* auto-enumerated and becomes 1 */
 
               (GREEN,   = 2), /* explicitly set to 2 */
-              (YELLOW,  = 3,  "set to 3 - this is an enumeration constant comment"),
-              (BLUE,    = 4,  "set to 4", { "metadata is a void pointer" }),
+              (YELLOW,  = 3,  "set to 3 - this is a textual meta info"),
+              (BLUE, ,  "auto-enumerated", { "a void pointer for arbitrary resource" }),
 
-              (MAGENTA, /* value argument may be empty */,
-                        "becomes 5",
-                        { "next argument is a type of this poiner" },
-                        "char"
-              ),
+              (MAGENTA,
+	       /* value argument may be empty */,
+	       "becomes 5",
+	      { "next argument is a type of this poiner" },
+	       "char"
+	       ),
 
-              (CYAN,    /* auto-enumerated */,
-                        /* no comment      */,
-                        { (color_t[]){ CYAN } },
-                        "color_t"
-              ),
+              (CYAN,
+	       /* auto-enumerated */,
+	       /* no meta         */,
+	      { (color_t[]){ CYAN } },
+	       "color_t" /* type itself might be used for initialization of resource */
+	       ),
 
-              WHITE           /* trailing comma is optional */
+              (WHITE,
+	       /* auto-enumerated */,
+	       /* no meta         */,
+	      { (color_t[]){ CYAN, WHITE } },
+	       "color_t",
+	       2 * sizeof (color_t) /* size of resource array */
+	       )           /* trailing comma is optional */
               )

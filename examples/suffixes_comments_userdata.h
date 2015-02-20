@@ -7,10 +7,12 @@ TYPEDEF_STRUCT (example_t,
 		/* all 4 arguments of ATTRIBUTES are optional */
                 (int, x1), /* (type, name) */
                 (int, x2, [3]), /* (type, name, suffix) */
-                (double, x3, /* empty */, "Text comment for the field"),  /* (type, name, suffix, comment) */
-                (float, x4, /* empty */, /* empty */, { "auxiliary void pointer" }, "char"), /* (type, name, suffix, comment, { void_ptr }) */
-		 /* (type, name, suffix, comment, { void_ptr }, type_of_void_ptr_as_string) */
-                (long double, x5, /* empty */, /* empty */, { (example_t[]){ { .x1 = 1, .x3 = 1.0 } } }, "example_t"),
+                (double, x3, /* empty */, "Text comment for the field"),  /* (type, name, suffix, meta) */
+		/* (type, name, suffix, meta, { void_ptr }, type_of_void_ptr_as_string) */
+                (float, x4, /* empty */, /* empty */, { "auxiliary void pointer" }, "char"),
+		 /* (type, name, suffix, meta, { void_ptr }, type_of_void_ptr_as_string, size_of_void_ptr) */
+                (long double, x5, /* empty */, /* empty */,
+		{ (example_t[]){ { .x1 = 1, .x3 = 1.1 }, { .x1 = 2, .x3 = 2.2 } } }, "example_t", 2 * sizeof (example_t)),
 		int x6,
 		volatile const unsigned long long int x7,
 		string_t x8
