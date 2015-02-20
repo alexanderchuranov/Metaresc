@@ -262,26 +262,6 @@ cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 }
 
 /**
- * MR_TYPE_EXT_RARRAY_DATA type saving handler. Saves resizeable array content.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @param data structure that argregates evrything required for saving
- * @return status
- */
-static int
-cinit_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
-{
-  if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
-    data->content = MR_STRDUP (MR_CINIT_NULL);
-  else
-    {
-      data->prefix = "(" MR_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
-      data->suffix = "}";
-    }
-  return (0);
-}
-
-/**
  * MR_TYPE_EXT_POINTER type saving handler. Save pointer as a string.
  * @param idx an index of node in ptrs
  * @param ptrs resizeable array with pointers descriptors
@@ -313,26 +293,6 @@ json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
 {
   data->prefix = "[\n";
   data->suffix = "]";
-  return (0);
-}
-
-/**
- * MR_TYPE_EXT_RARRAY_DATA type saving handler. Saves resizeable array content in JSON.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @param data structure that argregates evrything required for saving
- * @return status
- */
-static int
-json_save_rarray_data (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
-{
-  if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
-    data->content = MR_STRDUP (MR_CINIT_NULL);
-  else
-    {
-      data->prefix = "[\n";
-      data->suffix = "]";
-    }
   return (0);
 }
 
@@ -395,7 +355,6 @@ static cinit_json_save_handler_t cinit_save_handler[] =
 static cinit_json_save_handler_t ext_cinit_save_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = cinit_save_struct,
-    [MR_TYPE_EXT_RARRAY_DATA] = cinit_save_rarray_data,
     [MR_TYPE_EXT_POINTER] = cinit_save_pointer,
   };
 
@@ -435,7 +394,6 @@ static cinit_json_save_handler_t json_save_handler[] =
 static cinit_json_save_handler_t ext_json_save_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = json_save_array,
-    [MR_TYPE_EXT_RARRAY_DATA] = json_save_rarray_data,
     [MR_TYPE_EXT_POINTER] = json_save_pointer,
   };
 

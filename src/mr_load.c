@@ -76,7 +76,6 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 	      data = mr_load_data->ptrs.ra[idx].data;
 
 	    if ((MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra[i].fd.mr_type_ext) ||
-		(MR_TYPE_EXT_RARRAY_DATA == mr_load_data->ptrs.ra[i].fd.mr_type_ext) ||
 		(MR_TYPE_STRING == mr_load_data->ptrs.ra[i].fd.mr_type))
 	      *(void**)mr_load_data->ptrs.ra[i].data = data;
 	  }
@@ -540,135 +539,6 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   return (MR_SUCCESS);
 }
 
-static mr_status_t
-mr_load_rarray_data (int idx, mr_load_data_t * mr_load_data)
-{
-  char * ra_data = mr_load_data->ptrs.ra[idx].data;
-  mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
-  int i, count = 0;
-  mr_fd_t fd_ = mr_load_data->ptrs.ra[idx].fd;
-
-  for (i = mr_load_data->ptrs.ra[idx].first_child; i >= 0; i = mr_load_data->ptrs.ra[i].next)
-    ++count;
-  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-  fd_.name = mr_load_data->ptrs.ra[mr_load_data->ptrs.ra[idx].parent].fd.name;
-
-  if (mr_load_data->ptrs.ra[idx].ref_idx >= 0)
-    return (MR_SUCCESS);
-  
-  if (0 == count)
-    {
-      ra->alloc_size = ra->size = 0;
-      ra->data = NULL;
-    }
-  else
-    {
-      ra->alloc_size = ra->size = count * fd_.size;
-      ra->data = MR_MALLOC (ra->size);
-      if (NULL == ra->data)
-	{
-	  ra->alloc_size = ra->size = 0;
-	  ra->data = NULL;
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (MR_FAILURE);
-	}
-      memset (ra->data, 0, ra->size);
-
-      /* loop on subnodes */
-      i = 0;
-      for (idx = mr_load_data->ptrs.ra[idx].first_child; idx >= 0; idx = mr_load_data->ptrs.ra[idx].next)
-	if (MR_SUCCESS != mr_load (&((char*)ra->data)[fd_.size * i++], &fd_, idx, mr_load_data))
-	  return (MR_FAILURE);
-    }
-  return (MR_SUCCESS);
-}
-
-mr_status_t
-mr_load_rarray_type (mr_fd_t * fdp, mr_status_t (*action) (mr_td_t *, void *), void * context)
-{
-  mr_td_t * tdp = mr_get_td_by_name ("mr_rarray_t");
-  mr_status_t status = MR_FAILURE;
-  
-  if (NULL == tdp)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, "mr_rarray_t");
-  else
-    {
-      mr_td_t td = *tdp;
-      int fields_count = td.fields_size / sizeof (td.fields[0]);
-      mr_ic_rarray_t mr_ic_rarray;
-      mr_fd_ptr_t fields_data[fields_count];
-      mr_fd_t * data_fdp;
-      mr_fd_t fd;
-      int i;
-
-      memcpy (fields_data, td.fields, td.fields_size);
-      td.fields = fields_data;
-      for (i = 0; i < fields_count; ++i)
-	{
-	  data_fdp = fields_data[i].fdp;
-	  if (0 == strcmp ("data", data_fdp->name.str))
-	    break;
-	}
-      if (i >= fields_count)
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);
-      else
-	{
-	  fd = *fdp; /* make a copy of 'data' field descriptor */
-	  fd.mr_type_ext = MR_TYPE_EXT_RARRAY_DATA;
-	  fd.name = data_fdp->name;
-	  fd.offset = data_fdp->offset;
-	  fields_data[i].fdp = &fd; /* replace 'data' descriptor on a local copy */
-
-	  mr_ic_rarray.ra = (mr_ptr_t*)fields_data;
-	  mr_ic_rarray.size = td.fields_size;
-	  mr_ic_rarray.alloc_size = -1;
-	  mr_ic_new (&td.lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_NONE);
-	  mr_ic_index (&td.lookup_by_name, &mr_ic_rarray, NULL);
-	  status = action (&td, context);
-	  mr_ic_free (&td.lookup_by_name);
-	}
-    }
-  return (status);
-}
-
-TYPEDEF_STRUCT (mr_load_rarray_struct_t,
-		int idx,
-		(mr_load_data_t *, mr_load_data)
-		)
-
-static mr_status_t
-mr_load_rarray_inner (mr_td_t * tdp, void * context)
-{
-  mr_load_rarray_struct_t * mr_load_rarray_struct = context;
-  return (mr_load_struct_inner (mr_load_rarray_struct->idx, mr_load_rarray_struct->mr_load_data, tdp));
-}
-
-/**
- * MR_RARRAY load handler.
- * Save content of subnodes to resizeable array elements
- * (allocate/reallocate required memory).
- * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
- */
-static mr_status_t
-mr_load_rarray (int idx, mr_load_data_t * mr_load_data)
-{
-  mr_rarray_t * ra = mr_load_data->ptrs.ra[idx].data;
-  mr_load_rarray_struct_t mr_load_rarray_struct = {
-    .idx = idx,
-    .mr_load_data = mr_load_data,
-  };
-
-  memset (ra, 0, sizeof (*ra));
-
-  if (MR_SUCCESS != mr_load_rarray_type (&mr_load_data->ptrs.ra[idx].fd, mr_load_rarray_inner, &mr_load_rarray_struct))
-    return (MR_FAILURE);
-  ra->alloc_size = ra->size;
-
-  return (MR_SUCCESS);
-}
-
 /**
  * MR_TYPE_EXT_POINTER load handler. Initiated as postponed call thru mr_load_pointer via stack.
  * Loads element into newly allocate memory.
@@ -845,8 +715,6 @@ static mr_load_handler_t mr_load_handler[] =
 static mr_load_handler_t mr_ext_load_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = mr_load_array,
-    [MR_TYPE_EXT_RARRAY] = mr_load_rarray,
-    [MR_TYPE_EXT_RARRAY_DATA] = mr_load_rarray_data,
     [MR_TYPE_EXT_POINTER] = mr_load_pointer,
   };
 

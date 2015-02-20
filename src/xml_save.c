@@ -272,7 +272,6 @@ xml_save_empty (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static xml_save_handler_t ext_xml_save_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = xml_save_empty,
-    [MR_TYPE_EXT_RARRAY_DATA] = xml_save_empty,
     [MR_TYPE_EXT_POINTER] = xml_save_empty,
   };
 

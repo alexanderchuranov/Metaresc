@@ -54,8 +54,6 @@
 /* XML attribute for zero length strings */
 #define MR_ISNULL "isnull"
 #define MR_ISNULL_VALUE "true"
-#define MR_RARRAY_OPAQUE_DATA_T mr_rarray_opaque_data_t
-#define MR_RARRAY_OPAQUE_DATA_T_STR MR_STRINGIFY_READONLY (MR_RARRAY_OPAQUE_DATA_T)
 #define MR_OPAQUE_DATA mr_opaque_data
 #define MR_OPAQUE_DATA_STR MR_STRINGIFY_READONLY (MR_OPAQUE_DATA)
 #define MR_SIZE mr_size
@@ -379,7 +377,6 @@
 #define P00_COMMA_ARRAY ARRAY,
 #define P00_COMMA_POINTER POINTER,
 #define P00_COMMA_POINTER_STRUCT POINTER_STRUCT,
-#define P00_COMMA_RARRAY RARRAY,
 #define P00_COMMA_FUNC FUNC,
 
 #define P00_COMMA_char AUTO_BI, char,
@@ -520,7 +517,6 @@
 #define MR_ARRAY(...) MR_UNFOLD (MR_ARRAY, __VA_ARGS__)
 #define MR_POINTER(...) MR_UNFOLD (MR_POINTER, __VA_ARGS__)
 #define MR_POINTER_STRUCT(...) MR_UNFOLD (MR_POINTER_STRUCT, __VA_ARGS__)
-#define MR_RARRAY(...) MR_UNFOLD (MR_RARRAY, __VA_ARGS__)
 #define MR_FUNC(...) MR_UNFOLD (MR_FUNC, __VA_ARGS__)
 #define MR_END_STRUCT(...) MR_UNFOLD (MR_END_STRUCT, __VA_ARGS__)
 
@@ -570,8 +566,6 @@
 #define MR_ARRAY_PROTO MR_FIELD_PROTO
 #define MR_POINTER_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE *, NAME, )
 #define MR_POINTER_STRUCT_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct MR_TYPEDEF_PREFIX (TYPE) *, NAME, )
-/* rarray defenition should be syncroonized with mr_rarray_t type definition */
-#define MR_RARRAY_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct __attribute__((packed)) {TYPE * data; typeof (((mr_rarray_t*)NULL)->size) size; typeof (((mr_rarray_t*)NULL)->alloc_size) alloc_size; typeof (((mr_rarray_t*)NULL)->res) res; typeof (((mr_rarray_t*)NULL)->res_type) res_type;}, NAME, )
 #define MR_FUNC_PROTO(MR_TYPE_NAME, TYPE, NAME, ARGS, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, (*NAME), ARGS)
 
 #define MR_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, ... /* ATTR */) MR_IF_ELSE (MR_IS_EMPTY (NAME)) () (char NAME[0];) union __VA_ARGS__ {
@@ -694,7 +688,6 @@
 #define MR_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_STRUCT, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_UNION_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_UNION, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_POINTER, __VA_ARGS__)
-#define MR_RARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_RARRAY, __VA_ARGS__)
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, MR_TYPE_EXT_NONE, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
     .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\

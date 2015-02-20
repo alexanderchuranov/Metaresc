@@ -38,7 +38,6 @@ static int scm_named_fields[MR_TYPE_LAST] = {
 static int scm_is_array[MR_TYPE_LAST] = {
   [0 ... MR_TYPE_LAST - 1] = MR_SCM_IS_NOT_ARRAY,
   [MR_TYPE_EXT_ARRAY] = MR_SCM_IS_ARRAY,
-  [MR_TYPE_EXT_RARRAY] = MR_SCM_IS_ARRAY,
 };
 
 /**
@@ -299,7 +298,6 @@ static scm_save_handler_t scm_save_handler[] =
 static scm_save_handler_t ext_scm_save_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = scm_save_empty,
-    [MR_TYPE_EXT_RARRAY_DATA] = scm_save_pointer,
     [MR_TYPE_EXT_POINTER] = scm_save_pointer,
   };
 

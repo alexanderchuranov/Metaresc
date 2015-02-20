@@ -600,59 +600,6 @@ mr_save_array (mr_save_data_t * mr_save_data)
 }
 
 /**
- * MR_RARRAY type saving handler. Saves resizeable array into internal representation.
- * @param mr_save_data save routines data and lookup structures
- */
-static void
-mr_save_rarray (mr_save_data_t * mr_save_data)
-{
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  int data_idx;
-  mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
-  mr_rarray_t * ra = mr_save_data->ptrs.ra[idx].data;
-  int count = ra->size / fd_.size;
-
-  /* save as mr_rarray_t */
-  mr_save_data->ptrs.ra[idx].fd.type = "mr_rarray_t";
-  mr_save_data->ptrs.ra[idx].fd.mr_type = MR_TYPE_STRUCT;
-  mr_save_data->ptrs.ra[idx].fd.mr_type_ext = MR_TYPE_EXT_NONE;
-  mr_save_struct (mr_save_data);
-
-  /* lookup for subnode .data */
-  for (data_idx = mr_save_data->ptrs.ra[idx].first_child; data_idx >= 0; data_idx = mr_save_data->ptrs.ra[data_idx].next)
-    if (0 == strcmp ("data", mr_save_data->ptrs.ra[data_idx].fd.name.str))
-      break;
-
-  if (data_idx < 0)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RARRAY_FAILED);
-  else
-    {
-      /* change void * on appropriate type */
-      mr_save_data->ptrs.ra[data_idx].fd.type = fd_.type;
-      mr_save_data->ptrs.ra[data_idx].fd.size = ra->size;
-      mr_save_data->ptrs.ra[data_idx].fd.mr_type_ext = MR_TYPE_EXT_RARRAY_DATA;
-      mr_save_data->ptrs.ra[data_idx].flags.is_opaque_data = (ra->res_type != NULL) &&
-	(0 == strcmp (ra->res_type, MR_RARRAY_OPAQUE_DATA_T_STR));
-
-      if (mr_save_data->ptrs.ra[data_idx].ref_idx < 0)
-	{
-	  if ((NULL == ra->data) || (0 == count))
-	    mr_save_data->ptrs.ra[data_idx].flags.is_null = TRUE;
-	  else
-	    {
-	      int i;
-	      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-	      /* add each array element to this node */
-	      mr_save_data->parent = data_idx;
-	      for (i = 0; i < count; ++i)
-		mr_save_inner (&((char*)ra->data)[i * fd_.size], &fd_, mr_save_data);
-	      mr_save_data->parent = mr_save_data->ptrs.ra[idx].parent;
-	    }
-	}
-    }
-}
-
-/**
  * Saves pointer into internal representation.
  * @param idx node index
  * @param mr_save_data save routines data and lookup structures
@@ -928,6 +875,5 @@ static mr_save_handler_t mr_save_handler[] =
 static mr_save_handler_t ext_mr_save_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = mr_save_array,
-    [MR_TYPE_EXT_RARRAY] = mr_save_rarray,
     [MR_TYPE_EXT_POINTER] = mr_save_pointer,
   };

@@ -29,14 +29,9 @@
     ck_assert_msg (((0 != ptrs.size) && (NULL != ptrs.ra)),		\
 		   "save into internal representation failed");		\
     for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)		\
-      if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra[i].fd.mr_type_ext)		\
-	{								\
-	  mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra[i].data)[-offsetof (mr_rarray_t, data)]; \
-	  ra->alloc_size = ra->size;					\
-	}								\
-      else if ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&	\
-	       (MR_TYPE_STRUCT == ptrs.ra[i].fd.mr_type) &&		\
-	       (0 == strcmp ("mr_hashed_string_t", ptrs.ra[i].fd.type))) \
+      if ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&		\
+	  (MR_TYPE_STRUCT == ptrs.ra[i].fd.mr_type) &&			\
+	  (0 == strcmp ("mr_hashed_string_t", ptrs.ra[i].fd.type)))	\
 	{								\
 	  mr_hashed_string_t * mr_hashed_name = ptrs.ra[i].data;	\
 	  mr_hashed_name->hash_value = mr_hash_str (mr_hashed_name->str); \
@@ -66,7 +61,7 @@
   TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));	\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
-  TYPEDEF_STRUCT (array_t, RARRAY (list_t, ra));			\
+  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "char"), (ssize_t, size)); \
   int test_run (int count)						\
   {									\
     int i;								\
@@ -76,17 +71,17 @@
     struct tms start, end;						\
     times (&start);							\
     memset (&array, 0, sizeof (array));					\
-    array.ra.size = count * sizeof (array.ra.data[0]);			\
-    array.ra.data = MR_MALLOC (array.ra.size);				\
-    ck_assert_msg (NULL != array.ra.data, "Memory allocation failed.");	\
+    array.size = count * sizeof (array.ra[0]);				\
+    array.ra = MR_MALLOC (array.size);					\
+    ck_assert_msg (NULL != array.ra, "Memory allocation failed.");	\
     for (i = 1; i < count; ++i)						\
       {									\
-	array.ra.data[i - 1].next = &array.ra.data[i];			\
-	array.ra.data[i - 1].mr_ptr.ptr = "string_t";			\
+	array.ra[i - 1].next = &array.ra[i];				\
+	array.ra[i - 1].mr_ptr.ptr = "string_t";			\
       }									\
-    array.ra.data[count - 1].next = &array.ra.data[0];			\
-    array.ra.data[count - 1].mr_ptr.ptr = "string_t";			\
-    typed_list.root = &array.ra.data[0];				\
+    array.ra[count - 1].next = &array.ra[0];				\
+    array.ra[count - 1].mr_ptr.ptr = "string_t";			\
+    typed_list.root = &array.ra[0];					\
     ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);		\
       ck_assert_msg ((ra.size > 0) && (ra.data != NULL),		\
 		     "Serialization for method " #METHOD " failed.");	\
@@ -95,7 +90,6 @@
 		     "Deserialization for method " #METHOD " failed.");	\
       MR_FREE_RECURSIVELY (typed_list_t, &list_);			\
       MR_FREE (ra.data);						\
-      array.ra.res_type = "char";					\
       ra = MR_SAVE_ ## METHOD ## _RA (array_t, &array);			\
 	ck_assert_msg ((ra.size > 0) && (ra.data != NULL),		\
 		       "Serialization for method " #METHOD " failed.");	\
@@ -104,7 +98,7 @@
 		       "Deserialization for method " #METHOD " failed."); \
 	MR_FREE_RECURSIVELY (array_t, &array_);				\
 	MR_FREE (ra.data);						\
-	MR_FREE (array.ra.data);					\
+	MR_FREE (array.ra);						\
 	times (&end);							\
 	return ((int)((end.tms_utime - start.tms_utime)));		\
   }									\

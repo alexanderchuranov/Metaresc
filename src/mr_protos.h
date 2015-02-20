@@ -62,7 +62,6 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_ANON_UNION_TYPE_ERROR, , "Can't create type for anonymous union in type: '%s'."),
 	      (MR_MESSAGE_UNKNOWN_XML_ESC, , "Unknown XML escape sequence '%s'."),
 	      (MR_MESSAGE_WRONG_XML_ESC, , "Wrong XML escape sequence '%s'."),
-	      (MR_MESSAGE_RARRAY_FAILED, , "Failed to find field .data."),
 	      (MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, , "Union failed to find field by discriminator '%s'."),
 	      (MR_MESSAGE_XML_STRING_ENCODING_FAILED, , "XML2 encoding failed for string '%s'."),
 	      (MR_MESSAGE_POINTER_NODE_CHILD_MISSING, , "Pointer node child missing: type '%s' name '%s'."),
@@ -78,7 +77,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG, , "Unexpected charecters after closing tag."),
 	      (MR_MESSAGE_TAGS_DONT_MATCH, , "Open and close tags names do not match."),
 	      (MR_MESSAGE_CANT_READ_PROPERTY, , "Can't read %s property."),
-	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) or allocation size (%zd) for dynamics array."),
+	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) for dynamics array."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -121,8 +120,6 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 	      MR_TYPE_EXT_NONE,
 	      MR_TYPE_EXT_ARRAY,
-	      MR_TYPE_EXT_RARRAY,
-	      MR_TYPE_EXT_RARRAY_DATA,
 	      MR_TYPE_EXT_POINTER,
 	      MR_TYPE_EXT_LAST,  /* keep it last */
 	      )

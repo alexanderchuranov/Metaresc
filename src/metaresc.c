@@ -65,18 +65,6 @@ mr_conf_t mr_conf = {
 
 MR_MEM_INIT ( , __attribute__((constructor,weak)));
 
-#undef MR_MODE
-TYPEDEF_STRUCT (struct_mr_rarray_t, (mr_rarray_t, ra));
-TYPEDEF_STRUCT (mr_ra_void_t, RARRAY (void, ra));
-
-#undef MR_COMPARE_FIELDS_EXT
-#define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) (!__builtin_types_compatible_p (typeof (((TYPE1*)NULL)->NAME1), typeof (((TYPE2*)NULL)->NAME2)))
-
-/*
-  if this assert fails then mr_rarray_t definition in mr_protos.h differs from MR_RARRAY_PROTO define in metaresc.h
-*/
-MR_COMPILETIME_ASSERT (MR_COMPARE_COMPAUND_TYPES (struct_mr_rarray_t, mr_ra_void_t, ra.data, ra.size, ra.alloc_size, ra.res, ra.res_type));
-
 static mr_status_t
 mr_td_visitor (mr_ptr_t key, const void * context)
 {
@@ -690,8 +678,8 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
       ptrs.ra[i].res.ptr = NULL;
       if ((ptrs.ra[i].ref_idx < 0) && (ptrs.ra[i].idx >= 0))
 	if (((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) &&
-	     (MR_TYPE_VOID != ptrs.ra[i].fd.mr_type))||
-	    (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra[i].fd.mr_type_ext) ||
+	     (MR_TYPE_VOID != ptrs.ra[i].fd.mr_type) &&
+	     (MR_TYPE_NONE != ptrs.ra[i].fd.mr_type)) ||
 	    ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&
 	     (MR_TYPE_STRING == ptrs.ra[i].fd.mr_type)))
 	  ptrs.ra[i].res.ptr = *(void**)ptrs.ra[i].data;
@@ -767,13 +755,10 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    ptrs.ra[i].first_child = ptrs.ra[i].last_child = i + 1;
 
 	  case MR_TYPE_EXT_POINTER:
-	  case MR_TYPE_EXT_RARRAY_DATA:
 	    {
 	      int idx;
 	      char * copy;
-	      ssize_t size, alloc_size;
-
-	      size = alloc_size = ptrs.ra[i].fd.size; /* default allocation size */
+	      ssize_t size = ptrs.ra[i].fd.size; /* default allocation size */
 
 	      if (ptrs.ra[i].first_child < 0)
 		{
@@ -781,33 +766,21 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 			      ptrs.ra[i].fd.type, ptrs.ra[i].fd.name.str);
 		  return (MR_FAILURE);
 		}
-	      /* rarrays require allocation of memory chunk according alloc_size field */
-	      if (MR_TYPE_EXT_RARRAY_DATA == ptrs.ra[i].fd.mr_type_ext)
-		{
-		  mr_rarray_t * ra = (mr_rarray_t*)&((char*)ptrs.ra[i].data)[-offsetof (mr_rarray_t, data)];
-		  size = ra->size;
-		  /* statically allocated rarrays has negative alloc_size */
-		  if (alloc_size < ra->alloc_size)
-		    alloc_size = ra->alloc_size;
-		}
 	    
 	      if (MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext)
 		size = ptrs.ra[i].size;
 	    
 	      if ((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) && (MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type)
 		  && (0 ==  ptrs.ra[i].fd.size))
-		size = alloc_size = strlen (*(void**)ptrs.ra[i].data) + 1;
+		size = strlen (*(void**)ptrs.ra[i].data) + 1;
 	    
-	      if (alloc_size < size)
-		alloc_size = size;
-
-	      if ((size < 0) || (alloc_size < 0))
+	      if (size < 0)
 		{
-		  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size, alloc_size);
+		  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
 		  return (MR_FAILURE);
 		}
 	    
-	      copy = MR_MALLOC (alloc_size);
+	      copy = MR_MALLOC (size);
 	      if (NULL == copy)
 		{
 		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -816,8 +789,6 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 
 	      /* copy data from source */
 	      memcpy (copy, *(void**)ptrs.ra[i].data, size);
-	      /* zeros the rest of allocated memeory (only for rarrays) */
-	      memset (&copy[ptrs.ra[i].fd.size], 0, alloc_size - size);
 	      /* go thru all childs and calculate their addresses in newly allocated chunk */
 	      for (idx = ptrs.ra[i].first_child; idx >= 0; idx = ptrs.ra[idx].next)
 		ptrs.ra[idx].res.ptr = &copy[(char*)ptrs.ra[idx].data - *(char**)ptrs.ra[i].data];
@@ -843,7 +814,6 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	  if (MR_TYPE_STRING != ptrs.ra[i].fd.mr_type)
 	    break;
 	case MR_TYPE_EXT_POINTER:
-	case MR_TYPE_EXT_RARRAY_DATA:
 	  {
 	    int ptr_idx;
 	    /* get index of the node that is referenced by the pointer */

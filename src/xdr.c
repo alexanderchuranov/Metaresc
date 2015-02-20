@@ -260,7 +260,6 @@ mr_set_crossrefs (mr_ra_mr_ptrdes_t * ptrs)
 	    switch (ptrs->ra[i].fd.mr_type_ext)
 	      {
 	      case MR_TYPE_EXT_POINTER:
-	      case MR_TYPE_EXT_RARRAY_DATA:
 		*(void**)ptrs->ra[i].data = data;
 		break;
 	      default:
@@ -1075,181 +1074,6 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 }
 
 /**
- * Saves resizeable array data field into XDR stream.
- * @param xdrs XDR stream descriptor
- * @param idx index of the node in nodes collection
- * @param ptrs resizeable array with pointers descriptors
- * @return status of operation
- */
-static mr_status_t
-xdr_save_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
-{
-  bool_t status = FALSE;
-  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra[idx].flags))
-    return (MR_FAILURE);
-
-  if (ptrs->ra[idx].ref_idx >= 0)
-    status = xdr_int32_t (xdrs, &ptrs->ra[ptrs->ra[idx].ref_idx].idx);
-  else
-    {
-      char * ra_data = ptrs->ra[idx].data;
-      mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
-      if (!xdr_int32_t (xdrs, &ptrs->ra[idx].ref_idx))
-	return (MR_FAILURE);
-      switch (sizeof (ra->size))
-	{
-	case sizeof (int8_t):
-	  status = xdr_int8_t (xdrs, (void*)&ra->size);
-	  break;
-	case sizeof (int16_t):
-	  status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size);
-	  break;
-	case sizeof (int32_t):
-	  status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size);
-	  break;
-	case sizeof (int64_t):
-	  status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size);
-	  break;
-	}
-
-      if (!status)
-	return (MR_FAILURE);
-
-      if (ptrs->ra[idx].flags.is_opaque_data) /* content saved as opaque data */
-	status = xdr_opaque (xdrs, ra->data, ra->size);
-      else
-	status = TRUE;
-    }
-  return (status ? MR_SUCCESS : MR_FAILURE);
-}
-
-/**
- * Loads resizeable array data field from XDR stream.
- * @param xdrs XDR stream descriptor
- * @param idx index of the node in nodes collection
- * @param ptrs resizeable array with pointers descriptors
- * @return status of operation
- */
-static mr_status_t
-xdr_load_rarray_data (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
-{
-  if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra[idx].flags))
-    return (MR_FAILURE);
-  if (!xdr_int32_t (xdrs, &ptrs->ra[idx].ref_idx))
-    return (MR_FAILURE);
-  if (ptrs->ra[idx].ref_idx < 0)
-    {
-      mr_fd_t fd_ = ptrs->ra[idx].fd;
-      char * ra_data = ptrs->ra[idx].data;
-      mr_rarray_t * ra = (void*)&ra_data[-offsetof (mr_rarray_t, data)];
-      bool_t status = FALSE;
-
-      switch (sizeof (ra->size))
-	{
-	case sizeof (int8_t):
-	  status = xdr_int8_t (xdrs, (void*)&ra->size);
-	  break;
-	case sizeof (int16_t):
-	  status = xdr_int16_t (xdrs, (int16_t*)(void*)&ra->size);
-	  break;
-	case sizeof (int32_t):
-	  status = xdr_int32_t (xdrs, (int32_t*)(void*)&ra->size);
-	  break;
-	case sizeof (int64_t):
-	  status = xdr_int64_t (xdrs, (int64_t*)(void*)&ra->size);
-	  break;
-	}
-
-      if (!status)
-	return (MR_FAILURE);
-
-      /* .size and .alloc_size will be loaded once again as fields of mr_rarray_t */
-      ra->alloc_size = ra->size;
-      ra->data = NULL;
-
-      if (ra->size > 0)
-	{
-	  int i;
-	  int count = ra->size / fd_.size;
-
-	  ra->data = MR_MALLOC (ra->size);
-	  if (NULL == ra->data)
-	    {
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      return (MR_FAILURE);
-	    }
-	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-
-	  memset (ra->data, 0, ra->size);
-	  if (ptrs->ra[idx].flags.is_opaque_data)
-	    return (xdr_opaque (xdrs, ra->data, ra->size) ? MR_SUCCESS : MR_FAILURE);
-	  else
-	    for (i = 0; i < count; ++i)
-	      if (MR_SUCCESS != xdr_load_inner (((char*)ra->data) + i * fd_.size, &fd_, xdrs, ptrs, idx))
-		return (MR_FAILURE);
-	}
-    }
-
-  return (MR_SUCCESS);
-}
-
-TYPEDEF_STRUCT (xdr_load_rarray_struct_t,
-		(XDR *, xdrs),
-		int idx,
-		(mr_ra_mr_ptrdes_t *, ptrs))
-
-static mr_status_t
-xdr_load_rarray_inner (mr_td_t * tdp, void * context)
-{
-  xdr_load_rarray_struct_t * xdr_load_rarray_struct = context;
-  return (xdr_load_struct_inner (xdr_load_rarray_struct->xdrs,
-				 xdr_load_rarray_struct->idx,
-				 xdr_load_rarray_struct->ptrs,
-				 tdp));
-}
-
-/**
- * Loads resizeable array from XDR stream.
- * @param xdrs XDR stream descriptor
- * @param idx index of the node in nodes collection
- * @param ptrs resizeable array with pointers descriptors
- * @return status of operation
- */
-static mr_status_t
-xdr_load_rarray (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
-{
-  mr_rarray_t * ra = ptrs->ra[idx].data;
-  xdr_load_rarray_struct_t xdr_load_rarray_struct = {
-    .xdrs = xdrs,
-    .idx = idx,
-    .ptrs = ptrs,
-  };
-
-  memset (ra, 0, sizeof (*ra));
-  if (MR_SUCCESS != mr_load_rarray_type (&ptrs->ra[idx].fd, xdr_load_rarray_inner, &xdr_load_rarray_struct))
-    return (MR_FAILURE);
-  /* alloc_size is loaded from XDRS, but it should reflect amount of memory really allocated for data */
-  ra->alloc_size = ra->size;
-
-  return (MR_SUCCESS);
-}
-
-static bool
-has_opaque_rarrays (mr_ra_mr_ptrdes_t * ptrs)
-{
-  int i;
-  bool has_opaque_rarrays_flag = FALSE;
-  for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
-    if (TRUE == ptrs->ra[i].flags.is_opaque_data)
-      {
-	/* do not save sub-nodes */
-	ptrs->ra[i].first_child = ptrs->ra[i].last_child = -1;
-	has_opaque_rarrays_flag = TRUE;
-      }
-  return (has_opaque_rarrays_flag);
-}
-
-/**
  * Init save handlers Table
  */
 static xdr_save_handler_t xdr_save_handler[] =
@@ -1288,7 +1112,6 @@ static xdr_save_handler_t xdr_save_handler[] =
 static xdr_save_handler_t ext_xdr_save_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = xdr_none,
-    [MR_TYPE_EXT_RARRAY_DATA] = xdr_save_rarray_data,
     [MR_TYPE_EXT_POINTER] = xdr_save_pointer,
   };
 
@@ -1325,11 +1148,6 @@ xdr_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 mr_status_t
 xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs)
 {
-  if (has_opaque_rarrays (ptrs))
-    {
-      int idx_ = 0;
-      mr_ptrs_ds (ptrs, mr_renumber_node, &idx_);
-    }
   return (mr_ptrs_ds (ptrs, xdr_save_node, xdrs));
 }
 
@@ -1372,7 +1190,5 @@ static xdr_load_handler_t xdr_load_handler[] =
 static xdr_load_handler_t ext_xdr_load_handler[] =
   {
     [MR_TYPE_EXT_ARRAY] = xdr_load_array,
-    [MR_TYPE_EXT_RARRAY] = xdr_load_rarray,
-    [MR_TYPE_EXT_RARRAY_DATA] = xdr_load_rarray_data,
     [MR_TYPE_EXT_POINTER] = xdr_load_pointer,
   };
