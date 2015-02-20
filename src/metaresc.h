@@ -298,8 +298,8 @@
 #define P00_FIELD(P00_MODE_TYPE_NAME, FIELD, I) MR_IF_ELSE (MR_IS_EMPTY (FIELD)) () (P00_FIELD_ (P00_MODE_TYPE_NAME, FIELD))
 /*
   field descriptions might be in two forms.
-  1. MR_TYPE_MACRO (ARGS) for type scpecific declarations like INT32 (x)
-  2. (TYPE, NAME, SUFFIX..., META..., RES..., RES_TYPE...) for auto detection declarations.
+  1. MR_TYPE_MACRO (ARGS) for type scpecific declarations like VOID (TYPE, NAME)
+  2. (TYPE, NAME, SUFFIX..., META..., RES..., RES_TYPE..., RES_SIZE...) for auto detection declarations.
 */
 #define P00_FIELD_(P00_MODE_TYPE_NAME, FIELD)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (FIELD))					\
@@ -352,31 +352,13 @@
   (P00_UNFOLD (MR_, ENUM_DEF, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (FIELD)))
 
 /* list of substitutions for P00_FIELD_UNFOLD_ */
-#define P00_COMMA_FIELD FIELD,
 #define P00_COMMA_AUTO AUTO,
 #define P00_COMMA_VOID VOID,
-#define P00_COMMA_ENUM ENUM,
 #define P00_COMMA_BITFIELD BITFIELD,
 #define P00_COMMA_BITMASK BITMASK,
-#define P00_COMMA_INT8 INT8,
-#define P00_COMMA_UINT8 UINT8,
-#define P00_COMMA_INT16 INT16,
-#define P00_COMMA_UINT16 UINT16,
-#define P00_COMMA_INT32 INT32,
-#define P00_COMMA_UINT32 UINT32,
-#define P00_COMMA_INT64 INT64,
-#define P00_COMMA_UINT64 UINT64,
-#define P00_COMMA_FLOAT FLOAT,
-#define P00_COMMA_DOUBLE DOUBLE,
-#define P00_COMMA_LONG_DOUBLE LONG_DOUBLE,
-#define P00_COMMA_CHAR CHAR,
-#define P00_COMMA_STRING STRING,
 #define P00_COMMA_CHAR_ARRAY CHAR_ARRAY,
-#define P00_COMMA_STRUCT STRUCT,
-#define P00_COMMA_UNION UNION,
 #define P00_COMMA_ARRAY ARRAY,
 #define P00_COMMA_POINTER POINTER,
-#define P00_COMMA_POINTER_STRUCT POINTER_STRUCT,
 #define P00_COMMA_FUNC FUNC,
 
 #define P00_COMMA_char AUTO_BI, char,
@@ -494,29 +476,11 @@
 
 #define MR_AUTO(...) MR_UNFOLD (MR_AUTO, __VA_ARGS__)
 #define MR_VOID(...) MR_UNFOLD (MR_VOID, __VA_ARGS__)
-#define MR_ENUM(...) MR_UNFOLD (MR_ENUM, __VA_ARGS__)
 #define MR_BITFIELD(...) MR_UNFOLD (MR_BITFIELD, __VA_ARGS__)
 #define MR_BITMASK(...) MR_UNFOLD (MR_BITMASK, __VA_ARGS__)
-#define MR_BOOL(...) MR_UNFOLD (MR_BOOL, __VA_ARGS__)
-#define MR_INT8(...) MR_UNFOLD (MR_INT8, __VA_ARGS__)
-#define MR_UINT8(...) MR_UNFOLD (MR_UINT8, __VA_ARGS__)
-#define MR_INT16(...) MR_UNFOLD (MR_INT16, __VA_ARGS__)
-#define MR_UINT16(...) MR_UNFOLD (MR_UINT16, __VA_ARGS__)
-#define MR_INT32(...) MR_UNFOLD (MR_INT32, __VA_ARGS__)
-#define MR_UINT32(...) MR_UNFOLD (MR_UINT32, __VA_ARGS__)
-#define MR_INT64(...) MR_UNFOLD (MR_INT64, __VA_ARGS__)
-#define MR_UINT64(...) MR_UNFOLD (MR_UINT64, __VA_ARGS__)
-#define MR_FLOAT(...) MR_UNFOLD (MR_FLOAT, __VA_ARGS__)
-#define MR_DOUBLE(...) MR_UNFOLD (MR_DOUBLE, __VA_ARGS__)
-#define MR_LONG_DOUBLE(...) MR_UNFOLD (MR_LONG_DOUBLE, __VA_ARGS__)
-#define MR_CHAR(...) MR_UNFOLD (MR_CHAR, __VA_ARGS__)
-#define MR_STRING(...) MR_UNFOLD (MR_STRING, __VA_ARGS__)
 #define MR_CHAR_ARRAY(...) MR_UNFOLD (MR_CHAR_ARRAY, __VA_ARGS__)
-#define MR_STRUCT(...) MR_UNFOLD (MR_STRUCT, __VA_ARGS__)
-#define MR_UNION(...) MR_UNFOLD (MR_UNION, __VA_ARGS__)
 #define MR_ARRAY(...) MR_UNFOLD (MR_ARRAY, __VA_ARGS__)
 #define MR_POINTER(...) MR_UNFOLD (MR_POINTER, __VA_ARGS__)
-#define MR_POINTER_STRUCT(...) MR_UNFOLD (MR_POINTER_STRUCT, __VA_ARGS__)
 #define MR_FUNC(...) MR_UNFOLD (MR_FUNC, __VA_ARGS__)
 #define MR_END_STRUCT(...) MR_UNFOLD (MR_END_STRUCT, __VA_ARGS__)
 
@@ -526,7 +490,6 @@
 #define MR_END_ANON_UNION(...) MR_UNFOLD (MR_END_ANON_UNION, __VA_ARGS__)
 
 #define MR_TYPEDEF_ENUM(...) MR_UNFOLD (MR_TYPEDEF_ENUM, __VA_ARGS__)
-#define MR_ENUM_DEF(...) MR_UNFOLD (MR_ENUM_DEF, __VA_ARGS__)
 #define MR_END_ENUM(...) MR_UNFOLD (MR_END_ENUM, __VA_ARGS__)
 
 #define MR_TYPEDEF_CHAR_ARRAY(...) MR_UNFOLD (MR_TYPEDEF_CHAR_ARRAY, __VA_ARGS__)
@@ -544,28 +507,10 @@
 #define MR_CHAR_ARRAY_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
 
 #define MR_FIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) TYPE NAME SUFFIX;
-#define MR_ENUM_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
 #define MR_BITFIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, SUFFIX)
 #define MR_BITMASK_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
-#define MR_BOOL_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, bool, NAME, )
-#define MR_INT8_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, int8_t, NAME, )
-#define MR_UINT8_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, uint8_t, NAME, )
-#define MR_INT16_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, int16_t, NAME, )
-#define MR_UINT16_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, uint16_t, NAME, )
-#define MR_INT32_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, int32_t, NAME, )
-#define MR_UINT32_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, uint32_t, NAME, )
-#define MR_INT64_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, int64_t, NAME, )
-#define MR_UINT64_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, uint64_t, NAME, )
-#define MR_FLOAT_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, float, NAME, )
-#define MR_DOUBLE_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, double, NAME, )
-#define MR_LONG_DOUBLE_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, long double, NAME, )
-#define MR_CHAR_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, char, NAME, )
-#define MR_STRING_PROTO(MR_TYPE_NAME, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, char *, NAME, )
-#define MR_STRUCT_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
-#define MR_UNION_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, )
 #define MR_ARRAY_PROTO MR_FIELD_PROTO
 #define MR_POINTER_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE *, NAME, )
-#define MR_POINTER_STRUCT_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, struct MR_TYPEDEF_PREFIX (TYPE) *, NAME, )
 #define MR_FUNC_PROTO(MR_TYPE_NAME, TYPE, NAME, ARGS, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, (*NAME), ARGS)
 
 #define MR_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, ... /* ATTR */) MR_IF_ELSE (MR_IS_EMPTY (NAME)) () (char NAME[0];) union __VA_ARGS__ {
@@ -603,16 +548,6 @@
 	     },								\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
-
-#define MR_POINTER_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) { \
-    (mr_fd_t[]){ {							\
-	.name = { .str = #NAME, .hash_value = 0, },			\
-	  .type = MR_STRINGIFY (TYPE),					\
-	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
-	     .mr_type = MR_TYPE_STRUCT,					\
-	     .mr_type_ext = MR_TYPE_EXT_POINTER,			\
-	     .meta = "" __VA_ARGS__,					\
-	     } } },
 
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
@@ -668,25 +603,8 @@
 #define MR_VOID_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 
-#define MR_ENUM_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_ENUM, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_BOOL_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, bool, NAME, , MR_TYPE_BOOL, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT8_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int8_t, NAME, , MR_TYPE_INT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT8_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint8_t, NAME, , MR_TYPE_UINT8, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT16_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int16_t, NAME, , MR_TYPE_INT16, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT16_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint16_t, NAME, , MR_TYPE_UINT16, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT32_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int32_t, NAME, , MR_TYPE_INT32, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT32_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint32_t, NAME, , MR_TYPE_UINT32, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_INT64_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, int64_t, NAME, , MR_TYPE_INT64, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UINT64_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, uint64_t, NAME, , MR_TYPE_UINT64, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_FLOAT_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, float, NAME, , MR_TYPE_FLOAT, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_DOUBLE_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, double, NAME, , MR_TYPE_DOUBLE, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_LONG_DOUBLE_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, long double, NAME, , MR_TYPE_LONG_DOUBLE, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_CHAR_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, char, NAME, , MR_TYPE_CHAR, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_STRING_DESC(MR_TYPE_NAME, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, char *, NAME, , MR_TYPE_STRING, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_STRUCT_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_STRUCT, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_UNION_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_UNION, MR_TYPE_EXT_NONE, __VA_ARGS__)
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_POINTER, __VA_ARGS__)
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, MR_TYPE_EXT_NONE, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
@@ -1199,28 +1117,28 @@ typedef unsigned int mr_hash_value_t;
 
 extern mr_conf_t mr_conf;
 
-extern mr_status_t __attribute__ ((sentinel(0))) mr_add_type (mr_td_t*, char*, ...);
-extern char * mr_read_xml_doc (FILE*);
+extern mr_status_t __attribute__ ((sentinel(0))) mr_add_type (mr_td_t * tdp, char * meta, ...);
+extern char * mr_read_xml_doc (FILE * fd);
 
-extern void mr_save (void*, mr_fd_t*, mr_save_data_t*);
-extern mr_status_t mr_load (void*, mr_fd_t*, int, mr_load_data_t*);
+extern void mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data);
+extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data);
 #ifdef HAVE_LIBXML2
-extern xmlDocPtr xml2_save (mr_ra_mr_ptrdes_t*);
-extern int xml2_load (xmlNodePtr, mr_ra_mr_ptrdes_t*);
+extern xmlDocPtr xml2_save (mr_ra_mr_ptrdes_t * ptrs);
+extern int xml2_load (xmlNodePtr, mr_ra_mr_ptrdes_t * ptrs);
 #endif /* HAVE_LIBXML2 */
-extern mr_status_t xdr_save (XDR*, mr_ra_mr_ptrdes_t*);
-extern mr_status_t xdr_load (void*, mr_fd_t*, XDR*);
-extern void xdrra_create (XDR*, mr_rarray_t*, enum xdr_op);
+extern mr_status_t xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs);
+extern mr_status_t xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs);
+extern void xdrra_create (XDR * xdrs, mr_rarray_t * rarray, enum xdr_op op);
 
-extern char * xml1_save (mr_ra_mr_ptrdes_t*);
-extern char * cinit_save (mr_ra_mr_ptrdes_t*);
-extern char * json_save (mr_ra_mr_ptrdes_t*);
-extern char * scm_save (mr_ra_mr_ptrdes_t*);
+extern char * xml1_save (mr_ra_mr_ptrdes_t * ptrs);
+extern char * cinit_save (mr_ra_mr_ptrdes_t * ptrs);
+extern char * json_save (mr_ra_mr_ptrdes_t * ptrs);
+extern char * scm_save (mr_ra_mr_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
-extern mr_status_t xml1_load (char*, mr_ra_mr_ptrdes_t*);
-extern mr_status_t cinit_load (char*, mr_ra_mr_ptrdes_t*);
-extern mr_status_t scm_load (char*, mr_ra_mr_ptrdes_t*);
+extern mr_status_t xml1_load (char * str, mr_ra_mr_ptrdes_t * ptrs);
+extern mr_status_t cinit_load (char * str, mr_ra_mr_ptrdes_t * ptrs);
+extern mr_status_t scm_load (char * str, mr_ra_mr_ptrdes_t * ptrs);
 #endif /* HAVE_BISON_FLEX */
 
 extern void * mr_malloc (const char * filename, const char * function, int line, size_t size);
@@ -1233,30 +1151,29 @@ extern bool mr_is_valid_field_name (char * name);
 extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs);
 extern void mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs);
 extern int mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs);
-extern void mr_add_child (int, int, mr_ra_mr_ptrdes_t*);
-extern void mr_detect_type (mr_fd_t*);
-extern char * mr_normalize_name (char*);
-extern mr_status_t mr_free_recursively (mr_ra_mr_ptrdes_t);
-extern mr_status_t mr_copy_recursively (mr_ra_mr_ptrdes_t, void*);
-extern mr_status_t mr_free_ptrs (mr_ra_mr_ptrdes_t);
-extern mr_fd_t * mr_get_fd_by_name (mr_td_t*, char*);
-extern mr_fd_t * mr_get_enum_by_value (mr_td_t*, int64_t);
-extern mr_fd_t * mr_get_enum_by_name (char*);
-extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t*, uint64_t*);
-extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t*, uint64_t*);
-extern mr_td_t * mr_get_td_by_name (char*);
-extern char * mr_message_format (mr_message_id_t, va_list);
-extern void mr_message (const char*, const char*, int, mr_log_level_t, mr_message_id_t, ...);
-extern void mr_message_unsupported_node_type (mr_fd_t*);
-extern void * mr_rarray_append (mr_rarray_t*, int);
-extern void * mr_rarray_allocate_element (void**, ssize_t*, ssize_t*, int);
-extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t*, const char*, ...);
+extern void mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs);
+extern void mr_detect_type (mr_fd_t * fdp);
+extern char * mr_normalize_name (char * name);
+extern mr_status_t mr_free_recursively (mr_ra_mr_ptrdes_t ptrs);
+extern mr_status_t mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * data);
+extern mr_status_t mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs);
+extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
+extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, int64_t value);
+extern mr_fd_t * mr_get_enum_by_name (char * name);
+extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
+extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
+extern mr_td_t * mr_get_td_by_name (char * type);
+extern char * mr_message_format (mr_message_id_t message_id, va_list args);
+extern void mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, ...);
+extern void * mr_rarray_append (mr_rarray_t * rarray, int size);
+extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, int element_size);
+extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
 
-extern char * xml_unquote_string (mr_substr_t*);
+extern char * xml_unquote_string (mr_substr_t * substr);
 extern void mr_init_save_xml (void);
 
 extern int64_t mr_get_enum_value (mr_td_t * tdp, void * data);
-extern mr_hash_value_t mr_hash_str (char*);
+extern mr_hash_value_t mr_hash_str (char * str);
 extern int mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_hash_value_t mr_fd_name_get_hash (const mr_ptr_t x, const void * context);
 extern int mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
