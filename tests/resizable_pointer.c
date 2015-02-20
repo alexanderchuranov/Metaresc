@@ -3,7 +3,7 @@
 #include <regression.h>
 
 TYPEDEF_STRUCT (resizable_array_t,
-		(int *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "char"),
 		int size,
 		);
 
@@ -44,6 +44,25 @@ MR_START_TEST (resizable_mr_ptr, "test mr_ptr_t as a resizable array") {
       .dynamic_type = "resizable_mr_ptr_t",
     };
   ALL_METHODS (ASSERT_SAVE_LOAD, resizable_mr_ptr_t, &orig);
+} END_TEST
+
+#undef TEST_METHODS
+#define TEST_METHODS XDR
+
+#define CMP_OPAQUE_DATA(TYPE, X, Y, ...) CMP_SERIALIAZED (resizable_array_t, ((resizable_array_t*)X), ((resizable_array_t*)Y), __VA_ARGS__)
+
+TYPEDEF_STRUCT (resizable_array_as_opaque_data_t,
+		(int8_t *, MR_OPAQUE_DATA, , , { "size" }, "char"),
+		VOID (int, size),
+		);
+
+MR_START_TEST (resizable_array_as_opaque_data, "test pointer as a resizable array as opaque data") {
+  resizable_array_as_opaque_data_t orig = 
+    {
+      .MR_OPAQUE_DATA = (typeof (orig.MR_OPAQUE_DATA[0])[]){ -1, 1, },
+      .size = 2 * sizeof (orig.MR_OPAQUE_DATA[0]),
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_as_opaque_data_t, &orig, CMP_OPAQUE_DATA);
 } END_TEST
 
 MAIN ();

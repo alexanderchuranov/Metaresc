@@ -997,7 +997,8 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     return (MR_FAILURE);
   
   if (ptrs->ra[idx].flags.is_opaque_data && (ptrs->ra[idx].size > 0))
-    return (xdr_opaque (xdrs, ptrs->ra[idx].data, ptrs->ra[idx].size) ? MR_SUCCESS : MR_FAILURE);
+    return (xdr_opaque (xdrs, *(void**)ptrs->ra[idx].data, ptrs->ra[idx].size) ? MR_SUCCESS : MR_FAILURE);
+
   return (MR_SUCCESS);
 }
 
