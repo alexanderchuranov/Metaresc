@@ -68,12 +68,12 @@ extern Suite * suite;
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
       mr_rarray_t x_ = MR_SAVE_XDR_RA (TYPE, X);			\
       mr_rarray_t y_ = MR_SAVE_XDR_RA (TYPE, Y);			\
-      int xy_cmp = (x_.size != y_.size) ||				\
-	memcmp (x_.data, y_.data, x_.size);				\
-      if (x_.data)							\
-	MR_FREE (x_.data);						\
-      if (y_.data)							\
-	MR_FREE (y_.data);						\
+      int xy_cmp = (x_.MR_SIZE != y_.MR_SIZE) ||			\
+	memcmp (x_.data.ptr, y_.data.ptr, x_.MR_SIZE);			\
+      if (x_.data.ptr)							\
+	MR_FREE (x_.data.ptr);						\
+      if (y_.data.ptr)							\
+	MR_FREE (y_.data.ptr);						\
       xy_cmp;								\
     })
 #endif /* HAVE_BISON_FLEX */
@@ -97,8 +97,8 @@ extern Suite * suite;
       load_success = (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)); \
       ck_assert_msg (load_success,					\
 		     "load for method " #METHOD " on type " #TYPE " failed"); \
-      if (serialized.data)						\
-	MR_FREE (serialized.data);					\
+      if (serialized.data.ptr)						\
+	MR_FREE (serialized.data.ptr);					\
       orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &METHOD ## _restored, __VA_ARGS__)); \
       ck_assert_msg (orig_eq_restored,					\
 		     "restored value mismatched original for method " #METHOD " on type " #TYPE); \

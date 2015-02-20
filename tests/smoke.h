@@ -24,26 +24,28 @@
 #define SMOKE_METHOD(METHOD, ...) START_TEST (mr_conf_save_load) {	\
     mr_conf_t mr_conf_saved = mr_conf;					\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-      ck_assert_msg (((0 != mr_conf_serialized.size) && (NULL != mr_conf_serialized.data)), \
+      ck_assert_msg (((0 != mr_conf_serialized.MR_SIZE) && (NULL != mr_conf_serialized.data.ptr)), \
 		     "save for method " #METHOD " failed");		\
       mr_conf_t mr_conf_loaded;						\
       ck_assert_msg (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded), \
 		     "load for method " #METHOD " failed");		\
       mr_conf = mr_conf_loaded;						\
       mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-	ck_assert_msg ((mr_conf_serialized.size == mr_conf_serialized_.size) && \
-		       (0 == memcmp (mr_conf_serialized.data, mr_conf_serialized_.data, mr_conf_serialized.size)), \
+	ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
+		       (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
 		       "restored mr_conf mismatched original dump for method " #METHOD); \
-	MR_FREE (mr_conf_serialized_.data);				\
-	MR_FREE (mr_conf_serialized.data);				\
+	MR_FREE (mr_conf_serialized_.data.ptr);				\
+	MR_FREE (mr_conf_serialized.data.ptr);				\
 	mr_conf = mr_conf_saved;					\
 	MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);		\
   } END_TEST								\
+									\
   TYPEDEF_STRUCT (mr_empty_t);						\
   TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));	\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
   TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "char"), (ssize_t, size)); \
+									\
   int test_run (int count)						\
   {									\
     int i;								\
@@ -65,21 +67,21 @@
     array.ra[count - 1].mr_ptr.ptr = "string_t";			\
     typed_list.root = &array.ra[0];					\
     ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);		\
-      ck_assert_msg ((ra.size > 0) && (ra.data != NULL),		\
+      ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\
 		     "Serialization for method " #METHOD " failed.");	\
       ck_assert_msg (MR_SUCCESS ==					\
 		     MR_LOAD_ ## METHOD ## _RA (typed_list_t, &ra, &list_), \
 		     "Deserialization for method " #METHOD " failed.");	\
       MR_FREE_RECURSIVELY (typed_list_t, &list_);			\
-      MR_FREE (ra.data);						\
+      MR_FREE (ra.data.ptr);						\
       ra = MR_SAVE_ ## METHOD ## _RA (array_t, &array);			\
-	ck_assert_msg ((ra.size > 0) && (ra.data != NULL),		\
+	ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),	\
 		       "Serialization for method " #METHOD " failed.");	\
 	ck_assert_msg (MR_SUCCESS ==					\
 		       MR_LOAD_ ## METHOD ## _RA (array_t, &ra, &array_), \
 		       "Deserialization for method " #METHOD " failed."); \
 	MR_FREE_RECURSIVELY (array_t, &array_);				\
-	MR_FREE (ra.data);						\
+	MR_FREE (ra.data.ptr);						\
 	MR_FREE (array.ra);						\
 	times (&end);							\
 	return ((int)((end.tms_utime - start.tms_utime)));		\

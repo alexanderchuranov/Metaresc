@@ -35,10 +35,10 @@ static bool_t
 xdrra_getlong (XDR * xdrs, long * lp)
 {
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
-  char * base = ra->data;
+  char * base = ra->data.ptr;
   if (NULL == ra)
     return (FALSE);
-  if (ra->size - xdrs->x_handy < sizeof (int32_t))
+  if (ra->MR_SIZE - xdrs->x_handy < sizeof (int32_t))
     return (FALSE);
   *(int32_t*)lp = (int32_t) ntohl ((*((int32_t *)(&base[xdrs->x_handy]))));
   xdrs->x_handy += sizeof (int32_t);
@@ -76,10 +76,10 @@ static bool_t
 xdrra_getbytes (XDR * xdrs, caddr_t addr, u_int len)
 {
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
-  char * base = ra->data;
+  char * base = ra->data.ptr;
   if (NULL == ra)
     return (FALSE);
-  if (ra->size - xdrs->x_handy < len)
+  if (ra->MR_SIZE - xdrs->x_handy < len)
     return (FALSE);
   memcpy (addr, &base[xdrs->x_handy], len);
   xdrs->x_handy += len;
@@ -142,10 +142,10 @@ static int32_t *
 xdrra_inline (XDR * xdrs, u_int len)
 {
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
-  char * base = ra->data;
+  char * base = ra->data.ptr;
   if (NULL == ra)
     return (FALSE);
-  if (ra->size - xdrs->x_handy < len)
+  if (ra->MR_SIZE - xdrs->x_handy < len)
     return (NULL);
   return ((int32_t*)&base[xdrs->x_handy]);
 }
@@ -160,10 +160,10 @@ xdrra_destroy (XDR * xdrs)
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
   if (NULL == ra)
     return;
-  if (ra->data)
-    MR_FREE (ra->data);
-  ra->data = NULL;
-  ra->size = ra->alloc_size = 0;
+  if (ra->data.ptr)
+    MR_FREE (ra->data.ptr);
+  ra->data.ptr = NULL;
+  ra->MR_SIZE = ra->alloc_size = 0;
 }
 
 #ifdef HAVE_STRUCT_XDR_OPS_X_GETINT32

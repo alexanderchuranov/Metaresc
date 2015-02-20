@@ -408,10 +408,15 @@ static cinit_json_save_handler_t ext_json_save_handler[] =
 static char *
 cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, mr_ra_mr_ptrdes_t*, mr_save_type_data_t*))
 {
-  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (""), .size = sizeof (""), .alloc_size = sizeof (""), .res = { NULL }, };
+  mr_rarray_t mr_ra_str = {
+    .data = { MR_STRDUP ("") },
+    .MR_SIZE = sizeof (""),
+    .type = "char",
+    .alloc_size = sizeof (""),
+  };
   int idx = 0;
 
-  if (NULL == mr_ra_str.data)
+  if (NULL == mr_ra_str.data.ptr)
     return (NULL);
 
   while (idx >= 0)
@@ -498,7 +503,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
 	}
     }
 
-  return (mr_ra_str.data);
+  return (mr_ra_str.data.ptr);
 }
 
 static int

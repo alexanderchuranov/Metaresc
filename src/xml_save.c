@@ -317,10 +317,15 @@ static xml_save_handler_t xml1_save_handler[] =
 char *
 xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 {
-  mr_rarray_t mr_ra_str = { .data = MR_STRDUP (MR_XML1_DOCUMENT_HEADER), .size = sizeof (MR_XML1_DOCUMENT_HEADER), .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER), .res = { NULL }, };
+  mr_rarray_t mr_ra_str = {
+    .data = { MR_STRDUP (MR_XML1_DOCUMENT_HEADER) },
+    .MR_SIZE = sizeof (MR_XML1_DOCUMENT_HEADER),
+    .type = "char",
+    .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER),
+  };
   int idx = 0;
 
-  if (NULL == mr_ra_str.data)
+  if (NULL == mr_ra_str.data.ptr)
     return (NULL);
 
   while (idx >= 0)
@@ -386,7 +391,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
     }
   if (mr_ra_printf (&mr_ra_str, "\n") < 0)
     return (NULL);
-  return (mr_ra_str.data);
+  return (mr_ra_str.data.ptr);
 }
 
 #ifdef HAVE_LIBXML2

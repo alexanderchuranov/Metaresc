@@ -777,7 +777,7 @@
 
 #define MR_SAVE_XDR_RA(MR_TYPE_NAME, S_PTR) ({				\
       XDR _xdrs_;							\
-      mr_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, }; \
+      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "uint8_t" }; \
       xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
       if (MR_SUCCESS != MR_SAVE_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR))	\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_SAVE_FAILED);		\
@@ -801,9 +801,10 @@
 #define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (scm_save, MR_TYPE_NAME, S_PTR)
 
 #define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
-      mr_rarray_t _ra_ = { .alloc_size = 0, .size = 0, .data = NULL, }; \
-      _ra_.data = METHOD (MR_TYPE_NAME, S_PTR);				\
-      if (_ra_.data) _ra_.size = _ra_.alloc_size = strlen (_ra_.data) + 1; \
+      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "char" }; \
+      _ra_.data.ptr = METHOD (MR_TYPE_NAME, S_PTR);			\
+      if (_ra_.data.ptr)						\
+	_ra_.MR_SIZE = _ra_.alloc_size = strlen (_ra_.data.ptr) + 1;	\
       _ra_;								\
     })
 
@@ -986,7 +987,7 @@
 #endif /* HAVE_LIBXML2 */
 
 #define MR_LOAD_XML2_RA(MR_TYPE_NAME, ...) MR_LOAD_XML2_RA_ARGN (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_XML2_RA_ARGN(MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_XML2_ARG ## N (MR_TYPE_NAME, (char*)((RA)->data), S_PTR)
+#define MR_LOAD_XML2_RA_ARGN(MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_XML2_ARG ## N (MR_TYPE_NAME, (char*)((RA)->data.ptr), S_PTR)
 
 #ifdef HAVE_BISON_FLEX
 
@@ -1052,7 +1053,7 @@
 #define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (scm_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_LOAD_METHOD_RA(METHOD, MR_TYPE_NAME, ...) MR_LOAD_METHOD_RA_ARGN (METHOD, MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_METHOD_RA_ARGN(METHOD, MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, (char*)((RA)->data), S_PTR)
+#define MR_LOAD_METHOD_RA_ARGN(METHOD, MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, (char*)((RA)->data.ptr), S_PTR)
 
 #define MR_LOAD_XML1_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_CINIT_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
@@ -1099,8 +1100,13 @@
 
 #endif /* HAVE_LIBXML2 */
 
+typedef char char_t;
 typedef long int long_int_t;
+typedef long long int long_long_int_t;
 typedef long double long_double_t;
+typedef complex float complex_float_t;
+typedef complex double complex_double_t;
+typedef complex long double complex_long_double_t;
 typedef unsigned int mr_hash_value_t;
 
 #ifndef MR_MODE

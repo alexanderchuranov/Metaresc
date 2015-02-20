@@ -125,11 +125,10 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 	      )
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
-		(void *, data, , "pointer on data array"),
-		(int64_t, size, , "used space in bytes"),
-		VOID (int64_t, alloc_size, , "allocated space in bytes"),
-		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
-		(char *, res_type, , "union discriminator"),
+		(mr_ptr_t, data, , "type"),
+		(ssize_t, MR_SIZE, , "used space in bytes"),
+		(char *, type, , "type of data pointer"),
+		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
 		)
 
 TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),

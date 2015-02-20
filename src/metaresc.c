@@ -28,8 +28,32 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
+#define MR_TYPEDEF_DESC_BI_(TYPE, MR_TYPE, ...) MR_TYPEDEF_DESC (TYPE, MR_TYPE) MR_TYPEDEF_END_DESC (TYPE, __VA_ARGS__);
+#define MR_TYPEDEF_DESC_BI(TYPE, ...) MR_TYPEDEF_DESC_BI_ (TYPE, MR_TYPE_DETECT (TYPE))
+
 /* meta data for type 'char' - required as a descriminator for mr_ptr union */
-MR_TYPEDEF_DESC (char, MR_TYPE_CHAR_ARRAY) MR_TYPEDEF_END_DESC (char, "type descriptor for 'char'", .size = 0);
+MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'", .size = 0);
+/* meta data for all scallar types */
+MR_TYPEDEF_DESC_BI (char_t);
+MR_TYPEDEF_DESC_BI (bool);
+MR_TYPEDEF_DESC_BI (uint8_t);
+MR_TYPEDEF_DESC_BI (int8_t);
+MR_TYPEDEF_DESC_BI (uint16_t);
+MR_TYPEDEF_DESC_BI (int16_t);
+MR_TYPEDEF_DESC_BI (uint32_t);
+MR_TYPEDEF_DESC_BI (int32_t);
+MR_TYPEDEF_DESC_BI (uint64_t);
+MR_TYPEDEF_DESC_BI (int64_t);
+MR_TYPEDEF_DESC_BI (int);
+MR_TYPEDEF_DESC_BI (short);
+MR_TYPEDEF_DESC_BI (long);
+MR_TYPEDEF_DESC_BI (long_long_int_t);
+MR_TYPEDEF_DESC_BI (float);
+MR_TYPEDEF_DESC_BI (double);
+MR_TYPEDEF_DESC_BI (long_double_t);
+MR_TYPEDEF_DESC_BI (complex_float_t);
+MR_TYPEDEF_DESC_BI (complex_double_t);
+MR_TYPEDEF_DESC_BI (complex_long_double_t);
 
 /* MR_IC_NONE:        ( / 363893 11767.0) ratio: 30.92 */
 /* MR_IC_RBTREE:       ( / 82415 15641.0) ratio: 5.26  */
@@ -344,7 +368,7 @@ mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, 
 void *
 mr_rarray_append (mr_rarray_t * rarray, int size)
 {
-  return (mr_rarray_allocate_element (&rarray->data, &rarray->size, &rarray->alloc_size, size));
+  return (mr_rarray_allocate_element (&rarray->data.ptr, &rarray->MR_SIZE, &rarray->alloc_size, size));
 }
 
 /**
@@ -368,20 +392,20 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
   if (NULL == str)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      if (mr_ra_str->data)
-	MR_FREE (mr_ra_str->data);
-      mr_ra_str->data = NULL;
-      mr_ra_str->size = mr_ra_str->alloc_size = 0;
+      if (mr_ra_str->data.ptr)
+	MR_FREE (mr_ra_str->data.ptr);
+      mr_ra_str->data.ptr = NULL;
+      mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
       return (-1);
     }
   tail = mr_rarray_append (mr_ra_str, length);
   if (tail)
     strcat (--tail, str);
-  else if (mr_ra_str->data)
+  else if (mr_ra_str->data.ptr)
     {
-      MR_FREE (mr_ra_str->data);
-      mr_ra_str->data = NULL;
-      mr_ra_str->size = mr_ra_str->alloc_size = 0;
+      MR_FREE (mr_ra_str->data.ptr);
+      mr_ra_str->data.ptr = NULL;
+      mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
     }
   free (str);
   return (tail ? length : -1);
