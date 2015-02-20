@@ -124,11 +124,10 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 	      MR_TYPE_EXT_LAST,  /* keep it last */
 	      )
 
-/* mr_rarray_t defenition should be synchronized with MR_RARRAY_PROTO macro */
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
 		(void *, data, , "pointer on data array"),
 		(int64_t, size, , "used space in bytes"),
-		(int64_t, alloc_size, , "allocated space in bytes"),
+		VOID (int64_t, alloc_size, , "allocated space in bytes"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		)
@@ -208,7 +207,7 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
 		(mr_ptr_t *, ra, , "key_type", { "size" }, "char"),
 		(ssize_t, size, , "size of array"),
-		(ssize_t, alloc_size, , "allocated size for array"),
+		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
 
 typedef struct mr_ic_t mr_ic_t;
@@ -369,7 +368,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements", { "size" }, "char"),
 		(ssize_t, size, , "size of resizable array"),
-		(ssize_t, alloc_size, , "allocated size of resizable array"),
+		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
 		(mr_ptr_t, res, , "user data"),
 		(char *, res_type, , "type for 'res'")
 		)
@@ -378,7 +377,7 @@ TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
 		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
-		(ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
+		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
@@ -387,10 +386,10 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
-		(ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
+		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
 		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
-		(ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
+		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
 		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators", { "mr_ra_ud_size" }, "char"),
 		)
 
