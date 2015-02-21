@@ -9,12 +9,12 @@
   1. serialize mr_conf - library config structure
   2. load back config from serialized representation into another variable
   3. replace global variable with the main mr_conf on a loaded one
-  4. serialize mr_conf once again
+  4. serialize mr_conf once again using loaded configuration
   5. match it with the first dump
   6. restore mr_conf from saved copy
   7. free up all allocated memory
 
-  One more tests checks that complexity of save/load is not O(n * n). It should be O(n * log (n))
+  One more test checks that complexity of save/load is not O(n * n). It should be O(n * log (n))
   Methods that have limitation of structure depth due to recursive implementation should define
   SKIP_PERFORMANCE_TEST_{METHOD} to 0
 */

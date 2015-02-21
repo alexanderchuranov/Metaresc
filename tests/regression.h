@@ -33,7 +33,7 @@ extern Suite * suite;
 	TCase * tcase = tcase_create ("" __VA_ARGS__);			\
 	if (tcase)							\
 	  {								\
-	    tcase_set_timeout (tcase, 10);				\
+	    tcase_set_timeout (tcase, 15);				\
 	    tcase_add_test (tcase, NAME);				\
 	    suite_add_tcase (suite, tcase);				\
 	  }								\

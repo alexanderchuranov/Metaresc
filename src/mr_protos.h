@@ -126,8 +126,8 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
 		(mr_ptr_t, data, , "type"),
-		(ssize_t, MR_SIZE, , "used space in bytes"),
-		(char *, type, , "type of data pointer"),
+		(char *, type, , "type of 'data' pointer"),
+		VOID (ssize_t, MR_SIZE, , "used space in bytes"),
 		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
 		)
 
@@ -267,13 +267,13 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		  sample:
 		  VOID (void *, ptr, , "user extended info", { &((ext_info_t){ .field = XXX }) }, "ext_info_t")
 		  or
-		  VOID (void *, ptr, , "user extended info", { (ext_info_t[]){ {.field = XXX} } }, "ext_info_t")
+		  VOID (void *, ptr, , "user extended info", { (ext_info_t[]){ {.field = XXX}, {.field = YYY} } }, "ext_info_t", 2 * sizeof (ext_info_t))
 		  or
 		  VOID (void *, ptr, , "user extended info", { "one more extra string" }, "char")
 		*/
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
-		(ssize_t, MR_SIZE, , "size of array if pointer"),
+		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "wrapper for mr_fd_t*"),
@@ -294,7 +294,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, meta, , "type meta info"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
-		(ssize_t, MR_SIZE, , "size of array if pointer"),
+		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		) /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
@@ -383,12 +383,12 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
+		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
-		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
+		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators", { "mr_ra_ud_size" }, "char"),
 		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
-		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators", { "mr_ra_ud_size" }, "char"),
 		)
 
 TYPEDEF_FUNC (char *, mr_output_format_t, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
