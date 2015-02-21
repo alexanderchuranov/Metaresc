@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#define MR_CINIT_DEBUG 0
 /* Pass the argument to yyparse through to yylex. */
 #define MR_CINIT_LTYPE mr_token_lloc_t
 #define MR_LOAD (mr_cinit_get_extra (scanner))
@@ -18,9 +19,6 @@
 #define YYSTYPE MR_CINIT_STYPE
 #define YYLTYPE MR_CINIT_LTYPE
 #include <cinit_load.lex.h>
-#undef YYSTYPE
-#undef YYLTYPE
-
 }
 
 %code {

@@ -24,9 +24,9 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_ra_mr_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 
-#define MR_PARSE_ERROR(LLOC, SCANNER, ERROR_MSG)			\
+#define MR_PARSE_ERROR(LLOCP, SCANNER, ERROR_MSG)			\
   MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
-	      LLOC.start.lineno, LLOC.start.column, LLOC.end.lineno, LLOC.end.column)
+	      (LLOCP)->start.lineno, (LLOCP)->start.column, (LLOCP)->end.lineno, (LLOCP)->end.column)
 
 /**
  * Helper function for building tree within parsing.

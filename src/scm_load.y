@@ -5,6 +5,7 @@
 %code top {
 #include <stdio.h>
 
+#define MR_SCM_DEBUG 0
 /* Pass the argument to yyparse through to yylex. */
 #define MR_SCM_LTYPE mr_token_lloc_t
 #define MR_LOAD (mr_scm_get_extra (scanner))
@@ -17,8 +18,6 @@
 #define YYSTYPE MR_SCM_STYPE
 #define YYLTYPE MR_SCM_LTYPE
 #include <scm_load.lex.h>
-#undef YYSTYPE
-#undef YYLTYPE
 }
 
 %code {
