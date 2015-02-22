@@ -124,7 +124,7 @@ TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
 	      MR_TYPE_EXT_LAST,  /* keep it last */
 	      )
 
-TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES (__attribute__((packed)), "resizable array type"),
+TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
 		(mr_ptr_t, data, , "type"),
 		(char *, type, , "type of 'data' pointer"),
 		VOID (ssize_t, MR_SIZE, , "used space in bytes"),
@@ -209,15 +209,13 @@ TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers fo
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
 
-typedef struct mr_ic_t mr_ic_t;
-
 TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(int, items_count),
 		(ssize_t, size, , "size of hash table"),
 		(char *, bucket_type),
 		(mr_hash_fn_t, hash_fn),
-		(mr_ptr_t *, index_add, (mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
-		(void, index_free, (mr_ic_t * /* ic */)),
+		(mr_ptr_t *, index_add, (struct mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
+		(void, index_free, (struct mr_ic_t * /* ic */)),
 		/* resizable array for hash table sized by field 'size'
 		   mr_ptr_t typed by 'bucket_type' */
 		(mr_ptr_t *, hash_table, , "bucket_type", { "size" }, "char"),
