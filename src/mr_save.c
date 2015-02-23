@@ -575,6 +575,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   int count = fd_.param.array_param.count;
   int i;
 
+  fd_.unnamed = TRUE;
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type_ext = MR_TYPE_EXT_NONE; /* set extended type property to MR_NONE in copy of field descriptor */
   else
@@ -609,6 +610,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
       int i;
       mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
       fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+      fd_.unnamed = TRUE;
       
       for (i = 0; i < count; ++i)
 	mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
@@ -818,6 +820,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.size = 0;
   mr_save_data->ptrs.ra = NULL;
 
+  fdp->unnamed = TRUE;
+  
   mr_save_inner (data, fdp, mr_save_data, -1);
 
   while (mr_save_data->mr_ra_idx_size > 0)

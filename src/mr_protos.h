@@ -5,9 +5,10 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , , { MR_SIZE_STR }, "char"),
+	       (void *, ptr, , , { MR_SIZE_STR }, "char", .unnamed = TRUE),
 	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "char"),
 	       (long_int_t, long_int_t),
+	       (typeof (offsetof (div_t, quot)), offset),
 	       )
 
 TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_STRING))
@@ -255,8 +256,9 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_ext_t, mr_type_ext, , "Metaresc type extension"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(char *, type, , "stringified type name"),
-		(typeof (offsetof (mr_array_param_t, count)), offset, , "offset in structure"),
+		(typeof (offsetof (div_t, quot)), offset, , "offset in structure"),
 		(typeof (sizeof (0)), size, , "size of field"),
+		(bool, unnamed, , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		(mr_fd_param_t, param, , "mr_type"),
 		(char *, meta, , "field meta info"),
 		/*
@@ -333,7 +335,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
-		ANON_UNION (),
+		ANON_UNION (type_specific),
 		VOID (uint8_t, vt_void, , "no serialization by default"),
 		long long int vt_int,
 		long double vt_float,

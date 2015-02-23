@@ -30,17 +30,6 @@ TYPEDEF_FUNC (int, cinit_json_save_handler_t, (int, mr_ra_mr_ptrdes_t *, mr_save
 #define MR_JSON_NAMED_FIELD_TEMPLATE "\"%s\" : "
 #define MR_CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
 
-#define MR_CINIT_UNNAMED_FIELDS (0)
-#define MR_CINIT_NAMED_FIELDS (!MR_CINIT_UNNAMED_FIELDS)
-
-static int cinit_named_node[MR_TYPE_LAST] = {
-  [0 ... MR_TYPE_LAST - 1] = MR_CINIT_UNNAMED_FIELDS,
-  [MR_TYPE_STRUCT] = MR_CINIT_NAMED_FIELDS,
-  [MR_TYPE_UNION] = MR_CINIT_NAMED_FIELDS,
-  [MR_TYPE_ANON_UNION] = MR_CINIT_NAMED_FIELDS,
-  [MR_TYPE_NAMED_ANON_UNION] = MR_CINIT_NAMED_FIELDS,
-};
-
 /**
  * MR_NONE type saving handler.
  * @param idx an index of node in ptrs
@@ -261,6 +250,13 @@ cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
   return (0);
 }
 
+static int
+json_save_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+{
+  save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
+  return (cinit_save_struct (idx, ptrs, save_data));
+}
+
 /**
  * MR_TYPE_EXT_POINTER type saving handler. Save pointer as a string.
  * @param idx an index of node in ptrs
@@ -304,14 +300,15 @@ json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
  * @return status
  */
 static int
-json_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * data)
+json_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
+  save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
   if (ptrs->ra[idx].first_child < 0)
-    data->content = MR_STRDUP (MR_CINIT_NULL);
+    save_data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     {
-      data->prefix = "/* (" MR_JSON_TYPE_NAME_TEMPLATE "[]) */ [\n";
-      data->suffix = "]";
+      save_data->prefix = "/* (" MR_JSON_TYPE_NAME_TEMPLATE "[]) */ [\n";
+      save_data->suffix = "]";
     }
   return (0);
 }
@@ -387,7 +384,7 @@ static cinit_json_save_handler_t json_save_handler[] =
     [MR_TYPE_FUNC] = cinit_save_func,
     [MR_TYPE_FUNC_TYPE] = cinit_save_func,
     [MR_TYPE_UNION] = cinit_save_struct,
-    [MR_TYPE_ANON_UNION] = cinit_save_struct,
+    [MR_TYPE_ANON_UNION] = json_save_union,
     [MR_TYPE_NAMED_ANON_UNION] = cinit_save_struct,
   };
 
@@ -430,17 +427,13 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, int (*node_handler) (mr_fd_t*, int, m
       skip_node = node_handler (fdp, idx, ptrs, &save_data);
       if (!skip_node)
 	{
-	  int named_node = MR_CINIT_UNNAMED_FIELDS;
 	  level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
 
 	  if (ptrs->ra[idx].level > 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 	      return (NULL);
 
-	  if ((ptrs->ra[idx].parent >= 0) && (MR_TYPE_EXT_NONE == ptrs->ra[ptrs->ra[idx].parent].fd.mr_type_ext))
-	    named_node = cinit_named_node[ptrs->ra[ptrs->ra[idx].parent].fd.mr_type];
-
-	  if ((MR_CINIT_NAMED_FIELDS == named_node) && (save_data.named_field_template))
+	  if (save_data.named_field_template != NULL)
 	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra[idx].fd.name.str) < 0)
 	      return (NULL);
 
@@ -510,8 +503,7 @@ static int
 cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   int skip_node = 0;
-  if ((fdp->mr_type != MR_TYPE_ANON_UNION) && /* anonymous unions should be unnamed for CINIT */
-      ((ptrs->ra[idx].parent >= 0) && strcmp ("mr_ptr_t", ptrs->ra[ptrs->ra[idx].parent].fd.type))) /* ugly hack for synthetic type. mr_ptr_t members should be unnamed */
+  if (FALSE == fdp->unnamed)
     save_data->named_field_template = MR_CINIT_NAMED_FIELD_TEMPLATE;
 
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_cinit_save_handler[fdp->mr_type_ext])
@@ -533,7 +525,10 @@ static int
 json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   int skip_node = 0;
-  save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
+
+  if (FALSE == fdp->unnamed)
+    save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
+
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_json_save_handler[fdp->mr_type_ext])
     skip_node = ext_json_save_handler[fdp->mr_type_ext] (idx, ptrs, save_data);
   else if ((fdp->mr_type < MR_TYPE_LAST) && json_save_handler[fdp->mr_type])

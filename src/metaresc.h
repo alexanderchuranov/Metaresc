@@ -626,6 +626,7 @@
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = "",							\
 	     .offset = 0,						\
+	     .unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (TRUE) (FALSE), \
 	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .meta = #__VA_ARGS__,					\
