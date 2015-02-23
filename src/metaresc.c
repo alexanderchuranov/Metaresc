@@ -35,6 +35,7 @@
 MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'", .size = 0);
 /* meta data for all scallar types */
 MR_TYPEDEF_DESC_BI (char_t, "alias for type 'char' for serialization as array of char");
+MR_TYPEDEF_DESC_BI (string_t);
 MR_TYPEDEF_DESC_BI (bool);
 MR_TYPEDEF_DESC_BI (uint8_t);
 MR_TYPEDEF_DESC_BI (int8_t);

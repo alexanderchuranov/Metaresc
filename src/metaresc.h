@@ -1101,6 +1101,7 @@
 
 #endif /* HAVE_LIBXML2 */
 
+typedef char * string_t;
 typedef char char_t;
 typedef long int long_int_t;
 typedef long long int long_long_int_t;
