@@ -638,6 +638,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 
       if (postpone)
 	{
+	  mr_ptrdes_t src, dst;
 	  /* at first attempt to save pointer we need need to determine size of structure */
 	  if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID))
 	    /* for serializable types we take size of the type as default value */
@@ -649,18 +650,13 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	  /* pointers might have assosiated field with the size for resizable arrays.
 	     name of the size field is stored in 'res' of field meta-data.
 	     'res_type' in this case will be 'char' */
-	  if ((NULL != mr_save_data->ptrs.ra[idx].fd.res_type) &&
-	      (0 == strcmp ("char", mr_save_data->ptrs.ra[idx].fd.res_type)))
+
+	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
+	  if (src.data != NULL)
 	    {
-	      mr_ptrdes_t src, dst;
-	      mr_pointer_get_size_ptrdes (&src, mr_save_data->ptrs.ra[idx].fd.res.ptr,
-					  idx, &mr_save_data->ptrs);
-	      if (src.data != NULL)
-		{
-		  dst.data = &mr_save_data->ptrs.ra[idx].size;
-		  dst.fd.mr_type = MR_TYPE_DETECT (typeof (mr_save_data->ptrs.ra[idx].size));
-		  mr_assign_int (&dst, &src);
-		}
+	      dst.data = &mr_save_data->ptrs.ra[idx].size;
+	      dst.fd.mr_type = MR_TYPE_DETECT (typeof (mr_save_data->ptrs.ra[idx].size));
+	      mr_assign_int (&dst, &src);
 	    }
 	}
       

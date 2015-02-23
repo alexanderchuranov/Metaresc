@@ -7,8 +7,9 @@
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
 	       (void *, ptr, , , { MR_SIZE_STR }, "char", .unnamed = TRUE),
 	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "char"),
+	       (char *, string),
+	       (typeof (offsetof (mr_dummy_struct_t, dummy_field)), offset),
 	       (long_int_t, long_int_t),
-	       (typeof (offsetof (div_t, quot)), offset),
 	       )
 
 TYPEDEF_FUNC (char, string_t, , ATTRIBUTES ( , "tricky way to declare type equivalent to char *", .mr_type = MR_TYPE_STRING))
@@ -164,14 +165,15 @@ TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(int, width, , "bit-field width in bits"),
 		(int, shift, , "bit-field shift in first byte"),
-		(int, size, , "size of bitfield array"),
-		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes", { "size" }, "char"), 
+		(int, size, , "size of bitfield array", {"size"}, "string"),
+		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
+		{ .offset = offsetof (mr_bitfield_param_t, size) }, "offset"), 
 		)
 
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
 		(int, size, , "size of args array"),
 		(struct mr_fd_t *, args, , "function arguments descriptors saved as resizable array of field descriptors",
-		{ "size" }, "char"), 
+		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
 		)
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
@@ -205,7 +207,7 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
-		(mr_ptr_t *, ra, , "key_type", { "size" }, "char"),
+		(mr_ptr_t *, ra, , "key_type", { .offset = offsetof (mr_ic_rarray_t, size) }, "offset"), 
 		(ssize_t, size, , "size of array"),
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
@@ -219,7 +221,7 @@ TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collect
 		(void, index_free, (struct mr_ic_t * /* ic */)),
 		/* resizable array for hash table sized by field 'size'
 		   mr_ptr_t typed by 'bucket_type' */
-		(mr_ptr_t *, hash_table, , "bucket_type", { "size" }, "char"),
+		(mr_ptr_t *, hash_table, , "bucket_type", { .offset = offsetof (mr_ic_hash_t, size) }, "offset"),
 		)
 
 TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "extend mr_ic_hash_t with field specific for MR_IC_HASH_NEXT"),
@@ -256,7 +258,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_ext_t, mr_type_ext, , "Metaresc type extension"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(char *, type, , "stringified type name"),
-		(typeof (offsetof (div_t, quot)), offset, , "offset in structure"),
+		(typeof (offsetof (mr_dummy_struct_t, dummy_field)), offset, , "offset in structure"),
 		(typeof (sizeof (0)), size, , "size of field"),
 		(bool, unnamed, , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		(mr_fd_param_t, param, , "mr_type"),
@@ -290,7 +292,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_ic_t, lookup_by_name, , "lookup by enum values"),
 		(mr_ic_t, lookup_by_value, , "lookup by enum values"),
 		(size_t, fields_size, , "size of 'fields' array"),
-		(mr_fd_ptr_t *, fields, , "fields or enums descriptors", { "fields_size" }, "char"),
+		(mr_fd_ptr_t *, fields, , "fields or enums descriptors", { .offset = offsetof (mr_td_t, fields_size) }, "offset"),
 		(char *, meta, , "type meta info"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
@@ -365,7 +367,8 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		)
 
 TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
-		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements", { "size" }, "char"),
+		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements",
+		{ .offset = offsetof (mr_ra_mr_ptrdes_t, size) }, "offset"),
 		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
 		(mr_ptr_t, res, , "user data"),
@@ -374,7 +377,7 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 
 TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
-		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
+		(int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_load_data_t, mr_ra_idx_size) }, "offset"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
@@ -383,10 +386,11 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
-		(int *, mr_ra_idx, , "indexes of postponed nodes", { "mr_ra_idx_size" }, "char"),
+		(int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_save_data_t, mr_ra_idx_size) }, "offset"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
-		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators", { "mr_ra_ud_size" }, "char"),
+		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators",
+		{ .offset = offsetof (mr_save_data_t, mr_ra_ud_size) }, "offset"),
 		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
 		)

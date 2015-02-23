@@ -1110,6 +1110,9 @@ typedef complex double complex_double_t;
 typedef complex long double complex_long_double_t;
 typedef unsigned int mr_hash_value_t;
 typedef struct mr_ic_t mr_ic_t_; /* required for forward definition of struct mr_ic_t which is used in mr_ic_hash_t */
+typedef struct mr_dummy_struct_t {
+  char dummy_field[0];
+} mr_dummy_struct_t;
 
 #ifndef MR_MODE
 #define MR_MODE_UNDEFINED
@@ -1156,7 +1159,7 @@ extern void mr_free (const char * filename, const char * function, int line, voi
 
 extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
 extern bool mr_is_valid_field_name (char * name);
-extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs);
+extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_mr_ptrdes_t * ptrs);
 extern void mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs);
 extern int mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs);

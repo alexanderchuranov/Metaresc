@@ -633,12 +633,34 @@ mr_is_valid_field_name (char * name)
   return (TRUE);
 }
 
-void
-mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr_ptrdes_t * ptrs)
+static mr_fd_t *
+mr_get_fd_by_offset (mr_td_t * tdp, typeof (((mr_ptr_t*)0)->offset) offset)
 {
+  int i;
+  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
+    if (tdp->fields[i].fdp->offset == offset)
+      return (tdp->fields[i].fdp);
+  return (NULL);
+}
+
+void
+mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_mr_ptrdes_t * ptrs)
+{
+  char * name = NULL;
   memset (ptrdes, 0, sizeof (*ptrdes));
   
-  if (mr_is_valid_field_name (name))
+  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("char", ptrs->ra[idx].fd.res_type)) &&
+      mr_is_valid_field_name (ptrs->ra[idx].fd.res.ptr))
+    name = ptrs->ra[idx].fd.res.ptr;
+
+  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("string", ptrs->ra[idx].fd.res_type)) &&
+      mr_is_valid_field_name (ptrs->ra[idx].fd.res.ptr))
+    name = ptrs->ra[idx].fd.res.ptr;
+
+  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("offset", ptrs->ra[idx].fd.res_type)))
+    name = "";
+  
+  if (name != NULL)
     {
       int parent;
       /* traverse through parents up to first structure */
@@ -656,7 +678,10 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr
 	    return;
 
 	  /* lookup for a size field in this parent */
-	  parent_fdp = mr_get_fd_by_name (parent_tdp, name);
+	  if (0 == strcmp ("", name))
+	    parent_fdp = mr_get_fd_by_offset (parent_tdp, ptrs->ra[idx].fd.res.offset);
+	  else
+	    parent_fdp = mr_get_fd_by_name (parent_tdp, name);
 	      
 	  if (NULL == parent_fdp)
 	    return;
@@ -670,17 +695,14 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, char * name, int idx, mr_ra_mr
 void
 mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("char", ptrs->ra[idx].fd.res_type)))
-    {
-      mr_ptrdes_t src, dst;
-      mr_pointer_get_size_ptrdes (&dst, ptrs->ra[idx].fd.res.ptr, idx, ptrs);
+  mr_ptrdes_t src, dst;
+  mr_pointer_get_size_ptrdes (&dst, idx, ptrs);
       
-      if (dst.data != NULL)
-	{
-	  src.data = &ptrs->ra[idx].size;
-	  src.fd.mr_type = MR_TYPE_DETECT (typeof (ptrs->ra[idx].size));
-	  mr_assign_int (&dst, &src);
-	}
+  if (dst.data != NULL)
+    {
+      src.data = &ptrs->ra[idx].size;
+      src.fd.mr_type = MR_TYPE_DETECT (typeof (ptrs->ra[idx].size));
+      mr_assign_int (&dst, &src);
     }
 }
 
