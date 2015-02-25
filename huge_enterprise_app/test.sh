@@ -18,7 +18,7 @@ perform_test()
     [ "$variant" = "optimized" ] && CFLAGS="-DMR_MODE=PROTO" || CFLAGS=""
     
     make distclean
-    buildtime=$( (time -p CFLAGS=${CFLAGS} make -j ${numcpus} NUMFILES=${numfiles} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
+    buildtime=$( (CFLAGS=${CFLAGS} time -p make -j ${numcpus} NUMFILES=${numfiles} > /dev/null) 2>&1 | grep real | awk '{print $NF;}')
     filesize=$( stat --format '%s' huge_enterprise_app )
     starttime=$( (time -p ./huge_enterprise_app > /dev/null) 2>&1 | grep real | awk '{print $NF;}' )
     
