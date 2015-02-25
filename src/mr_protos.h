@@ -163,7 +163,7 @@ TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(int, width, , "bit-field width in bits"),
 		(int, shift, , "bit-field shift in first byte"),
-		(ssize_t, size, , "size of bitfield array", {"size"}, "string"),
+		(ssize_t, size, , "size of bitfield array"),
 		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
 		{ .offset = offsetof (mr_bitfield_param_t, size) }, "offset"), 
 		)
