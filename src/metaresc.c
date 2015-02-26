@@ -493,7 +493,21 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 {
   uint64_t value = 0;
   mr_type_t mr_type;
+  void * src_data = src->data;
+  void * dst_data = dst->data;
 
+  if (MR_TYPE_EXT_POINTER == src->fd.mr_type_ext)
+    src_data = *(void**)src_data;
+
+  if (NULL == src_data)
+    return;
+  
+  if (MR_TYPE_EXT_POINTER == dst->fd.mr_type_ext)
+    dst_data = *(void**)dst_data;
+
+  if (NULL == dst_data)
+    return;
+  
   if (MR_TYPE_VOID == src->fd.mr_type)
     mr_type = src->fd.mr_type_aux;
   else
@@ -502,51 +516,52 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
   switch (mr_type)
     {
     case MR_TYPE_VOID:
+    case MR_TYPE_ENUM:
       switch (src->fd.size)
 	{
-	case sizeof (int8_t):
-	  value = *(int8_t*)src->data;
+	case sizeof (uint8_t):
+	  value = *(uint8_t*)src_data;
 	  break;
-	case sizeof (int16_t):
-	  value = *(int16_t*)src->data;
+	case sizeof (uint16_t):
+	  value = *(uint16_t*)src_data;
 	  break;
-	case sizeof (int32_t):
-	  value = *(int32_t*)src->data;
+	case sizeof (uint32_t):
+	  value = *(uint32_t*)src_data;
 	  break;
-	case sizeof (int64_t):
-	  value = *(int64_t*)src->data;
+	case sizeof (uint64_t):
+	  value = *(uint64_t*)src_data;
 	  break;
 	}
       break;
     case MR_TYPE_BOOL:
-      value = *(bool*)src->data;
+      value = *(bool*)src_data;
       break;
     case MR_TYPE_CHAR:
-      value = *(char*)src->data;
+      value = *(char*)src_data;
       break;
     case MR_TYPE_UINT8:
-      value = *(uint8_t*)src->data;
+      value = *(uint8_t*)src_data;
       break;
     case MR_TYPE_INT8:
-      value = *(int8_t*)src->data;
+      value = *(int8_t*)src_data;
       break;
     case MR_TYPE_UINT16:
-      value = *(uint16_t*)src->data;
+      value = *(uint16_t*)src_data;
       break;
     case MR_TYPE_INT16:
-      value = *(int16_t*)src->data;
+      value = *(int16_t*)src_data;
       break;
     case MR_TYPE_UINT32:
-      value = *(uint32_t*)src->data;
+      value = *(uint32_t*)src_data;
       break;
     case MR_TYPE_INT32:
-      value = *(int32_t*)src->data;
+      value = *(int32_t*)src_data;
       break;
     case MR_TYPE_UINT64:
-      value = *(uint64_t*)src->data;
+      value = *(uint64_t*)src_data;
       break;
     case MR_TYPE_INT64:
-      value = *(int64_t*)src->data;
+      value = *(int64_t*)src_data;
       break;
     case MR_TYPE_BITFIELD:
       mr_save_bitfield_value (src, &value); /* get value of the bitfield */
@@ -563,51 +578,52 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
   switch (mr_type)
     {
     case MR_TYPE_VOID:
+    case MR_TYPE_ENUM:
       switch (dst->fd.size)
 	{
-	case sizeof (int8_t):
-	  *(int8_t*)dst->data = value;
+	case sizeof (uint8_t):
+	  *(uint8_t*)dst_data = value;
 	  break;
-	case sizeof (int16_t):
-	  *(int16_t*)dst->data = value;
+	case sizeof (uint16_t):
+	  *(uint16_t*)dst_data = value;
 	  break;
-	case sizeof (int32_t):
-	  *(int32_t*)dst->data = value;
+	case sizeof (uint32_t):
+	  *(uint32_t*)dst_data = value;
 	  break;
-	case sizeof (int64_t):
-	  *(int64_t*)dst->data = value;
+	case sizeof (uint64_t):
+	  *(uint64_t*)dst_data = value;
 	  break;
 	}
       break;
     case MR_TYPE_BOOL:
-      *(bool*)dst->data = value;
+      *(bool*)dst_data = value;
       break;
     case MR_TYPE_CHAR:
-      *(char*)dst->data = value;
+      *(char*)dst_data = value;
       break;
     case MR_TYPE_UINT8:
-      *(uint8_t*)dst->data = value;
+      *(uint8_t*)dst_data = value;
       break;
     case MR_TYPE_INT8:
-      *(int8_t*)dst->data = value;
+      *(int8_t*)dst_data = value;
       break;
     case MR_TYPE_UINT16:
-      *(uint16_t*)dst->data = value;
+      *(uint16_t*)dst_data = value;
       break;
     case MR_TYPE_INT16:
-      *(int16_t*)dst->data = value;
+      *(int16_t*)dst_data = value;
       break;
     case MR_TYPE_UINT32:
-      *(uint32_t*)dst->data = value;
+      *(uint32_t*)dst_data = value;
       break;
     case MR_TYPE_INT32:
-      *(int32_t*)dst->data = value;
+      *(int32_t*)dst_data = value;
       break;
     case MR_TYPE_UINT64:
-      *(uint64_t*)dst->data = value;
+      *(uint64_t*)dst_data = value;
       break;
     case MR_TYPE_INT64:
-      *(int64_t*)dst->data = value;
+      *(int64_t*)dst_data = value;
       break;
     case MR_TYPE_BITFIELD:
       mr_load_bitfield_value (dst, &value); /* set value of the bitfield */
@@ -703,6 +719,7 @@ mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
     {
       src.data = &ptrs->ra[idx].size;
       src.fd.mr_type = MR_TYPE_DETECT (typeof (ptrs->ra[idx].size));
+      src.fd.mr_type_ext = MR_TYPE_EXT_NONE;
       mr_assign_int (&dst, &src);
     }
 }

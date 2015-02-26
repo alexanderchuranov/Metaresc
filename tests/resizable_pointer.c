@@ -20,6 +20,142 @@ MR_START_TEST (resizable_array, "test pointer as a resizable array casted by nam
   ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_t, &orig, CMP_RPTR);
 } END_TEST
 
+/********************************************************************************************************/
+
+TYPEDEF_STRUCT (resizable_array_size_as_bool_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		bool size,
+		);
+
+MR_START_TEST (resizable_array_size_as_bool, "test pointer as a resizable array with size typed as bool") {
+  resizable_array_size_as_bool_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, },
+      .size = 1,
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_bool_t, &orig, CMP_RPTR);
+} END_TEST
+
+/********************************************************************************************************/
+
+TYPEDEF_STRUCT (resizable_array_size_as_int8_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		int8_t size,
+		);
+
+MR_START_TEST (resizable_array_size_as_int8, "test pointer as a resizable array with size typed as int8_t") {
+  resizable_array_size_as_int8_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, 1, },
+      .size = 2 * sizeof (orig.data[0]),
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_int8_t, &orig, CMP_RPTR);
+} END_TEST
+
+/********************************************************************************************************/
+
+TYPEDEF_STRUCT (resizable_array_size_as_int16_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		int16_t size,
+		);
+
+MR_START_TEST (resizable_array_size_as_int16, "test pointer as a resizable array with size typed as int16_t") {
+  resizable_array_size_as_int16_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, 1, },
+      .size = 2 * sizeof (orig.data[0]),
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_int16_t, &orig, CMP_RPTR);
+} END_TEST
+
+/********************************************************************************************************/
+
+TYPEDEF_STRUCT (resizable_array_size_as_int32_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		int32_t size,
+		);
+
+MR_START_TEST (resizable_array_size_as_int32, "test pointer as a resizable array with size typed as int32_t") {
+  resizable_array_size_as_int32_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, 1, },
+      .size = 2 * sizeof (orig.data[0]),
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_int32_t, &orig, CMP_RPTR);
+} END_TEST
+
+/********************************************************************************************************/
+
+TYPEDEF_STRUCT (resizable_array_size_as_int64_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		int64_t size,
+		);
+
+MR_START_TEST (resizable_array_size_as_int64, "test pointer as a resizable array with size typed as int64_t") {
+  resizable_array_size_as_int64_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, 1, },
+      .size = 2 * sizeof (orig.data[0]),
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_int64_t, &orig, CMP_RPTR);
+} END_TEST
+
+/********************************************************************************************************/
+
+TYPEDEF_STRUCT (resizable_array_size_as_bitfield_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		BITFIELD (int8_t, size, :3),
+		);
+
+MR_START_TEST (resizable_array_size_as_bitfield, "test pointer as a resizable array with size typed as bitfield") {
+  resizable_array_size_as_bitfield_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, 1, },
+      .size = 2 * sizeof (orig.data[0]),
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_bitfield_t, &orig, CMP_RPTR);
+} END_TEST
+
+/********************************************************************************************************/
+
+TYPEDEF_ENUM (array_size_t,
+	      (ZERO, = 0),
+	      (ONE, = sizeof (int8_t)),
+	      (TWO, = 2 * sizeof (int8_t)),
+	      );
+
+TYPEDEF_STRUCT (resizable_array_size_as_enum_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		(array_size_t, size),
+		);
+
+MR_START_TEST (resizable_array_size_as_enum, "test pointer as a resizable array with size typed as enum") {
+  resizable_array_size_as_enum_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, 1, },
+      .size = TWO,
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_enum_t, &orig, CMP_RPTR);
+} END_TEST
+
+/********************************************************************************************************/
+
+#define CMP_RPTR_SIZEPTR(TYPE, X, Y, ...) ((*(X)->size != *(Y)->size) || memcmp ((X)->data, (Y)->data, *(X)->size))
+
+TYPEDEF_STRUCT (resizable_array_size_as_int_ptr_t,
+		(int8_t *, data, , , { "size" }, "char"),
+		(int *, size),
+		);
+
+MR_START_TEST (resizable_array_size_as_int_ptr, "test pointer as a resizable array with size typed as pointer to int") {
+  resizable_array_size_as_int_ptr_t orig = 
+    {
+      .data = (typeof (orig.data[0])[]){ -1, 1, },
+      .size = (int[]) { 2 * sizeof (orig.data[0]) },
+    };
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_size_as_int_ptr_t, &orig, CMP_RPTR_SIZEPTR);
+} END_TEST
+
   /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_without_size_t,
