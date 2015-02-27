@@ -2,6 +2,7 @@
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
+#include <flt_values.h>
 
 #include <union.h>
 

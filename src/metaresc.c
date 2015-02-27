@@ -651,7 +651,7 @@ mr_is_valid_field_name (char * name)
 }
 
 static mr_fd_t *
-mr_get_fd_by_offset (mr_td_t * tdp, typeof (((mr_ptr_t*)0)->offset) offset)
+mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_ptr_t*)0)->offset) offset)
 {
   int i;
   for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
@@ -718,7 +718,7 @@ mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (dst.data != NULL)
     {
       src.data = &ptrs->ra[idx].size;
-      src.fd.mr_type = MR_TYPE_DETECT (typeof (ptrs->ra[idx].size));
+      src.fd.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].size));
       src.fd.mr_type_ext = MR_TYPE_EXT_NONE;
       mr_assign_int (&dst, &src);
     }

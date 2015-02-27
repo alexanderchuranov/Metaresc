@@ -6,7 +6,6 @@
 #include <regression.h>
 #include <flt_values.h>
 
-
 #define ASSERT_SAVE_LOAD_COMPLEX_FLOAT(METHOD, VALUE) ({		\
       ASSERT_SAVE_LOAD_TYPE (METHOD, complex float, VALUE, MEM_CMP);	\
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_complex_float_t, VALUE, MEM_CMP); \
@@ -24,4 +23,3 @@ MR_START_TEST (flt_epsilon_float, "FLT_EPSILON float") { ALL_METHODS (ASSERT_SAV
 MR_START_TEST (pi_float_complex, "pi + e*i") { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_FLOAT, M_PI + M_E * I); } END_TEST 
 													
 MAIN ();
-

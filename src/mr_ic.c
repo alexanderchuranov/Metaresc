@@ -69,7 +69,7 @@ mr_ic_none_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
   else
     {
       void * ra;
-      typeof (ic->rarray.alloc_size) alloc_size = ic->rarray.size - sizeof (ic->rarray.ra[0]);
+      __typeof__ (ic->rarray.alloc_size) alloc_size = ic->rarray.size - sizeof (ic->rarray.ra[0]);
 
       ra = MR_MALLOC (alloc_size);
       if (NULL == ra)

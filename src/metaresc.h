@@ -9,6 +9,14 @@
 #include <mr_pp.h>
 #include <mr_export.h>
 
+#ifndef __USE_XOPEN2K8
+#define __USE_XOPEN2K8
+#endif /* __USE_XOPEN2K8 */
+#ifndef __USE_BSD
+#define __USE_BSD
+#endif /* __USE_BSD */
+#include <string.h> /* for strlen () & memset () */
+
 #ifndef __USE_GNU
 #define __USE_GNU
 #endif /* __USE_GNU */
@@ -18,7 +26,6 @@
 #include <stdio.h> /* for FILE */
 #include <stddef.h> /* for offsetof */
 #include <stdbool.h> /* for bool */
-#include <string.h> /* for strlen () & memset () */
 #include <ctype.h> /* for isspace () */
 #include <stdarg.h> /* for va_list */
 #include <inttypes.h> /* for int8_t, int16_t, int32_t, int64_t, SCNxXX, etc */
@@ -42,8 +49,8 @@
 #define MR_SIZEOF_LONG_DOUBLE (10)
 
 #define MR_MAX_INDENT_LEVEL (30) /* the same constant as in libxml2 */
-#define MR_MIN(X,Y) ({ typeof (X) _x_ = (X); typeof (Y) _y_ = (Y); (_x_ < _y_) ? _x_ : _y_; })
-#define MR_MAX(X,Y) ({ typeof (X) _x_ = (X); typeof (Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
+#define MR_MIN(X,Y) ({ __typeof__ (X) _x_ = (X); __typeof__ (Y) _y_ = (Y); (_x_ < _y_) ? _x_ : _y_; })
+#define MR_MAX(X,Y) ({ __typeof__ (X) _x_ = (X); __typeof__ (Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
 #define MR_LIMIT_LEVEL(LEVEL) MR_MIN (LEVEL, MR_MAX_INDENT_LEVEL)
 
 /* each refereed structure will have REF_IDX property */
@@ -142,7 +149,7 @@
    )
 #define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, *, const) | MR_TYPE_DETECT (TYPE, *, volatile) | MR_TYPE_DETECT (TYPE, *, const volatile))
 /* Help macro for arrays auto-detection */
-#define MR_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE [], typeof (S_PTR)) ? MR_TYPE_EXT_ARRAY : MR_TYPE_EXT_NONE)
+#define MR_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE [], __typeof__ (S_PTR)) ? MR_TYPE_EXT_ARRAY : MR_TYPE_EXT_NONE)
 
 /* internal macros for arguments evaluation and concatination */
 #define MR_PASTE2(...) MR_PASTE2_ (__VA_ARGS__)
@@ -465,7 +472,7 @@
 /*
   if your types contains only builtin types then you can do more precies comparation.
   #undef MR_COMPARE_FIELDS_EXT
-  #define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) !__builtin_types_compatible_p (typeof (((TYPE1*)NULL)->NAME1), typeof (((TYPE2*)NULL)->NAME2))
+  #define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) !__builtin_types_compatible_p (__typeof__ (((TYPE1*)NULL)->NAME1), __typeof__ (((TYPE2*)NULL)->NAME2))
 */
 #endif /* MR_COMPARE_FIELDS_EXT */
 #define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) != offsetof (TYPE2, NAME2)) | (sizeof (((TYPE1*)NULL)->NAME1) != sizeof (((TYPE2*)NULL)->NAME2)) | MR_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
@@ -701,7 +708,7 @@
   #define MR_CHECK_TYPES(...)
 */
 #ifndef MR_CHECK_TYPES
-#define MR_CHECK_TYPES(MR_TYPE_NAME, ...) ({ (void) ((MR_TYPE_NAME*)0 - (typeof (__VA_ARGS__ + 0))0); })
+#define MR_CHECK_TYPES(MR_TYPE_NAME, ...) ({ (void) ((MR_TYPE_NAME*)0 - (__typeof__ (__VA_ARGS__ + 0))0); })
 #endif /* MR_CHECK_TYPES */
 
 #define MR_COPY_RECURSIVELY(MR_TYPE_NAME, ...) MR_COPY_RECURSIVELY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)

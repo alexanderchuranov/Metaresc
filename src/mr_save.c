@@ -655,7 +655,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	  if (src.data != NULL)
 	    {
 	      dst.data = &mr_save_data->ptrs.ra[idx].size;
-	      dst.fd.mr_type = MR_TYPE_DETECT (typeof (mr_save_data->ptrs.ra[idx].size));
+	      dst.fd.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].size));
 	      dst.fd.mr_type_ext = MR_TYPE_EXT_NONE;
 	      mr_assign_int (&dst, &src);
 	    }

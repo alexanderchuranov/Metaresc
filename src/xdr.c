@@ -209,7 +209,7 @@ xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
       .x_putlong = xdrra_putlong,
       .x_getbytes = xdrra_getbytes,
       .x_putbytes = xdrra_putbytes,
-      .x_getpostn = (typeof (xdrra_ops.x_getpostn))xdrra_getpostn,
+      .x_getpostn = (__typeof__ (xdrra_ops.x_getpostn))xdrra_getpostn,
       .x_setpostn = xdrra_setpostn,
       .x_inline = xdrra_inline,
       .x_destroy = xdrra_destroy,

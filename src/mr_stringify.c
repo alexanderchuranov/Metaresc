@@ -4,6 +4,8 @@
 
 #include <math.h>
 #include <stdbool.h>
+#define __USE_XOPEN2K8
+#include <string.h>
 #ifdef HAVE_CONFIG_H
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */

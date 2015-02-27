@@ -20,6 +20,14 @@
 #define LDBL_EPSILON (0x1p-64)
 #endif /* HAVE_VALUES_H */
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif /* M_PI */
+
+#ifndef M_E
+#define M_E 2.7182818284590452354
+#endif /* M_E */
+
 TYPEDEF_ENUM (sign_t, (PLUS, = 0), (MINUS, = 1))
 
 TYPEDEF_STRUCT (ieee_754_float_t,

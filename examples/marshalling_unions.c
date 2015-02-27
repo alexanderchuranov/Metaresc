@@ -26,7 +26,7 @@ TYPEDEF_STRUCT (discriminated_union_t,
 
 int main ()
 {
-  discriminated_union_t u = { { .float_val = M_PI }, UD_UC_ARRAY };
+  discriminated_union_t u = { { .float_val = 3.1415926 }, UD_UC_ARRAY };
   char * xml = MR_SAVE_XML (discriminated_union_t, &u);
 
   if (NULL == xml)

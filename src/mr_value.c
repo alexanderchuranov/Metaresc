@@ -18,9 +18,9 @@
 #include <mr_value.h>
 
 #ifdef HAVE_BISON_FLEX
-#define MR_LOAD_VAR(VAR, STR) MR_LOAD_CINIT (typeof (VAR), STR, &VAR)
+#define MR_LOAD_VAR(VAR, STR) MR_LOAD_CINIT (__typeof__ (VAR), STR, &VAR)
 #else
-#define MR_LOAD_VAR(VAR, STR) mr_load_var (MR_TYPE_DETECT (typeof (VAR)), STR, &VAR)
+#define MR_LOAD_VAR(VAR, STR) mr_load_var (MR_TYPE_DETECT (__typeof__ (VAR)), STR, &VAR)
 
 /**
  * Read enum value from string
@@ -209,7 +209,7 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
       else								\
 	{								\
 	  char * unknown = value->vt_string;				\
-	  typeof (value->VT_VALUE) vt_value = 0;			\
+	  __typeof__ (value->VT_VALUE) vt_value = 0;			\
 	  status = MR_LOAD_VAR (vt_value, unknown);			\
 	  if (MR_SUCCESS == status)					\
 	    {								\
@@ -238,7 +238,7 @@ mr_value_id (mr_value_t * value)
   else
     {
       mr_fd_t * fdp = mr_get_enum_by_name (value->vt_string);
-      typeof (value->vt_int) vt_int = 0;
+      __typeof__ (value->vt_int) vt_int = 0;
       if (NULL == fdp)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, value->vt_string);
       else
