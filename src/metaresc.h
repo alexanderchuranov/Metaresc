@@ -11,21 +11,23 @@
 
 #ifndef __USE_XOPEN2K8
 #define __USE_XOPEN2K8
+#define __USE_XOPEN2K8_UNDEFINED
 #endif /* __USE_XOPEN2K8 */
-#ifndef __USE_BSD
-#define __USE_BSD
-#endif /* __USE_BSD */
-#include <string.h> /* for strlen () & memset () */
 
 #ifndef __USE_GNU
 #define __USE_GNU
+#define __USE_GNU_UNDEFINED
 #endif /* __USE_GNU */
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#define _GNU_SOURCE_UNDEFINED
 #endif /* _GNU_SOURCE */
+
 #include <stdio.h> /* for FILE */
 #include <stddef.h> /* for offsetof */
 #include <stdbool.h> /* for bool */
+#include <string.h> /* for strlen () & memset () */
 #include <ctype.h> /* for isspace () */
 #include <stdarg.h> /* for va_list */
 #include <inttypes.h> /* for int8_t, int16_t, int32_t, int64_t, SCNxXX, etc */
@@ -36,6 +38,18 @@
 #endif /* HAVE_LIBXML2 */
 #include <rpc/types.h>
 #include <rpc/xdr.h>
+
+#ifdef _GNU_SOURCE_UNDEFINED
+#undef _GNU_SOURCE
+#endif /* _GNU_SOURCE_UNDEFINED */
+
+#ifdef __USE_GNU_UNDEFINED
+#undef __USE_GNU
+#endif /* __USE_GNU_UNDEFINED */
+
+#ifdef __USE_XOPEN2K8_UNDEFINED
+#undef __USE_XOPEN2K8
+#endif /* __USE_XOPEN2K8_UNDEFINED */
 
 /* Library exports */
 #define MR_MAX_STRING_LENGTH ((unsigned int)-1)

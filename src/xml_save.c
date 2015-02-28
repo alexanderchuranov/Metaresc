@@ -3,6 +3,10 @@
 /* This file is part of Metaresc project */
 
 #include <stdio.h>
+#ifndef __USE_BSD
+#define __USE_BSD
+#endif /* __USE_BSD */
+#include <string.h> /* strncasecmp */
 #include <stdarg.h>
 
 #include <metaresc.h>
