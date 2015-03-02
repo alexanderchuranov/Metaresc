@@ -10,13 +10,5 @@
 int
 main (int argc, char * argv[])
 {
-  empty_t empty;
-
-  memset (&empty, 0, sizeof (empty));
-  char * str = MR_SAVE_CINIT (empty_t, &empty);
-  (void)MR_LOAD_CINIT (empty_t, str, &empty);
-  if (str)
-    MR_FREE (str);
-
   return (EXIT_SUCCESS);
 }
