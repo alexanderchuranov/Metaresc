@@ -164,12 +164,17 @@ MR_START_TEST (ic_del_indexed, "Check deletion of indexed element") { ic_types_f
 static int ic_find_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   int i;
-
+  mr_ptr_t * find;
+  mr_ptr_t x = { .long_int_t = -1, };
+  
   ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
+  
+  find = mr_ic_find (ic, x, NULL);
+  ck_assert_msg (NULL == find, "Non-indexed element was found for mr_ic_type_t %s", mr_ic_type);
   
   for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
     {
-      mr_ptr_t * find = mr_ic_find (ic, mr_ic_rarray.ra[i], NULL);
+      find = mr_ic_find (ic, mr_ic_rarray.ra[i], NULL);
       ck_assert_msg (NULL != find, "Failed to find element in indexed data for mr_ic_type_t %s", mr_ic_type);
       ck_assert_msg (mr_ic_rarray.ra[i].long_int_t == find->long_int_t,
 		     "Found wrong element in indexed data for mr_ic_type_t %s", mr_ic_type);
