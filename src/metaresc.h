@@ -138,33 +138,35 @@
 
 #define MR_TYPE_DETECT3(PREFIX, TYPE, SUFFIX)				\
   (0 /* MR_TYPE_NONE */							\
-   | (__builtin_types_compatible_p (PREFIX void SUFFIX, TYPE) ? MR_TYPE_VOID : 0) \
-   | (__builtin_types_compatible_p (PREFIX bool SUFFIX, TYPE) ? MR_TYPE_BOOL : 0) \
-   | (__builtin_types_compatible_p (PREFIX int8_t SUFFIX, TYPE) ? MR_TYPE_INT8 : 0) \
-   | (__builtin_types_compatible_p (PREFIX uint8_t SUFFIX, TYPE) ? MR_TYPE_UINT8 : 0) \
-   | (__builtin_types_compatible_p (PREFIX int16_t SUFFIX, TYPE) ? MR_TYPE_INT16 : 0) \
-   | (__builtin_types_compatible_p (PREFIX uint16_t SUFFIX, TYPE) ? MR_TYPE_UINT16 : 0) \
-   | (__builtin_types_compatible_p (PREFIX int32_t SUFFIX, TYPE) ? MR_TYPE_INT32 : 0) \
-   | (__builtin_types_compatible_p (PREFIX uint32_t SUFFIX, TYPE) ? MR_TYPE_UINT32 : 0) \
-   | (__builtin_types_compatible_p (PREFIX int64_t SUFFIX, TYPE) ? MR_TYPE_INT64 : 0) \
-   | (__builtin_types_compatible_p (PREFIX uint64_t SUFFIX, TYPE) ? MR_TYPE_UINT64 : 0) \
-   | (__builtin_types_compatible_p (PREFIX MR_UNCOVERED_TYPE SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
-   | (__builtin_types_compatible_p (PREFIX unsigned MR_UNCOVERED_TYPE SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
-   | (__builtin_types_compatible_p (PREFIX float SUFFIX, TYPE) ? MR_TYPE_FLOAT : 0) \
-   | (__builtin_types_compatible_p (PREFIX complex float SUFFIX, TYPE) ? MR_TYPE_COMPLEX_FLOAT : 0) \
-   | (__builtin_types_compatible_p (PREFIX double SUFFIX, TYPE) ? MR_TYPE_DOUBLE : 0) \
-   | (__builtin_types_compatible_p (PREFIX complex double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_DOUBLE : 0) \
-   | (__builtin_types_compatible_p (PREFIX long double SUFFIX, TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
-   | (__builtin_types_compatible_p (PREFIX complex long double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
-   | (__builtin_types_compatible_p (PREFIX char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
-   | (__builtin_types_compatible_p (PREFIX char MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) () ((SUFFIX)) [], TYPE) ? MR_TYPE_CHAR_ARRAY : 0) \
-   | ((__builtin_types_compatible_p (PREFIX char * SUFFIX, TYPE)	\
-       MR_IF_ELSE (MR_IS_EMPTY (PREFIX)) (				\
-					  | __builtin_types_compatible_p (const char * SUFFIX, TYPE) \
-					  | __builtin_types_compatible_p (volatile char * SUFFIX, TYPE)	\
-					  | __builtin_types_compatible_p (const volatile char * SUFFIX, TYPE)) ()) ? MR_TYPE_STRING : 0) \
+   | (__builtin_types_compatible_p (PREFIX void SUFFIX, PREFIX TYPE) ? MR_TYPE_VOID : 0) \
+   | (__builtin_types_compatible_p (PREFIX bool SUFFIX, PREFIX TYPE) ? MR_TYPE_BOOL : 0) \
+   | (__builtin_types_compatible_p (PREFIX int8_t SUFFIX, PREFIX TYPE) ? MR_TYPE_INT8 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint8_t SUFFIX, PREFIX TYPE) ? MR_TYPE_UINT8 : 0) \
+   | (__builtin_types_compatible_p (PREFIX int16_t SUFFIX, PREFIX TYPE) ? MR_TYPE_INT16 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint16_t SUFFIX, PREFIX TYPE) ? MR_TYPE_UINT16 : 0) \
+   | (__builtin_types_compatible_p (PREFIX int32_t SUFFIX, PREFIX TYPE) ? MR_TYPE_INT32 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint32_t SUFFIX, PREFIX TYPE) ? MR_TYPE_UINT32 : 0) \
+   | (__builtin_types_compatible_p (PREFIX int64_t SUFFIX, PREFIX TYPE) ? MR_TYPE_INT64 : 0) \
+   | (__builtin_types_compatible_p (PREFIX uint64_t SUFFIX, PREFIX TYPE) ? MR_TYPE_UINT64 : 0) \
+   | (__builtin_types_compatible_p (PREFIX MR_UNCOVERED_TYPE SUFFIX, PREFIX TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
+   | (__builtin_types_compatible_p (PREFIX unsigned MR_UNCOVERED_TYPE SUFFIX, PREFIX TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
+   | (__builtin_types_compatible_p (PREFIX float SUFFIX, PREFIX PREFIX TYPE) ? MR_TYPE_FLOAT : 0) \
+   | (__builtin_types_compatible_p (PREFIX complex float SUFFIX, PREFIX TYPE) ? MR_TYPE_COMPLEX_FLOAT : 0) \
+   | (__builtin_types_compatible_p (PREFIX double SUFFIX, PREFIX TYPE) ? MR_TYPE_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX complex double SUFFIX, PREFIX TYPE) ? MR_TYPE_COMPLEX_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX long double SUFFIX, PREFIX TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX complex long double SUFFIX, PREFIX TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (PREFIX char SUFFIX, PREFIX TYPE) ? MR_TYPE_CHAR : 0) \
+   | (__builtin_types_compatible_p (PREFIX char MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) () ((SUFFIX)) [], PREFIX TYPE) ? MR_TYPE_CHAR_ARRAY : 0) \
+   | ((__builtin_types_compatible_p (const volatile string_t SUFFIX, const volatile TYPE) \
+       | __builtin_types_compatible_p (const volatile char * SUFFIX, const volatile TYPE) \
+       MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) () (				\
+					     | __builtin_types_compatible_p (const volatile char * const SUFFIX, const volatile TYPE) \
+					     | __builtin_types_compatible_p (const volatile char * volatile SUFFIX, const volatile TYPE) \
+					     | __builtin_types_compatible_p (const volatile char * const volatile SUFFIX, \
+									     const volatile TYPE))) ? MR_TYPE_STRING : 0) \
    )
-#define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, *, const) | MR_TYPE_DETECT (TYPE, *, volatile) | MR_TYPE_DETECT (TYPE, *, const volatile))
+#define MR_TYPE_DETECT_PTR(TYPE) MR_TYPE_DETECT (TYPE, *, const volatile)
 /* Help macro for arrays auto-detection */
 #define MR_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE [], __typeof__ (S_PTR)) ? MR_TYPE_EXT_ARRAY : MR_TYPE_EXT_NONE)
 

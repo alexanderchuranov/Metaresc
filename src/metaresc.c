@@ -90,6 +90,19 @@ mr_conf_t mr_conf = {
 
 MR_MEM_INIT ( , __attribute__((constructor,weak)));
 
+static mr_status_t mr_conf_init_visitor (mr_ptr_t key, const void * context);
+
+static inline void
+mr_conf_init ()
+{
+  static bool initialized = FALSE;
+  if (!initialized)
+    {
+      mr_ic_foreach (&mr_conf.lookup_by_name, mr_conf_init_visitor, NULL);
+      initialized = TRUE;
+    }
+}
+
 static mr_status_t
 mr_td_visitor (mr_ptr_t key, const void * context)
 {
@@ -734,6 +747,8 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 {
   int i;
 
+  mr_conf_init ();
+  
   if (NULL == ptrs.ra)
     return (MR_FAILURE);
 
@@ -776,6 +791,8 @@ mr_status_t
 mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 {
   int i;
+
+  mr_conf_init ();
 
   if ((NULL == ptrs.ra) || (NULL == dst))
     return (MR_FAILURE);
@@ -1740,17 +1757,6 @@ mr_conf_init_visitor (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
-static void
-mr_conf_init ()
-{
-  static bool initialized = FALSE;
-  if (!initialized)
-    {
-      mr_ic_foreach (&mr_conf.lookup_by_name, mr_conf_init_visitor, NULL);
-      initialized = TRUE;
-    }
-}
-
 /**
  * Helper function for serialization macroses. Detects mr_type for enums, structures and unions.
  * Enums are detected at compile time as integers, and structures & unions as MR_TYPE_NONE
@@ -1764,6 +1770,9 @@ mr_detect_type (mr_fd_t * fdp)
 
   mr_conf_init ();
 
+  if (NULL == fdp)
+    return;
+  
   switch (fdp->mr_type)
     {
     case MR_TYPE_UINT8:
