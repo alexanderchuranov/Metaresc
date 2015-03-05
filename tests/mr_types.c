@@ -3,6 +3,7 @@
 #include <regression.h>
 
 typedef char char_array_t[1];
+typedef char * char_ptr_t;
 
 TYPEDEF_STRUCT (struct_t,
 		bool bool_,
@@ -28,6 +29,7 @@ TYPEDEF_STRUCT (struct_t,
 		volatile string_t volatile_string,
 		const volatile string_t const_volatile_string,
 		volatile const string_t volatile_const_string,
+		(char_ptr_t, char_ptr_),
 		(char *, string_),
 		(const char *, const_string_),
 		(volatile char *, volatile_string_),
@@ -115,6 +117,8 @@ MR_START_TEST (check_types_detection, "check that types detected correctly") {
   ASSERT_FIELD_TYPE (const_volatile_string, MR_TYPE_STRING);
   ASSERT_FIELD_TYPE (volatile_const_string, MR_TYPE_STRING);
 
+  ASSERT_FIELD_TYPE (char_ptr_, MR_TYPE_STRING);
+  
   ASSERT_FIELD_TYPE (string_, MR_TYPE_STRING);
   ASSERT_FIELD_TYPE (const_string_, MR_TYPE_STRING);
   ASSERT_FIELD_TYPE (volatile_string_, MR_TYPE_STRING);
