@@ -28,9 +28,6 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
-#define MR_TYPEDEF_DESC_BI_(TYPE, MR_TYPE, ...) MR_TYPEDEF_DESC (TYPE, MR_TYPE) MR_TYPEDEF_END_DESC (TYPE, __VA_ARGS__);
-#define MR_TYPEDEF_DESC_BI(TYPE, ...) MR_TYPEDEF_DESC_BI_ (TYPE, MR_TYPE_DETECT (TYPE), __VA_ARGS__)
-
 /* meta data for type 'char' - required as a descriminator for mr_ptr union */
 MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'", .size = 0);
 /* meta data for all scallar types */
@@ -45,6 +42,8 @@ MR_TYPEDEF_DESC_BI (uint32_t);
 MR_TYPEDEF_DESC_BI (int32_t);
 MR_TYPEDEF_DESC_BI (uint64_t);
 MR_TYPEDEF_DESC_BI (int64_t);
+MR_TYPEDEF_DESC_BI (signed);
+MR_TYPEDEF_DESC_BI (unsigned);
 MR_TYPEDEF_DESC_BI (int);
 MR_TYPEDEF_DESC_BI (short);
 MR_TYPEDEF_DESC_BI (long);

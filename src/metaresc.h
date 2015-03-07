@@ -250,6 +250,10 @@
 #define TYPEDEF_CHAR_ARRAY(...) P00_TYPEDEF (CHAR_ARRAY, __VA_ARGS__)
 #define TYPEDEF_FUNC(...) P00_TYPEDEF (FUNC, __VA_ARGS__)
 
+/* Macroses for builtin types meta data registration */
+#define MR_TYPEDEF_DESC_BI_(TYPE, MR_TYPE, ...) MR_TYPEDEF_DESC (TYPE, MR_TYPE) MR_TYPEDEF_END_DESC (TYPE, __VA_ARGS__);
+#define MR_TYPEDEF_DESC_BI(TYPE, ...) MR_TYPEDEF_DESC_BI_ (TYPE, MR_TYPE_DETECT (TYPE), __VA_ARGS__)
+
 /*
   Checks if MR_MODE was defined. If it was undefined automtically produce prototypes and descriptors.
   Library could be unintrusively extended for other modes. Defined MR_MODE transparently passed to lower level.
@@ -1140,6 +1144,8 @@ typedef struct mr_ic_t mr_ic_t_; /* required for forward definition of struct mr
 typedef struct mr_dummy_struct_t {
   char dummy_field[0];
 } mr_dummy_struct_t;
+typedef __typeof__ (offsetof (mr_dummy_struct_t, dummy_field)) mr_offset_t;
+typedef __typeof__ (sizeof (0)) mr_size_t;
 
 #ifndef MR_MODE
 #define MR_MODE_UNDEFINED
