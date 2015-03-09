@@ -82,7 +82,6 @@ mr_conf_t mr_conf = {
   .lookup_by_name = {
     .ic_type = MR_IC_NONE,
     .find = NULL,
-    .ext = { .ptr = NULL, },
   },
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
 };
@@ -434,7 +433,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 int
 mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = mr_rarray_allocate_element ((void**)&ptrs->ra, &ptrs->size, &ptrs->alloc_size, sizeof (ptrs->ra[0]));
+  mr_ptrdes_t * ptrdes = mr_rarray_allocate_element ((void*)&ptrs->ra, &ptrs->size, &ptrs->alloc_size, sizeof (ptrs->ra[0]));
   if (NULL == ptrdes)
     return (-1);
   memset (ptrdes, 0, sizeof (*ptrdes));

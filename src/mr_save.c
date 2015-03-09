@@ -462,7 +462,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   if (!mr_is_valid_field_name (mr_save_data->ptrs.ra[idx].fd.meta))
     return (mr_union_discriminator_by_name (tdp, NULL));
 
-  ud = mr_rarray_allocate_element ((void**)&mr_save_data->mr_ra_ud,
+  ud = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_ud,
 				   &mr_save_data->mr_ra_ud_size, &mr_save_data->mr_ra_ud_alloc_size,
 				   sizeof (mr_save_data->mr_ra_ud[0]));
   /* create a record for further lookups in parent nodes for discriminator value */
@@ -682,7 +682,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	{
 	  if (postpone)
 	    {
-	      int * idx_ = mr_rarray_allocate_element ((void**)&mr_save_data->mr_ra_idx,
+	      int * idx_ = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_idx,
 						       &mr_save_data->mr_ra_idx_size, &mr_save_data->mr_ra_idx_alloc_size, 
 						       sizeof (mr_save_data->mr_ra_idx[0]));
 	      if (NULL == idx_)

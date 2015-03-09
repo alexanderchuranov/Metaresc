@@ -979,7 +979,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 static mr_status_t
 xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  if (!xdr_int32_t (xdrs, (int32_t*)&ptrs->ra[idx].flags))
+  if (!xdr_int32_t (xdrs, (void*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);
 
   if (ptrs->ra[idx].ref_idx >= 0)
@@ -1015,7 +1015,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
 
   *data = NULL;
   
-  if (!xdr_int32_t (xdrs, (int32_t*)&ptrs->ra[idx].flags))
+  if (!xdr_int32_t (xdrs, (void*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);
 
   if (!xdr_int32_t (xdrs, &ptrs->ra[idx].ref_idx))

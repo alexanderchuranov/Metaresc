@@ -564,7 +564,7 @@ mr_ic_hash_tree_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 
   --hash->items_count;
   bucket = mr_ic_hash_get_backet (hash, key, context);
-  mr_tdelete (key, (mr_red_black_tree_node_t**)&hash->hash_table[bucket].ptr, ic->compar_fn, context);
+  mr_tdelete (key, (void*)&hash->hash_table[bucket].ptr, ic->compar_fn, context);
   return (MR_SUCCESS);
 }
 
