@@ -399,13 +399,13 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 	      (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type_ext) &&
 	      (MR_TYPE_CHAR_ARRAY == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type))
 	    {
-	      ptrdes->data = MR_REALLOC (ptrdes->data, str_len + 1);
-	      *(void**)mr_load_data->ptrs.ra[ptrdes->parent].data = ptrdes->data;
-	      if (NULL == ptrdes->data)
+	      void * data = MR_REALLOC (ptrdes->data, str_len + 1);
+	      if (NULL == data)
 		{
 		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 		  status = MR_FAILURE;
 		}
+	      *(void**)mr_load_data->ptrs.ra[ptrdes->parent].data = ptrdes->data = data;
 	    }
 	  else if (str_len >= max_size)
 	    {

@@ -547,13 +547,12 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
       if (0 == max_size)
 	{
 	  void * data = MR_REALLOC (ptrs->ra[idx].data, str_len);
-	  ptrs->ra[idx].data = data;
-	  *(void**)ptrs->ra[idx - 1].data = data;
 	  if (NULL == data)
 	    {
 	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	      return (MR_FAILURE);
 	    }
+	  *(void**)ptrs->ra[idx - 1].data = ptrs->ra[idx].data = data;
 	}
       }
   return (xdr_opaque (xdrs, ptrs->ra[idx].data, str_len) ? MR_SUCCESS : MR_FAILURE);

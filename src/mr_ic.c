@@ -4,6 +4,7 @@
 
 #include <setjmp.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include <metaresc.h>
 #include <mr_tsearch.h>
@@ -54,7 +55,7 @@ mr_ic_none_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 mr_status_t
 mr_ic_none_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  off_t offset;
+  ptrdiff_t offset;
   mr_ptr_t * find = mr_ic_find (ic, key, context);
   if (NULL == find)
     return (MR_FAILURE);
