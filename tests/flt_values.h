@@ -15,8 +15,8 @@
 #define DBL_MAX (0x1.fffffffffffffp+1023)
 #define DBL_MIN (0x1p-1022)
 #define DBL_EPSILON (0x1p-52)
-#define LDBL_MAX (0x1.ffffffffffffffffp+16383)
-#define LDBL_MIN (0x1p-16382)
+#define LDBL_MAX (0x1.ffffffffffffffffp+16383L)
+#define LDBL_MIN (0x1p-16382L)
 #define LDBL_EPSILON (0x1p-64)
 #endif /* HAVE_VALUES_H */
 
@@ -27,6 +27,10 @@
 #ifndef M_E
 #define M_E 2.7182818284590452354
 #endif /* M_E */
+
+#define LD_NAN ((ieee_long_double_t){ { .long_double = 0, .ieee_854_long_double_nan = { .quiet_nan = !0, .one = 1, .exponent = -1, }, }, }).long_double
+#define LD_LDBL_MAX ((ieee_long_double_t){ { .long_double = 0, .ieee_854_long_double = { .mantissa1 = -1, .mantissa0 = -1, .exponent = -2, .sign = PLUS, }, }, }).long_double
+#define LD_LDBL_MIN ((ieee_long_double_t){ { .long_double = 0, .ieee_854_long_double = { .mantissa1 = 0, .mantissa0 = (1 << 31), .exponent = 1, .sign = PLUS, }, }, }).long_double
 
 TYPEDEF_ENUM (sign_t, (PLUS, = 0), (MINUS, = 1))
 

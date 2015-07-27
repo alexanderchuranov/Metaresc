@@ -4,10 +4,18 @@
 #include <metaresc.h>
 #include <regression.h>
 
+#define PTR_CMP(TYPE, X, Y, ...) ({					\
+      int cmp = (*(void**)(X) != *(void**)(Y));				\
+      if (cmp)								\
+	fprintf (stderr, "Pointers missmatched %p != %p\n",		\
+		 *(void**)X, *(void**)Y);				\
+      cmp;								\
+    })
+
 #define ASSERT_SAVE_LOAD_FUNC(METHOD, VALUE) ({				\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, int_int_func_t, VALUE, MEM_CMP);	\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_func_inline_t, VALUE, MEM_CMP); \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_func_type_t, VALUE, MEM_CMP); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, int_int_func_t, VALUE, PTR_CMP);	\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_func_inline_t, VALUE, PTR_CMP); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_func_type_t, VALUE, PTR_CMP); \
     })
 
 TYPEDEF_FUNC (int, int_int_func_t, (int))

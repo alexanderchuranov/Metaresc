@@ -114,7 +114,7 @@ AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_FUNC_REALLOC
 AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([memset strchr strndup strdup strncasecmp strstr xdr_int8_t xdr_uint8_t])
+AC_CHECK_FUNCS([memset strchr strndup strdup strncasecmp strstr xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
 
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=128)
 AC_MSG_CHECKING(preprocessor routines depth)

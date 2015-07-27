@@ -1,6 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 PP_DEPTH=$1
+
+if [ x${PP_DEPTH} = x ]; then
+    PP_DEPTH=128
+fi
 
 echo "#ifndef _RLPP_H_"
 echo "#define _RLPP_H_" 

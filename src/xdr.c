@@ -205,8 +205,8 @@ xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
 {
   static struct xdr_ops xdrra_ops =
     {
-      .x_getlong = xdrra_getlong,
-      .x_putlong = xdrra_putlong,
+      .x_getlong = (__typeof__ (xdrra_ops.x_getlong))xdrra_getlong,
+      .x_putlong = (__typeof__ (xdrra_ops.x_putlong))xdrra_putlong,
       .x_getbytes = xdrra_getbytes,
       .x_putbytes = xdrra_putbytes,
       .x_getpostn = (__typeof__ (xdrra_ops.x_getpostn))xdrra_getpostn,
@@ -382,9 +382,34 @@ xdr_ssize_t (XDR * xdrs, ssize_t * cp)
 #ifndef HAVE_XDR_UINT8_T
 #define xdr_uint8_t xdr_char_
 #endif /* HAVE_XDR_UINT8_T */
+
 #ifndef HAVE_XDR_INT8_T
 #define xdr_int8_t xdr_char_
 #endif /* HAVE_XDR_INT8_T */
+
+#ifndef HAVE_XDR_UINT16_T
+#  ifdef HAVE_XDR_U_INT16_T
+#    define xdr_uint16_t xdr_u_int16_t
+#  else /* HAVE_XDR_U_INT16_T */
+#    define xdr_uint16_t xdr_u_short
+#  endif /* HAVE_XDR_U_INT16_T */
+#endif /* HAVE_XDR_UINT16_T */
+
+#ifndef HAVE_XDR_UINT32_T
+#  ifdef HAVE_XDR_U_INT32_T
+#    define xdr_uint32_t xdr_u_int32_t
+#  else /* HAVE_XDR_U_INT32_T */
+#    define xdr_uint32_t xdr_u_int
+#  endif /* HAVE_XDR_U_INT32_T */
+#endif /* HAVE_XDR_UINT32_T */
+
+#ifndef HAVE_XDR_UINT64_T
+#  ifdef HAVE_XDR_U_INT64_T
+#    define xdr_uint64_t xdr_u_int64_t
+#  else /* HAVE_XDR_U_INT64_T */
+#    define xdr_uint64_t xdr_u_longlong_t
+#  endif /* HAVE_XDR_U_INT64_T */
+#endif /* HAVE_XDR_UINT64_T */
 
 /**
  * Handler for unsigned integer types.

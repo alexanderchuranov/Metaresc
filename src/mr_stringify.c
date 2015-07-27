@@ -154,7 +154,11 @@ mr_stringify_func (mr_ptrdes_t * ptrdes)
       if (0 != dladdr (func, &info))
 	{
 	  if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
-	    return (MR_STRDUP (info.dli_sname));
+	    {
+	      void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
+	      if (func_ == func)
+		return (MR_STRDUP (info.dli_sname));
+	    }
 	}
 #endif /* HAVE_LIBDL */
       sprintf (str, "%p", func);
