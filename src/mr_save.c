@@ -271,7 +271,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
       mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
       return;
     }
-  ref_idx = mr_resolve_untyped_forward_ref (mr_save_data);
+  mr_resolve_untyped_forward_ref (mr_save_data);
   /* it is impossible to correctly resolve untyped pointer match so we ignore it */
   mr_add_child (parent, idx, &mr_save_data->ptrs);
 

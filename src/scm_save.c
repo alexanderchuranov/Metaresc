@@ -397,7 +397,6 @@ scm_save (mr_ra_mr_ptrdes_t * ptrs)
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra[idx].parent;
-	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
 	      named_node = MR_SCM_UNNAMED_FIELDS;
 	      parent = ptrs->ra[idx].parent;
 

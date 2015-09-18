@@ -228,6 +228,8 @@ mr_stringify_bitfield (mr_ptrdes_t * ptrdes)
 static char *
 mr_decompose_bitmask_add (char * str, char * bitmask_or_delimiter, char * token)
 {
+  if (NULL == str)
+    return (NULL);
   char * str_ = MR_REALLOC (str, strlen (str) + strlen (bitmask_or_delimiter) + strlen (token) + 1);
   if (NULL == str_)
     {

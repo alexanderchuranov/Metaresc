@@ -134,7 +134,7 @@ mr_ic_none_free (mr_ic_t * ic)
 mr_status_t
 mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 {
-  if ((NULL == ic) || (NULL == compar_fn))
+  if (NULL == ic)
     return (MR_FAILURE);
 
   ic->ic_type = MR_IC_NONE;
