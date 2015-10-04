@@ -458,6 +458,9 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
   mr_union_discriminator_t * ud;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].fd.type); /* look up for type descriptor */
 
+  if (NULL == tdp)
+    return (NULL);
+
   /* if union meta field is a valid field name, then traverse thruogh parents and look for union discriminator */
   if (!mr_is_valid_field_name (mr_save_data->ptrs.ra[idx].fd.meta))
     return (mr_union_discriminator_by_name (tdp, NULL));
