@@ -263,28 +263,45 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type)
 
 /* ----------------------- MR_IC_SORTED_ARRAY ----------------------- */
 
+static int
+mr_ic_sorted_array_find_idx (mr_ic_t * ic, mr_ptr_t key, const void * context, int * diff)
+{
+  int down = 0;
+  int up = ic->rarray.size / sizeof (ic->rarray.ra[0]);
+
+  *diff = !0;
+
+  while (up != down)
+    {
+      int mid = (down + up) >> 1;
+      *diff = ic->compar_fn (key, ic->rarray.ra[mid], context);
+      if (0 == *diff)
+	return (mid);
+      if (*diff < 0)
+	up = mid;
+      else
+	down = mid + 1;
+    }
+  return (down);
+}
+
 mr_ptr_t *
 mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  int i;
   mr_ptr_t * add;
-  mr_ptr_t * find = mr_ic_find (ic, key, context);
-  if (find != NULL)
-    return (find);
+  int diff = !0;
+  int idx = mr_ic_sorted_array_find_idx (ic, key, context, &diff);
+  if (0 == diff)
+    return (&ic->rarray.ra[idx]);
 
   add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, sizeof (ic->rarray.ra[0]));
   if (NULL == add)
     return (NULL);
 
-  for (i = ic->rarray.size / sizeof (ic->rarray.ra[0]) - 1; i > 0; --i)
-    {
-      ic->rarray.ra[i] = ic->rarray.ra[i - 1];
-      if (ic->compar_fn (key, ic->rarray.ra[i], context) >= 0)
-	break;
-    }
-  ic->rarray.ra[i] = key;
+  memmove (&ic->rarray.ra[idx + 1], &ic->rarray.ra[idx], ic->rarray.size - idx * sizeof (ic->rarray.ra[0]));
+  ic->rarray.ra[idx] = key;
 
-  return (&ic->rarray.ra[i]);
+  return (&ic->rarray.ra[idx]);
 }
 
 mr_status_t
@@ -296,23 +313,12 @@ mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 mr_ptr_t *
 mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  int up, down;
-
-  down = 0;
-  up = ic->rarray.size / sizeof (ic->rarray.ra[0]);
-
-  while (up != down)
-    {
-      int mid = (down + up) >> 1;
-      int diff = ic->compar_fn (key, ic->rarray.ra[mid], context);
-      if (0 == diff)
-	return (&ic->rarray.ra[mid]);
-      if (diff < 0)
-	up = mid;
-      else
-	down = mid + 1;
-    }
-  return (NULL);
+  int diff = !0;
+  int idx = mr_ic_sorted_array_find_idx (ic, key, context, &diff);
+  if (0 == diff)
+    return (&ic->rarray.ra[idx]);
+  else
+    return (NULL);
 }
 
 TYPEDEF_STRUCT (mr_sort_key_t,
