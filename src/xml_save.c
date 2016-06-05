@@ -471,7 +471,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   char * content = NULL;
   xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name.str);
 
-  ptrs->ra[idx].res.ptr = node;
+  ptrs->ra[idx].res.data.ptr = node;
   if (NULL == node)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -513,7 +513,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
     xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
   if (parent >= 0)
-    xmlAddChild (ptrs->ra[parent].res.ptr, node);
+    xmlAddChild (ptrs->ra[parent].res.data.ptr, node);
 
   return (MR_SUCCESS);
 }
@@ -537,8 +537,8 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
   ptrs->res.ptr = doc;
   mr_ptrs_ds (ptrs, xml2_save_node, NULL);
 
-  if ((ptrs->size > 0) && (NULL != ptrs->ra[0].res.ptr))
-    xmlDocSetRootElement (doc, ptrs->ra[0].res.ptr);
+  if ((ptrs->size > 0) && (NULL != ptrs->ra[0].res.data.ptr))
+    xmlDocSetRootElement (doc, ptrs->ra[0].res.data.ptr);
 
   return (doc);
 }

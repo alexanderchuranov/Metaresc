@@ -345,6 +345,12 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		END_ANON_UNION ("value_type"),
 		)
 
+TYPEDEF_STRUCT (mr_res_t,
+		(mr_ptr_t, data, , "type"), 
+		(char *, type, , "union discriminator"),
+		(ssize_t, MR_SIZE, , "size of data"),
+		)
+
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptr_t, data, , "type"),
 		(char *, type, , "overlay for fd.type", .offset = (mr_offset_t)&((mr_ptrdes_t*)0)->fd.type),
@@ -361,8 +367,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptrdes_flags_t, flags),
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
 		(mr_value_t, mr_value),
-		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
-		(char *, res_type, , "union discriminator"),
+		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
 TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),

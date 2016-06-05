@@ -465,8 +465,9 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->flags.is_content_reference = FALSE;
   ptrdes->flags.is_opaque_data = FALSE;
   ptrdes->mr_value.value_type = MR_VT_UNKNOWN;
-  ptrdes->res.ptr = NULL;
-  ptrdes->res_type = NULL;
+  ptrdes->res.data.ptr = NULL;
+  ptrdes->res.type = NULL;
+  ptrdes->res.MR_SIZE = 0;
   return (ptrs->size / sizeof (ptrs->ra[0]) - 1);
 }
 
@@ -753,17 +754,17 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
     {
-      ptrs.ra[i].res.ptr = NULL;
+      ptrs.ra[i].res.data.ptr = NULL;
       if ((ptrs.ra[i].ref_idx < 0) && (ptrs.ra[i].idx >= 0))
 	if ((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) ||
 	    ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&
 	     (MR_TYPE_STRING == ptrs.ra[i].fd.mr_type)))
-	  ptrs.ra[i].res.ptr = *(void**)ptrs.ra[i].data.ptr;
+	  ptrs.ra[i].res.data.ptr = *(void**)ptrs.ra[i].data.ptr;
     }
 
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-    if (ptrs.ra[i].res.ptr)
-      MR_FREE (ptrs.ra[i].res.ptr);
+    if (ptrs.ra[i].res.data.ptr)
+      MR_FREE (ptrs.ra[i].res.data.ptr);
 
   MR_FREE (ptrs.ra);
   return (MR_SUCCESS);
@@ -773,10 +774,10 @@ static mr_status_t
 calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 {
   /* is new address is not set yet, then it could be calculated as relative address from the parent node */
-  if (NULL == ptrs->ra[idx].res.ptr)
+  if (NULL == ptrs->ra[idx].res.data.ptr)
     {
       int parent = ptrs->ra[idx].parent;
-      ptrs->ra[idx].res.ptr = &((char*)ptrs->ra[parent].res.ptr)[ptrs->ra[idx].data.ptr - ptrs->ra[parent].data.ptr];
+      ptrs->ra[idx].res.data.ptr = &((char*)ptrs->ra[parent].res.data.ptr)[ptrs->ra[idx].data.ptr - ptrs->ra[parent].data.ptr];
     }
   return (MR_SUCCESS);
 }
@@ -797,7 +798,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
     return (MR_FAILURE);
 
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
-    ptrs.ra[i].res.ptr = NULL;
+    ptrs.ra[i].res.data.ptr = NULL;
 
   /* NB index 0 is excluded */
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
@@ -869,7 +870,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	      memcpy (copy, *(void**)ptrs.ra[i].data.ptr, size);
 	      /* go thru all childs and calculate their addresses in newly allocated chunk */
 	      for (idx = ptrs.ra[i].first_child; idx >= 0; idx = ptrs.ra[idx].next)
-		ptrs.ra[idx].res.ptr = &copy[(char*)ptrs.ra[idx].data.ptr - *(char**)ptrs.ra[i].data.ptr];
+		ptrs.ra[idx].res.data.ptr = &copy[(char*)ptrs.ra[idx].data.ptr - *(char**)ptrs.ra[i].data.ptr];
 	    }
 	    break;
 	  default:
@@ -878,7 +879,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
       }
   /* copy first level struct */
   memcpy (dst, ptrs.ra[0].data.ptr, ptrs.ra[0].fd.size);
-  ptrs.ra[0].res.ptr = dst;
+  ptrs.ra[0].res.data.ptr = dst;
 
   /* depth search thru the graph and calculate new addresses for all nodes */
   mr_ptrs_ds (&ptrs, calc_relative_addr, NULL);
@@ -900,7 +901,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    else
 	      ptr_idx = ptrs.ra[i].flags.is_content_reference ? ptrs.ra[ptrs.ra[i].ref_idx].first_child : ptrs.ra[i].ref_idx;
 	    /* update pointer in the copy */
-	    *(void**)ptrs.ra[i].res.ptr = ptrs.ra[ptr_idx].res.ptr;
+	    *(void**)ptrs.ra[i].res.data.ptr = ptrs.ra[ptr_idx].res.data.ptr;
 	  }
 	  break;
 	default:

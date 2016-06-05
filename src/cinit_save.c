@@ -460,8 +460,8 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, 
 	      MR_FREE (save_data.content);
 	    }
 
-	  ptrs->ra[idx].res.ptr = save_data.suffix;
-	  ptrs->ra[idx].res_type = "char";
+	  ptrs->ra[idx].res.data.ptr = save_data.suffix;
+	  ptrs->ra[idx].res.type = "char";
 	}
 
       if (ptrs->ra[idx].first_child >= 0)
@@ -482,12 +482,12 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, 
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra[idx].parent;
-	      if (ptrs->ra[idx].res.ptr)
+	      if (ptrs->ra[idx].res.data.ptr)
 		{
 		  level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
 		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 		    return (NULL);
-		  if (mr_ra_printf (&mr_ra_str, "%s", (char*)ptrs->ra[idx].res.ptr) < 0)
+		  if (mr_ra_printf (&mr_ra_str, "%s", (char*)ptrs->ra[idx].res.data.ptr) < 0)
 		    return (NULL);
 		  if (idx != 0)
 		    if (mr_ra_printf (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
