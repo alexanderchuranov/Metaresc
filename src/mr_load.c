@@ -71,13 +71,13 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 	  {
 	    void * data;
 	    if (mr_load_data->ptrs.ra[i].flags.is_content_reference)
-	      data = *(void**)(mr_load_data->ptrs.ra[idx].data);
+	      data = *(void**)(mr_load_data->ptrs.ra[idx].data.ptr);
 	    else
-	      data = mr_load_data->ptrs.ra[idx].data;
+	      data = mr_load_data->ptrs.ra[idx].data.ptr;
 
 	    if ((MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra[i].fd.mr_type_ext) ||
 		(MR_TYPE_STRING == mr_load_data->ptrs.ra[i].fd.mr_type))
-	      *(void**)mr_load_data->ptrs.ra[i].data = data;
+	      *(void**)mr_load_data->ptrs.ra[i].data.ptr = data;
 	  }
       }
   MR_FREE (table);
@@ -113,31 +113,31 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
   switch (ptrdes->fd.mr_type)
     {
     case MR_TYPE_BOOL:
-      *(bool*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(bool*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_INT8:
-      *(int8_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(int8_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_UINT8:
-      *(uint8_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(uint8_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_INT16:
-      *(int16_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(int16_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_UINT16:
-      *(uint16_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(uint16_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_INT32:
-      *(int32_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(int32_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_UINT32:
-      *(uint32_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(uint32_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_INT64:
-      *(int64_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(int64_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
     case MR_TYPE_UINT64:
-      *(uint64_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+      *(uint64_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       break;
 
     case MR_TYPE_ENUM:
@@ -145,19 +145,19 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
       switch (ptrdes->fd.size)
 	{
 	case sizeof (uint8_t):
-	  *(uint8_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	  *(uint8_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
 	  break;
 	case sizeof (uint16_t):
-	  *(uint16_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	  *(uint16_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
 	  break;
 	case sizeof (uint32_t):
-	  *(uint32_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	  *(uint32_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
 	  break;
 	case sizeof (uint64_t):
-	  *(uint64_t*)ptrdes->data = ptrdes->mr_value.vt_int;
+	  *(uint64_t*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
 	  break;
 	default:
-	  memcpy (ptrdes->data, &ptrdes->mr_value.vt_int,
+	  memcpy (ptrdes->data.ptr, &ptrdes->mr_value.vt_int,
 		  MR_MIN (ptrdes->fd.size, sizeof (ptrdes->mr_value.vt_int)));
 	  break;
 	}
@@ -179,14 +179,14 @@ mr_status_t
 mr_load_func (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
-  *(void**)ptrdes->data = NULL;
+  *(void**)ptrdes->data.ptr = NULL;
   switch (ptrdes->mr_value.value_type)
     {
     case MR_VT_INT:
-      *(void**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
+      *(void**)ptrdes->data.ptr = (void*)(long)ptrdes->mr_value.vt_int;
       break;
     case MR_VT_STRING:
-      *(void**)ptrdes->data = ptrdes->mr_value.vt_string;
+      *(void**)ptrdes->data.ptr = ptrdes->mr_value.vt_string;
       ptrdes->mr_value.vt_string = NULL;
       break;
     case MR_VT_ID:
@@ -199,11 +199,11 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
 	    {
 	      if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
 		return (MR_FAILURE);
-	      *(void**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
+	      *(void**)ptrdes->data.ptr = (void*)(long)ptrdes->mr_value.vt_int;
 	    }
 #ifdef HAVE_LIBDL
 	  else
-	    *(void**)ptrdes->data = dlsym (RTLD_DEFAULT, ptrdes->mr_value.vt_string);
+	    *(void**)ptrdes->data.ptr = dlsym (RTLD_DEFAULT, ptrdes->mr_value.vt_string);
 #endif /* HAVE_LIBDL */
 	}
       break;
@@ -244,13 +244,13 @@ mr_load_float (int idx, mr_load_data_t * mr_load_data)
   switch (ptrdes->fd.mr_type)
     {
     case MR_TYPE_FLOAT:
-      *(float*)ptrdes->data = ptrdes->mr_value.vt_float;
+      *(float*)ptrdes->data.ptr = ptrdes->mr_value.vt_float;
       break;
     case MR_TYPE_DOUBLE:
-      *(double*)ptrdes->data = ptrdes->mr_value.vt_float;
+      *(double*)ptrdes->data.ptr = ptrdes->mr_value.vt_float;
       break;
     case MR_TYPE_LONG_DOUBLE:
-      *(long double*)ptrdes->data = ptrdes->mr_value.vt_float;
+      *(long double*)ptrdes->data.ptr = ptrdes->mr_value.vt_float;
       break;
     default:
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
@@ -269,13 +269,13 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
   switch (ptrdes->fd.mr_type)
     {
     case MR_TYPE_COMPLEX_FLOAT:
-      *(complex float*)ptrdes->data = ptrdes->mr_value.vt_complex;
+      *(complex float*)ptrdes->data.ptr = ptrdes->mr_value.vt_complex;
       break;
     case MR_TYPE_COMPLEX_DOUBLE:
-      *(complex double*)ptrdes->data = ptrdes->mr_value.vt_complex;
+      *(complex double*)ptrdes->data.ptr = ptrdes->mr_value.vt_complex;
       break;
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
-      *(complex long double*)ptrdes->data = ptrdes->mr_value.vt_complex;
+      *(complex long double*)ptrdes->data.ptr = ptrdes->mr_value.vt_complex;
       break;
     default:
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
@@ -302,7 +302,7 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
       if (NULL == ptrdes->mr_value.vt_string)
 	status = MR_FAILURE;
       else if (strlen (ptrdes->mr_value.vt_string) <= 1)
-	*(char*)ptrdes->data = ptrdes->mr_value.vt_string[0];
+	*(char*)ptrdes->data.ptr = ptrdes->mr_value.vt_string[0];
       else
 	{
 	  int32_t code = 0;
@@ -314,7 +314,7 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
 	      while (isspace (ptrdes->mr_value.vt_string[size]))
 		++size;
 	      if (0 == ptrdes->mr_value.vt_string[size])
-		*(char*)ptrdes->data = code;
+		*(char*)ptrdes->data.ptr = code;
 	      else
 		status = MR_FAILURE;
 	    }
@@ -326,12 +326,12 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
       break;
       
     case MR_VT_CHAR:
-      *(char*)ptrdes->data = ptrdes->mr_value.vt_char;
+      *(char*)ptrdes->data.ptr = ptrdes->mr_value.vt_char;
       break;
       
     default:
       if (MR_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->mr_value))
-	*(char*)ptrdes->data = ptrdes->mr_value.vt_int;
+	*(char*)ptrdes->data.ptr = ptrdes->mr_value.vt_int;
       else
 	status = MR_FAILURE;
       break;
@@ -351,18 +351,18 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
   if ((TRUE == ptrdes->flags.is_null) || (ptrdes->ref_idx >= 0))
-    *(char**)ptrdes->data = NULL;
+    *(char**)ptrdes->data.ptr = NULL;
   else
     {
       switch (ptrdes->mr_value.value_type)
 	{
 	case MR_VT_STRING:
 	case MR_VT_UNKNOWN:
-	  *(char**)ptrdes->data = ptrdes->mr_value.vt_string;
+	  *(char**)ptrdes->data.ptr = ptrdes->mr_value.vt_string;
 	  ptrdes->mr_value.vt_string = NULL;
 	  break;
 	case MR_VT_INT:
-	  *(char**)ptrdes->data = (void*)(long)ptrdes->mr_value.vt_int;
+	  *(char**)ptrdes->data.ptr = (void*)(long)ptrdes->mr_value.vt_int;
 	  break;
 	default:
 	  return (MR_FAILURE);
@@ -385,7 +385,7 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
   int max_size = ptrdes->fd.param.array_param.count * ptrdes->fd.size;
   mr_status_t status = MR_FAILURE;
   
-  memset (ptrdes->data, 0, max_size);
+  memset (ptrdes->data.ptr, 0, max_size);
   if ((MR_VT_STRING == ptrdes->mr_value.value_type) ||
       (MR_VT_UNKNOWN == ptrdes->mr_value.value_type))
     {
@@ -399,21 +399,21 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 	      (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type_ext) &&
 	      (MR_TYPE_CHAR_ARRAY == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type))
 	    {
-	      void * data = MR_REALLOC (ptrdes->data, str_len + 1);
+	      void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
 	      if (NULL == data)
 		{
 		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 		  status = MR_FAILURE;
 		}
-	      *(void**)mr_load_data->ptrs.ra[ptrdes->parent].data = ptrdes->data = data;
+	      *(void**)mr_load_data->ptrs.ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
 	    }
 	  else if (str_len >= max_size)
 	    {
 	      str[max_size - 1] = 0;
 	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
 	    }
-	  if (ptrdes->data)
-	    strcpy (ptrdes->data, str);
+	  if (ptrdes->data.ptr)
+	    strcpy (ptrdes->data.ptr, str);
 	}
     }
   else
@@ -446,7 +446,7 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
 static mr_status_t
 mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
 {
-  char * data = mr_load_data->ptrs.ra[idx].data;
+  char * data = mr_load_data->ptrs.ra[idx].data.ptr;
   int first_child = mr_load_data->ptrs.ra[idx].first_child;
   mr_fd_t * fdp = NULL;
 
@@ -508,7 +508,7 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_load_array (int idx, mr_load_data_t * mr_load_data)
 {
-  char * data = mr_load_data->ptrs.ra[idx].data;
+  char * data = mr_load_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = mr_load_data->ptrs.ra[idx].fd;
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
@@ -549,7 +549,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 {
-  char ** data = mr_load_data->ptrs.ra[idx].data;
+  char ** data = mr_load_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = mr_load_data->ptrs.ra[idx].fd;
   int count = 0;
   int node;
@@ -589,7 +589,7 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
 {
-  void ** data = mr_load_data->ptrs.ra[idx].data;
+  void ** data = mr_load_data->ptrs.ra[idx].data.ptr;
   /* default initializer */
   *data = NULL;
   if (mr_load_data->ptrs.ra[idx].ref_idx >= 0)
@@ -744,7 +744,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
       return (MR_FAILURE);
     }
 
-  mr_load_data->ptrs.ra[idx].data = data;
+  mr_load_data->ptrs.ra[idx].data.ptr = data;
   if (mr_load_data->ptrs.ra[idx].fd.name.str && fdp->name.str)
     if (0 != strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].fd.name.str))
       {

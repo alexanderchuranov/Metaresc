@@ -32,13 +32,13 @@
 char *
 mr_output_format_bool (mr_ptrdes_t * ptrdes)
 {
-  return (*(bool*)ptrdes->data ? MR_STRDUP ("TRUE") : MR_STRDUP ("FALSE"));
+  return (*(bool*)ptrdes->data.ptr ? MR_STRDUP ("TRUE") : MR_STRDUP ("FALSE"));
 }
 
 #define MR_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   char * mr_output_format_ ## TYPE (mr_ptrdes_t * ptrdes) {		\
     char str[MR_FLOAT_TO_STRING_BUF_SIZE] = "";				\
-    sprintf (str, FORMAT, *(TYPE*)ptrdes->data);			\
+    sprintf (str, FORMAT, *(TYPE*)ptrdes->data.ptr);			\
     return (MR_STRDUP (str));						\
   }
 
@@ -146,7 +146,7 @@ mr_stringify_func (mr_ptrdes_t * ptrdes)
     return (MR_STRDUP (""));
   else
     {
-      void * func = *(void**)ptrdes->data;
+      void * func = *(void**)ptrdes->data.ptr;
       char str[MR_INT_TO_STRING_BUF_SIZE];
 #ifdef HAVE_LIBDL
       Dl_info info;
@@ -183,7 +183,7 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
   else
     {
-      int64_t value = mr_get_enum_value (tdp, ptrdes->data);
+      int64_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
       if (fdp && fdp->name.str)
 	return (MR_STRDUP (fdp->name.str));
@@ -207,7 +207,7 @@ mr_stringify_bitfield (mr_ptrdes_t * ptrdes)
 
   mr_save_bitfield_value (ptrdes, &value);
   ptrdes_ = *ptrdes;
-  ptrdes_.data = &value;
+  ptrdes_.data.ptr = &value;
 
   switch (ptrdes->fd.mr_type_aux)
     {
@@ -272,7 +272,7 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
       return (mr_stringify_uint (ptrdes));
     }
 
-  value = mr_get_enum_value (tdp, ptrdes->data);
+  value = mr_get_enum_value (tdp, ptrdes->data.ptr);
 
   if (0 == value)
     {
@@ -302,7 +302,7 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
   if (value != 0)
     {
       /* save non-matched part as integer */
-      mr_ptrdes_t ptrdes = { .data = &value, };
+      mr_ptrdes_t ptrdes = { .data.ptr = &value, };
       char * number = mr_stringify_uint64_t (&ptrdes);
       if (number != NULL)
 	{

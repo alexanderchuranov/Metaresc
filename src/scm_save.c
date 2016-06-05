@@ -95,7 +95,7 @@ SCM_SAVE_TYPE (bitfield);
 static char *
 scm_save_bool (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (*(bool*)ptrs->ra[idx].data ? MR_STRDUP (MR_SCM_TRUE) : MR_STRDUP (MR_SCM_FALSE));
+  return (*(bool*)ptrs->ra[idx].data.ptr ? MR_STRDUP (MR_SCM_TRUE) : MR_STRDUP (MR_SCM_FALSE));
 }
 
 /**
@@ -148,7 +148,7 @@ scm_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 scm_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  char c = *(char*)ptrs->ra[idx].data;
+  char c = *(char*)ptrs->ra[idx].data.ptr;
   char str[] = "#\\x00";
   if (isprint (c))
     {
@@ -216,7 +216,7 @@ scm_quote_string (char * str, char quote)
 static char *
 scm_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (scm_quote_string (ptrs->ra[idx].data, '"'));
+  return (scm_quote_string (ptrs->ra[idx].data.ptr, '"'));
 }
 
 /**
@@ -228,7 +228,7 @@ scm_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 scm_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  char * str = *(char**)ptrs->ra[idx].data;
+  char * str = *(char**)ptrs->ra[idx].data.ptr;
   if ((NULL == str) || (ptrs->ra[idx].ref_idx >= 0))
     return (MR_STRDUP (MR_SCM_FALSE));
   else

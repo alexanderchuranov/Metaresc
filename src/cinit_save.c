@@ -149,7 +149,7 @@ static bool
 cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   char str[] = " ";
-  str[0] = *(char*)ptrs->ra[idx].data;
+  str[0] = *(char*)ptrs->ra[idx].data.ptr;
   if (0 == str[0])
     save_data->content = MR_STRDUP ("'\\000'");
   else
@@ -167,7 +167,7 @@ cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_d
 static bool
 cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
-  save_data->content = cinit_quote_string (ptrs->ra[idx].data, '"');
+  save_data->content = cinit_quote_string (ptrs->ra[idx].data.ptr, '"');
   return (FALSE);
 }
 
@@ -181,7 +181,7 @@ cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 static bool
 cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
-  char * str = *(char**)ptrs->ra[idx].data;
+  char * str = *(char**)ptrs->ra[idx].data.ptr;
   if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
     save_data->content = MR_STRDUP (MR_CINIT_NULL);
   else

@@ -223,7 +223,7 @@ static char *
 xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   char str[MR_CHAR_TO_STRING_BUF_SIZE] = " ";
-  str[0] = *(char*)ptrs->ra[idx].data;
+  str[0] = *(char*)ptrs->ra[idx].data.ptr;
   if (isprint (str[0]))
     return (xml_quote_string (str));
   sprintf (str, CINIT_CHAR_QUOTE, (int)(unsigned char)str[0]);
@@ -239,7 +239,7 @@ xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 xml_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  return (xml_quote_string (ptrs->ra[idx].data));
+  return (xml_quote_string (ptrs->ra[idx].data.ptr));
 }
 
 /**
@@ -251,7 +251,7 @@ xml_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
 static char *
 xml1_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  char * str = *(char**)ptrs->ra[idx].data;
+  char * str = *(char**)ptrs->ra[idx].data.ptr;
   if ((NULL == str) || (ptrs->ra[idx].ref_idx >= 0))
     return (MR_STRDUP (""));
   else
@@ -410,7 +410,7 @@ xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
   xmlDocPtr doc = ptrs->res.ptr;
   xmlChar * encoded_content;
-  char * content = *(char**)ptrs->ra[idx].data;
+  char * content = *(char**)ptrs->ra[idx].data.ptr;
 
   if ((NULL == content) || (ptrs->ra[idx].ref_idx >= 0))
     content = "";

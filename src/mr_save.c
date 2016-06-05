@@ -38,7 +38,7 @@ static mr_save_handler_t ext_mr_save_handler[];
 static int
 mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 {
-  int diff = x->data - y->data;
+  int diff = x->data.ptr - y->data.ptr;
   if (diff) return (diff);
   diff = x->fd.mr_type_ext - y->fd.mr_type_ext;
   if (diff) return (diff);
@@ -84,7 +84,7 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
   const mr_ptrdes_t * ptrdes = &ptrs->ra[x.long_int_t];
-  return ((long)ptrdes->data + ptrdes->fd.mr_type + ptrdes->fd.mr_type_ext * MR_TYPE_LAST);
+  return ((long)ptrdes->data.ptr + ptrdes->fd.mr_type + ptrdes->fd.mr_type_ext * MR_TYPE_LAST);
 }
 
 int
@@ -98,14 +98,14 @@ mr_hash_value_t __attribute__ ((unused))
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
-  return ((long)ptrs->ra[x.long_int_t].data);
+  return ((long)ptrs->ra[x.long_int_t].data.ptr);
 }
 
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_mr_ptrdes_t * ptrs = context;
-  return (ptrs->ra[x.long_int_t].data - ptrs->ra[y.long_int_t].data);
+  return (ptrs->ra[x.long_int_t].data.ptr - ptrs->ra[y.long_int_t].data.ptr);
 }
 
 /**
@@ -142,7 +142,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
 {
   mr_ra_mr_ptrdes_t * ptrs = &mr_save_data->ptrs;
   long count = ptrs->size / sizeof (ptrs->ra[0]) - 1;
-  void * data = ptrs->ra[count].data;
+  void * data = ptrs->ra[count].data.ptr;
   int same_ptr = count;
   mr_ptr_t * search_result;
 
@@ -163,7 +163,7 @@ mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
   for (;;)
     {
       int parent = ptrs->ra[same_ptr].parent;
-      if ((parent < 0) || (ptrs->ra[parent].data != data))
+      if ((parent < 0) || (ptrs->ra[parent].data.ptr != data))
 	break;
       same_ptr = parent;
     }
@@ -222,7 +222,7 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
   if (idx < 0)
     return (idx); /* memory allocation error occured */
   /* populate attributes of new node */
-  ptrs->ra[idx].data = data;
+  ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fd = *fdp;
   /* this element is required only for a search so we need to adjust back size of collection */
   ptrs->size -= sizeof (ptrs->ra[0]);
@@ -252,7 +252,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
   idx = mr_add_ptr_to_list (&mr_save_data->ptrs);
   if (idx < 0)
     return; /* memory allocation error occured */
-  mr_save_data->ptrs.ra[idx].data = data;
+  mr_save_data->ptrs.ra[idx].data.ptr = data;
   mr_save_data->ptrs.ra[idx].fd = *fdp;
   mr_save_data->ptrs.ra[idx].parent = parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
 
@@ -290,7 +290,7 @@ static void
 mr_save_func (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  if (NULL == *(void**)mr_save_data->ptrs.ra[idx].data)
+  if (NULL == *(void**)mr_save_data->ptrs.ra[idx].data.ptr)
     mr_save_data->ptrs.ra[idx].flags.is_null = TRUE;
 }
 
@@ -303,7 +303,7 @@ static void
 mr_save_string (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  char * str = *(char**)mr_save_data->ptrs.ra[idx].data;
+  char * str = *(char**)mr_save_data->ptrs.ra[idx].data.ptr;
   if (NULL == str)
     mr_save_data->ptrs.ra[idx].flags.is_null = TRUE;
   else
@@ -332,7 +332,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].fd.type);
-  char * data = mr_save_data->ptrs.ra[idx].data;
+  char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   int i, count;
 
   if (NULL == tdp) /* check whether type descriptor was found */
@@ -410,7 +410,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
       case MR_TYPE_BITFIELD:
 	{
 	  uint64_t value = 0;
-	  mr_ptrdes_t ptrdes = { .data = discriminator, .fd = *parent_fdp, };
+	  mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fd = *parent_fdp, };
 	  mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
 	  mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
 	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
@@ -506,7 +506,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data)
 	  continue;
 
 	/* get an address of discriminator field */
-	discriminator = (char*)mr_save_data->ptrs.ra[parent].data + parent_fdp->offset;
+	discriminator = (char*)mr_save_data->ptrs.ra[parent].data.ptr + parent_fdp->offset;
 
 	/* if discriminator is a pointer then we need address of the content */
 	if (MR_TYPE_EXT_POINTER == parent_fdp->mr_type_ext)
@@ -543,7 +543,7 @@ static void
 mr_save_union (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  char * data = mr_save_data->ptrs.ra[idx].data;
+  char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].fd.type); /* look up for type descriptor */
   mr_fd_t * fdp;
 
@@ -572,7 +572,7 @@ static void
 mr_save_array (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  char * data = mr_save_data->ptrs.ra[idx].data;
+  char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
@@ -599,7 +599,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
 static void
 mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 {
-  char ** data = mr_save_data->ptrs.ra[idx].data;
+  char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
   int count = 1;
 
   if (mr_save_data->ptrs.ra[idx].fd.size != 0)
@@ -629,7 +629,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 static void
 mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 {
-  void ** data = mr_save_data->ptrs.ra[idx].data;
+  void ** data = mr_save_data->ptrs.ra[idx].data.ptr;
 
   if (NULL == *data)
     mr_save_data->ptrs.ra[idx].flags.is_null = TRUE; /* return empty node if pointer is NULL */
@@ -655,9 +655,9 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	     'res_type' in this case will be 'char' */
 
 	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
-	  if (src.data != NULL)
+	  if (src.data.ptr != NULL)
 	    {
-	      dst.data = &mr_save_data->ptrs.ra[idx].size;
+	      dst.data.ptr = &mr_save_data->ptrs.ra[idx].size;
 	      dst.fd.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].size));
 	      dst.fd.mr_type_ext = MR_TYPE_EXT_NONE;
 	      mr_assign_int (&dst, &src);
@@ -741,13 +741,13 @@ mr_post_process_node  (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   if ((MR_TYPE_EXT_POINTER == mr_save_data->ptrs.ra[idx].fd.mr_type_ext) &&
       ((MR_TYPE_NONE == mr_save_data->ptrs.ra[idx].fd.mr_type) || (MR_TYPE_VOID == mr_save_data->ptrs.ra[idx].fd.mr_type)) &&
       (mr_save_data->ptrs.ra[idx].ref_idx < 0) &&
-      (NULL != *(void**)mr_save_data->ptrs.ra[idx].data))
+      (NULL != *(void**)mr_save_data->ptrs.ra[idx].data.ptr))
     {
       static mr_fd_t fd_ = {
 	.mr_type = MR_TYPE_NONE,
 	.mr_type_ext = MR_TYPE_EXT_NONE,
       };
-      int ref_idx = mr_check_ptr_in_list (mr_save_data, *(void**)mr_save_data->ptrs.ra[idx].data, &fd_);
+      int ref_idx = mr_check_ptr_in_list (mr_save_data, *(void**)mr_save_data->ptrs.ra[idx].data.ptr, &fd_);
       if (ref_idx >= 0)
 	{
 	  mr_save_data->ptrs.ra[idx].ref_idx = ref_idx;

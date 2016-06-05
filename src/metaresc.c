@@ -274,7 +274,7 @@ strndup (const char * str, size_t size)
 mr_status_t
 mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
-  uint8_t * ptr = ptrdes->data;
+  uint8_t * ptr = ptrdes->data.ptr;
   int i;
 
   *value = *ptr++ >> ptrdes->fd.param.bitfield_param.shift;
@@ -306,7 +306,7 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 mr_status_t
 mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
-  uint8_t * ptr = ptrdes->data;
+  uint8_t * ptr = ptrdes->data.ptr;
   int i;
 
   *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
@@ -437,7 +437,8 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   if (NULL == ptrdes)
     return (-1);
   memset (ptrdes, 0, sizeof (*ptrdes));
-  ptrdes->data = NULL;
+  ptrdes->data.ptr = NULL;
+  ptrdes->type = &ptrdes->fd.type;
   ptrdes->fd.type = NULL;
   ptrdes->fd.name.str = NULL;
   ptrdes->fd.name.hash_value = 0;
@@ -504,8 +505,8 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 {
   uint64_t value = 0;
   mr_type_t mr_type;
-  void * src_data = src->data;
-  void * dst_data = dst->data;
+  void * src_data = src->data.ptr;
+  void * dst_data = dst->data.ptr;
 
   if (MR_TYPE_EXT_POINTER == src->fd.mr_type_ext)
     src_data = *(void**)src_data;
@@ -715,7 +716,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_mr_ptrdes_t * p
 	    return;
 
 	  ptrdes->fd = *parent_fdp;
-	  ptrdes->data = (char*)ptrs->ra[parent].data + parent_fdp->offset; /* get an address of size field */
+	  ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
 	}
     }
 }
@@ -726,9 +727,9 @@ mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
   mr_ptrdes_t src, dst;
   mr_pointer_get_size_ptrdes (&dst, idx, ptrs);
       
-  if (dst.data != NULL)
+  if (dst.data.ptr != NULL)
     {
-      src.data = &ptrs->ra[idx].size;
+      src.data.ptr = &ptrs->ra[idx].size;
       src.fd.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].size));
       src.fd.mr_type_ext = MR_TYPE_EXT_NONE;
       mr_assign_int (&dst, &src);
@@ -757,7 +758,7 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 	if ((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) ||
 	    ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&
 	     (MR_TYPE_STRING == ptrs.ra[i].fd.mr_type)))
-	  ptrs.ra[i].res.ptr = *(void**)ptrs.ra[i].data;
+	  ptrs.ra[i].res.ptr = *(void**)ptrs.ra[i].data.ptr;
     }
 
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
@@ -775,7 +776,7 @@ calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
   if (NULL == ptrs->ra[idx].res.ptr)
     {
       int parent = ptrs->ra[idx].parent;
-      ptrs->ra[idx].res.ptr = &((char*)ptrs->ra[parent].res.ptr)[ptrs->ra[idx].data - ptrs->ra[parent].data];
+      ptrs->ra[idx].res.ptr = &((char*)ptrs->ra[parent].res.ptr)[ptrs->ra[idx].data.ptr - ptrs->ra[parent].data.ptr];
     }
   return (MR_SUCCESS);
 }
@@ -809,7 +810,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	if (TRUE == ptrs.ra[i].flags.is_null)
 	  {
 	    /* explicitly set to NULL pointers that were attributed as is_null */
-	    *(void**)ptrs.ra[i].data = NULL;
+	    *(void**)ptrs.ra[i].data.ptr = NULL;
 	    continue;
 	  }
 	
@@ -819,11 +820,11 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    if (MR_TYPE_STRING != ptrs.ra[i].fd.mr_type)
 	      break;
 	    /* calc string length for further malloc */
-	    ptrs.ra[i].fd.size = strlen (*(void**)ptrs.ra[i].data) + 1;
+	    ptrs.ra[i].fd.size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
 	    /* string node should be followed with unlinked char array node */
 	    if ((ptrs.ra[i].first_child >= 0) ||
 		(ptrs.ra[i + 1].parent != i) ||
-		(*(void**)ptrs.ra[i].data != ptrs.ra[i + 1].data))
+		(*(void**)ptrs.ra[i].data.ptr != ptrs.ra[i + 1].data.ptr))
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA);
 		return (MR_FAILURE);
@@ -848,7 +849,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 		{
 		  size = ptrs.ra[i].size;
 		  if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type) && (0 == ptrs.ra[i].fd.size))
-		    size = strlen (*(void**)ptrs.ra[i].data) + 1;
+		    size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
 		}
 	    
 	      if (size < 0)
@@ -865,10 +866,10 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 		}
 
 	      /* copy data from source */
-	      memcpy (copy, *(void**)ptrs.ra[i].data, size);
+	      memcpy (copy, *(void**)ptrs.ra[i].data.ptr, size);
 	      /* go thru all childs and calculate their addresses in newly allocated chunk */
 	      for (idx = ptrs.ra[i].first_child; idx >= 0; idx = ptrs.ra[idx].next)
-		ptrs.ra[idx].res.ptr = &copy[(char*)ptrs.ra[idx].data - *(char**)ptrs.ra[i].data];
+		ptrs.ra[idx].res.ptr = &copy[(char*)ptrs.ra[idx].data.ptr - *(char**)ptrs.ra[i].data.ptr];
 	    }
 	    break;
 	  default:
@@ -876,7 +877,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	  }
       }
   /* copy first level struct */
-  memcpy (dst, ptrs.ra[0].data, ptrs.ra[0].fd.size);
+  memcpy (dst, ptrs.ra[0].data.ptr, ptrs.ra[0].fd.size);
   ptrs.ra[0].res.ptr = dst;
 
   /* depth search thru the graph and calculate new addresses for all nodes */

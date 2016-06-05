@@ -11,11 +11,11 @@
     char str[2 * MR_FLOAT_TO_STRING_BUF_SIZE] = "";			\
     mr_ptrdes_t real_ptrdes = *ptrdes;					\
     mr_ptrdes_t imag_ptrdes = *ptrdes;					\
-    TYPE_NAME real = __real__ *(complex TYPE_NAME *)ptrdes->data;	\
-    TYPE_NAME imag = __imag__ *(complex TYPE_NAME *)ptrdes->data;	\
-    real_ptrdes.data = &real;						\
+    TYPE_NAME real = __real__ *(complex TYPE_NAME *)ptrdes->data.ptr;	\
+    TYPE_NAME imag = __imag__ *(complex TYPE_NAME *)ptrdes->data.ptr;	\
+    real_ptrdes.data.ptr = &real;					\
     real_ptrdes.fd.mr_type = MR_TYPE;					\
-    imag_ptrdes.data = &imag;						\
+    imag_ptrdes.data.ptr = &imag;					\
     imag_ptrdes.fd.mr_type = MR_TYPE;					\
     char * real_str = mr_stringify_ ## NAME_SUFFIX (&real_ptrdes);	\
     char * imag_str = mr_stringify_ ## NAME_SUFFIX (&imag_ptrdes);	\
