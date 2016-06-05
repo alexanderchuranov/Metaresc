@@ -408,7 +408,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
 static char *
 xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
 {
-  xmlDocPtr doc = ptrs->res.ptr;
+  xmlDocPtr doc = ptrs->res.data.ptr;
   xmlChar * encoded_content;
   char * content = *(char**)ptrs->ra[idx].data.ptr;
 
@@ -534,7 +534,7 @@ xml2_save (mr_ra_mr_ptrdes_t * ptrs)
       return (NULL);
     }
 
-  ptrs->res.ptr = doc;
+  ptrs->res.data.ptr = doc;
   mr_ptrs_ds (ptrs, xml2_save_node, NULL);
 
   if ((ptrs->size > 0) && (NULL != ptrs->ra[0].res.data.ptr))

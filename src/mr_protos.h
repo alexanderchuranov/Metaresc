@@ -375,8 +375,7 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 		{ .offset = offsetof (mr_ra_mr_ptrdes_t, size) }, "offset"),
 		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
-		(mr_ptr_t, res, , "res_type"),
-		(char *, res_type, , "type for 'res'")
+		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
 TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
