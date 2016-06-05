@@ -1016,11 +1016,11 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
   if (TRUE == ptrs->ra[idx].flags.is_null)
     return (MR_SUCCESS);
 
-  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].size))
+  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
     return (MR_FAILURE);
   
-  if (ptrs->ra[idx].flags.is_opaque_data && (ptrs->ra[idx].size > 0))
-    return (xdr_opaque (xdrs, *(void**)ptrs->ra[idx].data.ptr, ptrs->ra[idx].size) ? MR_SUCCESS : MR_FAILURE);
+  if (ptrs->ra[idx].flags.is_opaque_data && (ptrs->ra[idx].MR_SIZE > 0))
+    return (xdr_opaque (xdrs, *(void**)ptrs->ra[idx].data.ptr, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);
 
   return (MR_SUCCESS);
 }
@@ -1053,38 +1053,38 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_mr_ptrdes_t * ptrs)
     {
       int i, count = 0;
       
-      if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].size))
+      if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
 
       if (!ptrs->ra[idx].flags.is_opaque_data)
 	{
 	  if (fd_.size > 0) /* types with zero size used for dynamics strings allocation */
 	    {
-	      count = ptrs->ra[idx].size / fd_.size;
-	      ptrs->ra[idx].size = count * fd_.size;
+	      count = ptrs->ra[idx].MR_SIZE / fd_.size;
+	      ptrs->ra[idx].MR_SIZE = count * fd_.size;
 	    }
 	  else
 	    {
 	      count = 1;
-	      ptrs->ra[idx].size = sizeof (char);
+	      ptrs->ra[idx].MR_SIZE = sizeof (char);
 	    }
 	}
 
-      if (ptrs->ra[idx].size <= 0)
+      if (ptrs->ra[idx].MR_SIZE <= 0)
 	return (MR_FAILURE);
 
       mr_pointer_set_size (idx, ptrs);
       
-      *data = MR_MALLOC (ptrs->ra[idx].size);
+      *data = MR_MALLOC (ptrs->ra[idx].MR_SIZE);
       if (NULL == *data)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (MR_FAILURE);
 	}
-      memset (*data, 0, ptrs->ra[idx].size);
+      memset (*data, 0, ptrs->ra[idx].MR_SIZE);
       
       if (ptrs->ra[idx].flags.is_opaque_data)
-	return (xdr_opaque (xdrs, *data, ptrs->ra[idx].size) ? MR_SUCCESS : MR_FAILURE);
+	return (xdr_opaque (xdrs, *data, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);
       else
 	{
 	  fd_.mr_type_ext = MR_TYPE_EXT_NONE;

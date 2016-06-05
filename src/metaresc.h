@@ -566,6 +566,7 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
+	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE,					\
 	     .mr_type_ext = MR_TYPE_EXT,				\
 	     .param =							\
@@ -585,6 +586,7 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
+	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE_DETECT (TYPE),				\
 	     .mr_type_ext = MR_TYPE_EXT_ARRAY,				\
 	     .param =							\
@@ -605,6 +607,7 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
+	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE_VOID,					\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
@@ -616,6 +619,7 @@
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
+	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE_BITFIELD,				\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .mr_type_ext = MR_TYPE_EXT_NONE,				\

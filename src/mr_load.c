@@ -574,7 +574,7 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
     if (MR_SUCCESS != mr_load (*data + count++ * fd_.size, &fd_, node, mr_load_data))
       return (MR_FAILURE);
 
-  mr_load_data->ptrs.ra[idx].size = count * fd_.size;
+  mr_load_data->ptrs.ra[idx].MR_SIZE = count * fd_.size;
   mr_pointer_set_size (idx, &mr_load_data->ptrs);
   
   return (MR_SUCCESS);

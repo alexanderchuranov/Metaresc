@@ -252,7 +252,9 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
   idx = mr_add_ptr_to_list (&mr_save_data->ptrs);
   if (idx < 0)
     return; /* memory allocation error occured */
+
   mr_save_data->ptrs.ra[idx].data.ptr = data;
+  mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->size;
   mr_save_data->ptrs.ra[idx].fd = *fdp;
   mr_save_data->ptrs.ra[idx].parent = parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
 
@@ -268,6 +270,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
       mr_save_data->ptrs.ra[ref_parent].last_child = -1;
       mr_save_data->ptrs.ra[ref_idx].flags.is_referenced = TRUE;
       mr_save_data->ptrs.ra[ref_idx].fd.name.str = fdp->name.str;
+      mr_save_data->ptrs.ra[ref_idx].fd.unnamed = fdp->unnamed;
       mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
       return;
     }
@@ -603,7 +606,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   int count = 1;
 
   if (mr_save_data->ptrs.ra[idx].fd.size != 0)
-    count = mr_save_data->ptrs.ra[idx].size / mr_save_data->ptrs.ra[idx].fd.size;
+    count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].fd.size;
   
   /* add each array element to this node */
   if (count <= 0)
@@ -642,13 +645,10 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
       if (postpone)
 	{
 	  mr_ptrdes_t src, dst;
-	  /* at first attempt to save pointer we need need to determine size of structure */
-	  if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID))
-	    /* for serializable types we take size of the type as default value */
-	    mr_save_data->ptrs.ra[idx].size = mr_save_data->ptrs.ra[idx].fd.size;
-	  else
+	  /* at first attempt to save pointer we need to determine size of structure */
+	  if ((mr_type == MR_TYPE_NONE) || (mr_type == MR_TYPE_VOID))
 	    /* unserializable types will have zero size */
-	    mr_save_data->ptrs.ra[idx].size = 0;
+	    mr_save_data->ptrs.ra[idx].MR_SIZE = 0;
 	  
 	  /* pointers might have assosiated field with the size for resizable arrays.
 	     name of the size field is stored in 'res' of field meta-data.
@@ -657,8 +657,8 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
 	  if (src.data.ptr != NULL)
 	    {
-	      dst.data.ptr = &mr_save_data->ptrs.ra[idx].size;
-	      dst.fd.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].size));
+	      dst.data.ptr = &mr_save_data->ptrs.ra[idx].MR_SIZE;
+	      dst.fd.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].MR_SIZE));
 	      dst.fd.mr_type_ext = MR_TYPE_EXT_NONE;
 	      mr_assign_int (&dst, &src);
 	    }
@@ -676,7 +676,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 	}
       else if (0 == strcmp (mr_save_data->ptrs.ra[idx].fd.name.str, MR_OPAQUE_DATA_STR))
 	{
-	  if (mr_save_data->ptrs.ra[idx].size <= 0)
+	  if (mr_save_data->ptrs.ra[idx].MR_SIZE <= 0)
 	    mr_save_data->ptrs.ra[idx].flags.is_null = TRUE;
 	  else
 	    mr_save_data->ptrs.ra[idx].flags.is_opaque_data = TRUE;

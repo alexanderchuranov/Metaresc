@@ -346,9 +346,9 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
-		(mr_ptr_t, data, , "type", { .offset = offsetof (mr_ptrdes_t, size), }, "offset"),
-		(char **, type, , "discriminator for data, points on fd.type"),
-		(ssize_t, size, , "size of dynamic array"),
+		(mr_ptr_t, data, , "type"),
+		(char *, type, , "overlay for fd.type", .offset = (mr_offset_t)&((mr_ptrdes_t*)0)->fd.type),
+		(ssize_t, MR_SIZE, , "size of dynamic array"),
 		(mr_fd_t, fd, , "field descriptor"),
 		(int, level, , "level from the root element"),
 		(int32_t, idx, , "public index"),
@@ -370,7 +370,7 @@ TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array")
 		{ .offset = offsetof (mr_ra_mr_ptrdes_t, size) }, "offset"),
 		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
-		(mr_ptr_t, res, , "user data"),
+		(mr_ptr_t, res, , "res_type"),
 		(char *, res_type, , "type for 'res'")
 		)
 

@@ -438,7 +438,7 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
     return (-1);
   memset (ptrdes, 0, sizeof (*ptrdes));
   ptrdes->data.ptr = NULL;
-  ptrdes->type = &ptrdes->fd.type;
+  ptrdes->MR_SIZE = 0;
   ptrdes->fd.type = NULL;
   ptrdes->fd.name.str = NULL;
   ptrdes->fd.name.hash_value = 0;
@@ -729,8 +729,8 @@ mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
       
   if (dst.data.ptr != NULL)
     {
-      src.data.ptr = &ptrs->ra[idx].size;
-      src.fd.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].size));
+      src.data.ptr = &ptrs->ra[idx].MR_SIZE;
+      src.fd.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].MR_SIZE));
       src.fd.mr_type_ext = MR_TYPE_EXT_NONE;
       mr_assign_int (&dst, &src);
     }
@@ -847,7 +847,7 @@ mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
 	    
 	      if (MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext)
 		{
-		  size = ptrs.ra[i].size;
+		  size = ptrs.ra[i].MR_SIZE;
 		  if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type) && (0 == ptrs.ra[i].fd.size))
 		    size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
 		}
