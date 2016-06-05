@@ -298,7 +298,7 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
   if (NULL == add)
     return (NULL);
 
-  memmove (&ic->rarray.ra[idx + 1], &ic->rarray.ra[idx], ic->rarray.size - idx * sizeof (ic->rarray.ra[0]));
+  memmove (&ic->rarray.ra[idx + 1], &ic->rarray.ra[idx], ic->rarray.size - (idx + 1) * sizeof (ic->rarray.ra[0]));
   ic->rarray.ra[idx] = key;
 
   return (&ic->rarray.ra[idx]);
