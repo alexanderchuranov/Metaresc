@@ -21,7 +21,7 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(char *, str, , "string to parse"),
 		(char *, buf, , "parser internal buffer"),
 		(int, parent, , "index of current parent"),
-		(mr_ra_mr_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
+		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 
 #define MR_PARSE_ERROR(LLOCP, SCANNER, ERROR_MSG)			\
@@ -109,7 +109,7 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
 #define YYMAXDEPTH (1 << 31)
 
 #define MR_LOAD_FUNC(METHOD)						\
-  mr_status_t METHOD ## _load (char * str, mr_ra_mr_ptrdes_t * ptrs) {	\
+  mr_status_t METHOD ## _load (char * str, mr_ra_ptrdes_t * ptrs) {	\
     mr_status_t status;							\
     yyscan_t scanner;							\
     mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \

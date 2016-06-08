@@ -762,7 +762,7 @@
 	  },								\
 	};								\
       MR_TYPE_NAME * check_type = S_PTR;				\
-      mr_save_data_t __mr_save_data__;					\
+      mr_save_data_t __mr_save_data__ = { .ptrs.ptrdes_type = MR_PD_SAVE, }; \
       mr_detect_type (&__fd__);						\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
@@ -783,7 +783,7 @@
 	  .size = 0,							\
 	};								\
       void * __ptr__ = S_PTR;						\
-      mr_save_data_t __mr_save_data__;					\
+      mr_save_data_t __mr_save_data__ = { .ptrs.ptrdes_type = MR_PD_SAVE, }; \
       mr_detect_type (&__fd__);						\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
       if (__ptr__ == NULL)						\
@@ -800,7 +800,7 @@
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
-	  mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+	  mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
 	  if (__ptrs__.ra != NULL)					\
 	    {								\
 	      __status__ = xdr_save (__xdrs__, &__ptrs__);		\
@@ -820,7 +820,7 @@
     })
 
 #define MR_SAVE_METHOD(METHOD, MR_TYPE_NAME, S_PTR) ({			\
-      mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       char * __str__ = NULL;						\
       if (__ptrs__.ra != NULL)						\
 	{								\
@@ -908,7 +908,7 @@
       int __size__;							\
       char * __str__ = NULL;						\
       xmlChar * __xml_str__ = NULL;					\
-      mr_ra_mr_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       if (__ptrs__.ra != NULL)						\
 	{								\
 	  xmlDocPtr __doc__ = xml2_save (&__ptrs__);			\
@@ -931,7 +931,7 @@
       mr_status_t __status__ = MR_FAILURE;				\
       int __idx__ = -1;							\
       mr_load_data_t __load_data__ = {					\
-	.ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, },		\
+	.ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
 	.mr_ra_idx = NULL,						\
 	.mr_ra_idx_size = 0,						\
 	.mr_ra_idx_alloc_size = 0,					\
@@ -1038,7 +1038,7 @@
       else								\
 	{								\
 	  mr_load_data_t _load_data_ = {				\
-	    .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, },	\
+	    .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
 	    .mr_ra_idx = NULL,						\
 	    .mr_ra_idx_size = 0,					\
 	    .mr_ra_idx_alloc_size = 0,					\
@@ -1171,22 +1171,22 @@ extern char * mr_read_xml_doc (FILE * fd);
 extern void mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data);
 extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data);
 #ifdef HAVE_LIBXML2
-extern xmlDocPtr xml2_save (mr_ra_mr_ptrdes_t * ptrs);
-extern int xml2_load (xmlNodePtr, mr_ra_mr_ptrdes_t * ptrs);
+extern xmlDocPtr xml2_save (mr_ra_ptrdes_t * ptrs);
+extern int xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBXML2 */
-extern mr_status_t xdr_save (XDR * xdrs, mr_ra_mr_ptrdes_t * ptrs);
+extern mr_status_t xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs);
 extern void xdrra_create (XDR * xdrs, mr_rarray_t * rarray, enum xdr_op op);
 
-extern char * xml1_save (mr_ra_mr_ptrdes_t * ptrs);
-extern char * cinit_save (mr_ra_mr_ptrdes_t * ptrs);
-extern char * json_save (mr_ra_mr_ptrdes_t * ptrs);
-extern char * scm_save (mr_ra_mr_ptrdes_t * ptrs);
+extern char * xml1_save (mr_ra_ptrdes_t * ptrs);
+extern char * cinit_save (mr_ra_ptrdes_t * ptrs);
+extern char * json_save (mr_ra_ptrdes_t * ptrs);
+extern char * scm_save (mr_ra_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
-extern mr_status_t xml1_load (char * str, mr_ra_mr_ptrdes_t * ptrs);
-extern mr_status_t cinit_load (char * str, mr_ra_mr_ptrdes_t * ptrs);
-extern mr_status_t scm_load (char * str, mr_ra_mr_ptrdes_t * ptrs);
+extern mr_status_t xml1_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t cinit_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t scm_load (char * str, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_BISON_FLEX */
 
 extern void * mr_malloc (const char * filename, const char * function, int line, size_t size);
@@ -1196,15 +1196,15 @@ extern void mr_free (const char * filename, const char * function, int line, voi
 
 extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
 extern bool mr_is_valid_field_name (char * name);
-extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_mr_ptrdes_t * ptrs);
-extern void mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs);
-extern int mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs);
-extern void mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs);
+extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs);
+extern void mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs);
+extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
+extern void mr_add_child (int parent, int child, mr_ra_ptrdes_t * ptrs);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
-extern mr_status_t mr_free_recursively (mr_ra_mr_ptrdes_t ptrs);
-extern mr_status_t mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * data);
-extern mr_status_t mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs);
+extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t ptrs);
+extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * data);
+extern mr_status_t mr_free_ptrs (mr_ra_ptrdes_t ptrs);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, int64_t value);
 extern mr_fd_t * mr_get_enum_by_name (char * name);

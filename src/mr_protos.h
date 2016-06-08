@@ -365,28 +365,36 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, prev, , "previous sibling index"),
 		(int, next, , "next sibling index"),
 		(mr_ptrdes_flags_t, flags),
+		ANON_UNION (type_specific),
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
 		(mr_value_t, mr_value),
+		END_ANON_UNION ("ptrdes_type"),
 		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
-TYPEDEF_STRUCT (mr_ra_mr_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
+TYPEDEF_ENUM (mr_ptrdes_type_t,
+	      (MR_PD_SAVE, , "union_discriminator"),
+	      (MR_PD_LOAD, , "mr_value"),
+	      )
+
+TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements",
-		{ .offset = offsetof (mr_ra_mr_ptrdes_t, size) }, "offset"),
+		{ .offset = offsetof (mr_ra_ptrdes_t, size) }, "offset"),
 		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
+		(mr_ptrdes_type_t, ptrdes_type, , "discriminator for anonymous union in mr_ptrdes_t"),
 		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
 TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
-		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
+		(mr_ra_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
 		(int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_load_data_t, mr_ra_idx_size) }, "offset"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
-		(mr_ra_mr_ptrdes_t, ptrs, , "internal representation of a saved tree"),
+		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
 		(int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_save_data_t, mr_ra_idx_size) }, "offset"),

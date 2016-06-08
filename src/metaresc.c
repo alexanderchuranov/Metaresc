@@ -431,28 +431,12 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
  * pointer on element is changing (index remains constant).
  */
 int
-mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
+mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = mr_rarray_allocate_element ((void*)&ptrs->ra, &ptrs->size, &ptrs->alloc_size, sizeof (ptrs->ra[0]));
   if (NULL == ptrdes)
     return (-1);
   memset (ptrdes, 0, sizeof (*ptrdes));
-  ptrdes->data.ptr = NULL;
-  ptrdes->MR_SIZE = 0;
-  ptrdes->fd.type = NULL;
-  ptrdes->fd.name.str = NULL;
-  ptrdes->fd.name.hash_value = 0;
-  ptrdes->fd.size = 0;
-  ptrdes->fd.offset = 0;
-  ptrdes->fd.mr_type = MR_TYPE_VOID;
-  ptrdes->fd.mr_type_ext = MR_TYPE_EXT_NONE;
-  ptrdes->fd.param.array_param.count = 0;
-  ptrdes->fd.param.array_param.row_count = 0;
-  ptrdes->fd.param.enum_value = 0;
-  ptrdes->fd.meta = NULL;
-  ptrdes->fd.res.ptr = NULL;
-  ptrdes->fd.res_type = NULL;
-  ptrdes->level = 0;
   ptrdes->idx = -1; /* NB! To be initialized in depth search in mr_save */
   ptrdes->ref_idx = -1;
   ptrdes->parent = -1;
@@ -460,14 +444,6 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
   ptrdes->last_child = -1;
   ptrdes->prev = -1;
   ptrdes->next = -1;
-  ptrdes->flags.is_null = FALSE;
-  ptrdes->flags.is_referenced = FALSE;
-  ptrdes->flags.is_content_reference = FALSE;
-  ptrdes->flags.is_opaque_data = FALSE;
-  ptrdes->mr_value.value_type = MR_VT_UNKNOWN;
-  ptrdes->res.data.ptr = NULL;
-  ptrdes->res.type = NULL;
-  ptrdes->res.MR_SIZE = 0;
   return (ptrs->size / sizeof (ptrs->ra[0]) - 1);
 }
 
@@ -478,7 +454,7 @@ mr_add_ptr_to_list (mr_ra_mr_ptrdes_t * ptrs)
  * @param ptrs resizable array with pointers descriptors
  */
 void
-mr_add_child (int parent, int child, mr_ra_mr_ptrdes_t * ptrs)
+mr_add_child (int parent, int child, mr_ra_ptrdes_t * ptrs)
 {
   int last_child;
 
@@ -674,7 +650,7 @@ mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_ptr_t*)0)->offset) offset)
 }
 
 void
-mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_mr_ptrdes_t * ptrs)
+mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs)
 {
   char * name = NULL;
   memset (ptrdes, 0, sizeof (*ptrdes));
@@ -723,7 +699,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_mr_ptrdes_t * p
 }
 
 void
-mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
+mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t src, dst;
   mr_pointer_get_size_ptrdes (&dst, idx, ptrs);
@@ -743,7 +719,7 @@ mr_pointer_set_size (int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @return status
  */
 mr_status_t
-mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
+mr_free_recursively (mr_ra_ptrdes_t ptrs)
 {
   int i;
 
@@ -771,7 +747,7 @@ mr_free_recursively (mr_ra_mr_ptrdes_t ptrs)
 }
 
 static mr_status_t
-calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+calc_relative_addr (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   /* is new address is not set yet, then it could be calculated as relative address from the parent node */
   if (NULL == ptrs->ra[idx].res.data.ptr)
@@ -788,7 +764,7 @@ calc_relative_addr (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
  * @return status
  */
 mr_status_t
-mr_copy_recursively (mr_ra_mr_ptrdes_t ptrs, void * dst)
+mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 {
   int i;
 

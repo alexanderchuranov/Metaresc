@@ -13,7 +13,7 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_mr_ptrdes_t *))
+TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_ptrdes_t *))
 
 #define MR_XML1_DOCUMENT_HEADER "<?xml version=\"1.0\"?>"
 
@@ -176,7 +176,7 @@ xml_unquote_string (mr_substr_t * substr)
  * @return stringified representation of object
  */
 static char *
-xml_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
+xml_save_none (int idx, mr_ra_ptrdes_t * ptrs)
 {
   return (NULL);
 }
@@ -188,7 +188,7 @@ xml_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs)
  * \@return stringified representation of object
  */
 #define XML_SAVE_TYPE(TYPE, ...)				      \
-  static char * xml_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs) \
+  static char * xml_save_ ## TYPE (int idx, mr_ra_ptrdes_t * ptrs) \
   {								      \
     return (mr_stringify_ ## TYPE (&ptrs->ra[idx] __VA_ARGS__));      \
   }
@@ -220,7 +220,7 @@ XML_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
  * @return stringified character value
  */
 static char *
-xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
+xml_save_char (int idx, mr_ra_ptrdes_t * ptrs)
 {
   char str[MR_CHAR_TO_STRING_BUF_SIZE] = " ";
   str[0] = *(char*)ptrs->ra[idx].data.ptr;
@@ -237,7 +237,7 @@ xml_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @return XML escaped string content
  */
 static char *
-xml_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
+xml_save_char_array (int idx, mr_ra_ptrdes_t * ptrs)
 {
   return (xml_quote_string (ptrs->ra[idx].data.ptr));
 }
@@ -249,7 +249,7 @@ xml_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @return XML escaped string content
  */
 static char *
-xml1_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
+xml1_save_string (int idx, mr_ra_ptrdes_t * ptrs)
 {
   char * str = *(char**)ptrs->ra[idx].data.ptr;
   if ((NULL == str) || (ptrs->ra[idx].ref_idx >= 0))
@@ -265,7 +265,7 @@ xml1_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
  * @return empty string
  */
 static char *
-xml_save_empty (int idx, mr_ra_mr_ptrdes_t * ptrs)
+xml_save_empty (int idx, mr_ra_ptrdes_t * ptrs)
 {
   return (MR_STRDUP (""));
 }
@@ -319,7 +319,7 @@ static xml_save_handler_t xml1_save_handler[] =
  * @return stringified representation of object
  */
 char *
-xml1_save (mr_ra_mr_ptrdes_t * ptrs)
+xml1_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
     .data = { MR_STRDUP (MR_XML1_DOCUMENT_HEADER) },
@@ -406,7 +406,7 @@ xml1_save (mr_ra_mr_ptrdes_t * ptrs)
  * @return XML escaped string content
  */
 static char *
-xml2_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs)
+xml2_save_string (int idx, mr_ra_ptrdes_t * ptrs)
 {
   xmlDocPtr doc = ptrs->res.data.ptr;
   xmlChar * encoded_content;
@@ -463,7 +463,7 @@ static xml_save_handler_t xml2_save_handler[] =
   };
 
 static mr_status_t
-xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_fd_t * fdp = &ptrs->ra[idx].fd;
   int parent = ptrs->ra[idx].parent;
@@ -524,7 +524,7 @@ xml2_save_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
  * @return XML document
  */
 xmlDocPtr
-xml2_save (mr_ra_mr_ptrdes_t * ptrs)
+xml2_save (mr_ra_ptrdes_t * ptrs)
 {
   xmlDocPtr doc = xmlNewDoc (BAD_CAST "1.0");
 

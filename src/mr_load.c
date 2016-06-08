@@ -646,7 +646,7 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
  * @return Status of read
  */
 mr_status_t
-mr_free_ptrs (mr_ra_mr_ptrdes_t ptrs)
+mr_free_ptrs (mr_ra_ptrdes_t ptrs)
 {
   if (ptrs.ra)
     {

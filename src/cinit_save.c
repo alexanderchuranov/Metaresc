@@ -17,7 +17,7 @@ TYPEDEF_STRUCT (mr_save_type_data_t, ATTRIBUTES ( , "serialization of the node")
 		(char *, suffix, , "statically allocated string"),
 		)
 
-TYPEDEF_FUNC (bool, cinit_json_save_handler_t, (int, mr_ra_mr_ptrdes_t *, mr_save_type_data_t *))
+TYPEDEF_FUNC (bool, cinit_json_save_handler_t, (int, mr_ra_ptrdes_t *, mr_save_type_data_t *))
 
 #define MR_CINIT_NULL "NULL"
 #define MR_CINIT_INDENT_SPACES (2)
@@ -39,7 +39,7 @@ TYPEDEF_FUNC (bool, cinit_json_save_handler_t, (int, mr_ra_mr_ptrdes_t *, mr_sav
  * @return status
  */
 static bool
-cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_none (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   return (TRUE);
 }
@@ -51,7 +51,7 @@ cinit_save_none (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_d
  * \@param data structure that argregates evrything required for saving
  * \@return status
  */
-#define CINIT_SAVE_TYPE(TYPE, EXT...) static bool cinit_save_ ## TYPE (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data) { save_data->content = mr_stringify_ ## TYPE (&ptrs->ra[idx] EXT); return (FALSE); }
+#define CINIT_SAVE_TYPE(TYPE, EXT...) static bool cinit_save_ ## TYPE (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data) { save_data->content = mr_stringify_ ## TYPE (&ptrs->ra[idx] EXT); return (FALSE); }
 
 CINIT_SAVE_TYPE (bool);
 CINIT_SAVE_TYPE (int8_t);
@@ -146,7 +146,7 @@ cinit_quote_string (char * str, char quote)
  * @return status
  */
 static bool
-cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_char (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   char str[] = " ";
   str[0] = *(char*)ptrs->ra[idx].data.ptr;
@@ -165,7 +165,7 @@ cinit_save_char (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_d
  * @return status
  */
 static bool
-cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_char_array (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   save_data->content = cinit_quote_string (ptrs->ra[idx].data.ptr, '"');
   return (FALSE);
@@ -179,7 +179,7 @@ cinit_save_char_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
  * @return status
  */
 static bool
-cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_string (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   char * str = *(char**)ptrs->ra[idx].data.ptr;
   if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
@@ -197,7 +197,7 @@ cinit_save_string (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save
  * @return status
  */
 static bool
-cinit_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_func (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   char * func_str = mr_stringify_func (&ptrs->ra[idx]);
   if (func_str)
@@ -229,7 +229,7 @@ cinit_save_func (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_d
  * @return status
  */
 static bool
-cinit_save_struct (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_struct (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   save_data->prefix = "{\n";
   save_data->suffix = "}";
@@ -244,7 +244,7 @@ cinit_save_struct (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save
  * @return status
  */
 static bool
-cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_anon_union (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   save_data->prefix = "\"\", {\n";
   save_data->suffix = "}";
@@ -252,7 +252,7 @@ cinit_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * 
 }
 
 static bool
-json_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+json_save_anon_union (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   /* unnamed union type is marked as unnamed for CINIT, but we need to override this in JSON */
   save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
@@ -267,7 +267,7 @@ json_save_anon_union (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * s
  * @return status
  */
 static bool
-cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_save_pointer (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   if (ptrs->ra[idx].first_child < 0)
     save_data->content = MR_STRDUP (MR_CINIT_NULL);
@@ -287,7 +287,7 @@ cinit_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * sav
  * @return status
  */
 static bool
-json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+json_save_array (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   save_data->prefix = "[\n";
   save_data->suffix = "]";
@@ -302,7 +302,7 @@ json_save_array (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_d
  * @return status
  */
 static bool
-json_save_pointer (int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+json_save_pointer (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE; /* mr_ptr_t might be unnamed. we need to override this */
   if (ptrs->ra[idx].first_child < 0)
@@ -405,7 +405,7 @@ static cinit_json_save_handler_t ext_json_save_handler[] =
  * @return stringified representation of the object
  */
 static char *
-cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, mr_ra_mr_ptrdes_t*, mr_save_type_data_t*))
+cinit_json_save (mr_ra_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, mr_ra_ptrdes_t*, mr_save_type_data_t*))
 {
   mr_rarray_t mr_ra_str = {
     .data = { MR_STRDUP ("") },
@@ -502,7 +502,7 @@ cinit_json_save (mr_ra_mr_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, 
 }
 
 static bool
-cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   bool skip_node = 0;
   if (FALSE == fdp->unnamed)
@@ -518,13 +518,13 @@ cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_ty
 }
 
 char *
-cinit_save (mr_ra_mr_ptrdes_t * _ptrs_)
+cinit_save (mr_ra_ptrdes_t * _ptrs_)
 {
   return (cinit_json_save (_ptrs_, cinit_node_handler));
 }
 
 static bool
-json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
+json_node_handler (mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   bool skip_node = 0;
 
@@ -541,7 +541,7 @@ json_node_handler (mr_fd_t * fdp, int idx, mr_ra_mr_ptrdes_t * ptrs, mr_save_typ
 }
 
 char *
-json_save (mr_ra_mr_ptrdes_t * _ptrs_)
+json_save (mr_ra_ptrdes_t * _ptrs_)
 {
   return (cinit_json_save (_ptrs_, json_node_handler));
 }

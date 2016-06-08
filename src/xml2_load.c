@@ -5,7 +5,7 @@
 #include <metaresc.h>
 
 int
-xml2_load (xmlNodePtr node, mr_ra_mr_ptrdes_t * ptrs)
+xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
 {
   int idx = mr_add_ptr_to_list (ptrs);
   xmlNodePtr node_;

@@ -82,7 +82,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 mr_hash_value_t __attribute__ ((unused))
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
-  const mr_ra_mr_ptrdes_t * ptrs = context;
+  const mr_ra_ptrdes_t * ptrs = context;
   const mr_ptrdes_t * ptrdes = &ptrs->ra[x.long_int_t];
   return ((long)ptrdes->data.ptr + ptrdes->fd.mr_type + ptrdes->fd.mr_type_ext * MR_TYPE_LAST);
 }
@@ -90,21 +90,21 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 int
 mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_ra_mr_ptrdes_t * ptrs = context;
+  const mr_ra_ptrdes_t * ptrs = context;
   return (mr_cmp_ptrdes (&ptrs->ra[x.long_int_t], &ptrs->ra[y.long_int_t]));
 }
 
 mr_hash_value_t __attribute__ ((unused))
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
-  const mr_ra_mr_ptrdes_t * ptrs = context;
+  const mr_ra_ptrdes_t * ptrs = context;
   return ((long)ptrs->ra[x.long_int_t].data.ptr);
 }
 
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_ra_mr_ptrdes_t * ptrs = context;
+  const mr_ra_ptrdes_t * ptrs = context;
   return (ptrs->ra[x.long_int_t].data.ptr - ptrs->ra[y.long_int_t].data.ptr);
 }
 
@@ -118,7 +118,7 @@ mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 static int
 mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
 {
-  mr_ra_mr_ptrdes_t * ptrs = &mr_save_data->ptrs;
+  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   long count = ptrs->size / sizeof (ptrs->ra[0]) - 1;
   mr_ptr_t * search_result;
 
@@ -140,7 +140,7 @@ mr_resolve_typed_forward_ref (mr_save_data_t * mr_save_data)
 static int
 mr_resolve_untyped_forward_ref (mr_save_data_t * mr_save_data)
 {
-  mr_ra_mr_ptrdes_t * ptrs = &mr_save_data->ptrs;
+  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   long count = ptrs->size / sizeof (ptrs->ra[0]) - 1;
   void * data = ptrs->ra[count].data.ptr;
   int same_ptr = count;
@@ -214,7 +214,7 @@ mr_ud_get_hash (mr_ptr_t x, const void * context)
 static int
 mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data, mr_fd_t * fdp)
 {
-  mr_ra_mr_ptrdes_t * ptrs = &mr_save_data->ptrs;
+  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   mr_ptr_t * find_result;
   long idx;
 
@@ -699,7 +699,7 @@ mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
 }
 
 mr_status_t
-mr_ptrs_ds (mr_ra_mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
+mr_ptrs_ds (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
 {
   int idx = 0;
   while (idx >= 0)
@@ -720,7 +720,7 @@ mr_ptrs_ds (mr_ra_mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * co
 }
 
 mr_status_t
-mr_renumber_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   int * idx_ = context;
   ptrs->ra[idx].idx = (*idx_)++;
@@ -728,7 +728,7 @@ mr_renumber_node (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
 }
 
 static mr_status_t
-mr_post_process_node  (mr_ra_mr_ptrdes_t * ptrs, int idx, void * context)
+mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_save_data_t * mr_save_data = context;
   int parent = mr_save_data->ptrs.ra[idx].parent;
