@@ -353,7 +353,7 @@ TYPEDEF_STRUCT (mr_res_t,
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptr_t, data, , "type"),
-		(char *, type, , "overlay for fd.type", .offset = (mr_offset_t)&((mr_ptrdes_t*)0)->fd.type),
+		(char *, type, , "copy of fd.type for all basic types and structures"),
 		(ssize_t, MR_SIZE, , "size of dynamic array"),
 		(mr_fd_t, fd, , "field descriptor"),
 		(int, level, , "level from the root element"),

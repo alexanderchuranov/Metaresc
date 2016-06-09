@@ -254,8 +254,18 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
     return; /* memory allocation error occured */
 
   mr_save_data->ptrs.ra[idx].data.ptr = data;
-  mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->size;
   mr_save_data->ptrs.ra[idx].fd = *fdp;
+
+  if ((MR_TYPE_EXT_POINTER != fdp->mr_type_ext)
+      && (MR_TYPE_UNION != fdp->mr_type)
+      && (MR_TYPE_FUNC != fdp->mr_type))
+    mr_save_data->ptrs.ra[idx].type = fdp->type;
+  
+  if (MR_TYPE_EXT_ARRAY == fdp->mr_type_ext)
+    mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->size * fdp->param.array_param.count;
+  else
+    mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->size;
+  
   mr_save_data->ptrs.ra[idx].parent = parent; /* NB: mr_add_child do the same, but also adds links from parent to child. This link is requred for mr_resolve_untyped_forward_ref  */
 
   mr_ic_new (&mr_save_data->ptrs.ra[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
