@@ -282,6 +282,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
       mr_save_data->ptrs.ra[ref_idx].fd.name.str = fdp->name.str;
       mr_save_data->ptrs.ra[ref_idx].fd.unnamed = fdp->unnamed;
       mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
+      mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
       return;
     }
   mr_resolve_untyped_forward_ref (mr_save_data);
@@ -841,7 +842,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 				 mr_save_data);
     }
   mr_post_process (mr_save_data);
-
+  
   for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
     mr_ic_free (&mr_save_data->ptrs.ra[i].union_discriminator);
 
