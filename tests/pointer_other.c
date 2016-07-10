@@ -116,4 +116,44 @@ MR_START_TEST (resolve_typed_forward_ref, "test of forvard reference resolution"
   ALL_METHODS (ASSERT_SAVE_LOAD, resolve_typed_forward_ref_t, &x);
 } END_TEST
 
+TYPEDEF_UNION (int_float_t,
+	       int _int,
+	       float _float,
+	       )
+
+TYPEDEF_STRUCT (nested_t,
+		string_t type,
+		(int_float_t, uif, , "type"),
+		)
+
+TYPEDEF_STRUCT (union_resolution_t,
+		string_t type,
+		(nested_t *, nested),
+		(int_float_t *, uifp, , "type"),
+		)
+
+MR_START_TEST (union_resolution_correctness, "test correctness of union resolution") {
+  union_resolution_t union_resolution = {
+    .type = "_float",
+    .nested = (nested_t[]){ { .type = "_int", .uif = { ._int = 1234567890, }, }, },
+  };
+  union_resolution.uifp = &union_resolution.nested->uif;
+  mr_ra_ptrdes_t ptrs = MR_SAVE (union_resolution_t, &union_resolution);
+  int i;
+  mr_status_t mr_status = MR_FAILURE;
+  if (ptrs.ra != NULL)
+    {
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	if ((ptrs.ra[i].fd.name.str != NULL) &&
+	    (0 == strcmp (ptrs.ra[i].fd.name.str, "uif")) &&
+	    (ptrs.ra[i].first_child >= 0) &&
+	    (ptrs.ra[ptrs.ra[i].first_child].fd.name.str != NULL) &&
+	    (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].fd.name.str, union_resolution.nested->type)))
+	  mr_status = MR_SUCCESS;
+      MR_FREE (ptrs.ra);
+    }
+  ck_assert_msg ((MR_SUCCESS == mr_status), "Union resolved uncorrectly");
+} END_TEST
+
+
 MAIN ();
