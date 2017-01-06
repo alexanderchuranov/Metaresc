@@ -44,7 +44,7 @@
   TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));	\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
-  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "char"), (ssize_t, size)); \
+  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "char"), (ssize_t, size), (char *, ptr_type)); \
 									\
   int test_run (int count)						\
   {									\
@@ -56,6 +56,7 @@
     times (&start);							\
     memset (&array, 0, sizeof (array));					\
     array.size = count * sizeof (array.ra[0]);				\
+    array.ptr_type = "char";						\
     array.ra = MR_MALLOC (array.size);					\
     ck_assert_msg (NULL != array.ra, "Memory allocation failed.");	\
     for (i = 1; i < count; ++i)						\
@@ -88,7 +89,7 @@
   }									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
-      int size = 2;							\
+    int size = 2;							\
     do size += size >> 1; while (0 == test_run (size));			\
     int x1 = test_run (size * MULTIPLE);				\
     int x2 = test_run (size * MULTIPLE * 4);				\
@@ -106,7 +107,7 @@
     TCase * tcase = tcase_create ("mr_conf save/load");			\
     if (NULL == tcase)							\
       return (EXIT_FAILURE);						\
-    tcase_set_timeout (tcase, 0);					\
+    tcase_set_timeout (tcase, 3);					\
     tcase_add_test (tcase, mr_conf_save_load);				\
     tcase_add_test (tcase, test_performance);				\
     suite_add_tcase (suite, tcase);					\

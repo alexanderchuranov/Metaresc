@@ -79,8 +79,6 @@ MR_START_TEST (self_ref_ptr, "self referenced pointer") {
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_ptr_t, &x);
   x.x = &x.y;
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_ptr_t, &x);
-  x.x = (void*)&x;
-  ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_ptr_t, &x);
 } END_TEST
 
 TYPEDEF_STRUCT (self_ref_string_t,
@@ -121,39 +119,49 @@ TYPEDEF_UNION (int_float_t,
 	       float _float,
 	       )
 
-TYPEDEF_STRUCT (nested_t,
+TYPEDEF_STRUCT (typed_union_t,
 		string_t type,
 		(int_float_t, uif, , "type"),
 		)
 
 TYPEDEF_STRUCT (union_resolution_t,
+		(typed_union_t *, typed_union),
 		string_t type,
-		(nested_t *, nested),
 		(int_float_t *, uifp, , "type"),
 		)
 
 MR_START_TEST (union_resolution_correctness, "test correctness of union resolution") {
   union_resolution_t union_resolution = {
     .type = "_float",
-    .nested = (nested_t[]){ { .type = "_int", .uif = { ._int = 1234567890, }, }, },
+    .typed_union = (typed_union_t[]){
+      {
+	.type = "_int",
+	.uif = { ._int = 1234567890, },
+      },
+    },
   };
-  union_resolution.uifp = &union_resolution.nested->uif;
+  union_resolution.uifp = &union_resolution.typed_union->uif;
+  
   mr_ra_ptrdes_t ptrs = MR_SAVE (union_resolution_t, &union_resolution);
   int i;
-  mr_status_t mr_status = MR_FAILURE;
+  bool union_resolved_correctly = false;
   if (ptrs.ra != NULL)
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	if ((ptrs.ra[i].fd.name.str != NULL) &&
-	    (0 == strcmp (ptrs.ra[i].fd.name.str, "uif")) &&
-	    (ptrs.ra[i].first_child >= 0) &&
-	    (ptrs.ra[ptrs.ra[i].first_child].fd.name.str != NULL) &&
-	    (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].fd.name.str, union_resolution.nested->type)))
-	  mr_status = MR_SUCCESS;
+	{
+	  if ((ptrs.ra[i].fd.name.str != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].fd.name.str, "uif")) &&
+	      (ptrs.ra[i].first_child >= 0) &&
+	      (ptrs.ra[ptrs.ra[i].first_child].fd.name.str != NULL) &&
+	      (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].fd.name.str, union_resolution.typed_union->type)))
+	    {
+	      union_resolved_correctly = true;
+	      break;
+	    }
+	}
       MR_FREE (ptrs.ra);
     }
-  ck_assert_msg ((MR_SUCCESS == mr_status), "Union resolved uncorrectly");
+  ck_assert_msg (union_resolved_correctly, "Union resolved incorrectly");
 } END_TEST
-
 
 MAIN ();

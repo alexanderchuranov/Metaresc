@@ -33,27 +33,66 @@ MR_START_TEST (empty_string_t, "empty string") { ALL_METHODS (ASSERT_SAVE_LOAD_S
 MR_START_TEST (printable_string_t, "all printable characters string") { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, "\040\041\042\043\044\045\046\047\050\051\052\053\054\055\056\057\060\061\062\063\064\065\066\067\070\071\072\073\074\075\076\077\100\101\102\103\104\105\106\107\110\111\112\113\114\115\116\117\120\121\122\123\124\125\126\127\130\131\132\133\134\135\136\137\140\141\142\143\144\145\146\147\150\151\152\153\154\155\156\157\160\161\162\163\164\165\166\167\170\171\172\173\174\175\176"); } END_TEST
 MR_START_TEST (xml_special_string_t, "xml special characters string") { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, "&<>;'\"\t\r\n"); } END_TEST
 
-MR_START_TEST (pointer_match_content, "strings points on another field") {
-  struct_ca_str_t orig_ca_str = { .x = "string_t" };
-  struct_str_ca_t orig_str_ca = { .x = "string_t" };
-  orig_ca_str.y = orig_ca_str.x;
-  orig_str_ca.y = orig_str_ca.x;
-  ALL_METHODS (ASSERT_SAVE_LOAD, struct_ca_str_t, &orig_ca_str);
-  ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_ca_t, &orig_str_ca);
+MR_START_TEST (pointer_match_content_known, "strings points on known char array") {
+  struct_ca_str_t orig = { .x = "string_t" };
+  orig.y = orig.x;
+  bool string_is_a_reference = false;
+  mr_ra_ptrdes_t ptrs = MR_SAVE (struct_ca_str_t, &orig);
+  if (ptrs.ra != NULL)
+    {
+      int i;
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  if ((ptrs.ra[i].fd.name.str != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].fd.name.str, "y")) &&
+	      (ptrs.ra[i].ref_idx >= 0))
+	    string_is_a_reference = true;
+	}
+      MR_FREE (ptrs.ra);
+      ck_assert_msg (string_is_a_reference, "string was not resolved a reference on char array");
+    }
+  ALL_METHODS (ASSERT_SAVE_LOAD, struct_ca_str_t, &orig);
+} END_TEST
+
+MR_START_TEST (pointer_match_content_unknown, "strings points on unknown char array") {
+  struct_str_ca_t orig = { .x = "string_t" };
+  orig.y = orig.x;
+  bool string_is_a_reference = false;
+  mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_ca_t, &orig);
+  if (ptrs.ra != NULL)
+    {
+      int i;
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  if ((ptrs.ra[i].fd.name.str != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].fd.name.str, "y")) &&
+	      (ptrs.ra[i].ref_idx >= 0))
+	    string_is_a_reference = true;
+	}
+      MR_FREE (ptrs.ra);
+      ck_assert_msg (string_is_a_reference, "string was not resolved a reference on char array");
+    }
+  ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_ca_t, &orig);
 } END_TEST
 
 MR_START_TEST (pointer_match_another_pointer, "two strings points on the same content") {
   struct_str_str_t orig = { .x = "string_t", };
   orig.y = orig.x;
+  mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_str_t, &orig);
+  if (ptrs.ra != NULL)
+    {
+      int i, count = 0;
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  if ((ptrs.ra[i].fd.type != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].fd.type, "string_t")) &&
+	      (ptrs.ra[i].ref_idx >= 0))
+	    ++count;
+	}
+      MR_FREE (ptrs.ra);
+      ck_assert_msg (1 == count, "pointer on existing string was not detected properly");
+    }
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_str_t, &orig);
-  orig.y = (void*)&orig;
-  ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_str_t, &orig);
-} END_TEST
-
-MR_START_TEST (pointer_match_another_content, "strings points on the some other content") {
-  struct_string_t orig;
-  orig.x = (void*)&orig;
-  ALL_METHODS (ASSERT_SAVE_LOAD, struct_string_t, &orig);
 } END_TEST
 
 MAIN ();

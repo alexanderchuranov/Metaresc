@@ -78,6 +78,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_TAGS_DONT_MATCH, , "Open and close tags names do not match."),
 	      (MR_MESSAGE_CANT_READ_PROPERTY, , "Can't read %s property."),
 	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) for dynamics array."),
+	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -369,6 +370,8 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
 		(mr_value_t, mr_value),
 		END_ANON_UNION ("ptrdes_type"),
+		(long_int_t, next_typed),
+		(long_int_t, next_untyped),
 		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
