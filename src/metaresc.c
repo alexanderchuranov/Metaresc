@@ -55,11 +55,11 @@ MR_TYPEDEF_DESC_BI (complex_float_t);
 MR_TYPEDEF_DESC_BI (complex_double_t);
 MR_TYPEDEF_DESC_BI (complex_long_double_t);
 
-/* MR_IC_NONE:        ( / 363893 11767.0) ratio: 30.92 */
-/* MR_IC_RBTREE:       ( / 82415 15641.0) ratio: 5.26  */
-/* MR_IC_SORTED_ARRAY: ( / 80284 15272.0) ratio: 5.25  */
-/* MR_IC_HASH_NEXT:    ( / 39304 30176.0) ratio: 1.30  */
-/* MR_IC_HASH_TREE:    ( / 38277 23013.0) ratio: 1.66  */
+/* MR_IC_NONE:        ( / 1000208 17280.0) ratio: 57.88 */
+/* MR_IC_RBTREE:       ( / 130017 19591.0) ratio: 6.63  */
+/* MR_IC_SORTED_ARRAY: ( / 102626 17535.0) ratio: 5.85  */
+/* MR_IC_HASH_NEXT:     ( / 33828 24834.0) ratio: 1.36  */
+/* MR_IC_HASH_TREE:     ( / 42154 32632.0) ratio: 1.29  */
 
 #define MR_IC_STATIC_DEFAULT MR_IC_HASH_NEXT
 

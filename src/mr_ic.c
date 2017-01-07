@@ -744,7 +744,7 @@ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
   int i;
 
   if (ic->hash_next.zero_key)
-    if (MR_SUCCESS != visit_fn (&zero, context))
+    if (MR_SUCCESS != visit_fn (zero, context))
       return (MR_FAILURE);
 
   for (i = hash->size / sizeof (hash->hash_table[0]) - 1; i >= 0; --i)

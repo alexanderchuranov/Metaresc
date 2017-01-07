@@ -18,9 +18,9 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-/* MR_IC_RBTREE   ( / 1001626 7396.0) ratio: 135.42 */
-/* MR_IC_HASH_NEXT ( / 237032 9368.0) ratio: 25.30 */
-/* MR_IC_HASH_TREE  ( / 51574 7396.0) ratio: 6.97 */
+/* MR_IC_RBTREE    ( / 372146 1671.0) ratio: 222.70 */
+/* MR_IC_HASH_NEXT ( / 139148 1671.0) ratio: 83.27 */
+/* MR_IC_HASH_TREE  ( / 28611 1671.0) ratio: 17.12 */
 
 #define MR_IC_DYNAMIC_DEFAULT MR_IC_HASH_TREE
 
