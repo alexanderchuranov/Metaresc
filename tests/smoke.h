@@ -107,7 +107,7 @@
     TCase * tcase = tcase_create ("mr_conf save/load");			\
     if (NULL == tcase)							\
       return (EXIT_FAILURE);						\
-    tcase_set_timeout (tcase, 3);					\
+    tcase_set_timeout (tcase, 0);					\
     tcase_add_test (tcase, mr_conf_save_load);				\
     tcase_add_test (tcase, test_performance);				\
     suite_add_tcase (suite, tcase);					\

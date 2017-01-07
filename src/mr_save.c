@@ -353,16 +353,20 @@ mr_check_ud (mr_ptr_t key, const void * context)
   const mr_check_ud_ctx_t * mr_check_ud_ctx = context;
   mr_save_data_t * mr_save_data = mr_check_ud_ctx->mr_save_data;
   mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.long_int_t];
-  mr_fd_t * fdp = mr_node_get_discriminator_fd (mr_save_data, mr_check_ud_ctx->node, ud->discriminator.str);
+  /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
+  char * discriminator = ud->discriminator.str;
+  char * type = ud->type.str;
+  mr_fd_t * ud_fdp = ud->fdp;
+  mr_fd_t * fdp = mr_node_get_discriminator_fd (mr_save_data, mr_check_ud_ctx->node, discriminator);
 
   /* here we check that union discriminator was resolved at the level of saved node.
      This means that resolution is not dependant on upper tree */
   if (NULL != fdp)
     return (MR_SUCCESS);
   /* otherwise we need to find union resolution in the context of new parent */
-  fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, ud->type.str, ud->discriminator.str);
+  fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, type, discriminator);
   
-  return ((fdp == ud->fdp) ? MR_SUCCESS : MR_FAILURE);
+  return ((fdp == ud_fdp) ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -419,6 +423,15 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data)
   return (find_result ? find_result->long_int_t : -1);
 }
 
+static mr_status_t
+register_type_name (mr_ptr_t key, const void * context)
+{
+  mr_td_t * tdp = key.ptr;
+  char ** type_name = (void*)context;
+  type_name[tdp->mr_type] = tdp->type.str;
+  return (MR_SUCCESS);
+}
+
 /**
  * Save scheduler. Save any object into internal representation.
  * @param data a pointer on data
@@ -428,8 +441,10 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data)
 static void
 mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
 {
-  /* add pointer on saving structure to list ptrs */
-  long_int_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs);
+  static char * type_name[] = { [0 ... MR_TYPE_LAST - 1] = NULL };
+  static bool initialized = FALSE;
+  
+  long_int_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   if (idx < 0)
     return; /* memory allocation error occured */
@@ -439,10 +454,24 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
   ra[idx].next_typed = -1;
   ra[idx].next_untyped = -1;
 
-  if ((MR_TYPE_EXT_POINTER != fdp->mr_type_ext)
-      && (MR_TYPE_UNION != fdp->mr_type)
-      && (MR_TYPE_FUNC != fdp->mr_type))
-    ra[idx].type = fdp->type;
+  if (!initialized)
+    {
+      mr_ic_foreach (&mr_conf.lookup_by_name, register_type_name, type_name);
+      type_name[MR_TYPE_STRUCT] = NULL;
+      type_name[MR_TYPE_ENUM] = NULL;
+      type_name[MR_TYPE_UNION] = NULL;
+      type_name[MR_TYPE_FUNC] = NULL;
+      type_name[MR_TYPE_FUNC_TYPE] = NULL;
+      initialized = TRUE;
+    }
+
+  if (MR_TYPE_EXT_NONE == fdp->mr_type_ext)
+    {
+      if ((MR_TYPE_STRUCT == fdp->mr_type) || (MR_TYPE_ENUM == fdp->mr_type))
+	ra[idx].type = fdp->type;
+      else
+	ra[idx].type = type_name[fdp->mr_type];
+    }
   
   if (MR_TYPE_EXT_ARRAY == fdp->mr_type_ext)
     ra[idx].MR_SIZE = fdp->size * fdp->param.array_param.count;
@@ -468,7 +497,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 	  if (MR_SUCCESS == status)
 	    {
 	      if ((MR_TYPE_EXT_POINTER == ra[parent].fd.mr_type_ext) ||
-		  (MR_TYPE_STRING == ra[parent].fd.mr_type))
+		  ((MR_TYPE_EXT_NONE == ra[parent].fd.mr_type_ext) && (MR_TYPE_STRING == ra[parent].fd.mr_type)))
 		{
 		  ra[parent].ref_idx = ref_idx;
 		  ra[ref_idx].flags.is_referenced = TRUE;
@@ -480,16 +509,17 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 		{
 		  int ref_parent = ra[ref_idx].parent;
 
-		  if ((ref_parent >= 0) &&
-		      ((MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext) ||
-		       (MR_TYPE_STRING == ra[ref_parent].fd.mr_type))
-		       )
+		  if ((ref_parent >= 0)
+		      && ((MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext) ||
+			  ((MR_TYPE_EXT_NONE == ra[ref_parent].fd.mr_type_ext) &&
+			   (MR_TYPE_STRING == ra[ref_parent].fd.mr_type))))
 		    {
 		      ra[ref_parent].ref_idx = ref_idx;
 		      ra[ref_parent].first_child = -1;
 		      ra[ref_parent].last_child = -1;
 		      ra[ref_idx].flags.is_referenced = TRUE;
 		      ra[ref_idx].fd.name = ra[idx].fd.name;
+		      ra[ref_idx].fd.unnamed = ra[idx].fd.unnamed;
       
 		      mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
 		      mr_ic_free (&mr_save_data->ptrs.ra[idx].union_discriminator);
