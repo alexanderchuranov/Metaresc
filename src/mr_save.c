@@ -437,6 +437,7 @@ register_type_name (mr_ptr_t key, const void * context)
  * @param data a pointer on data
  * @param fdp a ponter of field descriptor
  * @param mr_save_data save routines data and lookup structures
+ * @param parent index of parent node
  */
 static void
 mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
@@ -478,8 +479,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
   else
     ra[idx].MR_SIZE = fdp->size;
   
-  mr_ic_new (&ra[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
-
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx, &mr_save_data->ptrs);
   if ((NULL != search_result) && (search_result->long_int_t != idx))
@@ -501,7 +500,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 		{
 		  ra[parent].ref_idx = ref_idx;
 		  ra[ref_idx].flags.is_referenced = TRUE;
-		  mr_ic_free (&ra[idx].union_discriminator);
 		  mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
 		  return;
 		}
@@ -522,7 +520,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 		      ra[ref_idx].fd.unnamed = ra[idx].fd.unnamed;
       
 		      mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
-		      mr_ic_free (&mr_save_data->ptrs.ra[idx].union_discriminator);
 		      mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
 		      return;
 		    }
@@ -549,6 +546,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 	}
     }
   
+  mr_ic_new (&ra[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
+
   mr_add_child (parent, idx, &mr_save_data->ptrs);
 
   /* route saving handler */
