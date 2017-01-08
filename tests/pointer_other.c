@@ -164,4 +164,39 @@ MR_START_TEST (union_resolution_correctness, "test correctness of union resoluti
   ck_assert_msg (union_resolved_correctly, "Union resolved incorrectly");
 } END_TEST
 
+TYPEDEF_STRUCT (linked_list_ptr_t,
+		(struct linked_list_t *, ptr));
+
+TYPEDEF_STRUCT (linked_list_t,
+		(linked_list_ptr_t, next));
+
+TYPEDEF_STRUCT (root_struct_t,
+		(linked_list_ptr_t *, ll_ptr));
+
+MR_START_TEST (backward_ref_is_a_field, "Saved pointer is a field in struct") {
+  linked_list_t ll;
+  root_struct_t root_struct;
+  ll.next.ptr = &ll;
+  root_struct.ll_ptr = &ll.next;
+
+  mr_ra_ptrdes_t ptrs = MR_SAVE (root_struct_t, &root_struct);
+  int i;
+  bool pointer_resolved_correctly = true;
+  if (ptrs.ra != NULL)
+    {
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  int ref_idx = ptrs.ra[i].ref_idx;
+	  if ((ref_idx >= 0) &&
+	      (ptrs.ra[ref_idx].idx < 0))
+	    {
+	      pointer_resolved_correctly = false;
+	      break;
+	    }
+	}
+      MR_FREE (ptrs.ra);
+    }
+  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+} END_TEST
+
 MAIN ();
