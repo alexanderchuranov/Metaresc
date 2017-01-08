@@ -721,69 +721,6 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
     }
 }
 
-/**
- * Check if pointer points on data that could be saved and was not saved before
- * @param postpone flag for postponed saving
- * @param idx node index
- * @param mr_save_data save routines data and lookup structures
- */
-static void
-mr_save_pointer_postponed (int postpone, int idx, mr_save_data_t * mr_save_data)
-{
-  void ** data = mr_save_data->ptrs.ra[idx].data.ptr;
-
-  if (NULL == *data)
-    mr_save_data->ptrs.ra[idx].flags.is_null = TRUE; /* return empty node if pointer is NULL */
-  else
-    {
-      mr_type_t mr_type = mr_save_data->ptrs.ra[idx].fd.mr_type;
-
-      if (postpone)
-	{
-	  mr_ptrdes_t src, dst;
-	  /* at first attempt to save pointer we need to determine size of structure */
-	  if ((mr_type == MR_TYPE_NONE) || (mr_type == MR_TYPE_VOID))
-	    /* unserializable types will have zero size */
-	    mr_save_data->ptrs.ra[idx].MR_SIZE = 0;
-	  
-	  /* pointers might have assosiated field with the size for resizable arrays.
-	     name of the size field is stored in 'res' of field meta-data.
-	     'res_type' in this case will be 'char' */
-
-	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
-	  if (src.data.ptr != NULL)
-	    {
-	      dst.data.ptr = &mr_save_data->ptrs.ra[idx].MR_SIZE;
-	      dst.fd.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].MR_SIZE));
-	      dst.fd.mr_type_ext = MR_TYPE_EXT_NONE;
-	      mr_assign_int (&dst, &src);
-	    }
-	}
-      
-      if (0 == strcmp (mr_save_data->ptrs.ra[idx].fd.name.str, MR_OPAQUE_DATA_STR))
-	{
-	  if (mr_save_data->ptrs.ra[idx].MR_SIZE <= 0)
-	    mr_save_data->ptrs.ra[idx].flags.is_null = TRUE;
-	  else
-	    mr_save_data->ptrs.ra[idx].flags.is_opaque_data = TRUE;
-	}
-      else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
-	{
-	  if (postpone)
-	    {
-	      int * idx_ = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_idx,
-						       &mr_save_data->mr_ra_idx_size, &mr_save_data->mr_ra_idx_alloc_size, 
-						       sizeof (mr_save_data->mr_ra_idx[0]));
-	      if (NULL == idx_)
-		return;
-	      *idx_ = idx;
-	    }
-	  else
-	    mr_save_pointer_content (idx, mr_save_data);
-	}
-    }
-}
-
 mr_status_t
 mr_ptrs_ds (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
 {
@@ -884,8 +821,51 @@ mr_post_process (mr_save_data_t * mr_save_data)
 static void
 mr_save_pointer (mr_save_data_t * mr_save_data)
 {
-  mr_save_pointer_postponed (!0, mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1, mr_save_data);
-}
+  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  void ** data = mr_save_data->ptrs.ra[idx].data.ptr;
+
+  if (NULL == *data)
+    mr_save_data->ptrs.ra[idx].flags.is_null = TRUE; /* return empty node if pointer is NULL */
+  else
+    {
+      mr_type_t mr_type = mr_save_data->ptrs.ra[idx].fd.mr_type;
+      mr_ptrdes_t src, dst;
+      /* at first attempt to save pointer we need to determine size of structure */
+      if ((mr_type == MR_TYPE_NONE) || (mr_type == MR_TYPE_VOID))
+	/* unserializable types will have zero size */
+	mr_save_data->ptrs.ra[idx].MR_SIZE = 0;
+      
+      /* pointers might have assosiated field with the size for resizable arrays.
+	 name of the size field is stored in 'res' of field meta-data.
+	 'res_type' in this case will be 'char' */
+      
+      mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
+      if (src.data.ptr != NULL)
+	{
+	  dst.data.ptr = &mr_save_data->ptrs.ra[idx].MR_SIZE;
+	  dst.fd.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].MR_SIZE));
+	  dst.fd.mr_type_ext = MR_TYPE_EXT_NONE;
+	  mr_assign_int (&dst, &src);
+	}
+      
+      if (0 == strcmp (mr_save_data->ptrs.ra[idx].fd.name.str, MR_OPAQUE_DATA_STR))
+	{
+	  if (mr_save_data->ptrs.ra[idx].MR_SIZE <= 0)
+	    mr_save_data->ptrs.ra[idx].flags.is_null = TRUE;
+	  else
+	    mr_save_data->ptrs.ra[idx].flags.is_opaque_data = TRUE;
+	}
+      else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
+	{
+	  int * idx_ = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_idx,
+						   &mr_save_data->mr_ra_idx_size, &mr_save_data->mr_ra_idx_alloc_size, 
+						   sizeof (mr_save_data->mr_ra_idx[0]));
+	  if (NULL == idx_)
+	    return;
+	  *idx_ = idx;
+	}
+    }
+}  
 
 /**
  * Public function. Calls save scheduler and frees lookup tables.
@@ -916,8 +896,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   while (mr_save_data->mr_ra_idx_size > 0)
     {
       mr_save_data->mr_ra_idx_size -= sizeof (mr_save_data->mr_ra_idx[0]);
-      mr_save_pointer_postponed (0, mr_save_data->mr_ra_idx[mr_save_data->mr_ra_idx_size / sizeof (mr_save_data->mr_ra_idx[0])],
-				 mr_save_data);
+      mr_save_pointer_content (mr_save_data->mr_ra_idx[mr_save_data->mr_ra_idx_size / sizeof (mr_save_data->mr_ra_idx[0])], mr_save_data);
     }
   mr_post_process (mr_save_data);
   
