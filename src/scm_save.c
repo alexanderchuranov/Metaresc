@@ -318,7 +318,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
   while (idx >= 0)
     {
       mr_fd_t * fdp = &ptrs->ra[idx].fd;
-      int level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
+      int level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
       int named_node = MR_SCM_UNNAMED_FIELDS;
       int parent = ptrs->ra[idx].parent;
       char * content = NULL;

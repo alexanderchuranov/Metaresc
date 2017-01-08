@@ -352,12 +352,18 @@ TYPEDEF_STRUCT (mr_res_t,
 		(ssize_t, MR_SIZE, , "size of data"),
 		)
 
+TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
+		(int, level, , "level from the root element"),
+		(long_int_t, next_typed, , "linked list of nodes with same type and pointer"),
+		(long_int_t, next_untyped, , "linked list of nodes with same pointer"),
+		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
+		)
+
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptr_t, data, , "type"),
 		(char *, type, , "copy of fd.type for all basic types and structures"),
 		(ssize_t, MR_SIZE, , "size of dynamic array"),
 		(mr_fd_t, fd, , "field descriptor"),
-		(int, level, , "level from the root element"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
@@ -367,16 +373,14 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, next, , "next sibling index"),
 		(mr_ptrdes_flags_t, flags),
 		ANON_UNION (type_specific),
-		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
-		(mr_value_t, mr_value),
+		(mr_save_params_t, save_params, , "attributes specific for saving"),
+		(mr_value_t, mr_value, , "attributes specific for loading"),
 		END_ANON_UNION ("ptrdes_type"),
-		(long_int_t, next_typed),
-		(long_int_t, next_untyped),
 		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
 TYPEDEF_ENUM (mr_ptrdes_type_t,
-	      (MR_PD_SAVE, , "union_discriminator"),
+	      (MR_PD_SAVE, , "save_params"),
 	      (MR_PD_LOAD, , "mr_value"),
 	      )
 

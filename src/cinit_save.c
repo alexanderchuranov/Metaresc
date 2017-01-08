@@ -429,9 +429,9 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, mr_
       skip_node = node_handler (fdp, idx, ptrs, &save_data);
       if (!skip_node)
 	{
-	  level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
+	  level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
 
-	  if (ptrs->ra[idx].level > 0)
+	  if (ptrs->ra[idx].save_params.level > 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 	      return (NULL);
 
@@ -470,7 +470,7 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, mr_
 	{
 	  if (save_data.suffix)
 	    {
-	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
+	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
 	      if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 		return (NULL);
 	      if (mr_ra_printf (&mr_ra_str, "%s", save_data.suffix) < 0)
@@ -484,7 +484,7 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, mr_
 	      idx = ptrs->ra[idx].parent;
 	      if (ptrs->ra[idx].res.data.ptr)
 		{
-		  level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
+		  level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
 		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 		    return (NULL);
 		  if (mr_ra_printf (&mr_ra_str, "%s", (char*)ptrs->ra[idx].res.data.ptr) < 0)

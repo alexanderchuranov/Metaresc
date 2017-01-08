@@ -179,7 +179,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 	void * discriminator_ptr;
 
 	/* checks if this parent already have union resolution info */
-	ud_find = mr_ic_find (&mr_save_data->ptrs.ra[parent].union_discriminator, ud_idx, mr_save_data);
+	ud_find = mr_ic_find (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, ud_idx, mr_save_data);
 	/* break the traverse loop if it has */
 	if (ud_find)
 	  break;
@@ -213,7 +213,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
     if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra[idx].fd.mr_type_ext)
-      if (NULL == mr_ic_add (&mr_save_data->ptrs.ra[idx].union_discriminator, *ud_find, mr_save_data))
+      if (NULL == mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find, mr_save_data))
 	break;
 
   return (fdp);
@@ -464,8 +464,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 
   ra[idx].data.ptr = data;
   ra[idx].fd = *fdp;
-  ra[idx].next_typed = -1;
-  ra[idx].next_untyped = -1;
+  ra[idx].save_params.next_typed = -1;
+  ra[idx].save_params.next_untyped = -1;
 
   if (!initialized)
     {
@@ -496,7 +496,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
   if ((NULL != search_result) && (search_result->long_int_t != idx))
     {
       long_int_t ref_idx;
-      for (ref_idx = search_result->long_int_t; ref_idx >= 0; ref_idx = ra[ref_idx].next_typed)
+      for (ref_idx = search_result->long_int_t; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
 	{
 	  mr_check_ud_ctx_t mr_check_ud_ctx = {
 	    .mr_save_data = mr_save_data,
@@ -504,7 +504,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 	    .parent = parent,
 	  };
 	  
-	  mr_status_t status = mr_ic_foreach (&ra[ref_idx].union_discriminator, mr_check_ud, &mr_check_ud_ctx);
+	  mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
 	  if (MR_SUCCESS == status)
 	    {
 	      if ((MR_TYPE_EXT_POINTER == ra[parent].fd.mr_type_ext) ||
@@ -540,7 +540,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 	    }
 	}
 
-      mr_save_data->ptrs.ra[idx].next_typed = search_result->long_int_t;
+      mr_save_data->ptrs.ra[idx].save_params.next_typed = search_result->long_int_t;
       search_result->long_int_t = idx;
     }
 
@@ -549,17 +549,17 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
     {
       if (mr_save_data->ptrs.ra[idx].MR_SIZE > mr_save_data->ptrs.ra[search_result->long_int_t].MR_SIZE)
 	{
-	  mr_save_data->ptrs.ra[idx].next_untyped = search_result->long_int_t;
+	  mr_save_data->ptrs.ra[idx].save_params.next_untyped = search_result->long_int_t;
 	  search_result->long_int_t = idx;
 	}
       else
 	{
-	  mr_save_data->ptrs.ra[idx].next_untyped = mr_save_data->ptrs.ra[search_result->long_int_t].next_untyped;
-	  mr_save_data->ptrs.ra[search_result->long_int_t].next_untyped = idx;
+	  mr_save_data->ptrs.ra[idx].save_params.next_untyped = mr_save_data->ptrs.ra[search_result->long_int_t].save_params.next_untyped;
+	  mr_save_data->ptrs.ra[search_result->long_int_t].save_params.next_untyped = idx;
 	}
     }
   
-  mr_ic_new (&ra[idx].union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
+  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
 
   mr_add_child (parent, idx, &mr_save_data->ptrs);
 
@@ -820,9 +820,9 @@ mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
   int parent = mr_save_data->ptrs.ra[idx].parent;
 
   if (parent < 0)
-    mr_save_data->ptrs.ra[idx].level = 0;
+    mr_save_data->ptrs.ra[idx].save_params.level = 0;
   else
-    mr_save_data->ptrs.ra[idx].level = mr_save_data->ptrs.ra[parent].level + 1;
+    mr_save_data->ptrs.ra[idx].save_params.level = mr_save_data->ptrs.ra[parent].save_params.level + 1;
 
   if ((MR_TYPE_EXT_POINTER == mr_save_data->ptrs.ra[idx].fd.mr_type_ext) &&
       ((MR_TYPE_NONE == mr_save_data->ptrs.ra[idx].fd.mr_type) || (MR_TYPE_VOID == mr_save_data->ptrs.ra[idx].fd.mr_type)) &&
@@ -922,7 +922,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_post_process (mr_save_data);
   
   for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
-    mr_ic_free (&mr_save_data->ptrs.ra[i].union_discriminator);
+    mr_ic_free (&mr_save_data->ptrs.ra[i].save_params.union_discriminator);
 
   if (mr_save_data->mr_ra_ud != NULL)
     MR_FREE (mr_save_data->mr_ra_ud);

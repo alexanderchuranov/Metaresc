@@ -347,7 +347,7 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
       else
 	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
-      level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
+      level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
       empty_tag = (ptrs->ra[idx].first_child < 0) && ((NULL == content) || (0 == content[0]));
       if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].fd.name.str) < 0)
 	return (NULL);
@@ -386,7 +386,7 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra[idx].parent;
-	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].level);
+	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
 	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].fd.name.str) < 0)
 		return (NULL);
 	    }
