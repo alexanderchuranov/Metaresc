@@ -432,6 +432,18 @@ register_type_name (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
+static bool
+ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
+{
+  while (node >= 0)
+    {
+      if (node == ref_idx)
+	return (TRUE);
+      node = ra[node].parent;
+    }
+  return (FALSE);
+}
+
 /**
  * Save scheduler. Save any object into internal representation.
  * @param data a pointer on data
@@ -510,7 +522,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
 		  if ((ref_parent >= 0)
 		      && ((MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext) ||
 			  ((MR_TYPE_EXT_NONE == ra[ref_parent].fd.mr_type_ext) &&
-			   (MR_TYPE_STRING == ra[ref_parent].fd.mr_type))))
+			   (MR_TYPE_STRING == ra[ref_parent].fd.mr_type)))
+		      && !ref_is_parent (ra, parent, ref_idx))
 		    {
 		      ra[ref_parent].ref_idx = ref_idx;
 		      ra[ref_parent].first_child = -1;
