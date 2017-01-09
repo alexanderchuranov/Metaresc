@@ -701,24 +701,15 @@ static void
 mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 {
   char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
-  int count = 1;
+  int count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].fd.size;
+  mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
+  int i;
 
-  if (mr_save_data->ptrs.ra[idx].fd.size != 0)
-    count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].fd.size;
-  
-  /* add each array element to this node */
-  if (count <= 0)
-    mr_save_data->ptrs.ra[idx].flags.is_null = TRUE; /* return empty node if pointer is NULL */
-  else
-    {
-      int i;
-      mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
-      fd_.mr_type_ext = MR_TYPE_EXT_NONE;
-      fd_.unnamed = TRUE;
+  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+  fd_.unnamed = TRUE;
       
-      for (i = 0; i < count; ++i)
-	mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
-    }
+  for (i = 0; i < count; ++i)
+    mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
 }
 
 mr_status_t
@@ -855,6 +846,8 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
 	  else
 	    mr_save_data->ptrs.ra[idx].flags.is_opaque_data = TRUE;
 	}
+      else if ((0 == mr_save_data->ptrs.ra[idx].fd.size) || (mr_save_data->ptrs.ra[idx].MR_SIZE < mr_save_data->ptrs.ra[idx].fd.size))
+	mr_save_data->ptrs.ra[idx].flags.is_null = TRUE;
       else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
 	{
 	  int * idx_ = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_idx,
