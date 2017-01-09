@@ -173,30 +173,32 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 
   /* traverse through parents up to root node */
   for (parent = node; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
-    if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra[parent].fd.mr_type_ext)
-      {
-	mr_fd_t * parent_fdp;
-	void * discriminator_ptr;
+    {
+      mr_fd_t * parent_fdp;
+      void * discriminator_ptr;
 
-	/* checks if this parent already have union resolution info */
-	ud_find = mr_ic_find (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, ud_idx, mr_save_data);
-	/* break the traverse loop if it has */
-	if (ud_find)
-	  break;
-
-	parent_fdp = mr_node_get_discriminator_fd (mr_save_data, parent, ud->discriminator.str);
-	if (NULL == parent_fdp)
-	  continue;
-	/* get an address of discriminator field */
-	discriminator_ptr = (char*)mr_save_data->ptrs.ra[parent].data.ptr + parent_fdp->offset;
-
-	/* if discriminator is a pointer then we need address of the content */
-	if (MR_TYPE_EXT_POINTER == parent_fdp->mr_type_ext)
-	  discriminator_ptr = *(void**)discriminator_ptr;
-
-	fdp = mr_union_discriminator_by_type (tdp, parent_fdp, discriminator_ptr);
+      /* checks if this parent already have union resolution info */
+      ud_find = mr_ic_find (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, ud_idx, mr_save_data);
+      /* break the traverse loop if it has */
+      if (ud_find)
 	break;
-      }
+
+      if (MR_TYPE_EXT_NONE != mr_save_data->ptrs.ra[parent].fd.mr_type_ext)
+	continue;
+      
+      parent_fdp = mr_node_get_discriminator_fd (mr_save_data, parent, ud->discriminator.str);
+      if (NULL == parent_fdp)
+	continue;
+      /* get an address of discriminator field */
+      discriminator_ptr = (char*)mr_save_data->ptrs.ra[parent].data.ptr + parent_fdp->offset;
+
+      /* if discriminator is a pointer then we need address of the content */
+      if (MR_TYPE_EXT_POINTER == parent_fdp->mr_type_ext)
+	discriminator_ptr = *(void**)discriminator_ptr;
+
+      fdp = mr_union_discriminator_by_type (tdp, parent_fdp, discriminator_ptr);
+      break;
+    }
 
   if (NULL != ud_find)
     fdp = mr_save_data->mr_ra_ud[ud_find->long_int_t].fdp; /* union discriminator info was found in some of the parents */
@@ -212,9 +214,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
-    if (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra[idx].fd.mr_type_ext)
-      if (NULL == mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find, mr_save_data))
-	break;
+    mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find, mr_save_data);
+  mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find, mr_save_data);
 
   return (fdp);
 }
