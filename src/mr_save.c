@@ -210,12 +210,12 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
       ud->fdp = fdp;
       ud_find = &ud_idx;
+      mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find, mr_save_data);
     }
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
     mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find, mr_save_data);
-  mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find, mr_save_data);
 
   return (fdp);
 }
