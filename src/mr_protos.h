@@ -211,13 +211,17 @@ TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers fo
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
 
+TYPEDEF_STRUCT (mr_ic_hash_virt_func_t, ATTRIBUTES ( , "virtual functions table for hashed collections"),
+		(mr_ptr_t *, index_add, (struct mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
+		(void, index_free, (struct mr_ic_t * /* ic */)),
+		)
+
 TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(int, items_count),
 		(ssize_t, size, , "size of hash table"),
 		(char *, bucket_type),
 		(mr_hash_fn_t, hash_fn),
-		(mr_ptr_t *, index_add, (struct mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
-		(void, index_free, (struct mr_ic_t * /* ic */)),
+		(mr_ic_hash_virt_func_t *, virt_func),
 		/* resizable array for hash table sized by field 'size'
 		   mr_ptr_t typed by 'bucket_type' */
 		(mr_ptr_t *, hash_table, , "bucket_type", { .offset = offsetof (mr_ic_hash_t, size) }, "offset"),
@@ -231,7 +235,11 @@ TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "extend mr_ic_hash_t with fiel
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
+		(mr_compar_fn_t, compar_fn),
+		(struct mr_ic_virt_func_t *, virt_func),
 
+		(char *, ext_type, , "type specifier for extended IC types"),
+		
 		ANON_UNION (type_specific),
 		(mr_ptr_t, ext, , "ext_type"),
 		(mr_ic_rarray_t, rarray),
@@ -239,9 +247,9 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_hash_t, hash),
 		(mr_ic_hash_next_t, hash_next),
 		END_ANON_UNION ("ic_type"),
-		(char *, ext_type, , "type specifier for extended IC types"),
-		
-		(mr_compar_fn_t, compar_fn),
+		)
+
+TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for indexed collections"),
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_status_t, del, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),

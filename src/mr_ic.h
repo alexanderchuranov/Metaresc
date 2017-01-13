@@ -58,74 +58,57 @@ extern mr_status_t mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_c
 static inline mr_status_t
 mr_ic_del (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  if (NULL == ic)
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->del))
     return (MR_FAILURE);
-  if (ic->del)
-    return (ic->del (ic, key, context));
-  return (MR_FAILURE);
+  return (ic->virt_func->del (ic, key, context));
 }
 
 static inline mr_ptr_t *
 mr_ic_find (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  if (NULL == ic)
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->find))
     return (NULL);
-  if (ic->find)
-    return (ic->find (ic, key, context));
-  return (NULL);
+  return (ic->virt_func->find (ic, key, context));
 }
 
 static inline mr_ptr_t *
 mr_ic_add (mr_ic_t * ic, mr_ptr_t key, const void * context)
 {
-  if (NULL == ic)
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->add))
     return (NULL);
-  if (ic->add)
-    return (ic->add (ic, key, context));
-  return (NULL);
+  return (ic->virt_func->add (ic, key, context));
 }
 
 static inline mr_status_t
 mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
-  if ((NULL == ic) || (NULL == visit_fn))
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->foreach) || (NULL == visit_fn))
     return (MR_FAILURE);
-  if (ic->foreach)
-    return (ic->foreach (ic, visit_fn, context));
-  return (MR_FAILURE);
+  return (ic->virt_func->foreach (ic, visit_fn, context));
 }
 
 static inline mr_status_t
 mr_ic_index (mr_ic_t * ic, mr_ic_rarray_t * rarray, const void * context)
 {
-  int i, count;
-  if ((NULL == ic) || (NULL == rarray))
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->index) || (NULL == rarray))
     return (MR_FAILURE);
-  if (ic->index)
-    return (ic->index (ic, rarray, context));
-  count = rarray->size / sizeof (rarray->ra[0]);
-  for (i = 0; i < count; ++i)
-    if (NULL == mr_ic_add (ic, rarray->ra[i], context))
-      return (MR_FAILURE);
-  return (MR_SUCCESS);
+  return (ic->virt_func->index (ic, rarray, context));
 }
 
 static inline void
 mr_ic_reset (mr_ic_t * ic)
 {
-  if (NULL == ic)
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->reset))
     return;
-  if (ic->reset)
-    ic->reset (ic);
+  ic->virt_func->reset (ic);
 }
 
 static inline void
 mr_ic_free (mr_ic_t * ic)
 {
-  if (NULL == ic)
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->free))
     return;
-  if (ic->free)
-    ic->free (ic);
+  ic->virt_func->free (ic);
 }
 
 static inline mr_status_t
