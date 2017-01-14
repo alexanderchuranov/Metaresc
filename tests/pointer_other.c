@@ -199,4 +199,40 @@ MR_START_TEST (backward_ref_is_a_field, "Saved pointer is a field in struct") {
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
+TYPEDEF_STRUCT (two_dynamic_arrays_t,
+		(int *, da1, , "dynamic array one", { .offset = offsetof (two_dynamic_arrays_t, size1), }, "offset"),
+		(ssize_t, size1),
+		(int *, da2, , "dynamic array two", { .offset = offsetof (two_dynamic_arrays_t, size2), }, "offset"),
+		(ssize_t, size2),
+		);
+
+MR_START_TEST (tda_same_ptr_and_size, "Two dynamic arrays with same pointers and size") {
+  two_dynamic_arrays_t tda;
+  int array[2];
+
+  tda.da1 = array;
+  tda.size1 = sizeof (array);
+  tda.da2 = array;
+  tda.size2 = sizeof (array);
+  
+  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
+  int i;
+  bool pointer_resolved_correctly = true;
+  if (ptrs.ra != NULL)
+    {
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  int ref_idx = ptrs.ra[i].ref_idx;
+	  if ((ref_idx >= 0) &&
+	      (ptrs.ra[ref_idx].prev >= 0))
+	    {
+	      pointer_resolved_correctly = false;
+	      break;
+	    }
+	}
+      MR_FREE (ptrs.ra);
+    }
+  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+} END_TEST
+
 MAIN ();
