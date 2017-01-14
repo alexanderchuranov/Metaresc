@@ -445,6 +445,55 @@ ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
   return (FALSE);
 }
 
+static int
+resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
+{
+  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  
+  for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
+    {
+      mr_check_ud_ctx_t mr_check_ud_ctx = {
+	.mr_save_data = mr_save_data,
+	.node = ref_idx,
+	.parent = parent,
+      };
+	  
+      mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
+      if (MR_SUCCESS == status)
+	{
+	  if ((MR_TYPE_EXT_POINTER == ra[parent].fd.mr_type_ext) ||
+	      ((MR_TYPE_EXT_NONE == ra[parent].fd.mr_type_ext) && (MR_TYPE_STRING == ra[parent].fd.mr_type)))
+	    {
+	      ra[parent].ref_idx = ref_idx;
+	      ra[ref_idx].flags.is_referenced = TRUE;
+	      return (0);
+	    }
+	  else
+	    {
+	      int ref_parent = ra[ref_idx].parent;
+
+	      if ((ref_parent >= 0)
+		  && ((MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext) ||
+		      ((MR_TYPE_EXT_NONE == ra[ref_parent].fd.mr_type_ext) &&
+		       (MR_TYPE_STRING == ra[ref_parent].fd.mr_type)))
+		  && !ref_is_parent (ra, parent, ref_idx))
+		{
+		  ra[ref_parent].ref_idx = ref_idx;
+		  ra[ref_parent].first_child = -1;
+		  ra[ref_parent].last_child = -1;
+		  ra[ref_idx].flags.is_referenced = TRUE;
+		  ra[ref_idx].fd.name = fdp->name;
+		  ra[ref_idx].fd.unnamed = fdp->unnamed;
+      
+		  mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
+		  return (1);
+		}
+	    }
+	}
+    }
+  return (-1);
+}  
+
 /**
  * Save scheduler. Save any object into internal representation.
  * @param data a pointer on data
@@ -452,7 +501,7 @@ ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
  * @param mr_save_data save routines data and lookup structures
  * @param parent index of parent node
  */
-static void
+static int
 mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
 {
   static char * type_name[] = { [0 ... MR_TYPE_LAST - 1] = NULL };
@@ -461,7 +510,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
   long_int_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   if (idx < 0)
-    return; /* memory allocation error occured */
+    return (0); /* memory allocation error occured */
 
   ra[idx].data.ptr = data;
   ra[idx].fd = *fdp;
@@ -496,49 +545,11 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx, &mr_save_data->ptrs);
   if ((NULL != search_result) && (search_result->long_int_t != idx))
     {
-      long_int_t ref_idx;
-      for (ref_idx = search_result->long_int_t; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
+      int nodes_matched = resolve_matched (search_result->long_int_t, fdp, mr_save_data, parent);
+      if (nodes_matched >= 0)
 	{
-	  mr_check_ud_ctx_t mr_check_ud_ctx = {
-	    .mr_save_data = mr_save_data,
-	    .node = ref_idx,
-	    .parent = parent,
-	  };
-	  
-	  mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
-	  if (MR_SUCCESS == status)
-	    {
-	      if ((MR_TYPE_EXT_POINTER == ra[parent].fd.mr_type_ext) ||
-		  ((MR_TYPE_EXT_NONE == ra[parent].fd.mr_type_ext) && (MR_TYPE_STRING == ra[parent].fd.mr_type)))
-		{
-		  ra[parent].ref_idx = ref_idx;
-		  ra[ref_idx].flags.is_referenced = TRUE;
-		  mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-		  return;
-		}
-	      else
-		{
-		  int ref_parent = ra[ref_idx].parent;
-
-		  if ((ref_parent >= 0)
-		      && ((MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext) ||
-			  ((MR_TYPE_EXT_NONE == ra[ref_parent].fd.mr_type_ext) &&
-			   (MR_TYPE_STRING == ra[ref_parent].fd.mr_type)))
-		      && !ref_is_parent (ra, parent, ref_idx))
-		    {
-		      ra[ref_parent].ref_idx = ref_idx;
-		      ra[ref_parent].first_child = -1;
-		      ra[ref_parent].last_child = -1;
-		      ra[ref_idx].flags.is_referenced = TRUE;
-		      ra[ref_idx].fd.name = ra[idx].fd.name;
-		      ra[ref_idx].fd.unnamed = ra[idx].fd.unnamed;
-      
-		      mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
-		      mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-		      return;
-		    }
-		}
-	    }
+	  mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
+	  return (nodes_matched);
 	}
 
       mr_save_data->ptrs.ra[idx].save_params.next_typed = search_result->long_int_t;
@@ -569,6 +580,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
     ext_mr_save_handler[fdp->mr_type_ext] (mr_save_data);
   else if ((fdp->mr_type < MR_TYPE_LAST) && mr_save_handler[fdp->mr_type])
     mr_save_handler[fdp->mr_type] (mr_save_data);
+
+  return (1);
 }
 
 /**
@@ -678,7 +691,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
-  int i;
+  int i = 0;
 
   fd_.unnamed = TRUE;
   if (1 == fd_.param.array_param.row_count)
@@ -688,9 +701,11 @@ mr_save_array (mr_save_data_t * mr_save_data)
       fd_.param.array_param.count = row_count;
       fd_.param.array_param.row_count = 1;
     }
-  /* add each array element to this node */
-  for (i = 0; i < count; i += row_count)
-    mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, idx);
+
+  do {
+    int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, idx);
+    i += nodes_added * row_count;
+  } while (i < count);
 }
 
 /**
@@ -704,13 +719,19 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
   int count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].fd.size;
   mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
-  int i;
+  int i = 0;
 
   fd_.mr_type_ext = MR_TYPE_EXT_NONE;
   fd_.unnamed = TRUE;
+  fd_.param.array_param.count = count;
+  fd_.param.array_param.row_count = 1;
       
-  for (i = 0; i < count; ++i)
-    mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
+  do {
+    int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
+    if (0 == nodes_added)
+      break;
+    i += nodes_added;
+  } while (i < count);
 }
 
 mr_status_t
