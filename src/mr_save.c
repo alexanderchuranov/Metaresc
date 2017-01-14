@@ -461,12 +461,52 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
       mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
       if (MR_SUCCESS == status)
 	{
-	  if ((MR_TYPE_EXT_POINTER == ra[parent].fd.mr_type_ext) ||
-	      ((MR_TYPE_EXT_NONE == ra[parent].fd.mr_type_ext) && (MR_TYPE_STRING == ra[parent].fd.mr_type)))
+	  if (((MR_TYPE_EXT_NONE == ra[parent].fd.mr_type_ext) && (MR_TYPE_STRING == ra[parent].fd.mr_type)))
 	    {
 	      ra[parent].ref_idx = ref_idx;
 	      ra[ref_idx].flags.is_referenced = TRUE;
 	      return (0);
+	    }
+	  else if (MR_TYPE_EXT_POINTER == ra[parent].fd.mr_type_ext)
+	    {
+	      if (ra[parent].first_child < 0) /* this is the first element in resizable array */
+		{
+		  int ref_parent = ra[ref_idx].parent;
+		  if (fdp->param.array_param.count <= ra[ref_idx].fd.param.array_param.count)
+		    {
+		      /* new resizable pointer is a part of already saved */
+		      ra[parent].ref_idx = ref_idx;
+		      ra[ref_idx].flags.is_referenced = TRUE;
+		      return (0);
+		    }
+		  /* otherwise we can handle only match with another resizable pointer */
+		  if (MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext)
+		    {
+		      if (ra[ref_idx].prev < 0)
+			{
+			  int count;
+			  /*
+			    previously saved resizable pointer was pointing to the same address, but was shorter.
+			    we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
+			  */
+			  ra[ref_parent].ref_idx = ref_idx;
+			  ra[ref_parent].first_child = -1;
+			  ra[ref_parent].last_child = -1;
+			  ra[ref_idx].flags.is_referenced = TRUE;
+      
+			  for (count = 0; ref_idx >= 0; ++count)
+			    {
+			      int next = ra[ref_idx].next;
+			      ra[ref_idx].fd.name = fdp->name;
+			      ra[ref_idx].fd.unnamed = fdp->unnamed;
+			      ra[ref_idx].fd.param.array_param.count = fdp->param.array_param.count - count;
+			      mr_add_child (parent, ref_idx, ra);
+			      ref_idx = next;
+			    }
+			  return (count);
+			}
+		    }
+		}
 	    }
 	  else
 	    {
@@ -691,7 +731,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
-  int i = 0;
+  int i;
 
   fd_.unnamed = TRUE;
   if (1 == fd_.param.array_param.row_count)
@@ -702,10 +742,13 @@ mr_save_array (mr_save_data_t * mr_save_data)
       fd_.param.array_param.row_count = 1;
     }
 
-  do {
-    int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, idx);
-    i += nodes_added * row_count;
-  } while (i < count);
+  for (i = 0; i < count; )
+    {
+      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, idx);
+      if (1 == row_count)
+	fd_.param.array_param.count -= nodes_added;
+      i += nodes_added * row_count;
+    }
 }
 
 /**
@@ -719,19 +762,21 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
   int count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].fd.size;
   mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
-  int i = 0;
+  int i;
 
   fd_.mr_type_ext = MR_TYPE_EXT_NONE;
   fd_.unnamed = TRUE;
   fd_.param.array_param.count = count;
   fd_.param.array_param.row_count = 1;
       
-  do {
-    int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
-    if (0 == nodes_added)
-      break;
-    i += nodes_added;
-  } while (i < count);
+  for (i = 0; i< count; )
+    {
+      int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
+      if (0 == nodes_added)
+	break;
+      fd_.param.array_param.count -= nodes_added;
+      i += nodes_added;
+    }
 }
 
 mr_status_t
