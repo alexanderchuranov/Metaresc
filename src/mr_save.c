@@ -550,38 +550,23 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 		  /* we can handle only match with another resizable pointer */
 		  if (MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext)
 		    {
-		      int count, max_count;
+		      int count;
 		      /*
 			in the middle of saving of resizable pointer we matched another resizable pointer
 			we need to append all nodes from found resizable pointer to new one and
 			adjust counters if total length of sequence increased
 		      */
-		      ra[ref_parent].ref_idx = ref_idx;
-		      ra[ref_parent].first_child = -1;
-		      ra[ref_parent].last_child = -1;
-		      ra[ref_idx].flags.is_referenced = TRUE;
 
-		      if (fdp->param.array_param.count >= ra[ref_idx].fd.param.array_param.count)
-			max_count = fdp->param.array_param.count;
-		      else
+		      if (fdp->param.array_param.count < ra[ref_idx].fd.param.array_param.count)
 			{
 			  int idx;
-			  max_count = ra[ref_idx].fd.param.array_param.count;
+			  fdp->param.array_param.count = ra[ref_idx].fd.param.array_param.count;
 			  count = 0;
 			  for (idx = ra[parent].first_child; idx >= 0; idx = ra[idx].next)
-			    ra[idx].fd.param.array_param.count = max_count - count++;
+			    ra[idx].fd.param.array_param.count = fdp->param.array_param.count - count++;
 			}
-      
-		      for (count = 0; ref_idx >= 0; ++count)
-			{
-			  int next = ra[ref_idx].next;
-			  ra[ref_idx].fd.name = fdp->name;
-			  ra[ref_idx].fd.unnamed = fdp->unnamed;
-			  ra[ref_idx].fd.param.array_param.count = max_count - count;
-			  mr_add_child (parent, ref_idx, ra);
-			  ref_idx = next;
-			}
-		      return (count);
+
+		      return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
 		    }
 		}
 	    }
