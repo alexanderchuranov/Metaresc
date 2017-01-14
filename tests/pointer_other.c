@@ -264,4 +264,32 @@ MR_START_TEST (tda_same_ptr_and_bigger, "Two dynamic arrays with same pointers a
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
+MR_START_TEST (tda_overlapping_1, "Two overlaping dynamic arrays. Lower pointer saved first") {
+  two_dynamic_arrays_t tda;
+  int array[3] = { 1, 2, 3, };
+
+  tda.da1 = &array[1];
+  tda.size1 = 2 * sizeof (array[0]);
+  tda.da2 = array;
+  tda.size2 = 2 * sizeof (array[0]);
+  
+  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
+  int i;
+  bool pointer_resolved_correctly = false;
+  if (ptrs.ra != NULL)
+    {
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  int ref_idx = ptrs.ra[i].ref_idx;
+	  if (ref_idx >= 0)
+	    {
+	      pointer_resolved_correctly = true;
+	      break;
+	    }
+	}
+      MR_FREE (ptrs.ra);
+    }
+  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+} END_TEST
+
 MAIN ();
