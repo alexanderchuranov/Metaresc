@@ -282,7 +282,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   
   ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fd = *fdp;
-  mr_add_child (parent, idx, ptrs);
+  mr_add_child (parent, idx, ptrs->ra);
 
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xdr_load_handler[fdp->mr_type_ext])
     status = ext_xdr_load_handler[fdp->mr_type_ext] (xdrs, idx, ptrs);

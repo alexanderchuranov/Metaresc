@@ -1199,7 +1199,7 @@ extern bool mr_is_valid_field_name (char * name);
 extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs);
 extern void mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs);
 extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
-extern void mr_add_child (int parent, int child, mr_ra_ptrdes_t * ptrs);
+extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t ptrs);

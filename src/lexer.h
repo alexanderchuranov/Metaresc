@@ -38,7 +38,7 @@ static inline int mr_parse_add_node (mr_load_t * mr_load)
   int idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (idx < 0)
     return (idx);
-  mr_add_child (mr_load->parent, idx, mr_load->ptrs);
+  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
   return (idx);
 }
 

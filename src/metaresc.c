@@ -458,27 +458,27 @@ mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizable array with pointers descriptors
  */
 void
-mr_add_child (int parent, int child, mr_ra_ptrdes_t * ptrs)
+mr_add_child (int parent, int child, mr_ptrdes_t * ra)
 {
   int last_child;
 
   if (child < 0)
     return;
 
-  ptrs->ra[child].parent = parent;
+  ra[child].parent = parent;
   if (parent < 0)
     return;
 
-  last_child = ptrs->ra[parent].last_child;
+  last_child = ra[parent].last_child;
   if (last_child < 0)
-    ptrs->ra[parent].first_child = child;
+    ra[parent].first_child = child;
   else
     {
-      ptrs->ra[last_child].next = child;
-      ptrs->ra[child].prev = last_child;
-      ptrs->ra[child].next = -1;
+      ra[last_child].next = child;
+      ra[child].prev = last_child;
+      ra[child].next = -1;
     }
-  ptrs->ra[parent].last_child = child;
+  ra[parent].last_child = child;
 }
 
 void

@@ -307,30 +307,30 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 mr_hash_value_t __attribute__ ((unused))
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
-  const mr_ra_ptrdes_t * ptrs = context;
-  const mr_ptrdes_t * ptrdes = &ptrs->ra[x.long_int_t];
+  const mr_ptrdes_t * ra = context;
+  const mr_ptrdes_t * ptrdes = &ra[x.long_int_t];
   return ((long)ptrdes->data.ptr + ptrdes->fd.mr_type + ptrdes->fd.mr_type_ext * MR_TYPE_LAST);
 }
 
 int
 mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_ra_ptrdes_t * ptrs = context;
-  return (mr_cmp_ptrdes (&ptrs->ra[x.long_int_t], &ptrs->ra[y.long_int_t]));
+  mr_ptrdes_t * ra = (mr_ptrdes_t*)context;
+  return (mr_cmp_ptrdes (&ra[x.long_int_t], &ra[y.long_int_t]));
 }
 
 mr_hash_value_t __attribute__ ((unused))
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
-  const mr_ra_ptrdes_t * ptrs = context;
-  return ((long)ptrs->ra[x.long_int_t].data.ptr);
+  const mr_ptrdes_t * ra = context;
+  return ((long)ra[x.long_int_t].data.ptr);
 }
 
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_ra_ptrdes_t * ptrs = context;
-  return (ptrs->ra[x.long_int_t].data.ptr - ptrs->ra[y.long_int_t].data.ptr);
+  const mr_ptrdes_t * ra = context;
+  return (ra[x.long_int_t].data.ptr - ra[y.long_int_t].data.ptr);
 }
 
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,
@@ -405,21 +405,21 @@ mr_ud_get_hash (mr_ptr_t x, const void * context)
 static int
 mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data)
 {
-  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   mr_ptr_t * find_result;
-  long_int_t idx = mr_add_ptr_to_list (ptrs);
+  long_int_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs);
+  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
 
   if (idx < 0)
     return (idx); /* memory allocation error occured */
 
   /* populate attributes of new node */
-  ptrs->ra[idx].data.ptr = data;
+  ra[idx].data.ptr = data;
 
   /* this element is required only for a search so we need to adjust back size of collection */
-  ptrs->size -= sizeof (ptrs->ra[0]);
+  mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
 
   /* search in index of typed references */
-  find_result = mr_ic_find (&mr_save_data->untyped_ptrs, idx, ptrs);
+  find_result = mr_ic_find (&mr_save_data->untyped_ptrs, idx, ra);
   
   return (find_result ? find_result->long_int_t : -1);
 }
@@ -449,15 +449,15 @@ static int
 resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
 {
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  mr_check_ud_ctx_t mr_check_ud_ctx = {
+    .mr_save_data = mr_save_data,
+    .parent = parent,
+  };
   
   for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
     {
-      mr_check_ud_ctx_t mr_check_ud_ctx = {
-	.mr_save_data = mr_save_data,
-	.node = ref_idx,
-	.parent = parent,
-      };
-	  
+      mr_check_ud_ctx.node = ref_idx;
+
       mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
       if (MR_SUCCESS == status)
 	{
@@ -485,7 +485,7 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 		  ra[ref_idx].fd.name = fdp->name;
 		  ra[ref_idx].fd.unnamed = fdp->unnamed;
       
-		  mr_add_child (parent, ref_idx, &mr_save_data->ptrs);
+		  mr_add_child (parent, ref_idx, ra);
 		  return (1);
 		}
 	    }
@@ -542,7 +542,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
     ra[idx].MR_SIZE = fdp->size;
   
   /* forward reference resolving */
-  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx, &mr_save_data->ptrs);
+  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx, ra);
   if ((NULL != search_result) && (search_result->long_int_t != idx))
     {
       int nodes_matched = resolve_matched (search_result->long_int_t, fdp, mr_save_data, parent);
@@ -556,24 +556,24 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
       search_result->long_int_t = idx;
     }
 
-  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx, &mr_save_data->ptrs);
+  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx, ra);
   if ((search_result != NULL) && (search_result->long_int_t != idx))
     {
-      if (mr_save_data->ptrs.ra[idx].MR_SIZE > mr_save_data->ptrs.ra[search_result->long_int_t].MR_SIZE)
+      if (ra[idx].MR_SIZE > ra[search_result->long_int_t].MR_SIZE)
 	{
-	  mr_save_data->ptrs.ra[idx].save_params.next_untyped = search_result->long_int_t;
+	  ra[idx].save_params.next_untyped = search_result->long_int_t;
 	  search_result->long_int_t = idx;
 	}
       else
 	{
-	  mr_save_data->ptrs.ra[idx].save_params.next_untyped = mr_save_data->ptrs.ra[search_result->long_int_t].save_params.next_untyped;
-	  mr_save_data->ptrs.ra[search_result->long_int_t].save_params.next_untyped = idx;
+	  ra[idx].save_params.next_untyped = ra[search_result->long_int_t].save_params.next_untyped;
+	  ra[search_result->long_int_t].save_params.next_untyped = idx;
 	}
     }
   
   mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
 
-  mr_add_child (parent, idx, &mr_save_data->ptrs);
+  mr_add_child (parent, idx, ra);
 
   /* route saving handler */
   if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_mr_save_handler[fdp->mr_type_ext])

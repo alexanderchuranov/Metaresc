@@ -59,7 +59,10 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   /* loop on subnodes */
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)
     if (XML_ELEMENT_NODE == node_->type)
-      mr_add_child (idx, xml2_load (node_, ptrs), ptrs);
-
+      {
+	int child = xml2_load (node_, ptrs);
+	mr_add_child (idx, child, ptrs->ra);
+      }
+  
   return (idx);
 }
