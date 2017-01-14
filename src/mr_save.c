@@ -779,13 +779,6 @@ mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 	}
     }
 
-  return (MR_SUCCESS);
-}
-
-static mr_status_t
-mr_process_strings  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
-{
-  mr_save_data_t * mr_save_data = context;
   if ((MR_TYPE_STRING == mr_save_data->ptrs.ra[idx].fd.mr_type) &&
       (MR_TYPE_EXT_NONE == mr_save_data->ptrs.ra[idx].fd.mr_type_ext))
     mr_save_data->ptrs.ra[idx].first_child = mr_save_data->ptrs.ra[idx].last_child = -1;
@@ -802,7 +795,6 @@ mr_post_process (mr_save_data_t * mr_save_data)
 {
   int idx_ = 0;
   mr_ptrs_ds (&mr_save_data->ptrs, mr_post_process_node, mr_save_data);
-  mr_ptrs_ds (&mr_save_data->ptrs, mr_process_strings, mr_save_data);
   mr_ptrs_ds (&mr_save_data->ptrs, mr_renumber_node, &idx_); /* enumeration of nodes should be done only after strings processing */
 }
 
