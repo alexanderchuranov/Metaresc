@@ -445,6 +445,29 @@ ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
   return (FALSE);
 }
 
+static int
+move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fdp)
+{
+  int count, ref_idx = ra[ref_parent].first_child;
+  
+  ra[ref_parent].ref_idx = ref_idx;
+  ra[ref_parent].first_child = -1;
+  ra[ref_parent].last_child = -1;
+  ra[ref_idx].flags.is_referenced = TRUE;
+			  
+  for (count = 0; ref_idx >= 0; ++count)
+    {
+      int next = ra[ref_idx].next;
+      ra[ref_idx].fd.name = fdp->name;
+      ra[ref_idx].fd.unnamed = fdp->unnamed;
+      ra[ref_idx].fd.param.array_param.count = fdp->param.array_param.count - count;
+      mr_add_child (parent, ref_idx, ra);
+      ref_idx = next;
+    }
+  return (count);
+}
+  
+
 static int mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent);
 
 static int
@@ -485,28 +508,11 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 		  if (MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext)
 		    {
 		      if (ra[ref_idx].prev < 0)
-			{
-			  int count;
 			  /*
 			    previously saved resizable pointer was pointing to the same address, but was shorter.
 			    we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
 			  */
-			  ra[ref_parent].ref_idx = ref_idx;
-			  ra[ref_parent].first_child = -1;
-			  ra[ref_parent].last_child = -1;
-			  ra[ref_idx].flags.is_referenced = TRUE;
-      
-			  for (count = 0; ref_idx >= 0; ++count)
-			    {
-			      int next = ra[ref_idx].next;
-			      ra[ref_idx].fd.name = fdp->name;
-			      ra[ref_idx].fd.unnamed = fdp->unnamed;
-			      ra[ref_idx].fd.param.array_param.count = fdp->param.array_param.count - count;
-			      mr_add_child (parent, ref_idx, ra);
-			      ref_idx = next;
-			    }
-			  return (count);
-			}
+			return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
 		      else
 			{
 			  mr_fd_t fd_ = ra[ref_idx].fd;
@@ -584,21 +590,12 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 	      int ref_parent = ra[ref_idx].parent;
 
 	      if ((ref_parent >= 0)
-		  && ((MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext) ||
-		      ((MR_TYPE_EXT_NONE == ra[ref_parent].fd.mr_type_ext) &&
-		       (MR_TYPE_STRING == ra[ref_parent].fd.mr_type)))
-		  && !ref_is_parent (ra, parent, ref_idx))
-		{
-		  ra[ref_parent].ref_idx = ref_idx;
-		  ra[ref_parent].first_child = -1;
-		  ra[ref_parent].last_child = -1;
-		  ra[ref_idx].flags.is_referenced = TRUE;
-		  ra[ref_idx].fd.name = fdp->name;
-		  ra[ref_idx].fd.unnamed = fdp->unnamed;
-      
-		  mr_add_child (parent, ref_idx, ra);
-		  return (1);
-		}
+		  && !ref_is_parent (ra, parent, ref_idx)
+		  && (((MR_TYPE_EXT_NONE == ra[ref_parent].fd.mr_type_ext) && (MR_TYPE_STRING == ra[ref_parent].fd.mr_type))
+		      || ((MR_TYPE_EXT_POINTER == ra[ref_parent].fd.mr_type_ext)
+			  && (ra[ref_idx].prev < 0)
+			  && (fdp->param.array_param.count >= ra[ref_idx].fd.param.array_param.count))))
+		return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
 	    }
 	}
     }
