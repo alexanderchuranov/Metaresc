@@ -208,7 +208,7 @@ TYPEDEF_STRUCT (two_dynamic_arrays_t,
 
 MR_START_TEST (tda_same_ptr_and_size, "Two dynamic arrays with same pointers and size") {
   two_dynamic_arrays_t tda;
-  int array[2];
+  int array[2] = { 1, 2, };
 
   tda.da1 = array;
   tda.size1 = sizeof (array);
@@ -225,6 +225,35 @@ MR_START_TEST (tda_same_ptr_and_size, "Two dynamic arrays with same pointers and
 	  int ref_idx = ptrs.ra[i].ref_idx;
 	  if ((ref_idx >= 0) &&
 	      (ptrs.ra[ref_idx].prev >= 0))
+	    {
+	      pointer_resolved_correctly = false;
+	      break;
+	    }
+	}
+      MR_FREE (ptrs.ra);
+    }
+  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+} END_TEST
+
+MR_START_TEST (tda_same_ptr_and_bigger, "Two dynamic arrays with same pointers and one is bigger") {
+  two_dynamic_arrays_t tda;
+  int array[2] = { 1, 2, };
+
+  tda.da1 = array;
+  tda.size1 = sizeof (array);
+  tda.da2 = array;
+  tda.size2 = sizeof (array[0]);
+  
+  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
+  int i;
+  bool pointer_resolved_correctly = true;
+  if (ptrs.ra != NULL)
+    {
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  int ref_idx = ptrs.ra[i].ref_idx;
+	  if ((ref_idx >= 0) &&
+	      (ptrs.ra[ref_idx].next < 0))
 	    {
 	      pointer_resolved_correctly = false;
 	      break;
