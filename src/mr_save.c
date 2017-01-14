@@ -445,6 +445,8 @@ ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
   return (FALSE);
 }
 
+static int mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent);
+
 static int
 resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
 {
@@ -504,6 +506,31 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 			      ref_idx = next;
 			    }
 			  return (count);
+			}
+		      else
+			{
+			  mr_fd_t fd_ = ra[ref_idx].fd;
+			  int i, count = fdp->param.array_param.count - fd_.param.array_param.count;
+			  char * data = ((char*)ra[ref_idx].data.ptr) + fd_.param.array_param.count * fd_.size;
+
+			  fd_.param.array_param.count = count;
+			  ra[parent].ref_idx = ref_idx;
+			  ra[ref_idx].flags.is_referenced = TRUE;
+			  
+			  for (ref_idx = ra[ref_parent].first_child; ref_idx >= 0; ref_idx = ra[ref_idx].next)
+			    ra[ref_idx].fd.param.array_param.count += count;
+			  
+			  mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
+			  for (i = 0; i < count; )
+			    {
+			      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, ref_parent);
+			      if (0 == nodes_added)
+				break;
+			      fd_.param.array_param.count -= nodes_added;
+			      i += nodes_added;
+			    }
+			  mr_save_data->ptrs.size += sizeof (mr_save_data->ptrs.ra[0]);
+			  return (0);
 			}
 		    }
 		}
@@ -769,7 +796,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.param.array_param.count = count;
   fd_.param.array_param.row_count = 1;
       
-  for (i = 0; i< count; )
+  for (i = 0; i < count; )
     {
       int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
       if (0 == nodes_added)
