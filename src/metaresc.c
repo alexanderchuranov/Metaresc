@@ -489,19 +489,19 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
   void * src_data = src->data.ptr;
   void * dst_data = dst->data.ptr;
 
-  if (MR_TYPE_EXT_POINTER == src->fd.mr_type_ext)
+  if (MR_TYPE_POINTER == src->fd.mr_type)
     src_data = *(void**)src_data;
 
   if (NULL == src_data)
     return;
   
-  if (MR_TYPE_EXT_POINTER == dst->fd.mr_type_ext)
+  if (MR_TYPE_POINTER == dst->fd.mr_type)
     dst_data = *(void**)dst_data;
 
   if (NULL == dst_data)
     return;
   
-  if (MR_TYPE_VOID == src->fd.mr_type)
+  if ((MR_TYPE_VOID == src->fd.mr_type) || (MR_TYPE_POINTER == src->fd.mr_type))
     mr_type = src->fd.mr_type_aux;
   else
     mr_type = src->fd.mr_type;
@@ -562,8 +562,8 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     default:
       break;
     }
-  
-  if (MR_TYPE_VOID == dst->fd.mr_type)
+
+  if ((MR_TYPE_VOID == dst->fd.mr_type) || (MR_TYPE_POINTER == dst->fd.mr_type))
     mr_type = dst->fd.mr_type_aux;
   else
     mr_type = dst->fd.mr_type;
@@ -675,8 +675,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
       int parent;
       /* traverse through parents up to first structure */
       for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
-	if ((MR_TYPE_EXT_NONE == ptrs->ra[parent].fd.mr_type_ext) &&
-	    (MR_TYPE_STRUCT == ptrs->ra[parent].fd.mr_type))
+	if (MR_TYPE_STRUCT == ptrs->ra[parent].fd.mr_type)
 	  break;
       
       if (parent >= 0)
@@ -712,7 +711,6 @@ mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
     {
       src.data.ptr = &ptrs->ra[idx].MR_SIZE;
       src.fd.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].MR_SIZE));
-      src.fd.mr_type_ext = MR_TYPE_EXT_NONE;
       mr_assign_int (&dst, &src);
     }
 }
@@ -736,9 +734,8 @@ mr_free_recursively (mr_ra_ptrdes_t ptrs)
     {
       ptrs.ra[i].res.data.ptr = NULL;
       if ((ptrs.ra[i].ref_idx < 0) && (ptrs.ra[i].idx >= 0))
-	if ((MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext) ||
-	    ((MR_TYPE_EXT_NONE == ptrs.ra[i].fd.mr_type_ext) &&
-	     (MR_TYPE_STRING == ptrs.ra[i].fd.mr_type)))
+	if ((MR_TYPE_POINTER == ptrs.ra[i].fd.mr_type)
+	    || (MR_TYPE_STRING == ptrs.ra[i].fd.mr_type))
 	  ptrs.ra[i].res.data.ptr = *(void**)ptrs.ra[i].data.ptr;
     }
 
@@ -795,11 +792,9 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 	    continue;
 	  }
 	
-	switch (ptrs.ra[i].fd.mr_type_ext)
+	switch (ptrs.ra[i].fd.mr_type)
 	  {
-	  case MR_TYPE_EXT_NONE:
-	    if (MR_TYPE_STRING != ptrs.ra[i].fd.mr_type)
-	      break;
+	  case MR_TYPE_STRING:
 	    /* calc string length for further malloc */
 	    ptrs.ra[i].fd.size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
 	    /* string node should be followed with unlinked char array node */
@@ -813,7 +808,7 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 	    /* link it back. we need to save address of allocated memory into this node */
 	    ptrs.ra[i].first_child = ptrs.ra[i].last_child = i + 1;
 
-	  case MR_TYPE_EXT_POINTER:
+	  case MR_TYPE_POINTER:
 	    {
 	      int idx;
 	      char * copy;
@@ -826,7 +821,7 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 		  return (MR_FAILURE);
 		}
 	    
-	      if (MR_TYPE_EXT_POINTER == ptrs.ra[i].fd.mr_type_ext)
+	      if (MR_TYPE_POINTER == ptrs.ra[i].fd.mr_type)
 		{
 		  size = ptrs.ra[i].MR_SIZE;
 		  if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type) && (0 == ptrs.ra[i].fd.size))
@@ -867,12 +862,10 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
   /* now we should update pointers in a copy */
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
     if ((ptrs.ra[i].idx >= 0) && (TRUE != ptrs.ra[i].flags.is_null)) /* skip NULL and invalid nodes */
-      switch (ptrs.ra[i].fd.mr_type_ext)
+      switch (ptrs.ra[i].fd.mr_type)
 	{
-	case MR_TYPE_EXT_NONE:
-	  if (MR_TYPE_STRING != ptrs.ra[i].fd.mr_type)
-	    break;
-	case MR_TYPE_EXT_POINTER:
+	case MR_TYPE_STRING:
+	case MR_TYPE_POINTER:
 	  {
 	    int ptr_idx;
 	    /* get index of the node that is referenced by the pointer */
@@ -1437,7 +1430,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
       fdp->mr_type = tdp->mr_type;
       fdp->size = tdp->size; /* size of forward pointers could be resolved only at the time of type registration */
     }
-  else if (MR_TYPE_EXT_NONE == fdp->mr_type_ext)
+  else
     {
       /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
@@ -1447,11 +1440,10 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	  while (isspace (end[-1]))
 	    --end;
 	  *end = 0; /* trancate type name */
-	  fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
-	  fdp->mr_type = fdp->mr_type_aux;
+	  fdp->mr_type = MR_TYPE_POINTER;
 	  fdp->size = types_sizes[fdp->mr_type];
 	  /* autodetect structures and enums */
-	  switch (fdp->mr_type)
+	  switch (fdp->mr_type_aux)
 	    {
 	    case MR_TYPE_NONE:
 	    case MR_TYPE_INT8:
@@ -1466,7 +1458,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	      tdp = mr_get_td_by_name (fdp->type);
 	      if (tdp)
 		{
-		  fdp->mr_type = tdp->mr_type;
+		  fdp->mr_type_aux = tdp->mr_type;
 		  fdp->size = tdp->size;
 		}
 	      break;
@@ -1515,7 +1507,7 @@ mr_func_field_detect (mr_fd_t * fdp)
 static mr_status_t
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
-  mr_td_t * tdp;
+  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
   switch (fdp->mr_type)
     {
       /* Enum detection */
@@ -1527,13 +1519,11 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
     case MR_TYPE_UINT32:
     case MR_TYPE_INT64:
     case MR_TYPE_UINT64:
-      tdp = mr_get_td_by_name (fdp->type);
       if (tdp)
 	fdp->mr_type = tdp->mr_type;
       break;
 
     case MR_TYPE_BITFIELD:
-      tdp = mr_get_td_by_name (fdp->type);
       if (tdp)
 	fdp->mr_type_aux = tdp->mr_type;
       break;
@@ -1541,14 +1531,18 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       /*
 	pointer on structure refers to forward declarations and can't calculate type size at compile time.
       */
-    case MR_TYPE_STRUCT:
-    case MR_TYPE_CHAR_ARRAY:
-      if (MR_TYPE_EXT_POINTER == fdp->mr_type_ext)
+    case MR_TYPE_POINTER:
+      if (tdp)
 	{
-	  tdp = mr_get_td_by_name (fdp->type);
-	  if (tdp)
-	    fdp->size = tdp->size;
+	  if (MR_TYPE_NONE == fdp->mr_type_aux)
+	    fdp->mr_type_aux = tdp->mr_type;
+	  fdp->size = tdp->size;
 	}
+      break;
+
+    case MR_TYPE_ARRAY:
+      if (tdp && (MR_TYPE_NONE == fdp->mr_type_aux))
+	fdp->mr_type_aux = tdp->mr_type;
       break;
 
     case MR_TYPE_NONE: /* MR_AUTO type resolution */
@@ -1640,9 +1634,8 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->name = tdp->type;
   fdp->size = tdp->size;
   fdp->offset = 0;
-  fdp->mr_type = tdp->mr_type;
-  fdp->mr_type_aux = MR_TYPE_VOID;
-  fdp->mr_type_ext = MR_TYPE_EXT_POINTER;
+  fdp->mr_type = MR_TYPE_POINTER;
+  fdp->mr_type_aux = tdp->mr_type;
   return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp, NULL)) ? MR_SUCCESS : MR_FAILURE);
 }
 

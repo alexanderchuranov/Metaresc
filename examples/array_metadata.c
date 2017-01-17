@@ -23,7 +23,7 @@ int print_array_field_info (mr_td_t * td, char name[])
       return (EXIT_FAILURE);
     }
 
-  if (fd->mr_type_ext != MR_TYPE_EXT_ARRAY)
+  if (fd->mr_type != MR_TYPE_ARRAY)
     {
       fprintf (stderr,
 	       "error: the '%s' field is not an array\n",

@@ -95,10 +95,8 @@
   ({									\
     mr_fd_t * __fdp__ = FDP;						\
     mr_td_t * mr_type_td = mr_get_td_by_name ("mr_type_t");		\
-    mr_td_t * mr_type_ext_td = mr_get_td_by_name ("mr_type_ext_t");	\
     mr_fd_t * mr_type_fd = mr_type_td ? mr_get_enum_by_value (mr_type_td, __fdp__->mr_type) : NULL; \
-    mr_fd_t * mr_type_ext_fd = mr_type_ext_td ? mr_get_enum_by_value (mr_type_ext_td, __fdp__->mr_type_ext) : NULL; \
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, (mr_type_fd ? mr_type_fd->name.str : "unknown"), __fdp__->mr_type, (mr_type_ext_fd ? mr_type_ext_fd->name.str : "unknown"), __fdp__->mr_type_ext); \
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, (mr_type_fd ? mr_type_fd->name.str : "unknown"), __fdp__->mr_type); \
   })
 
 /* make a string from argument in writable memory. #STR itself is in read-only memory */
@@ -167,8 +165,6 @@
 									     const volatile TYPE))) ? MR_TYPE_STRING : 0) \
    )
 #define MR_TYPE_DETECT_PTR(TYPE) MR_TYPE_DETECT (TYPE, *, const volatile)
-/* Help macro for arrays auto-detection */
-#define MR_TYPE_EXT_DETECT(TYPE, S_PTR) (__builtin_types_compatible_p (TYPE [], __typeof__ (S_PTR)) ? MR_TYPE_EXT_ARRAY : MR_TYPE_EXT_NONE)
 
 /* internal macros for arguments evaluation and concatination */
 #define MR_PASTE2(...) MR_PASTE2_ (__VA_ARGS__)
@@ -560,7 +556,7 @@
 
 #define MR_TYPEDEF_STRUCT_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_STRUCT, __VA_ARGS__)
 
-#define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, MR_TYPE_EXT, /* META */ ...) { \
+#define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
@@ -568,7 +564,6 @@
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE,					\
-	     .mr_type_ext = MR_TYPE_EXT,				\
 	     .param =							\
 	     {								\
 	       .array_param = {						\
@@ -587,8 +582,8 @@
 	     .size = sizeof (TYPE),					\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .unnamed = FALSE,						\
-	     .mr_type = MR_TYPE_DETECT (TYPE),				\
-	     .mr_type_ext = MR_TYPE_EXT_ARRAY,				\
+	     .mr_type = MR_TYPE_ARRAY,					\
+	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .param =							\
 	     {								\
 	       .array_param = {						\
@@ -610,7 +605,6 @@
 	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE_VOID,					\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
-	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .meta = "" __VA_ARGS__,					\
 	     } } },
 
@@ -622,7 +616,6 @@
 	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE_BITFIELD,				\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
-	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .param = {							\
 	  .bitfield_param = {						\
 	    .size = sizeof (MR_TYPE_NAME),				\
@@ -631,23 +624,22 @@
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
-#define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_DETECT (TYPE, ((MR_TYPE_NAME*)NULL)->NAME), __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE))
+#define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_DETECT (TYPE), __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE))
 
 #define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_VOID_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 
-#define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_NONE, __VA_ARGS__)
-#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_DETECT (TYPE), MR_TYPE_EXT_POINTER, __VA_ARGS__)
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, MR_TYPE_EXT_NONE, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
+#define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, __VA_ARGS__)
+#define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
+#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
     .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
       .type = MR_STRINGIFY (TYPE),				\
 	 .size = sizeof (TYPE),					\
 	 .mr_type = MR_TYPE_DETECT (TYPE),			\
 	 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),		\
-	 .mr_type_ext = MR_TYPE_EXT_NONE,			\
 	 .meta = "" __VA_ARGS__,				\
 	 },
 #define MR_END_STRUCT_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
@@ -662,7 +654,6 @@
 	     .offset = 0,						\
 	     .unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (TRUE) (FALSE), \
 	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
-	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .meta = #__VA_ARGS__,					\
 	     .res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
 	     .res_type = "mr_td_t",					\
@@ -671,7 +662,6 @@
     (mr_fd_t[]){ {							\
 	.type = "",							\
 	  .mr_type = MR_TYPE_END_ANON_UNION,				\
-	  .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	  .meta = "" __VA_ARGS__,					\
 	  } } },
 
@@ -682,7 +672,6 @@
 	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
 	  .name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .mr_type = MR_TYPE_ENUM_VALUE,				\
-	     .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	     .param = { .enum_value = NAME, },				\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
@@ -751,7 +740,6 @@
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
 	  .type = #MR_TYPE_NAME,					\
 	  .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-	  .mr_type_ext = MR_TYPE_EXT_DETECT (MR_TYPE_NAME, S_PTR),	\
 	  .size = sizeof (MR_TYPE_NAME),				\
 	  .param = 							\
 	  {								\
@@ -779,7 +767,6 @@
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
 	  .type = MR_TYPE_NAME_STR,					\
 	  .mr_type = MR_TYPE_NONE,					\
-	  .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	  .size = 0,							\
 	};								\
       void * __ptr__ = S_PTR;						\
@@ -860,7 +847,6 @@
 	    .type = #MR_TYPE_NAME,					\
 	    .name = { .str = NULL, .hash_value = 0, },			\
 	    .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-	    .mr_type_ext = MR_TYPE_EXT_NONE,				\
 	    .size = sizeof (MR_TYPE_NAME),				\
 	    .param = 							\
 	    {								\
@@ -940,7 +926,6 @@
 	.type = #MR_TYPE_NAME,						\
 	.name = { .str = NULL, .hash_value = 0, },			\
 	.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-	.mr_type_ext = MR_TYPE_EXT_NONE,				\
 	.size = sizeof (MR_TYPE_NAME),					\
 	.param = 							\
 	{								\
@@ -1050,7 +1035,6 @@
 		.type = #MR_TYPE_NAME,					\
 		.name = { .str = NULL, .hash_value = 0, },		\
 		.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),		\
-		.mr_type_ext = MR_TYPE_EXT_DETECT (MR_TYPE_NAME, S_PTR), \
 		.size = sizeof (MR_TYPE_NAME),				\
 		.param = 						\
 		{							\

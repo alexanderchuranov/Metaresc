@@ -273,12 +273,6 @@ xml_save_empty (int idx, mr_ra_ptrdes_t * ptrs)
 /**
  * Init IO handlers Table
  */
-static xml_save_handler_t ext_xml_save_handler[] =
-  {
-    [MR_TYPE_EXT_ARRAY] = xml_save_empty,
-    [MR_TYPE_EXT_POINTER] = xml_save_empty,
-  };
-
 static xml_save_handler_t xml1_save_handler[] =
   {
     [MR_TYPE_STRING] = xml1_save_string,
@@ -308,6 +302,8 @@ static xml_save_handler_t xml1_save_handler[] =
     [MR_TYPE_STRUCT] = xml_save_empty,
     [MR_TYPE_FUNC] = xml_save_func,
     [MR_TYPE_FUNC_TYPE] = xml_save_func,
+    [MR_TYPE_ARRAY] = xml_save_empty,
+    [MR_TYPE_POINTER] = xml_save_empty,
     [MR_TYPE_UNION] = xml_save_empty,
     [MR_TYPE_ANON_UNION] = xml_save_empty,
     [MR_TYPE_NAMED_ANON_UNION] = xml_save_empty,
@@ -340,9 +336,7 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
       mr_fd_t * fdp = &ptrs->ra[idx].fd;
 
       /* route saving handler */
-      if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xml_save_handler[fdp->mr_type_ext])
-	content = ext_xml_save_handler[fdp->mr_type_ext] (idx, ptrs);
-      else if ((fdp->mr_type < MR_TYPE_LAST) && xml1_save_handler[fdp->mr_type])
+      if ((fdp->mr_type < MR_TYPE_LAST) && xml1_save_handler[fdp->mr_type])
 	content = xml1_save_handler[fdp->mr_type] (idx, ptrs);
       else
 	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
@@ -457,6 +451,8 @@ static xml_save_handler_t xml2_save_handler[] =
     [MR_TYPE_STRUCT] = xml_save_empty,
     [MR_TYPE_FUNC] = xml_save_func,
     [MR_TYPE_FUNC_TYPE] = xml_save_func,
+    [MR_TYPE_ARRAY] = xml_save_empty,
+    [MR_TYPE_POINTER] = xml_save_empty,
     [MR_TYPE_UNION] = xml_save_empty,
     [MR_TYPE_ANON_UNION] = xml_save_empty,
     [MR_TYPE_NAMED_ANON_UNION] = xml_save_empty,
@@ -481,9 +477,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
   node->_private = (void*)(long)idx;
 
   /* route saving handler */
-  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_xml_save_handler[fdp->mr_type_ext])
-    content = ext_xml_save_handler[fdp->mr_type_ext] (idx, ptrs);
-  else if ((fdp->mr_type < MR_TYPE_LAST) && xml2_save_handler[fdp->mr_type])
+  if ((fdp->mr_type < MR_TYPE_LAST) && xml2_save_handler[fdp->mr_type])
     content = xml2_save_handler[fdp->mr_type] (idx, ptrs);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);

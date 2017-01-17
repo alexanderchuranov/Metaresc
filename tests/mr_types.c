@@ -74,19 +74,19 @@ TYPEDEF_STRUCT (struct_t,
 		(string_t volatile const *, string_t_volatile_const_ptr_),
 		)
 
-#define ASSERT_FIELD_TYPE_(FIELD, MR_TYPE, MR_TYPE_EXT) ({		\
+#define ASSERT_FIELD_TYPE_(FIELD, MR_TYPE, MR_TYPE_AUX) ({		\
       mr_td_t * tdp = mr_get_td_by_name ("struct_t");			\
       ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type struct_t."); \
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, #FIELD);			\
       ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field " #FIELD "."); \
       ck_assert_msg (fdp->mr_type == MR_TYPE, "Mismatched mr_type for field " #FIELD " (%d != %d).", \
 		     fdp->mr_type, MR_TYPE);				\
-      ck_assert_msg (fdp->mr_type_ext == MR_TYPE_EXT, "Mismatched mr_type_ext for field " #FIELD " (%d != %d).", \
-		     fdp->mr_type_ext, MR_TYPE_EXT);			\
+      ck_assert_msg (fdp->mr_type_aux == MR_TYPE_AUX, "Mismatched mr_type_aux for field " #FIELD " (%d != %d).", \
+		     fdp->mr_type_aux, MR_TYPE_AUX);			\
     })
   
 #define ASSERT_FIELD_TYPE(FIELD, MR_TYPE, ...)				\
-  ASSERT_FIELD_TYPE_ (FIELD, MR_TYPE, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_TYPE_EXT_NONE) (__VA_ARGS__))
+  ASSERT_FIELD_TYPE_ (FIELD, MR_TYPE, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_TYPE_NONE) (__VA_ARGS__))
 
 MR_START_TEST (check_types_detection, "check that types detected correctly") {
   mr_detect_type (NULL);
@@ -119,48 +119,48 @@ MR_START_TEST (check_types_detection, "check that types detected correctly") {
 
   ASSERT_FIELD_TYPE (char_ptr_, MR_TYPE_STRING);
   
-  ASSERT_FIELD_TYPE (string_, MR_TYPE_STRING);
-  ASSERT_FIELD_TYPE (const_string_, MR_TYPE_STRING);
-  ASSERT_FIELD_TYPE (volatile_string_, MR_TYPE_STRING);
-  ASSERT_FIELD_TYPE (const_volatile_string_, MR_TYPE_STRING);
-  ASSERT_FIELD_TYPE (volatile_const_string_, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (string_, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_FIELD_TYPE (const_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_FIELD_TYPE (volatile_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_FIELD_TYPE (const_volatile_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_FIELD_TYPE (volatile_const_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
 
-  ASSERT_FIELD_TYPE (void_ptr_, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_void_ptr_, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (void_const_ptr_, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (void_ptr_const, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (void_const_ptr_const, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_void_ptr_, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_volatile_void_ptr_, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_const_void_ptr_, MR_TYPE_VOID, MR_TYPE_EXT_POINTER);
+  ASSERT_FIELD_TYPE (void_ptr_, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (const_void_ptr_, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (void_const_ptr_, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (void_ptr_const, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (void_const_ptr_const, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (volatile_void_ptr_, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (const_volatile_void_ptr_, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (volatile_const_void_ptr_, MR_TYPE_POINTER, MR_TYPE_VOID);
 
-  ASSERT_FIELD_TYPE (float_ptr_, MR_TYPE_FLOAT, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_float_ptr_, MR_TYPE_FLOAT, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_float_ptr_, MR_TYPE_FLOAT, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_volatile_float_ptr_, MR_TYPE_FLOAT, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_const_float_ptr_, MR_TYPE_FLOAT, MR_TYPE_EXT_POINTER);
+  ASSERT_FIELD_TYPE (float_ptr_, MR_TYPE_POINTER, MR_TYPE_FLOAT);
+  ASSERT_FIELD_TYPE (const_float_ptr_, MR_TYPE_POINTER, MR_TYPE_FLOAT);
+  ASSERT_FIELD_TYPE (volatile_float_ptr_, MR_TYPE_POINTER, MR_TYPE_FLOAT);
+  ASSERT_FIELD_TYPE (const_volatile_float_ptr_, MR_TYPE_POINTER, MR_TYPE_FLOAT);
+  ASSERT_FIELD_TYPE (volatile_const_float_ptr_, MR_TYPE_POINTER, MR_TYPE_FLOAT);
 
-  ASSERT_FIELD_TYPE (char_array_ptr_, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_char_array_ptr_, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_char_array_ptr_, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_volatile_char_array_ptr_, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_const_char_array_ptr_, MR_TYPE_CHAR_ARRAY, MR_TYPE_EXT_POINTER);
+  ASSERT_FIELD_TYPE (char_array_ptr_, MR_TYPE_POINTER, MR_TYPE_CHAR_ARRAY);
+  ASSERT_FIELD_TYPE (const_char_array_ptr_, MR_TYPE_POINTER, MR_TYPE_CHAR_ARRAY);
+  ASSERT_FIELD_TYPE (volatile_char_array_ptr_, MR_TYPE_POINTER, MR_TYPE_CHAR_ARRAY);
+  ASSERT_FIELD_TYPE (const_volatile_char_array_ptr_, MR_TYPE_POINTER, MR_TYPE_CHAR_ARRAY);
+  ASSERT_FIELD_TYPE (volatile_const_char_array_ptr_, MR_TYPE_POINTER, MR_TYPE_CHAR_ARRAY);
 
-  ASSERT_FIELD_TYPE (string_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_string_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_string_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (const_volatile_string_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (volatile_const_string_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
+  ASSERT_FIELD_TYPE (string_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (const_string_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (volatile_string_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (const_volatile_string_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (volatile_const_string_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
 
-  ASSERT_FIELD_TYPE (string_const_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (string_volatile_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (string_const_volatile_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (string_volatile_const_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
+  ASSERT_FIELD_TYPE (string_const_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (string_volatile_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (string_const_volatile_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (string_volatile_const_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
   
-  ASSERT_FIELD_TYPE (string_t_const_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (string_t_volatile_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (string_t_const_volatile_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
-  ASSERT_FIELD_TYPE (string_t_volatile_const_ptr_, MR_TYPE_STRING, MR_TYPE_EXT_POINTER);
+  ASSERT_FIELD_TYPE (string_t_const_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (string_t_volatile_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (string_t_const_volatile_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
+  ASSERT_FIELD_TYPE (string_t_volatile_const_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
 
 } END_TEST
 

@@ -75,7 +75,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 	    else
 	      data = mr_load_data->ptrs.ra[idx].data.ptr;
 
-	    if ((MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra[i].fd.mr_type_ext) ||
+	    if ((MR_TYPE_POINTER == mr_load_data->ptrs.ra[i].fd.mr_type) ||
 		(MR_TYPE_STRING == mr_load_data->ptrs.ra[i].fd.mr_type))
 	      *(void**)mr_load_data->ptrs.ra[i].data.ptr = data;
 	  }
@@ -396,7 +396,6 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 	  status = MR_SUCCESS;
 	  if ((ptrdes->fd.size <= 0) &&
 	      (ptrdes->parent >= 0) &&
-	      (MR_TYPE_EXT_POINTER == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type_ext) &&
 	      (MR_TYPE_CHAR_ARRAY == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type))
 	    {
 	      void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
@@ -515,7 +514,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   int i = 0;
 
   if (1 == fd_.param.array_param.row_count)
-    fd_.mr_type_ext = MR_TYPE_EXT_NONE; /* prepare copy of filed descriptor for array elements loading */
+    fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
   else
     {
       fd_.param.array_param.count = row_count;
@@ -559,7 +558,7 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
   if (0 == count)
     return (MR_SUCCESS);
   
-  fd_.mr_type_ext = MR_TYPE_EXT_NONE;
+  fd_.mr_type = fd_.mr_type_aux;
   /* allocate memory */
   *data = MR_MALLOC (count * fd_.size);
   if (NULL == *data)
@@ -707,15 +706,11 @@ static mr_load_handler_t mr_load_handler[] =
     [MR_TYPE_STRUCT] = mr_load_struct,
     [MR_TYPE_FUNC] = mr_load_func,
     [MR_TYPE_FUNC_TYPE] = mr_load_func,
+    [MR_TYPE_ARRAY] = mr_load_array,
+    [MR_TYPE_POINTER] = mr_load_pointer,
     [MR_TYPE_UNION] = mr_load_struct,
     [MR_TYPE_ANON_UNION] = mr_load_struct,
     [MR_TYPE_NAMED_ANON_UNION] = mr_load_anon_union,
-  };
-
-static mr_load_handler_t mr_ext_load_handler[] =
-  {
-    [MR_TYPE_EXT_ARRAY] = mr_load_array,
-    [MR_TYPE_EXT_POINTER] = mr_load_pointer,
   };
 
 /**
@@ -768,16 +763,13 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra[idx].fd.size = fdp->size;
   mr_load_data->ptrs.ra[idx].fd.mr_type = fdp->mr_type;
   mr_load_data->ptrs.ra[idx].fd.mr_type_aux = fdp->mr_type_aux;
-  mr_load_data->ptrs.ra[idx].fd.mr_type_ext = fdp->mr_type_ext;
   mr_load_data->ptrs.ra[idx].fd.param = fdp->param;
   mr_load_data->ptrs.ra[idx].fd.meta = fdp->meta;
   mr_load_data->ptrs.ra[idx].fd.res.ptr = fdp->res.ptr;
   mr_load_data->ptrs.ra[idx].fd.res_type = fdp->res_type;
 
   /* route loading */
-  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && mr_ext_load_handler[fdp->mr_type_ext])
-    status = mr_ext_load_handler[fdp->mr_type_ext] (idx, mr_load_data);
-  else if ((fdp->mr_type < MR_TYPE_LAST) && mr_load_handler[fdp->mr_type])
+  if ((fdp->mr_type < MR_TYPE_LAST) && mr_load_handler[fdp->mr_type])
     status = mr_load_handler[fdp->mr_type] (idx, mr_load_data);
   else
     MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);

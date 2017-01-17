@@ -32,14 +32,6 @@ static int scm_named_fields[MR_TYPE_LAST] = {
   [MR_TYPE_NAMED_ANON_UNION] = MR_SCM_NAMED_FIELDS,
 };
 
-#define MR_SCM_IS_NOT_ARRAY (0)
-#define MR_SCM_IS_ARRAY (!MR_SCM_IS_NOT_ARRAY)
-
-static int scm_is_array[MR_TYPE_LAST] = {
-  [0 ... MR_TYPE_LAST - 1] = MR_SCM_IS_NOT_ARRAY,
-  [MR_TYPE_EXT_ARRAY] = MR_SCM_IS_ARRAY,
-};
-
 /**
  * MR_NONE type saving handler.
  * @param idx an index of node in ptrs
@@ -290,15 +282,11 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_STRUCT] = scm_save_empty,
     [MR_TYPE_FUNC] = scm_save_func,
     [MR_TYPE_FUNC_TYPE] = scm_save_func,
+    [MR_TYPE_ARRAY] = scm_save_empty,
+    [MR_TYPE_POINTER] = scm_save_pointer,
     [MR_TYPE_UNION] = scm_save_empty,
     [MR_TYPE_ANON_UNION] = scm_save_empty,
     [MR_TYPE_NAMED_ANON_UNION] = scm_save_empty,
-  };
-
-static scm_save_handler_t ext_scm_save_handler[] =
-  {
-    [MR_TYPE_EXT_ARRAY] = scm_save_empty,
-    [MR_TYPE_EXT_POINTER] = scm_save_pointer,
   };
 
 /**
@@ -349,9 +337,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
       if (ptrs->ra[idx].first_child < 0)
 	{
 	  /* route saving handler */
-	  if ((fdp->mr_type_ext < MR_TYPE_EXT_LAST) && ext_scm_save_handler[fdp->mr_type_ext])
-	    content = ext_scm_save_handler[fdp->mr_type_ext] (idx, ptrs);
-	  else if ((fdp->mr_type < MR_TYPE_LAST) && scm_save_handler[fdp->mr_type])
+	  if ((fdp->mr_type < MR_TYPE_LAST) && scm_save_handler[fdp->mr_type])
 	    content = scm_save_handler[fdp->mr_type] (idx, ptrs);
 	  else
 	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
@@ -383,7 +369,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 	  if (MR_SCM_NAMED_FIELDS == named_node)
 	    if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
 	      return (NULL);
-	  if (MR_SCM_IS_ARRAY == scm_is_array[fdp->mr_type_ext])
+	  if (MR_TYPE_ARRAY == fdp->mr_type)
 	    if (mr_ra_printf (&mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
 	      return (NULL);
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_START) < 0)

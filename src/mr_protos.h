@@ -51,7 +51,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_SAVE_IDX_RANGE_CHECK, , "Save node index is out of range."),
 	      (MR_MESSAGE_NODE_NAME_MISSMATCH, , "Node name mismatch: expected '%s' got '%s'."),
 	      (MR_MESSAGE_NODE_TYPE_MISSMATCH, , "Node '%s' type mismatch: expected '%s' got '%s'."),
-	      (MR_MESSAGE_UNSUPPORTED_NODE_TYPE, , "Unsupported node type: %s(%d):%s(%d)."),
+	      (MR_MESSAGE_UNSUPPORTED_NODE_TYPE, , "Unsupported node type: %s(%d)."),
 	      (MR_MESSAGE_RANGE_CHECK, , "Range check error in array '%s'."),
 	      (MR_MESSAGE_READ_REF, , "Can't read '%s' as index."),
 	      (MR_MESSAGE_SAVE_ENUM, , "Can't find enum name for value %" SCNd64 " type '%s' field '%s'."),
@@ -110,19 +110,14 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      (MR_TYPE_FUNC, , "func_param"),
 	      (MR_TYPE_BITFIELD, , "bitfield_param"),
 	      MR_TYPE_BITMASK,
+	      (MR_TYPE_ARRAY, , "array_param"),
+	      MR_TYPE_POINTER,
 	      MR_TYPE_UNION,
 	      MR_TYPE_ANON_UNION,
 	      MR_TYPE_NAMED_ANON_UNION,
 	      MR_TYPE_END_ANON_UNION,
 	      MR_TYPE_TRAILING_RECORD,
 	      MR_TYPE_LAST, /* keep it last */
-	      )
-
-TYPEDEF_ENUM (mr_type_ext_t, ATTRIBUTES ( , "Metaresc types extension"),
-	      MR_TYPE_EXT_NONE,
-	      MR_TYPE_EXT_ARRAY,
-	      MR_TYPE_EXT_POINTER,
-	      MR_TYPE_EXT_LAST,  /* keep it last */
 	      )
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
@@ -176,6 +171,7 @@ TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function 
 		)
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
+	       VOID (char, void_param, , "default serialized vaue"),
 	       (mr_array_param_t, array_param, , "array parameters - default for serialization"),
 	       (int64_t, enum_value, , "enum value"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
@@ -262,7 +258,6 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
-		(mr_type_ext_t, mr_type_ext, , "Metaresc type extension"),
 		(bool, unnamed, , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(char *, type, , "stringified type name"),
