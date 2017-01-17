@@ -552,7 +552,6 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 		  /* we can handle only match with another resizable pointer */
 		  if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
 		    {
-		      int count;
 		      /*
 			in the middle of saving of resizable pointer we matched another resizable pointer
 			we need to append all nodes from found resizable pointer to new one and
@@ -561,11 +560,12 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 
 		      if (fdp->param.array_param.count < ra[ref_idx].fd.param.array_param.count)
 			{
-			  int idx;
+			  int idx, count = fdp->param.array_param.count;
+			  
 			  fdp->param.array_param.count = ra[ref_idx].fd.param.array_param.count;
-			  count = 0;
+			  
 			  for (idx = ra[parent].first_child; idx >= 0; idx = ra[idx].next)
-			    ra[idx].fd.param.array_param.count = fdp->param.array_param.count - count++;
+			    ra[idx].fd.param.array_param.count = count--;
 			}
 
 		      return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
