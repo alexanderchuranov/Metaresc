@@ -553,32 +553,33 @@ XDR_COMPLEX (long_double, long double);
 static mr_status_t
 xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  uint32_t str_len;
-  uint32_t max_size = ptrs->ra[idx].fd.size * ptrs->ra[idx].fd.param.array_param.count;
+  uint32_t str_len, max_size = ptrs->ra[idx].fd.size * ptrs->ra[idx].fd.param.array_param.count;
+  int parent = ptrs->ra[idx].parent;
+  bool is_a_dynamic_string = ((parent >= 0) && (MR_TYPE_POINTER == ptrs->ra[parent].fd.mr_type));
 
   if (XDR_ENCODE == xdrs->x_op)
     {
       str_len = strlen (ptrs->ra[idx].data.ptr) + 1;
-      if ((max_size > 0) && (str_len > max_size))
-	str_len = max_size;
+      if (!is_a_dynamic_string && (str_len > max_size))
+	{
+	  str_len = max_size;
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
+	}
     }
 
   if (!xdr_uint32_t (xdrs, &str_len))
     return (MR_FAILURE);
 
-  if (XDR_DECODE == xdrs->x_op)
+  if ((XDR_DECODE == xdrs->x_op) && (str_len > max_size) && is_a_dynamic_string)
     {
-      if (0 == max_size)
+      void * data = MR_REALLOC (ptrs->ra[idx].data.ptr, str_len);
+      if (NULL == data)
 	{
-	  void * data = MR_REALLOC (ptrs->ra[idx].data.ptr, str_len);
-	  if (NULL == data)
-	    {
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      return (MR_FAILURE);
-	    }
-	  *(void**)ptrs->ra[idx - 1].data.ptr = ptrs->ra[idx].data.ptr = data;
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (MR_FAILURE);
 	}
-      }
+      *(void**)ptrs->ra[idx - 1].data.ptr = ptrs->ra[idx].data.ptr = data;
+    }
   return (xdr_opaque (xdrs, ptrs->ra[idx].data.ptr, str_len) ? MR_SUCCESS : MR_FAILURE);
 }
 

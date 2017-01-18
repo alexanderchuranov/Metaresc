@@ -461,6 +461,8 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fd
     {
       int next = ra[ref_idx].next;
       ra[ref_idx].fd.name = fdp->name;
+      ra[ref_idx].fd.type = fdp->type;
+      ra[ref_idx].fd.size = fdp->size;
       ra[ref_idx].fd.unnamed = fdp->unnamed;
       ra[ref_idx].fd.param.array_param.count = fdp->param.array_param.count - count;
       mr_add_child (parent, ref_idx, ra);
@@ -729,6 +731,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
     {
       mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
       fd_.mr_type = MR_TYPE_CHAR_ARRAY;
+      fd_.size = sizeof (char);
       fd_.type = "char";
       mr_save_inner (str, &fd_, mr_save_data, idx);
     }

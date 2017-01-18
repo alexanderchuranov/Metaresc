@@ -392,25 +392,28 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
       char * str = ptrdes->mr_value.vt_string;
       if (NULL != str)
 	{
-	  int str_len = strlen (str);
+	  int str_len = strlen (str) + 1;
 	  status = MR_SUCCESS;
-	  if ((ptrdes->fd.size <= 0) &&
-	      (ptrdes->parent >= 0) &&
-	      (MR_TYPE_CHAR_ARRAY == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type))
+	  if (str_len > max_size)
 	    {
-	      void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
-	      if (NULL == data)
+	      if ((ptrdes->parent >= 0) &&
+		  (MR_TYPE_POINTER == mr_load_data->ptrs.ra[ptrdes->parent].fd.mr_type))
 		{
-		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-		  status = MR_FAILURE;
+		  void * data = MR_REALLOC (ptrdes->data.ptr, str_len);
+		  if (NULL == data)
+		    {
+		      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+		      status = MR_FAILURE;
+		    }
+		  *(void**)mr_load_data->ptrs.ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
 		}
-	      *(void**)mr_load_data->ptrs.ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
+	      else
+		{
+		  str[max_size - 1] = 0;
+		  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
+		}
 	    }
-	  else if (str_len >= max_size)
-	    {
-	      str[max_size - 1] = 0;
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
-	    }
+		  
 	  if (ptrdes->data.ptr)
 	    strcpy (ptrdes->data.ptr, str);
 	}

@@ -29,7 +29,7 @@
 #include <mr_protos.h>
 
 /* meta data for type 'char' - required as a descriminator for mr_ptr union */
-MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'", .size = 0);
+MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'");
 /* meta data for all scallar types */
 MR_TYPEDEF_DESC_BI (char_t, "alias for type 'char' for serialization as array of char");
 MR_TYPEDEF_DESC_BI (string_t);
@@ -824,7 +824,7 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 	      if (MR_TYPE_POINTER == ptrs.ra[i].fd.mr_type)
 		{
 		  size = ptrs.ra[i].MR_SIZE;
-		  if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type) && (0 == ptrs.ra[i].fd.size))
+		  if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type_aux) && (sizeof (char) == ptrs.ra[i].fd.size))
 		    size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
 		}
 	    
@@ -1417,10 +1417,6 @@ mr_auto_field_detect (mr_fd_t * fdp)
       [MR_TYPE_CHAR] = sizeof (char),
       [MR_TYPE_CHAR_ARRAY] = sizeof (char),
       [MR_TYPE_STRING] = sizeof (char*),
-      [MR_TYPE_STRUCT] = sizeof (void),
-      [MR_TYPE_UNION] = sizeof (void),
-      [MR_TYPE_ANON_UNION] = sizeof (void),
-      [MR_TYPE_NAMED_ANON_UNION] = sizeof (void),
     };
 
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);
@@ -1441,7 +1437,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	    --end;
 	  *end = 0; /* trancate type name */
 	  fdp->mr_type = MR_TYPE_POINTER;
-	  fdp->size = types_sizes[fdp->mr_type];
+	  fdp->size = types_sizes[fdp->mr_type_aux];
 	  /* autodetect structures and enums */
 	  switch (fdp->mr_type_aux)
 	    {
@@ -1532,17 +1528,29 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	pointer on structure refers to forward declarations and can't calculate type size at compile time.
       */
     case MR_TYPE_POINTER:
+    case MR_TYPE_ARRAY:
       if (tdp)
 	{
-	  if (MR_TYPE_NONE == fdp->mr_type_aux)
-	    fdp->mr_type_aux = tdp->mr_type;
 	  fdp->size = tdp->size;
-	}
-      break;
+	  switch (fdp->mr_type_aux)
+	    {
+	    case MR_TYPE_NONE:
+	    case MR_TYPE_INT8:
+	    case MR_TYPE_UINT8:
+	    case MR_TYPE_INT16:
+	    case MR_TYPE_UINT16:
+	    case MR_TYPE_INT32:
+	    case MR_TYPE_UINT32:
+	    case MR_TYPE_INT64:
+	    case MR_TYPE_UINT64:
+	    case MR_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
+	      fdp->mr_type_aux = tdp->mr_type;
+	      break;
 
-    case MR_TYPE_ARRAY:
-      if (tdp && (MR_TYPE_NONE == fdp->mr_type_aux))
-	fdp->mr_type_aux = tdp->mr_type;
+	    default:
+	      break;
+	    }
+	}
       break;
 
     case MR_TYPE_NONE: /* MR_AUTO type resolution */
