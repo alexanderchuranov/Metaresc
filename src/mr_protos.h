@@ -172,7 +172,7 @@ TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function 
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       VOID (char, void_param, , "default serialized vaue"),
-	       (mr_array_param_t, array_param, , "array parameters - default for serialization"),
+	       (mr_array_param_t, array_param, , "array parameters"),
 	       (int64_t, enum_value, , "enum value"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
@@ -228,16 +228,19 @@ TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "extend mr_ic_hash_t with fiel
 		(bool, zero_key),
 		)
 
+TYPEDEF_STRUCT (mr_ptr_typed_t, ATTRIBUTES ( , "typed void pointer"),
+		(mr_ptr_t, mr_ptr, , "ext_type"),
+		(char *, ext_type, , "type as string"),
+		)
+
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_type_t, ic_type),
 		(char *, key_type),
 		(mr_compar_fn_t, compar_fn),
 		(struct mr_ic_virt_func_t *, virt_func),
-
-		(char *, ext_type, , "type specifier for extended IC types"),
 		
 		ANON_UNION (type_specific),
-		(mr_ptr_t, ext, , "ext_type"),
+		(mr_ptr_typed_t, ext, , "pointer on custom data for extended IC types"),
 		(mr_ic_rarray_t, rarray),
 		(mr_red_black_tree_node_t *, tree),
 		(mr_ic_hash_t, hash),
