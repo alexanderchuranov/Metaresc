@@ -1392,15 +1392,13 @@ mr_check_fields (mr_td_t * tdp)
 /**
  * Initialize AUTO fields. Detect types, size, pointers etc.
  * @param fdp pointer on a field descriptor
- * @return status
  */
-static mr_status_t
+static void
 mr_auto_field_detect (mr_fd_t * fdp)
 {
   static size_t types_sizes[] =
     {
       [0 ... MR_TYPE_LAST - 1] = 0,
-      [MR_TYPE_NONE] = 0,
       [MR_TYPE_VOID] = sizeof (void),
       [MR_TYPE_BOOL] = sizeof (bool),
       [MR_TYPE_INT8] = sizeof (int8_t),
@@ -1467,7 +1465,6 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	    }
 	}
     }
-  return (MR_SUCCESS);
 }
 
 /**
@@ -1546,7 +1543,6 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	    case MR_TYPE_UINT32:
 	    case MR_TYPE_INT64:
 	    case MR_TYPE_UINT64:
-	    case MR_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
 	      fdp->mr_type_aux = tdp->mr_type;
 	      break;
 

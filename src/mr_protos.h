@@ -152,13 +152,13 @@ TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
 		)
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
-		(int, count, , "array size"),
-		(int, row_count, , "row size"),
+		(unsigned int, count, , "array size"),
+		(unsigned int, row_count, , "row size"),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
-		(int, width, , "bit-field width in bits"),
-		(int, shift, , "bit-field shift in first byte"),
+		(unsigned int, width, , "bit-field width in bits"),
+		(unsigned int, shift, , "bit-field shift in first byte"),
 		(ssize_t, size, , "size of bitfield array"),
 		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
 		{ .offset = offsetof (mr_bitfield_param_t, size) }, "offset"), 
@@ -173,7 +173,7 @@ TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       VOID (uint8_t, void_param, , "default serialized vaue"),
 	       (mr_array_param_t, array_param, , "array parameters"),
-	       (int64_t, enum_value, , "enum value"),
+	       (uint64_t, enum_value, , "enum value"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
 	       )
@@ -213,7 +213,7 @@ TYPEDEF_STRUCT (mr_ic_hash_virt_func_t, ATTRIBUTES ( , "virtual functions table 
 		)
 
 TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
-		(int, items_count),
+		(unsigned int, items_count),
 		(ssize_t, size, , "size of hash table"),
 		(char *, bucket_type),
 		(mr_hash_fn_t, hash_fn),
@@ -330,7 +330,7 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
-		(int, length),
+		(unsigned int, length),
 		)
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
@@ -404,7 +404,7 @@ TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 
 TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
-		(int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_load_data_t, mr_ra_idx_size) }, "offset"),
+		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_load_data_t, mr_ra_idx_size) }, "offset"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
@@ -413,7 +413,7 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
-		(int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_save_data_t, mr_ra_idx_size) }, "offset"),
+		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_save_data_t, mr_ra_idx_size) }, "offset"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators",
