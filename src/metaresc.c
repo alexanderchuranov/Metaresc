@@ -55,11 +55,11 @@ MR_TYPEDEF_DESC_BI (complex_float_t);
 MR_TYPEDEF_DESC_BI (complex_double_t);
 MR_TYPEDEF_DESC_BI (complex_long_double_t);
 
-/* MR_IC_NONE:        ( / 1000208 17280.0) ratio: 57.88 */
-/* MR_IC_RBTREE:       ( / 130017 19591.0) ratio: 6.63  */
-/* MR_IC_SORTED_ARRAY: ( / 102626 17535.0) ratio: 5.85  */
-/* MR_IC_HASH_NEXT:     ( / 33828 24834.0) ratio: 1.36  */
-/* MR_IC_HASH_TREE:     ( / 42154 32632.0) ratio: 1.29  */
+/* MR_IC_NONE:        ( / 70780888 1082965) ratio 65.36 */
+/* MR_IC_RBTREE:       ( / 9600581 1301985) ratio 7.37  */
+/* MR_IC_SORTED_ARRAY: ( / 8529280 1103829) ratio 7.73  */
+/* MR_IC_HASH_NEXT:    ( / 2153378 1292580) ratio 1.67  */
+/* MR_IC_HASH_TREE:    ( / 2321116 1621609) ratio 1.43  */
 
 #define MR_IC_STATIC_DEFAULT MR_IC_HASH_NEXT
 
@@ -925,7 +925,10 @@ mr_hashed_string_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
-  return (strcmp (x_->str, y_->str));
+  diff = (strcmp (x_->str, y_->str));
+  if (diff)
+    return (diff);
+  return (0);
 }
 
 mr_hash_value_t

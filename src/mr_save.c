@@ -18,9 +18,9 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-/* MR_IC_RBTREE    ( / 372146 1671.0) ratio: 222.70 */
-/* MR_IC_HASH_NEXT ( / 139148 1671.0) ratio: 83.27 */
-/* MR_IC_HASH_TREE  ( / 28611 1671.0) ratio: 17.12 */
+/* MR_IC_RBTREE    ( / 29380522 126030) ratio 233.12 */
+/* MR_IC_HASH_NEXT  ( / 4132470 162829) ratio 25.38  */
+/* MR_IC_HASH_TREE  ( / 2239373 162827) ratio 13.75  */
 
 #define MR_IC_DYNAMIC_DEFAULT MR_IC_HASH_TREE
 
@@ -183,7 +183,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       if (ud_find)
 	break;
 
-      if (MR_TYPE_ARRAY == mr_save_data->ptrs.ra[parent].fd.mr_type)
+      if ((MR_TYPE_ARRAY == mr_save_data->ptrs.ra[parent].fd.mr_type)
+	  || (MR_TYPE_POINTER == mr_save_data->ptrs.ra[parent].fd.mr_type))
 	continue;
       
       parent_fdp = mr_node_get_discriminator_fd (mr_save_data, parent, ud->discriminator.str);
@@ -210,7 +211,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
       ud->fdp = fdp;
       ud_find = &ud_idx;
-      mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find, mr_save_data);
+      if (parent >= 0)
+	mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find, mr_save_data);
     }
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
