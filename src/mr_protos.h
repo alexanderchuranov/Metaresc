@@ -326,7 +326,7 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 		)
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
-		(char *, str),
+		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
 		(int, length),
 		)
 
