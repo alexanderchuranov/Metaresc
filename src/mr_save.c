@@ -462,10 +462,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fd
   for (count = 0; ref_idx >= 0; ++count)
     {
       int next = ra[ref_idx].next;
-      ra[ref_idx].fd.name = fdp->name;
-      ra[ref_idx].fd.type = fdp->type;
-      ra[ref_idx].fd.size = fdp->size;
-      ra[ref_idx].fd.unnamed = fdp->unnamed;
+      ra[ref_idx].fd = *fdp;
       ra[ref_idx].fd.param.array_param.count = fdp->param.array_param.count - count;
       mr_add_child (parent, ref_idx, ra);
       ref_idx = next;
@@ -473,8 +470,90 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fd
   return (count);
 }
   
-
 static int mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent);
+
+static int
+resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
+{
+  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  int ref_parent = ra[ref_idx].parent;
+  
+  if (ra[parent].first_child < 0) /* this is the first element in resizable array */
+    {
+      if (fdp->param.array_param.count <= ra[ref_idx].fd.param.array_param.count)
+	{
+	  /* new resizable pointer is a part of already saved */
+	  ra[parent].ref_idx = ref_idx;
+	  ra[ref_idx].flags.is_referenced = TRUE;
+	  return (0);
+	}
+      /* otherwise we can handle only match with another resizable pointer */
+      if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
+	{
+	  if (ra[ref_idx].prev < 0)
+	    /*
+	      previously saved resizable pointer was pointing to the same address, but was shorter.
+	      we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
+	    */
+	    return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
+	  else
+	    {
+	      mr_fd_t fd_ = ra[ref_idx].fd;
+	      int i, count = fdp->param.array_param.count - fd_.param.array_param.count;
+	      char * data = ((char*)ra[ref_idx].data.ptr) + fd_.param.array_param.count * fd_.size;
+			  
+	      /*
+		Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
+		but previously saved pointer is shorter then we need for new one.
+		We need to append required number of nodes to previously saved pointer and set new resizable pointer as a references.
+	      */
+			  
+	      fd_.param.array_param.count = count;
+	      ra[parent].ref_idx = ref_idx;
+	      ra[ref_idx].flags.is_referenced = TRUE;
+			  
+	      for (ref_idx = ra[ref_parent].first_child; ref_idx >= 0; ref_idx = ra[ref_idx].next)
+		ra[ref_idx].fd.param.array_param.count += count;
+			  
+	      for (i = 0; i < count; )
+		{
+		  int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, ref_parent);
+		  if (0 == nodes_added)
+		    break;
+		  fd_.param.array_param.count -= nodes_added;
+		  i += nodes_added;
+		}
+	      return (0);
+	    }
+	}
+    }
+  else
+    {
+      /* we can handle only match with another resizable pointer */
+      if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
+	{
+	  /*
+	    in the middle of saving of resizable pointer we matched another resizable pointer
+	    we need to append all nodes from found resizable pointer to new one and
+	    adjust counters if total length of sequence increased
+	  */
+
+	  if (fdp->param.array_param.count < ra[ref_idx].fd.param.array_param.count)
+	    {
+	      int idx, count = fdp->param.array_param.count;
+			  
+	      fdp->param.array_param.count = ra[ref_idx].fd.param.array_param.count;
+			  
+	      for (idx = ra[parent].first_child; idx >= 0; idx = ra[idx].next)
+		ra[idx].fd.param.array_param.count = count--;
+	    }
+
+	  return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
+	}
+    }
+  
+  return (-1);
+}
 
 static int
 resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
@@ -487,108 +566,34 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
   
   for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
     {
-      mr_check_ud_ctx.node = ref_idx;
+      int ref_parent = ra[ref_idx].parent;
+      int nodes_added;
 
+      mr_check_ud_ctx.node = ref_idx;
       mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
       if (MR_SUCCESS == status)
-	{
-	  if (MR_TYPE_STRING == ra[parent].fd.mr_type)
-	    {
-	      ra[parent].ref_idx = ref_idx;
-	      ra[ref_idx].flags.is_referenced = TRUE;
-	      return (0);
-	    }
-	  else if (MR_TYPE_POINTER == ra[parent].fd.mr_type)
-	    {
-	      if (ra[parent].first_child < 0) /* this is the first element in resizable array */
-		{
-		  int ref_parent = ra[ref_idx].parent;
-		  if (fdp->param.array_param.count <= ra[ref_idx].fd.param.array_param.count)
-		    {
-		      /* new resizable pointer is a part of already saved */
-		      ra[parent].ref_idx = ref_idx;
-		      ra[ref_idx].flags.is_referenced = TRUE;
-		      return (0);
-		    }
-		  /* otherwise we can handle only match with another resizable pointer */
-		  if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
-		    {
-		      if (ra[ref_idx].prev < 0)
-			  /*
-			    previously saved resizable pointer was pointing to the same address, but was shorter.
-			    we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
-			  */
-			return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
-		      else
-			{
-			  mr_fd_t fd_ = ra[ref_idx].fd;
-			  int i, count = fdp->param.array_param.count - fd_.param.array_param.count;
-			  char * data = ((char*)ra[ref_idx].data.ptr) + fd_.param.array_param.count * fd_.size;
-			  
-			  /*
-			    Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
-			    but previously saved pointer is shorter then we need for new one.
-			    We need to append required number of nodes to previously saved pointer and set new resizable pointer as a references.
-			   */
-			  
-			  fd_.param.array_param.count = count;
-			  ra[parent].ref_idx = ref_idx;
-			  ra[ref_idx].flags.is_referenced = TRUE;
-			  
-			  for (ref_idx = ra[ref_parent].first_child; ref_idx >= 0; ref_idx = ra[ref_idx].next)
-			    ra[ref_idx].fd.param.array_param.count += count;
-			  
-			  for (i = 0; i < count; )
-			    {
-			      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, ref_parent);
-			      if (0 == nodes_added)
-				break;
-			      fd_.param.array_param.count -= nodes_added;
-			      i += nodes_added;
-			    }
-			  return (0);
-			}
-		    }
-		}
-	      else
-		{
-		  int ref_parent = ra[ref_idx].parent;
-		  /* we can handle only match with another resizable pointer */
-		  if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
-		    {
-		      /*
-			in the middle of saving of resizable pointer we matched another resizable pointer
-			we need to append all nodes from found resizable pointer to new one and
-			adjust counters if total length of sequence increased
-		      */
+	switch (ra[parent].fd.mr_type)
+	  {
+	  case MR_TYPE_STRING:
+	    ra[parent].ref_idx = ref_idx;
+	    ra[ref_idx].flags.is_referenced = TRUE;
+	    return (0);
 
-		      if (fdp->param.array_param.count < ra[ref_idx].fd.param.array_param.count)
-			{
-			  int idx, count = fdp->param.array_param.count;
-			  
-			  fdp->param.array_param.count = ra[ref_idx].fd.param.array_param.count;
-			  
-			  for (idx = ra[parent].first_child; idx >= 0; idx = ra[idx].next)
-			    ra[idx].fd.param.array_param.count = count--;
-			}
-
-		      return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
-		    }
-		}
-	    }
-	  else
-	    {
-	      int ref_parent = ra[ref_idx].parent;
-
-	      if ((ref_parent >= 0)
-		  && !ref_is_parent (ra, parent, ref_idx)
-		  && ((MR_TYPE_STRING == ra[ref_parent].fd.mr_type)
-		      || ((MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
-			  && (ra[ref_idx].prev < 0)
-			  && (fdp->param.array_param.count >= ra[ref_idx].fd.param.array_param.count))))
-		return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
-	    }
-	}
+	  case MR_TYPE_POINTER:
+	    nodes_added = resolve_pointer (ref_idx, fdp, mr_save_data, parent);
+	    if (nodes_added >= 0)
+	      return (nodes_added);
+	    
+	  default:
+	    if ((ref_parent >= 0)
+		&& ((MR_TYPE_STRING == ra[ref_parent].fd.mr_type)
+		    || ((MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
+			&& (ra[ref_idx].prev < 0)
+			&& (fdp->param.array_param.count >= ra[ref_idx].fd.param.array_param.count)))
+		&& !ref_is_parent (ra, parent, ref_idx)
+		)
+	      return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
+	  }
     }
   return (-1);
 }  
