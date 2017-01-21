@@ -59,9 +59,17 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
 static mr_fd_t *
 mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * discriminator)
 {
+  mr_type_t mr_type = parent_fdp->mr_type;
+  /* if discriminator is a pointer then we need address of the content */
+  if (MR_TYPE_POINTER == parent_fdp->mr_type)
+    {
+      discriminator = *(void**)discriminator;
+      mr_type = parent_fdp->mr_type_aux;
+    }
+
   /* switch over basic types */
   if (discriminator)
-    switch (parent_fdp->mr_type)
+    switch (mr_type)
       {
       case MR_TYPE_BOOL:
 	return (mr_union_discriminator_by_idx (tdp, *(bool*)discriminator));
@@ -190,12 +198,9 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       parent_fdp = mr_node_get_discriminator_fd (mr_save_data, parent, ud->discriminator.str);
       if (NULL == parent_fdp)
 	continue;
+      
       /* get an address of discriminator field */
       discriminator_ptr = (char*)mr_save_data->ptrs.ra[parent].data.ptr + parent_fdp->offset;
-
-      /* if discriminator is a pointer then we need address of the content */
-      if (MR_TYPE_POINTER == parent_fdp->mr_type)
-	discriminator_ptr = *(void**)discriminator_ptr;
 
       fdp = mr_union_discriminator_by_type (tdp, parent_fdp, discriminator_ptr);
       break;
