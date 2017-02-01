@@ -18,12 +18,10 @@
 #include <mr_load.h>
 #include <mr_save.h>
 
-TYPEDEF_FUNC (mr_status_t, xdr_load_handler_t, (XDR *, int, mr_ra_ptrdes_t *))
-TYPEDEF_FUNC (mr_status_t, xdr_save_handler_t, (XDR *, int, mr_ra_ptrdes_t *))
+TYPEDEF_FUNC (mr_status_t, xdr_handler_t, (XDR *, int, mr_ra_ptrdes_t *))
 
-static xdr_load_handler_t xdr_load_handler[];
-static xdr_load_handler_t ext_xdr_load_handler[];
-static xdr_save_handler_t xdr_save_handler[];
+static xdr_handler_t xdr_load_handler[];
+static xdr_handler_t xdr_save_handler[];
 
 /**
  * Loads int32_t from binary XDR stream.
@@ -1100,7 +1098,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 /**
  * Init save handlers Table
  */
-static xdr_save_handler_t xdr_save_handler[] =
+static xdr_handler_t xdr_save_handler[] =
   {
     [MR_TYPE_NONE] = xdr_none,
     [MR_TYPE_VOID] = xdr_none,
@@ -1169,7 +1167,7 @@ xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs)
 /**
  * Init load handlers Table
  */
-static xdr_load_handler_t xdr_load_handler[] =
+static xdr_handler_t xdr_load_handler[] =
   {
     [MR_TYPE_NONE] = xdr_none,
     [MR_TYPE_VOID] = xdr_none,

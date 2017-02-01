@@ -27,7 +27,6 @@
 TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
 
 static mr_save_handler_t mr_save_handler[];
-static mr_save_handler_t ext_mr_save_handler[];
 
 static mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
@@ -1039,7 +1038,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
       mr_save_pointer_content (mr_save_data->mr_ra_idx[mr_save_data->mr_ra_idx_size / sizeof (mr_save_data->mr_ra_idx[0])], mr_save_data);
     }
   mr_post_process (mr_save_data);
-  
+
   for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
     mr_ic_free (&mr_save_data->ptrs.ra[i].save_params.union_discriminator);
 
