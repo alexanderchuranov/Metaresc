@@ -321,19 +321,19 @@ MR_START_TEST (tda_overlapping_2, "Two overlaping dynamic arrays. Lower pointer 
 } END_TEST
 
 
-TYPEDEF_STRUCT (array_t,
+TYPEDEF_STRUCT (int_array_t,
 		(int, array, [3]),
 		);
 
 TYPEDEF_STRUCT (pointer_to_array_t,
-		(array_t *, array_ptr),
-		(int *, da, , "dynamic array one", { .offset = offsetof (pointer_to_array_t, size), }, "offset"),
+		(int_array_t *, array_ptr),
+		(int *, da, , "dynamic array", { .offset = offsetof (pointer_to_array_t, size), }, "offset"),
 		(ssize_t, size),
 		);
 
 MR_START_TEST (pointer_to_array, "Pointer into the middle of static array loaded first") {
   pointer_to_array_t pointer_to_array;
-  array_t array = { { 1, 2, 3 }, };
+  int_array_t array = { { 1, 2, 3 }, };
   pointer_to_array.array_ptr = &array;
   pointer_to_array.da = &array.array[1];
   pointer_to_array.size = 2 * sizeof (pointer_to_array.da[0]);
@@ -341,23 +341,20 @@ MR_START_TEST (pointer_to_array, "Pointer into the middle of static array loaded
   mr_ra_ptrdes_t ptrs = MR_SAVE (pointer_to_array_t, &pointer_to_array);
   int i;
   bool pointer_resolved_correctly = false;
-  bool has_ref_idx = false;
   if (ptrs.ra != NULL)
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if (ref_idx >= 0)
+	  if ((ref_idx >= 0) && (ptrs.ra[ref_idx].prev >= 0))
 	    {
-	      has_ref_idx = true;
-	      if (ptrs.ra[ref_idx].next >= 0)
-		pointer_resolved_correctly = true;
+	      pointer_resolved_correctly = true;
 	      break;
 	    }
 	}
       MR_FREE (ptrs.ra);
     }
-  ck_assert_msg (has_ref_idx && pointer_resolved_correctly, "Pointer resolved incorrectly");
+  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
 MAIN ();

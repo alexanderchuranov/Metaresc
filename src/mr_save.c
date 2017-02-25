@@ -275,9 +275,14 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       diff = x->fd.param.array_param.row_count - y->fd.param.array_param.row_count;
       if (diff)
 	return (diff);
-      diff = strcmp (x->fd.type, y->fd.type);
-      if (diff)
-	return (diff);
+      if ((MR_TYPE_STRUCT == x->fd.mr_type) ||
+	  (MR_TYPE_UNION == x->fd.mr_type) ||
+	  (MR_TYPE_ENUM == x->fd.mr_type))
+	{
+	  diff = strcmp (x->fd.type, y->fd.type);
+	  if (diff)
+	    return (diff);
+	}
       break;
       
     case MR_TYPE_BITFIELD:
