@@ -111,7 +111,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      (MR_TYPE_BITFIELD, , "bitfield_param"),
 	      MR_TYPE_BITMASK,
 	      (MR_TYPE_ARRAY, , "array_param"),
-	      (MR_TYPE_POINTER, , "array_param"),
+	      MR_TYPE_POINTER,
 	      MR_TYPE_UNION,
 	      MR_TYPE_ANON_UNION,
 	      MR_TYPE_NAMED_ANON_UNION,
@@ -171,7 +171,6 @@ TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function 
 		)
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
-	       VOID (uint8_t, void_param, , "default serialized vaue"),
 	       (mr_array_param_t, array_param, , "array parameters"),
 	       (uint64_t, enum_value, , "enum value"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),

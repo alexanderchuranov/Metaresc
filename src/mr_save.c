@@ -549,12 +549,14 @@ resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 
 	  if (fdp->param.array_param.count < ra[ref_idx].fd.param.array_param.count)
 	    {
-	      int idx, count = fdp->param.array_param.count;
-			  
-	      fdp->param.array_param.count = ra[ref_idx].fd.param.array_param.count;
+	      int idx;
+	      int delta = ra[ref_idx].fd.param.array_param.count - fdp->param.array_param.count;
+	      
+	      /* this is required for proper reindexing of nodes that will be moved by move_nodes_to_parent*/
+	      fdp->param.array_param.count = ra[ref_idx].fd.param.array_param.count; 
 			  
 	      for (idx = ra[parent].first_child; idx >= 0; idx = ra[idx].next)
-		ra[idx].fd.param.array_param.count = count--;
+		ra[idx].fd.param.array_param.count += delta;
 	    }
 
 	  return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
