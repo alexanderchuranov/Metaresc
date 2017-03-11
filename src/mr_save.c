@@ -449,13 +449,9 @@ register_type_name (mr_ptr_t key, const void * context)
 static bool
 ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
 {
-  while (node >= 0)
-    {
-      if (node == ref_idx)
-	return (TRUE);
-      node = ra[node].parent;
-    }
-  return (FALSE);
+  while ((node >= 0) && (node != ref_idx))
+    node = ra[node].parent;
+  return (node == ref_idx);
 }
 
 static int
