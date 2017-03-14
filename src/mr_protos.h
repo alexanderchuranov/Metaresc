@@ -171,6 +171,7 @@ TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function 
 		)
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
+	       VOID (uint8_t, dummy, , "default serialization is empty"),
 	       (mr_array_param_t, array_param, , "array parameters"),
 	       (uint64_t, enum_value, , "enum value"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),

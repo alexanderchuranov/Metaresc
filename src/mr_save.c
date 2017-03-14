@@ -455,7 +455,7 @@ ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
 }
 
 static int
-move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fdp)
+move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx)
 {
   int count, ref_idx = ra[ref_parent].first_child;
   
@@ -467,8 +467,8 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fd
   for (count = 0; ref_idx >= 0; ++count)
     {
       int next = ra[ref_idx].next;
-      ra[ref_idx].fd = *fdp;
-      ra[ref_idx].fd.param.array_param.count = fdp->param.array_param.count - count;
+      ra[ref_idx].fd = ra[idx].fd;
+      ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * ra[idx].fd.size;
       mr_add_child (parent, ref_idx, ra);
       ref_idx = next;
     }
@@ -478,14 +478,14 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fd
 static int mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent);
 
 static int
-resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
+resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx)
 {
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   int ref_parent = ra[ref_idx].parent;
   
   if (ra[parent].first_child < 0) /* this is the first element in resizable array */
     {
-      if (fdp->param.array_param.count <= ra[ref_idx].fd.param.array_param.count)
+      if (ra[idx].MR_SIZE <= ra[ref_idx].MR_SIZE)
 	{
 	  /* new resizable pointer is a part of already saved */
 	  ra[parent].ref_idx = ref_idx;
@@ -500,12 +500,13 @@ resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 	      previously saved resizable pointer was pointing to the same address, but was shorter.
 	      we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
 	    */
-	    return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
+	    return (move_nodes_to_parent (ra, ref_parent, parent, idx));
 	  else
 	    {
-	      mr_fd_t fd_ = ra[ref_idx].fd;
-	      int i, count = fdp->param.array_param.count - fd_.param.array_param.count;
-	      char * data = ((char*)ra[ref_idx].data.ptr) + fd_.param.array_param.count * fd_.size;
+	      ssize_t size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
+	      mr_size_t fd_size = ra[ref_idx].fd.size;
+	      int i, count =  size_delta / fd_size;
+	      char * data = ((char*)ra[ref_idx].data.ptr) + ra[ref_idx].MR_SIZE;
 			  
 	      /*
 		Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
@@ -513,19 +514,17 @@ resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 		We need to append required number of nodes to previously saved pointer and set new resizable pointer as a references.
 	      */
 			  
-	      fd_.param.array_param.count = count;
 	      ra[parent].ref_idx = ref_idx;
 	      ra[ref_idx].flags.is_referenced = TRUE;
 			  
 	      for (ref_idx = ra[ref_parent].first_child; ref_idx >= 0; ref_idx = ra[ref_idx].next)
-		ra[ref_idx].fd.param.array_param.count += count;
+		ra[ref_idx].MR_SIZE += size_delta;
 			  
 	      for (i = 0; i < count; )
 		{
-		  int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, ref_parent);
+		  int nodes_added = mr_save_inner (data + i * fd_size, &ra[ref_idx].fd, count - i, mr_save_data, ref_parent);
 		  if (0 == nodes_added)
 		    break;
-		  fd_.param.array_param.count -= nodes_added;
 		  i += nodes_added;
 		}
 	      return (0);
@@ -543,19 +542,19 @@ resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 	    adjust counters if total length of sequence increased
 	  */
 
-	  if (fdp->param.array_param.count < ra[ref_idx].fd.param.array_param.count)
+	  if (ra[ref_idx].MR_SIZE > ra[idx].MR_SIZE)
 	    {
-	      int idx;
-	      int delta = ra[ref_idx].fd.param.array_param.count - fdp->param.array_param.count;
+	      int i;
+	      ssize_t size_delta = ra[ref_idx].MR_SIZE - ra[idx].MR_SIZE;
 	      
-	      /* this is required for proper reindexing of nodes that will be moved by move_nodes_to_parent*/
-	      fdp->param.array_param.count = ra[ref_idx].fd.param.array_param.count; 
+	      /* this is required for proper reindexing of nodes that will be moved by move_nodes_to_parent */
+	      ra[idx].MR_SIZE = ra[ref_idx].MR_SIZE;
 			  
-	      for (idx = ra[parent].first_child; idx >= 0; idx = ra[idx].next)
-		ra[idx].fd.param.array_param.count += delta;
+	      for (i = ra[parent].first_child; i >= 0; i = ra[i].next)
+		ra[i].MR_SIZE += size_delta;
 	    }
 
-	  return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
+	  return (move_nodes_to_parent (ra, ref_parent, parent, idx));
 	}
     }
   
@@ -563,7 +562,7 @@ resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 }
 
 static int
-resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
+resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx)
 {
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   mr_check_ud_ctx_t mr_check_ud_ctx = {
@@ -587,7 +586,7 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 	    return (0);
 
 	  case MR_TYPE_POINTER:
-	    nodes_added = resolve_pointer (ref_idx, fdp, mr_save_data, parent);
+	    nodes_added = resolve_pointer (mr_save_data, idx, parent, ref_idx);
 	    if (nodes_added >= 0)
 	      return (nodes_added);
 	    
@@ -596,10 +595,10 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 		&& ((MR_TYPE_STRING == ra[ref_parent].fd.mr_type)
 		    || ((MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
 			&& (ra[ref_idx].prev < 0)
-			&& (fdp->param.array_param.count >= ra[ref_idx].fd.param.array_param.count)))
+			&& (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
 		&& !ref_is_parent (ra, parent, ref_idx)
 		)
-	      return (move_nodes_to_parent (ra, ref_parent, parent, fdp));
+	      return (move_nodes_to_parent (ra, ref_parent, parent, idx));
 	  }
     }
   return (-1);
@@ -679,7 +678,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   if ((NULL != search_result) && (search_result->long_int_t != idx))
     {
       mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-      int nodes_matched = resolve_matched (search_result->long_int_t, fdp, mr_save_data, parent);
+      int nodes_matched = resolve_matched (mr_save_data, idx, parent, search_result->long_int_t);
       if (nodes_matched >= 0)
 	return (nodes_matched);
 
