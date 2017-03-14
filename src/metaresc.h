@@ -807,10 +807,11 @@
     })
 
 #define MR_SAVE_METHOD(METHOD, MR_TYPE_NAME, S_PTR) ({			\
-      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
       char * __str__ = NULL;						\
       if (__ptrs__.ra != NULL)						\
 	{								\
+	  mr_remove_empty_nodes (&__ptrs__);				\
 	  __str__ = METHOD (&__ptrs__);					\
 	  MR_FREE (__ptrs__.ra);					\
 	}								\
@@ -894,7 +895,7 @@
       int __size__;							\
       char * __str__ = NULL;						\
       xmlChar * __xml_str__ = NULL;					\
-      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
       if (__ptrs__.ra != NULL)						\
 	{								\
 	  xmlDocPtr __doc__ = xml2_save (&__ptrs__);			\
@@ -1203,6 +1204,7 @@ extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * r
 
 extern char * xml_unquote_string (mr_substr_t * substr);
 extern void mr_init_save_xml (void);
+extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 
 extern int64_t mr_get_enum_value (mr_td_t * tdp, void * data);
 extern mr_hash_value_t mr_hash_str (char * str);

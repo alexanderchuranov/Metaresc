@@ -939,6 +939,33 @@ mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
   return (MR_SUCCESS);
 }
 
+void
+mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
+{
+  int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  for (idx = 1; idx < count; ++idx)
+    if ((MR_TYPE_VOID == ptrs->ra[idx].fd.mr_type) ||
+	(MR_TYPE_STRUCT == ptrs->ra[idx].fd.mr_type) ||
+	(MR_TYPE_UNION == ptrs->ra[idx].fd.mr_type) ||
+	(MR_TYPE_ANON_UNION == ptrs->ra[idx].fd.mr_type) ||
+	(MR_TYPE_NAMED_ANON_UNION == ptrs->ra[idx].fd.mr_type))
+      for (i = idx; i > 0; i = ptrs->ra[i].parent)
+	{
+	  if (ptrs->ra[i].first_child >= 0)
+	    break;
+	  
+	  if (ptrs->ra[i].prev < 0)
+	    ptrs->ra[ptrs->ra[i].parent].first_child = ptrs->ra[i].next;
+	  else
+	    ptrs->ra[ptrs->ra[i].prev].next = ptrs->ra[i].next;
+	  
+	  if (ptrs->ra[i].next < 0)
+	    ptrs->ra[ptrs->ra[i].parent].last_child = ptrs->ra[i].prev;
+	  else
+	    ptrs->ra[ptrs->ra[i].next].prev = ptrs->ra[i].prev;
+	}
+}
+
 /**
  * Set indexes to nodes according saving sequence.
  * @param mr_save_data save routines data and lookup structures
