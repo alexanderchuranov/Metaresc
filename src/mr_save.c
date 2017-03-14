@@ -475,7 +475,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, mr_fd_t * fd
   return (count);
 }
   
-static int mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent);
+static int mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent);
 
 static int
 resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
@@ -522,7 +522,7 @@ resolve_pointer (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
 			  
 	      for (i = 0; i < count; )
 		{
-		  int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, ref_parent);
+		  int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, ref_parent);
 		  if (0 == nodes_added)
 		    break;
 		  fd_.param.array_param.count -= nodes_added;
@@ -613,7 +613,7 @@ resolve_matched (int ref_idx, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int 
  * @param parent index of parent node
  */
 static int
-mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int parent)
+mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
 {
   static char * type_name[] = { [0 ... MR_TYPE_LAST - 1] = NULL };
   static bool initialized = FALSE;
@@ -672,10 +672,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data, int pa
       break;
     }
   
-  if (MR_TYPE_ARRAY == fdp->mr_type)
-    ra[idx].MR_SIZE = fdp->size * fdp->param.array_param.count;
-  else
-    ra[idx].MR_SIZE = fdp->size;
+  ra[idx].MR_SIZE = fdp->size * count;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx, ra);
@@ -747,7 +744,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
       fd_.mr_type = MR_TYPE_CHAR_ARRAY;
       fd_.size = sizeof (char);
       fd_.type = "char";
-      mr_save_inner (str, &fd_, mr_save_data, idx);
+      mr_save_inner (str, &fd_, 1, mr_save_data, idx);
     }
 }
 
@@ -779,7 +776,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
-      mr_save_inner (&data[fdp->offset], fdp, mr_save_data, idx);
+      mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
     }
 }
 
@@ -809,7 +806,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[idx].fd.type, mr_save_data->ptrs.ra[idx].fd.meta);
 
   if (NULL != fdp)
-    mr_save_inner (&data[fdp->offset], fdp, mr_save_data, idx);
+    mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
 }
 
 /**
@@ -837,7 +834,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
 
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, mr_save_data, idx);
+      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
       if (1 == row_count)
 	fd_.param.array_param.count -= nodes_added;
       i += nodes_added * row_count;
@@ -864,7 +861,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
       
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, mr_save_data, idx);
+      int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
       if (0 == nodes_added)
 	break;
       fd_.param.array_param.count -= nodes_added;
@@ -1033,7 +1030,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 
   fdp->unnamed = TRUE;
   
-  mr_save_inner (data, fdp, mr_save_data, -1);
+  mr_save_inner (data, fdp, 1, mr_save_data, -1);
 
   while (mr_save_data->mr_ra_idx_size > 0)
     {
