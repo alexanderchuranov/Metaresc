@@ -503,7 +503,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	    return (move_nodes_to_parent (ra, ref_parent, parent, idx));
 	  else
 	    {
-	      ssize_t size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
+	      ssize_t size_delta = ra[ref_idx].MR_SIZE - ra[idx].MR_SIZE;
 	      mr_size_t fd_size = ra[ref_idx].fd.size;
 	      int i, count =  size_delta / fd_size;
 	      char * data = ((char*)ra[ref_idx].data.ptr) + ra[ref_idx].MR_SIZE;
@@ -663,6 +663,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
       
     case MR_TYPE_STRUCT:
     case MR_TYPE_ENUM:
+    case MR_TYPE_ANON_UNION:
+    case MR_TYPE_NAMED_ANON_UNION:
       ra[idx].type = fdp->type;
       break;
       
