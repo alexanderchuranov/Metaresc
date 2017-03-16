@@ -663,8 +663,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
       
     case MR_TYPE_STRUCT:
     case MR_TYPE_ENUM:
-    case MR_TYPE_ANON_UNION:
-    case MR_TYPE_NAMED_ANON_UNION:
       ra[idx].type = fdp->type;
       break;
       
