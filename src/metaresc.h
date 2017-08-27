@@ -469,9 +469,9 @@
 #define P00_COMMA_ANON_UNION ANON_UNION,
 #define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
-#define MR_UNIQ_NAME(LINE) name_ ## LINE
-#define MR_COMPILETIME_ASSERT(X) MR_COMPILETIME_ASSERT_ (X, __LINE__)
-#define MR_COMPILETIME_ASSERT_(X, LINE) typedef struct { int:-!!(X); } MR_UNIQ_NAME (LINE)
+#define MR_UNIQ_NAME(ID) name_ ## ID
+#define MR_COMPILETIME_ASSERT(X) MR_COMPILETIME_ASSERT_ (X, __COUNTER__)
+#define MR_COMPILETIME_ASSERT_(X, ID) typedef struct { int:-!!(X); } MR_UNIQ_NAME (ID)
 /*
   For types defined using standard language approach you will need to create analog types with metaresc.
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
