@@ -1379,8 +1379,11 @@ mr_check_fields (mr_td_t * tdp)
       if (name)
 	{
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
-	  if (*name) /* strings with field names might be in read-only memory. For MR_VOID names are saved in writable memory. */
-	    *name = 0; /* truncate on first invalid charecter */
+	  if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
+	    {
+	      fdp->mr_type = MR_TYPE_VOID; /* explicitly set type to VOID for auto-detected fields */
+	      *name = 0; /* truncate on first invalid charecter */
+	    }
 	}
       mr_normalize_type (fdp);
       if (MR_TYPE_BITFIELD == fdp->mr_type)
