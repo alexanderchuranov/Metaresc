@@ -148,7 +148,7 @@
    | (__builtin_types_compatible_p (PREFIX uint64_t SUFFIX, PREFIX TYPE) ? MR_TYPE_UINT64 : 0) \
    | (__builtin_types_compatible_p (PREFIX MR_UNCOVERED_TYPE SUFFIX, PREFIX TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
    | (__builtin_types_compatible_p (PREFIX unsigned MR_UNCOVERED_TYPE SUFFIX, PREFIX TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
-   | (__builtin_types_compatible_p (PREFIX float SUFFIX, PREFIX PREFIX TYPE) ? MR_TYPE_FLOAT : 0) \
+   | (__builtin_types_compatible_p (PREFIX float SUFFIX, PREFIX TYPE) ? MR_TYPE_FLOAT : 0) \
    | (__builtin_types_compatible_p (PREFIX complex float SUFFIX, PREFIX TYPE) ? MR_TYPE_COMPLEX_FLOAT : 0) \
    | (__builtin_types_compatible_p (PREFIX double SUFFIX, PREFIX TYPE) ? MR_TYPE_DOUBLE : 0) \
    | (__builtin_types_compatible_p (PREFIX complex double SUFFIX, PREFIX TYPE) ? MR_TYPE_COMPLEX_DOUBLE : 0) \
@@ -565,14 +565,6 @@
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .unnamed = FALSE,						\
 	     .mr_type = MR_TYPE,					\
-	     .param =							\
-	     {								\
-	       .array_param = {						\
-		 .count = sizeof (((MR_TYPE_NAME*)NULL)->NAME) /	\
-		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
-		 .row_count = 1,					\
-	       },							\
-	     },								\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
@@ -643,7 +635,7 @@
 #define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 
 #define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, __VA_ARGS__)
-#define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
+#define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__, .size = sizeof (((MR_TYPE_NAME*)0)->NAME))
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\

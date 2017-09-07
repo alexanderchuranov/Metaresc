@@ -382,7 +382,7 @@ static mr_status_t
 mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
-  int max_size = ptrdes->fd.param.array_param.count * ptrdes->fd.size;
+  int max_size = ptrdes->fd.size;
   mr_status_t status = MR_FAILURE;
   
   memset (ptrdes->data.ptr, 0, max_size);

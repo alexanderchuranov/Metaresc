@@ -551,7 +551,7 @@ XDR_COMPLEX (long_double, long double);
 static mr_status_t
 xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  uint32_t str_len, max_size = ptrs->ra[idx].fd.size * ptrs->ra[idx].fd.param.array_param.count;
+  uint32_t str_len, max_size = ptrs->ra[idx].fd.size;
   int parent = ptrs->ra[idx].parent;
   bool is_a_dynamic_string = ((parent >= 0) && (MR_TYPE_POINTER == ptrs->ra[parent].fd.mr_type));
 
