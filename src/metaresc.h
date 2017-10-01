@@ -358,12 +358,13 @@
 #define P00_FIELD_UNFOLD_(...) P00_FIELD_UNFOLD__ (__VA_ARGS__)
 #define P00_FIELD_UNFOLD__(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA, ...) \
   MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
-  (P00_UNFOLD (MR_, UNKNOWN, P00_GET_MODE P00_MODE_TYPE_NAME, , FIELD))	\
+  (P00_UNFOLD (MR_, UNKNOWN, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, FIELD))	\
   (P00_UNFOLD (MR_, P00_FIELD_COMMA, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (__VA_ARGS__)))
 
 /* produce compilation error for unkown field qualifiers */
 #define MR_UNKNOWN_PROTO(P00_TYPE_NAME, ...) int _1[#__VA_ARGS__()];
-#define MR_UNKNOWN_DESC(P00_TYPE_NAME, ...) { #__VA_ARGS__(), },
+/* auto generate descriptor based on field name */
+#define MR_UNKNOWN_DESC(P00_TYPE_NAME, ...) MR_AUTO_DESC (P00_TYPE_NAME, __VA_ARGS__)
 
 /*
   Check for empty trailing enum definition
