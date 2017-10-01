@@ -364,7 +364,7 @@
 /* produce compilation error for unkown field qualifiers */
 #define MR_UNKNOWN_PROTO(P00_TYPE_NAME, ...) int _1[#__VA_ARGS__()];
 /* auto generate descriptor based on field name */
-#define MR_UNKNOWN_DESC(P00_TYPE_NAME, ...) MR_AUTO_DESC (P00_TYPE_NAME, __VA_ARGS__)
+#define MR_UNKNOWN_DESC(P00_TYPE_NAME, ...) MR_AUTO_DESC (P00_TYPE_NAME, /* auto detect type */, __VA_ARGS__)
 
 /*
   Check for empty trailing enum definition
@@ -618,7 +618,7 @@
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
-#define MR_AUTO_DESC__(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+#define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX,			\
 		 MR_TYPE_DETECT (TYPE), __VA_ARGS__,			\
 		 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE)		\
@@ -627,10 +627,9 @@
    with type provided in macro. This is possible for descriptors
    generated for external types */
 
-#define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC__ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-#define MR_AUTO_DESC(MR_TYPE_NAME, ARG, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) \
-    (MR_AUTO_DESC_ (MR_TYPE_NAME, __typeof__ (((MR_TYPE_NAME*)0)->ARG), ARG)) \
-    (MR_AUTO_DESC_ (MR_TYPE_NAME, ARG, __VA_ARGS__))
+#define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_IF_ELSE (MR_IS_EMPTY (TYPE)) \
+    (MR_AUTO_DESC_ (MR_TYPE_NAME, __typeof__ (((MR_TYPE_NAME*)0)->NAME), NAME, __VA_ARGS__)) \
+    (MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__))
 
 #define MR_VOID_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
