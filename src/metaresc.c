@@ -1436,6 +1436,12 @@ mr_auto_field_detect (mr_fd_t * fdp)
     }
   else
     {
+      if (fdp->mr_type_aux != MR_TYPE_NONE)
+	{
+	  fdp->mr_type = MR_TYPE_POINTER;
+	  fdp->size = types_sizes[fdp->mr_type_aux];
+	}	  
+      
       /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
       if ('*' == *end)

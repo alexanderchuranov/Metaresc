@@ -77,14 +77,17 @@ TYPEDEF_STRUCT (struct_t,
 typedef struct ext_struct_t {
   int16_t x;
   int32_t y;
-  int64_t z;
+  uint8_t * z;
+  const uint16_t * cz;
+  volatile int32_t * vz;
+  const volatile int64_t * cvz;
 } ext_struct_t;
 
 #define MR_MODE DESC
 TYPEDEF_STRUCT (ext_struct_t,
-		(x),
-		_ y,
-		AUTO z,
+		x,
+		( , y),
+		z, cz, vz, cvz
 		)
 
 #define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({	\
@@ -103,13 +106,17 @@ TYPEDEF_STRUCT (ext_struct_t,
 
 #define ASSERT_STRUCT_FIELD_TYPE(FIELD, MR_TYPE, ...) ASSERT_FIELD_TYPE (struct_t, FIELD, MR_TYPE, __VA_ARGS__)
 #define ASSERT_EXT_STRUCT_FIELD_TYPE(FIELD) ASSERT_FIELD_TYPE (ext_struct_t, FIELD, MR_TYPE_DETECT (__typeof__ (((ext_struct_t*)0)->FIELD)))
+#define ASSERT_EXT_STRUCT_FIELD_TYPE_PTR(FIELD) ASSERT_FIELD_TYPE (ext_struct_t, FIELD, MR_TYPE_POINTER, MR_TYPE_DETECT_PTR (__typeof__ (((ext_struct_t*)0)->FIELD)))
 
 MR_START_TEST (check_ext_struct, "check that descriptor for external type is correct") {
   mr_detect_type (NULL);
   
   ASSERT_EXT_STRUCT_FIELD_TYPE (x);
   ASSERT_EXT_STRUCT_FIELD_TYPE (y);
-  ASSERT_EXT_STRUCT_FIELD_TYPE (z);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (z);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cz);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (vz);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cvz);
 } END_TEST
 
 MR_START_TEST (check_types_detection, "check that types detected correctly") {
@@ -135,13 +142,13 @@ MR_START_TEST (check_types_detection, "check that types detected correctly") {
   ASSERT_STRUCT_FIELD_TYPE (char_array_, MR_TYPE_CHAR_ARRAY);
   ASSERT_STRUCT_FIELD_TYPE (char_, MR_TYPE_CHAR);
 
-  ASSERT_STRUCT_FIELD_TYPE (string, MR_TYPE_STRING);
-  ASSERT_STRUCT_FIELD_TYPE (const_string, MR_TYPE_STRING);
-  ASSERT_STRUCT_FIELD_TYPE (volatile_string, MR_TYPE_STRING);
-  ASSERT_STRUCT_FIELD_TYPE (const_volatile_string, MR_TYPE_STRING);
-  ASSERT_STRUCT_FIELD_TYPE (volatile_const_string, MR_TYPE_STRING);
+  ASSERT_STRUCT_FIELD_TYPE (string, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_STRUCT_FIELD_TYPE (const_string, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_STRUCT_FIELD_TYPE (volatile_string, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_STRUCT_FIELD_TYPE (const_volatile_string, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_STRUCT_FIELD_TYPE (volatile_const_string, MR_TYPE_STRING, MR_TYPE_CHAR);
 
-  ASSERT_STRUCT_FIELD_TYPE (char_ptr_, MR_TYPE_STRING);
+  ASSERT_STRUCT_FIELD_TYPE (char_ptr_, MR_TYPE_STRING, MR_TYPE_CHAR);
   
   ASSERT_STRUCT_FIELD_TYPE (string_, MR_TYPE_STRING, MR_TYPE_CHAR);
   ASSERT_STRUCT_FIELD_TYPE (const_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
