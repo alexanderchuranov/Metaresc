@@ -687,7 +687,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
 	    return;
 
 	  /* lookup for a size field in this parent */
-	  if (0 == strcmp ("", name))
+	  if (0 == name[0])
 	    parent_fdp = mr_get_fd_by_offset (parent_tdp, ptrs->ra[idx].fd.res.offset);
 	  else
 	    parent_fdp = mr_get_fd_by_name (parent_tdp, name);
