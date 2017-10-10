@@ -485,10 +485,10 @@
 /*
   if your types contains only builtin types then you can do more precies comparation.
   #undef MR_COMPARE_FIELDS_EXT
-  #define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) !__builtin_types_compatible_p (__typeof__ (((TYPE1*)NULL)->NAME1), __typeof__ (((TYPE2*)NULL)->NAME2))
+  #define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) !__builtin_types_compatible_p (__typeof__ (((TYPE1*)0)->NAME1), __typeof__ (((TYPE2*)0)->NAME2))
 */
 #endif /* MR_COMPARE_FIELDS_EXT */
-#define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) != offsetof (TYPE2, NAME2)) | (sizeof (((TYPE1*)NULL)->NAME1) != sizeof (((TYPE2*)NULL)->NAME2)) | MR_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
+#define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) != offsetof (TYPE2, NAME2)) | (sizeof (((TYPE1*)0)->NAME1) != sizeof (((TYPE2*)0)->NAME2)) | MR_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
 
 #define MR_UNFOLD(NODE, ...) MR_PASTE3 (NODE, _, MR_MODE) (MR_TYPE_NAME, __VA_ARGS__)
 
@@ -573,9 +573,9 @@
 	     .param =							\
 	     {								\
 	       .array_param = {						\
-		 .count = sizeof (((MR_TYPE_NAME*)NULL)->NAME) /	\
+		 .count = sizeof (((MR_TYPE_NAME*)0)->NAME) /		\
 		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
-		 .row_count = sizeof (((MR_TYPE_NAME*)NULL)->NAME[0]) /	\
+		 .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) /	\
 		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
 	       },							\
 	     },								\
