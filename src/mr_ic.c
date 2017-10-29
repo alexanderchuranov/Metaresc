@@ -689,6 +689,8 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, const void * context, int
 	  hash->hash_table[i] = key;
 	  return (&hash->hash_table[i]);
 	}
+      if (0 == ic->compar_fn (key, hash->hash_table[i], context))
+	return (&hash->hash_table[i]);
       if (++i >= count)
 	i = 0;
       if (i == bucket)
