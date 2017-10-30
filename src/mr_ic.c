@@ -466,8 +466,12 @@ mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key, const void * context)
   int bucket = mr_ic_hash_get_backet (&ic->hash, key, context);
   if (bucket < 0)
     return (NULL);
-  ++ic->hash.items_count;
-  return (ic->hash.virt_func->index_add (ic, key, context, bucket));
+
+  mr_ptr_t * add = ic->hash.virt_func->index_add (ic, key, context, bucket);
+  if ((add != NULL) && (add->ptr == key.ptr))
+    ++ic->hash.items_count;
+
+  return (add);
 }
 
 TYPEDEF_STRUCT (mr_ic_hash_index_context_t,
