@@ -121,8 +121,9 @@ unquote_str (mr_substr_t * substr)
 %left TOK_CINIT_BIT_OR TOK_CINIT_BIT_AND TOK_CINIT_BIT_XOR
 %left TOK_CINIT_PLUS TOK_CINIT_MINUS
 %left TOK_CINIT_MUL TOK_CINIT_DIV TOK_CINIT_MOD
-%left NEG
+%precedence NEG 
 %type <value> expr
+%type <value> unary
 
 %start cinit
 
@@ -184,12 +185,7 @@ compaund
   }
 
 expr:
-TOK_CINIT_NUMBER { $$ = $1; }
-| TOK_CINIT_ID {
-  $$.vt_string = strndup ($1.str, $1.length);
-  $$.value_type = MR_VT_ID;
-  }
-| expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
+  expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
 | expr TOK_CINIT_MINUS expr { mr_value_sub (&$$, &$1, &$3); }
 | expr TOK_CINIT_MUL expr { mr_value_mul (&$$, &$1, &$3); }
 | expr TOK_CINIT_DIV expr { mr_value_div (&$$, &$1, &$3); }
@@ -197,7 +193,16 @@ TOK_CINIT_NUMBER { $$ = $1; }
 | expr TOK_CINIT_BIT_OR expr { mr_value_bit_or (&$$, &$1, &$3); }
 | expr TOK_CINIT_BIT_AND expr { mr_value_bit_and (&$$, &$1, &$3); }
 | expr TOK_CINIT_BIT_XOR expr { mr_value_bit_xor (&$$, &$1, &$3); }
-| TOK_CINIT_MINUS expr %prec NEG { $$ = $2; mr_value_neg (&$$); }
+| unary { $$ = $1; }
+| TOK_CINIT_MINUS unary %prec NEG { $$ = $2; mr_value_neg (&$$); }
+| TOK_CINIT_PLUS unary %prec NEG { $$ = $2; }
+
+unary:
+  TOK_CINIT_NUMBER { $$ = $1; }
+| TOK_CINIT_ID {
+  $$.vt_string = strndup ($1.str, $1.length);
+  $$.value_type = MR_VT_ID;
+  }
 | TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
 
 compaund:
