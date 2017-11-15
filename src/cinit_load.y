@@ -123,7 +123,6 @@ unquote_str (mr_substr_t * substr)
 %left TOK_CINIT_MUL TOK_CINIT_DIV TOK_CINIT_MOD
 %precedence NEG 
 %type <value> expr
-%type <value> unary
 
 %start cinit
 
@@ -193,12 +192,9 @@ expr:
 | expr TOK_CINIT_BIT_OR expr { mr_value_bit_or (&$$, &$1, &$3); }
 | expr TOK_CINIT_BIT_AND expr { mr_value_bit_and (&$$, &$1, &$3); }
 | expr TOK_CINIT_BIT_XOR expr { mr_value_bit_xor (&$$, &$1, &$3); }
-| unary { $$ = $1; }
-| TOK_CINIT_MINUS unary %prec NEG { $$ = $2; mr_value_neg (&$$); }
-| TOK_CINIT_PLUS unary %prec NEG { $$ = $2; }
-
-unary:
-  TOK_CINIT_NUMBER { $$ = $1; }
+| TOK_CINIT_MINUS expr %prec NEG { $$ = $2; mr_value_neg (&$$); }
+| TOK_CINIT_PLUS expr %prec NEG { $$ = $2; }
+| TOK_CINIT_NUMBER { $$ = $1; }
 | TOK_CINIT_ID {
   $$.vt_string = strndup ($1.str, $1.length);
   $$.value_type = MR_VT_ID;
