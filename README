@@ -6,3 +6,7 @@ of types declared that way may be subsequently serialized into various
 formats and deserialized later. To achieve this the library adds
 metadata annotations to types. These annotations may be used for may
 purposes far beyond just achieving the persistence.
+
+Install external dependencies autoconf, automake, libtool, pkg-config, flex, bison, libxml2-dev, check.
+On Ubuntu, run the following command:
+apt-get install autoconf automake libtool pkg-config flex bison libxml2-dev check
