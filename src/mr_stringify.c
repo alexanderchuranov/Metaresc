@@ -32,7 +32,7 @@
 char *
 mr_output_format_bool (mr_ptrdes_t * ptrdes)
 {
-  return (*(bool*)ptrdes->data.ptr ? MR_STRDUP ("TRUE") : MR_STRDUP ("FALSE"));
+  return (*(bool*)ptrdes->data.ptr ? MR_STRDUP ("true") : MR_STRDUP ("false"));
 }
 
 #define MR_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
@@ -142,7 +142,7 @@ mr_stringify_uint (mr_ptrdes_t * ptrdes)
 char *
 mr_stringify_func (mr_ptrdes_t * ptrdes)
 {
-  if (TRUE == ptrdes->flags.is_null)
+  if (true == ptrdes->flags.is_null)
     return (MR_STRDUP (""));
   else
     {

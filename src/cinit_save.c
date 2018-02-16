@@ -41,7 +41,7 @@ TYPEDEF_FUNC (bool, cinit_json_save_handler_t, (int, mr_ra_ptrdes_t *, mr_save_t
 static bool
 cinit_save_none (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
-  return (TRUE);
+  return (true);
 }
 
 /**
@@ -51,7 +51,7 @@ cinit_save_none (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data
  * \@param data structure that argregates evrything required for saving
  * \@return status
  */
-#define CINIT_SAVE_TYPE(TYPE, EXT...) static bool cinit_save_ ## TYPE (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data) { save_data->content = mr_stringify_ ## TYPE (&ptrs->ra[idx] EXT); return (FALSE); }
+#define CINIT_SAVE_TYPE(TYPE, EXT...) static bool cinit_save_ ## TYPE (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data) { save_data->content = mr_stringify_ ## TYPE (&ptrs->ra[idx] EXT); return (false); }
 
 CINIT_SAVE_TYPE (bool);
 CINIT_SAVE_TYPE (int8_t);
@@ -154,7 +154,7 @@ cinit_save_char (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data
     save_data->content = MR_STRDUP ("'\\000'");
   else
     save_data->content = cinit_quote_string (str, '\'');
-  return (FALSE);
+  return (false);
 }
 
 /**
@@ -168,7 +168,7 @@ static bool
 cinit_save_char_array (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   save_data->content = cinit_quote_string (ptrs->ra[idx].data.ptr, '"');
-  return (FALSE);
+  return (false);
 }
 
 /**
@@ -182,11 +182,11 @@ static bool
 cinit_save_string (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   char * str = *(char**)ptrs->ra[idx].data.ptr;
-  if ((TRUE == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
+  if ((true == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
     save_data->content = MR_STRDUP (MR_CINIT_NULL);
   else
     save_data->content = cinit_quote_string (str, '"');
-  return (FALSE);
+  return (false);
 }
 
 /**
@@ -202,7 +202,7 @@ cinit_save_func (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data
   char * func_str = mr_stringify_func (&ptrs->ra[idx]);
   if (func_str)
     {
-      if (TRUE == ptrs->ra[idx].flags.is_null)
+      if (true == ptrs->ra[idx].flags.is_null)
 	{
 	  MR_FREE (func_str);
 	  save_data->content = MR_STRDUP (MR_CINIT_NULL);
@@ -233,7 +233,7 @@ cinit_save_struct (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_da
 {
   save_data->prefix = "{\n";
   save_data->suffix = "}";
-  return (FALSE);
+  return (false);
 }
 
 /**
@@ -248,7 +248,7 @@ cinit_save_anon_union (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * sav
 {
   save_data->prefix = "\"\", {\n";
   save_data->suffix = "}";
-  return (FALSE);
+  return (false);
 }
 
 static bool
@@ -276,7 +276,7 @@ cinit_save_pointer (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_d
       save_data->prefix = "(" MR_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
       save_data->suffix = "}";
     }
-  return (FALSE);
+  return (false);
 }
 
 /**
@@ -291,7 +291,7 @@ json_save_array (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data
 {
   save_data->prefix = "[\n";
   save_data->suffix = "]";
-  return (FALSE);
+  return (false);
 }
 
 /**
@@ -312,7 +312,7 @@ json_save_pointer (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_da
       save_data->prefix = "/* (" MR_JSON_TYPE_NAME_TEMPLATE "[]) */ [\n";
       save_data->suffix = "]";
     }
-  return (FALSE);
+  return (false);
 }
 
 /**
@@ -497,7 +497,7 @@ static bool
 cinit_node_handler (mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   bool skip_node = 0;
-  if (FALSE == fdp->unnamed)
+  if (false == fdp->unnamed)
     save_data->named_field_template = MR_CINIT_NAMED_FIELD_TEMPLATE;
 
   if ((fdp->mr_type < MR_TYPE_LAST) && cinit_save_handler[fdp->mr_type])
@@ -518,7 +518,7 @@ json_node_handler (mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_d
 {
   bool skip_node = 0;
 
-  if (FALSE == fdp->unnamed)
+  if (false == fdp->unnamed)
     save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE;
 
   if ((fdp->mr_type < MR_TYPE_LAST) && json_save_handler[fdp->mr_type])

@@ -43,10 +43,10 @@ mr_get_enum (char * str, uint64_t * data)
     memcpy (name_, name, size);
     name_[size] = 0;
 
-    if (0 == strcmp ("FALSE", name_))
-      *data = FALSE;
-    else if (0 == strcmp ("TRUE", name_))
-      *data = TRUE;
+    if (0 == strcmp ("false", name_))
+      *data = false;
+    else if (0 == strcmp ("true", name_))
+      *data = true;
     else
       {
 	mr_fd_t * fdp = mr_get_enum_by_name (name_);
@@ -343,7 +343,7 @@ mr_value_is_zero (mr_value_t * value)
     case MR_VT_COMPLEX: return (0 == value->vt_complex);
     default: MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
     }
-  return (FALSE);
+  return (false);
 }
   
 MR_VALUE_OP (add, +);

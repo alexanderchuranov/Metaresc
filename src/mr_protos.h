@@ -5,7 +5,7 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , , { MR_SIZE_STR }, "char", .unnamed = TRUE),
+	       (void *, ptr, , , { MR_SIZE_STR }, "char", .unnamed = true),
 	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "char"),
 	       (char *, string),
 	       (mr_offset_t, offset),

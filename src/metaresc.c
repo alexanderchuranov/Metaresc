@@ -97,11 +97,11 @@ static mr_status_t mr_conf_init_visitor (mr_ptr_t key, const void * context);
 static inline void
 mr_conf_init ()
 {
-  static bool initialized = FALSE;
+  static bool initialized = false;
   if (!initialized)
     {
       mr_ic_foreach (&mr_conf.lookup_by_name, mr_conf_init_visitor, NULL);
-      initialized = TRUE;
+      initialized = true;
     }
 }
 
@@ -135,7 +135,7 @@ char *
 mr_message_format (mr_message_id_t message_id, va_list args)
 {
   static const char * messages[MR_MESSAGE_LAST + 1] = { [0 ... MR_MESSAGE_LAST] = NULL };
-  static bool messages_inited = FALSE;
+  static bool messages_inited = false;
   const char * format = "Unknown MR_MESSAGE_ID.";
   char * message = NULL;
 
@@ -147,7 +147,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 	  int i;
 	  for (i = 0; MR_TYPE_ENUM_VALUE == tdp->fields[i].fdp->mr_type; ++i)
 	    messages[tdp->fields[i].fdp->param.enum_value] = tdp->fields[i].fdp->meta;
-	  messages_inited = TRUE;
+	  messages_inited = true;
 	}
     }
 
@@ -634,13 +634,13 @@ bool
 mr_is_valid_field_name (char * name)
 {
   if (NULL == name)
-    return (FALSE);
+    return (false);
   if (!isalpha (*name) && ('_' != *name))
-    return (FALSE);
+    return (false);
   for (++name; *name; ++name)
     if (!isalnum (*name) && ('_' != *name))
-      return (FALSE);
-  return (TRUE);
+      return (false);
+  return (true);
 }
 
 static mr_fd_t *
@@ -785,7 +785,7 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
     */
     if ((ptrs.ra[i].idx >= 0) && (ptrs.ra[i].ref_idx < 0))
       {
-	if (TRUE == ptrs.ra[i].flags.is_null)
+	if (true == ptrs.ra[i].flags.is_null)
 	  {
 	    /* explicitly set to NULL pointers that were attributed as is_null */
 	    *(void**)ptrs.ra[i].data.ptr = NULL;
@@ -861,7 +861,7 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 
   /* now we should update pointers in a copy */
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
-    if ((ptrs.ra[i].idx >= 0) && (TRUE != ptrs.ra[i].flags.is_null)) /* skip NULL and invalid nodes */
+    if ((ptrs.ra[i].idx >= 0) && (true != ptrs.ra[i].flags.is_null)) /* skip NULL and invalid nodes */
       switch (ptrs.ra[i].fd.mr_type)
 	{
 	case MR_TYPE_STRING:
@@ -1272,15 +1272,15 @@ mr_normalize_type (mr_fd_t * fdp)
     };
   static bool isdelimiter [1 << (CHAR_BIT * sizeof (uint8_t))] =
     {
-      [0 ... (1 << (CHAR_BIT * sizeof (char))) - 1] = FALSE,
-      [0] = TRUE,
-      [(uint8_t)' '] = TRUE,
-      [(uint8_t)'*'] = TRUE,
+      [0 ... (1 << (CHAR_BIT * sizeof (char))) - 1] = false,
+      [0] = true,
+      [(uint8_t)' '] = true,
+      [(uint8_t)'*'] = true,
     };
   int i;
   char * ptr;
   int prev_is_space = 0;
-  bool modified = FALSE;
+  bool modified = false;
 
   for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
     {
@@ -1294,7 +1294,7 @@ mr_normalize_type (mr_fd_t * fdp)
 	  if (isdelimiter[(uint8_t)found[length]] && ((found == fdp->type) || isdelimiter[(uint8_t)found[-1]]))
 	    {
 	      memset (found, ' ', length); /* replaced all keywords on spaces */
-	      modified = TRUE;
+	      modified = true;
 	    }
 	  ++ptr; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
 	}

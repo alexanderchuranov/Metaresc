@@ -556,7 +556,7 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
-	     .unnamed = FALSE,						\
+	     .unnamed = false,						\
 	     .mr_type = MR_TYPE,					\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
@@ -567,7 +567,7 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
-	     .unnamed = FALSE,						\
+	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_ARRAY,					\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .param =							\
@@ -588,7 +588,7 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
-	     .unnamed = FALSE,						\
+	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_VOID,					\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .meta = "" __VA_ARGS__,					\
@@ -599,7 +599,7 @@
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
-	     .unnamed = FALSE,						\
+	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_BITFIELD,				\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .param = {							\
@@ -648,7 +648,7 @@
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = "",							\
 	     .offset = 0,						\
-	     .unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (TRUE) (FALSE), \
+	     .unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false), \
 	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	     .meta = #__VA_ARGS__,					\
 	     .res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \

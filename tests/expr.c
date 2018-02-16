@@ -15,7 +15,7 @@
   ck_assert_msg (((TYPE)(RESULT) == MR_LOAD_SCM (TYPE, VALUE)),		\
 		 "restored value mismatched original for method SCM on expression " VALUE)
 
-MR_START_TEST (parse_bool_true, "parse bool TRUE = (0)") { ASSERT_LOAD_EXPR (bool, TRUE); } END_TEST
+MR_START_TEST (parse_bool_true, "parse bool true = (0)") { ASSERT_LOAD_EXPR (bool, true); } END_TEST
 MR_START_TEST (parse_int_zero, "parse int 1") { ASSERT_LOAD_EXPR (int, 1); } END_TEST
 MR_START_TEST (parse_int_paren, "parse int x = (1)") { ASSERT_LOAD_EXPR (int, (1)); } END_TEST
 MR_START_TEST (parse_unary_minus, "parse int x = (1 + -1)") { ASSERT_LOAD_EXPR (int, (1 + -1)); } END_TEST

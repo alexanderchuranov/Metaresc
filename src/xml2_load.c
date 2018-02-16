@@ -21,7 +21,7 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
     {
       if (1 != sscanf (property, "%" SCNd32, &ptrs->ra[idx].idx))
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
-      ptrs->ra[idx].flags.is_referenced = TRUE;
+      ptrs->ra[idx].flags.is_referenced = true;
       xmlFree (property);
     }
   /* handle REF property */
@@ -39,13 +39,13 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       if (1 != sscanf (property, "%" SCNd32, &ptrs->ra[idx].ref_idx))
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       else
-	ptrs->ra[idx].flags.is_content_reference = TRUE;
+	ptrs->ra[idx].flags.is_content_reference = true;
       xmlFree (property);
     }
   property = (char*)xmlGetProp (node, (unsigned char*)MR_ISNULL);
   if (property)
     {
-      ptrs->ra[idx].flags.is_null= TRUE;
+      ptrs->ra[idx].flags.is_null= true;
       xmlFree (property);
     }
 

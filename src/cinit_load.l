@@ -62,9 +62,12 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
   return (TOK_CINIT_STRING);
 }
 
-"FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = FALSE; return (TOK_CINIT_NUMBER); }
-"TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = TRUE; return (TOK_CINIT_NUMBER); }
+"false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
+"FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
+"true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
+"TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
 "I" { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = I; return (TOK_CINIT_NUMBER); }
+
 
 {NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (yytext, NULL, 0); return (TOK_CINIT_NUMBER); }
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_CINIT_NUMBER); }

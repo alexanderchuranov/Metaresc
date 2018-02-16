@@ -35,12 +35,12 @@ xdrra_getlong (XDR * xdrs, long * lp)
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
   char * base = ra->data.ptr;
   if (NULL == ra)
-    return (FALSE);
+    return (false);
   if (ra->MR_SIZE - xdrs->x_handy < sizeof (int32_t))
-    return (FALSE);
+    return (false);
   *(int32_t*)lp = (int32_t) ntohl ((*((int32_t *)(&base[xdrs->x_handy]))));
   xdrs->x_handy += sizeof (int32_t);
-  return (TRUE);
+  return (true);
 }
 
 /**
@@ -55,12 +55,12 @@ xdrra_putlong (XDR * xdrs, const long * lp)
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
   int32_t * data = mr_rarray_append (ra, sizeof (int32_t));
   if (NULL == ra)
-    return (FALSE);
+    return (false);
   if (NULL == data)
-    return (FALSE);
+    return (false);
   *data = htonl (*(int32_t*)lp);
   xdrs->x_handy += sizeof (int32_t);
-  return (TRUE);
+  return (true);
 }
 
 /**
@@ -76,12 +76,12 @@ xdrra_getbytes (XDR * xdrs, caddr_t addr, u_int len)
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
   char * base = ra->data.ptr;
   if (NULL == ra)
-    return (FALSE);
+    return (false);
   if (ra->MR_SIZE - xdrs->x_handy < len)
-    return (FALSE);
+    return (false);
   memcpy (addr, &base[xdrs->x_handy], len);
   xdrs->x_handy += len;
-  return (TRUE);
+  return (true);
 }
 
 /**
@@ -97,13 +97,13 @@ xdrra_putbytes (XDR * xdrs, const char * addr, u_int len)
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
   int32_t * data;
   if (NULL == ra)
-    return (FALSE);
+    return (false);
   data = mr_rarray_append (ra, len);
   if (NULL == data)
-    return (FALSE);
+    return (false);
   memcpy (data, addr, len);
   xdrs->x_handy += len;
-  return (TRUE);
+  return (true);
 }
 
 /**
@@ -127,7 +127,7 @@ static bool_t
 xdrra_setpostn (XDR * xdrs, u_int pos)
 {
   xdrs->x_handy = pos;
-  return (TRUE);
+  return (true);
 }
 
 /**
@@ -142,7 +142,7 @@ xdrra_inline (XDR * xdrs, u_int len)
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
   char * base = ra->data.ptr;
   if (NULL == ra)
-    return (FALSE);
+    return (false);
   if (ra->MR_SIZE - xdrs->x_handy < len)
     return (NULL);
   return ((int32_t*)&base[xdrs->x_handy]);
@@ -329,10 +329,10 @@ bool_t xdr_char (xdrs, cp)
 
   i = (*cp);
   if (!xdr_int (xdrs, &i)) {
-    return (FALSE);
+    return (false);
   }
   *cp = i;
-  return (TRUE);
+  return (true);
 }
 
   Here is workaround.
@@ -351,10 +351,10 @@ xdr_char_ (XDR * xdrs, char * cp)
   if (XDR_ENCODE == xdrs->x_op)
     x = *cp;
   if (!xdr_int (xdrs, &x))
-    return (FALSE);
+    return (false);
   if (XDR_DECODE == xdrs->x_op)
     *cp = x;
-  return (TRUE);
+  return (true);
 }
 
 /**
@@ -370,10 +370,10 @@ xdr_ssize_t (XDR * xdrs, ssize_t * cp)
   if (XDR_ENCODE == xdrs->x_op)
     x = *cp;
   if (!xdr_int64_t (xdrs, &x))
-    return (FALSE);
+    return (false);
   if (XDR_DECODE == xdrs->x_op)
     *cp = x;
-  return (TRUE);
+  return (true);
 }
 
 #ifndef HAVE_XDR_UINT8_T
@@ -418,7 +418,7 @@ xdr_ssize_t (XDR * xdrs, ssize_t * cp)
 static mr_status_t
 xdr_uint_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  bool_t status = FALSE;
+  bool_t status = false;
   switch (ptrs->ra[idx].fd.size)
     {
     case sizeof (uint8_t):
@@ -447,7 +447,7 @@ xdr_uint_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_int_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  bool_t status = FALSE;
+  bool_t status = false;
   switch (ptrs->ra[idx].fd.size)
     {
     case sizeof (uint8_t):
@@ -724,7 +724,7 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
     .data.ptr = &dummy_str,
     .ref_idx = -1,
-    .flags = { .is_null = FALSE, .is_referenced = FALSE, .is_content_reference = FALSE, },
+    .flags = { .is_null = false, .is_referenced = false, .is_content_reference = false, },
   };
 
   if (ptrs->ra[idx].first_child >= 0)
@@ -794,7 +794,7 @@ xdr_save_temp_string (XDR * xdrs, char ** str)
       mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
 	.data.ptr = str,
 	.ref_idx = -1,
-	.flags = { .is_null = FALSE, .is_referenced = FALSE, .is_content_reference = FALSE, },
+	.flags = { .is_null = false, .is_referenced = false, .is_content_reference = false, },
       };
       mr_ra_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }; /* temporary resizeable array */
       status = xdr_save_string (xdrs, 0, &ptrs);
@@ -1011,7 +1011,7 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra[idx].ref_idx))
     return (MR_FAILURE);
   
-  if (TRUE == ptrs->ra[idx].flags.is_null)
+  if (true == ptrs->ra[idx].flags.is_null)
     return (MR_SUCCESS);
 
   if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
@@ -1044,7 +1044,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_int32_t (xdrs, &ptrs->ra[idx].ref_idx))
     return (MR_FAILURE);
   
-  if (TRUE == ptrs->ra[idx].flags.is_null)
+  if (true == ptrs->ra[idx].flags.is_null)
     return (MR_SUCCESS);
       
   if (ptrs->ra[idx].ref_idx < 0)
