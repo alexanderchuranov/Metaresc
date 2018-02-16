@@ -5,6 +5,7 @@
 %code top {
 #include <stdio.h>
 #include <stdbool.h>
+#include <limits.h>
 
 #define MR_CINIT_DEBUG 0
 /* Pass the argument to yyparse through to yylex. */
