@@ -2,6 +2,10 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
+#include <stdio.h>
+#include <stdbool.h>
+#include <string.h>
+
 #include <metaresc.h>
 #include <mr_stringify.h>
 
@@ -125,7 +129,7 @@ scm_save_bitmask (int idx, mr_ra_ptrdes_t * ptrs)
 static char *
 scm_save_func (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  if (TRUE == ptrs->ra[idx].flags.is_null)
+  if (true == ptrs->ra[idx].flags.is_null)
     return (MR_STRDUP (MR_SCM_FALSE));
   else
     return (mr_stringify_func (&ptrs->ra[idx]));

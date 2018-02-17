@@ -139,11 +139,11 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
       if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
 	error = MR_REF;
       else
-	mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = TRUE;
+	mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
     }
   else if (0 == mr_substrcmp (MR_ISNULL, &$3))
     {
-      mr_load->ptrs->ra[mr_load->parent].flags.is_null = TRUE;
+      mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
     }
 
   if (error)

@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdbool.h>
-#include <limits.h>
 
 #include <metaresc.h>
 #include <mr_stringify.h>
@@ -72,7 +71,7 @@ CINIT_SAVE_TYPE (complex_long_double_t);
 CINIT_SAVE_TYPE (bitfield);
 CINIT_SAVE_TYPE (bitmask, , MR_BITMASK_OR_DELIMITER);
 
-#define ESC_CHAR_MAP_SIZE (1 << CHAR_BIT)
+#define ESC_CHAR_MAP_SIZE (1 << __CHAR_BIT__)
 static int map[ESC_CHAR_MAP_SIZE] = {
   [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
   [(unsigned char)'\f'] = (unsigned char)'f',

@@ -127,7 +127,7 @@ value
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
 	{
 	  mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = TRUE;
+	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
 	mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;

@@ -1,15 +1,18 @@
 # -*- makefile -*-
 
 AUTOMAKE_OPTIONS = parallel-tests
-AM_CFLAGS = @AM_CFLAGS@ @LIBXML2_CFLAGS@
-AM_LDFLAGS = -rdynamic
+AM_CFLAGS = @AM_CFLAGS@
+AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src
 LIBS += ../src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
-  check_PROGRAMS = smoke_xdr
+check_PROGRAMS = 
+if HAVE_XDR
+  check_PROGRAMS += smoke_xdr
+endif
 
 if HAVE_BISON_FLEX
   check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr

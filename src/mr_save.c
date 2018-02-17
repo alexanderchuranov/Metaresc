@@ -6,12 +6,6 @@
 #ifdef HAVE_CONFIG_H
 # include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
-#ifdef HAVE_ENDIAN_H
-#include <endian.h>
-#endif /* HAVE_ENDIAN_H */
-#ifdef HAVE_MACHINE_ENDIAN_H
-#include <machine/endian.h>
-#endif /* HAVE_MACHINE_ENDIAN_H */
 
 #include <metaresc.h>
 #include <mr_ic.h>

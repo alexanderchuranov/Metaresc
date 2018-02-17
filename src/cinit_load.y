@@ -5,7 +5,6 @@
 %code top {
 #include <stdio.h>
 #include <stdbool.h>
-#include <limits.h>
 
 #define MR_CINIT_DEBUG 0
 /* Pass the argument to yyparse through to yylex. */
@@ -30,8 +29,8 @@ unquote_str (mr_substr_t * substr)
   int length_ = 0;
   char * str_;
   int i;
-  static int map[1 << CHAR_BIT] = {
-    [0 ... (1 << CHAR_BIT) - 1] = -1,
+  static int map[1 << __CHAR_BIT__] = {
+    [0 ... (1 << __CHAR_BIT__) - 1] = -1,
     [(unsigned char)'f'] = (unsigned char)'\f',
     [(unsigned char)'n'] = (unsigned char)'\n',
     [(unsigned char)'r'] = (unsigned char)'\r',
@@ -144,7 +143,7 @@ casted_value
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
 	{
 	  mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = TRUE;
+	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
 	mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;

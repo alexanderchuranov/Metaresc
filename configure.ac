@@ -64,7 +64,13 @@ AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
 AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
 CFLAGS=${save_CFLAGS}
 
-AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
+AM_LDFLAGS=""
+aux_LDFLAGS=-rdynamic
+save_LDFLAGS=${LDFLAGS}
+LDFLAGS="${LDFLAGS} ${aux_LDFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_LDFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_LDFLAGS="${AM_LDFLAGS} ${aux_LDFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+LDFLAGS=${save_LDFLAGS}
 
 dnl The dlopen() function is in the C library for *BSD and in libdl on GLIBC-based systems
 AC_SEARCH_LIBS([dladdr], [dl dld], [AC_DEFINE(HAVE_LIBDL, [], [define if dl is present])], [])
@@ -82,7 +88,11 @@ PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
 AM_CONDITIONAL(HAVE_LIBXML2, test x${HAVE_LIBXML2} = xyes)
 if [[ x${HAVE_LIBXML2} = xyes ]]; then
   AC_DEFINE(HAVE_LIBXML2, [], [define if libxml2 is present])
+  AM_CFLAGS="${AM_CFLAGS} ${LIBXML2_CFLAGS}"
 fi
+
+AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
+AC_SUBST(AM_LDFLAGS, ${AM_LDFLAGS})
 
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )
 AM_CONDITIONAL(HAVE_CHECK, test x${HAVE_CHECK} = xyes)
@@ -91,30 +101,12 @@ AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#
 #include <rpc/xdr.h>]])
 
 # Checks for header files.
-AC_FUNC_ALLOCA
-AC_HEADER_STDC
-AC_CHECK_HEADERS([inttypes.h malloc.h stddef.h stdlib.h string.h unistd.h endian.h values.h])
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_HEADER_STDBOOL
-AC_C_CONST
-AC_C_INLINE
-AC_TYPE_INT16_T
-AC_TYPE_INT32_T
-AC_TYPE_INT64_T
-AC_TYPE_INT8_T
-AC_TYPE_SIZE_T
-AC_TYPE_UINT16_T
-AC_TYPE_UINT32_T
-AC_TYPE_UINT64_T
-AC_TYPE_UINT8_T
+AC_CHECK_HEADERS([execinfo.h rpc/types.h])
+AC_CHECK_HEADER([rpc/types.h], [ HAVE_XDR=yes ])
+AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_MEMCMP
-AC_FUNC_REALLOC
-AC_FUNC_VPRINTF
-AC_CHECK_FUNCS([memset strchr strndup strdup strncasecmp strstr xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
+AC_CHECK_FUNCS([ strndup xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
 
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=128)
 AC_MSG_CHECKING(preprocessor routines depth)

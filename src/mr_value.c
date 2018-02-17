@@ -9,11 +9,6 @@
 #include <string.h>
 #include <stdbool.h>
 
-#ifdef HAVE_DLFCN_H
-#define __USE_GNU
-#include <dlfcn.h>
-#endif /* HAVE_DLFCN_H */
-
 #include <metaresc.h>
 #include <mr_value.h>
 

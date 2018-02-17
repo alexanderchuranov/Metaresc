@@ -42,8 +42,8 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
   return (TOK_SCM_NUMBER);
 }
 
-#f { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = FALSE; return (TOK_SCM_NUMBER); }
-#t { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = TRUE; return (TOK_SCM_NUMBER); }
+#f { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_SCM_NUMBER); }
+#t { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_SCM_NUMBER); }
 
 "\""([^\"\\]|\\.)*"\"" {
   yylval->string.str = yytext;

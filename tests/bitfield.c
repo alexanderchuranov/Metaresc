@@ -1,5 +1,3 @@
-#include <limits.h>
-
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
@@ -15,7 +13,7 @@ TYPEDEF_STRUCT (struct_bitfield_uint32_t, BITFIELD (uint32_t, x, :31))
 TYPEDEF_STRUCT (struct_bitfield_int64_t, BITFIELD (int64_t, x, :63))
 TYPEDEF_STRUCT (struct_bitfield_uint64_t, BITFIELD (uint64_t, x, :63))
 
-TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (enum_t) * CHAR_BIT - 1))
+TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (_enum_t) * __CHAR_BIT__ - 1))
 
 #define ASSERT_SAVE_LOAD_BITFIELD(METHOD, VALUE, ...) ({		\
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_bitfield_int8_t, VALUE, __VA_ARGS__); \

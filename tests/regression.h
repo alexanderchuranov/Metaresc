@@ -18,7 +18,13 @@
 #define LIBXML2_METHODS
 #endif /* HAVE_LIBXML2 */
 
-#define TEST_METHODS LIBXML2_METHODS BISON_FLEX_METHODS XDR
+#ifdef HAVE_RPC_TYPES_H
+#define XDR_METHODS XDR
+#else /* HAVE_RPC_TYPES_H */
+#define XDR_METHODS
+#endif /* HAVE_RPC_TYPES_H */
+
+#define TEST_METHODS LIBXML2_METHODS BISON_FLEX_METHODS XDR_METHODS
 
 extern Suite * suite;
 
@@ -43,8 +49,12 @@ extern Suite * suite;
 
 #define MEM_CMP(TYPE, X, Y, ...) memcmp (X, Y, sizeof (TYPE))
 
+#if defined (HAVE_BISON_FLEX) || defined (HAVE_LIBXML2)
 #ifdef HAVE_BISON_FLEX
 #define SERIALIZE_METHOD MR_SAVE_CINIT
+#else /* ! HAVE_BISON_FLEX */
+#define SERIALIZE_METHOD MR_SAVE_XML2
+#endif /* HAVE_BISON_FLEX */
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
       char * x_ = SERIALIZE_METHOD (TYPE, X);				\
       char * y_ = SERIALIZE_METHOD (TYPE, Y);				\
@@ -64,7 +74,7 @@ extern Suite * suite;
 	MR_FREE (y_);							\
       xy_cmp;								\
     })
-#else /* ! HAVE_BISON_FLEX */
+#elif HAVE_RPC_XDR_H
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
       mr_rarray_t x_ = MR_SAVE_XDR_RA (TYPE, X);			\
       mr_rarray_t y_ = MR_SAVE_XDR_RA (TYPE, Y);			\
@@ -76,7 +86,11 @@ extern Suite * suite;
 	MR_FREE (y_.data.ptr);						\
       xy_cmp;								\
     })
+#else /* HAVE_RPC_XDR_H */
+#error No default serialization method
 #endif /* HAVE_BISON_FLEX */
+
+#define SKIP_METHOD_ 0
 
 #define MR_IS__EQ__ 0
 

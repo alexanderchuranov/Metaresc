@@ -36,8 +36,10 @@
 # include <libxml/xmlmemory.h>
 # include <libxml/parser.h>
 #endif /* HAVE_LIBXML2 */
+#ifdef HAVE_RPC_TYPES_H
 #include <rpc/types.h>
 #include <rpc/xdr.h>
+#endif /* HAVE_RPC_TYPES_H */
 
 #ifdef _GNU_SOURCE_UNDEFINED
 #undef _GNU_SOURCE_UNDEFINED
@@ -1155,9 +1157,11 @@ extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t 
 extern xmlDocPtr xml2_save (mr_ra_ptrdes_t * ptrs);
 extern int xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBXML2 */
+#ifdef HAVE_RPC_TYPES_H
 extern mr_status_t xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs);
 extern void xdrra_create (XDR * xdrs, mr_rarray_t * rarray, enum xdr_op op);
+#endif /* HAVE_RPC_TYPES_H */
 
 extern char * xml1_save (mr_ra_ptrdes_t * ptrs);
 extern char * cinit_save (mr_ra_ptrdes_t * ptrs);

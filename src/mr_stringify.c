@@ -14,12 +14,7 @@
 #ifdef HAVE_CONFIG_H
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
-#ifdef HAVE_ENDIAN_H
-#include <endian.h>
-#endif /* HAVE_ENDIAN_H */
-#ifdef HAVE_MACHINE_ENDIAN_H
-#include <machine/endian.h>
-#endif /* HAVE_MACHINE_ENDIAN_H */
+
 #ifdef HAVE_DLFCN_H
 #define __USE_GNU
 #include <dlfcn.h>

@@ -255,7 +255,7 @@ MR_START_TEST (resizable_mr_ptr, "test mr_ptr_t as a resizable array") {
 } END_TEST
 
   /********************************************************************************************************/
-
+#ifdef HAVE_RPC_TYPES_H
 #undef TEST_METHODS
 #define TEST_METHODS XDR
 
@@ -274,6 +274,7 @@ MR_START_TEST (resizable_array_as_opaque_data, "test pointer as a resizable arra
     };
   ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_as_opaque_data_t, &orig, CMP_OPAQUE_DATA);
 } END_TEST
+#endif /* HAVE_RPC_TYPES_H */
 
   /********************************************************************************************************/
 

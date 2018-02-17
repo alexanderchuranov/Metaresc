@@ -1,7 +1,7 @@
 # -*- makefile -*-
 
-AM_CFLAGS = @AM_CFLAGS@ @LIBXML2_CFLAGS@
-AM_LDFLAGS = -rdynamic
+AM_CFLAGS = @AM_CFLAGS@
+AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src
 LIBS += ../src/libmetaresc.la $(LIBXML2_LIBS)
 

@@ -16,8 +16,9 @@
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h>
-#include <limits.h>
-#include <execinfo.h>
+#ifdef HAVE_EXECINFO_H
+# include <execinfo.h>
+#endif /* HAVE_EXECINFO_H */
 
 #include <metaresc.h>
 #include <mr_tsearch.h>
@@ -189,6 +190,7 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
 	  && log_level_str[log_level])
 	log_level_str_ = log_level_str[log_level];
 
+#ifdef HAVE_EXECINFO_H
       if (log_level <= MR_LL_DEBUG)
 	{
 	  void * array[8];
@@ -206,6 +208,7 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
 	      free (strings);
 	    }
 	}
+#endif /* HAVE_EXECINFO_H */
       
       message = mr_message_format (message_id, args);
       if (message)
@@ -282,7 +285,7 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   int i;
 
   *value = *ptr++ >> ptrdes->fd.param.bitfield_param.shift;
-  for (i = CHAR_BIT - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += CHAR_BIT)
+  for (i = __CHAR_BIT__ - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += __CHAR_BIT__)
     *value |= ((uint64_t)*ptr++) << i;
   *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
   switch (ptrdes->fd.mr_type_aux)
@@ -314,13 +317,13 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   int i;
 
   *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
-  if (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width >= CHAR_BIT)
+  if (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width >= __CHAR_BIT__)
     *ptr &= ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
   else
     *ptr &= (-1 - ((1 << (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width)) - 1)) | ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
   *ptr++ |= *value << ptrdes->fd.param.bitfield_param.shift;
-  for (i = CHAR_BIT - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += CHAR_BIT)
-    if (ptrdes->fd.param.bitfield_param.width - i >= CHAR_BIT)
+  for (i = __CHAR_BIT__ - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += __CHAR_BIT__)
+    if (ptrdes->fd.param.bitfield_param.width - i >= __CHAR_BIT__)
       *ptr++ = *value >> i;
     else
       {
@@ -1119,11 +1122,11 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
       enum_value = *(int64_t*)data;
       break;
     default:
-#if __BYTE_ORDER == __LITTLE_ENDIAN
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
       memcpy (&enum_value, data, MR_MIN (tdp->size_effective, sizeof (enum_value)));
-#else
+#else /*  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ */
 #error Support for non little endian architectures to be implemented
-#endif /*__BYTE_ORDER == __LITTLE_ENDIAN */
+#endif /* __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ */
       break;
     }
   return (enum_value);
@@ -1270,9 +1273,9 @@ mr_normalize_type (mr_fd_t * fdp)
       "__restrict",
       "__restrict__",
     };
-  static bool isdelimiter [1 << (CHAR_BIT * sizeof (uint8_t))] =
+  static bool isdelimiter [1 << (__CHAR_BIT__ * sizeof (uint8_t))] =
     {
-      [0 ... (1 << (CHAR_BIT * sizeof (char))) - 1] = false,
+      [0 ... (1 << (__CHAR_BIT__ * sizeof (char))) - 1] = false,
       [0] = true,
       [(uint8_t)' '] = true,
       [(uint8_t)'*'] = true,
@@ -1340,19 +1343,19 @@ mr_init_bitfield (mr_fd_t * fdp)
     return (MR_SUCCESS);
 
   fdp->offset = i;
-  for (i = 0; i < CHAR_BIT; ++i)
+  for (i = 0; i < __CHAR_BIT__; ++i)
     if (fdp->param.bitfield_param.bitfield[fdp->offset] & (1 << i))
       break;
   fdp->param.bitfield_param.shift = i;
   fdp->param.bitfield_param.width = 0;
   for (j = fdp->offset; j < fdp->param.bitfield_param.size; ++j)
     {
-      for ( ; i < CHAR_BIT; ++i)
+      for ( ; i < __CHAR_BIT__; ++i)
 	if (fdp->param.bitfield_param.bitfield[j] & (1 << i))
 	  ++fdp->param.bitfield_param.width;
 	else
 	  break;
-      if (i < CHAR_BIT)
+      if (i < __CHAR_BIT__)
 	break;
       i = 0;
     }

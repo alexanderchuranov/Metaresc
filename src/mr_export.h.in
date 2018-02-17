@@ -1,4 +1,7 @@
 
+/* Define to 1 if you have the <rpc/types.h> header file. */
+#undef HAVE_RPC_TYPES_H 
+
 /* Bison & Flex found */
 #undef HAVE_BISON_FLEX
 
