@@ -7,6 +7,51 @@ formats and deserialized later. To achieve this the library adds
 metadata annotations to types. These annotations may be used for may
 purposes far beyond just achieving the persistence.
 
+How to build:
+
 Install external dependencies autoconf, automake, libtool, pkg-config, flex, bison, libxml2-dev, check.
 On Ubuntu, run the following command:
-apt-get install autoconf automake libtool pkg-config flex bison libxml2-dev check
+* apt-get install autoconf automake libtool pkg-config flex bison libxml2-dev check
+
+Checkout Metaresc from github
+
+* git clone https://github.com/alexanderchuranov/Metaresc.git
+
+Run autoconf/automake generators:
+
+* ./autogen.sh
+
+Configure project for target system
+
+* ./configure
+
+Build and check library
+
+* make check
+
+On Windows one can use MinGW
+
+Download MinGW installer from here: https://sourceforge.net/projects/mingw/files/latest/download
+Choose Basic Setup > mingw-developer-toolkit && mingw32-base
+
+You will also need Bison v 3+ and pkg-config.
+Download Bison and Flex from here: https://sourceforge.net/projects/winflexbison/files/latest/download
+Extract archive to user home dir in MSYS: c:\MinGW\msys\1.0\home\UserName\ 
+Download pkg-config from here: https://sourceforge.net/projects/pkgconfiglite/files/latest/download
+Extract archive to c:\MinGW
+
+Optionally you could intall libxml2-dev and check. It should be a similar process with prebuild binaries.
+
+Having this minimal configuration you could build the library using standard autoconf/automake toolchain. 
+
+Run autoconf/automake generators:
+
+* ./autogen.sh
+
+Configure project for target system
+
+* CFLAGS=-D__USE_MINGW_ANSI_STDIO HAVE_BISON=yes HAVE_FLEX=yes YACC=~/win_flex_bison3-latest/win_bison.exe LEX=~/win_flex_bison3-latest/win_flex.exe ./configure
+
+Build and check library
+
+* make check
