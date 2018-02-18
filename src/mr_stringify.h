@@ -25,7 +25,7 @@
       MR_FREE (real_str);						\
     if (imag_str)							\
       MR_FREE (imag_str);						\
-    return (MR_STRDUP (str));						\
+    return (mr_strdup (str));						\
   }
 
 extern char * mr_output_format_bool (mr_ptrdes_t*);

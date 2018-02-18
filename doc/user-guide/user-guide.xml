@@ -601,7 +601,7 @@
      <para>
        To make switching memory managers easier, METARESC provides
        three memory management macros: <code>MR_MALLOC</code>,
-       <code>MR_REALLOC</code>, <code>MR_FREE</code> and <code>MR_STRDUP</code>.
+       <code>MR_REALLOC</code>, <code>MR_FREE</code>
        They are used
        as drop-in replacements for the <code>malloc</code>,
        <code>realloc</code>, <code>free</code> and <code>strdup</code>
@@ -631,12 +631,11 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 	]]></programlisting>
 	First 3 arguments of those handlers are file name, function
 	name and line number of the invocation place. Macro functions
-	MR_MALLOC, MR_REALLOC, MR_FREE and MR_STRDUP are defined in
+	MR_MALLOC, MR_REALLOC, MR_FREE are defined in
 	a <filename>metaresc.h</filename> header file as follows:
         <programlisting language="c"><![CDATA[
 	#define MR_MALLOC(SIZE) (mr_conf.mr_mem.malloc)(__FILE__, __FUNCTION__, __LINE__, SIZE)
 	#define MR_REALLOC(PTR, SIZE) (mr_conf.mr_mem.realloc)(__FILE__, __FUNCTION__, __LINE__, PTR, SIZE)
-	#define MR_STRDUP(STR) (mr_conf.mr_mem.strdup)(__FILE__, __FUNCTION__, __LINE__, STR)
 	#define MR_FREE(PTR) (mr_conf.mr_mem.free)(__FILE__, __FUNCTION__, __LINE__, PTR)
 	]]></programlisting>
      </para>

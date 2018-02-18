@@ -227,7 +227,7 @@ xml_save_char (int idx, mr_ra_ptrdes_t * ptrs)
   if (isprint (str[0]))
     return (xml_quote_string (str));
   sprintf (str, CINIT_CHAR_QUOTE, (int)(unsigned char)str[0]);
-  return (MR_STRDUP (str));
+  return (mr_strdup (str));
 }
 
 /**
@@ -253,7 +253,7 @@ xml1_save_string (int idx, mr_ra_ptrdes_t * ptrs)
 {
   char * str = *(char**)ptrs->ra[idx].data.ptr;
   if ((NULL == str) || (ptrs->ra[idx].ref_idx >= 0))
-    return (MR_STRDUP (""));
+    return (mr_strdup (""));
   else
     return (xml_quote_string (str));
 }
@@ -267,7 +267,7 @@ xml1_save_string (int idx, mr_ra_ptrdes_t * ptrs)
 static char *
 xml_save_empty (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  return (MR_STRDUP (""));
+  return (mr_strdup (""));
 }
 
 /**
@@ -318,7 +318,7 @@ char *
 xml1_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
-    .data = { MR_STRDUP (MR_XML1_DOCUMENT_HEADER) },
+    .data = { mr_strdup (MR_XML1_DOCUMENT_HEADER) },
     .MR_SIZE = sizeof (MR_XML1_DOCUMENT_HEADER),
     .type = "char",
     .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER),
@@ -411,12 +411,12 @@ xml2_save_string (int idx, mr_ra_ptrdes_t * ptrs)
   encoded_content = xmlEncodeEntitiesReentrant (doc, BAD_CAST content);
   if (NULL == encoded_content)
     {
-      content = MR_STRDUP ("");
+      content = mr_strdup ("");
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_XML_STRING_ENCODING_FAILED, content);
     }
   else
     {
-      content = MR_STRDUP ((char*)encoded_content);
+      content = mr_strdup ((char*)encoded_content);
       xmlFree (encoded_content);
     }
   return (content);

@@ -27,14 +27,14 @@
 char *
 mr_output_format_bool (mr_ptrdes_t * ptrdes)
 {
-  return (*(bool*)ptrdes->data.ptr ? MR_STRDUP ("true") : MR_STRDUP ("false"));
+  return (*(bool*)ptrdes->data.ptr ? mr_strdup ("true") : mr_strdup ("false"));
 }
 
 #define MR_OUTPUT_FORMAT_TYPE(TYPE, FORMAT)				\
   char * mr_output_format_ ## TYPE (mr_ptrdes_t * ptrdes) {		\
     char str[MR_FLOAT_TO_STRING_BUF_SIZE] = "";				\
     sprintf (str, FORMAT, *(TYPE*)ptrdes->data.ptr);			\
-    return (MR_STRDUP (str));						\
+    return (mr_strdup (str));						\
   }
 
 MR_OUTPUT_FORMAT_TYPE (int8_t, "%" SCNi8);
@@ -125,7 +125,7 @@ mr_stringify_uint (mr_ptrdes_t * ptrdes)
     case sizeof (uint64_t): return (mr_stringify_uint64_t (ptrdes));
     default:
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_INT_OF_UNKNOWN_SIZE, ptrdes->fd.size);
-      return (MR_STRDUP ("0"));
+      return (mr_strdup ("0"));
     }
 }
 
@@ -138,7 +138,7 @@ char *
 mr_stringify_func (mr_ptrdes_t * ptrdes)
 {
   if (true == ptrdes->flags.is_null)
-    return (MR_STRDUP (""));
+    return (mr_strdup (""));
   else
     {
       void * func = *(void**)ptrdes->data.ptr;
@@ -152,12 +152,12 @@ mr_stringify_func (mr_ptrdes_t * ptrdes)
 	    {
 	      void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
 	      if (func_ == func)
-		return (MR_STRDUP (info.dli_sname));
+		return (mr_strdup (info.dli_sname));
 	    }
 	}
 #endif /* HAVE_LIBDL */
       sprintf (str, "%p", func);
-      return (MR_STRDUP (str));
+      return (mr_strdup (str));
     }
 }
 
@@ -181,7 +181,7 @@ mr_stringify_enum (mr_ptrdes_t * ptrdes)
       int64_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
       if (fdp && fdp->name.str)
-	return (MR_STRDUP (fdp->name.str));
+	return (mr_strdup (fdp->name.str));
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
       ptrdes->fd.size = tdp->size_effective;
     }
@@ -272,7 +272,7 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
   if (0 == value)
     {
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
-      return (MR_STRDUP (fdp && fdp->name.str ? fdp->name.str : "0"));
+      return (mr_strdup (fdp && fdp->name.str ? fdp->name.str : "0"));
     }
 
   /* decompose value on bitmask */
@@ -283,7 +283,7 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
       if ((value & fdp->param.enum_value) && !(~value & fdp->param.enum_value))
 	{
 	  if (NULL == str)
-	    str = MR_STRDUP (fdp->name.str);
+	    str = mr_strdup (fdp->name.str);
 	  else
 	    str = mr_decompose_bitmask_add (str, bitmask_or_delimiter, fdp->name.str);
 	  if (NULL == str)

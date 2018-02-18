@@ -108,7 +108,6 @@
 
 #define MR_MALLOC(SIZE) (mr_conf.mr_mem.malloc)(__FILE__, __FUNCTION__, __LINE__, SIZE)
 #define MR_REALLOC(PTR, SIZE) (mr_conf.mr_mem.realloc)(__FILE__, __FUNCTION__, __LINE__, PTR, SIZE)
-#define MR_STRDUP(STR) (mr_conf.mr_mem.strdup)(__FILE__, __FUNCTION__, __LINE__, STR)
 #define MR_FREE(PTR) (mr_conf.mr_mem.free)(__FILE__, __FUNCTION__, __LINE__, PTR)
 
 /*
@@ -905,7 +904,7 @@
 	    }								\
 	  if (__xml_str__)						\
 	    {								\
-	      __str__ = MR_STRDUP ((char*)__xml_str__);			\
+	      __str__ = mr_strdup ((char*)__xml_str__);			\
 	      xmlFree (__xml_str__);					\
 	    }								\
 	}								\
@@ -1176,8 +1175,8 @@ extern mr_status_t scm_load (char * str, mr_ra_ptrdes_t * ptrs);
 
 extern void * mr_malloc (const char * filename, const char * function, int line, size_t size);
 extern void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size);
-extern char * mr_strdup (const char * filename, const char * function, int line, const char * str);
 extern void mr_free (const char * filename, const char * function, int line, void * ptr);
+extern char * mr_strdup (const char * str);
 extern char * mr_strndup (const char * str, size_t size);
 
 extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);

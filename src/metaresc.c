@@ -66,7 +66,6 @@ MR_TYPEDEF_DESC_BI (complex_long_double_t);
 
 void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
 void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
-char * mr_strdup (const char * filename, const char * function, int line, const char * str) { return (strdup (str)); }
 void mr_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
 
 /** Metaresc configuration structure */
@@ -75,7 +74,6 @@ mr_conf_t mr_conf = {
     .mem_alloc_strategy = 2, /**< Memory allocation strategy. Default is to double buffer every time. */
     .malloc = mr_malloc, /**< Pointer to malloc function. */
     .realloc = mr_realloc, /**< Pointer to realloc function. */
-    .strdup = mr_strdup, /**< Pointer to strdup function. */
     .free = mr_free, /**< Pointer to free function. */
   },
   .log_level = MR_LL_ALL, /**< default log level ALL */
@@ -299,6 +297,20 @@ mr_strndup (const char * str, size_t size)
     }
   memcpy (_str, str, _size);
   _str[_size] = 0;
+  return (_str);
+}
+
+char *
+mr_strdup (const char * str)
+{
+  int _size = strlen (str) + 1;
+  char * _str = MR_MALLOC (_size);
+  if (NULL == _str)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (NULL);
+    }
+  memcpy (_str, str, _size);
   return (_str);
 }
 

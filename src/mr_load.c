@@ -636,7 +636,7 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
       (ptrdes->next >= 0) && (NULL == mr_load_data->ptrs.ra[ptrdes->next].fd.name.str)) /* there should be a next node without name */
     {
       if (mr_load_data->ptrs.ra[idx].fd.name.str) /* sainity check - this field can't be NULL */
-	mr_load_data->ptrs.ra[ptrdes->next].fd.name.str = MR_STRDUP (mr_load_data->ptrs.ra[idx].fd.name.str);
+	mr_load_data->ptrs.ra[ptrdes->next].fd.name.str = mr_strdup (mr_load_data->ptrs.ra[idx].fd.name.str);
       return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
     }
   return (mr_load_struct (idx, mr_load_data));
@@ -760,9 +760,9 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	}
 
   if ((NULL == mr_load_data->ptrs.ra[idx].fd.name.str) && (fdp->name.str))
-    mr_load_data->ptrs.ra[idx].fd.name.str = MR_STRDUP (fdp->name.str);
+    mr_load_data->ptrs.ra[idx].fd.name.str = mr_strdup (fdp->name.str);
   if ((NULL == mr_load_data->ptrs.ra[idx].fd.type) && (fdp->type))
-    mr_load_data->ptrs.ra[idx].fd.type = MR_STRDUP (fdp->type);
+    mr_load_data->ptrs.ra[idx].fd.type = mr_strdup (fdp->type);
   mr_load_data->ptrs.ra[idx].fd.size = fdp->size;
   mr_load_data->ptrs.ra[idx].fd.mr_type = fdp->mr_type;
   mr_load_data->ptrs.ra[idx].fd.mr_type_aux = fdp->mr_type_aux;

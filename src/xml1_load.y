@@ -79,7 +79,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
     }
   mr_load->ptrs->ra[mr_load->parent].fd.name.str = mr_strndup ($2.str, $2.length);
   mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_UNKNOWN;
-  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = MR_STRDUP ("");
+  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = mr_strdup ("");
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
 }
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {

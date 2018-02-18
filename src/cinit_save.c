@@ -150,7 +150,7 @@ cinit_save_char (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data
   char str[] = " ";
   str[0] = *(char*)ptrs->ra[idx].data.ptr;
   if (0 == str[0])
-    save_data->content = MR_STRDUP ("'\\000'");
+    save_data->content = mr_strdup ("'\\000'");
   else
     save_data->content = cinit_quote_string (str, '\'');
   return (false);
@@ -182,7 +182,7 @@ cinit_save_string (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_da
 {
   char * str = *(char**)ptrs->ra[idx].data.ptr;
   if ((true == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
-    save_data->content = MR_STRDUP (MR_CINIT_NULL);
+    save_data->content = mr_strdup (MR_CINIT_NULL);
   else
     save_data->content = cinit_quote_string (str, '"');
   return (false);
@@ -204,7 +204,7 @@ cinit_save_func (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data
       if (true == ptrs->ra[idx].flags.is_null)
 	{
 	  MR_FREE (func_str);
-	  save_data->content = MR_STRDUP (MR_CINIT_NULL);
+	  save_data->content = mr_strdup (MR_CINIT_NULL);
 	}
       else if (isdigit (func_str[0])) /* pointer serialized as int */
 	{
@@ -212,7 +212,7 @@ cinit_save_func (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data
 	  char buf[strlen (type) + strlen (func_str) + sizeof ("()")];
 	  sprintf (buf, "(%s)%s", type, func_str);
 	  MR_FREE (func_str);
-	  save_data->content = MR_STRDUP (buf);
+	  save_data->content = mr_strdup (buf);
 	}
       else
 	save_data->content = func_str;
@@ -269,7 +269,7 @@ static bool
 cinit_save_pointer (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_data)
 {
   if (ptrs->ra[idx].first_child < 0)
-    save_data->content = MR_STRDUP (MR_CINIT_NULL);
+    save_data->content = mr_strdup (MR_CINIT_NULL);
   else
     {
       save_data->prefix = "(" MR_CINIT_TYPE_NAME_TEMPLATE "[]){\n";
@@ -305,7 +305,7 @@ json_save_pointer (int idx, mr_ra_ptrdes_t * ptrs, mr_save_type_data_t * save_da
 {
   save_data->named_field_template = MR_JSON_NAMED_FIELD_TEMPLATE; /* mr_ptr_t might be unnamed. we need to override this */
   if (ptrs->ra[idx].first_child < 0)
-    save_data->content = MR_STRDUP (MR_CINIT_NULL);
+    save_data->content = mr_strdup (MR_CINIT_NULL);
   else
     {
       save_data->prefix = "/* (" MR_JSON_TYPE_NAME_TEMPLATE "[]) */ [\n";
@@ -399,7 +399,7 @@ static char *
 cinit_json_save (mr_ra_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, mr_ra_ptrdes_t*, mr_save_type_data_t*))
 {
   mr_rarray_t mr_ra_str = {
-    .data = { MR_STRDUP ("") },
+    .data = { mr_strdup ("") },
     .MR_SIZE = sizeof (""),
     .type = "char",
     .alloc_size = sizeof (""),
