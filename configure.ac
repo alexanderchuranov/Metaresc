@@ -65,12 +65,12 @@ AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${a
 CFLAGS=${save_CFLAGS}
 
 AM_LDFLAGS=""
-aux_LDFLAGS=-rdynamic
-save_LDFLAGS=${LDFLAGS}
-LDFLAGS="${LDFLAGS} ${aux_LDFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_LDFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_LDFLAGS="${AM_LDFLAGS} ${aux_LDFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-LDFLAGS=${save_LDFLAGS}
+aux_CFLAGS=-rdynamic
+save_CFLAGS=${CFLAGS}
+CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_LDFLAGS="${AM_LDFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+CFLAGS=${save_CFLAGS}
 
 dnl The dlopen() function is in the C library for *BSD and in libdl on GLIBC-based systems
 AC_SEARCH_LIBS([dladdr], [dl dld], [AC_DEFINE(HAVE_LIBDL, [], [define if dl is present])], [])
