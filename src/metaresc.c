@@ -126,6 +126,38 @@ mr_cleanup (void)
   mr_ic_free (&mr_conf.lookup_by_name);
 }
 
+static int
+mr_vscprintf (const char * format, va_list args) 
+{
+  va_list _args;
+  va_copy (_args, args);
+  int retval = vsnprintf (NULL, 0, format, _args);
+  va_end (_args);
+  return (retval);
+}
+
+static int 
+mr_vasprintf (char ** strp, const char * fmt, va_list args) 
+{
+  int len = mr_vscprintf (fmt, args);
+  if (len <= 0) 
+    return (len);
+  char * str = MR_MALLOC (len + 1);
+  if (NULL == str) 
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (-1);
+    }
+  int _len = vsnprintf (str, len + 1, fmt, args);
+  if (_len < 0)
+    {
+      MR_FREE (str);
+      return (len);
+    }
+  *strp = str;
+  return (_len);
+}
+
 /**
  * Format message. Allocates memory for message that need to be freed.
  * @param message_id message template string ID
@@ -155,7 +187,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
   if ((message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
     format = messages[message_id];
 
-  int __attribute__ ((unused)) unused = vasprintf (&message, format, args);
+  int __attribute__ ((unused)) unused = mr_vasprintf (&message, format, args);
 
   return (message);
 }
@@ -214,7 +246,7 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
       if (message)
 	{
 	  fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
-	  free (message);
+	  MR_FREE (message);
 	}
     }
   va_end (args);
@@ -245,7 +277,6 @@ mr_normalize_name (char * name)
   return (++ptr);
 }
 
-#ifndef HAVE_STRNDUP
 /**
  * Allocate new string and copy first 'size' chars from str.
  * For compilers without GNU extension
@@ -255,22 +286,21 @@ mr_normalize_name (char * name)
  * @return A pointer on newly allocated string
  */
 char *
-strndup (const char * str, size_t size)
+mr_strndup (const char * str, size_t size)
 {
-  char * copy;
-  if (strlen (str) < size)
-    size = strlen (str);
-  copy = (char*)MR_MALLOC (size + 1);
-  if (NULL == copy)
+  char * _str = (char*)str;
+  int _size;
+  for (_size = 0; (_size < size) && *_str++; ++_size);
+  _str = MR_MALLOC (_size + 1);
+  if (NULL == _str)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
     }
-  memcpy (copy, str, size);
-  copy[size] = 0;
-  return (copy);
+  memcpy (_str, str, _size);
+  _str[_size] = 0;
+  return (_str);
 }
-#endif /* HAVE_STRNDUP */
 
 /**
  * Extract bits of bit-field, extend sign bits if needed.
@@ -342,23 +372,10 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 void *
 mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, int element_size)
 {
-  if ((NULL == data) || (NULL == size) || (NULL == alloc_size))
+  if ((NULL == data) || (NULL == size) || (NULL == alloc_size) ||
+      (*size < 0) || (element_size < 0))
     return (NULL);
   
-  if (NULL == *data)
-    {
-      *alloc_size = *size = 0;
-      *data = MR_MALLOC (element_size);
-      if (NULL == *data)
-	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      else
-	{
-	  memset (*data, 0, element_size);
-	  *alloc_size = *size = element_size;
-	}
-      return (*data);
-    }
-
   *size += element_size;
   if (*size > *alloc_size)
     {
@@ -401,33 +418,42 @@ int
 mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 {
   va_list args;
-  int length;
-  char * str;
-  char * tail;
+  int length, _length;
 
   va_start (args, format);
-  length = vasprintf (&str, format, args);
+  length = mr_vscprintf (format, args);
+
+  if (length < 0)
+    goto free_mr_ra;
+
+  int size = mr_ra_str->MR_SIZE;
+  if ((0 == size) || (NULL == mr_ra_str->data.ptr))
+    {
+      /* need to allocate initial trailing zero for the string */
+      ++size;
+      ++length;
+    }
+  char * tail = mr_rarray_append (mr_ra_str, length);
+
+  if (NULL == tail)
+    goto free_mr_ra;
+  else
+    _length = vsnprintf (tail - 1, length + 1, format, args);
+
+  if (_length < 0)
+    goto free_mr_ra;
+  mr_ra_str->MR_SIZE = _length + size;
+
   va_end (args);
-  if (NULL == str)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      if (mr_ra_str->data.ptr)
-	MR_FREE (mr_ra_str->data.ptr);
-      mr_ra_str->data.ptr = NULL;
-      mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
-      return (-1);
-    }
-  tail = mr_rarray_append (mr_ra_str, length);
-  if (tail)
-    strcat (--tail, str);
-  else if (mr_ra_str->data.ptr)
-    {
-      MR_FREE (mr_ra_str->data.ptr);
-      mr_ra_str->data.ptr = NULL;
-      mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
-    }
-  free (str);
-  return (tail ? length : -1);
+  return (_length);
+
+ free_mr_ra:
+  if (mr_ra_str->data.ptr)
+    MR_FREE (mr_ra_str->data.ptr);
+  mr_ra_str->data.ptr = NULL;
+  mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
+  va_end (args);  
+  return (-1);
 }
 
 /**

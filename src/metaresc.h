@@ -1178,6 +1178,7 @@ extern void * mr_malloc (const char * filename, const char * function, int line,
 extern void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size);
 extern char * mr_strdup (const char * filename, const char * function, int line, const char * str);
 extern void mr_free (const char * filename, const char * function, int line, void * ptr);
+extern char * mr_strndup (const char * str, size_t size);
 
 extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
 extern bool mr_is_valid_field_name (char * name);

@@ -154,7 +154,7 @@ casted_value:
 value
 | TOK_CINIT_FIELD_CAST value {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].fd.type = strndup ($1.str, $1.length);
+  mr_load->ptrs->ra[mr_load->parent].fd.type = mr_strndup ($1.str, $1.length);
 }
 
 value:
@@ -196,7 +196,7 @@ expr:
 | TOK_CINIT_PLUS expr %prec NEG { $$ = $2; }
 | TOK_CINIT_NUMBER { $$ = $1; }
 | TOK_CINIT_ID {
-  $$.vt_string = strndup ($1.str, $1.length);
+  $$.vt_string = mr_strndup ($1.str, $1.length);
   $$.value_type = MR_VT_ID;
   }
 | TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
@@ -210,7 +210,7 @@ list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
 nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->ptrs->ra[mr_load->parent].last_child].fd.name.str = strndup ($1.str, $1.length); }
+| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->ptrs->ra[mr_load->parent].last_child].fd.name.str = mr_strndup ($1.str, $1.length); }
 
 %%
 

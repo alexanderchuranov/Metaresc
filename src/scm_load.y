@@ -149,7 +149,7 @@ compaund
 expr:
 TOK_SCM_NUMBER { $$ = $1; }
 | TOK_SCM_ID {
-  $$.vt_string = strndup ($1.str, $1.length);
+  $$.vt_string = mr_strndup ($1.str, $1.length);
   $$.value_type = MR_VT_ID;
   }
 | TOK_SCM_LPARENTHESIS TOK_SCM_PLUS ws plus_list TOK_SCM_RPARENTHESIS { $$ = $4; }
@@ -196,7 +196,7 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   int parent = mr_load->ptrs->ra[self].parent;
   int prev = mr_load->ptrs->ra[self].prev;
   int child = mr_load->ptrs->ra[self].first_child;
-  char * name = strndup ($4.str, $4.length);
+  char * name = mr_strndup ($4.str, $4.length);
   if (parent >= 0)
     {
       if (mr_load->ptrs->ra[parent].first_child == self)

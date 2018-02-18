@@ -106,7 +106,7 @@ AC_CHECK_HEADER([rpc/types.h], [ HAVE_XDR=yes ])
 AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 
 # Checks for library functions.
-AC_CHECK_FUNCS([ strndup xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
+AC_CHECK_FUNCS([ xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
 
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=128)
 AC_MSG_CHECKING(preprocessor routines depth)
