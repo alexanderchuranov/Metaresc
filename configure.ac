@@ -97,7 +97,7 @@ AC_SUBST(AM_LDFLAGS, ${AM_LDFLAGS})
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )
 AM_CONDITIONAL(HAVE_CHECK, test x${HAVE_CHECK} = xyes)
 
-AC_CHECK_LIB(execinfo, backtrace, LIBS=-lexecinfo)
+AC_CHECK_LIB(execinfo, backtrace, [ LIBS="${LIBS} -lexecinfo" ])
 
 AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#include <rpc/types.h>
 #include <rpc/xdr.h>]])
