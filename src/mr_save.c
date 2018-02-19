@@ -501,6 +501,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      mr_size_t fd_size = ra[ref_idx].fd.size;
 	      int i, count =  size_delta / fd_size;
 	      char * data = ((char*)ra[ref_idx].data.ptr) + ra[ref_idx].MR_SIZE;
+	      int node;
 			  
 	      /*
 		Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
@@ -511,8 +512,8 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      ra[parent].ref_idx = ref_idx;
 	      ra[ref_idx].flags.is_referenced = true;
 			  
-	      for (ref_idx = ra[ref_parent].first_child; ref_idx >= 0; ref_idx = ra[ref_idx].next)
-		ra[ref_idx].MR_SIZE += size_delta;
+	      for (node = ra[ref_parent].first_child; node >= 0; node = ra[node].next)
+		ra[node].MR_SIZE += size_delta;
 			  
 	      for (i = 0; i < count; )
 		{
