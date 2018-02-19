@@ -6,19 +6,46 @@
 #ifdef HAVE_CONFIG_H
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
+
 #ifdef HAVE_VALUES_H
 #include <values.h>
-#else  /* HAVE_VALUES_H */
-#define FLT_MAX (0x1.fffffep+127)
-#define FLT_MIN (0x1p-126)
-#define FLT_EPSILON (0x1p-23)
-#define DBL_MAX (0x1.fffffffffffffp+1023)
-#define DBL_MIN (0x1p-1022)
-#define DBL_EPSILON (0x1p-52)
-#define LDBL_MAX (0x1.ffffffffffffffffp+16383L)
-#define LDBL_MIN (0x1p-16382L)
-#define LDBL_EPSILON (0x1p-64)
 #endif /* HAVE_VALUES_H */
+
+#ifndef FLT_MAX
+#define FLT_MAX (0x1.fffffep+127)
+#endif /* FLT_MAX */
+
+#ifndef FLT_MIN
+#define FLT_MIN (0x1p-126)
+#endif /* FLT_MIN */
+
+#ifndef FLT_EPSILON
+#define FLT_EPSILON (0x1p-23)
+#endif /* FLT_EPSILON */
+
+#ifndef DBL_MAX
+#define DBL_MAX (0x1.fffffffffffffp+1023)
+#endif /* DBL_MAX */
+
+#ifndef DBL_MIN
+#define DBL_MIN (0x1p-1022)
+#endif /* DBL_MIN */
+
+#ifndef DBL_EPSILON
+#define DBL_EPSILON (0x1p-52)
+#endif /* DBL_EPSILON */
+
+#ifndef LDBL_MAX
+#define LDBL_MAX (0x1.ffffffffffffffffp+16383L)
+#endif /* LDBL_MAX */
+
+#ifndef LDBL_MIN
+#define LDBL_MIN (0x1p-16382L)
+#endif /* LDBL_MIN */
+
+#ifndef LDBL_EPSILON
+#define LDBL_EPSILON (0x1p-64)
+#endif /* LDBL_EPSILON */
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
