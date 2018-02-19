@@ -97,6 +97,8 @@ AC_SUBST(AM_LDFLAGS, ${AM_LDFLAGS})
 PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )
 AM_CONDITIONAL(HAVE_CHECK, test x${HAVE_CHECK} = xyes)
 
+AC_CHECK_LIB(execinfo, backtrace, LIBS=-lexecinfo)
+
 AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#include <rpc/types.h>
 #include <rpc/xdr.h>]])
 
@@ -106,7 +108,7 @@ AC_CHECK_HEADER([rpc/types.h], [ HAVE_XDR=yes ])
 AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 
 # Checks for library functions.
-AC_CHECK_FUNCS([ xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
+AC_CHECK_FUNCS([ backtrace xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
 
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=128)
 AC_MSG_CHECKING(preprocessor routines depth)

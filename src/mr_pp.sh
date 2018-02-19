@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 PP_DEPTH=$1
 
@@ -31,11 +31,11 @@ do
 done
 echo 
 
-echo -n "#define MR_ARG"$PP_DEPTH"(" 
+/bin/echo -n "#define MR_ARG"$PP_DEPTH"(" 
 I=1
 while [ $I -le $PP_DEPTH ]
 do
-  echo -n "_$I, "
+  /bin/echo -n "_$I, "
   I=$(( $I + 1 ))
 done
 echo "...) _"$PP_DEPTH 
@@ -43,21 +43,21 @@ echo
 
 echo "#define MR_NARG(...) MR_NARG_ (0, ##__VA_ARGS__)" 
 
-echo -n "#define MR_NARG_(...) MR_ARG$PP_DEPTH (__VA_ARGS__, " 
+/bin/echo -n "#define MR_NARG_(...) MR_ARG$PP_DEPTH (__VA_ARGS__, " 
 I=$(( $PP_DEPTH - 2 ))
 while [ $I -ge 0 ]
 do
-  echo -n "$I, "
+  /bin/echo -n "$I, "
   I=$(( $I - 1 ))
 done
 echo ")" 
 echo 
 
-echo -n "#define MR_HAS_COMMA(...) MR_ARG"$PP_DEPTH "(__VA_ARGS__, " 
+/bin/echo -n "#define MR_HAS_COMMA(...) MR_ARG"$PP_DEPTH "(__VA_ARGS__, " 
 I=2
 while [ $I -lt $PP_DEPTH ]
 do
-  echo -n "1, "
+  /bin/echo -n "1, "
   I=$(( $I + 1 ))
 done
 echo "0)" 
