@@ -29,7 +29,7 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
-/* meta data for type 'char' - required as a descriminator for mr_ptr union */
+/* meta data for type 'char' - required as a discriminator for mr_ptr union */
 MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'");
 /* meta data for all scallar types */
 MR_TYPEDEF_DESC_BI (char_t, "alias for type 'char' for serialization as array of char");
@@ -442,7 +442,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
   if ((0 == size) || (NULL == mr_ra_str->data.ptr))
     {
       /* need to allocate initial trailing zero for the string */
-      ++size;
+      size = 1;
       ++length;
     }
   char * tail = mr_rarray_append (mr_ra_str, length);

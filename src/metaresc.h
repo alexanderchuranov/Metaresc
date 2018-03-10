@@ -1143,8 +1143,6 @@ typedef __typeof__ (sizeof (0)) mr_size_t;
 #undef MR_MODE
 #endif
 
-#include <mr_tsearch.h>
-
 extern mr_conf_t mr_conf;
 
 extern mr_status_t __attribute__ ((sentinel(0))) mr_add_type (mr_td_t * tdp, char * meta, ...);
