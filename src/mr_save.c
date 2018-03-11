@@ -12,11 +12,7 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-/* MR_IC_RBTREE    ( / 29380522 126030) ratio 233.12 */
-/* MR_IC_HASH_NEXT  ( / 4132470 162829) ratio 25.38  */
-/* MR_IC_HASH_TREE  ( / 2239373 162827) ratio 13.75  */
-
-#define MR_IC_DYNAMIC_DEFAULT MR_IC_HASH_TREE
+#define MR_IC_DYNAMIC_DEFAULT MR_IC_HASH_NEXT
 
 TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
 
@@ -261,7 +257,6 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
       break;
       
-    case MR_TYPE_POINTER:
     case MR_TYPE_ARRAY:
       diff = x->fd.param.array_param.count - y->fd.param.array_param.count;
       if (diff)
@@ -269,9 +264,10 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       diff = x->fd.param.array_param.row_count - y->fd.param.array_param.row_count;
       if (diff)
 	return (diff);
-      if ((MR_TYPE_STRUCT == x->fd.mr_type) ||
-	  (MR_TYPE_UNION == x->fd.mr_type) ||
-	  (MR_TYPE_ENUM == x->fd.mr_type))
+    case MR_TYPE_POINTER:
+      if ((MR_TYPE_STRUCT == x->fd.mr_type_aux) ||
+	  (MR_TYPE_UNION == x->fd.mr_type_aux) ||
+	  (MR_TYPE_ENUM == x->fd.mr_type_aux))
 	{
 	  diff = strcmp (x->fd.type, y->fd.type);
 	  if (diff)
