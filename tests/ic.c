@@ -43,7 +43,7 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
     if (mr_ic_types[i] != NULL)
       {
 	mr_ic_t ic;
-	ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, long_int_t_get_hash, long_int_t_cmp, "long_int_t", i),
+	ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, long_int_t_get_hash, long_int_t_cmp, "long_int_t", i, NULL),
 		       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[i]);
 	ck_assert_msg (callback (&ic, mr_ic_types[i]), "test failed for mr_ic_type_t %s", mr_ic_types[i]);
 	mr_ic_free (&ic);
@@ -75,7 +75,7 @@ static int ic_index_cb (mr_ic_t * ic, char * mr_ic_type)
   long sum_ = 0;
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray), "index failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   
   for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
@@ -89,7 +89,7 @@ static int ic_add_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   long sum = 0;
   mr_ptr_t x = { .long_int_t = 1, };
-  ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   return (x.long_int_t == sum);
 }
@@ -103,8 +103,8 @@ static int ic_add_existing_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   long sum_ = 0;
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
-  ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
 
   for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
@@ -121,8 +121,8 @@ static int ic_add_non_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   long sum_ = x.long_int_t;
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
-  ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
 
   for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
@@ -136,8 +136,8 @@ static int ic_del_add_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   long sum = 0;
   mr_ptr_t x = { .long_int_t = 1, };
-  ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
-  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, x, NULL), "del failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, x), "del failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   return (0 == sum);
 }
@@ -150,8 +150,8 @@ static int ic_del_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   long sum_ = 0;
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
-  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, mr_ic_rarray.ra[0], NULL), "del failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, mr_ic_rarray.ra[0]), "del failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   
   for (i = 1; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
@@ -167,14 +167,14 @@ static int ic_find_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   mr_ptr_t * find;
   mr_ptr_t x = { .long_int_t = -1, };
   
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray), "index failed for mr_ic_type %s", mr_ic_type);
   
-  find = mr_ic_find (ic, x, NULL);
+  find = mr_ic_find (ic, x);
   ck_assert_msg (NULL == find, "Non-indexed element was found for mr_ic_type_t %s", mr_ic_type);
   
   for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
     {
-      find = mr_ic_find (ic, mr_ic_rarray.ra[i], NULL);
+      find = mr_ic_find (ic, mr_ic_rarray.ra[i]);
       ck_assert_msg (NULL != find, "Failed to find element in indexed data for mr_ic_type_t %s", mr_ic_type);
       ck_assert_msg (mr_ic_rarray.ra[i].long_int_t == find->long_int_t,
 		     "Found wrong element in indexed data for mr_ic_type_t %s", mr_ic_type);
@@ -187,8 +187,8 @@ MR_START_TEST (ic_find_indexed, "Check find over indexed data") { ic_types_forea
 static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   mr_ptr_t x = { .long_int_t = 1, };
-  ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
-  mr_ptr_t * find = mr_ic_find (ic, x, NULL);
+  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
+  mr_ptr_t * find = mr_ic_find (ic, x);
   ck_assert_msg (NULL != find, "find failed for mr_ic_type %s", mr_ic_type);
   return (x.long_int_t == find->long_int_t);
 }
@@ -198,7 +198,7 @@ MR_START_TEST (ic_find_added, "Check search of added element") { ic_types_foreac
 static int ic_reset_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   long sum = 0;
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray, NULL), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray), "index failed for mr_ic_type %s", mr_ic_type);
   mr_ic_reset (ic);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   return (0 == sum);
@@ -210,7 +210,7 @@ static int ic_reset_add_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   long sum = 0;
   mr_ptr_t x = { .long_int_t = 1, };
-  ck_assert_msg (NULL != mr_ic_add (ic, x, NULL), "add failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
   mr_ic_reset (ic);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
   return (0 == sum);

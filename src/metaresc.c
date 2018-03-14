@@ -1023,7 +1023,7 @@ mr_td_t *
 mr_get_td_by_name (char * type)
 {
   mr_td_t td = { .type = { .str = type, .hash_value = mr_hash_str (type), } };
-  mr_ptr_t * result = mr_ic_find (&mr_conf.lookup_by_name, &td, NULL);
+  mr_ptr_t * result = mr_ic_find (&mr_conf.lookup_by_name, &td);
   return (result ? result->ptr : NULL);
 }
 
@@ -1235,17 +1235,17 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_STATIC_DEFAULT);
+  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_STATIC_DEFAULT, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
-  mr_ic_index (&tdp->lookup_by_value, &mr_ic_rarray, NULL);
+  mr_ic_index (&tdp->lookup_by_value, &mr_ic_rarray);
 
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
       mr_ptr_t key = { .ptr = tdp->fields[i].fdp };
-      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key, NULL);
+      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key);
       if (NULL == result)
 	return (MR_FAILURE);
       if (result->ptr != key.ptr)
@@ -1270,7 +1270,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_value, &fd, NULL);
+  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_value, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1284,7 +1284,7 @@ mr_fd_t *
 mr_get_enum_by_name (char * name)
 {
   mr_fd_t fd = { .name = { .str = name, .hash_value = mr_hash_str (name), } };
-  mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, &fd, NULL);
+  mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1654,7 +1654,7 @@ mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
   mr_fd_t fd = { .name = { .str = name, .hash_value = mr_hash_str (name), } };
-  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_name, &fd, NULL);
+  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_name, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1690,7 +1690,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->offset = 0;
   fdp->mr_type = MR_TYPE_POINTER;
   fdp->mr_type_aux = tdp->mr_type;
-  return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp, NULL)) ? MR_SUCCESS : MR_FAILURE);
+  return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp)) ? MR_SUCCESS : MR_FAILURE);
 }
 
 /**
@@ -1741,19 +1741,19 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     return (MR_FAILURE);
 
   mr_check_fields (tdp);
-  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT);
+  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
-  mr_ic_index (&tdp->lookup_by_name, &mr_ic_rarray, NULL);
+  mr_ic_index (&tdp->lookup_by_name, &mr_ic_rarray);
 
   if (NULL == mr_conf.enum_by_name.virt_func)
-    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT);
+    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT, NULL);
 
   if (NULL == mr_conf.lookup_by_name.virt_func)
-    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_STATIC_DEFAULT);
+    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_STATIC_DEFAULT, NULL);
 
-  if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp, NULL))
+  if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp))
     return (MR_FAILURE);
 
   if (MR_TYPE_ENUM == tdp->mr_type)

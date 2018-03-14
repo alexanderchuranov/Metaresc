@@ -175,7 +175,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       void * discriminator_ptr;
 
       /* checks if this parent already have union resolution info */
-      ud_find = mr_ic_find (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, ud_idx, mr_save_data);
+      ud_find = mr_ic_find (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, ud_idx);
       /* break the traverse loop if it has */
       if (ud_find)
 	break;
@@ -206,12 +206,12 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       ud->fdp = fdp;
       ud_find = &ud_idx;
       if (parent >= 0)
-	mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find, mr_save_data);
+	mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find);
     }
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
-    mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find, mr_save_data);
+    mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find);
 
   return (fdp);
 }
@@ -310,30 +310,30 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 mr_hash_value_t __attribute__ ((unused))
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
-  const mr_ptrdes_t * ra = context;
-  const mr_ptrdes_t * ptrdes = &ra[x.long_int_t];
+  const mr_ra_ptrdes_t * ra_ptrdes = context;
+  const mr_ptrdes_t * ptrdes = &ra_ptrdes->ra[x.long_int_t];
   return (ptrdes->data.long_int_t + ptrdes->fd.mr_type);
 }
 
 int
 mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  mr_ptrdes_t * ra = (mr_ptrdes_t*)context;
-  return (mr_cmp_ptrdes (&ra[x.long_int_t], &ra[y.long_int_t]));
+  const mr_ra_ptrdes_t * ra_ptrdes = context;
+  return (mr_cmp_ptrdes (&ra_ptrdes->ra[x.long_int_t], &ra_ptrdes->ra[y.long_int_t]));
 }
 
 mr_hash_value_t __attribute__ ((unused))
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
-  const mr_ptrdes_t * ra = context;
-  return ((long)ra[x.long_int_t].data.ptr);
+  const mr_ra_ptrdes_t * ra_ptrdes = context;
+  return ((long)ra_ptrdes->ra[x.long_int_t].data.ptr);
 }
 
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_ptrdes_t * ra = context;
-  return (ra[x.long_int_t].data.ptr - ra[y.long_int_t].data.ptr);
+  const mr_ra_ptrdes_t * ra_ptrdes = context;
+  return (ra_ptrdes->ra[x.long_int_t].data.ptr - ra_ptrdes->ra[y.long_int_t].data.ptr);
 }
 
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,
@@ -422,7 +422,7 @@ mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data)
   mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
 
   /* search in index of typed references */
-  find_result = mr_ic_find (&mr_save_data->untyped_ptrs, idx, ra);
+  find_result = mr_ic_find (&mr_save_data->untyped_ptrs, idx);
   
   return (find_result ? find_result->long_int_t : -1);
 }
@@ -665,7 +665,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].MR_SIZE = fdp->size * count;
 
   /* forward reference resolving */
-  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx, ra);
+  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
   if ((NULL != search_result) && (search_result->long_int_t != idx))
     {
       mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
@@ -678,7 +678,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
       search_result->long_int_t = idx;
     }
 
-  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx, ra);
+  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx);
   if ((search_result != NULL) && (search_result->long_int_t != idx))
     {
       if (ra[idx].MR_SIZE > ra[search_result->long_int_t].MR_SIZE)
@@ -692,8 +692,13 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 	  ra[search_result->long_int_t].save_params.next_untyped = idx;
 	}
     }
-  
-  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
+
+  mr_res_t context = {
+    .data = { mr_save_data },
+    .type = "mr_save_data_t",
+    .MR_SIZE = sizeof (mr_save_data_t),
+  };
+  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT, &context);
 
   mr_add_child (parent, idx, ra);
 
@@ -1033,10 +1038,15 @@ void
 mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 {
   int i;
+  mr_res_t context = {
+    .data = { mr_save_data },
+    .type = "mr_save_data_t",
+    .MR_SIZE = sizeof (mr_save_data_t),
+  };
 
   memset (mr_save_data, 0, sizeof (*mr_save_data));
-  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
-  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT);
+  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT, &context);
+  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT, &context);
 
   mr_save_data->mr_ra_ud_size = 0;
   mr_save_data->mr_ra_ud = NULL;

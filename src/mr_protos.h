@@ -194,6 +194,7 @@ TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup o
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
+	      (MR_IC_CUSTOM, , "custom"),
 	      (MR_IC_NONE, , "rarray"),
 	      (MR_IC_RBTREE, , "tree"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
@@ -208,7 +209,7 @@ TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers fo
 		)
 
 TYPEDEF_STRUCT (mr_ic_hash_virt_func_t, ATTRIBUTES ( , "virtual functions table for hashed collections"),
-		(mr_ptr_t *, index_add, (struct mr_ic_t * /* iс */, mr_ptr_t /* key */, __const void * /* context */, int /* bucket */)),
+		(mr_ptr_t *, index_add, (struct mr_ic_t * /* iс */, mr_ptr_t /* key */, int /* bucket */)),
 		(void, index_free, (struct mr_ic_t * /* ic */)),
 		)
 
@@ -228,19 +229,21 @@ TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "extend mr_ic_hash_t with fiel
 		(bool, zero_key),
 		)
 
-TYPEDEF_STRUCT (mr_ptr_typed_t, ATTRIBUTES ( , "typed void pointer"),
-		(mr_ptr_t, mr_ptr, , "ext_type"),
-		(char *, ext_type, , "type as string"),
+TYPEDEF_STRUCT (mr_res_t,
+		(mr_ptr_t, data, , "type"), 
+		(char *, type, , "union discriminator"),
+		(ssize_t, MR_SIZE, , "size of data"),
 		)
 
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_type_t, ic_type),
+		(mr_res_t, context),
 		(char *, key_type),
 		(mr_compar_fn_t, compar_fn),
 		(struct mr_ic_virt_func_t *, virt_func),
 		
 		ANON_UNION (type_specific),
-		(mr_ptr_typed_t, ext, , "pointer on custom data for extended IC types"),
+		(mr_res_t, custom, , "pointer on custom data for extended IC types"),
 		(mr_ic_rarray_t, rarray),
 		(mr_red_black_tree_node_t *, tree),
 		(mr_ic_hash_t, hash),
@@ -249,11 +252,11 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		)
 
 TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for indexed collections"),
-		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
-		(mr_status_t, del, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
-		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */, __const void * /* context */)),
+		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
+		(mr_status_t, del, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
+		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
 		(mr_status_t, foreach, (mr_ic_t * /* ic */, mr_visit_fn_t /* visit_fn */, __const void * /* context */)),
-		(mr_status_t, index, (mr_ic_t * /* ic */, mr_ic_rarray_t * /* rarray */, __const void * /* context */)),
+		(mr_status_t, index, (mr_ic_t * /* ic */, mr_ic_rarray_t * /* rarray */)),
 		(void, reset, (mr_ic_t * /* ic */)),
 		(void, free, (mr_ic_t * /* ic */)),
 		)
@@ -352,12 +355,6 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		string_t vt_string,
 		char vt_char,
 		END_ANON_UNION ("value_type"),
-		)
-
-TYPEDEF_STRUCT (mr_res_t,
-		(mr_ptr_t, data, , "type"), 
-		(char *, type, , "union discriminator"),
-		(ssize_t, MR_SIZE, , "size of data"),
 		)
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
