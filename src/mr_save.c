@@ -264,7 +264,12 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       diff = x->fd.param.array_param.row_count - y->fd.param.array_param.row_count;
       if (diff)
 	return (diff);
+      
     case MR_TYPE_POINTER:
+      diff = x->fd.mr_type_aux - y->fd.mr_type_aux;
+      if (diff)
+	return (diff);
+      
       if ((MR_TYPE_STRUCT == x->fd.mr_type_aux) ||
 	  (MR_TYPE_UNION == x->fd.mr_type_aux) ||
 	  (MR_TYPE_ENUM == x->fd.mr_type_aux))
