@@ -410,15 +410,7 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
 
 /* ----------------------- MR_IC_HASH ----------------------- */
 
-#define MR_HASH_TABLE_SIZE_MULT (1.4)
-/* MR_HASH_TABLE_SIZE_MULT: HASH_NEXT ( / cmp matched) ratio, HASH_TREE ( / cmp matched) ratio */
-/* 1.5  ( / 24151 15217.0) 1.58 ( / 31483 20344.0) 1.54 */
-/* 1.4  ( / 17783 14921.0) 1.19 ( / 22681 20048.0) 1.13 */
-/* 1.3  ( / 18459 14701.0) 1.25 ( / 23180 19820.0) 1.16 */
-/* 1.2  ( / 38973 14461.0) 2.69 ( / 24962 19561.0) 1.27 */
-/* 1.1  ( / 48032 14241.0) 3.37 ( / 29766 19323.0) 1.54 */
-/* 1.05 ( / 30735 14139.0) 2.17 ( / 28792 19244.0) 1.49 */
-/* 1.0  ( / 62538 14077.0) 4.44 ( / 29668 19160.0) 1.54 */
+#define MR_HASH_TABLE_SIZE_MULT (1.61803398875)
 
 void
 mr_ic_hash_reset (mr_ic_t * ic)
@@ -456,7 +448,7 @@ mr_ic_hash_next_free (mr_ic_t * ic)
   ic->hash_next.zero_key = false;
 }
 
-static int
+static inline int
 mr_ic_hash_get_backet (mr_ic_t * ic, mr_ptr_t key)
 {
   mr_hash_value_t hash_value = ic->hash.hash_fn (key, ic->context.data.ptr);
@@ -626,7 +618,7 @@ mr_status_t
 mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
   static mr_ic_virt_func_t virt_func = {
-    .add = mr_ic_hash_add,
+    .add = mr_ic_hash_add_inner,
     .del = mr_ic_hash_tree_del,
     .find = mr_ic_hash_tree_find,
     .foreach = mr_ic_hash_tree_foreach,
@@ -657,6 +649,14 @@ mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
   ic->hash.bucket_type = "mr_red_black_tree_node_t";
   ic->hash.virt_func = &hash_virt_func;
 
+  ic->hash.size = (1 << 8) * sizeof (ic->hash.hash_table[0]);
+  ic->hash.hash_table = MR_MALLOC (ic->hash.size);
+  if (NULL == ic->hash.hash_table)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (MR_FAILURE);
+    }
+  memset (ic->hash.hash_table, 0, ic->hash.size);
   return (MR_SUCCESS);
 }
 

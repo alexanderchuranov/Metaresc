@@ -12,8 +12,6 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-#define MR_IC_DYNAMIC_DEFAULT MR_IC_HASH_NEXT
-
 TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
 
 static mr_save_handler_t mr_save_handler[];
@@ -703,7 +701,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     .type = "mr_save_data_t",
     .MR_SIZE = sizeof (mr_save_data_t),
   };
-  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT, &context);
+  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_RBTREE, &context);
 
   mr_add_child (parent, idx, ra);
 
@@ -1050,8 +1048,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   };
 
   memset (mr_save_data, 0, sizeof (*mr_save_data));
-  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT, &context);
-  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_DYNAMIC_DEFAULT, &context);
+  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "long_int_t", MR_IC_HASH_NEXT, &context);
+  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "long_int_t", MR_IC_HASH_NEXT, &context);
 
   mr_save_data->mr_ra_ud_size = 0;
   mr_save_data->mr_ra_ud = NULL;
