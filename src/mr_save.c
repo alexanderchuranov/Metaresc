@@ -12,7 +12,7 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-TYPEDEF_FUNC (void, mr_save_handler_t, (mr_save_data_t *))
+TYPEDEF_FUNC (int, mr_save_handler_t, (mr_save_data_t *))
 
 static mr_save_handler_t mr_save_handler[];
 
@@ -402,34 +402,6 @@ mr_ud_get_hash (mr_ptr_t x, const void * context)
 	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.long_int_t].discriminator, NULL));
 }
 
-/**
- * Check whether pointer is presented in the collection of already saved pointers.
- * @param mr_save_data save routines data and lookup structures
- * @param data pointer on saved object
- * @return an index of node in collection of already saved nodes
- */
-static int
-mr_check_ptr_in_list (mr_save_data_t * mr_save_data, void * data)
-{
-  mr_ptr_t * find_result;
-  long_int_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs);
-  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
-
-  if (idx < 0)
-    return (idx); /* memory allocation error occured */
-
-  /* populate attributes of new node */
-  ra[idx].data.ptr = data;
-
-  /* this element is required only for a search so we need to adjust back size of collection */
-  mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-
-  /* search in index of typed references */
-  find_result = mr_ic_find (&mr_save_data->untyped_ptrs, idx);
-  
-  return (find_result ? find_result->long_int_t : -1);
-}
-
 static mr_status_t
 register_type_name (mr_ptr_t key, const void * context)
 {
@@ -483,7 +455,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	  /* new resizable pointer is a part of already saved */
 	  ra[parent].ref_idx = ref_idx;
 	  ra[ref_idx].flags.is_referenced = true;
-	  return (0);
+	  return (ra[idx].MR_SIZE / ra[idx].fd.size);
 	}
       /* otherwise we can handle only match with another resizable pointer */
       if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
@@ -517,11 +489,11 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      for (i = 0; i < count; )
 		{
 		  int nodes_added = mr_save_inner (data + i * fd_size, &ra[ref_idx].fd, count - i, mr_save_data, ref_parent);
-		  if (0 == nodes_added)
+		  if (nodes_added <= 0)
 		    break;
 		  i += nodes_added;
 		}
-	      return (0);
+	      return (i);
 	    }
 	}
     }
@@ -614,7 +586,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   long_int_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   if (idx < 0)
-    return (0); /* memory allocation error occured */
+    return (-1); /* memory allocation error occured */
 
   ra[idx].data.ptr = data;
   ra[idx].fd = *fdp;
@@ -707,7 +679,11 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   /* route saving handler */
   if ((fdp->mr_type < MR_TYPE_LAST) && mr_save_handler[fdp->mr_type])
-    mr_save_handler[fdp->mr_type] (mr_save_data);
+    {
+      int nodes_added = mr_save_handler[fdp->mr_type] (mr_save_data);
+      if (nodes_added < 0)
+	return (nodes_added);
+    }
 
   return (1);
 }
@@ -716,12 +692,13 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler. Detects NULL pointers.
  * @param mr_save_data save routines data and lookup structures
  */
-static void
+static int
 mr_save_func (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   if (NULL == *(void**)mr_save_data->ptrs.ra[idx].data.ptr)
     mr_save_data->ptrs.ra[idx].flags.is_null = true;
+  return (1);
 }
 
 /**
@@ -729,28 +706,28 @@ mr_save_func (mr_save_data_t * mr_save_data)
  * Detects if string content was already saved.
  * @param mr_save_data save routines data and lookup structures
  */
-static void
+static int
 mr_save_string (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * str = *(char**)mr_save_data->ptrs.ra[idx].data.ptr;
   if (NULL == str)
-    mr_save_data->ptrs.ra[idx].flags.is_null = true;
-  else
     {
-      mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
-      fd_.mr_type = MR_TYPE_CHAR_ARRAY;
-      fd_.size = sizeof (char);
-      fd_.type = "char";
-      mr_save_inner (str, &fd_, 1, mr_save_data, idx);
+      mr_save_data->ptrs.ra[idx].flags.is_null = true;
+      return (1);
     }
+  mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
+  fd_.mr_type = MR_TYPE_CHAR_ARRAY;
+  fd_.size = sizeof (char);
+  fd_.type = "char";
+  return (mr_save_inner (str, &fd_, 1, mr_save_data, idx));
 }
 
 /**
  * MR_STRUCT type saving handler. Saves structure as internal representation tree node.
  * @param mr_save_data save routines data and lookup structures
  */
-static void
+static int
 mr_save_struct (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
@@ -761,28 +738,31 @@ mr_save_struct (mr_save_data_t * mr_save_data)
   if (NULL == tdp) /* check whether type descriptor was found */
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].fd.type);
-      return;
+      return (0);
     }
 
   if (tdp->mr_type != MR_TYPE_STRUCT)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type.str);
-      return;
+      return (0);
     }
 
   count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
-      mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
+      int nodes_added = mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
+      if (nodes_added < 0)
+	return (nodes_added);
     }
+  return (i);
 }
 
 /**
  * MR_UNION type saving handler. Saves structure as internal representation tree node.
  * @param mr_save_data save routines data and lookup structures
  */
-static void
+static int
 mr_save_union (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
@@ -793,25 +773,26 @@ mr_save_union (mr_save_data_t * mr_save_data)
   if (NULL == tdp) /* check whether type descriptor was found */
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].fd.type);
-      return;
+      return (0);
     }
   if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->type.str);
-      return;
+      return (0);
     }
   
   fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[idx].fd.type, mr_save_data->ptrs.ra[idx].fd.meta);
 
   if (NULL != fdp)
-    mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
+    return (mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx));
+  return (0);
 }
 
 /**
  * MR_ARRAY type saving handler. Saves array into internal representation.
  * @param mr_save_data save routines data and lookup structures
  */
-static void
+static int
 mr_save_array (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
@@ -833,10 +814,13 @@ mr_save_array (mr_save_data_t * mr_save_data)
   for (i = 0; i < count; )
     {
       int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
+      if (nodes_added <= 0)
+	return (nodes_added);
       if (1 == row_count)
 	fd_.param.array_param.count -= nodes_added;
       i += nodes_added * row_count;
     }
+  return (i);
 }
 
 /**
@@ -844,7 +828,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
  * @param idx node index
  * @param mr_save_data save routines data and lookup structures
  */
-static void
+static int
 mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 {
   char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
@@ -860,11 +844,12 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   for (i = 0; i < count; )
     {
       int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
-      if (0 == nodes_added)
-	break;
+      if (nodes_added <= 0)
+	return (nodes_added);
       fd_.param.array_param.count -= nodes_added;
       i += nodes_added;
     }
+  return (i);
 }
 
 mr_status_t
@@ -911,9 +896,23 @@ mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
       ((MR_TYPE_NONE == mr_save_data->ptrs.ra[idx].fd.mr_type_aux) || (MR_TYPE_VOID == mr_save_data->ptrs.ra[idx].fd.mr_type_aux)) &&
       !mr_save_data->ptrs.ra[idx].flags.is_null)
     {
-      int ref_idx = mr_check_ptr_in_list (mr_save_data, *(void**)mr_save_data->ptrs.ra[idx].data.ptr);
-      if (ref_idx >= 0)
+      long_int_t alloc_idx = mr_add_ptr_to_list (&mr_save_data->ptrs);
+
+      if (alloc_idx < 0)
+	return (MR_FAILURE); /* memory allocation error occured */
+
+      /* populate attributes of new node */
+      mr_save_data->ptrs.ra[alloc_idx].data.ptr = *(void**)mr_save_data->ptrs.ra[idx].data.ptr;
+
+      /* this element is required only for a search so we need to adjust back size of collection */
+      mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
+
+      /* search in index of typed references */
+      mr_ptr_t * find_result = mr_ic_find (&mr_save_data->untyped_ptrs, alloc_idx);
+  
+      if (find_result != NULL)
 	{
+	  int ref_idx = find_result->long_int_t;
 	  mr_save_data->ptrs.ra[idx].ref_idx = ref_idx;
 	  mr_save_data->ptrs.ra[ref_idx].flags.is_referenced = true;
 	}
@@ -981,7 +980,7 @@ mr_post_process (mr_save_data_t * mr_save_data)
  * MR_POINTER_STRUCT type saving handler. Save referenced structure into internal representation.
  * @param mr_save_data save routines data and lookup structures
  */
-static void
+static int
 mr_save_pointer (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
@@ -1025,10 +1024,11 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
 						   &mr_save_data->mr_ra_idx_size, &mr_save_data->mr_ra_idx_alloc_size, 
 						   sizeof (mr_save_data->mr_ra_idx[0]));
 	  if (NULL == idx_)
-	    return;
+	    return (-1);
 	  *idx_ = idx;
 	}
     }
+  return (1);
 }  
 
 /**
@@ -1059,15 +1059,19 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ra = NULL;
 
   fdp->unnamed = true;
-  
-  mr_save_inner (data, fdp, 1, mr_save_data, -1);
-
-  while (mr_save_data->mr_ra_idx_size > 0)
+  int nodes_added = mr_save_inner (data, fdp, 1, mr_save_data, -1);
+  if (nodes_added > 0)
     {
-      mr_save_data->mr_ra_idx_size -= sizeof (mr_save_data->mr_ra_idx[0]);
-      mr_save_pointer_content (mr_save_data->mr_ra_idx[mr_save_data->mr_ra_idx_size / sizeof (mr_save_data->mr_ra_idx[0])], mr_save_data);
+      while (mr_save_data->mr_ra_idx_size > 0)
+	{
+	  mr_save_data->mr_ra_idx_size -= sizeof (mr_save_data->mr_ra_idx[0]);
+	  nodes_added = mr_save_pointer_content (mr_save_data->mr_ra_idx[mr_save_data->mr_ra_idx_size / sizeof (mr_save_data->mr_ra_idx[0])], mr_save_data);
+	  if (nodes_added < 0)
+	    break;
+	}
+      if (nodes_added >= 0)
+	mr_post_process (mr_save_data);
     }
-  mr_post_process (mr_save_data);
 
   for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
     mr_ic_free (&mr_save_data->ptrs.ra[i].save_params.union_discriminator);

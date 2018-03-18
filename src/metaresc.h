@@ -1196,8 +1196,8 @@ extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * valu
 extern mr_td_t * mr_get_td_by_name (char * type);
 extern char * mr_message_format (mr_message_id_t message_id, va_list args);
 extern void mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, ...);
-extern void * mr_rarray_append (mr_rarray_t * rarray, int size);
-extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, int element_size);
+extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
+extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
 
 extern char * xml_unquote_string (mr_substr_t * substr);

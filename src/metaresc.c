@@ -376,39 +376,41 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
  * @return Pointer on a new element of rarray
  */
 void *
-mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, int element_size)
+mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size)
 {
   if ((NULL == data) || (NULL == size) || (NULL == alloc_size) ||
       (*size < 0) || (element_size < 0))
     return (NULL);
   
-  *size += element_size;
-  if (*size > *alloc_size)
+  char * _data = *data;
+  ssize_t _size = *size;
+  ssize_t new_size = _size + element_size;
+  if (new_size > *alloc_size)
     {
       float mas = mr_conf.mr_mem.mem_alloc_strategy;
-      int realloc_size;
-      void * data_;
+      ssize_t realloc_size;
       if (mas < 1)
 	mas = 1;
       if (mas > 2)
 	mas = 2;
-      realloc_size = (((int)((*alloc_size + 1) * mas) + *size - 1) / *size) * *size;
-      if (realloc_size < *size)
-	realloc_size = *size;
-      data_ = MR_REALLOC (*data, realloc_size);
-      if (NULL == data_)
+      realloc_size = (((int)((new_size + 1) * mas) + element_size - 1) / element_size) * element_size;
+      if (realloc_size < new_size)
+	realloc_size = new_size;
+      _data = MR_REALLOC (_data, realloc_size);
+      if (NULL == _data)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (NULL);
 	}
       *alloc_size = realloc_size;
-      *data = data_;
+      *data = _data;
     }
-  return (&((char*)(*data))[*size - element_size]);
+  *size = new_size;
+  return (&_data[_size]);
 }
 
 void *
-mr_rarray_append (mr_rarray_t * rarray, int size)
+mr_rarray_append (mr_rarray_t * rarray, ssize_t size)
 {
   return (mr_rarray_allocate_element (&rarray->data.ptr, &rarray->MR_SIZE, &rarray->alloc_size, size));
 }
