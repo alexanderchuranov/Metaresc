@@ -204,12 +204,20 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       ud->fdp = fdp;
       ud_find = &ud_idx;
       if (parent >= 0)
-	mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find);
+	{
+	  mr_ptr_t * add = mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find);
+	  if (NULL == add)
+	    return (NULL);
+	}
     }
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
-    mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find);
+    {
+      mr_ptr_t * add = mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find);
+      if (NULL == add)
+	return (NULL);
+    }
 
   return (fdp);
 }
@@ -641,7 +649,9 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
-  if ((NULL != search_result) && (search_result->long_int_t != idx))
+  if (NULL == search_result)
+    return (-1);
+  if (search_result->long_int_t != idx)
     {
       mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
       int nodes_matched = resolve_matched (mr_save_data, idx, parent, search_result->long_int_t);
@@ -654,7 +664,9 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     }
 
   search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx);
-  if ((search_result != NULL) && (search_result->long_int_t != idx))
+  if (NULL == search_result)
+    return (-1);
+  if (search_result->long_int_t != idx)
     {
       if (ra[idx].MR_SIZE > ra[search_result->long_int_t].MR_SIZE)
 	{
