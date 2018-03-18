@@ -56,8 +56,6 @@ MR_TYPEDEF_DESC_BI (complex_float_t);
 MR_TYPEDEF_DESC_BI (complex_double_t);
 MR_TYPEDEF_DESC_BI (complex_long_double_t);
 
-#define MR_IC_STATIC_DEFAULT MR_IC_SORTED_ARRAY
-
 void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
 void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
 void mr_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
@@ -1231,7 +1229,7 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_STATIC_DEFAULT, NULL);
+  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
@@ -1737,17 +1735,17 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     return (MR_FAILURE);
 
   mr_check_fields (tdp);
-  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT, NULL);
+  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
   mr_ic_index (&tdp->lookup_by_name, &mr_ic_rarray);
 
   if (NULL == mr_conf.enum_by_name.virt_func)
-    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_DEFAULT, NULL);
+    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
 
   if (NULL == mr_conf.lookup_by_name.virt_func)
-    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_STATIC_DEFAULT, NULL);
+    mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
 
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp))
     return (MR_FAILURE);
