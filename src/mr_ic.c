@@ -117,12 +117,6 @@ mr_ic_none_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 }
 
 void
-mr_ic_none_reset (mr_ic_t * ic)
-{
-  ic->rarray.size = 0;
-}
-
-void
 mr_ic_none_free (mr_ic_t * ic)
 {
   if ((ic->rarray.alloc_size >= 0) && (NULL != ic->rarray.ra))
@@ -140,7 +134,6 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_
     .find = mr_ic_none_find,
     .foreach = mr_ic_none_foreach,
     .index = mr_ic_none_index,
-    .reset = mr_ic_none_reset,
     .free = mr_ic_none_free,
   };
   
@@ -166,12 +159,6 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_
 static void
 dummy_free_fn (mr_ptr_t key, const void * context)
 {
-}
-
-void
-mr_ic_rbtree_reset (mr_ic_t * ic)
-{
-  mr_ic_rbtree_free (ic);
 }
 
 void
@@ -258,7 +245,6 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
     .find = mr_ic_rbtree_find,
     .foreach = mr_ic_rbtree_foreach,
     .index = mr_ic_rbtree_index,
-    .reset = mr_ic_rbtree_reset,
     .free = mr_ic_rbtree_free,
   };
   
@@ -366,12 +352,6 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 }
 
 void
-mr_ic_sorted_array_reset (mr_ic_t * ic)
-{
-  mr_ic_none_reset (ic);
-}
-
-void
 mr_ic_sorted_array_free (mr_ic_t * ic)
 {
   mr_ic_none_free (ic);
@@ -386,7 +366,6 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
     .find = mr_ic_sorted_array_find,
     .foreach = mr_ic_none_foreach,
     .index = mr_ic_sorted_array_index,
-    .reset = mr_ic_sorted_array_reset,
     .free = mr_ic_sorted_array_free,
   };
   
@@ -411,25 +390,6 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
 /* ----------------------- MR_IC_HASH ----------------------- */
 
 #define MR_HASH_TABLE_SIZE_MULT (1.61803398875)
-
-void
-mr_ic_hash_reset (mr_ic_t * ic)
-{
-  if ((NULL == ic) || (NULL == ic->hash.hash_table) || (NULL == ic->hash.virt_func))
-    return;
-
-  ic->hash.virt_func->index_free (ic);
-  
-  memset (ic->hash.hash_table, 0, ic->hash.size);
-  ic->hash.items_count = 0;
-}
-
-void
-mr_ic_hash_next_reset (mr_ic_t * ic)
-{
-  mr_ic_hash_reset (ic);
-  ic->hash_next.zero_key = false;
-}
 
 void
 mr_ic_hash_free (mr_ic_t * ic)
@@ -623,7 +583,6 @@ mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
     .find = mr_ic_hash_tree_find,
     .foreach = mr_ic_hash_tree_foreach,
     .index = mr_ic_hash_index,
-    .reset = mr_ic_hash_reset,
     .free = mr_ic_hash_free,
   };
   static mr_ic_hash_virt_func_t hash_virt_func = {
@@ -789,7 +748,6 @@ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
     .find = mr_ic_hash_next_find,
     .foreach = mr_ic_hash_next_foreach,
     .index = mr_ic_hash_index,
-    .reset = mr_ic_hash_reset,
     .free = mr_ic_hash_free,
   };
   static mr_ic_hash_virt_func_t hash_virt_func = {

@@ -257,7 +257,6 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
 		(mr_status_t, foreach, (mr_ic_t * /* ic */, mr_visit_fn_t /* visit_fn */, __const void * /* context */)),
 		(mr_status_t, index, (mr_ic_t * /* ic */, mr_ic_rarray_t * /* rarray */)),
-		(void, reset, (mr_ic_t * /* ic */)),
 		(void, free, (mr_ic_t * /* ic */)),
 		)
 
