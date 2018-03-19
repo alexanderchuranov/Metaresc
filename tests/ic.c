@@ -195,27 +195,4 @@ static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
 
 MR_START_TEST (ic_find_added, "Check search of added element") { ic_types_foreach (ic_find_add_cb); } END_TEST
 
-static int ic_reset_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
-{
-  long sum = 0;
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, &mr_ic_rarray), "index failed for mr_ic_type %s", mr_ic_type);
-  mr_ic_reset (ic);
-  ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
-  return (0 == sum);
-}
-
-MR_START_TEST (ic_reset_indexed, "Check reset for indexed data") { ic_types_foreach (ic_reset_indexed_cb); } END_TEST
-
-static int ic_reset_add_cb (mr_ic_t * ic, char * mr_ic_type)
-{
-  long sum = 0;
-  mr_ptr_t x = { .long_int_t = 1, };
-  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
-  mr_ic_reset (ic);
-  ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, long_int_t_sum_visitor, &sum), "sum failed for mr_ic_type %s", mr_ic_type);
-  return (0 == sum);
-}
-
-MR_START_TEST (ic_reset_added, "Check reset for added element") { ic_types_foreach (ic_reset_add_cb); } END_TEST
-
 MAIN ();
