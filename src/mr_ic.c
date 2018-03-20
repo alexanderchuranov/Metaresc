@@ -338,6 +338,9 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 {
   mr_ic_sorted_array_free (ic);
 
+  if (0 == rarray->size)
+    return (MR_SUCCESS);
+  
   ic->rarray.ra = MR_MALLOC (rarray->size);
   if (NULL == ic->rarray.ra)
     {
@@ -348,6 +351,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
   ic->rarray.size = ic->rarray.alloc_size = rarray->size;
   memcpy (ic->rarray.ra, rarray->ra, rarray->size);
   hsort (ic->rarray.ra, ic->rarray.size / sizeof (ic->rarray.ra[0]), sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
+
   return (MR_SUCCESS);
 }
 
