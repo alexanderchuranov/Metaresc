@@ -936,7 +936,7 @@ mr_hash_str (char * str)
 }
 
 mr_hash_value_t
-mr_hashed_string_get_hash (mr_ptr_t x, const void * context)
+mr_hashed_string_get_hash (mr_ptr_t x)
 {
   mr_hashed_string_t * x_ = x.ptr;
   if (0 == x_->hash_value)
@@ -955,8 +955,8 @@ mr_hashed_string_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_hashed_string_t * x_ = x.ptr;
   const mr_hashed_string_t * y_ = y.ptr;
-  mr_hash_value_t x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x, context);
-  mr_hash_value_t y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y, context);
+  mr_hash_value_t x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x);
+  mr_hash_value_t y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y);
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
@@ -970,7 +970,7 @@ mr_hash_value_t
 mr_fd_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
-  return (mr_hashed_string_get_hash (&x_->name, context));
+  return (mr_hashed_string_get_hash (&x_->name));
 }
 
 /**
@@ -991,7 +991,7 @@ mr_hash_value_t
 mr_td_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_td_t * x_ = x.ptr;
-  return (mr_hashed_string_get_hash (&x_->type, context));
+  return (mr_hashed_string_get_hash (&x_->type));
 }
 
 /**

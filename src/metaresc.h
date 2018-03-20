@@ -1211,7 +1211,7 @@ extern mr_hash_value_t mr_fd_name_get_hash (const mr_ptr_t x, const void * conte
 extern int mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_hash_value_t mr_td_name_get_hash (const mr_ptr_t x, const void * context);
 extern int mr_hashed_string_cmp (const mr_ptr_t, const mr_ptr_t, const void *);
-extern mr_hash_value_t mr_hashed_string_get_hash (mr_ptr_t, const void *);
+extern mr_hash_value_t mr_hashed_string_get_hash (mr_ptr_t);
 extern mr_hash_value_t mr_enumfd_get_hash (mr_ptr_t x, const void * context);
 extern int cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context);
 

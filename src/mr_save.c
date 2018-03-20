@@ -406,8 +406,8 @@ mr_hash_value_t __attribute__ ((unused))
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.long_int_t].type, NULL) << 1) +
-	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.long_int_t].discriminator, NULL));
+  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.long_int_t].type) << 1) +
+	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.long_int_t].discriminator));
 }
 
 static mr_status_t
@@ -1054,9 +1054,9 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 {
   int i;
   mr_res_t context = {
-    .data = { mr_save_data },
-    .type = "mr_save_data_t",
-    .MR_SIZE = sizeof (mr_save_data_t),
+    .data = { &mr_save_data->ptrs },
+    .type = "mr_ra_ptrdes_t",
+    .MR_SIZE = sizeof (mr_ra_ptrdes_t),
   };
 
   memset (mr_save_data, 0, sizeof (*mr_save_data));
