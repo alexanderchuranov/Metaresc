@@ -96,6 +96,9 @@ mr_ic_free (mr_ic_t * ic)
   if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->free))
     return;
   ic->virt_func->free (ic);
+  ic->context.data.ptr = NULL;
+  ic->context.type = NULL;
+  ic->context.MR_SIZE = 0;
 }
 
 static inline mr_status_t

@@ -447,8 +447,6 @@ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
 static mr_status_t
 mr_ic_hash_index_inner (mr_ic_t * src_ic, mr_ic_t * dst_ic, int items_count)
 {
-  mr_ic_free (dst_ic);
-
   dst_ic->hash.items_count = items_count;
 
   if (0 == dst_ic->hash.items_count)
@@ -499,7 +497,7 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key)
 
       if (MR_SUCCESS != mr_ic_hash_index_inner (ic, &dst_ic, ic->hash.items_count + 1))
 	return (NULL);
-      
+
       mr_ic_free (ic);
       *ic = dst_ic;
     }
@@ -582,7 +580,7 @@ mr_status_t
 mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
   static mr_ic_virt_func_t virt_func = {
-    .add = mr_ic_hash_add_inner,
+    .add = mr_ic_hash_add,
     .del = mr_ic_hash_tree_del,
     .find = mr_ic_hash_tree_find,
     .foreach = mr_ic_hash_tree_foreach,
@@ -612,14 +610,9 @@ mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
   ic->hash.bucket_type = "mr_red_black_tree_node_t";
   ic->hash.virt_func = &hash_virt_func;
 
-  ic->hash.size = (1 << 8) * sizeof (ic->hash.hash_table[0]);
-  ic->hash.hash_table = MR_MALLOC (ic->hash.size);
-  if (NULL == ic->hash.hash_table)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
-    }
-  memset (ic->hash.hash_table, 0, ic->hash.size);
+  ic->hash.size = 0;
+  ic->hash.hash_table = NULL;
+
   return (MR_SUCCESS);
 }
 
@@ -767,6 +760,7 @@ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
     ic->context = *context;
   else
     memset (&ic->context, 0, sizeof (ic->context));
+
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
   ic->virt_func = &virt_func;
