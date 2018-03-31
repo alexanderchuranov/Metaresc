@@ -32,9 +32,9 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
 
   static char *
     mr_ic_types[] = {
-    MR_IC_INIT (NONE),
-    MR_IC_INIT (RBTREE),
+    MR_IC_INIT (UNSORTED_ARRAY),
     MR_IC_INIT (SORTED_ARRAY),
+    MR_IC_INIT (RBTREE),
     MR_IC_INIT (HASH_TREE),
     MR_IC_INIT (HASH_NEXT),
   };

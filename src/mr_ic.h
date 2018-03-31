@@ -96,9 +96,7 @@ mr_ic_free (mr_ic_t * ic)
   if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->free))
     return;
   ic->virt_func->free (ic);
-  ic->context.data.ptr = NULL;
-  ic->context.type = NULL;
-  ic->context.MR_SIZE = 0;
+  memset (ic, 0, sizeof (*ic));
 }
 
 static inline mr_status_t
@@ -107,12 +105,12 @@ mr_ic_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * 
   memset (ic, 0, sizeof (*ic));
   switch (mr_ic_type)
     {
-    case MR_IC_NONE:
+    case MR_IC_UNSORTED_ARRAY:
       return (mr_ic_none_new (ic, compar_fn, key_type, context));
-    case MR_IC_RBTREE:
-      return (mr_ic_rbtree_new (ic, compar_fn, key_type, context));
     case MR_IC_SORTED_ARRAY:
       return (mr_ic_sorted_array_new (ic, compar_fn, key_type, context));
+    case MR_IC_RBTREE:
+      return (mr_ic_rbtree_new (ic, compar_fn, key_type, context));
     case MR_IC_HASH_TREE:
       return (mr_ic_hash_tree_new (ic, hash_fn, compar_fn, key_type, context));
     case MR_IC_HASH_NEXT:

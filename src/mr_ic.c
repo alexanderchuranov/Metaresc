@@ -140,7 +140,7 @@ mr_ic_none_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_
   if (NULL == ic)
     return (MR_FAILURE);
 
-  ic->ic_type = MR_IC_NONE;
+  ic->ic_type = MR_IC_UNSORTED_ARRAY;
   if (context)
     ic->context = *context;
   else

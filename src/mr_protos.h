@@ -194,12 +194,13 @@ TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup o
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
+	      (MR_IC_UNINITIALIZED, = 0, "void_ptr"),
 	      (MR_IC_CUSTOM, , "custom"),
-	      (MR_IC_NONE, , "rarray"),
-	      (MR_IC_RBTREE, , "tree"),
+	      (MR_IC_UNSORTED_ARRAY, , "rarray"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
-	      (MR_IC_HASH_TREE, , "hash"),
+	      (MR_IC_RBTREE, , "tree"),
 	      (MR_IC_HASH_NEXT, , "hash_next"),
+	      (MR_IC_HASH_TREE, , "hash"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
@@ -243,6 +244,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(struct mr_ic_virt_func_t *, virt_func),
 		
 		ANON_UNION (type_specific),
+		(void *, void_ptr, , "default serialization"),
 		(mr_res_t, custom, , "pointer on custom data for extended IC types"),
 		(mr_ic_rarray_t, rarray),
 		(mr_red_black_tree_node_t *, tree),

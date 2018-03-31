@@ -71,12 +71,10 @@ mr_conf_t mr_conf = {
   .log_level = MR_LL_ALL, /**< default log level ALL */
   .msg_handler = NULL, /**< pointer on user defined message handler */
   .lookup_by_name = {
-    .ic_type = MR_IC_NONE,
-    .virt_func = NULL,
+    .ic_type = MR_IC_UNINITIALIZED,
   },
   .enum_by_name = {
-    .ic_type = MR_IC_NONE,
-    .virt_func = NULL,
+    .ic_type = MR_IC_UNINITIALIZED,
   },
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
 };
@@ -1741,10 +1739,10 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   mr_ic_rarray.alloc_size = -1;
   mr_ic_index (&tdp->lookup_by_name, &mr_ic_rarray);
 
-  if (NULL == mr_conf.enum_by_name.virt_func)
+  if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
     mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
 
-  if (NULL == mr_conf.lookup_by_name.virt_func)
+  if (MR_IC_UNINITIALIZED == mr_conf.lookup_by_name.ic_type)
     mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
 
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp))
