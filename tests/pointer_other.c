@@ -320,6 +320,35 @@ MR_START_TEST (tda_overlapping_2, "Two overlaping dynamic arrays. Lower pointer 
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
+MR_START_TEST (tda_overlapping_3, "Two overlaping dynamic arrays. First saved pointer is embeded into second one") {
+  two_dynamic_arrays_t tda;
+  int array[] = { 1, 2, 3, 4, };
+
+  tda.da1 = &array[0];
+  tda.size1 = 4 * sizeof (array[0]);
+  tda.da2 = &array[1];
+  tda.size2 = 2 * sizeof (array[0]);
+  
+  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
+  char * str = MR_SAVE_CINIT (mr_ra_ptrdes_t, &ptrs);
+  printf ("%s\n", str);
+  int i;
+  bool pointer_resolved_correctly = false;
+  if (ptrs.ra != NULL)
+    {
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+	{
+	  int ref_idx = ptrs.ra[i].ref_idx;
+	  if (ref_idx >= 0)
+	    {
+	      pointer_resolved_correctly = true;
+	      break;
+	    }
+	}
+      MR_FREE (ptrs.ra);
+    }
+  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+} END_TEST
 
 TYPEDEF_STRUCT (int_array_t,
 		(int, array, [3]),
