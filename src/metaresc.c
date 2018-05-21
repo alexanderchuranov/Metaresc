@@ -88,10 +88,7 @@ mr_conf_init ()
 {
   static bool initialized = false;
   if (!initialized)
-    {
-      mr_ic_foreach (&mr_conf.lookup_by_name, mr_conf_init_visitor, NULL);
-      initialized = true;
-    }
+    initialized = (MR_SUCCESS == mr_ic_foreach (&mr_conf.lookup_by_name, mr_conf_init_visitor, NULL));
 }
 
 static mr_status_t
@@ -127,15 +124,13 @@ mr_vscprintf (const char * format, va_list args)
 static int 
 mr_vasprintf (char ** strp, const char * fmt, va_list args) 
 {
+  *strp = NULL;
   int len = mr_vscprintf (fmt, args);
   if (len <= 0) 
     return (len);
   char * str = MR_MALLOC (len + 1);
   if (NULL == str) 
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (-1);
-    }
+    return (-1);
   int _len = vsnprintf (str, len + 1, fmt, args);
   if (_len < 0)
     {
@@ -231,7 +226,9 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
 #endif /* HAVE_EXECINFO_H */
       
       message = mr_message_format (message_id, args);
-      if (message)
+      if (NULL == message)
+	fprintf (stderr, "%s: in %s %s() line %d: Out of memory formating error message #%d\n", log_level_str_, file_name, func_name, line, message_id);
+      else
 	{
 	  fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
 	  MR_FREE (message);
@@ -1285,7 +1282,7 @@ mr_get_enum_by_name (char * name)
  * @param fdp pointer on a field descriptor
  * @return status
  */
-static mr_status_t
+static void
 mr_normalize_type (mr_fd_t * fdp)
 {
   static char * keywords[] =
@@ -1349,7 +1346,6 @@ mr_normalize_type (mr_fd_t * fdp)
 	  }
       *ptr = 0;
     }
-  return (MR_SUCCESS);
 }
 
 /**
@@ -1357,20 +1353,20 @@ mr_normalize_type (mr_fd_t * fdp)
  * @param fdp pointer on a field descriptor
  * @return status
  */
-static mr_status_t
+static void
 mr_init_bitfield (mr_fd_t * fdp)
 {
   int i, j;
   if ((NULL == fdp->param.bitfield_param.bitfield) ||
       (0 == fdp->param.bitfield_param.size))
-    return (MR_SUCCESS);
+    return;
 
   for (i = 0; i < fdp->param.bitfield_param.size; ++i)
     if (fdp->param.bitfield_param.bitfield[i])
       break;
   /* if bitmask is clear then there is no need to initialize anything */
   if (!fdp->param.bitfield_param.bitfield[i])
-    return (MR_SUCCESS);
+    return;
 
   fdp->offset = i;
   for (i = 0; i < __CHAR_BIT__; ++i)
@@ -1389,15 +1385,13 @@ mr_init_bitfield (mr_fd_t * fdp)
 	break;
       i = 0;
     }
-  return (MR_SUCCESS);
 }
 
 /**
  * New type descriptor preprocessing. Check fields names duplication, nornalize types name, initialize bitfields. Called once for each type.
  * @param tdp pointer on a type descriptor
- * @return status
  */
-static mr_status_t
+static void
 mr_check_fields (mr_td_t * tdp)
 {
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
@@ -1419,7 +1413,6 @@ mr_check_fields (mr_td_t * tdp)
       if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_init_bitfield (fdp);
     }
-  return (MR_SUCCESS);
 }
 
 /**
@@ -1467,7 +1460,6 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	  fdp->mr_type = MR_TYPE_POINTER;
 	  fdp->size = types_sizes[fdp->mr_type_aux];
 	}	  
-      
       /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
       if ('*' == *end)
@@ -1511,7 +1503,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
  * @param fdp pointer on a field descriptor
  * @return status
  */
-static mr_status_t
+static void
 mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
@@ -1536,10 +1528,9 @@ mr_func_field_detect (mr_fd_t * fdp)
 	}
     }
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
-  return (MR_SUCCESS);
 }
 
-static mr_status_t
+static void
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);
@@ -1603,7 +1594,6 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
     default:
       break;
     }
-  return (MR_SUCCESS);
 }
 
 static mr_status_t
@@ -1624,7 +1614,7 @@ mr_fd_detect_res_size (mr_fd_t * fdp)
  * @param args auxiliary arguments
  * @return status
  */
-static mr_status_t
+static void
 mr_detect_fields_types (mr_td_t * tdp)
 {
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
@@ -1633,7 +1623,6 @@ mr_detect_fields_types (mr_td_t * tdp)
       mr_fd_detect_field_type (tdp->fields[i].fdp);
       mr_fd_detect_res_size (tdp->fields[i].fdp);
     }
-  return (MR_SUCCESS);
 }
 
 /**
@@ -1660,9 +1649,9 @@ mr_register_type_pointer (mr_td_t * tdp)
 {
   mr_fd_t * fdp;
   mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
-  /* check that mr_ptr_t is already a registered type */
+  /* check that mr_ptr_t have already a registered */
   if (NULL == union_tdp)
-    return (MR_FAILURE);
+    return (MR_SUCCESS);
   /* check that requested type is already registered */
   if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
     return (MR_SUCCESS);
@@ -1672,7 +1661,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   if (NULL == fdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (MR_FAILURE);
+      return (MR_SUCCESS);
     }
 
   *fdp = *union_tdp->fields[0].fdp;
@@ -1682,7 +1671,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->offset = 0;
   fdp->mr_type = MR_TYPE_POINTER;
   fdp->mr_type_aux = tdp->mr_type;
-  return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp)) ? MR_SUCCESS : MR_FAILURE);
+  return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
 /**
@@ -1749,12 +1738,12 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     return (MR_FAILURE);
 
   if (MR_TYPE_ENUM == tdp->mr_type)
-    mr_add_enum (tdp);
+    return (mr_add_enum (tdp));
 
   return (MR_SUCCESS);
 }
 
-static mr_status_t
+static void
 mr_td_detect_res_size (mr_td_t * tdp)
 {
   if ((0 == tdp->MR_SIZE) && (tdp->res_type != NULL))
@@ -1763,17 +1752,17 @@ mr_td_detect_res_size (mr_td_t * tdp)
       if (res_tdp != NULL)
 	tdp->MR_SIZE = res_tdp->size;
     }
-  return (MR_SUCCESS);
 }
 
 static mr_status_t
 mr_conf_init_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
+  
   mr_detect_fields_types (tdp);
-  mr_register_type_pointer (tdp);
   mr_td_detect_res_size (tdp);
-  return (MR_SUCCESS);
+
+  return (mr_register_type_pointer (tdp));
 }
 
 /**

@@ -1088,6 +1088,12 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
     mr_ic_free (&mr_save_data->ptrs.ra[i].save_params.union_discriminator);
 
+  if ((nodes_added < 0) && (mr_save_data->ptrs.ra != NULL))
+    {
+      MR_FREE (mr_save_data->ptrs.ra);
+      mr_save_data->ptrs.ra = NULL;
+    }
+
   if (mr_save_data->mr_ra_ud != NULL)
     MR_FREE (mr_save_data->mr_ra_ud);
   mr_save_data->mr_ra_ud = NULL;
