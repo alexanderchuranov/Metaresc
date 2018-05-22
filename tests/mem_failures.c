@@ -46,6 +46,16 @@ st_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (0);
 }
 
+static mr_status_t
+st_free (mr_ptr_t x, const void * context)
+{
+  stack_trace_t * stack_trace = x.ptr;
+  if (stack_trace->stack)
+    free (stack_trace->stack);
+  free (stack_trace);
+  return (MR_SUCCESS);
+}
+
 static inline stack_trace_t * stack_trace_get ()
 {
   stack_trace_t * stack_trace = malloc (sizeof (*stack_trace));
@@ -160,6 +170,10 @@ MR_START_TEST (mem_failures, "test memory operations failures") {
 	  break;
 	}
     }
+  mr_ic_foreach (&malloc_seen, st_free, NULL);
+  mr_ic_free (&malloc_seen);
+  mr_ic_foreach (&realloc_seen, st_free, NULL);
+  mr_ic_free (&realloc_seen);
 
   ck_assert_msg (malloc_cnt == free_cnt, "Mismatch of allocations (%d) and free (%d)", malloc_cnt, free_cnt);
 } END_TEST
