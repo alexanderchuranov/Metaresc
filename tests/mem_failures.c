@@ -187,19 +187,25 @@ mr_save_method ()
   return (MR_FAILURE);
 }
 
-static mr_status_t
-save_cinit_method ()
-{
-  mr_rarray_t ra = MR_SAVE_CINIT_RA (mr_conf_t, &mr_conf);
-  if (ra.data.ptr)
-    {
-      MR_FREE (ra.data.ptr);
-      return (MR_SUCCESS);
-    }
-  return (MR_FAILURE);
-}
-
 MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAVE") { mem_failures_method (mr_save_method); } END_TEST
-MR_START_TEST (mem_failures_save_cinit, "test memory operations failures for MR_SAVE_CINIT_RA") { mem_failures_method (save_cinit_method); } END_TEST
+
+#define TEST_MR_SAVE_METHOD(METHOD)					\
+  static mr_status_t							\
+  METHOD ## _method ()							\
+  {									\
+    mr_rarray_t ra = METHOD (mr_conf_t, &mr_conf);			\
+    if (ra.data.ptr)							\
+      {									\
+	MR_FREE (ra.data.ptr);						\
+	return (MR_SUCCESS);						\
+      }									\
+    return (MR_FAILURE);						\
+  }									\
+  MR_START_TEST (mem_failures_ ## METHOD,				\
+		 "test memory operations failures for " #METHOD)	\
+  { mem_failures_method (METHOD ## _method); } END_TEST
+
+TEST_MR_SAVE_METHOD (MR_SAVE_CINIT_RA)
+TEST_MR_SAVE_METHOD (MR_SAVE_JSON_RA)
 
 MAIN ();
