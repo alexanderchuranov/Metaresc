@@ -293,6 +293,14 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_NAMED_ANON_UNION] = scm_save_empty,
   };
 
+static void *
+free_and_return_null (char * content)
+{
+  if (content)
+    MR_FREE (content);
+  return (NULL);
+}
+
 /**
  * Public function. Save scheduler. Save any object as a string.
  * @param ptrs resizeable array with pointers descriptors
@@ -352,15 +360,15 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 		{
 		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START "%s" MR_SCM_NAMED_FIELD_END,
 				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra[idx].fd.name.str) < 0)
-		    return (NULL);
+		    return (free_and_return_null (content));
 		}
 	      else
 		{
 		  if (in_comment)
 		    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
-		      return (NULL);
+		      return (free_and_return_null (content));
 		  if (mr_ra_printf (&mr_ra_str, " %s", content) < 0)
-		    return (NULL);
+		    return (free_and_return_null (content));
 		}
 	      MR_FREE (content);
 	    }

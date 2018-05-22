@@ -153,6 +153,8 @@ static void mem_failures_method (mr_status_t (*method) ())
   _mem.realloc = _realloc;
   _mem.free = _free;
 
+  malloc_cnt = realloc_cnt = free_cnt = 0;
+
   mr_status_t status;
 
   status = mr_ic_new (&malloc_seen, st_hash, st_cmp, "stack_trace_t", MR_IC_RBTREE, NULL);
@@ -205,6 +207,7 @@ MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAV
 		 "test memory operations failures for " #METHOD)	\
   { mem_failures_method (METHOD ## _method); } END_TEST
 
+TEST_MR_SAVE_METHOD (MR_SAVE_SCM_RA)
 TEST_MR_SAVE_METHOD (MR_SAVE_CINIT_RA)
 TEST_MR_SAVE_METHOD (MR_SAVE_JSON_RA)
 
