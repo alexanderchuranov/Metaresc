@@ -387,6 +387,14 @@ static cinit_json_save_handler_t json_save_handler[] =
     [MR_TYPE_NAMED_ANON_UNION] = cinit_save_struct,
   };
 
+static void * free_data_content (mr_save_type_data_t * save_data)
+{
+  if (save_data->content)
+    MR_FREE (save_data->content);
+  save_data->content = NULL;
+  return (NULL);
+}
+
 /**
  * Public function. Save scheduler. Saves any object as a string.
  * Code common for c-init and json.
@@ -424,31 +432,31 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, bool (*node_handler) (mr_fd_t*, int, mr_
 
 	  if (ptrs->ra[idx].save_params.level > 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
-	      return (NULL);
+	      return (free_data_content (&save_data));
 
 	  if (save_data.named_field_template != NULL)
 	    if (mr_ra_printf (&mr_ra_str, save_data.named_field_template, ptrs->ra[idx].fd.name.str) < 0)
-	      return (NULL);
+	      return (free_data_content (&save_data));
 
 	  if (ptrs->ra[idx].ref_idx >= 0)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT,
 			      (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			      ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-	      return (NULL);
+	      return (free_data_content (&save_data));
 
 	  if (ptrs->ra[idx].flags.is_referenced)
 	    if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
-	      return (NULL);
+	      return (free_data_content (&save_data));
 
 	  if (save_data.prefix)
 	    if (mr_ra_printf (&mr_ra_str, save_data.prefix, ptrs->ra[idx].fd.type) < 0)
-	      return (NULL);
+	      return (free_data_content (&save_data));
 
 	  if (save_data.content)
 	    {
 	      if (mr_ra_printf (&mr_ra_str, "%s", save_data.content) < 0)
-		return (NULL);
-	      MR_FREE (save_data.content);
+		return (free_data_content (&save_data));
+	      free_data_content (&save_data);
 	    }
 
 	  ptrs->ra[idx].res.data.ptr = save_data.suffix;
