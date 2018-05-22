@@ -64,7 +64,7 @@ xml_quote_string (char * str)
       length += sizeof (XML_NONPRINT_ESC) - 1;
 
   str_ = MR_MALLOC (length + 1);
-  if (NULL == str)
+  if (NULL == str_)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (NULL);
