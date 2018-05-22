@@ -145,7 +145,8 @@ static void _free (const char * filename, const char * function, int line, void 
 
 static void _mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args) {}
 
-MR_START_TEST (mem_failures, "test memory operations failures") {
+static void mem_failures_method (mr_status_t (*method) ())
+{
   mr_mem = mr_conf.mr_mem;
   _mem.mem_alloc_strategy = mr_mem.mem_alloc_strategy;
   _mem.malloc = _malloc;
@@ -159,23 +160,35 @@ MR_START_TEST (mem_failures, "test memory operations failures") {
   status = mr_ic_new (&realloc_seen, st_hash, st_cmp, "stack_trace_t", MR_IC_RBTREE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for realloc");
 
-  mr_conf.mr_mem = _mem;
   mr_conf.msg_handler = _mr_message;
-  for (;;)
-    {
-      mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);
-      if (ptrs.ra)
-	{
-	  MR_FREE (ptrs.ra);
-	  break;
-	}
-    }
+  mr_conf.mr_mem = _mem;
+
+  while (MR_SUCCESS != method ());
+    
+  mr_conf.mr_mem = mr_mem;
+
   mr_ic_foreach (&malloc_seen, st_free, NULL);
   mr_ic_free (&malloc_seen);
   mr_ic_foreach (&realloc_seen, st_free, NULL);
   mr_ic_free (&realloc_seen);
 
   ck_assert_msg (malloc_cnt == free_cnt, "Mismatch of allocations (%d) and free (%d)", malloc_cnt, free_cnt);
+}
+
+static mr_status_t
+mr_save_method ()
+{
+  mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);
+  if (ptrs.ra)
+    {
+      MR_FREE (ptrs.ra);
+      return (MR_SUCCESS);
+    }
+  return (MR_FAILURE);
+}
+
+MR_START_TEST (mem_failures, "test memory operations failures") {
+  mem_failures_method (mr_save_method);
 } END_TEST
 
 MAIN ();
