@@ -207,9 +207,12 @@ MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAV
 		 "test memory operations failures for " #METHOD)	\
   { mem_failures_method (METHOD ## _method); } END_TEST
 
+
 TEST_MR_SAVE_METHOD (MR_SAVE_SCM_RA)
 TEST_MR_SAVE_METHOD (MR_SAVE_CINIT_RA)
 TEST_MR_SAVE_METHOD (MR_SAVE_JSON_RA)
+TEST_MR_SAVE_METHOD (MR_SAVE_XML1_RA)
 TEST_MR_SAVE_METHOD (MR_SAVE_XML2_RA)
+TEST_MR_SAVE_METHOD (MR_SAVE_XDR_RA)
 
 MAIN ();

@@ -309,6 +309,14 @@ static xml_save_handler_t xml1_save_handler[] =
     [MR_TYPE_NAMED_ANON_UNION] = xml_save_empty,
   };
 
+static void *
+free_and_return_null (char * content)
+{
+  if (content)
+    MR_FREE (content);
+  return (NULL);
+}
+
 /**
  * Public function. Save scheduler. Save any object as a string.
  * @param ptrs resizeable array with pointers descriptors
@@ -344,28 +352,28 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
       level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
       empty_tag = (ptrs->ra[idx].first_child < 0) && ((NULL == content) || (0 == content[0]));
       if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].fd.name.str) < 0)
-	return (NULL);
+	return (free_and_return_null (content));
       if (ptrs->ra[idx].ref_idx >= 0)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT,
 			  (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			  ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-	  return (NULL);
+	  return (free_and_return_null (content));
       if (ptrs->ra[idx].flags.is_referenced)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
-	  return (NULL);
+	  return (free_and_return_null (content));
       if (true == ptrs->ra[idx].flags.is_null)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
-	  return (NULL);
+	  return (free_and_return_null (content));
 
       if (empty_tag)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_XML1_OPEN_EMPTY_TAG_END) < 0)
-	    return (NULL);
+	    return (free_and_return_null (content));
 	}
       else
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_XML1_OPEN_TAG_END, content ? content : "") < 0)
-	    return (NULL);
+	    return (free_and_return_null (content));
 	}
       if (content)
 	MR_FREE (content);
