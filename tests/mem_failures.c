@@ -195,7 +195,7 @@ MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAV
   static mr_status_t							\
   METHOD ## _method ()							\
   {									\
-    mr_rarray_t ra = METHOD (mr_conf_t, &mr_conf);			\
+    mr_rarray_t ra = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf);	\
     if (ra.data.ptr)							\
       {									\
 	MR_FREE (ra.data.ptr);						\
@@ -208,11 +208,11 @@ MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAV
   { mem_failures_method (METHOD ## _method); } END_TEST
 
 
-TEST_MR_SAVE_METHOD (MR_SAVE_SCM_RA)
-TEST_MR_SAVE_METHOD (MR_SAVE_CINIT_RA)
-TEST_MR_SAVE_METHOD (MR_SAVE_JSON_RA)
-TEST_MR_SAVE_METHOD (MR_SAVE_XML1_RA)
-TEST_MR_SAVE_METHOD (MR_SAVE_XML2_RA)
-TEST_MR_SAVE_METHOD (MR_SAVE_XDR_RA)
+TEST_MR_SAVE_METHOD (SCM)
+TEST_MR_SAVE_METHOD (CINIT)
+TEST_MR_SAVE_METHOD (JSON)
+TEST_MR_SAVE_METHOD (XML1)
+TEST_MR_SAVE_METHOD (XML2)
+TEST_MR_SAVE_METHOD (XDR)
 
 MAIN ();
