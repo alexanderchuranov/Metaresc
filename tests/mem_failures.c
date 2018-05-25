@@ -145,7 +145,7 @@ static void _free (const char * filename, const char * function, int line, void 
 
 static void _mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args) {}
 
-static void mem_failures_method (mr_status_t (*method) ())
+static void mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
 {
   mr_mem = mr_conf.mr_mem;
   _mem.mem_alloc_strategy = mr_mem.mem_alloc_strategy;
@@ -165,7 +165,7 @@ static void mem_failures_method (mr_status_t (*method) ())
   mr_conf.msg_handler = _mr_message;
   mr_conf.mr_mem = _mem;
 
-  while (MR_SUCCESS != method ());
+  while (MR_SUCCESS != method (arg));
     
   mr_conf.mr_mem = mr_mem;
 
@@ -178,7 +178,7 @@ static void mem_failures_method (mr_status_t (*method) ())
 }
 
 static mr_status_t
-mr_save_method ()
+mr_save_method (void * arg)
 {
   mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);
   if (ptrs.ra)
@@ -189,11 +189,11 @@ mr_save_method ()
   return (MR_FAILURE);
 }
 
-MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAVE") { mem_failures_method (mr_save_method); } END_TEST
+MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAVE") { mem_failures_method (mr_save_method, NULL); } END_TEST
 
 #define TEST_MR_SAVE_METHOD(METHOD)					\
   static mr_status_t							\
-  METHOD ## _method ()							\
+  METHOD ## _method (void * arg)					\
   {									\
     mr_rarray_t ra = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf);	\
     if (ra.data.ptr)							\
@@ -205,7 +205,7 @@ MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAV
   }									\
   MR_START_TEST (mem_failures_ ## METHOD,				\
 		 "test memory operations failures for " #METHOD)	\
-  { mem_failures_method (METHOD ## _method); } END_TEST
+  { mem_failures_method (METHOD ## _method, NULL); } END_TEST
 
 
 TEST_MR_SAVE_METHOD (SCM)
