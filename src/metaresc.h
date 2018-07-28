@@ -728,7 +728,17 @@
 #define MR_COPY_RECURSIVELY_(MR_TYPE_NAME, S_PTR, D_PTR, N, ...) MR_PASTE2 (MR_COPY_RECURSIVELY_ARG, N) (MR_TYPE_NAME, S_PTR, D_PTR)
 #define MR_COPY_RECURSIVELY_ARG3(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR); mr_copy_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR), D_PTR); })
 #define MR_COPY_RECURSIVELY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_TYPE_NAME dst; mr_copy_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR), &dst); dst; })
-#define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) mr_free_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR))
+#define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) ({		\
+      mr_ra_ptrdes_t ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_status_t status = MR_SUCCESS;				\
+      mr_free_recursively (&ptrs);				\
+      if (NULL == ptrs.ra)					\
+	status = MR_FAILURE;					\
+      else							\
+	MR_FREE (ptrs.ra);					\
+      status;							\
+    })
+      
 
 #define MR_SAVE MR_SAVE_TYPED
 #define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR) ({				\
@@ -1185,7 +1195,7 @@ extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
-extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t ptrs);
+extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * data);
 extern mr_status_t mr_free_ptrs (mr_ra_ptrdes_t ptrs);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);

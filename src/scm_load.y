@@ -114,7 +114,15 @@ ws_scm_ws: ws scm ws
 
 scm: start_node scm_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent; }
 
-start_node: { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_parse_add_node (mr_load); }
+start_node: { 
+  mr_load_t * mr_load = MR_LOAD; 
+  mr_load->parent = mr_parse_add_node (mr_load); 
+  if (mr_load->parent < 0)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      YYERROR;
+    }
+}
 
 scm_stmt:
 value
@@ -142,8 +150,13 @@ compaund
 | expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
+  void * rv = mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
   mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_STRING;
+  if ((void*)4317681840 == rv)
+    {
+      fprintf (stderr, "str = '%s'\n", rv);
+    }
+
 }
 
 expr:

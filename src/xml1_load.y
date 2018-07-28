@@ -115,7 +115,15 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
  }
 
-start_tag: { MR_LOAD->parent = mr_parse_add_node (MR_LOAD); }
+start_tag: { 
+  mr_load_t * mr_load = MR_LOAD; 
+  mr_load->parent = mr_parse_add_node (mr_load); 
+  if (mr_load->parent < 0)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      YYERROR;
+    }
+}
 
 nested_tags: | nested_tags tag
 

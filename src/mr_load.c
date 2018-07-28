@@ -34,6 +34,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
   int count = mr_load_data->ptrs.size / sizeof (mr_load_data->ptrs.ra[0]);
   int max_idx = -1;
   int * table;
+  mr_status_t status = MR_SUCCESS;
 
   for (i = 0; i < count; ++i)
     if (mr_load_data->ptrs.ra[i].idx > max_idx)
@@ -56,7 +57,10 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
       {
 	/* checking indexes collision */
 	if (table[mr_load_data->ptrs.ra[i].idx] >= 0)
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, mr_load_data->ptrs.ra[i].idx);
+	  {
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, mr_load_data->ptrs.ra[i].idx);
+	    status = MR_FAILURE;
+	  }
 	table[mr_load_data->ptrs.ra[i].idx] = i;
       }
 
@@ -66,22 +70,44 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
       {
 	int idx = table[mr_load_data->ptrs.ra[i].ref_idx];
 	if (idx < 0)
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, mr_load_data->ptrs.ra[i].ref_idx);
+	  {
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, mr_load_data->ptrs.ra[i].ref_idx);
+	    status = MR_FAILURE;
+	  }
 	else
 	  {
-	    void * data;
-	    if (mr_load_data->ptrs.ra[i].flags.is_content_reference)
-	      data = *(void**)(mr_load_data->ptrs.ra[idx].data.ptr);
-	    else
-	      data = mr_load_data->ptrs.ra[idx].data.ptr;
+	    void * data = mr_load_data->ptrs.ra[idx].data.ptr;
 
-	    if ((MR_TYPE_POINTER == mr_load_data->ptrs.ra[i].fd.mr_type) ||
-		(MR_TYPE_STRING == mr_load_data->ptrs.ra[i].fd.mr_type))
+	    if ((MR_TYPE_POINTER != mr_load_data->ptrs.ra[i].fd.mr_type) &&
+		(MR_TYPE_STRING != mr_load_data->ptrs.ra[i].fd.mr_type))
+	      {
+		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, mr_load_data->ptrs.ra[i].fd.mr_type);
+		status = MR_FAILURE;
+		continue;
+	      }
+
+	    if (mr_load_data->ptrs.ra[i].flags.is_content_reference)
+	      {
+		if (NULL == data)
+		  {
+		    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+		    status = MR_FAILURE;
+		  }
+		else
+		  data = *(void**)data;
+	      }
+
+	    if (NULL == mr_load_data->ptrs.ra[i].data.ptr)
+	      {
+		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+		status = MR_FAILURE;
+	      }
+	    else
 	      *(void**)mr_load_data->ptrs.ra[i].data.ptr = data;
 	  }
       }
   MR_FREE (table);
-  return (MR_SUCCESS);
+  return (status);
 }
 
 /**
@@ -385,7 +411,7 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
   int max_size = ptrdes->fd.size;
   mr_status_t status = MR_FAILURE;
   
-  memset (ptrdes->data.ptr, 0, max_size);
+  *(char*)ptrdes->data.ptr = 0;
   if ((MR_VT_STRING == ptrdes->mr_value.value_type) ||
       (MR_VT_UNKNOWN == ptrdes->mr_value.value_type))
     {
@@ -402,9 +428,12 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 		  void * data = MR_REALLOC (ptrdes->data.ptr, str_len);
 		  if (NULL == data)
 		    {
+		      if (ptrdes->data.ptr != NULL)
+			MR_FREE (ptrdes->data.ptr);
 		      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 		      status = MR_FAILURE;
 		    }
+		  
 		  *(void**)mr_load_data->ptrs.ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
 		}
 	      else
@@ -414,7 +443,7 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
 		}
 	    }
 		  
-	  if (ptrdes->data.ptr)
+	  if (ptrdes->data.ptr != NULL)
 	    strcpy (ptrdes->data.ptr, str);
 	}
     }
@@ -555,7 +584,7 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
   mr_fd_t fd_ = mr_load_data->ptrs.ra[idx].fd;
   int count = 0;
   int node;
-  
+
   for (node = mr_load_data->ptrs.ra[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra[node].next)
     ++count;
   if (0 == count)
@@ -760,9 +789,20 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	}
 
   if ((NULL == mr_load_data->ptrs.ra[idx].fd.name.str) && (fdp->name.str))
-    mr_load_data->ptrs.ra[idx].fd.name.str = mr_strdup (fdp->name.str);
+    {
+      char * name = mr_strdup (fdp->name.str);
+      if (NULL == name)
+	return (MR_FAILURE);
+      mr_load_data->ptrs.ra[idx].fd.name.str = name;
+    }
   if ((NULL == mr_load_data->ptrs.ra[idx].fd.type) && (fdp->type))
-    mr_load_data->ptrs.ra[idx].fd.type = mr_strdup (fdp->type);
+    {
+      char * type = mr_strdup (fdp->type);
+      if (NULL == type)
+	return (MR_FAILURE);
+      mr_load_data->ptrs.ra[idx].fd.type = type;
+    }
+
   mr_load_data->ptrs.ra[idx].fd.size = fdp->size;
   mr_load_data->ptrs.ra[idx].fd.mr_type = fdp->mr_type;
   mr_load_data->ptrs.ra[idx].fd.mr_type_aux = fdp->mr_type_aux;
@@ -780,14 +820,21 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   /* set cross references at the upper level */
   if (0 == idx)
     {
-      while (mr_load_data->mr_ra_idx_size > 0)
+      if (MR_SUCCESS == status)
 	{
-	  mr_load_data->mr_ra_idx_size -= sizeof (mr_load_data->mr_ra_idx[0]);
-	  mr_load_pointer_postponed (mr_load_data->mr_ra_idx[mr_load_data->mr_ra_idx_size / sizeof (mr_load_data->mr_ra_idx[0])],
-				     mr_load_data);
+	  while (mr_load_data->mr_ra_idx_size > 0)
+	    {
+	      mr_load_data->mr_ra_idx_size -= sizeof (mr_load_data->mr_ra_idx[0]);
+	      status = mr_load_pointer_postponed (mr_load_data->mr_ra_idx[mr_load_data->mr_ra_idx_size / sizeof (mr_load_data->mr_ra_idx[0])],
+						  mr_load_data);
+	      if (MR_SUCCESS != status)
+		break;
+	    }
 	}
       if (MR_SUCCESS == status)
 	status = mr_set_crossrefs (mr_load_data);
+      else
+	mr_set_crossrefs (mr_load_data);
       if (mr_load_data->mr_ra_idx != NULL)
 	{
 	  MR_FREE (mr_load_data->mr_ra_idx);

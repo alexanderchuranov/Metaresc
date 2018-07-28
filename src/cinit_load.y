@@ -130,7 +130,15 @@ unquote_str (mr_substr_t * substr)
 
 cinit: start_node cinit_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent; }
 
-start_node: { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_parse_add_node (mr_load); }
+start_node: { 
+  mr_load_t * mr_load = MR_LOAD; 
+  mr_load->parent = mr_parse_add_node (mr_load); 
+  if (mr_load->parent < 0)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      YYERROR;
+    }
+}
 
 cinit_stmt:
 casted_value

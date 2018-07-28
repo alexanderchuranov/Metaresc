@@ -557,6 +557,8 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	  case MR_TYPE_STRING:
 	    ra[parent].ref_idx = ref_idx;
 	    ra[ref_idx].flags.is_referenced = true;
+	    ra[parent].save_params.next_typed = ra[ref_parent].save_params.next_typed;
+	    ra[ref_parent].save_params.next_typed = parent;
 	    return (0);
 
 	  case MR_TYPE_POINTER:
@@ -897,27 +899,27 @@ static mr_status_t
 mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_save_data_t * mr_save_data = context;
-  int parent = mr_save_data->ptrs.ra[idx].parent;
+  int parent = ptrs->ra[idx].parent;
 
   if (parent < 0)
-    mr_save_data->ptrs.ra[idx].save_params.level = 0;
+    ptrs->ra[idx].save_params.level = 0;
   else
-    mr_save_data->ptrs.ra[idx].save_params.level = mr_save_data->ptrs.ra[parent].save_params.level + 1;
+    ptrs->ra[idx].save_params.level = ptrs->ra[parent].save_params.level + 1;
 
-  if ((MR_TYPE_POINTER == mr_save_data->ptrs.ra[idx].fd.mr_type) &&
-      ((MR_TYPE_NONE == mr_save_data->ptrs.ra[idx].fd.mr_type_aux) || (MR_TYPE_VOID == mr_save_data->ptrs.ra[idx].fd.mr_type_aux)) &&
-      !mr_save_data->ptrs.ra[idx].flags.is_null)
+  if ((MR_TYPE_POINTER == ptrs->ra[idx].fd.mr_type) &&
+      ((MR_TYPE_NONE == ptrs->ra[idx].fd.mr_type_aux) || (MR_TYPE_VOID == ptrs->ra[idx].fd.mr_type_aux)) &&
+      !ptrs->ra[idx].flags.is_null)
     {
-      long_int_t alloc_idx = mr_add_ptr_to_list (&mr_save_data->ptrs);
+      long_int_t alloc_idx = mr_add_ptr_to_list (ptrs);
 
       if (alloc_idx < 0)
 	return (MR_FAILURE); /* memory allocation error occured */
 
       /* populate attributes of new node */
-      mr_save_data->ptrs.ra[alloc_idx].data.ptr = *(void**)mr_save_data->ptrs.ra[idx].data.ptr;
+      ptrs->ra[alloc_idx].data.ptr = *(void**)ptrs->ra[idx].data.ptr;
 
       /* this element is required only for a search so we need to adjust back size of collection */
-      mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
+      ptrs->size -= sizeof (ptrs->ra[0]);
 
       /* search in index of typed references */
       mr_ptr_t * find_result = mr_ic_find (&mr_save_data->untyped_ptrs, alloc_idx);
@@ -925,28 +927,57 @@ mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
       if (find_result != NULL)
 	{
 	  int ref_idx = find_result->long_int_t;
-	  mr_save_data->ptrs.ra[idx].ref_idx = ref_idx;
-	  mr_save_data->ptrs.ra[ref_idx].flags.is_referenced = true;
+	  ptrs->ra[idx].ref_idx = ref_idx;
+	  ptrs->ra[ref_idx].flags.is_referenced = true;
 	}
       else
-	mr_save_data->ptrs.ra[idx].flags.is_null = true; /* unresolved void pointers are saved as NULL */
+	ptrs->ra[idx].flags.is_null = true; /* unresolved void pointers are saved as NULL */
     }
 
-  if (mr_save_data->ptrs.ra[idx].ref_idx >= 0)
+  if (ptrs->ra[idx].ref_idx >= 0)
     {
-      int ref_parent = mr_save_data->ptrs.ra[mr_save_data->ptrs.ra[idx].ref_idx].parent;
-      if ((ref_parent >= 0) && (MR_TYPE_STRING == mr_save_data->ptrs.ra[ref_parent].fd.mr_type))
+      int ref_parent = ptrs->ra[ptrs->ra[idx].ref_idx].parent;
+      if ((ref_parent >= 0) && (MR_TYPE_STRING == ptrs->ra[ref_parent].fd.mr_type))
 	{
-	  mr_save_data->ptrs.ra[idx].ref_idx = ref_parent;
-	  mr_save_data->ptrs.ra[idx].flags.is_content_reference = true;
-	  mr_save_data->ptrs.ra[ref_parent].flags.is_referenced = true;
+	  ptrs->ra[idx].ref_idx = ref_parent;
+	  ptrs->ra[idx].flags.is_content_reference = true;
+	  ptrs->ra[ref_parent].flags.is_referenced = true;
 	}
     }
 
-  if (MR_TYPE_STRING == mr_save_data->ptrs.ra[idx].fd.mr_type)
-    mr_save_data->ptrs.ra[idx].first_child = mr_save_data->ptrs.ra[idx].last_child = -1;
+  if (MR_TYPE_STRING == ptrs->ra[idx].fd.mr_type)
+    ptrs->ra[idx].first_child = ptrs->ra[idx].last_child = -1;
 
   return (MR_SUCCESS);
+}
+
+static void
+mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
+{
+  int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  for (i = 0; i < count; ++i)
+    if ((MR_TYPE_STRING == ptrs->ra[i].fd.mr_type) && (ptrs->ra[i].ref_idx < 0))
+      {
+	int min_idx = i;
+
+	for (idx = ptrs->ra[i].save_params.next_typed; idx >= 0; idx = ptrs->ra[idx].save_params.next_typed)
+	  if (ptrs->ra[idx].idx < ptrs->ra[min_idx].idx)
+	    min_idx = idx;
+
+	if (min_idx != i)
+	  {
+	    for (idx = ptrs->ra[i].save_params.next_typed; idx >= 0; idx = ptrs->ra[idx].save_params.next_typed)
+	      ptrs->ra[idx].ref_idx = min_idx;
+
+	    ptrs->ra[i].ref_idx = min_idx;
+	    ptrs->ra[i].flags.is_referenced = false;
+	    ptrs->ra[i].flags.is_content_reference = true;
+
+	    ptrs->ra[min_idx].ref_idx = -1;
+	    ptrs->ra[min_idx].flags.is_referenced = true;
+	    ptrs->ra[min_idx].flags.is_content_reference = false;
+	  }
+      }
 }
 
 void
@@ -974,6 +1005,9 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 	  else
 	    ptrs->ra[ptrs->ra[i].next].prev = ptrs->ra[i].prev;
 	}
+
+  int idx_ = 0;
+  mr_ptrs_ds (ptrs, mr_renumber_node, &idx_);
 }
 
 /**
@@ -986,6 +1020,7 @@ mr_post_process (mr_save_data_t * mr_save_data)
   int idx_ = 0;
   mr_ptrs_ds (&mr_save_data->ptrs, mr_post_process_node, mr_save_data);
   mr_ptrs_ds (&mr_save_data->ptrs, mr_renumber_node, &idx_); /* enumeration of nodes should be done only after strings processing */
+  mr_reorder_strings (&mr_save_data->ptrs);
 }
 
 /**

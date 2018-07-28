@@ -110,12 +110,13 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
 
 #define MR_LOAD_FUNC(METHOD)						\
   mr_status_t METHOD ## _load (char * str, mr_ra_ptrdes_t * ptrs) {	\
-    mr_status_t status;							\
+    mr_status_t status = MR_FAILURE;					\
     yyscan_t scanner;							\
     mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \
-    mr_ ## METHOD ## _lex_init_extra (&mr_load, &scanner);		\
-    mr_ ## METHOD ## __scan_string (str, scanner);			\
-    status = (0 == mr_ ## METHOD ## _parse (scanner)) ? MR_SUCCESS : MR_FAILURE; \
+    if (mr_ ## METHOD ## _lex_init_extra (&mr_load, &scanner))		\
+      return (MR_FAILURE);						\
+    if (NULL != mr_ ## METHOD ## __scan_string (str, scanner))		\
+      status = (0 == mr_ ## METHOD ## _parse (scanner)) ? MR_SUCCESS : MR_FAILURE; \
     mr_ ## METHOD ## _lex_destroy (scanner);				\
     return (status);							\
   }

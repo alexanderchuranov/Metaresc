@@ -248,24 +248,35 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 	  }
 	else
 	  {
-	    void * data;
+	    int idx = ptrs->ra[i].ref_idx;
+	    void * data = ptrs->ra[idx].data.ptr;
+
+	    if ((MR_TYPE_POINTER != ptrs->ra[i].fd.mr_type) &&
+		(MR_TYPE_STRING != ptrs->ra[i].fd.mr_type))
+	      {
+		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrs->ra[i].fd.mr_type);
+		status = MR_FAILURE;
+		continue;
+	      }
 
 	    if (ptrs->ra[i].flags.is_content_reference)
-	      data = *(void**)ptrs->ra[ptrs->ra[i].ref_idx].data.ptr;
-	    else
-	      data = ptrs->ra[ptrs->ra[i].ref_idx].data.ptr;
-
-	    switch (ptrs->ra[i].fd.mr_type)
 	      {
-	      case MR_TYPE_POINTER:
-		*(void**)ptrs->ra[i].data.ptr = data;
-		break;
-	      case MR_TYPE_STRING:
-		*(char**)ptrs->ra[i].data.ptr = data;
-		break;
-	      default:
-		break;
+		if (NULL == data)
+		  {
+		    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+		    status = MR_FAILURE;
+		  }
+		else
+		  data = *(void**)data;
 	      }
+
+	    if (NULL == ptrs->ra[i].data.ptr)
+	      {
+		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+		status = MR_FAILURE;
+	      }
+	    else
+	      *(void**)ptrs->ra[i].data.ptr = data;
 	  }
       }
   return (status);
@@ -299,6 +310,8 @@ xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
 
   if (MR_SUCCESS == status)
     status = mr_set_crossrefs (&ptrs);
+  else
+    mr_set_crossrefs (&ptrs);
 
   if (ptrs.ra != NULL)
     MR_FREE (ptrs.ra);

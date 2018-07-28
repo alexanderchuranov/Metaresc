@@ -751,30 +751,44 @@ mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
  * @return status
  */
 mr_status_t
-mr_free_recursively (mr_ra_ptrdes_t ptrs)
+mr_free_recursively (mr_ra_ptrdes_t * ptrs)
 {
   int i;
+  mr_status_t status = MR_SUCCESS;
 
   mr_conf_init ();
   
-  if (NULL == ptrs.ra)
+  if ((NULL == ptrs) || (NULL == ptrs->ra))
     return (MR_FAILURE);
 
-  for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+  for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
     {
-      ptrs.ra[i].res.data.ptr = NULL;
-      if ((ptrs.ra[i].ref_idx < 0) && (ptrs.ra[i].idx >= 0))
-	if ((MR_TYPE_POINTER == ptrs.ra[i].fd.mr_type)
-	    || (MR_TYPE_STRING == ptrs.ra[i].fd.mr_type))
-	  ptrs.ra[i].res.data.ptr = *(void**)ptrs.ra[i].data.ptr;
+      mr_ptrdes_t * ptrdes = &ptrs->ra[i];
+      ptrdes->res.data.ptr = NULL;
+
+      if ((ptrdes->ref_idx < 0) && (ptrdes->idx >= 0))
+	if ((MR_TYPE_POINTER == ptrdes->fd.mr_type)
+	    || (MR_TYPE_STRING == ptrdes->fd.mr_type))
+	  {
+	    if (NULL == ptrdes->data.ptr)
+	      {
+		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+		status = MR_FAILURE;
+	      }
+	    else
+	      {
+		if (!((MR_TYPE_POINTER == ptrdes->fd.mr_type) && /* skip void pointers */
+		      ((MR_TYPE_NONE == ptrdes->fd.mr_type_aux) || (MR_TYPE_VOID == ptrdes->fd.mr_type_aux))))
+		  ptrdes->res.data.ptr = *(void**)ptrdes->data.ptr;
+	      }
+	  }
     }
 
-  for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-    if (ptrs.ra[i].res.data.ptr)
-      MR_FREE (ptrs.ra[i].res.data.ptr);
+  for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
+    if (ptrs->ra[i].res.data.ptr)
+      MR_FREE (ptrs->ra[i].res.data.ptr);
 
-  MR_FREE (ptrs.ra);
-  return (MR_SUCCESS);
+  return (status);
 }
 
 static mr_status_t
@@ -810,12 +824,12 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
   /* NB index 0 is excluded */
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
     /*
-      skip nodes that are not in final save graph (ptrs.ra[i].idx >= 0)
-      nodes are references on other nodes (ptrs.ra[i].ref_idx < 0)
+      process nodes that are in final save graph (ptrs.ra[i].idx >= 0)
+      and are not references on other nodes (ptrs.ra[i].ref_idx < 0)
     */
     if ((ptrs.ra[i].idx >= 0) && (ptrs.ra[i].ref_idx < 0))
       {
-	if (true == ptrs.ra[i].flags.is_null)
+ 	if (true == ptrs.ra[i].flags.is_null)
 	  {
 	    /* explicitly set to NULL pointers that were attributed as is_null */
 	    *(void**)ptrs.ra[i].data.ptr = NULL;
@@ -825,24 +839,22 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 	switch (ptrs.ra[i].fd.mr_type)
 	  {
 	  case MR_TYPE_STRING:
-	    /* calc string length for further malloc */
-	    ptrs.ra[i].fd.size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
-	    /* string node should be followed with unlinked char array node */
-	    if ((ptrs.ra[i].first_child >= 0) ||
-		(ptrs.ra[i + 1].parent != i) ||
-		(*(void**)ptrs.ra[i].data.ptr != ptrs.ra[i + 1].data.ptr))
+	    if (*(char**)ptrs.ra[i].data.ptr != NULL)
 	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_STRING_SAVE_DATA);
-		return (MR_FAILURE);
+		ptrs.ra[i].res.type = mr_strdup (*(char**)ptrs.ra[i].data.ptr);
+		if (NULL == ptrs.ra[i].res.type)
+		  {
+		    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+		    return (MR_FAILURE);
+		  }
 	      }
-	    /* link it back. we need to save address of allocated memory into this node */
-	    ptrs.ra[i].first_child = ptrs.ra[i].last_child = i + 1;
-
+	    break;
+	    
 	  case MR_TYPE_POINTER:
 	    {
 	      int idx;
 	      char * copy;
-	      ssize_t size = ptrs.ra[i].fd.size; /* default allocation size */
+	      ssize_t size = ptrs.ra[i].MR_SIZE;
 
 	      if (ptrs.ra[i].first_child < 0)
 		{
@@ -851,12 +863,8 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
 		  return (MR_FAILURE);
 		}
 	    
-	      if (MR_TYPE_POINTER == ptrs.ra[i].fd.mr_type)
-		{
-		  size = ptrs.ra[i].MR_SIZE;
-		  if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type_aux) && (sizeof (char) == ptrs.ra[i].fd.size))
-		    size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
-		}
+	      if ((MR_TYPE_CHAR_ARRAY == ptrs.ra[i].fd.mr_type_aux) && (sizeof (char) == ptrs.ra[i].fd.size))
+		size = strlen (*(void**)ptrs.ra[i].data.ptr) + 1;
 	    
 	      if (size < 0)
 		{
@@ -895,18 +903,23 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
       switch (ptrs.ra[i].fd.mr_type)
 	{
 	case MR_TYPE_STRING:
-	case MR_TYPE_POINTER:
-	  {
-	    int ptr_idx;
-	    /* get index of the node that is referenced by the pointer */
-	    if (ptrs.ra[i].ref_idx < 0)
-	      ptr_idx = ptrs.ra[i].first_child;
-	    else
-	      ptr_idx = ptrs.ra[i].flags.is_content_reference ? ptrs.ra[ptrs.ra[i].ref_idx].first_child : ptrs.ra[i].ref_idx;
-	    /* update pointer in the copy */
-	    *(void**)ptrs.ra[i].res.data.ptr = ptrs.ra[ptr_idx].res.data.ptr;
-	  }
+	  /* update pointer in the copy */
+	  if (ptrs.ra[i].ref_idx < 0)
+	    *(char**)ptrs.ra[i].res.data.ptr = ptrs.ra[i].res.type;
+	  else if (ptrs.ra[i].flags.is_content_reference)
+	    *(void**)ptrs.ra[i].res.data.ptr = ptrs.ra[ptrs.ra[i].ref_idx].res.type;
+	  else
+	    *(void**)ptrs.ra[i].res.data.ptr = ptrs.ra[ptrs.ra[i].ref_idx].res.data.ptr;
 	  break;
+
+	case MR_TYPE_POINTER:
+	  /* update pointer in the copy */
+	  if (ptrs.ra[i].ref_idx < 0)
+	    *(void**)ptrs.ra[i].res.data.ptr = ptrs.ra[ptrs.ra[i].first_child].res.data.ptr;
+	  else
+	    *(void**)ptrs.ra[i].res.data.ptr = ptrs.ra[ptrs.ra[i].ref_idx].res.data.ptr;
+	  break;
+
 	default:
 	  break;
 	}
@@ -1754,6 +1767,32 @@ mr_td_detect_res_size (mr_td_t * tdp)
     }
 }
 
+static void
+mr_reorder_union_and_discriminator (mr_td_t * tdp)
+{
+  int i;
+  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
+    if ((MR_TYPE_UNION == tdp->fields[i].fdp->mr_type) ||
+	(MR_TYPE_ANON_UNION == tdp->fields[i].fdp->mr_type) ||
+	(MR_TYPE_NAMED_ANON_UNION == tdp->fields[i].fdp->mr_type))
+      {
+	mr_fd_t * union_fdp = tdp->fields[i].fdp;
+	mr_fd_t * discriminator_fdp = mr_get_fd_by_name (tdp, union_fdp->meta);
+	if (discriminator_fdp)
+	  {
+	    int idx;
+	    for (idx = tdp->fields_size / sizeof (tdp->fields[0]) - 1; idx >= 0; --idx)
+	      if (tdp->fields[idx].fdp == discriminator_fdp)
+		break;
+	    if (i < idx)
+	      {
+		tdp->fields[i].fdp = discriminator_fdp;
+		tdp->fields[idx].fdp = union_fdp;
+	      }
+	  }
+      }
+}
+
 static mr_status_t
 mr_conf_init_visitor (mr_ptr_t key, const void * context)
 {
@@ -1761,6 +1800,7 @@ mr_conf_init_visitor (mr_ptr_t key, const void * context)
   
   mr_detect_fields_types (tdp);
   mr_td_detect_res_size (tdp);
+  mr_reorder_union_and_discriminator (tdp);
 
   return (mr_register_type_pointer (tdp));
 }
