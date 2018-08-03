@@ -395,11 +395,11 @@ mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
   int diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.long_int_t].type,
-				   &mr_save_data->mr_ra_ud[y.long_int_t].type, NULL);
+				   &mr_save_data->mr_ra_ud[y.long_int_t].type);
   if (diff)
     return (diff);
   return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.long_int_t].discriminator,
-				&mr_save_data->mr_ra_ud[y.long_int_t].discriminator, NULL));
+				&mr_save_data->mr_ra_ud[y.long_int_t].discriminator));
 }
 
 mr_hash_value_t __attribute__ ((unused))

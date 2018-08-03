@@ -944,9 +944,9 @@ mr_hash_str (char * str)
 }
 
 mr_hash_value_t
-mr_hashed_string_get_hash (mr_ptr_t x)
+mr_hashed_string_get_hash (const mr_hashed_string_t * x)
 {
-  mr_hashed_string_t * x_ = x.ptr;
+  mr_hashed_string_t * x_ = (mr_hashed_string_t*)x;
   if (0 == x_->hash_value)
     x_->hash_value = mr_hash_str (x_->str);
   return (x_->hash_value);
@@ -959,16 +959,14 @@ mr_hashed_string_get_hash (mr_ptr_t x)
  * @return comparation sign
  */
 int
-mr_hashed_string_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+mr_hashed_string_cmp (const mr_hashed_string_t * x, const mr_hashed_string_t * y)
 {
-  const mr_hashed_string_t * x_ = x.ptr;
-  const mr_hashed_string_t * y_ = y.ptr;
-  mr_hash_value_t x_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)x);
-  mr_hash_value_t y_hash_value = mr_hashed_string_get_hash ((mr_ptr_t)y);
+  mr_hash_value_t x_hash_value = mr_hashed_string_get_hash (x);
+  mr_hash_value_t y_hash_value = mr_hashed_string_get_hash (y);
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
-  diff = (strcmp (x_->str, y_->str));
+  diff = (strcmp (x->str, y->str));
   if (diff)
     return (diff);
   return (0);
@@ -992,7 +990,7 @@ mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_fd_t * x_ = x.ptr;
   const mr_fd_t * y_ = y.ptr;
-  return (mr_hashed_string_cmp ((void*)&x_->name, (void*)&y_->name, context));
+  return (mr_hashed_string_cmp (&x_->name, &y_->name));
 }
 
 mr_hash_value_t
@@ -1013,7 +1011,7 @@ mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_td_t * x_ = x.ptr;
   const mr_td_t * y_ = y.ptr;
-  return (mr_hashed_string_cmp ((void*)&x_->type, (void*)&y_->type, context));
+  return (mr_hashed_string_cmp (&x_->type, &y_->type));
 }
 
 /**
