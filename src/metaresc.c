@@ -676,11 +676,9 @@ mr_is_valid_field_name (char * name)
 static mr_fd_t *
 mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_ptr_t*)0)->offset) offset)
 {
-  int i;
-  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
-    if (tdp->fields[i].fdp->offset == offset)
-      return (tdp->fields[i].fdp);
-  return (NULL);
+  mr_fd_t fd = { .offset = offset, };
+  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_offset, &fd);
+  return (result ? result->ptr : NULL);
 }
 
 void
