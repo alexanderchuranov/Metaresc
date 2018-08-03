@@ -980,7 +980,7 @@ mr_fd_name_get_hash (mr_ptr_t x, const void * context)
 }
 
 /**
- * Comparator for mr_fd_t
+ * Comparator for mr_fd_t by name field
  * @param x pointer on one mr_fd_t
  * @param y pointer on another mr_fd_t
  * @return comparation sign
@@ -991,6 +991,27 @@ mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   const mr_fd_t * x_ = x.ptr;
   const mr_fd_t * y_ = y.ptr;
   return (mr_hashed_string_cmp (&x_->name, &y_->name));
+}
+
+mr_hash_value_t
+mr_fd_offset_get_hash (mr_ptr_t x, const void * context)
+{
+  mr_fd_t * x_ = x.ptr;
+  return (x_->offset);
+}
+
+/**
+ * Comparator for mr_fd_t by offset field
+ * @param x pointer on one mr_fd_t
+ * @param y pointer on another mr_fd_t
+ * @return comparation sign
+ */
+int
+mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_fd_t * x_ = x.ptr;
+  const mr_fd_t * y_ = y.ptr;
+  return (x_->offset > y_->offset) - (x_->offset < y_->offset);
 }
 
 mr_hash_value_t
@@ -1733,11 +1754,16 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     return (MR_FAILURE);
 
   mr_check_fields (tdp);
-  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+  
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
+  
+  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
   mr_ic_index (&tdp->lookup_by_name, &mr_ic_rarray);
+
+  mr_ic_new (&tdp->lookup_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+  mr_ic_index (&tdp->lookup_by_offset, &mr_ic_rarray);
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
     mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
