@@ -150,13 +150,8 @@ compaund
 | expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  void * rv = mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
+  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
   mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_STRING;
-  if ((void*)4317681840 == rv)
-    {
-      fprintf (stderr, "str = '%s'\n", rv);
-    }
-
 }
 
 expr:
