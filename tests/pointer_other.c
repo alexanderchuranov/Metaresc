@@ -330,21 +330,16 @@ MR_START_TEST (tda_overlapping_3, "Two overlaping dynamic arrays. First saved po
   tda.size2 = 2 * sizeof (array[0]);
   
   mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  char * str = MR_SAVE_CINIT (mr_ra_ptrdes_t, &ptrs);
-  printf ("%s\n", str);
   int i;
   bool pointer_resolved_correctly = false;
   if (ptrs.ra != NULL)
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if (ref_idx >= 0)
-	    {
-	      pointer_resolved_correctly = true;
-	      break;
-	    }
-	}
+	if (ptrs.ra[i].ref_idx >= 0)
+	  {
+	    pointer_resolved_correctly = true;
+	    break;
+	  }
       MR_FREE (ptrs.ra);
     }
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
