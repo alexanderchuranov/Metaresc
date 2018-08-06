@@ -167,7 +167,12 @@ static inline bool st_is_seen (mr_ic_t * seen)
 static void * _malloc (const char * filename, const char * function, int line, size_t size) 
 { 
   if (!st_is_seen (&malloc_seen))
-    return (NULL);
+    {
+#ifdef DEBUG
+      fprintf (stderr, "Fire error from: %s %s %d\n", filename, function, line);
+#endif /* DEBUG */
+      return (NULL);
+    }
 
   ++malloc_cnt;
 
@@ -194,7 +199,12 @@ static void * _realloc (const char * filename, const char * function, int line, 
     return (_malloc (filename, function, line, size));
 
   if (!st_is_seen (&realloc_seen))
-    return (NULL);
+    {
+#ifdef DEBUG
+      fprintf (stderr, "Fire error from: %s %s %d\n", filename, function, line);
+#endif /* DEBUG */
+      return (NULL);
+    }
 
   mr_conf.mr_mem = mr_mem;
   stack_trace_t stack_trace_del;

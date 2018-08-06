@@ -831,10 +831,11 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 		break;
 	    }
 	}
+      
+      mr_status_t crossref_status = mr_set_crossrefs (mr_load_data);
       if (MR_SUCCESS == status)
-	status = mr_set_crossrefs (mr_load_data);
-      else
-	mr_set_crossrefs (mr_load_data);
+	status = crossref_status;
+      
       if (mr_load_data->mr_ra_idx != NULL)
 	{
 	  MR_FREE (mr_load_data->mr_ra_idx);

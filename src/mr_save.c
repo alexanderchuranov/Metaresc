@@ -231,11 +231,11 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 static int
 mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 {
-  int diff = x->data.ptr - y->data.ptr;
+  int diff = (x->data.ptr > y->data.ptr) - (x->data.ptr < y->data.ptr);
   if (diff)
     return (diff);
   
-  diff = x->fd.mr_type - y->fd.mr_type;
+  diff = (x->fd.mr_type > y->fd.mr_type) - (x->fd.mr_type < y->fd.mr_type);
   if (diff)
     return (diff);
 
@@ -264,15 +264,17 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       break;
       
     case MR_TYPE_ARRAY:
-      diff = x->fd.param.array_param.count - y->fd.param.array_param.count;
+      diff = (x->fd.param.array_param.count > y->fd.param.array_param.count) -
+	(x->fd.param.array_param.count < y->fd.param.array_param.count);
       if (diff)
 	return (diff);
-      diff = x->fd.param.array_param.row_count - y->fd.param.array_param.row_count;
+      diff = (x->fd.param.array_param.row_count > y->fd.param.array_param.row_count) -
+	(x->fd.param.array_param.row_count < y->fd.param.array_param.row_count);
       if (diff)
 	return (diff);
       
     case MR_TYPE_POINTER:
-      diff = x->fd.mr_type_aux - y->fd.mr_type_aux;
+      diff = (x->fd.mr_type_aux > y->fd.mr_type_aux) - (x->fd.mr_type_aux < y->fd.mr_type_aux);
       if (diff)
 	return (diff);
       
@@ -287,10 +289,12 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       break;
       
     case MR_TYPE_BITFIELD:
-      diff = x->fd.param.bitfield_param.shift - y->fd.param.bitfield_param.shift;
+      diff = (x->fd.param.bitfield_param.shift > y->fd.param.bitfield_param.shift) -
+	(x->fd.param.bitfield_param.shift < y->fd.param.bitfield_param.shift);
       if (diff)
 	return (diff);
-      diff = x->fd.param.bitfield_param.width - y->fd.param.bitfield_param.width;
+      diff = (x->fd.param.bitfield_param.width > y->fd.param.bitfield_param.width) -
+	(x->fd.param.bitfield_param.width < y->fd.param.bitfield_param.width);
       if (diff)
 	return (diff);
       break;
@@ -344,7 +348,8 @@ int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (ra_ptrdes->ra[x.long_int_t].data.ptr - ra_ptrdes->ra[y.long_int_t].data.ptr);
+  return (ra_ptrdes->ra[x.long_int_t].data.ptr > ra_ptrdes->ra[y.long_int_t].data.ptr) -
+    (ra_ptrdes->ra[x.long_int_t].data.ptr < ra_ptrdes->ra[y.long_int_t].data.ptr);
 }
 
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,

@@ -307,11 +307,10 @@ xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
 {
   mr_ra_ptrdes_t ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, };
   mr_status_t status = xdr_load_inner (data, fdp, xdrs, &ptrs, -1);
+  mr_status_t crossref_status = mr_set_crossrefs (&ptrs);
 
   if (MR_SUCCESS == status)
-    status = mr_set_crossrefs (&ptrs);
-  else
-    mr_set_crossrefs (&ptrs);
+    status = crossref_status;
 
   if (ptrs.ra != NULL)
     MR_FREE (ptrs.ra);
