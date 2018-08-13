@@ -775,8 +775,7 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
 	      }
 	    else
 	      {
-		if (!((MR_TYPE_POINTER == ptrdes->fd.mr_type) && /* skip void pointers */
-		      ((MR_TYPE_NONE == ptrdes->fd.mr_type_aux) || (MR_TYPE_VOID == ptrdes->fd.mr_type_aux))))
+		if (!ptrdes->flags.is_null)
 		  ptrdes->res.data.ptr = *(void**)ptrdes->data.ptr;
 	      }
 	  }
@@ -817,7 +816,10 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
     return (MR_FAILURE);
 
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
-    ptrs.ra[i].res.data.ptr = NULL;
+    {
+      ptrs.ra[i].res.data.ptr = NULL;
+      ptrs.ra[i].res.type = NULL;
+    }
 
   /* NB index 0 is excluded */
   for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
@@ -828,11 +830,7 @@ mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * dst)
     if ((ptrs.ra[i].idx >= 0) && (ptrs.ra[i].ref_idx < 0))
       {
  	if (true == ptrs.ra[i].flags.is_null)
-	  {
-	    /* explicitly set to NULL pointers that were attributed as is_null */
-	    *(void**)ptrs.ra[i].data.ptr = NULL;
-	    continue;
-	  }
+	  continue;
 	
 	switch (ptrs.ra[i].fd.mr_type)
 	  {
