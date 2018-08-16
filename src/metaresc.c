@@ -764,21 +764,17 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
       mr_ptrdes_t * ptrdes = &ptrs->ra[i];
       ptrdes->res.data.ptr = NULL;
 
-      if ((ptrdes->ref_idx < 0) && (ptrdes->idx >= 0))
-	if ((MR_TYPE_POINTER == ptrdes->fd.mr_type)
-	    || (MR_TYPE_STRING == ptrdes->fd.mr_type))
-	  {
-	    if (NULL == ptrdes->data.ptr)
-	      {
-		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-		status = MR_FAILURE;
-	      }
-	    else
-	      {
-		if (!ptrdes->flags.is_null)
-		  ptrdes->res.data.ptr = *(void**)ptrdes->data.ptr;
-	      }
-	  }
+      if ((ptrdes->ref_idx < 0) && (ptrdes->idx >= 0) && !ptrdes->flags.is_null &&
+	  ((MR_TYPE_POINTER == ptrdes->fd.mr_type) || (MR_TYPE_STRING == ptrdes->fd.mr_type)))
+	{
+	  if (NULL == ptrdes->data.ptr)
+	    {
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	      status = MR_FAILURE;
+	    }
+	  else
+	    ptrdes->res.data.ptr = *(void**)ptrdes->data.ptr;
+	}
     }
 
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
