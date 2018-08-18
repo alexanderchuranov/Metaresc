@@ -9,7 +9,7 @@ VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
-  check_PROGRAMS = mf_mr_save
+  check_PROGRAMS = mf_mr_save mf_mr_copy
 
 if HAVE_XDR
   check_PROGRAMS += smoke_xdr mf_xdr_save mf_xdr_load
@@ -27,6 +27,7 @@ endif
 endif
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)
+mf_mr_copy_LDADD = mem_failures.$(OBJEXT)
 mf_xdr_save_LDADD = mem_failures.$(OBJEXT)
 mf_xdr_load_LDADD = mem_failures.$(OBJEXT)
 mf_cinit_save_LDADD = mem_failures.$(OBJEXT)

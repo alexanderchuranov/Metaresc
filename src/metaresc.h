@@ -726,8 +726,24 @@
 
 #define MR_COPY_RECURSIVELY(MR_TYPE_NAME, ...) MR_COPY_RECURSIVELY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
 #define MR_COPY_RECURSIVELY_(MR_TYPE_NAME, S_PTR, D_PTR, N, ...) MR_PASTE2 (MR_COPY_RECURSIVELY_ARG, N) (MR_TYPE_NAME, S_PTR, D_PTR)
-#define MR_COPY_RECURSIVELY_ARG3(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR); mr_copy_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR), D_PTR); })
-#define MR_COPY_RECURSIVELY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ MR_TYPE_NAME dst; mr_copy_recursively (MR_SAVE (MR_TYPE_NAME, S_PTR), &dst); dst; })
+#define MR_COPY_RECURSIVELY_ARG3(MR_TYPE_NAME, S_PTR, D_PTR) ({		\
+      mr_status_t ___status = MR_FAILURE;				\
+      MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
+      mr_ra_ptrdes_t ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
+      if (___ptrs.ra != NULL)						\
+	{								\
+	  ___status = mr_copy_recursively (&___ptrs, D_PTR);		\
+	  MR_FREE (___ptrs.ra);						\
+	}								\
+      ___status;							\
+    })
+#define MR_COPY_RECURSIVELY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ \
+      MR_TYPE_NAME dst;						\
+      memset (&dst, 0, sizeof (dst));				\
+      MR_COPY_RECURSIVELY_ARG3 (MR_TYPE_NAME, S_PTR, &dst);	\
+      dst;							\
+    })
+
 #define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) ({		\
       mr_ra_ptrdes_t ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       mr_status_t status = MR_SUCCESS;				\
@@ -1196,7 +1212,7 @@ extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
-extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t ptrs, void * data);
+extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
 extern mr_status_t mr_free_ptrs (mr_ra_ptrdes_t ptrs);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, int64_t value);
