@@ -826,66 +826,62 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
     /*
       process nodes that are in final save graph (ptrs->ra[i].idx >= 0)
       and are not references on other nodes (ptrs->ra[i].ref_idx < 0)
+      and not a NULL pointer
     */
-    if ((ptrs->ra[i].idx >= 0) && (ptrs->ra[i].ref_idx < 0))
-      {
- 	if (true == ptrs->ra[i].flags.is_null)
-	  continue;
-	
-	switch (ptrs->ra[i].fd.mr_type)
-	  {
-	  case MR_TYPE_STRING:
-	    if (*(char**)ptrs->ra[i].data.ptr != NULL)
-	      {
-		ptrs->ra[i].res.type = mr_strdup (*(char**)ptrs->ra[i].data.ptr);
-		if (NULL == ptrs->ra[i].res.type)
-		  {
-		    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-		    goto failure;
-		  }
-	      }
-	    break;
-	    
-	  case MR_TYPE_POINTER:
+    if ((ptrs->ra[i].idx >= 0) && (ptrs->ra[i].ref_idx < 0) && (true != ptrs->ra[i].flags.is_null))
+      switch (ptrs->ra[i].fd.mr_type)
+	{
+	case MR_TYPE_STRING:
+	  if (*(char**)ptrs->ra[i].data.ptr != NULL)
 	    {
-	      int idx;
-	      char * copy;
-	      ssize_t size = ptrs->ra[i].MR_SIZE;
-
-	      if (ptrs->ra[i].first_child < 0)
-		{
-		  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			      ptrs->ra[i].fd.type, ptrs->ra[i].fd.name.str);
-		  goto failure;
-		}
-	    
-	      if ((MR_TYPE_CHAR_ARRAY == ptrs->ra[i].fd.mr_type_aux) && (sizeof (char) == ptrs->ra[i].fd.size))
-		size = strlen (*(void**)ptrs->ra[i].data.ptr) + 1;
-	    
-	      if (size < 0)
-		{
-		  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
-		  goto failure;
-		}
-	    
-	      copy = MR_MALLOC (size);
-	      if (NULL == copy)
+	      ptrs->ra[i].res.type = mr_strdup (*(char**)ptrs->ra[i].data.ptr);
+	      if (NULL == ptrs->ra[i].res.type)
 		{
 		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 		  goto failure;
 		}
-
-	      /* copy data from source */
-	      memcpy (copy, *(void**)ptrs->ra[i].data.ptr, size);
-	      /* go thru all childs and calculate their addresses in newly allocated chunk */
-	      for (idx = ptrs->ra[i].first_child; idx >= 0; idx = ptrs->ra[idx].next)
-		ptrs->ra[idx].res.data.ptr = &copy[(char*)ptrs->ra[idx].data.ptr - *(char**)ptrs->ra[i].data.ptr];
 	    }
-	    break;
-	  default:
-	    break;
+	  break;
+	    
+	case MR_TYPE_POINTER:
+	  {
+	    int idx;
+	    char * copy;
+	    ssize_t size = ptrs->ra[i].MR_SIZE;
+
+	    if (ptrs->ra[i].first_child < 0)
+	      {
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
+			    ptrs->ra[i].fd.type, ptrs->ra[i].fd.name.str);
+		goto failure;
+	      }
+	    
+	    if ((MR_TYPE_CHAR_ARRAY == ptrs->ra[i].fd.mr_type_aux) && (sizeof (char) == ptrs->ra[i].fd.size))
+	      size = strlen (*(void**)ptrs->ra[i].data.ptr) + 1;
+	    
+	    if (size < 0)
+	      {
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
+		goto failure;
+	      }
+	    
+	    copy = MR_MALLOC (size);
+	    if (NULL == copy)
+	      {
+		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+		goto failure;
+	      }
+
+	    /* copy data from source */
+	    memcpy (copy, *(void**)ptrs->ra[i].data.ptr, size);
+	    /* go thru all childs and calculate their addresses in newly allocated chunk */
+	    for (idx = ptrs->ra[i].first_child; idx >= 0; idx = ptrs->ra[idx].next)
+	      ptrs->ra[idx].res.data.ptr = &copy[(char*)ptrs->ra[idx].data.ptr - *(char**)ptrs->ra[i].data.ptr];
 	  }
-      }
+	  break;
+	default:
+	  break;
+	}
 
   /* depth search thru the graph and calculate new addresses for all nodes */
   mr_ptrs_ds (ptrs, calc_relative_addr, NULL);

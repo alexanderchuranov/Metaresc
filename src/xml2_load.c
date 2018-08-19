@@ -38,8 +38,7 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
     {
       if (1 != sscanf (property, "%" SCNd32, &ptrs->ra[idx].ref_idx))
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
-      else
-	ptrs->ra[idx].flags.is_content_reference = true;
+      ptrs->ra[idx].flags.is_content_reference = true;
       xmlFree (property);
     }
   property = (char*)xmlGetProp (node, (unsigned char*)MR_ISNULL);
@@ -52,8 +51,11 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   for (node_ = node->xmlChildrenNode; node_ && !content; node_ = node_->next)
     content = (char*)XML_GET_CONTENT (node_);
 
+  if (NULL == content)
+    content = "";
+  
   ptrs->ra[idx].mr_value.value_type = MR_VT_UNKNOWN;
-  ptrs->ra[idx].mr_value.vt_string = content ? mr_strdup (content) : mr_strdup ("");
+  ptrs->ra[idx].mr_value.vt_string = mr_strdup (content);
   ptrs->ra[idx].fd.name.str = mr_strdup ((char*)node->name);
 
   /* loop on subnodes */
