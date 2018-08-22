@@ -56,7 +56,8 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   
   ptrs->ra[idx].mr_value.value_type = MR_VT_UNKNOWN;
   ptrs->ra[idx].mr_value.vt_string = mr_strdup (content);
-  ptrs->ra[idx].fd.name.str = mr_strdup ((char*)node->name);
+  ptrs->ra[idx].name_ss.str = (char*)node->name;
+  ptrs->ra[idx].name_ss.length = strlen (ptrs->ra[idx].name_ss.str);
 
   /* loop on subnodes */
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)

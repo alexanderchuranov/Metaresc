@@ -204,7 +204,6 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   int parent = mr_load->ptrs->ra[self].parent;
   int prev = mr_load->ptrs->ra[self].prev;
   int child = mr_load->ptrs->ra[self].first_child;
-  char * name = mr_strndup ($4.str, $4.length);
   if (parent >= 0)
     {
       if (mr_load->ptrs->ra[parent].first_child == self)
@@ -217,7 +216,9 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   mr_load->ptrs->ra[child].prev = prev;
 
   mr_load->ptrs->ra[child].parent = parent;
-  mr_load->ptrs->ra[child].fd.name.str = name;
+  mr_load->ptrs->ra[child].name_ss.str = &mr_load->str[$4.str - mr_load->buf];
+  mr_load->ptrs->ra[child].name_ss.length = $4.length;
+
   mr_load->parent = child;
 }
 

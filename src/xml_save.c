@@ -135,8 +135,9 @@ xml_unquote_string (mr_substr_t * substr)
       str_[length_++] = substr->str[j];
     else
       {
-	char esc[ESC_SIZE];
+	char esc[ESC_SIZE + 1];
 	strncpy (esc, &substr->str[j], sizeof (esc) - 1);
+	esc[sizeof (esc) - 1] = 0;
 	if ('#' == substr->str[j + 1])
 	  {
 	    int32_t code = 0;

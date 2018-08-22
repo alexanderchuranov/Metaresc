@@ -218,7 +218,12 @@ list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
 nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->ptrs->ra[mr_load->parent].last_child].fd.name.str = mr_strndup ($1.str, $1.length); }
+| TOK_CINIT_FIELD_PREFIX cinit {
+  mr_load_t * mr_load = MR_LOAD;
+  int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
+  mr_load->ptrs->ra[idx].name_ss.str = &mr_load->str[$1.str - mr_load->buf];
+  mr_load->ptrs->ra[idx].name_ss.length = $1.length;
+}
 
 %%
 
