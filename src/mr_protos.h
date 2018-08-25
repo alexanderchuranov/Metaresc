@@ -334,7 +334,7 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
-		(unsigned int, length),
+		(size_t, length),
 		)
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
