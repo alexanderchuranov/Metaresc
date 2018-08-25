@@ -893,12 +893,12 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t ptrdes = { .fd = ptrs->ra[idx].fd, .data = ptrs->ra[idx].data, };
   mr_load_data_t mr_load_data = { .ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }, };
 
-  if (MR_SUCCESS != xdr_load_temp_string (xdrs, &ptrdes.mr_value.vt_string))
+  if (MR_SUCCESS != xdr_load_temp_string (xdrs, &ptrdes.load_params.mr_value.vt_string))
     return (MR_FAILURE);
-  if (NULL == ptrdes.mr_value.vt_string)
+  if (NULL == ptrdes.load_params.mr_value.vt_string)
     return (MR_FAILURE);
 
-  ptrdes.mr_value.value_type = MR_VT_UNKNOWN;
+  ptrdes.load_params.mr_value.value_type = MR_VT_UNKNOWN;
   switch (ptrs->ra[idx].fd.mr_type)
     {
     case MR_TYPE_ENUM:
@@ -913,8 +913,8 @@ xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
       status = MR_FAILURE;
       break;
     }
-  if (MR_VT_UNKNOWN == ptrdes.mr_value.value_type)
-    MR_FREE (ptrdes.mr_value.vt_string);
+  if (MR_VT_UNKNOWN == ptrdes.load_params.mr_value.value_type)
+    MR_FREE (ptrdes.load_params.mr_value.vt_string);
 
   return (status);
 }

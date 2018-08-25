@@ -54,12 +54,12 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   if (NULL == content)
     content = "";
   
-  ptrs->ra[idx].name_ss.str = (char*)node->name;
-  ptrs->ra[idx].name_ss.length = strlen (ptrs->ra[idx].name_ss.str);
+  ptrs->ra[idx].load_params.name_ss.str = (char*)node->name;
+  ptrs->ra[idx].load_params.name_ss.length = strlen ((char*)node->name);
   
-  ptrs->ra[idx].mr_value.value_type = MR_VT_UNKNOWN;
-  ptrs->ra[idx].mr_value.vt_string = mr_strdup (content);
-  if (NULL == ptrs->ra[idx].mr_value.vt_string)
+  ptrs->ra[idx].load_params.mr_value.value_type = MR_VT_UNKNOWN;
+  ptrs->ra[idx].load_params.mr_value.vt_string = mr_strdup (content);
+  if (NULL == ptrs->ra[idx].load_params.mr_value.vt_string)
     return (-1);
 
   /* loop on subnodes */

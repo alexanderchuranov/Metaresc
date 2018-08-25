@@ -146,12 +146,12 @@ value:
 compaund
 | named_node
 | TOK_SCM_HASH compaund
-| TOK_SCM_CHAR { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
-| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
+| TOK_SCM_CHAR { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
+| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
-  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_STRING;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_string = unquote_str (&$1);
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_STRING;
 }
 
 expr:
@@ -216,8 +216,8 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   mr_load->ptrs->ra[child].prev = prev;
 
   mr_load->ptrs->ra[child].parent = parent;
-  mr_load->ptrs->ra[child].name_ss.str = &mr_load->str[$4.str - mr_load->buf];
-  mr_load->ptrs->ra[child].name_ss.length = $4.length;
+  mr_load->ptrs->ra[child].load_params.name_ss.str = &mr_load->str[$4.str - mr_load->buf];
+  mr_load->ptrs->ra[child].load_params.name_ss.length = $4.length;
 
   mr_load->parent = child;
 }

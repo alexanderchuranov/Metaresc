@@ -172,11 +172,11 @@ value
 
 value:
 compaund
-| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].mr_value = $1; }
+| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
 | TOK_CINIT_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_string = unquote_str (&$1);
-  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_STRING;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_string = unquote_str (&$1);
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_STRING;
   }
 | TOK_CINIT_CHAR {
   mr_load_t * mr_load = MR_LOAD;
@@ -192,8 +192,8 @@ compaund
       if (vt_char_str_length > 1)
 	YYERROR;
     }
-  mr_load->ptrs->ra[mr_load->parent].mr_value.vt_char = vt_char;
-  mr_load->ptrs->ra[mr_load->parent].mr_value.value_type = MR_VT_CHAR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_char = vt_char;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_CHAR;
   }
 
 expr:
@@ -226,8 +226,8 @@ list_element: cinit
 | TOK_CINIT_FIELD_PREFIX cinit {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_load->ptrs->ra[idx].name_ss.str = &mr_load->str[$1.str - mr_load->buf];
-  mr_load->ptrs->ra[idx].name_ss.length = $1.length;
+  mr_load->ptrs->ra[idx].load_params.name_ss.str = &mr_load->str[$1.str - mr_load->buf];
+  mr_load->ptrs->ra[idx].load_params.name_ss.length = $1.length;
 }
 
 %%
