@@ -44,7 +44,7 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   property = (char*)xmlGetProp (node, (unsigned char*)MR_ISNULL);
   if (property)
     {
-      ptrs->ra[idx].flags.is_null= true;
+      ptrs->ra[idx].flags.is_null = true;
       xmlFree (property);
     }
 
@@ -54,16 +54,21 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   if (NULL == content)
     content = "";
   
-  ptrs->ra[idx].mr_value.value_type = MR_VT_UNKNOWN;
-  ptrs->ra[idx].mr_value.vt_string = mr_strdup (content);
   ptrs->ra[idx].name_ss.str = (char*)node->name;
   ptrs->ra[idx].name_ss.length = strlen (ptrs->ra[idx].name_ss.str);
+  
+  ptrs->ra[idx].mr_value.value_type = MR_VT_UNKNOWN;
+  ptrs->ra[idx].mr_value.vt_string = mr_strdup (content);
+  if (NULL == ptrs->ra[idx].mr_value.vt_string)
+    return (-1);
 
   /* loop on subnodes */
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)
     if (XML_ELEMENT_NODE == node_->type)
       {
 	int child = xml2_load (node_, ptrs);
+	if (child < 0)
+	  return (child);
 	mr_add_child (idx, child, ptrs->ra);
       }
   
