@@ -472,15 +472,15 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
  * Save content of subnodes to structure fileds.
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
- * @param tdp type descriptor
  * @return Status of read
  */
 static mr_status_t
-mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
+mr_load_struct (int idx, mr_load_data_t * mr_load_data)
 {
+  mr_fd_t * fdp = NULL;
   char * data = mr_load_data->ptrs.ra[idx].data.ptr;
   int first_child = mr_load_data->ptrs.ra[idx].first_child;
-  mr_fd_t * fdp = NULL;
+  mr_td_t * tdp = mr_get_td_by_name (mr_load_data->ptrs.ra[idx].fd.type);
 
   /* get pointer on structure descriptor */
   if (NULL == tdp)
@@ -521,18 +521,6 @@ mr_load_struct_inner (int idx, mr_load_data_t * mr_load_data, mr_td_t * tdp)
 	return (MR_FAILURE);
     }
   return (MR_SUCCESS);
-}
-
-/**
- * MR_STRUCT load handler. Wrapper over mr_load_struct_inner.
- * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
- */
-static mr_status_t
-mr_load_struct (int idx, mr_load_data_t * mr_load_data)
-{
-  return (mr_load_struct_inner (idx, mr_load_data, mr_get_td_by_name (mr_load_data->ptrs.ra[idx].fd.type)));
 }
 
 /**
