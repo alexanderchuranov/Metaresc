@@ -695,9 +695,6 @@ mr_free_ptrs (mr_ra_ptrdes_t ptrs)
       int i;
       for (i = 0; i < count; ++i)
 	{
-	  if (ptrs.ra[i].fd.type)
-	    MR_FREE (ptrs.ra[i].fd.type);
-	  ptrs.ra[i].fd.type = NULL;
 	  if ((MR_VT_UNKNOWN == ptrs.ra[i].mr_value.value_type)
 	      || (MR_VT_STRING == ptrs.ra[i].mr_value.value_type)
 	      || (MR_VT_ID == ptrs.ra[i].mr_value.value_type))
@@ -806,12 +803,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
     }
   
   if ((NULL == mr_load_data->ptrs.ra[idx].fd.type) && (fdp->type))
-    {
-      char * type = mr_strdup (fdp->type);
-      if (NULL == type)
-	return (MR_FAILURE);
-      mr_load_data->ptrs.ra[idx].fd.type = type;
-    }
+    mr_load_data->ptrs.ra[idx].fd.type = fdp->type;
 
   mr_load_data->ptrs.ra[idx].fd.size = fdp->size;
   mr_load_data->ptrs.ra[idx].fd.mr_type = fdp->mr_type;

@@ -162,7 +162,12 @@ casted_value:
 value
 | TOK_CINIT_FIELD_CAST value {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].fd.type = mr_strndup ($1.str, $1.length);
+  char type[$1.length + 1];
+  memcpy (type, $1.str, $1.length);
+  type[$1.length] = 0;
+  mr_td_t * tdp = mr_get_td_by_name (type);
+  if (tdp != NULL)
+    mr_load->ptrs->ra[mr_load->parent].fd.type = tdp->type.str;
 }
 
 value:
