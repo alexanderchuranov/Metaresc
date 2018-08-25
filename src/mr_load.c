@@ -489,14 +489,6 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
       return (MR_FAILURE);
     }
 
-  /* for C init style we can get union descriptor only from type cast */
-  if ((0 == strcmp (tdp->type.str, "mr_ptr_t")) && (first_child >= 0) &&
-      mr_load_data->ptrs.ra[first_child].fd.type && (NULL == mr_load_data->ptrs.ra[first_child].load_params.name_ss.str))
-    {
-      mr_load_data->ptrs.ra[first_child].load_params.name_ss.str = mr_load_data->ptrs.ra[first_child].fd.type;
-      mr_load_data->ptrs.ra[first_child].load_params.name_ss.length = strlen (mr_load_data->ptrs.ra[first_child].fd.type);
-    }
-
   /* loop on all subnodes */
   for (idx = first_child; idx >= 0; idx = mr_load_data->ptrs.ra[idx].next)
     {

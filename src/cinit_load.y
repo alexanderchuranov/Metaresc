@@ -128,7 +128,10 @@ unquote_str (mr_substr_t * substr)
 
 %% /* The grammar follows.  */
 
-cinit: start_node cinit_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent; }
+cinit: start_node cinit_stmt {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
+ }
 
 start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
@@ -167,8 +170,13 @@ value
   type[$1.length] = 0;
   mr_td_t * tdp = mr_get_td_by_name (type);
   if (tdp != NULL)
-    mr_load->ptrs->ra[mr_load->parent].fd.type = tdp->type.str;
-}
+    {
+      mr_load->ptrs->ra[mr_load->parent].fd.type = tdp->type.str;
+      /* for mr_ptr_t union we get name of union member from type cast */
+      mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.str = tdp->type.str;
+      mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.length = strlen (tdp->type.str);
+    }
+ }
 
 value:
 compaund
