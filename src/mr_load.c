@@ -694,16 +694,12 @@ mr_free_ptrs (mr_ra_ptrdes_t ptrs)
       int count = ptrs.size / sizeof (ptrs.ra[0]);
       int i;
       for (i = 0; i < count; ++i)
-	{
-	  if ((MR_VT_UNKNOWN == ptrs.ra[i].mr_value.value_type)
-	      || (MR_VT_STRING == ptrs.ra[i].mr_value.value_type)
-	      || (MR_VT_ID == ptrs.ra[i].mr_value.value_type))
-	    {
-	      if (ptrs.ra[i].mr_value.vt_string)
-		MR_FREE (ptrs.ra[i].mr_value.vt_string);
-	      ptrs.ra[i].mr_value.vt_string = NULL;
-	    }
-	}
+	if (((MR_VT_UNKNOWN == ptrs.ra[i].mr_value.value_type)
+	     || (MR_VT_STRING == ptrs.ra[i].mr_value.value_type)
+	     || (MR_VT_ID == ptrs.ra[i].mr_value.value_type))
+	    && (ptrs.ra[i].mr_value.vt_string != NULL))
+	  MR_FREE (ptrs.ra[i].mr_value.vt_string);
+      
       MR_FREE (ptrs.ra);
       ptrs.ra = NULL;
       ptrs.size = ptrs.alloc_size = 0;
