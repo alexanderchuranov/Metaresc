@@ -46,6 +46,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_READ_LONG_DOUBLE, , "Can't read long double from string `%s`."),
 	      (MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, , "Can't read complex long double from string `%s`."),
 	      (MR_MESSAGE_READ_CHAR, , "Can't read char from string `%s`."),
+	      (MR_MESSAGE_READ_FUNC, , "Can't read function address from string `%s`."),
 	      (MR_MESSAGE_STRING_TRUNCATED, , "Char array range check: string truncated."),
 	      (MR_MESSAGE_UNKNOWN_SUBNODE, , "Struct type '%s': unknown subnode '%s'."),
 	      (MR_MESSAGE_SAVE_IDX_RANGE_CHECK, , "Save node index is out of range."),
@@ -337,8 +338,14 @@ TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 		(size_t, length),
 		)
 
+TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
+		(mr_substr_t, substr),
+		(char *, unquote, (mr_substr_t *)),
+		)
+
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      (MR_VT_UNKNOWN, = 0, "vt_string"),
+	      (MR_VT_QUOTED_SUBSTR, , "vt_quoted_substr"),
 	      (MR_VT_INT, , "vt_int"),
 	      (MR_VT_FLOAT, , "vt_float"),
 	      (MR_VT_COMPLEX, , "vt_complex"),
@@ -356,6 +363,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		complex long double vt_complex,
 		string_t vt_string,
 		char vt_char,
+		(mr_quoted_substr_t, vt_quoted_substr),
 		END_ANON_UNION ("value_type"),
 		)
 
