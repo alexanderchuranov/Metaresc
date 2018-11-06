@@ -8,8 +8,6 @@
 #define ASSERT_LOAD_EXPR(TYPE, VALUE)					\
   ck_assert_msg (((TYPE)(VALUE) == MR_LOAD_CINIT (TYPE, #VALUE)),	\
 		 "restored value mismatched original for method CINIT on expression " #VALUE); \
-  ck_assert_msg (((TYPE)(VALUE) == MR_LOAD_XML (TYPE, "<?xml version='1.0'?><x>" #VALUE "</x>")), \
-		 "restored value mismatched original for method XML on expression " #VALUE) 
 
 #define ASSERT_LOAD_TYPE_SCM(TYPE, VALUE, RESULT)			\
   ck_assert_msg (((TYPE)(RESULT) == MR_LOAD_SCM (TYPE, VALUE)),		\

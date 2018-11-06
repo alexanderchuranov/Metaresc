@@ -98,6 +98,7 @@ st_print (stack_trace_t * stack_trace)
 mr_status_t
 print_block (mr_ptr_t x, const void * context)
 {
+  fprintf (stderr, "Lost pointer:\n");
   st_print (x.ptr);
   return (MR_SUCCESS);
 }
@@ -317,7 +318,8 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
       fprintf (stderr, "#%d (%d) ~ (%d)\n", i, malloc_cnt, free_cnt);
 #endif /* DEBUG */
 
-      ck_assert_msg (malloc_cnt == free_cnt, "Mismatch of allocations (%d) and free (%d) on round %d", malloc_cnt, free_cnt, i);
+      if (malloc_cnt != free_cnt)
+	break;
       if (MR_SUCCESS == status)
 	break;
     }
@@ -333,6 +335,8 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
   mr_ic_foreach (&alloc_blocks, print_block, NULL);
   mr_ic_foreach (&alloc_blocks, st_free, NULL);
   mr_ic_free (&alloc_blocks);
+
+  ck_assert_msg (malloc_cnt == free_cnt, "Mismatch of allocations (%d) and free (%d) on round %d", malloc_cnt, free_cnt, i);
 }
 
 MAIN ();

@@ -1,7 +1,7 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
-
+#define static
 #ifdef HAVE_CONFIG_H
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
@@ -23,7 +23,7 @@ TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /
 
 /**
  * Post load references setting. If node was marked as references
- * it should be substitude with actual pointer. This substition
+ * it should be substitute with actual pointer. This substition
  * can't be made during structure loading because of forward references.
  * @param mr_load_data structures that holds context of loading
  * @return Status.
@@ -69,45 +69,54 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
   for (i = 0; i < count; ++i)
     if (mr_load_data->ptrs.ra[i].ref_idx >= 0)
       {
+	if (mr_load_data->ptrs.ra[i].ref_idx > max_idx)
+	  {
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, mr_load_data->ptrs.ra[i].ref_idx);
+	    status = MR_FAILURE;
+	    continue;
+	  }
+	
 	int idx = table[mr_load_data->ptrs.ra[i].ref_idx];
 	if (idx < 0)
 	  {
 	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, mr_load_data->ptrs.ra[i].ref_idx);
 	    status = MR_FAILURE;
+	    continue;
 	  }
-	else
+
+	void * data = mr_load_data->ptrs.ra[idx].data.ptr;
+
+	if ((MR_TYPE_POINTER != mr_load_data->ptrs.ra[i].fd.mr_type) &&
+	    (MR_TYPE_STRING != mr_load_data->ptrs.ra[i].fd.mr_type))
 	  {
-	    void * data = mr_load_data->ptrs.ra[idx].data.ptr;
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, mr_load_data->ptrs.ra[i].fd.mr_type);
+	    status = MR_FAILURE;
+	    continue;
+	  }
 
-	    if ((MR_TYPE_POINTER != mr_load_data->ptrs.ra[i].fd.mr_type) &&
-		(MR_TYPE_STRING != mr_load_data->ptrs.ra[i].fd.mr_type))
-	      {
-		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, mr_load_data->ptrs.ra[i].fd.mr_type);
-		status = MR_FAILURE;
-		continue;
-	      }
-
-	    if (mr_load_data->ptrs.ra[i].flags.is_content_reference)
-	      {
-		if (NULL == data)
-		  {
-		    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-		    status = MR_FAILURE;
-		  }
-		else
-		  data = *(void**)data;
-	      }
-
-	    if (NULL == mr_load_data->ptrs.ra[i].data.ptr)
+	if (mr_load_data->ptrs.ra[i].flags.is_content_reference)
+	  {
+	    if (NULL == data)
 	      {
 		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
 		status = MR_FAILURE;
 	      }
 	    else
-	      *(void**)mr_load_data->ptrs.ra[i].data.ptr = data;
+	      data = *(void**)data;
 	  }
+
+	if (NULL == mr_load_data->ptrs.ra[i].data.ptr)
+	  {
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	    status = MR_FAILURE;
+	    continue;
+	  }
+
+	*(void**)mr_load_data->ptrs.ra[i].data.ptr = data;
       }
+  
   MR_FREE (table);
+
   return (status);
 }
 
@@ -216,7 +225,7 @@ mr_get_func (char * func_name)
 }
 
 static mr_status_t
-mr_get_func_wrapper (char * func_name, void * dst, bool * str_allocated)
+mr_get_func_wrapper (char * func_name, void * dst)
 {
   void * func_addr = mr_get_func (func_name);
   if (NULL == func_name)
@@ -228,32 +237,31 @@ mr_get_func_wrapper (char * func_name, void * dst, bool * str_allocated)
   return (MR_SUCCESS);
 }
 
-TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */, bool * /* str_allocated */))
+TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
 
 static mr_status_t
 mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg)
 {
-  char * str = quoted_substr->substr.str;
-  
-  if (quoted_substr->unquote != NULL)
-    str = quoted_substr->unquote (&quoted_substr->substr);
-  
-  if (NULL == str)
-    return (MR_FAILURE);
-  
-  bool str_allocated = (str != quoted_substr->substr.str);
-  if (!str_allocated && (quoted_substr->substr.str[quoted_substr->substr.length] != 0))
-    {
-      str = alloca (quoted_substr->substr.length + 1);
-      memcpy (str, quoted_substr->substr.str, quoted_substr->substr.length);
-      str[quoted_substr->substr.length] = 0;
-    }
-  
-  mr_status_t status = process_quoted_str (str, arg, &str_allocated);
+  mr_status_t status = MR_SUCCESS;
 
-  if (str_allocated)
-    MR_FREE (str);
+  if ((NULL == quoted_substr->unquote) &&
+      (0 == quoted_substr->substr.str[quoted_substr->substr.length]))
+    status = process_quoted_str (quoted_substr->substr.str, arg);
+  else
+    {
+      char dst[quoted_substr->substr.length + 1];
   
+      if (NULL == quoted_substr->unquote)
+	{
+	  memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length);
+	  dst[quoted_substr->substr.length] = 0;
+	}
+      else
+	quoted_substr->unquote (&quoted_substr->substr, dst);
+  
+      status = process_quoted_str (dst, arg);
+    }
+
   return (status);
 }
 
@@ -277,7 +285,7 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
       break;
     case MR_VT_ID:
     case MR_VT_UNKNOWN:
-      status = mr_get_func_wrapper (ptrdes->load_params.mr_value.vt_string, ptrdes->data.ptr, NULL);
+      status = mr_get_func_wrapper (ptrdes->load_params.mr_value.vt_string, ptrdes->data.ptr);
       break;
     case MR_VT_QUOTED_SUBSTR:
       status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_func_wrapper, ptrdes->data.ptr);
@@ -392,7 +400,7 @@ mr_get_char (char * src, char * dst)
 }
 
 static mr_status_t
-mr_get_char_wrapper (char * src, void * dst, bool * str_allocated)
+mr_get_char_wrapper (char * src, void * dst)
 {
   mr_status_t status = mr_get_char (src, dst);
   if (MR_FAILURE == status)
@@ -415,7 +423,7 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
   switch (ptrdes->load_params.mr_value.value_type)
     {
     case MR_VT_UNKNOWN:
-      status = mr_get_char_wrapper (ptrdes->load_params.mr_value.vt_string, ptrdes->data.ptr, NULL);
+      status = mr_get_char_wrapper (ptrdes->load_params.mr_value.vt_string, ptrdes->data.ptr);
       break;
       
     case MR_VT_QUOTED_SUBSTR:
@@ -438,21 +446,16 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
 }
 
 static mr_status_t
-mr_get_str (char * src, void * dst, bool * str_allocated)
+mr_get_str (char * src, void * dst)
 {
-  if (!*str_allocated)
+  src = mr_strdup (src);
+  if (NULL == src)
     {
-      src = mr_strdup (src);
-      if (NULL == src)
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (MR_FAILURE);
-	}
-    }      
-  
-  *(char**)dst = src;
-  *str_allocated = false;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_OUT_OF_MEMORY);
+      return (MR_FAILURE);
+    }
 
+  *(char**)dst = src;
   return (MR_SUCCESS);
 }
 
@@ -499,7 +502,7 @@ TYPEDEF_STRUCT (mr_load_node_context_t,
 		(mr_ra_ptrdes_t *, ptrs))
 
 static mr_status_t
-mr_get_char_array (char * str, void * dst, bool * str_allocated)
+mr_get_char_array (char * str, void * dst)
 {
   mr_load_node_context_t * load_node_context = dst;
   mr_ptrdes_t * ptrdes = &load_node_context->ptrs->ra[load_node_context->idx];
@@ -555,15 +558,18 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
   };
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
   mr_status_t status = MR_SUCCESS;
+
+  if (ptrdes->fd.size > 0)
+    *(char*)ptrdes->data.ptr = 0;
   
   switch (ptrdes->load_params.mr_value.value_type)
     {
-    case MR_VT_STRING:
-    case MR_VT_UNKNOWN:
-      status = mr_get_char_array (ptrdes->load_params.mr_value.vt_string, &load_node_context, NULL);
-      break;
     case MR_VT_QUOTED_SUBSTR:
       status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_char_array, &load_node_context);
+      break;
+    case MR_VT_STRING:
+    case MR_VT_UNKNOWN:
+      status = mr_get_char_array (ptrdes->load_params.mr_value.vt_string, &load_node_context);
       break;
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
@@ -602,6 +608,7 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
   char * data = mr_load_data->ptrs.ra[idx].data.ptr;
   int first_child = mr_load_data->ptrs.ra[idx].first_child;
   mr_td_t * tdp = mr_get_td_by_name (mr_load_data->ptrs.ra[idx].fd.type);
+  mr_status_t status = MR_SUCCESS;
 
   /* get pointer on structure descriptor */
   if (NULL == tdp)
@@ -626,14 +633,15 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
       if (NULL == fdp)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, name);
-	  return (MR_FAILURE);
+	  status = MR_FAILURE;
 	}
 
       /* recursively load subnode */
-      if (MR_SUCCESS != mr_load (&data[fdp->offset], fdp, idx, mr_load_data))
-	return (MR_FAILURE);
+      mr_status_t subnode_status = mr_load (&data[fdp->offset], fdp, idx, mr_load_data);
+      if (MR_SUCCESS != subnode_status)
+	status = subnode_status;
     }
-  return (MR_SUCCESS);
+  return (status);
 }
 
 /**
@@ -651,6 +659,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   int row_count = fd_.param.array_param.row_count;
   int count = fd_.param.array_param.count;
   int i = 0;
+  mr_status_t status = MR_SUCCESS;
 
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
@@ -674,11 +683,12 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
 	  return (MR_FAILURE);
 	}
       /* load recursively */
-      if (MR_SUCCESS != mr_load (&data[i * fd_.size], &fd_, idx, mr_load_data))
-	return (MR_FAILURE);
+      mr_status_t subnode_status = mr_load (&data[i * fd_.size], &fd_, idx, mr_load_data);
+      if (MR_SUCCESS != subnode_status)
+	status = subnode_status;
       i += row_count;
     }
-  return (MR_SUCCESS);
+  return (status);
 }
 
 /**
@@ -691,6 +701,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 {
+  mr_status_t status = MR_SUCCESS;
   char ** data = mr_load_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = mr_load_data->ptrs.ra[idx].fd;
   int count = 0;
@@ -709,17 +720,21 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
+  
   memset (*data, 0, count * fd_.size);
   /* load recursively */
   count = 0;
   for (node = mr_load_data->ptrs.ra[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra[node].next)
-    if (MR_SUCCESS != mr_load (*data + count++ * fd_.size, &fd_, node, mr_load_data))
-      return (MR_FAILURE);
+    {
+      mr_status_t subnode_status = mr_load (*data + count++ * fd_.size, &fd_, node, mr_load_data);
+      if (MR_SUCCESS != subnode_status)
+	status = subnode_status;
+    }
 
   mr_load_data->ptrs.ra[idx].MR_SIZE = count * fd_.size;
   mr_pointer_set_size (idx, &mr_load_data->ptrs);
   
-  return (MR_SUCCESS);
+  return (status);
 }
 
 /**
@@ -747,7 +762,6 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
       if (NULL == idx_)
 	return (MR_FAILURE);
       *idx_ = idx;
-      return (MR_SUCCESS);
     }
 
   return (MR_SUCCESS);
@@ -924,10 +938,11 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	  while (mr_load_data->mr_ra_idx_size > 0)
 	    {
 	      mr_load_data->mr_ra_idx_size -= sizeof (mr_load_data->mr_ra_idx[0]);
-	      status = mr_load_pointer_postponed (mr_load_data->mr_ra_idx[mr_load_data->mr_ra_idx_size / sizeof (mr_load_data->mr_ra_idx[0])],
-						  mr_load_data);
-	      if (MR_SUCCESS != status)
-		break;
+	      mr_status_t subnode_status = mr_load_pointer_postponed
+		(mr_load_data->mr_ra_idx[mr_load_data->mr_ra_idx_size / sizeof (mr_load_data->mr_ra_idx[0])],
+		 mr_load_data);
+	      if (MR_SUCCESS != subnode_status)
+		status = subnode_status;
 	    }
 	}
       

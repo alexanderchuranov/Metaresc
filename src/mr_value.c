@@ -12,9 +12,6 @@
 #include <metaresc.h>
 #include <mr_value.h>
 
-#ifdef HAVE_BISON_FLEX
-#define MR_LOAD_VAR(VAR, STR) MR_LOAD_CINIT (__typeof__ (*VAR), STR, VAR)
-#else
 #define MR_LOAD_VAR(VAR, STR) mr_load_var (MR_TYPE_DETECT (__typeof__ (*VAR)), STR, VAR)
 
 /**
@@ -187,8 +184,6 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
   return (MR_SUCCESS);
 }
 
-#endif /* HAVE_BISON_FLEX */
-
 #define MR_VALUE_CAST(VT_VALUE)						\
   switch (value->value_type)						\
     {									\
@@ -224,29 +219,19 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
 	{								\
 	  __typeof__ (value->VT_VALUE) vt_value = 0;			\
 	  mr_quoted_substr_t * quoted_substr = &value->vt_quoted_substr; \
-	  char * str = quoted_substr->substr.str;			\
-	  if (quoted_substr->unquote != NULL)				\
-	    str = quoted_substr->unquote (&quoted_substr->substr);	\
-	  if (NULL == str)						\
-	    status = MR_FAILURE;					\
-	  else								\
+	  char dst[quoted_substr->substr.length + 1];			\
+	  if (NULL == quoted_substr->unquote)				\
 	    {								\
-	      bool str_allocated = (str != quoted_substr->substr.str);	\
-	      if (!str_allocated &&					\
-		  (quoted_substr->substr.str[quoted_substr->substr.length] != 0)) \
-		{							\
-		  str = alloca (quoted_substr->substr.length + 1);	\
-		  memcpy (str, quoted_substr->substr.str, quoted_substr->substr.length); \
-		  str[quoted_substr->substr.length] = 0;		\
-		}							\
-	      status = MR_LOAD_VAR (&vt_value, str);			\
-	      if (str_allocated)					\
-		MR_FREE (str);						\
-	      if (MR_SUCCESS == status)					\
-		{							\
-		  value->VT_VALUE = vt_value;				\
-		  value->value_type = value_type;			\
-		}							\
+	      memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length); \
+	      dst[quoted_substr->substr.length] = 0;			\
+	    }								\
+	  else								\
+	    quoted_substr->unquote (&quoted_substr->substr, dst);	\
+	  status = MR_LOAD_VAR (&vt_value, dst);			\
+	  if (MR_SUCCESS == status)					\
+	    {								\
+	      value->VT_VALUE = vt_value;				\
+	      value->value_type = value_type;				\
 	    }								\
 	}								\
       break;								\

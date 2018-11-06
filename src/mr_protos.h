@@ -340,7 +340,7 @@ TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 
 TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
 		(mr_substr_t, substr),
-		(char *, unquote, (mr_substr_t *)),
+		(void, unquote, (mr_substr_t *, char *)),
 		)
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),

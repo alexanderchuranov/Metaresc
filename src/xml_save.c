@@ -34,11 +34,11 @@ TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_ptrdes_t *))
 #define ESC_CHAR_MAP_SIZE (256)
 static char * map[ESC_CHAR_MAP_SIZE] = {
   [0 ... ESC_CHAR_MAP_SIZE - 1] = NULL,
-  [(unsigned char)'\t'] = "\t",
-  [(unsigned char)'\n'] = "\n",
   [(unsigned char)'&'] = "&amp;",
   [(unsigned char)'<'] = "&lt;",
   [(unsigned char)'>'] = "&gt;",
+  [(unsigned char)'"'] = "&quot;",
+  [(unsigned char)'\''] = "&apos;",
 };
 
 /**
@@ -94,19 +94,16 @@ xml_quote_string (char * str)
  * @param length length of the input string
  * @return XML unquoted string
  */
-char *
-xml_unquote_string (mr_substr_t * substr)
+void
+xml_unquote_string (mr_substr_t * substr, char * dst)
 {
-  char * str_ = MR_MALLOC (substr->length + 1);
-  int length_ = 0;
-  int i, j;
-
   static int inited = 0;
   static char map_c[ESC_CHAR_MAP_SIZE];
   static char * map_cp[ESC_CHAR_MAP_SIZE];
   static int map_s[ESC_CHAR_MAP_SIZE];
   static int map_size = 0;
-
+  int i, j;
+  
   if (0 == inited)
     {
       for (i = 0; i < ESC_CHAR_MAP_SIZE; ++i)
@@ -124,15 +121,11 @@ xml_unquote_string (mr_substr_t * substr)
       inited = !0;
     }
 
-  if (NULL == str_)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
+  int length_ = 0;
 
   for (j = 0; j < substr->length; ++j)
     if (substr->str[j] != '&')
-      str_[length_++] = substr->str[j];
+      dst[length_++] = substr->str[j];
     else
       {
 	char esc[ESC_SIZE + 1];
@@ -147,7 +140,7 @@ xml_unquote_string (mr_substr_t * substr)
 	    else
 	      {
 		j += size - 1; /* one more +1 in the loop */
-		str_[length_++] = code;
+		dst[length_++] = code;
 	      }
 	  }
 	else
@@ -155,19 +148,18 @@ xml_unquote_string (mr_substr_t * substr)
 	    for (i = 0; i < map_size; ++i)
 	      if (0 == strncasecmp (&substr->str[j], map_cp[i], map_s[i]))
 		{
-		  str_[length_++] = map_c[i];
+		  dst[length_++] = map_c[i];
 		  j += map_s[i] - 1; /* one more increase in the loop */
 		  break;
 		}
 	    if (i >= map_size)
 	      {
 		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_XML_ESC, esc);
-		str_[length_++] = substr->str[j];
+		dst[length_++] = substr->str[j];
 	      }
 	  }
       }
-  str_[length_] = 0;
-  return (str_);
+  dst[length_] = 0;
 }
 
 /**
