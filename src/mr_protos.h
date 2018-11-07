@@ -344,7 +344,7 @@ TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
 		)
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
-	      (MR_VT_UNKNOWN, = 0, "vt_string"),
+	      (MR_VT_VOID, = 0, "vt_void"),
 	      (MR_VT_QUOTED_SUBSTR, , "vt_quoted_substr"),
 	      (MR_VT_INT, , "vt_int"),
 	      (MR_VT_FLOAT, , "vt_float"),

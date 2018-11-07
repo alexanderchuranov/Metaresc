@@ -190,25 +190,6 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
     case MR_VT_INT: value->VT_VALUE = value->vt_int; break;		\
     case MR_VT_FLOAT: value->VT_VALUE = value->vt_float; break;		\
     case MR_VT_COMPLEX: value->VT_VALUE = value->vt_complex; break;	\
-    case MR_VT_UNKNOWN:							\
-      if (NULL == value->vt_string)					\
-	{								\
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
-	  status = MR_FAILURE;						\
-	}								\
-      else								\
-	{								\
-	  char * unknown = value->vt_string;				\
-	  __typeof__ (value->VT_VALUE) vt_value = 0;			\
-	  status = MR_LOAD_VAR (&vt_value, unknown);			\
-	  if (MR_SUCCESS == status)					\
-	    {								\
-	      value->VT_VALUE = vt_value;				\
-	      value->value_type = value_type;				\
-	      MR_FREE (unknown);					\
-	    }								\
-	}								\
-      break;								\
     case MR_VT_QUOTED_SUBSTR:						\
       if (NULL == value->vt_quoted_substr.substr.str)			\
 	{								\
@@ -246,7 +227,6 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
       status = MR_FAILURE;						\
       break;								\
     }
-
 
 static void
 mr_value_id (mr_value_t * value)
