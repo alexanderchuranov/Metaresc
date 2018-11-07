@@ -219,15 +219,21 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
 	{								\
 	  __typeof__ (value->VT_VALUE) vt_value = 0;			\
 	  mr_quoted_substr_t * quoted_substr = &value->vt_quoted_substr; \
-	  char dst[quoted_substr->substr.length + 1];			\
-	  if (NULL == quoted_substr->unquote)				\
-	    {								\
-	      memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length); \
-	      dst[quoted_substr->substr.length] = 0;			\
-	    }								\
+	  if ((NULL == quoted_substr->unquote) &&			\
+	      (0 == quoted_substr->substr.str[quoted_substr->substr.length])) \
+	    status = MR_LOAD_VAR (&vt_value, quoted_substr->substr.str); \
 	  else								\
-	    quoted_substr->unquote (&quoted_substr->substr, dst);	\
-	  status = MR_LOAD_VAR (&vt_value, dst);			\
+	    {								\
+	      char dst[quoted_substr->substr.length + 1];		\
+	      if (NULL == quoted_substr->unquote)			\
+		{							\
+		  memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length); \
+		  dst[quoted_substr->substr.length] = 0;		\
+		}							\
+	      else							\
+		quoted_substr->unquote (&quoted_substr->substr, dst);	\
+	      status = MR_LOAD_VAR (&vt_value, dst);			\
+	    }								\
 	  if (MR_SUCCESS == status)					\
 	    {								\
 	      value->VT_VALUE = vt_value;				\
