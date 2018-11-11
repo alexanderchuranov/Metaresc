@@ -351,7 +351,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      (MR_VT_COMPLEX, , "vt_complex"),
 	      (MR_VT_STRING, , "vt_string"),
 	      (MR_VT_CHAR, , "vt_string"),
-	      (MR_VT_ID, , "vt_string"),
+	      (MR_VT_ID, , "vt_quoted_substr"),
 	      )
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),

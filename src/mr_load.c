@@ -284,8 +284,6 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
       *(void**)ptrdes->data.ptr = (void*)(long)ptrdes->load_params.mr_value.vt_int;
       break;
     case MR_VT_ID:
-      status = mr_get_func_wrapper (ptrdes->load_params.mr_value.vt_string, ptrdes->data.ptr);
-      break;
     case MR_VT_QUOTED_SUBSTR:
       status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_func_wrapper, ptrdes->data.ptr);
       break;
@@ -802,8 +800,7 @@ mr_free_ptrs (mr_ra_ptrdes_t ptrs)
       int count = ptrs.size / sizeof (ptrs.ra[0]);
       int i;
       for (i = 0; i < count; ++i)
-	if (((MR_VT_STRING == ptrs.ra[i].load_params.mr_value.value_type)
-	     || (MR_VT_ID == ptrs.ra[i].load_params.mr_value.value_type))
+	if ((MR_VT_STRING == ptrs.ra[i].load_params.mr_value.value_type)
 	    && (ptrs.ra[i].load_params.mr_value.vt_string != NULL))
 	  MR_FREE (ptrs.ra[i].load_params.mr_value.vt_string);
       

@@ -239,13 +239,31 @@ mr_value_id (mr_value_t * value)
     value->vt_int = 0;
   else
     {
-      mr_fd_t * fdp = mr_get_enum_by_name (value->vt_string);
+      mr_fd_t * fdp;
+      mr_quoted_substr_t * quoted_substr = &value->vt_quoted_substr;
+      if ((NULL == quoted_substr->unquote) &&
+	  (0 == quoted_substr->substr.str[quoted_substr->substr.length]))
+	fdp = mr_get_enum_by_name (quoted_substr->substr.str);
+      else
+	{
+	  char dst[quoted_substr->substr.length + 1];
+  
+	  if (NULL == quoted_substr->unquote)
+	    {
+	      memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length);
+	      dst[quoted_substr->substr.length] = 0;
+	    }
+	  else
+	    quoted_substr->unquote (&quoted_substr->substr, dst);
+  
+	  fdp = mr_get_enum_by_name (dst);
+	}
+      
       __typeof__ (value->vt_int) vt_int = 0;
       if (NULL == fdp)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, value->vt_string);
       else
 	vt_int = fdp->param.enum_value;
-      MR_FREE (value->vt_string);
       value->vt_int = vt_int;
     }
 }

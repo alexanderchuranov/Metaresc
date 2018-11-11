@@ -157,8 +157,11 @@ compaund
 expr:
 TOK_SCM_NUMBER { $$ = $1; }
 | TOK_SCM_ID {
-  $$.vt_string = mr_strndup ($1.str, $1.length);
+  mr_load_t * mr_load = MR_LOAD;
   $$.value_type = MR_VT_ID;
+  $$.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
+  $$.vt_quoted_substr.substr.length = $1.length;
+  $$.vt_quoted_substr.unquote = NULL;
   }
 | TOK_SCM_LPARENTHESIS TOK_SCM_PLUS ws plus_list TOK_SCM_RPARENTHESIS { $$ = $4; }
 | TOK_SCM_LPARENTHESIS TOK_SCM_MINUS ws minus_list TOK_SCM_RPARENTHESIS { $$ = $4; }
