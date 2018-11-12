@@ -99,7 +99,8 @@ mr_td_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_ic_free (&tdp->field_by_name);
-  mr_ic_free (&tdp->lookup_by_value);
+  if (MR_TYPE_ENUM == tdp->mr_type)
+    mr_ic_free (&tdp->enum_by_value);
   return (MR_SUCCESS);
 }
 
@@ -681,7 +682,7 @@ static mr_fd_t *
 mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_ptr_t*)0)->offset) offset)
 {
   mr_fd_t fd = { .offset = offset, };
-  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_offset, &fd);
+  mr_ptr_t * result = mr_ic_find (&tdp->field_by_offset, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1273,11 +1274,11 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->lookup_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
+  mr_ic_new (&tdp->enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
-  mr_ic_index (&tdp->lookup_by_value, &mr_ic_rarray);
+  mr_ic_index (&tdp->enum_by_value, &mr_ic_rarray);
 
   for (i = 0; i < count; ++i)
     {
@@ -1308,7 +1309,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_value, &fd);
+  mr_ptr_t * result = mr_ic_find (&tdp->enum_by_value, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1794,8 +1795,8 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
   mr_ic_index (&tdp->field_by_name, &mr_ic_rarray);
 
-  mr_ic_new (&tdp->lookup_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
-  mr_ic_index (&tdp->lookup_by_offset, &mr_ic_rarray);
+  mr_ic_new (&tdp->field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+  mr_ic_index (&tdp->field_by_offset, &mr_ic_rarray);
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
     mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
