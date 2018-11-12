@@ -610,7 +610,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   if (!initialized)
     {
-      mr_ic_foreach (&mr_conf.lookup_by_name, register_type_name, type_name);
+      mr_ic_foreach (&mr_conf.type_by_name, register_type_name, type_name);
       initialized = true;
     }
 
