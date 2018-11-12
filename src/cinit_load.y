@@ -173,8 +173,7 @@ value
     {
       mr_load->ptrs->ra[mr_load->parent].fd.type = tdp->type.str;
       /* for mr_ptr_t union we get name of union member from type cast */
-      mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.str = tdp->type.str;
-      mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.length = strlen (tdp->type.str);
+      mr_load->ptrs->ra[mr_load->parent].fd.name.str = tdp->type.str;
     }
  }
 
@@ -237,8 +236,7 @@ list_element: cinit
 | TOK_CINIT_FIELD_PREFIX cinit {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_load->ptrs->ra[idx].load_params.name_ss.str = &mr_load->str[$1.str - mr_load->buf];
-  mr_load->ptrs->ra[idx].load_params.name_ss.length = $1.length;
+  mr_load->ptrs->ra[idx].fd.name.str = mr_get_static_field_name (&$1);
 }
 
 %%

@@ -77,8 +77,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.length -= i + 1;
       $2.str += i + 1;
     }
-  mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.str = &mr_load->str[$2.str - mr_load->buf];
-  mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.length = $2.length;
+  mr_load->ptrs->ra[mr_load->parent].fd.name.str = mr_get_static_field_name (&$2);
 
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = "";
@@ -115,8 +114,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.str += i + 1;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.str = &mr_load->str[$2.str - mr_load->buf];
-  mr_load->ptrs->ra[mr_load->parent].load_params.name_ss.length = $2.length;
+  mr_load->ptrs->ra[mr_load->parent].fd.name.str = mr_get_static_field_name (&$2);
   
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$4.str - mr_load->buf];;

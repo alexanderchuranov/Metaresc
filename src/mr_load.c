@@ -611,19 +611,14 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
   /* loop on all subnodes */
   for (idx = first_child; idx >= 0; idx = mr_load_data->ptrs.ra[idx].next)
     {
-      mr_substr_t * substr = &mr_load_data->ptrs.ra[idx].load_params.name_ss;
-      char name[substr->length + 1];
-      memcpy (name, substr->str, substr->length);
-      name[substr->length] = 0;
-      
-      if (NULL == substr->str)
+      if (NULL == mr_load_data->ptrs.ra[idx].fd.name.str)
 	fdp = mr_load_struct_next_field (tdp, fdp);
       else
-	fdp = mr_get_fd_by_name (tdp, name);
+	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra[idx].fd.name.str);
 
       if (NULL == fdp)
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, name);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, mr_load_data->ptrs.ra[idx].fd.name.str);
 	  status = MR_FAILURE;
 	}
 
@@ -666,11 +661,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
       /* check if array index is in range */
       if ((i < 0) || (i >= count))
 	{
-	  mr_substr_t * substr = &mr_load_data->ptrs.ra[idx].load_params.name_ss;
-	  char name[substr->length + 1];
-	  memcpy (name, substr->str, substr->length);
-	  name[substr->length] = 0;
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RANGE_CHECK, name);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (MR_FAILURE);
 	}
       /* load recursively */
@@ -778,10 +769,10 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
   if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
       (MR_VT_STRING == ptrdes->load_params.mr_value.value_type) && (NULL != ptrdes->load_params.mr_value.vt_string)
       && (0 == ptrdes->load_params.mr_value.vt_string[0]) && /* content must be an empty string */
-      (mr_load_data->ptrs.ra[idx].load_params.name_ss.str != NULL) && /* node must have a name */
-      (ptrdes->next >= 0) && (NULL == mr_load_data->ptrs.ra[ptrdes->next].load_params.name_ss.str)) /* there should be a next node without name */
+      (mr_load_data->ptrs.ra[idx].fd.name.str != NULL) && /* node must have a name */
+      (ptrdes->next >= 0) && (NULL == mr_load_data->ptrs.ra[ptrdes->next].fd.name.str)) /* there should be a next node without name */
     {
-      mr_load_data->ptrs.ra[ptrdes->next].load_params.name_ss = mr_load_data->ptrs.ra[idx].load_params.name_ss;
+      mr_load_data->ptrs.ra[ptrdes->next].fd.name = mr_load_data->ptrs.ra[idx].fd.name;
       return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
     }
   return (mr_load_struct (idx, mr_load_data));
@@ -876,14 +867,10 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
     }
 
   mr_load_data->ptrs.ra[idx].data.ptr = data;
-  if (mr_load_data->ptrs.ra[idx].load_params.name_ss.str && fdp->name.str)
-    if (0 != mr_substrcmp (fdp->name.str, &mr_load_data->ptrs.ra[idx].load_params.name_ss))
+  if (mr_load_data->ptrs.ra[idx].fd.name.str && fdp->name.str)
+    if (0 != strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].fd.name.str))
       {
-	mr_substr_t * substr = &mr_load_data->ptrs.ra[idx].load_params.name_ss;
-	char name[substr->length + 1];
-	memcpy (name, substr->str, substr->length);
-	name[substr->length] = 0;
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, name);
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, mr_load_data->ptrs.ra[idx].fd.name.str);
 	return (MR_FAILURE);
       }
 
@@ -896,11 +883,8 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	  return (MR_FAILURE);
 	}
 
-  if ((NULL == mr_load_data->ptrs.ra[idx].load_params.name_ss.str) && (fdp->name.str))
-    {
-      mr_load_data->ptrs.ra[idx].load_params.name_ss.str = fdp->name.str;
-      mr_load_data->ptrs.ra[idx].load_params.name_ss.length = strlen (fdp->name.str);
-    }
+  if ((NULL == mr_load_data->ptrs.ra[idx].fd.name.str) && (fdp->name.str))
+    mr_load_data->ptrs.ra[idx].fd.name.str = fdp->name.str;
   
   if ((NULL == mr_load_data->ptrs.ra[idx].fd.type) && (fdp->type))
     mr_load_data->ptrs.ra[idx].fd.type = fdp->type;

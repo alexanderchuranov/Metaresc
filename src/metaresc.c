@@ -76,6 +76,9 @@ mr_conf_t mr_conf = {
   .enum_by_name = {
     .ic_type = MR_IC_UNINITIALIZED,
   },
+  .fields_names = {
+    .ic_type = MR_IC_UNINITIALIZED,
+  },
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
 };
 
@@ -109,6 +112,7 @@ mr_cleanup (void)
   mr_ic_foreach (&mr_conf.lookup_by_name, mr_td_visitor, NULL);
   mr_ic_free (&mr_conf.enum_by_name);
   mr_ic_free (&mr_conf.lookup_by_name);
+  mr_ic_free (&mr_conf.fields_names);
 }
 
 static int
@@ -950,6 +954,13 @@ mr_hashed_string_get_hash (const mr_hashed_string_t * x)
   return (x_->hash_value);
 }
 
+mr_hash_value_t
+mr_hashed_string_get_hash_ic (mr_ptr_t x, const void * context)
+{
+  mr_hashed_string_t * x_ = x.ptr;
+  return (mr_hashed_string_get_hash (x_));
+}
+
 /**
  * Comparator for mr_hashed_string_t
  * @param x pointer on one mr_hashed_string_t
@@ -968,6 +979,14 @@ mr_hashed_string_cmp (const mr_hashed_string_t * x, const mr_hashed_string_t * y
   if (diff)
     return (diff);
   return (0);
+}
+
+int
+mr_hashed_string_cmp_ic (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_hashed_string_t * x_ = x.ptr;
+  const mr_hashed_string_t * y_ = y.ptr;
+  return (mr_hashed_string_cmp (x_, y_));
 }
 
 mr_hash_value_t
@@ -1704,6 +1723,20 @@ mr_register_type_pointer (mr_td_t * tdp)
   return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
+char *
+mr_get_static_field_name (mr_substr_t * substr)
+{
+  char name[substr->length + 1];
+  mr_hashed_string_t hashed_string = { .str = name, .hash_value = 0, };
+  memcpy (name, substr->str, substr->length);
+  name[substr->length] = 0;
+  mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &hashed_string);
+  if (NULL == find)
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+  mr_hashed_string_t * fields_name = find ? find->ptr : NULL;
+  return (fields_name ? fields_name->str : NULL);
+}
+
 /**
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
@@ -1714,6 +1747,7 @@ mr_register_type_pointer (mr_td_t * tdp)
 mr_status_t
 mr_add_type (mr_td_t * tdp, char * meta, ...)
 {
+  mr_status_t status = MR_SUCCESS;
   mr_ic_rarray_t mr_ic_rarray;
   va_list args;
   void * res;
@@ -1735,7 +1769,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
       if (NULL == fdp)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	  return (MR_FAILURE);
+	  status = MR_FAILURE;
 	}
       if (MR_TYPE_TRAILING_RECORD == fdp->mr_type)
 	break;
@@ -1749,7 +1783,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     tdp->res.ptr = res;
 
   if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
-    return (MR_FAILURE);
+    status = MR_FAILURE;
 
   mr_check_fields (tdp);
   
@@ -1769,13 +1803,24 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   if (MR_IC_UNINITIALIZED == mr_conf.lookup_by_name.ic_type)
     mr_ic_new (&mr_conf.lookup_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
 
+  if (MR_IC_UNINITIALIZED == mr_conf.fields_names.ic_type)
+    mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH_NEXT, NULL);
+
   if (NULL == mr_ic_add (&mr_conf.lookup_by_name, tdp))
-    return (MR_FAILURE);
+    status = MR_FAILURE;
 
-  if (MR_TYPE_ENUM == tdp->mr_type)
-    return (mr_add_enum (tdp));
+  if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->type))
+    status = MR_FAILURE;
 
-  return (MR_SUCCESS);
+  for (count = 0; count < tdp->fields_size / sizeof (tdp->fields[0]); ++count)
+    if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[count].fdp->name))
+      status = MR_FAILURE;
+  
+
+  if ((MR_TYPE_ENUM == tdp->mr_type) && (MR_SUCCESS != mr_add_enum (tdp)))
+    status = MR_FAILURE;
+
+  return (status);
 }
 
 static void

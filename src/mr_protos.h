@@ -80,6 +80,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_CANT_READ_PROPERTY, , "Can't read %s property."),
 	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) for dynamics array."),
 	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
+	      (MR_MESSAGE_UNKNOWN_FIELD_NAME, , "Unknown field name '%s'."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -376,7 +377,6 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
 
 TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
 		(mr_value_t, mr_value, , "loaded value"),
-		(mr_substr_t, name_ss, , "name of the field"),
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
@@ -442,6 +442,7 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_log_level_t, log_level),
 		(mr_msg_handler_t, msg_handler),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
+		(mr_ic_t, fields_names, , "index of all fields names"),
 		(mr_ic_t, lookup_by_name, , "index over types descriptors"),
 		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)

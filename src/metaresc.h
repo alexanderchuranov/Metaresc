@@ -1226,6 +1226,7 @@ extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
 
+extern char * mr_get_static_field_name (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 extern void mr_init_save_xml (void);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
