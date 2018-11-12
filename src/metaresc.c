@@ -98,7 +98,7 @@ static mr_status_t
 mr_td_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  mr_ic_free (&tdp->lookup_by_name);
+  mr_ic_free (&tdp->field_by_name);
   mr_ic_free (&tdp->lookup_by_value);
   return (MR_SUCCESS);
 }
@@ -1684,7 +1684,7 @@ mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
   mr_fd_t fd = { .name = { .str = name, .hash_value = mr_hash_str (name), } };
-  mr_ptr_t * result = mr_ic_find (&tdp->lookup_by_name, &fd);
+  mr_ptr_t * result = mr_ic_find (&tdp->field_by_name, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1720,7 +1720,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->offset = 0;
   fdp->mr_type = MR_TYPE_POINTER;
   fdp->mr_type_aux = tdp->mr_type;
-  return ((NULL == mr_ic_add (&union_tdp->lookup_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
+  return ((NULL == mr_ic_add (&union_tdp->field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
 char *
@@ -1791,8 +1791,8 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
   
-  mr_ic_new (&tdp->lookup_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
-  mr_ic_index (&tdp->lookup_by_name, &mr_ic_rarray);
+  mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+  mr_ic_index (&tdp->field_by_name, &mr_ic_rarray);
 
   mr_ic_new (&tdp->lookup_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
   mr_ic_index (&tdp->lookup_by_offset, &mr_ic_rarray);
