@@ -614,43 +614,10 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
       initialized = true;
     }
 
-  switch (fdp->mr_type)
-    {
-    case MR_TYPE_STRING:
-    case MR_TYPE_CHAR_ARRAY:
-    case MR_TYPE_CHAR:
-    case MR_TYPE_NONE:
-    case MR_TYPE_VOID:
-    case MR_TYPE_BOOL:
-    case MR_TYPE_INT8:
-    case MR_TYPE_UINT8:
-    case MR_TYPE_INT16:
-    case MR_TYPE_UINT16:
-    case MR_TYPE_INT32:
-    case MR_TYPE_UINT32:
-    case MR_TYPE_INT64:
-    case MR_TYPE_UINT64:
-    case MR_TYPE_FLOAT:
-    case MR_TYPE_COMPLEX_FLOAT:
-    case MR_TYPE_DOUBLE:
-    case MR_TYPE_COMPLEX_DOUBLE:
-    case MR_TYPE_LONG_DOUBLE:
-    case MR_TYPE_COMPLEX_LONG_DOUBLE:
-      if (mr_get_td_by_name (fdp->type) != NULL)
-	ra[idx].type = fdp->type;
-      else
-	ra[idx].type = type_name[fdp->mr_type];
-      break;
-      
-    case MR_TYPE_STRUCT:
-    case MR_TYPE_ENUM:
-      ra[idx].type = fdp->type;
-      break;
-      
-    default:
-      ra[idx].type = NULL;
-      break;
-    }
+  if (mr_get_td_by_name (fdp->type) != NULL)
+    ra[idx].type = fdp->type;
+  else if (fdp->mr_type < MR_TYPE_LAST)
+    ra[idx].type = type_name[fdp->mr_type];
   
   ra[idx].MR_SIZE = fdp->size * count;
 
