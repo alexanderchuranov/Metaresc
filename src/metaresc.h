@@ -973,7 +973,8 @@
 	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
 	  if (__idx__ >= 0)						\
 	    __status__ = mr_load (__check_type__, &__fd__, __idx__, &__load_data__); \
-	  mr_free_ptrs (__load_data__.ptrs);				\
+	  if (__load_data__.ptrs.ra)					\
+	    MR_FREE (__load_data__.ptrs.ra);				\
 	}								\
       __status__;							\
     })
@@ -1071,7 +1072,8 @@
 	      mr_detect_type (&_fd_);					\
 	      _status_ = mr_load (_check_type_, &_fd_, 0, &_load_data_); \
 	    }								\
-	  mr_free_ptrs (_load_data_.ptrs);				\
+	  if (_load_data_.ptrs.ra)					\
+	    MR_FREE (_load_data_.ptrs.ra);				\
 	}								\
       _status_;								\
     })
@@ -1213,7 +1215,6 @@ extern void mr_detect_type (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
-extern mr_status_t mr_free_ptrs (mr_ra_ptrdes_t ptrs);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, int64_t value);
 extern mr_fd_t * mr_get_enum_by_name (char * name);

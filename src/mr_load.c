@@ -287,11 +287,6 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
     case MR_VT_QUOTED_SUBSTR:
       status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_func_wrapper, ptrdes->data.ptr);
       break;
-    case MR_VT_STRING:
-      /* NULL pointer is parsed as string */
-      *(void**)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_string;
-      ptrdes->load_params.mr_value.vt_string = NULL;
-      break;
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
       status = MR_FAILURE;
@@ -470,10 +465,6 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
     {
       switch (ptrdes->load_params.mr_value.value_type)
 	{
-	case MR_VT_STRING:
-	  *(char**)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_string;
-	  ptrdes->load_params.mr_value.vt_string = NULL;
-	  break;
 	case MR_VT_QUOTED_SUBSTR:
 	  status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_str, ptrdes->data.ptr);
 	  break;
@@ -558,9 +549,6 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
     {
     case MR_VT_QUOTED_SUBSTR:
       status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_char_array, &load_node_context);
-      break;
-    case MR_VT_STRING:
-      status = mr_get_char_array (ptrdes->load_params.mr_value.vt_string, &load_node_context);
       break;
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
@@ -776,30 +764,6 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
       return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
     }
   return (mr_load_struct (idx, mr_load_data));
-}
-
-/**
- * Cleanup helper. Deallocates all dynamically allocated resources.
- * @param ptrs resizeable array with pointers descriptors
- * @return Status of read
- */
-mr_status_t
-mr_free_ptrs (mr_ra_ptrdes_t ptrs)
-{
-  if (ptrs.ra)
-    {
-      int count = ptrs.size / sizeof (ptrs.ra[0]);
-      int i;
-      for (i = 0; i < count; ++i)
-	if ((MR_VT_STRING == ptrs.ra[i].load_params.mr_value.value_type)
-	    && (ptrs.ra[i].load_params.mr_value.vt_string != NULL))
-	  MR_FREE (ptrs.ra[i].load_params.mr_value.vt_string);
-      
-      MR_FREE (ptrs.ra);
-      ptrs.ra = NULL;
-      ptrs.size = ptrs.alloc_size = 0;
-    }
-  return (MR_SUCCESS);
 }
 
 /**
