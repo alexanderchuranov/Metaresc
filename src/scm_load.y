@@ -18,13 +18,15 @@
 #define YYSTYPE MR_SCM_STYPE
 #define YYLTYPE MR_SCM_LTYPE
 #include <scm_load.lex.h>
+
+#define SIZEOF_QUOTE_CHAR (sizeof ("\"") - sizeof (""))
+
 }
 
 %code {
-  char * unquote_str (mr_substr_t * substr)
+  void scm_unquote_str (mr_substr_t * substr, char * dst)
   {
-    int length_ = 0;
-    char * str_;
+    int size, length;
     int i;
 #define ESC_CHAR_MAP_SIZE (256)
     static int map[ESC_CHAR_MAP_SIZE] = {
@@ -39,44 +41,29 @@
       [(unsigned char)'\\'] = (unsigned char)'\\',
     };
 
-    for (i = 1; i < substr->length - 1; ++i) /* we need to skip quotes at the begging and end */
-      {
-	if ('\\' == substr->str[i])
-	  {
-	    ++i;
-	    if (('x' == substr->str[i]) && isalnum (substr->str[i + 1])
-		&& isalnum (substr->str[i + 2]) && (';' == substr->str[i + 3]))
-	      i += 3;
-	  }
-	++length_;
-      }
-    str_ = MR_MALLOC (length_ + 1);
-    if (NULL == str_)
-      {
-	MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	return (NULL);
-      }
-    length_ = 0;
-    for (i = 1; i < substr->length - 1; ++i)
+    if (NULL == substr->str)
+      return;
+  
+    length = 0;
+    for (i = 0; i < substr->length; ++i)
       {
 	if ('\\' == substr->str[i])
 	  {
 	    int c = map[(unsigned char)substr->str[++i]];
 	    if (c > 0)
-	      str_[length_++] = c;
-	    else if (1 == sscanf (&substr->str[i], "x%x;", &c))
+	      dst[length++] = c;
+	    else if (1 == sscanf (&substr->str[i], "x%x%n;", &c, &size))
 	      {
-		i += 3;
-		str_[length_++] = c;
+		i += size;
+		dst[length++] = c;
 	      }
 	    else
-	      str_[length_++] = substr->str[i];
+	      dst[length++] = substr->str[i];
 	  }
 	else
-	  str_[length_++] = substr->str[i];
+	  dst[length++] = substr->str[i];
       }
-    str_[length_] = 0;
-    return (str_);
+    dst[length] = 0;
   }
  
 }
@@ -150,8 +137,10 @@ compaund
 | expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_string = unquote_str (&$1);
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_STRING;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length - 2 * SIZEOF_QUOTE_CHAR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = scm_unquote_str;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
 }
 
 expr:

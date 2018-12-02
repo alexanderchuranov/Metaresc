@@ -57,9 +57,9 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 {WS}  { /* eat up whitespace */ }
 
 "NULL" {
-  yylval->string.str = NULL;
-  yylval->string.length = 0;
-  return (TOK_CINIT_STRING);
+  yylval->value.value_type = MR_VT_INT;
+  yylval->value.vt_int = 0;
+  return (TOK_CINIT_NUMBER);
 }
 
 "false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }

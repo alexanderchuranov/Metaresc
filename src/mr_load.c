@@ -767,8 +767,8 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
     },
   */
   if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
-      (MR_VT_STRING == ptrdes->load_params.mr_value.value_type) && (NULL != ptrdes->load_params.mr_value.vt_string)
-      && (0 == ptrdes->load_params.mr_value.vt_string[0]) && /* content must be an empty string */
+      (MR_VT_QUOTED_SUBSTR == ptrdes->load_params.mr_value.value_type)
+      && (0 == ptrdes->load_params.mr_value.vt_quoted_substr.substr.length) && /* content must be an empty string */
       (mr_load_data->ptrs.ra[idx].fd.name.str != NULL) && /* node must have a name */
       (ptrdes->next >= 0) && (NULL == mr_load_data->ptrs.ra[ptrdes->next].fd.name.str)) /* there should be a next node without name */
     {

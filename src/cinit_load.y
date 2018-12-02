@@ -19,16 +19,17 @@
 #define YYSTYPE MR_CINIT_STYPE
 #define YYLTYPE MR_CINIT_LTYPE
 #include <cinit_load.lex.h>
+
+#define SIZEOF_QUOTE_CHAR (sizeof ("\"") - sizeof (""))
+  
 }
 
 %code {
-  
-static char *
-unquote_str (mr_substr_t * substr)
+
+void
+cinit_unquote_str (mr_substr_t * substr, char * dst)
 {
-  int length_ = 0;
-  char * str_;
-  int i;
+  int i, size, length;
   static int map[1 << __CHAR_BIT__] = {
     [0 ... (1 << __CHAR_BIT__) - 1] = -1,
     [(unsigned char)'f'] = (unsigned char)'\f',
@@ -42,55 +43,28 @@ unquote_str (mr_substr_t * substr)
   };
 
   if (NULL == substr->str)
-    return (NULL);
+    return;
 
-  for (i = 1; i < substr->length - 1;)
-    {
-      if ('\\' == substr->str[i++])
-	{
-	  int c = map[(unsigned char)substr->str[i]];
-	  if (c > 0)
-	    ++i;
-	  else
-	    {
-	      int count = 3;
-	      while ((substr->str[i] >= '0') && (substr->str[i] < '8') && (--count >= 0))
-		++i;
-	    }
-	}
-      ++length_;
-    }
-  str_ = MR_MALLOC (length_ + 1);
-  if (NULL == str_)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
-
-  length_ = 0;
-  for (i = 1; i < substr->length - 1; ++i)
+  length = 0;
+  for (i = 0; i < substr->length; ++i)
     {
       if ('\\' == substr->str[i])
 	{
 	  int c = map[(unsigned char)substr->str[++i]];
 	  if (c > 0)
-	    str_[length_++] = c;
-	  else if (1 == sscanf (&substr->str[i], "%o", &c))
+	    dst[length++] = c;
+	  else if (1 == sscanf (&substr->str[i], "%o%n", &c, &size))
 	    {
-	      int count = 3;
-	      while ((substr->str[i] >= '0') && (substr->str[i] < '8') && (--count >= 0))
-		++i;
-	      --i;
-	      str_[length_++] = c;
+	      i += size - 1;
+	      dst[length++] = c;
 	    }
 	  else
-	    str_[length_++] = substr->str[i];
+	    dst[length++] = substr->str[i];
 	}
       else
-	str_[length_++] = substr->str[i];
+	dst[length++] = substr->str[i];
     }
-  str_[length_] = 0;
-  return (str_);
+  dst[length] = 0;
 }
 
 }
@@ -182,24 +156,29 @@ compaund
 | expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
 | TOK_CINIT_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_string = unquote_str (&$1);
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_STRING;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length - 2 * SIZEOF_QUOTE_CHAR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = cinit_unquote_str;
   }
 | TOK_CINIT_CHAR {
   mr_load_t * mr_load = MR_LOAD;
-  char * vt_char_str = unquote_str (&$1);
-  char vt_char = 0;
-  if (vt_char_str)
+  mr_substr_t substr = {
+    .str = $1.str + SIZEOF_QUOTE_CHAR,
+    .length = $1.length - 2 * SIZEOF_QUOTE_CHAR,
+  };
+  char vt_char_str[substr.length + 1];
+
+  vt_char_str[0] = 0;
+  cinit_unquote_str (&substr, vt_char_str);
+
+  if (strlen (vt_char_str) > 1)
     {
-      int vt_char_str_length = strlen (vt_char_str);
-      vt_char = vt_char_str[0];
-      if (vt_char_str_length > 1)
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, vt_char_str);
-      MR_FREE (vt_char_str);
-      if (vt_char_str_length > 1)
-	YYERROR;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, vt_char_str);
+      YYERROR;
     }
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_char = vt_char;
+  
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_char = vt_char_str[0];
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_CHAR;
   }
 

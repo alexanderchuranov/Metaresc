@@ -1732,8 +1732,6 @@ mr_get_static_field_name (mr_substr_t * substr)
   memcpy (name, substr->str, substr->length);
   name[substr->length] = 0;
   mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &hashed_string);
-  if (NULL == find)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
   mr_hashed_string_t * fields_name = find ? find->ptr : NULL;
   return (fields_name ? fields_name->str : NULL);
 }
