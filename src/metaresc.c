@@ -1814,7 +1814,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   for (count = 0; count < tdp->fields_size / sizeof (tdp->fields[0]); ++count)
     if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[count].fdp->name))
       status = MR_FAILURE;
-  
 
   if ((MR_TYPE_ENUM == tdp->mr_type) && (MR_SUCCESS != mr_add_enum (tdp)))
     status = MR_FAILURE;
@@ -1833,32 +1832,6 @@ mr_td_detect_res_size (mr_td_t * tdp)
     }
 }
 
-static void
-mr_reorder_union_and_discriminator (mr_td_t * tdp)
-{
-  int i;
-  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
-    if ((MR_TYPE_UNION == tdp->fields[i].fdp->mr_type) ||
-	(MR_TYPE_ANON_UNION == tdp->fields[i].fdp->mr_type) ||
-	(MR_TYPE_NAMED_ANON_UNION == tdp->fields[i].fdp->mr_type))
-      {
-	mr_fd_t * union_fdp = tdp->fields[i].fdp;
-	mr_fd_t * discriminator_fdp = mr_get_fd_by_name (tdp, union_fdp->meta);
-	if (discriminator_fdp)
-	  {
-	    int idx;
-	    for (idx = tdp->fields_size / sizeof (tdp->fields[0]) - 1; idx >= 0; --idx)
-	      if (tdp->fields[idx].fdp == discriminator_fdp)
-		break;
-	    if (i < idx)
-	      {
-		tdp->fields[i].fdp = discriminator_fdp;
-		tdp->fields[idx].fdp = union_fdp;
-	      }
-	  }
-      }
-}
-
 static mr_status_t
 mr_conf_init_visitor (mr_ptr_t key, const void * context)
 {
@@ -1866,7 +1839,6 @@ mr_conf_init_visitor (mr_ptr_t key, const void * context)
   
   mr_detect_fields_types (tdp);
   mr_td_detect_res_size (tdp);
-  mr_reorder_union_and_discriminator (tdp);
 
   return (mr_register_type_pointer (tdp));
 }

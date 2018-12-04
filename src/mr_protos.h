@@ -122,8 +122,8 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      )
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
-		(mr_ptr_t, data, , "type"),
 		(char *, type, , "type of 'data' pointer"),
+		(mr_ptr_t, data, , "type"),
 		VOID (ssize_t, MR_SIZE, , "used space in bytes"),
 		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
 		)
@@ -205,8 +205,8 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
-		(mr_ptr_t *, ra, , "key_type", { .offset = offsetof (mr_ic_rarray_t, size) }, "offset"), 
 		(ssize_t, size, , "size of array"),
+		(mr_ptr_t *, ra, , "key_type", { .offset = offsetof (mr_ic_rarray_t, size) }, "offset"), 
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
 
@@ -334,8 +334,8 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 		)
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
-		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
 		(size_t, length),
+		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
 		)
 
 TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
@@ -378,8 +378,8 @@ TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loadin
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
-		(mr_ptr_t, data, , "type"),
 		(char *, type, , "copy of fd.type for all basic types and structures"),
+		(mr_ptr_t, data, , "type"),
 		(ssize_t, MR_SIZE, , "size of dynamic array"),
 		(mr_fd_t, fd, , "field descriptor"),
 		(int32_t, idx, , "public index"),
@@ -403,9 +403,9 @@ TYPEDEF_ENUM (mr_ptrdes_type_t,
 	      )
 
 TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
+		(ssize_t, size, , "size of resizable array"),
 		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements",
 		{ .offset = offsetof (mr_ra_ptrdes_t, size) }, "offset"),
-		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
 		(mr_ptrdes_type_t, ptrdes_type, , "discriminator for anonymous union in mr_ptrdes_t"),
 		(mr_res_t, res, , "extra pointer for user data"),
@@ -413,8 +413,8 @@ TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 
 TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
-		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_load_data_t, mr_ra_idx_size) }, "offset"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
+		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_load_data_t, mr_ra_idx_size) }, "offset"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
 
@@ -422,12 +422,12 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
-		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_save_data_t, mr_ra_idx_size) }, "offset"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
+		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_save_data_t, mr_ra_idx_size) }, "offset"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
+		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators",
 		{ .offset = offsetof (mr_save_data_t, mr_ra_ud_size) }, "offset"),
-		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
 		)
 
