@@ -597,6 +597,16 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 {
   static char * type_name[] = { [0 ... MR_TYPE_LAST - 1] = NULL };
   static bool initialized = false;
+  static bool is_serializable[] = {
+    [0 ... MR_TYPE_LAST - 1] = true,
+    [MR_TYPE_FUNC_TYPE] = false,
+    [MR_TYPE_FUNC] = false,
+    [MR_TYPE_POINTER] = false,
+    [MR_TYPE_ANON_UNION] = false,
+    [MR_TYPE_NAMED_ANON_UNION] = false,
+    [MR_TYPE_END_ANON_UNION] = false,
+    [MR_TYPE_TRAILING_RECORD] = false,
+  };
   
   long_int_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
@@ -614,10 +624,14 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
       initialized = true;
     }
 
-  if (mr_get_td_by_name (fdp->type) != NULL)
-    ra[idx].type = fdp->type;
-  else if (fdp->mr_type < MR_TYPE_LAST)
-    ra[idx].type = type_name[fdp->mr_type];
+  ra[idx].type = NULL;
+  if ((fdp->mr_type < MR_TYPE_LAST) && is_serializable[fdp->mr_type])
+    {
+      if (mr_get_td_by_name (fdp->type) != NULL)
+	ra[idx].type = fdp->type;
+      else 
+	ra[idx].type = type_name[fdp->mr_type];
+    }
   
   ra[idx].MR_SIZE = fdp->size * count;
 
@@ -662,7 +676,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_RBTREE, &context);
 
   mr_add_child (parent, idx, ra);
-
   /* route saving handler */
   if ((fdp->mr_type < MR_TYPE_LAST) && mr_save_handler[fdp->mr_type])
     {

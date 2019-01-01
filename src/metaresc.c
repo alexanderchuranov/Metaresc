@@ -1355,6 +1355,7 @@ mr_normalize_type (mr_fd_t * fdp)
       [0 ... (1 << (__CHAR_BIT__ * sizeof (char))) - 1] = false,
       [0] = true,
       [(uint8_t)' '] = true,
+      [(uint8_t)'\t'] = true,
       [(uint8_t)'*'] = true,
     };
   int i;
