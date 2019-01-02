@@ -209,24 +209,13 @@ TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers fo
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
 
-TYPEDEF_STRUCT (mr_ic_hash_virt_func_t, ATTRIBUTES ( , "virtual functions table for hashed collections"),
-		(mr_ptr_t *, index_add, (struct mr_ic_t * /* iс */, mr_ptr_t /* key */, int /* bucket */)),
-		(void, index_free, (struct mr_ic_t * /* ic */)),
-		)
-
-TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
+TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
+		(mr_hash_fn_t, hash_fn),
 		(unsigned int, items_count),
 		(ssize_t, size, , "size of hash table"),
-		(char *, bucket_type),
-		(mr_hash_fn_t, hash_fn),
-		(mr_ic_hash_virt_func_t *, virt_func),
 		/* resizable array for hash table sized by field 'size'
 		   mr_ptr_t typed by 'bucket_type' */
-		(mr_ptr_t *, hash_table, , "bucket_type", { .offset = offsetof (mr_ic_hash_t, size) }, "offset"),
-		)
-
-TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "extend mr_ic_hash_t with field specific for MR_IC_HASH_NEXT"),
-		(mr_ic_hash_t, hash, , "derive all fields from basic hash struct"),
+		(mr_ptr_t *, hash_table, , "key_type", { .offset = offsetof (mr_ic_hash_next_t, size) }, "offset"),
 		(bool, zero_key),
 		)
 
@@ -248,7 +237,6 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_res_t, custom, , "pointer on custom data for extended IC types"),
 		(mr_ic_rarray_t, rarray),
 		(mr_red_black_tree_node_t *, tree),
-		(mr_ic_hash_t, hash),
 		(mr_ic_hash_next_t, hash_next),
 		END_ANON_UNION ("ic_type"),
 		)

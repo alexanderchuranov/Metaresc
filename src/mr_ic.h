@@ -30,22 +30,12 @@ extern mr_status_t mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarr
 extern void mr_ic_sorted_array_free (mr_ic_t * ic);
 extern mr_status_t mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context);
 
-extern mr_ptr_t * mr_ic_hash_tree_index_add (mr_ic_t * ic, mr_ptr_t key, int bucket);
-extern void mr_ic_hash_tree_index_free (mr_ic_t * ic);
-extern mr_ptr_t * mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key);
-extern mr_status_t mr_ic_hash_tree_del (mr_ic_t * ic, mr_ptr_t key);
-extern mr_ptr_t * mr_ic_hash_tree_find (mr_ic_t * ic, mr_ptr_t key);
-extern mr_status_t mr_ic_hash_tree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context);
-extern mr_status_t mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray);
-extern void mr_ic_hash_free (mr_ic_t * ic);
-extern mr_status_t mr_ic_hash_tree_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context);
-
-extern void mr_ic_hash_next_free (mr_ic_t * ic);
-extern mr_ptr_t * mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, int bucket);
-extern void mr_ic_hash_next_index_free (mr_ic_t * ic);
+extern mr_ptr_t * mr_ic_hash_next_add (mr_ic_t * ic, mr_ptr_t key);
 extern mr_status_t mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key);
 extern mr_ptr_t * mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key);
 extern mr_status_t mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context);
+extern mr_status_t mr_ic_hash_next_index (mr_ic_t * ic, mr_ic_rarray_t * rarray);
+extern void mr_ic_hash_next_free (mr_ic_t * ic);
 extern mr_status_t mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context);
 
 /* ----------------------- MR_IC_* ----------------------- */

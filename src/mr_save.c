@@ -673,7 +673,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     .type = "mr_save_data_t",
     .MR_SIZE = sizeof (mr_save_data_t),
   };
-  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_RBTREE, &context);
+  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "long_int_t", MR_IC_HASH_NEXT, &context);
 
   mr_add_child (parent, idx, ra);
   /* route saving handler */
