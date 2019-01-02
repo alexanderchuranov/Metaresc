@@ -111,8 +111,6 @@ mr_ic_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * 
       return (mr_ic_sorted_array_new (ic, compar_fn, key_type, context));
     case MR_IC_RBTREE:
       return (mr_ic_rbtree_new (ic, compar_fn, key_type, context));
-    case MR_IC_HASH_TREE:
-      return (mr_ic_hash_tree_new (ic, hash_fn, compar_fn, key_type, context));
     case MR_IC_HASH_NEXT:
       return (mr_ic_hash_next_new (ic, hash_fn, compar_fn, key_type, context));
     default:

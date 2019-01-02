@@ -201,7 +201,6 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
 	      (MR_IC_RBTREE, , "tree"),
 	      (MR_IC_HASH_NEXT, , "hash_next"),
-	      (MR_IC_HASH_TREE, , "hash"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
