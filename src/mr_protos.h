@@ -80,6 +80,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_CANT_READ_PROPERTY, , "Can't read %s property."),
 	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) for dynamics array."),
 	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
+	      (MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, , "Unexpected number of items in static array collection %d."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -201,6 +202,7 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
 	      (MR_IC_RBTREE, , "tree"),
 	      (MR_IC_HASH_NEXT, , "hash_next"),
+	      (MR_IC_STATIC_ARRAY, , "static_array"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
@@ -211,12 +213,15 @@ TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers fo
 
 TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(mr_hash_fn_t, hash_fn),
-		(unsigned int, items_count),
-		(ssize_t, size, , "size of hash table"),
-		/* resizable array for hash table sized by field 'size'
-		   mr_ptr_t typed by 'bucket_type' */
+		/* resizable array for hash table sized by field 'size' mr_ptr_t typed by 'key_type' in mr_ic_t */
 		(mr_ptr_t *, hash_table, , "key_type", { .offset = offsetof (mr_ic_hash_next_t, size) }, "offset"),
+		(ssize_t, size, , "size of hash table"),
 		(bool, zero_key),
+		)
+
+TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),
+		(mr_hash_fn_t, hash_fn),
+		(mr_ptr_t, static_array, [3], "key_type"),
 		)
 
 TYPEDEF_STRUCT (mr_res_t,
@@ -227,6 +232,7 @@ TYPEDEF_STRUCT (mr_res_t,
 
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_type_t, ic_type),
+		(unsigned int, items_count),
 		(mr_res_t, context),
 		(char *, key_type),
 		(mr_compar_fn_t, compar_fn),
@@ -238,6 +244,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_rarray_t, rarray),
 		(mr_red_black_tree_node_t *, tree),
 		(mr_ic_hash_next_t, hash_next),
+		(mr_ic_static_array_t, static_array),
 		END_ANON_UNION ("ic_type"),
 		)
 
