@@ -35,8 +35,8 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
     MR_IC_INIT (UNSORTED_ARRAY),
     MR_IC_INIT (SORTED_ARRAY),
     MR_IC_INIT (RBTREE),
-    MR_IC_INIT (HASH_TREE),
     MR_IC_INIT (HASH_NEXT),
+    MR_IC_INIT (STATIC_ARRAY),
   };
 
   for (i = 0; i < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++i)
