@@ -5,6 +5,8 @@
 #ifndef _LEXER_H_
 #define _LEXER_H_
 
+#include <metaresc.h>
+
 TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
 		(int, lineno, , "parser location - line number"),
 		(int, column, , "parser location - column number"),

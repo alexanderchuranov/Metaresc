@@ -679,7 +679,7 @@ mr_is_valid_field_name (char * name)
 }
 
 static mr_fd_t *
-mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_ptr_t*)0)->offset) offset)
+mr_get_fd_by_offset (mr_td_t * tdp, mr_offset_t offset)
 {
   mr_fd_t fd = { .offset = offset, };
   mr_ptr_t * result = mr_ic_find (&tdp->field_by_offset, &fd);
@@ -1246,6 +1246,8 @@ mr_add_enum (mr_td_t * tdp)
 {
   mr_ic_rarray_t mr_ic_rarray;
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
+  mr_status_t status = MR_SUCCESS;
+
   /*
     Enums with __attribute__((packed, aligned (XXX))) GCC generates size according alignment, but not real size which is 1 byte due to packing.
     Here we determine effective type size.
@@ -1278,7 +1280,7 @@ mr_add_enum (mr_td_t * tdp)
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
-  mr_ic_index (&tdp->enum_by_value, &mr_ic_rarray);
+  status = mr_ic_index (&tdp->enum_by_value, &mr_ic_rarray);
 
   for (i = 0; i < count; ++i)
     {
@@ -1286,16 +1288,16 @@ mr_add_enum (mr_td_t * tdp)
       mr_ptr_t key = { .ptr = tdp->fields[i].fdp };
       mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key);
       if (NULL == result)
-	return (MR_FAILURE);
+	status = MR_FAILURE;
       if (result->ptr != key.ptr)
 	{
 	  mr_fd_t * fdp = result->ptr;
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, key.ptr);
-	  return (MR_FAILURE);
+	  status = MR_FAILURE;
 	}
     }
 
-  return (MR_SUCCESS);
+  return (status);
 }
 
 /**
@@ -1792,10 +1794,8 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   mr_ic_rarray.alloc_size = -1;
   
   mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
-  mr_ic_index (&tdp->field_by_name, &mr_ic_rarray);
-
-  mr_ic_new (&tdp->field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
-  mr_ic_index (&tdp->field_by_offset, &mr_ic_rarray);
+  if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, &mr_ic_rarray))
+    status = MR_FAILURE;
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
     mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
@@ -1816,8 +1816,18 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
     if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[count].fdp->name))
       status = MR_FAILURE;
 
-  if ((MR_TYPE_ENUM == tdp->mr_type) && (MR_SUCCESS != mr_add_enum (tdp)))
-    status = MR_FAILURE;
+  if (MR_TYPE_STRUCT == tdp->mr_type)
+    {
+      mr_ic_new (&tdp->field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+      if (MR_SUCCESS != mr_ic_index (&tdp->field_by_offset, &mr_ic_rarray))
+	status = MR_FAILURE;
+    }
+
+  if (MR_TYPE_ENUM == tdp->mr_type)
+    {
+      if(MR_SUCCESS != mr_add_enum (tdp))
+	status = MR_FAILURE;
+    }
 
   return (status);
 }
