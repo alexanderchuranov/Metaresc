@@ -1755,6 +1755,15 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   void * res;
   int count = 0;
 
+  if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
+    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
+
+  if (MR_IC_UNINITIALIZED == mr_conf.type_by_name.ic_type)
+    mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
+  
+  if (MR_IC_UNINITIALIZED == mr_conf.fields_names.ic_type)
+    mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH_NEXT, NULL);
+
   if (NULL == tdp)
     return (MR_FAILURE); /* assert */
   /* check whether this type is already in the list */
@@ -1789,6 +1798,13 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 
   mr_check_fields (tdp);
   
+  if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->type))
+    status = MR_FAILURE;
+
+  for (count = 0; count < tdp->fields_size / sizeof (tdp->fields[0]); ++count)
+    if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[count].fdp->name))
+      status = MR_FAILURE;
+
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
@@ -1796,25 +1812,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
   if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, &mr_ic_rarray))
     status = MR_FAILURE;
-
-  if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
-    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
-
-  if (MR_IC_UNINITIALIZED == mr_conf.type_by_name.ic_type)
-    mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
-  
-  if (MR_IC_UNINITIALIZED == mr_conf.fields_names.ic_type)
-    mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH_NEXT, NULL);
-
-  if (NULL == mr_ic_add (&mr_conf.type_by_name, tdp))
-    status = MR_FAILURE;
-
-  if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->type))
-    status = MR_FAILURE;
-
-  for (count = 0; count < tdp->fields_size / sizeof (tdp->fields[0]); ++count)
-    if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[count].fdp->name))
-      status = MR_FAILURE;
 
   if (MR_TYPE_STRUCT == tdp->mr_type)
     {
@@ -1828,6 +1825,9 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
       if (MR_SUCCESS != mr_add_enum (tdp))
 	status = MR_FAILURE;
     }
+
+  if (NULL == mr_ic_add (&mr_conf.type_by_name, tdp))
+    status = MR_FAILURE;
 
   return (status);
 }
