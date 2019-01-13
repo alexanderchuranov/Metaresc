@@ -99,6 +99,8 @@ mr_td_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_ic_free (&tdp->field_by_name);
+  if (MR_TYPE_STRUCT == tdp->mr_type)
+    mr_ic_free (&tdp->field_by_offset);
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_ic_free (&tdp->enum_by_value);
   return (MR_SUCCESS);
@@ -432,13 +434,10 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
   if (length < 0)
     goto free_mr_ra;
 
-  int size = mr_ra_str->MR_SIZE;
-  if ((0 == size) || (NULL == mr_ra_str->data.ptr))
-    {
-      /* need to allocate initial trailing zero for the string */
-      size = 1;
-      ++length;
-    }
+  if ((0 == mr_ra_str->MR_SIZE) || (NULL == mr_ra_str->data.ptr))
+    goto free_mr_ra;
+
+  size_t size = mr_ra_str->MR_SIZE;
   char * tail = mr_rarray_append (mr_ra_str, length);
 
   if (NULL == tail)
@@ -448,6 +447,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 
   if (_length < 0)
     goto free_mr_ra;
+  
   mr_ra_str->MR_SIZE = _length + size;
 
   va_end (args);
@@ -1753,7 +1753,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   mr_ic_rarray_t mr_ic_rarray;
   va_list args;
   void * res;
-  int count;
+  int count = 0;
 
   if (NULL == tdp)
     return (MR_FAILURE); /* assert */
@@ -1802,7 +1802,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 
   if (MR_IC_UNINITIALIZED == mr_conf.type_by_name.ic_type)
     mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
-
+  
   if (MR_IC_UNINITIALIZED == mr_conf.fields_names.ic_type)
     mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH_NEXT, NULL);
 
@@ -1825,7 +1825,7 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 
   if (MR_TYPE_ENUM == tdp->mr_type)
     {
-      if(MR_SUCCESS != mr_add_enum (tdp))
+      if (MR_SUCCESS != mr_add_enum (tdp))
 	status = MR_FAILURE;
     }
 

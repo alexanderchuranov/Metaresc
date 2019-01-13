@@ -9,7 +9,7 @@
 #include <metaresc.h>
 #include <mr_stringify.h>
 
-TYPEDEF_FUNC (char *, scm_save_handler_t, (int, mr_ra_ptrdes_t *))
+TYPEDEF_FUNC (int, scm_save_handler_t, (mr_rarray_t *, mr_ptrdes_t *))
 
 #define MR_SCM_EMPTY "()"
 #define MR_SCM_FALSE "#f"
@@ -42,57 +42,171 @@ static int scm_named_fields[MR_TYPE_LAST] = {
  * @param ptrs resizeable array with pointers descriptors
  * @return stringified int value
  */
-static char *
-scm_save_none (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_none (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (NULL);
+  return (0);
 }
 
 #define MR_SCM_BITMASK_OR_DELIMITER " "
 #define MR_SCM_BITMASK_TEMPLATE "(logior %s)"
 #define MR_SCM_COMPLEX_FLOAT_TEMPLATE "(+ %s %si)"
 
-static char * mr_stringify_float_scm (mr_ptrdes_t * ptrdes) { return (mr_output_format_float (ptrdes)); }
-static char * mr_stringify_double_scm (mr_ptrdes_t * ptrdes) { return (mr_output_format_double (ptrdes)); }
-static char * mr_stringify_long_double_t_scm (mr_ptrdes_t * ptrdes) { return (mr_output_format_long_double_t (ptrdes)); }
-
-static MR_OUTPUT_FORMAT_COMPLEX (float_scm, float, MR_TYPE_FLOAT, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
-static MR_OUTPUT_FORMAT_COMPLEX (double_scm, double, MR_TYPE_DOUBLE, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
-static MR_OUTPUT_FORMAT_COMPLEX (long_double_t_scm, long double, MR_TYPE_LONG_DOUBLE, MR_SCM_COMPLEX_FLOAT_TEMPLATE);
-
-#define SCM_SAVE_COMPLEX_FLOAT_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_ptrdes_t * ptrs) { return (mr_output_format_ ## TYPE (&ptrs->ra[idx])); }
-
-SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_float_scm);
-SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_double_scm);
-SCM_SAVE_COMPLEX_FLOAT_TYPE (complex_long_double_t_scm);
-
-/**
- * MR_XXX type saving handler. Make a string from *(XXX_t*)data.
- * \@param idx an index of node in ptrs
- * \@param ptrs resizeable array with pointers descriptors
- * \@return stringified int value
- */
-#define SCM_SAVE_TYPE(TYPE) static char * scm_save_ ## TYPE (int idx, mr_ra_ptrdes_t * ptrs) { return (mr_stringify_ ## TYPE (&ptrs->ra[idx])); }
-
-SCM_SAVE_TYPE (int8_t);
-SCM_SAVE_TYPE (uint8_t);
-SCM_SAVE_TYPE (int16_t);
-SCM_SAVE_TYPE (uint16_t);
-SCM_SAVE_TYPE (int32_t);
-SCM_SAVE_TYPE (uint32_t);
-SCM_SAVE_TYPE (int64_t);
-SCM_SAVE_TYPE (uint64_t);
-SCM_SAVE_TYPE (enum);
-SCM_SAVE_TYPE (float);
-SCM_SAVE_TYPE (double);
-SCM_SAVE_TYPE (long_double_t);
-SCM_SAVE_TYPE (bitfield);
-
-static char *
-scm_save_bool (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (*(bool*)ptrs->ra[idx].data.ptr ? mr_strdup (MR_SCM_TRUE) : mr_strdup (MR_SCM_FALSE));
+  return (mr_ra_printf (mr_ra_str, "%.8g", *(float *)ptrdes->data.ptr));
 }
+
+static int
+scm_save_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%.17g", *(double *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%.20Lg", *(long double *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "(+ %.8g %.8gi)",
+			__real__ *(complex float *)ptrdes->data.ptr,
+			__imag__ *(complex float *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "(+ %.17g %.17gi)",
+			__real__ *(complex double *)ptrdes->data.ptr,
+			__imag__ *(complex double *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "(+ %.20Lg %.20Lgi)",
+			__real__ *(complex long double *)ptrdes->data.ptr,
+			__imag__ *(complex long double *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_int8_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi8, *(int8_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_uint8_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu8, *(uint8_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_int16_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi16, *(int16_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_uint16_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu16, *(uint16_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_int32_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi32, *(int32_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_uint32_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu32, *(uint32_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_int64_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi64, *(int64_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_uint64_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu64, *(uint64_t *)ptrdes->data.ptr));
+}
+
+static int
+scm_save_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
+  /* check whether type descriptor was found */
+  if (NULL == tdp)
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->fd.type);
+  else if (MR_TYPE_ENUM != tdp->mr_type)
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
+  else
+    {
+      int64_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
+      mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
+      if (fdp && fdp->name.str)
+	return (mr_ra_printf (mr_ra_str, "%s", fdp->name.str));
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
+      ptrdes->fd.size = tdp->size_effective;
+    }
+  /* save as integer otherwise */
+  switch (ptrdes->fd.size)
+    {
+    case sizeof (uint8_t): return (mr_ra_printf (mr_ra_str, "%" SCNu8, *(uint8_t *)ptrdes->data.ptr));
+    case sizeof (uint16_t): return (mr_ra_printf (mr_ra_str, "%" SCNu16, *(uint16_t *)ptrdes->data.ptr));
+    case sizeof (uint32_t): return (mr_ra_printf (mr_ra_str, "%" SCNu32, *(uint32_t *)ptrdes->data.ptr));
+    case sizeof (uint64_t): return (mr_ra_printf (mr_ra_str, "%" SCNu64, *(uint64_t *)ptrdes->data.ptr));
+    }
+  
+  return (-1);
+}
+
+static int
+scm_save_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  if (*(bool*)ptrdes->data.ptr)
+    return (mr_ra_printf (mr_ra_str, MR_SCM_TRUE));
+  else
+    return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
+}
+
+static int
+scm_save_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  mr_ptrdes_t ptrdes_;
+  uint64_t value;
+
+  mr_save_bitfield_value (ptrdes, &value);
+  ptrdes_ = *ptrdes;
+  ptrdes_.data.ptr = &value;
+
+  switch (ptrdes->fd.mr_type_aux)
+    {
+    case MR_TYPE_BOOL: return (scm_save_bool (mr_ra_str, &ptrdes_));
+    case MR_TYPE_INT8: return (scm_save_int8_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_UINT8: return (scm_save_uint8_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_INT16: return (scm_save_int16_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_UINT16: return (scm_save_uint16_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_INT32: return (scm_save_int32_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_UINT32: return (scm_save_uint32_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_INT64: return (scm_save_int64_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_UINT64: return (scm_save_uint64_t (mr_ra_str, &ptrdes_));
+    case MR_TYPE_ENUM: return (scm_save_enum (mr_ra_str, &ptrdes_));
+    default: break;
+    }
+  return (-1);
+}  
 
 /**
  * MR_BITMASK type saving handler. Look up type descriptor and save as
@@ -101,23 +215,10 @@ scm_save_bool (int idx, mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizeable array with pointers descriptors
  * @return stringified enum value
  */
-static char *
-scm_save_bitmask (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char * str = mr_stringify_bitmask (&ptrs->ra[idx], MR_SCM_BITMASK_OR_DELIMITER);
-  if (str)
-    {
-      char * str_ = MR_MALLOC ((sizeof (MR_SCM_BITMASK_TEMPLATE) - 1) + (strlen (str) - 2) + 1);
-      if (NULL == str_)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (NULL);
-	}
-      sprintf (str_, MR_SCM_BITMASK_TEMPLATE, str);
-      MR_FREE (str);
-      str = str_;
-    }
-  return (str);
+  return (scm_save_enum (mr_ra_str, ptrdes));
 }
 
 /**
@@ -126,13 +227,27 @@ scm_save_bitmask (int idx, mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizeable array with pointers descriptors
  * @return stringified function name
  */
-static char *
-scm_save_func (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  if (true == ptrs->ra[idx].flags.is_null)
-    return (mr_strdup (MR_SCM_FALSE));
-  else
-    return (mr_stringify_func (&ptrs->ra[idx]));
+  if (true == ptrdes->flags.is_null)
+    return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
+
+  void * func = *(void**)ptrdes->data.ptr;
+#ifdef HAVE_LIBDL
+  Dl_info info;
+  memset (&info, 0, sizeof (info));
+  if (0 != dladdr (func, &info))
+    {
+      if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
+	{
+	  void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
+	  if (func_ == func)
+	    return (mr_ra_printf (mr_ra_str, "%s", info.dli_sname));
+	}
+    }
+#endif /* HAVE_LIBDL */
+  return (mr_ra_printf (mr_ra_str, "%p", func));
 }
 
 /**
@@ -141,66 +256,73 @@ scm_save_func (int idx, mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizeable array with pointers descriptors
  * @return stringified char
  */
-static char *
-scm_save_char (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char c = *(char*)ptrs->ra[idx].data.ptr;
-  char str[] = "#\\x00";
+  char c = *(char*)ptrdes->data.ptr;
   if (isprint (c))
-    {
-      str[2] = c;
-      str[3] = 0;
-    }
-  else
-    sprintf (str, "#\\x%02x", (int)(unsigned char)c);
-  return (mr_strdup (str));
+    return (mr_ra_printf (mr_ra_str, "#\\%c", c));
+  
+  return (mr_ra_printf (mr_ra_str, "#\\x%02x", (int)(unsigned char)c));
+}
+
+static int
+mr_ra_append_char (mr_rarray_t * mr_ra_str, char c)
+{
+  if ((0 == mr_ra_str->MR_SIZE) || (NULL == mr_ra_str->data.ptr))
+    goto free_mr_ra;
+
+  char * tail = mr_rarray_append (mr_ra_str, sizeof (c));
+
+  if (NULL == tail)
+    goto free_mr_ra;
+
+  tail[-1] = c;
+  tail[0] = 0;
+  return (1);
+
+ free_mr_ra:
+  if (mr_ra_str->data.ptr)
+    MR_FREE (mr_ra_str->data.ptr);
+  mr_ra_str->data.ptr = NULL;
+  mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
+  return (-1);
 }
 
 /**
  * Quote string.
+ * @param mr_ra_str output buffer
  * @param str string pointer
- * @param quote quote character
- * @return quoted string
+ * @return number of outputed chars
  */
-static char *
-scm_quote_string (char * str, char quote)
-{
-  int length = 0;
-  char * str_;
-  char * ptr;
+#define TRY_CATCH_THROW(ADD) ({			\
+      int added = ADD;				\
+      if (added < 0)				\
+	return (added);				\
+      added;					\
+    })
 
+static int
+scm_quote_string (mr_rarray_t * mr_ra_str, char * str)
+{
+  char * ptr;
+  int count = 0;
+
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  
   for (ptr = str; *ptr; ++ptr)
     {
-      if ((quote == *ptr) || ('\\' == *ptr))
-	++length;
-      if (!isprint (*ptr))
-	length += 4;
-      ++length;
-    }
-  str_ = MR_MALLOC (length + 3);
-  if (NULL == str_)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
-  length = 0;
-  str_[length++] = quote;
-  for (ptr = str; *ptr; ++ptr)
-    {
-      if ((quote == *ptr) || ('\\' == *ptr))
-	str_[length++] = '\\';
+      if (('"' == *ptr) || ('\\' == *ptr))
+	count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '\\'));
+      
       if (isprint (*ptr))
-	str_[length++] = *ptr;
+	count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, *ptr));
       else
-	{
-	  str_[length++] = '\\';
-	  sprintf (&str_[length], "x%02x;", (int)(unsigned char)*ptr);
-	  length += 4;
-	}
+	count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, "\\x%02x;", *(unsigned char *)ptr));
     }
-  str_[length++] = quote;
-  str_[length++] = 0;
-  return (str_);
+  
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  return (count);
 }
 
 /**
@@ -209,10 +331,10 @@ scm_quote_string (char * str, char quote)
  * @param ptrs resizeable array with pointers descriptors
  * @return char array value
  */
-static char *
-scm_save_char_array (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (scm_quote_string (ptrs->ra[idx].data.ptr, '"'));
+  return (scm_quote_string (mr_ra_str, ptrdes->data.ptr));
 }
 
 /**
@@ -221,14 +343,14 @@ scm_save_char_array (int idx, mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizeable array with pointers descriptors
  * @return string value
  */
-static char *
-scm_save_string (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char * str = *(char**)ptrs->ra[idx].data.ptr;
-  if ((NULL == str) || (ptrs->ra[idx].ref_idx >= 0))
-    return (mr_strdup (MR_SCM_FALSE));
+  char * str = *(char**)ptrdes->data.ptr;
+  if ((NULL == str) || (ptrdes->ref_idx >= 0))
+    return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
   else
-    return (scm_quote_string (str, '"'));
+    return (scm_quote_string (mr_ra_str, str));
 }
 
 /**
@@ -237,22 +359,10 @@ scm_save_string (int idx, mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizeable array with pointers descriptors
  * @return stringified pointer
  */
-static char *
-scm_save_pointer (int idx, mr_ra_ptrdes_t * ptrs)
+static int
+scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_strdup (MR_SCM_FALSE));
-}
-
-/**
- * Dummy stub for compaund types.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @return empty string
- */
-static char *
-scm_save_empty (int idx, mr_ra_ptrdes_t * ptrs)
-{
-  return (mr_strdup (MR_SCM_EMPTY));
+  return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
 }
 
 /**
@@ -275,31 +385,23 @@ static scm_save_handler_t scm_save_handler[] =
     [MR_TYPE_INT64] = scm_save_int64_t,
     [MR_TYPE_UINT64] = scm_save_uint64_t,
     [MR_TYPE_FLOAT] = scm_save_float,
-    [MR_TYPE_COMPLEX_FLOAT] = scm_save_complex_float_scm,
+    [MR_TYPE_COMPLEX_FLOAT] = scm_save_complex_float,
     [MR_TYPE_DOUBLE] = scm_save_double,
-    [MR_TYPE_COMPLEX_DOUBLE] = scm_save_complex_double_scm,
+    [MR_TYPE_COMPLEX_DOUBLE] = scm_save_complex_double,
     [MR_TYPE_LONG_DOUBLE] = scm_save_long_double_t,
-    [MR_TYPE_COMPLEX_LONG_DOUBLE] = scm_save_complex_long_double_t_scm,
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = scm_save_complex_long_double_t,
     [MR_TYPE_CHAR] = scm_save_char,
     [MR_TYPE_CHAR_ARRAY] = scm_save_char_array,
     [MR_TYPE_STRING] = scm_save_string,
-    [MR_TYPE_STRUCT] = scm_save_empty,
+    [MR_TYPE_STRUCT] = scm_save_none,
     [MR_TYPE_FUNC] = scm_save_func,
     [MR_TYPE_FUNC_TYPE] = scm_save_func,
-    [MR_TYPE_ARRAY] = scm_save_empty,
+    [MR_TYPE_ARRAY] = scm_save_none,
     [MR_TYPE_POINTER] = scm_save_pointer,
-    [MR_TYPE_UNION] = scm_save_empty,
-    [MR_TYPE_ANON_UNION] = scm_save_empty,
-    [MR_TYPE_NAMED_ANON_UNION] = scm_save_empty,
+    [MR_TYPE_UNION] = scm_save_none,
+    [MR_TYPE_ANON_UNION] = scm_save_none,
+    [MR_TYPE_NAMED_ANON_UNION] = scm_save_none,
   };
-
-static void *
-free_and_return_null (char * content)
-{
-  if (content)
-    MR_FREE (content);
-  return (NULL);
-}
 
 /**
  * Public function. Save scheduler. Save any object as a string.
@@ -321,7 +423,6 @@ scm_save (mr_ra_ptrdes_t * ptrs)
       int level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
       int named_node = MR_SCM_UNNAMED_FIELDS;
       int parent = ptrs->ra[idx].parent;
-      char * content = NULL;
       int in_comment = false;
 
       if (parent >= 0)
@@ -334,43 +435,50 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 			    (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			    ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
 	    return (NULL);
-	  else
-	    in_comment = true;
+
+	  in_comment = true;
 	}
       if (ptrs->ra[idx].flags.is_referenced)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
 			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra[idx].idx) < 0)
 	    return (NULL);
-	  else
-	    in_comment = true;
+
+	  in_comment = true;
 	}
 
       if (ptrs->ra[idx].first_child < 0)
 	{
+	  scm_save_handler_t save_handler = scm_save_none;
 	  /* route saving handler */
 	  if ((fdp->mr_type < MR_TYPE_LAST) && scm_save_handler[fdp->mr_type])
-	    content = scm_save_handler[fdp->mr_type] (idx, ptrs);
+	    save_handler = scm_save_handler[fdp->mr_type];
 	  else
 	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
 
-	  if (content)
+	  if (MR_SCM_NAMED_FIELDS == named_node)
 	    {
-	      if (MR_SCM_NAMED_FIELDS == named_node)
+	      if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START, level * MR_SCM_INDENT_SPACES, "") < 0)
+		return (NULL);
+	      if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
+		return (NULL);
+	      if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra[idx].fd.name.str) < 0)
+		return (NULL);
+	    }
+	  else
+	    {
+	      if (in_comment)
 		{
-		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START "%s" MR_SCM_NAMED_FIELD_END,
-				    level * MR_SCM_INDENT_SPACES, "", content, ptrs->ra[idx].fd.name.str) < 0)
-		    return (free_and_return_null (content));
+		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
+		    return (NULL);
 		}
 	      else
 		{
-		  if (in_comment)
-		    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
-		      return (free_and_return_null (content));
-		  if (mr_ra_printf (&mr_ra_str, " %s", content) < 0)
-		    return (free_and_return_null (content));
+		  if (mr_ra_append_char (&mr_ra_str, ' ') < 0)
+		    return (NULL);
 		}
-	      MR_FREE (content);
+	      if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
+		return (NULL);
 	    }
 	}
       else
