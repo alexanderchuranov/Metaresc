@@ -134,11 +134,6 @@ TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      MR_FAILURE,
 	      )
 
-TYPEDEF_ENUM (mr_red_black_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (unsigned char)))), "Red/Black enum"),
-	      (MR_BLACK, = 0),
-	      (MR_RED, = 1),
-	      )
-
 TYPEDEF_ENUM (mr_rb_visit_order_t, ATTRIBUTES ( , "red/black tree traverse states"),
 	      MR_RB_VISIT_PREORDER,
 	      MR_RB_VISIT_POSTORDER,
@@ -150,7 +145,7 @@ TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
 		(mr_ptr_t, key, , "key_type"),
 		(mr_red_black_tree_node_t *, left, , "left child"),
 		(mr_red_black_tree_node_t *, right, , "right child"),
-		(mr_red_black_t, red),
+		(bool, red),
 		)
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
