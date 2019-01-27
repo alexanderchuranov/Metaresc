@@ -12,6 +12,7 @@
 #define mr_scm_error MR_PARSE_ERROR
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 #include <lexer.h>
 #include <mr_value.h>
 #include <scm_load.tab.h>
@@ -28,18 +29,18 @@
   {
     int size, length;
     int i;
-#define ESC_CHAR_MAP_SIZE (256)
-    static int map[ESC_CHAR_MAP_SIZE] = {
-      [0 ... ESC_CHAR_MAP_SIZE - 1] = -1,
-      [(unsigned char)'f'] = (unsigned char)'\f',
-      [(unsigned char)'n'] = (unsigned char)'\n',
-      [(unsigned char)'r'] = (unsigned char)'\r',
-      [(unsigned char)'t'] = (unsigned char)'\t',
-      [(unsigned char)'v'] = (unsigned char)'\v',
-      [(unsigned char)'\''] = (unsigned char)'\'',
-      [(unsigned char)'\"'] = (unsigned char)'\"',
-      [(unsigned char)'\\'] = (unsigned char)'\\',
-    };
+
+    static bool initialized = false;
+    static char map[MR_ESC_CHAR_MAP_SIZE];
+
+    if (!initialized)
+      {
+	memset (map, 0, sizeof (map));
+	for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
+	  if (mr_esc_char_map[i])
+	    map[(unsigned char)mr_esc_char_map[i]] = i;
+	initialized = true;
+      }
 
     if (NULL == substr->str)
       return;
@@ -50,7 +51,7 @@
 	if ('\\' == substr->str[i])
 	  {
 	    int c = map[(unsigned char)substr->str[++i]];
-	    if (c > 0)
+	    if (c)
 	      dst[length++] = c;
 	    else if (1 == sscanf (&substr->str[i], "x%x%n;", &c, &size))
 	      {

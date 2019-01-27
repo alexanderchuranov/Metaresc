@@ -308,3 +308,238 @@ mr_stringify_bitmask (mr_ptrdes_t * ptrdes, char * bitmask_or_delimiter)
     }
   return (str);
 }
+
+/*-------------------------*/
+
+int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (0);
+}
+
+int mr_ra_printf_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%.8g", *(float *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%.17g", *(double *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%.20Lg", *(long double *)ptrdes->data.ptr));
+}
+
+#define MR_RA_PRINTF_COMPLEX(TYPE, SUFFIX)				\
+  int mr_ra_printf_complex_ ## SUFFIX (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)	\
+  {									\
+    int count = 0;							\
+    mr_ptrdes_t _ptrdes = *ptrdes;					\
+    TYPE real = __real__ *(complex TYPE *)ptrdes->data.ptr;		\
+    TYPE imag = __imag__ *(complex TYPE *)ptrdes->data.ptr;		\
+    _ptrdes.data.ptr = &real;						\
+    count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
+    count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, "%s", delimiter)); \
+    _ptrdes.data.ptr = &imag;						\
+    count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
+    count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, 'i'));	\
+    return (count);							\
+  }
+
+MR_RA_PRINTF_COMPLEX (float, float)
+MR_RA_PRINTF_COMPLEX (double, double)
+MR_RA_PRINTF_COMPLEX (long double, long_double_t)
+
+int mr_ra_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (*(bool*)ptrdes->data.ptr ?
+	  mr_ra_printf (mr_ra_str, "true") :
+	  mr_ra_printf (mr_ra_str, "false"));
+}
+
+int mr_ra_printf_int8_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi8, *(int8_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_uint8_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu8, *(uint8_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_int16_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi16, *(int16_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_uint16_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu16, *(uint16_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_int32_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi32, *(int32_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_uint32_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu32, *(uint32_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_int64_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNi64, *(int64_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_uint64_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf (mr_ra_str, "%" SCNu64, *(uint64_t *)ptrdes->data.ptr));
+}
+
+int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
+  /* check whether type descriptor was found */
+  if (NULL == tdp)
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->fd.type);
+  else if (MR_TYPE_ENUM != tdp->mr_type)
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->fd.type);
+  else
+    {
+      int64_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
+      mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
+      if (fdp && fdp->name.str)
+	return (mr_ra_printf (mr_ra_str, "%s", fdp->name.str));
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
+      ptrdes->fd.size = tdp->size_effective;
+    }
+  /* save as integer otherwise */
+  switch (ptrdes->fd.size)
+    {
+    case sizeof (uint8_t):
+      return (mr_ra_printf_uint8_t (mr_ra_str, ptrdes));
+    case sizeof (uint16_t):
+      return (mr_ra_printf_uint16_t (mr_ra_str, ptrdes));
+    case sizeof (uint32_t):
+      return (mr_ra_printf_uint32_t (mr_ra_str, ptrdes));
+    case sizeof (uint64_t):
+      return (mr_ra_printf_uint64_t (mr_ra_str, ptrdes));
+    }
+  
+  return (-1);
+}
+
+int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  mr_ptrdes_t _ptrdes = *ptrdes;;
+  uint64_t value;
+
+  mr_save_bitfield_value (ptrdes, &value);
+  _ptrdes.data.ptr = &value;
+
+  switch (ptrdes->fd.mr_type_aux)
+    {
+    case MR_TYPE_BOOL: return (mr_ra_printf_bool (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT8: return (mr_ra_printf_int8_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT8: return (mr_ra_printf_uint8_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT16: return (mr_ra_printf_int16_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT16: return (mr_ra_printf_uint16_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT32: return (mr_ra_printf_int32_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT32: return (mr_ra_printf_uint32_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT64: return (mr_ra_printf_int64_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT64: return (mr_ra_printf_uint64_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_ENUM: return (mr_ra_printf_enum (mr_ra_str, &_ptrdes));
+    default: break;
+    }
+  return (-1);
+}  
+
+const char * mr_serialize_func (void * func)
+{
+#ifdef HAVE_LIBDL
+  Dl_info info;
+  memset (&info, 0, sizeof (info));
+  if (0 != dladdr (func, &info))
+    {
+      if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
+	{
+	  void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
+	  if (func_ == func)
+	    return (info.dli_sname);
+	}
+    }
+#endif /* HAVE_LIBDL */
+  static char buf[sizeof ("0x") + sizeof (void*) * 2];
+  sprintf (buf, "%p", func);
+  return (buf);
+}
+
+int mr_ra_append_char (mr_rarray_t * mr_ra_str, char c)
+{
+  if ((0 == mr_ra_str->MR_SIZE) || (NULL == mr_ra_str->data.ptr))
+    goto free_mr_ra;
+
+  char * tail = mr_rarray_append (mr_ra_str, sizeof (c));
+
+  if (NULL == tail)
+    goto free_mr_ra;
+
+  tail[-1] = c;
+  tail[0] = 0;
+  return (1);
+
+ free_mr_ra:
+  if (mr_ra_str->data.ptr)
+    MR_FREE (mr_ra_str->data.ptr);
+  mr_ra_str->data.ptr = NULL;
+  mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
+  return (-1);
+}
+
+char mr_esc_char_map[MR_ESC_CHAR_MAP_SIZE] =
+  {
+    [0 ... MR_ESC_CHAR_MAP_SIZE - 1] = 0,
+    [(unsigned char)'\a'] = (unsigned char)'a',
+    [(unsigned char)'\b'] = (unsigned char)'b',
+    [(unsigned char)'\f'] = (unsigned char)'f',
+    [(unsigned char)'\v'] = (unsigned char)'v',
+    [(unsigned char)'\n'] = (unsigned char)'n',
+    [(unsigned char)'\r'] = (unsigned char)'r',
+    [(unsigned char)'\t'] = (unsigned char)'t',
+    [(unsigned char)'\"'] = (unsigned char)'\"',
+    [(unsigned char)'\\'] = (unsigned char)'\\',
+  };
+
+/**
+ * Quote string.
+ * @param mr_ra_str output buffer
+ * @param str string pointer
+ * @return number of outputed chars
+ */
+int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_pattern)
+{
+  char * ptr;
+  int count = 0;
+  
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  
+  for (ptr = str; *ptr; ++ptr)
+    {
+      char mapped = mr_esc_char_map[(unsigned char)*ptr];
+      if (mapped)
+	{
+	  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '\\'));
+	  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, mapped));
+	}
+      else if (isprint (*ptr))
+	count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, *ptr));
+      else
+	count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, char_pattern, *(unsigned char *)ptr));
+    }
+  
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  return (count);
+}
+

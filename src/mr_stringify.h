@@ -64,4 +64,37 @@ extern char * mr_stringify_bitfield (mr_ptrdes_t*);
 extern char * mr_stringify_bitmask (mr_ptrdes_t*, char*);
 extern char * mr_stringify_func (mr_ptrdes_t*);
 
+TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *))
+
+#define TRY_CATCH_THROW(ADD) ({			\
+      int added = ADD;				\
+      if (added < 0)				\
+	return (added);				\
+      added;					\
+    })
+
+int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter);
+int mr_ra_printf_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter);
+int mr_ra_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter);
+int mr_ra_printf_int8_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_uint8_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_int16_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_uint16_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_int32_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_uint32_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_int64_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_uint64_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_pattern);
+const char * mr_serialize_func (void * func);
+int mr_ra_append_char (mr_rarray_t * mr_ra_str, char c);
+
+#define MR_ESC_CHAR_MAP_SIZE (1 << __CHAR_BIT__)
+extern char mr_esc_char_map[MR_ESC_CHAR_MAP_SIZE];
+
 #endif /* _MR_STRINGIFY_H_ */
