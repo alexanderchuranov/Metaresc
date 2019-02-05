@@ -19,7 +19,7 @@
   SKIP_PERFORMANCE_TEST_{METHOD} to 0
 */
 
-#define MULTIPLE (64)
+#define MULTIPLE (32)
 
 #define SMOKE_METHOD(METHOD, ...) START_TEST (mr_conf_save_load) {	\
     mr_conf_t mr_conf_saved = mr_conf;					\
@@ -90,7 +90,7 @@
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
     int size = 2;							\
-    do size += size >> 1; while (0 == test_run (size));			\
+    do size += size >> 1; while (test_run (size) < 2);			\
     int x1 = test_run (size * MULTIPLE);				\
     int x2 = test_run (size * MULTIPLE * 4);				\
     ck_assert_msg (((double)x2 / (double)x1 < 5), "performance issue for method " #METHOD); \
