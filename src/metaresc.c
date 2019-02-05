@@ -70,6 +70,7 @@ mr_conf_t mr_conf = {
   },
   .log_level = MR_LL_ALL, /**< default log level ALL */
   .msg_handler = NULL, /**< pointer on user defined message handler */
+  .cache_func_resolve = true,
   .type_by_name = {
     .ic_type = MR_IC_UNINITIALIZED,
   },

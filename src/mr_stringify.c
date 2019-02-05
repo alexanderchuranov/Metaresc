@@ -456,18 +456,97 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (-1);
 }  
 
+TYPEDEF_STRUCT (mr_func_name_t,
+		ANON_UNION (),
+		(long, func_),
+		(void *, func),
+		END_ANON_UNION (),
+		(const char *, name))
+
+TYPEDEF_STRUCT (mr_ra_fn_t,
+		(mr_func_name_t *, ra, , , { .offset = offsetof (mr_ra_fn_t, size) }, "offset"),
+		(ssize_t, size),
+		(ssize_t, alloc_size))
+
+mr_hash_value_t
+mr_fn_get_hash (const mr_ptr_t x, const void * context)
+{
+  const mr_ra_fn_t * ra_fn = context;
+  return ((long)ra_fn->ra[x.long_int_t].func);
+}
+
+int
+mr_fn_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_ra_fn_t * ra_fn = context;
+  return ((ra_fn->ra[x.long_int_t].func > ra_fn->ra[y.long_int_t].func) - (ra_fn->ra[x.long_int_t].func < ra_fn->ra[y.long_int_t].func));
+}
+
+static mr_ic_t cache = { .ic_type = MR_IC_UNINITIALIZED, };
+static mr_ra_fn_t ra_fn = { .ra = NULL, .size = 0, .alloc_size = 0, };
+
+static void __attribute__ ((destructor))
+mr_fn_cache_cleanup (void)
+{
+  if (ra_fn.ra)
+    MR_FREE (ra_fn.ra);
+  ra_fn.ra = NULL;
+  ra_fn.size = ra_fn.alloc_size = 0;
+  mr_ic_free (&cache);
+}
+
 const char * mr_serialize_func (void * func)
 {
 #ifdef HAVE_LIBDL
-  Dl_info info;
-  memset (&info, 0, sizeof (info));
-  if (0 != dladdr (func, &info))
+  bool require_resolve = true;
+  mr_func_name_t * new_fn = NULL;
+
+  if (mr_conf.cache_func_resolve)
     {
-      if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
+      long_int_t idx = ra_fn.size / sizeof (ra_fn.ra[0]);
+
+      new_fn = mr_rarray_allocate_element ((void*)&ra_fn.ra, &ra_fn.size, &ra_fn.alloc_size, sizeof (ra_fn.ra[0]));
+      if (new_fn)
 	{
-	  void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
-	  if (func_ == func)
-	    return (info.dli_sname);
+	  new_fn->func = func;
+	  new_fn->name = NULL;
+      
+	  if (MR_IC_UNINITIALIZED == cache.ic_type)
+	    {
+	      mr_res_t context = {
+		.data = { &ra_fn, },
+		.type = "mr_ra_fn_t",
+		.MR_SIZE = sizeof (ra_fn),
+	      };
+	      mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "long_int_t", MR_IC_HASH_NEXT, &context);
+	    }
+	  mr_ptr_t * add = mr_ic_add (&cache, idx);
+	  if ((add != NULL) && (add->long_int_t != idx))
+	    {
+	      ra_fn.size -= sizeof (ra_fn.ra[0]);
+	      if (ra_fn.ra[add->long_int_t].name)
+		return (ra_fn.ra[add->long_int_t].name);
+	      require_resolve = false;
+	    }
+	}
+    }
+  
+  if (require_resolve)
+    {
+      Dl_info info;
+      memset (&info, 0, sizeof (info));
+      if (0 != dladdr (func, &info))
+	{
+	  if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
+	    {
+	      void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
+	      if (func_ == func)
+		{
+		  if (new_fn)
+		    new_fn->name = info.dli_sname;
+		  return (info.dli_sname);
+		}
+	    }
 	}
     }
 #endif /* HAVE_LIBDL */
