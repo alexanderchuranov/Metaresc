@@ -201,8 +201,8 @@ static mr_ra_printf_t json_save_tbl[] = {
   [MR_TYPE_NAMED_ANON_UNION] = cinit_printf_struct,
 };
 
-char *
-_cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * named_field_tmplt, char * null)
+static char *
+cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * named_field_tmplt, char * null)
 {
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },
@@ -287,7 +287,7 @@ _cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * nam
 char *
 cinit_save (mr_ra_ptrdes_t * ptrs)
 {
-  return (_cinit_json_save (ptrs, cinit_save_tbl, MR_CINIT_NAMED_FIELD_TEMPLATE, MR_CINIT_NULL));
+  return (cinit_json_save (ptrs, cinit_save_tbl, MR_CINIT_NAMED_FIELD_TEMPLATE, MR_CINIT_NULL));
 }
 
 char *
@@ -298,5 +298,5 @@ json_save (mr_ra_ptrdes_t * ptrs)
     if ((MR_TYPE_ANON_UNION == ptrs->ra[i].fd.mr_type) ||
 	(MR_TYPE_POINTER == ptrs->ra[i].fd.mr_type))
       ptrs->ra[i].fd.unnamed = false;
-  return (_cinit_json_save (ptrs, json_save_tbl, MR_JSON_NAMED_FIELD_TEMPLATE, MR_JSON_NULL));
+  return (cinit_json_save (ptrs, json_save_tbl, MR_JSON_NAMED_FIELD_TEMPLATE, MR_JSON_NULL));
 }
