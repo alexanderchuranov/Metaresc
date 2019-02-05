@@ -75,6 +75,7 @@ TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *))
 
 int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
 int mr_ra_printf_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
+int mr_ra_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
 int mr_ra_printf_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
 int mr_ra_printf_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
 int mr_ra_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter);
@@ -93,6 +94,7 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
 int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_pattern);
 const char * mr_serialize_func (void * func);
 int mr_ra_append_char (mr_rarray_t * mr_ra_str, char c);
+int mr_ra_append_string (mr_rarray_t * mr_ra_str, char * str);
 
 #define MR_ESC_CHAR_MAP_SIZE (1 << __CHAR_BIT__)
 extern char mr_esc_char_map[MR_ESC_CHAR_MAP_SIZE];

@@ -599,6 +599,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   static bool initialized = false;
   static bool is_serializable[] = {
     [0 ... MR_TYPE_LAST - 1] = true,
+    [MR_TYPE_BITFIELD] = false,
     [MR_TYPE_FUNC_TYPE] = false,
     [MR_TYPE_FUNC] = false,
     [MR_TYPE_POINTER] = false,

@@ -56,12 +56,8 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?"i"
 
 {WS}  { /* eat up whitespace */ }
 
-"NULL" {
-  yylval->value.value_type = MR_VT_INT;
-  yylval->value.vt_int = 0;
-  return (TOK_CINIT_NUMBER);
-}
-
+"NULL" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = 0; return (TOK_CINIT_NUMBER); }
+"null" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = 0; return (TOK_CINIT_NUMBER); }
 "false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
 "FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
 "true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }

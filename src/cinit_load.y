@@ -13,6 +13,7 @@
 #define mr_cinit_error MR_PARSE_ERROR
 
 #include <metaresc.h>
+#include <mr_stringify.h>
 #include <lexer.h>
 #include <mr_value.h>
 #include <cinit_load.tab.h>
@@ -30,17 +31,18 @@ void
 cinit_unquote_str (mr_substr_t * substr, char * dst)
 {
   int i, size, length;
-  static int map[1 << __CHAR_BIT__] = {
-    [0 ... (1 << __CHAR_BIT__) - 1] = -1,
-    [(unsigned char)'f'] = (unsigned char)'\f',
-    [(unsigned char)'n'] = (unsigned char)'\n',
-    [(unsigned char)'r'] = (unsigned char)'\r',
-    [(unsigned char)'t'] = (unsigned char)'\t',
-    [(unsigned char)'v'] = (unsigned char)'\v',
-    [(unsigned char)'\''] = (unsigned char)'\'',
-    [(unsigned char)'\"'] = (unsigned char)'\"',
-    [(unsigned char)'\\'] = (unsigned char)'\\',
-  };
+
+  static bool initialized = false;
+  static char map[MR_ESC_CHAR_MAP_SIZE];
+
+  if (!initialized)
+    {
+      memset (map, 0, sizeof (map));
+      for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
+	if (mr_esc_char_map[i])
+	  map[(unsigned char)mr_esc_char_map[i]] = i;
+      initialized = true;
+    }
 
   if (NULL == substr->str)
     return;

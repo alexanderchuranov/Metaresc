@@ -488,7 +488,29 @@ int mr_ra_append_char (mr_rarray_t * mr_ra_str, char c)
 
   tail[-1] = c;
   tail[0] = 0;
-  return (1);
+  return (sizeof (c));
+
+ free_mr_ra:
+  if (mr_ra_str->data.ptr)
+    MR_FREE (mr_ra_str->data.ptr);
+  mr_ra_str->data.ptr = NULL;
+  mr_ra_str->MR_SIZE = mr_ra_str->alloc_size = 0;
+  return (-1);
+}
+
+int mr_ra_append_string (mr_rarray_t * mr_ra_str, char * str)
+{
+  if ((0 == mr_ra_str->MR_SIZE) || (NULL == mr_ra_str->data.ptr))
+    goto free_mr_ra;
+
+  int length = strlen (str);
+  char * tail = mr_rarray_append (mr_ra_str, length);
+
+  if (NULL == tail)
+    goto free_mr_ra;
+
+  strcpy (&tail[-1], str);
+  return (length);
 
  free_mr_ra:
   if (mr_ra_str->data.ptr)
@@ -503,12 +525,11 @@ char mr_esc_char_map[MR_ESC_CHAR_MAP_SIZE] =
     [0 ... MR_ESC_CHAR_MAP_SIZE - 1] = 0,
     [(unsigned char)'\a'] = (unsigned char)'a',
     [(unsigned char)'\b'] = (unsigned char)'b',
-    [(unsigned char)'\f'] = (unsigned char)'f',
-    [(unsigned char)'\v'] = (unsigned char)'v',
-    [(unsigned char)'\n'] = (unsigned char)'n',
-    [(unsigned char)'\r'] = (unsigned char)'r',
     [(unsigned char)'\t'] = (unsigned char)'t',
-    [(unsigned char)'\"'] = (unsigned char)'\"',
+    [(unsigned char)'\n'] = (unsigned char)'n',
+    [(unsigned char)'\v'] = (unsigned char)'v',
+    [(unsigned char)'\f'] = (unsigned char)'f',
+    [(unsigned char)'\r'] = (unsigned char)'r',
     [(unsigned char)'\\'] = (unsigned char)'\\',
   };
 
@@ -528,6 +549,8 @@ int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_
   for (ptr = str; *ptr; ++ptr)
     {
       char mapped = mr_esc_char_map[(unsigned char)*ptr];
+      if (*ptr == '"')
+	mapped = '"';
       if (mapped)
 	{
 	  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '\\'));
