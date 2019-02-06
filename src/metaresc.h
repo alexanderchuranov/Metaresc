@@ -921,6 +921,7 @@
       mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
       if (__ptrs__.ra != NULL)						\
 	{								\
+	  mr_remove_empty_nodes (&__ptrs__);				\
 	  xmlDocPtr __doc__ = xml2_save (&__ptrs__);			\
 	  MR_FREE (__ptrs__.ra);					\
 	  if (__doc__)							\

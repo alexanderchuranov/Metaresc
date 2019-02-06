@@ -29,7 +29,7 @@ TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_ptrdes_t *))
 #define MR_XML1_OPEN_EMPTY_TAG_END "/>"
 #define MR_XML1_CLOSE_TAG "</%s>"
 
-#define XML_NONPRINT_ESC "&#x%X;"
+#define XML_NONPRINT_ESC "&#x%02X;"
 #define ESC_SIZE (sizeof (XML_NONPRINT_ESC))
 #define ESC_CHAR_MAP_SIZE (256)
 static char * map[ESC_CHAR_MAP_SIZE] = {
@@ -38,7 +38,6 @@ static char * map[ESC_CHAR_MAP_SIZE] = {
   [(unsigned char)'<'] = "&lt;",
   [(unsigned char)'>'] = "&gt;",
   [(unsigned char)'"'] = "&quot;",
-  [(unsigned char)'\''] = "&apos;",
 };
 
 /**
