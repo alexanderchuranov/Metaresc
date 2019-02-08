@@ -9,6 +9,7 @@
 #include <metaresc.h>
 #include <mr_stringify.h>
 
+#define COMPLEX_REAL_IMAG_DELIMITER " + "
 #define MR_CINIT_NULL "NULL"
 #define MR_JSON_NULL "null"
 #define MR_CINIT_INDENT_SPACES (2)
@@ -47,19 +48,19 @@ cinit_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 cinit_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf_complex_float (mr_ra_str, ptrdes, " + "));
+  return (mr_ra_printf_complex_float (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
 static int
 cinit_printf_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf_complex_double (mr_ra_str, ptrdes, " + "));
+  return (mr_ra_printf_complex_double (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
 static int
 cinit_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf_complex_long_double_t (mr_ra_str, ptrdes, " + "));
+  return (mr_ra_printf_complex_long_double_t (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
 static int

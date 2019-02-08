@@ -51,7 +51,7 @@ MR_START_TEST (char_ptr, "pointer on char") {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, "x");
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, (char[]){ 0 });
-  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, (char[]){ 255 });
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, (char[]){ 127 });
 } END_TEST
 
 TYPEDEF_STRUCT (charp_ptr_t, (char**, x));

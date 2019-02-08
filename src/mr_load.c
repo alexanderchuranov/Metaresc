@@ -366,38 +366,16 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
 }
 
 static mr_status_t
-mr_get_char (char * src, char * dst)
+mr_get_char (char * src, void * dst)
 {
-  if (NULL == src)
-    return (MR_FAILURE);
-  
-  if ((0 != src[0]) && (0 == src[1]))
+  if ((NULL == src) || (src[0] && src[1]))
     {
-      *dst = src[0];
-      return (MR_SUCCESS);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, src);
+      return (MR_FAILURE);
     }
-
-  int32_t code = 0;
-  int size = 0;
-  if (1 != sscanf (src, CINIT_CHAR_QUOTE "%n", &code, &size))
-    return (MR_FAILURE);
   
-  while (isspace (src[size]))
-    ++size;
-  if (0 != src[size])
-    return (MR_FAILURE);
-  *dst = code;
-      
+  *(char*)dst = *src;
   return (MR_SUCCESS);
-}
-
-static mr_status_t
-mr_get_char_wrapper (char * src, void * dst)
-{
-  mr_status_t status = mr_get_char (src, dst);
-  if (MR_FAILURE == status)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, src);
-  return (status);
 }
 
 /**
@@ -415,7 +393,7 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
   switch (ptrdes->load_params.mr_value.value_type)
     {
     case MR_VT_QUOTED_SUBSTR:
-      status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_char_wrapper, ptrdes->data.ptr);
+      status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_char, ptrdes->data.ptr);
       break;
       
     case MR_VT_CHAR:
