@@ -13,8 +13,6 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_ptrdes_t *))
-
 #define MR_XML1_DOCUMENT_HEADER "<?xml version=\"1.0\"?>"
 
 #define MR_XML1_INDENT_SPACES (2)
@@ -31,13 +29,19 @@ TYPEDEF_FUNC (char *, xml_save_handler_t, (int, mr_ra_ptrdes_t *))
 #define XML_QUOTE_CHAR_PATTERN "&#x%02X;"
 #define ESC_SIZE (sizeof (XML_QUOTE_CHAR_PATTERN))
 #define ESC_CHAR_MAP_SIZE (1 << __CHAR_BIT__)
-static char * map[ESC_CHAR_MAP_SIZE] = {
+static char * esc_char_map[ESC_CHAR_MAP_SIZE] = {
   [0 ... ESC_CHAR_MAP_SIZE - 1] = NULL,
   [(unsigned char)'&'] = "&amp;",
   [(unsigned char)'<'] = "&lt;",
   [(unsigned char)'>'] = "&gt;",
   [(unsigned char)'"'] = "&quot;",
 };
+
+TYPEDEF_STRUCT (mr_xml_esc_t,
+		(char *, esc_seq, , "escape sequence"),
+		(int, length, , "length of escape sequence"),
+		(char, symbol, , "escaped symbol"),
+		)
 
 /**
  * XML unquote function. Replace XML special characters aliases on a source characters.
@@ -48,65 +52,67 @@ static char * map[ESC_CHAR_MAP_SIZE] = {
 void
 xml_unquote_string (mr_substr_t * substr, char * dst)
 {
-  static int inited = 0;
-  static char map_c[ESC_CHAR_MAP_SIZE];
-  static char * map_cp[ESC_CHAR_MAP_SIZE];
-  static int map_s[ESC_CHAR_MAP_SIZE];
-  static int map_size = 0;
-  int i, j;
+  static bool inited = false;
+  static mr_xml_esc_t esc_seq_hash[ESC_CHAR_MAP_SIZE];
+  int i;
   
-  if (0 == inited)
+  if (!inited)
     {
+      memset (esc_seq_hash, 0, sizeof (esc_seq_hash));
       for (i = 0; i < ESC_CHAR_MAP_SIZE; ++i)
-	if (map[i])
+	if (esc_char_map[i])
 	  {
-	    int size = strlen (map[i]);
-	    if (size > 1)
-	      {
-		map_c[map_size] = i;
-		map_cp[map_size] = map[i];
-		map_s[map_size] = size;
-		++map_size;
-	      }
+	    int length = strlen (esc_char_map[i]);
+	    unsigned char mapped = esc_char_map[i][1];
+	    esc_seq_hash[mapped].esc_seq = esc_char_map[i];
+	    esc_seq_hash[mapped].symbol = i;
+	    esc_seq_hash[mapped].length = length;
 	  }
-      inited = !0;
+      inited = true;
     }
 
   int length_ = 0;
 
-  for (j = 0; j < substr->length; ++j)
-    if (substr->str[j] != '&')
-      dst[length_++] = substr->str[j];
+  for (i = 0; i < substr->length; ++i)
+    if (substr->str[i] != '&')
+      dst[length_++] = substr->str[i];
     else
       {
 	char esc[ESC_SIZE + 1];
-	strncpy (esc, &substr->str[j], sizeof (esc) - 1);
-	esc[sizeof (esc) - 1] = 0;
-	if ('#' == substr->str[j + 1])
+	strncpy (esc, &substr->str[i], sizeof (esc) - 1);
+	char * semicolon = strchr (esc, ';');
+	if (semicolon)
+	  semicolon[1] = 0;
+	else
+	  esc[sizeof (esc) - 1] = 0;
+	
+	if ('#' == substr->str[i + 1])
 	  {
 	    int32_t code = 0;
 	    int size = 0;
-	    if (1 != sscanf (&substr->str[j], XML_QUOTE_CHAR_PATTERN "%n", &code, &size))
+	    if (1 != sscanf (&substr->str[i], XML_QUOTE_CHAR_PATTERN "%n", &code, &size))
 	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_XML_ESC, esc);
 	    else
 	      {
-		j += size - 1; /* one more +1 in the loop */
+		i += size - 1; /* one more +1 in the loop */
 		dst[length_++] = code;
 	      }
 	  }
 	else
 	  {
-	    for (i = 0; i < map_size; ++i)
-	      if (0 == strncasecmp (&substr->str[j], map_cp[i], map_s[i]))
-		{
-		  dst[length_++] = map_c[i];
-		  j += map_s[i] - 1; /* one more increase in the loop */
-		  break;
-		}
-	    if (i >= map_size)
+	    unsigned char hash = tolower (substr->str[i + 1]);
+	    if (esc_seq_hash[hash].esc_seq &&
+		(0 == strncasecmp (&substr->str[i + 2],
+				   &esc_seq_hash[hash].esc_seq[2],
+				   esc_seq_hash[hash].length - 2)))
+	      {
+		dst[length_++] = esc_seq_hash[hash].symbol;
+		i += esc_seq_hash[hash].length - 1; /* one more increase in the loop */
+	      }
+	    else
 	      {
 		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_XML_ESC, esc);
-		dst[length_++] = substr->str[j];
+		dst[length_++] = substr->str[i];
 	      }
 	  }
       }
@@ -118,7 +124,7 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
 static int
 xml_ra_printf_quote_char (mr_rarray_t * mr_ra_str, unsigned char c)
 {
-  char * mapped = map[c];
+  char * mapped = esc_char_map[c];
   int count = 0;
 
   if (mapped)
@@ -338,7 +344,6 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
-
   node->_private = (void*)(long)idx;
 
   if (mr_ra_str->data.string[0])
