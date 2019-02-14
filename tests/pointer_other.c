@@ -31,6 +31,8 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
     ++warnings;
 }
 
+#define SKIP_METHOD_XDR 0
+
 MR_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
   int checked = 0;
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
@@ -44,6 +46,8 @@ MR_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
 
   ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
 } END_TEST
+
+#undef SKIP_METHOD_XDR
 
 TYPEDEF_STRUCT (char_ptr_t, POINTER (char, x));
 

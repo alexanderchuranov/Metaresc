@@ -420,7 +420,7 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
 		)
 
-TYPEDEF_FUNC (char *, mr_output_format_t, (mr_ptrdes_t *), ATTRIBUTES ( , "formater handler"))
+TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *))
 
 TYPEDEF_FUNC (void, mr_msg_handler_t, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), ATTRIBUTES ( , "handler for error messages"))
 
@@ -432,5 +432,5 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
 		(mr_ic_t, fields_names, , "index of all fields names"),
 		(mr_ic_t, type_by_name, , "index over types descriptors"),
-		(mr_output_format_t, output_format, [MR_TYPE_LAST], "formaters"),
+		(mr_ra_printf_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)

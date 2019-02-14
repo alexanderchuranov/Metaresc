@@ -420,63 +420,18 @@ xdr_ssize_t (XDR * xdrs, ssize_t * cp)
 #  endif /* HAVE_XDR_U_INT64_T */
 #endif /* HAVE_XDR_UINT64_T */
 
-/**
- * Handler for unsigned integer types.
- * @param xdrs XDR stream descriptor
- * @param idx index of node in ptrs
- * @param ptrs array with descriptor of loaded data
- * @return status
- */
-static mr_status_t
-xdr_uint_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
-{
-  bool_t status = false;
-  switch (ptrs->ra[idx].fd.size)
-    {
-    case sizeof (uint8_t):
-      status = xdr_uint8_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    case sizeof (uint16_t):
-      status = xdr_uint16_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    case sizeof (uint32_t):
-      status = xdr_uint32_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    case sizeof (uint64_t):
-      status = xdr_uint64_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    }
-  return (status ? MR_SUCCESS : MR_FAILURE);
-}
+#define XDR_INT_TYPE(TYPE)						\
+  static mr_status_t _xdr_ ## TYPE (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)	\
+  { return (xdr_ ## TYPE (xdrs, ptrs->ra[idx].data.ptr) ? MR_SUCCESS : MR_FAILURE); }
 
-/**
- * Handler for signed integer types.
- * @param xdrs XDR stream descriptor
- * @param idx index of node in ptrs
- * @param ptrs array with descriptor of loaded data
- * @return status
- */
-static mr_status_t
-xdr_int_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
-{
-  bool_t status = false;
-  switch (ptrs->ra[idx].fd.size)
-    {
-    case sizeof (uint8_t):
-      status = xdr_int8_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    case sizeof (uint16_t):
-      status = xdr_int16_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    case sizeof (uint32_t):
-      status = xdr_int32_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    case sizeof (uint64_t):
-      status = xdr_int64_t (xdrs, ptrs->ra[idx].data.ptr);
-      break;
-    }
-  return (status ? MR_SUCCESS : MR_FAILURE);
-}
+XDR_INT_TYPE (uint8_t)
+XDR_INT_TYPE (int8_t)
+XDR_INT_TYPE (uint16_t)
+XDR_INT_TYPE (int16_t)
+XDR_INT_TYPE (uint32_t)
+XDR_INT_TYPE (int32_t)
+XDR_INT_TYPE (uint64_t)
+XDR_INT_TYPE (int64_t)
 
 /**
  * Handler for type float.
@@ -792,43 +747,6 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 /**
- * Saves temporary string into XDR stream.
- * @param xdrs XDR stream descriptor
- * @param str pointer on a string
- * @return status
- */
-static mr_status_t
-xdr_save_temp_string (XDR * xdrs, char ** str)
-{
-  mr_status_t status = MR_FAILURE;
-  if (NULL != str)
-    {
-      mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
-	.data.ptr = str,
-	.ref_idx = -1,
-	.flags = { .is_null = false, .is_referenced = false, .is_content_reference = false, },
-      };
-      mr_ra_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }; /* temporary resizeable array */
-      status = xdr_save_string (xdrs, 0, &ptrs);
-    }
-  return (status);
-}
-
-/**
- * Loads temporary string from XDR stream.
- * @param xdrs XDR stream descriptor
- * @param str pointer on a string
- * @return status
- */
-static mr_status_t
-xdr_load_temp_string (XDR * xdrs, char ** str)
-{
-  mr_ptrdes_t ptrdes = { .data.ptr = str, }; /* temporary pointer descriptor for union discriminator string */
-  mr_ra_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }; /* temporary resizeable array */
-  return (xdr_load_string (xdrs, 0, &ptrs));
-}
-
-/**
  * Saves enum value as a string.
  * @param xdrs XDR stream descriptor
  * @param idx index of node in ptrs
@@ -836,92 +754,40 @@ xdr_load_temp_string (XDR * xdrs, char ** str)
  * @return status
  */
 static mr_status_t
-xdr_save_enum (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
+_xdr_enum (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  char * value = mr_stringify_enum (&ptrs->ra[idx]);
-  mr_status_t status = xdr_save_temp_string (xdrs, &value);
-  if (NULL != value)
-    MR_FREE (value);
-  return (status);
+  mr_td_t * tdp = mr_get_td_by_name (ptrs->ra[idx].fd.type);
+  if (NULL == tdp)
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].fd.type);
+  else if (tdp->mr_type != MR_TYPE_ENUM)
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_ENUM, tdp->type.str);
+  else 
+    switch (tdp->mr_type_effective)
+      {
+      case MR_TYPE_UINT8: return (_xdr_uint8_t (xdrs, idx, ptrs));
+      case MR_TYPE_INT8: return (_xdr_int8_t (xdrs, idx, ptrs));
+      case MR_TYPE_UINT16: return (_xdr_uint16_t (xdrs, idx, ptrs));
+      case MR_TYPE_INT16: return (_xdr_int16_t (xdrs, idx, ptrs));
+      case MR_TYPE_UINT32: return (_xdr_uint32_t (xdrs, idx, ptrs));
+      case MR_TYPE_INT32: return (_xdr_int32_t (xdrs, idx, ptrs));
+      case MR_TYPE_UINT64: return (_xdr_uint64_t (xdrs, idx, ptrs));
+      case MR_TYPE_INT64: return (_xdr_int64_t (xdrs, idx, ptrs));
+      default: return (MR_FAILURE);
+      }
+  return (MR_FAILURE);
 }
 
-/**
- * Saves bitmask value as a string.
- * @param xdrs XDR stream descriptor
- * @param idx index of node in ptrs
- * @param ptrs array with descriptor of loaded data
- * @return status
- */
 static mr_status_t
-xdr_save_bitmask (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
+xdr_int_by_size (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  char * value = mr_stringify_bitmask (&ptrs->ra[idx], MR_BITMASK_OR_DELIMITER);
-  mr_status_t status = xdr_save_temp_string (xdrs, &value);
-  if (NULL != value)
-    MR_FREE (value);
-  return (status);
-}
-
-/**
- * Saves function pointer as a string.
- * @param xdrs XDR stream descriptor
- * @param idx index of node in ptrs
- * @param ptrs array with descriptor of loaded data
- * @return status
- */
-static mr_status_t
-xdr_save_func (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
-{
-  char * value = mr_stringify_func (&ptrs->ra[idx]);
-  mr_status_t status = xdr_save_temp_string (xdrs, &value);
-  if (NULL != value)
-    MR_FREE (value);
-  return (status);
-}
-
-/**
- * Loads enum or bitmask.
- * @param xdrs XDR stream descriptor
- * @param idx index of node in ptrs
- * @param ptrs array with descriptor of loaded data
- * @return status
- */
-static mr_status_t
-xdr_load_stringified_type (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
-{
-  mr_status_t status = MR_FAILURE;
-  mr_ptrdes_t ptrdes = { .fd = ptrs->ra[idx].fd, .data = ptrs->ra[idx].data, };
-  mr_load_data_t mr_load_data = { .ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }, };
-  char * str = NULL;
-
-  if (MR_SUCCESS != xdr_load_temp_string (xdrs, &str))
-    return (MR_FAILURE);
-  if (NULL == str)
-    return (MR_FAILURE);
-
-  ptrdes.load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
-  ptrdes.load_params.mr_value.vt_quoted_substr.substr.str = str;
-  ptrdes.load_params.mr_value.vt_quoted_substr.substr.length = strlen (str);
-  ptrdes.load_params.mr_value.vt_quoted_substr.unquote = NULL;
-  
-  switch (ptrs->ra[idx].fd.mr_type)
+  switch (ptrs->ra[idx].fd.size)
     {
-    case MR_TYPE_ENUM:
-    case MR_TYPE_BITMASK:
-      status = mr_load_integer (0, &mr_load_data);
-      break;
-    case MR_TYPE_FUNC:
-    case MR_TYPE_FUNC_TYPE:
-      status = mr_load_func (0, &mr_load_data);
-      break;
-    default:
-      status = MR_FAILURE;
-      break;
+    case sizeof (uint8_t): return (_xdr_uint8_t (xdrs, idx, ptrs));
+    case sizeof (uint16_t): return (_xdr_uint16_t (xdrs, idx, ptrs));
+    case sizeof (uint32_t): return (_xdr_uint32_t (xdrs, idx, ptrs));
+    case sizeof (uint64_t): return (_xdr_uint64_t (xdrs, idx, ptrs));
     }
-
-  MR_FREE (str);
-
-  return (status);
+  return (MR_FAILURE);
 }
 
 /**
@@ -1119,30 +985,30 @@ static xdr_handler_t xdr_save_handler[] =
   {
     [MR_TYPE_NONE] = xdr_none,
     [MR_TYPE_VOID] = xdr_none,
-    [MR_TYPE_ENUM] = xdr_save_enum,
+    [MR_TYPE_ENUM] = _xdr_enum,
+    [MR_TYPE_BITMASK] = _xdr_enum,
     [MR_TYPE_BITFIELD] = xdr_save_bitfield,
-    [MR_TYPE_BITMASK] = xdr_save_bitmask,
-    [MR_TYPE_BOOL] = xdr_int_,
-    [MR_TYPE_INT8] = xdr_int_,
-    [MR_TYPE_UINT8] = xdr_uint_,
-    [MR_TYPE_INT16] = xdr_int_,
-    [MR_TYPE_UINT16] = xdr_uint_,
-    [MR_TYPE_INT32] = xdr_int_,
-    [MR_TYPE_UINT32] = xdr_uint_,
-    [MR_TYPE_INT64] = xdr_int_,
-    [MR_TYPE_UINT64] = xdr_uint_,
+    [MR_TYPE_BOOL] = xdr_int_by_size,
+    [MR_TYPE_INT8] = _xdr_int8_t,
+    [MR_TYPE_UINT8] = _xdr_uint8_t,
+    [MR_TYPE_INT16] = _xdr_int16_t,
+    [MR_TYPE_UINT16] = _xdr_uint16_t,
+    [MR_TYPE_INT32] = _xdr_int32_t,
+    [MR_TYPE_UINT32] = _xdr_uint32_t,
+    [MR_TYPE_INT64] = _xdr_int64_t,
+    [MR_TYPE_UINT64] = _xdr_uint64_t,
     [MR_TYPE_FLOAT] = xdr_float_,
     [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float,
     [MR_TYPE_DOUBLE] = xdr_double_,
     [MR_TYPE_COMPLEX_DOUBLE] = xdr_complex_double,
     [MR_TYPE_LONG_DOUBLE] = xdr_long_double_,
     [MR_TYPE_COMPLEX_LONG_DOUBLE] = xdr_complex_long_double,
-    [MR_TYPE_CHAR] = xdr_int_,
+    [MR_TYPE_CHAR] = _xdr_int8_t,
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_save_string,
     [MR_TYPE_STRUCT] = xdr_none,
-    [MR_TYPE_FUNC] = xdr_save_func,
-    [MR_TYPE_FUNC_TYPE] = xdr_save_func,
+    [MR_TYPE_FUNC] = xdr_int_by_size,
+    [MR_TYPE_FUNC_TYPE] = xdr_int_by_size,
     [MR_TYPE_ARRAY] = xdr_none,
     [MR_TYPE_POINTER] = xdr_save_pointer,
     [MR_TYPE_UNION] = xdr_save_union,
@@ -1188,30 +1054,30 @@ static xdr_handler_t xdr_load_handler[] =
   {
     [MR_TYPE_NONE] = xdr_none,
     [MR_TYPE_VOID] = xdr_none,
-    [MR_TYPE_ENUM] = xdr_load_stringified_type,
+    [MR_TYPE_ENUM] = _xdr_enum,
+    [MR_TYPE_BITMASK] = _xdr_enum,
     [MR_TYPE_BITFIELD] = xdr_load_bitfield,
-    [MR_TYPE_BITMASK] = xdr_load_stringified_type,
-    [MR_TYPE_BOOL] = xdr_int_,
-    [MR_TYPE_INT8] = xdr_int_,
-    [MR_TYPE_UINT8] = xdr_uint_,
-    [MR_TYPE_INT16] = xdr_int_,
-    [MR_TYPE_UINT16] = xdr_uint_,
-    [MR_TYPE_INT32] = xdr_int_,
-    [MR_TYPE_UINT32] = xdr_uint_,
-    [MR_TYPE_INT64] = xdr_int_,
-    [MR_TYPE_UINT64] = xdr_uint_,
+    [MR_TYPE_BOOL] = xdr_int_by_size,
+    [MR_TYPE_INT8] = _xdr_int8_t,
+    [MR_TYPE_UINT8] = _xdr_uint8_t,
+    [MR_TYPE_INT16] = _xdr_int16_t,
+    [MR_TYPE_UINT16] = _xdr_uint16_t,
+    [MR_TYPE_INT32] = _xdr_int32_t,
+    [MR_TYPE_UINT32] = _xdr_uint32_t,
+    [MR_TYPE_INT64] = _xdr_int64_t,
+    [MR_TYPE_UINT64] = _xdr_uint64_t,
     [MR_TYPE_FLOAT] = xdr_float_,
     [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float,
     [MR_TYPE_DOUBLE] = xdr_double_,
     [MR_TYPE_COMPLEX_DOUBLE] = xdr_complex_double,
     [MR_TYPE_LONG_DOUBLE] = xdr_long_double_,
     [MR_TYPE_COMPLEX_LONG_DOUBLE] = xdr_complex_long_double,
-    [MR_TYPE_CHAR] = xdr_int_,
+    [MR_TYPE_CHAR] = _xdr_int8_t,
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_load_string,
     [MR_TYPE_STRUCT] = xdr_load_struct,
-    [MR_TYPE_FUNC] = xdr_load_stringified_type,
-    [MR_TYPE_FUNC_TYPE] = xdr_load_stringified_type,
+    [MR_TYPE_FUNC] = xdr_int_by_size,
+    [MR_TYPE_FUNC_TYPE] = xdr_int_by_size,
     [MR_TYPE_ARRAY] = xdr_load_array,
     [MR_TYPE_POINTER] = xdr_load_pointer,
     [MR_TYPE_UNION] = xdr_load_union,

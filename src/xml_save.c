@@ -29,8 +29,8 @@
 #define XML_QUOTE_CHAR_PATTERN "&#x%02X;"
 #define ESC_SIZE (sizeof (XML_QUOTE_CHAR_PATTERN))
 #define ESC_CHAR_MAP_SIZE (1 << __CHAR_BIT__)
-static char * esc_char_map[ESC_CHAR_MAP_SIZE] = {
-  [0 ... ESC_CHAR_MAP_SIZE - 1] = NULL,
+static char * esc_char_map[MR_ESC_CHAR_MAP_SIZE] = {
+  [0 ... MR_ESC_CHAR_MAP_SIZE - 1] = NULL,
   [(unsigned char)'&'] = "&amp;",
   [(unsigned char)'<'] = "&lt;",
   [(unsigned char)'>'] = "&gt;",
@@ -53,13 +53,13 @@ void
 xml_unquote_string (mr_substr_t * substr, char * dst)
 {
   static bool inited = false;
-  static mr_xml_esc_t esc_seq_hash[ESC_CHAR_MAP_SIZE];
+  static mr_xml_esc_t esc_seq_hash[MR_ESC_CHAR_MAP_SIZE];
   int i;
   
   if (!inited)
     {
       memset (esc_seq_hash, 0, sizeof (esc_seq_hash));
-      for (i = 0; i < ESC_CHAR_MAP_SIZE; ++i)
+      for (i = 0; i < sizeof (esc_seq_hash) / sizeof (esc_seq_hash[0]); ++i)
 	if (esc_char_map[i])
 	  {
 	    int length = strlen (esc_char_map[i]);
