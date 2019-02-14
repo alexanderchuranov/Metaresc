@@ -16,80 +16,43 @@
 mr_ptr_t *
 mr_ic_unsorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_ptr_t * add;
   mr_ptr_t * find = mr_ic_find (ic, key);
   if (find != NULL)
     return (find);
 
-  if (ic->rarray.alloc_size < 0)
-    {
-      void * ra;
-      if (ic->rarray.size < 0)
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, ic->rarray.size, ic->rarray.alloc_size);
-	  return (NULL);
-	}
-      
-      ic->rarray.alloc_size = ic->rarray.size + sizeof (ic->rarray.ra[0]);
-
-      ra = MR_MALLOC (ic->rarray.alloc_size);
-      if (NULL == ra)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (NULL);
-	}
-
-      memcpy (ra, ic->rarray.ra, ic->rarray.size);
-      ic->rarray.ra = ra;
-    }
-
-  add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, sizeof (ic->rarray.ra[0]));
-
-  if (NULL == add)
+  mr_ic_t dst_ic;
+  mr_status_t status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
+  if (MR_SUCCESS != status)
     return (NULL);
+      
+  status = mr_ic_index (&dst_ic, &ic->rarray);
+  *ic = dst_ic;
 
-  *add = key;
-  ic->items_count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
-
-  return (add);
+  if (MR_SUCCESS != status)
+    return (NULL);
+      
+  return (mr_ic_add (ic, key));
 }
 
 mr_status_t
 mr_ic_unsorted_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
-  ptrdiff_t offset;
   mr_ptr_t * find = mr_ic_find (ic, key);
   if (NULL == find)
     return (MR_FAILURE);
   
-  offset = (char*)find - (char*)ic->rarray.ra;
-  
-  if (ic->rarray.alloc_size > 0)
-    {
-      ic->rarray.size -= sizeof (ic->rarray.ra[0]);
-      memmove (find, &find[1], ic->rarray.size - offset);
-    }
-  else
-    {
-      void * ra;
-      __typeof__ (ic->rarray.alloc_size) alloc_size = ic->rarray.size - sizeof (ic->rarray.ra[0]);
+  mr_ic_t dst_ic;
+  mr_status_t status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
+  if (MR_SUCCESS != status)
+    return (status);
+      
+  status = mr_ic_index (&dst_ic, &ic->rarray);
+  *ic = dst_ic;
 
-      ra = MR_MALLOC (alloc_size);
-      if (NULL == ra)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (MR_FAILURE);
-	}
-
-      ic->rarray.alloc_size = ic->rarray.size = alloc_size;
-      memcpy (ra, ic->rarray.ra, offset);
-      memcpy ((char*)ra + offset, &find[1], ic->rarray.size - offset);
-      ic->rarray.ra = ra;
-    }
-  
-  ic->items_count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
-  
-  return (MR_SUCCESS);
+  if (MR_SUCCESS != status)
+    return (status);
+      
+  return (mr_ic_del (ic, key));
 }
 
 mr_ptr_t *
@@ -115,8 +78,6 @@ mr_ic_unsorted_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void *
 mr_status_t
 mr_ic_unsorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 {
-  mr_ic_unsorted_array_free (ic);
-
   ic->rarray = *rarray;
   ic->items_count = rarray->size / sizeof (rarray->ra[0]);
   return (MR_SUCCESS);
@@ -125,8 +86,6 @@ mr_ic_unsorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 void
 mr_ic_unsorted_array_free (mr_ic_t * ic)
 {
-  if ((ic->rarray.alloc_size >= 0) && (NULL != ic->rarray.ra))
-    MR_FREE (ic->rarray.ra);
   ic->rarray.ra = NULL;
   ic->rarray.size = ic->rarray.alloc_size = 0;
   ic->items_count = 0;
@@ -325,7 +284,15 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 mr_status_t
 mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
-  return (mr_ic_unsorted_array_del (ic, key));
+  mr_ptr_t * find = mr_ic_find (ic, key);
+  if (NULL == find)
+    return (MR_FAILURE);
+   
+  ptrdiff_t offset = (char*)find - (char*)ic->rarray.ra;
+  memmove (find, &find[1], ic->rarray.size - offset);
+  ic->rarray.size -= sizeof (ic->rarray.ra[0]);
+  ic->items_count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
+  return (MR_SUCCESS);
 }
 
 mr_ptr_t *
@@ -374,7 +341,11 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 void
 mr_ic_sorted_array_free (mr_ic_t * ic)
 {
-  mr_ic_unsorted_array_free (ic);
+  if (NULL != ic->rarray.ra)
+    MR_FREE (ic->rarray.ra);
+  ic->rarray.ra = NULL;
+  ic->rarray.size = ic->rarray.alloc_size = 0;
+  ic->items_count = 0;
 }
 
 mr_status_t
