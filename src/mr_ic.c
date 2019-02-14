@@ -533,15 +533,24 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
   else
     {
       int i, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
+      int start_bucket = find - ic->hash_next.hash_table;
       
       find->long_int_t = 0;
-      for (i = find - ic->hash_next.hash_table; ;) /* need to re-index all elements in sequential block after deleted element */
+      for (i = start_bucket; ;) /* need to re-index all elements in sequential blocks after deleted element */
 	{
 	  mr_ptr_t mr_ptr;
 	  if (++i >= count)
 	    i = 0;
+	  
 	  if (0 == ic->hash_next.hash_table[i].long_int_t)
 	    break;
+	  
+	  if (i == start_bucket)
+	    {
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
+	      return (MR_FAILURE);
+	    }
+	  
 	  mr_ptr = ic->hash_next.hash_table[i];
 	  ic->hash_next.hash_table[i].long_int_t = 0;
 	  int bucket = mr_ic_hash_get_backet (ic, mr_ptr);
@@ -657,11 +666,10 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
       rarray.alloc_size = -1;
       
       status = mr_ic_index (&dst_ic, &rarray);
-      *ic = dst_ic;
-
       if (MR_SUCCESS != status)
 	return (NULL);
       
+      *ic = dst_ic;
       return (mr_ic_add (ic, key));
     }
 
@@ -673,13 +681,11 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
 mr_status_t
 mr_ic_static_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
-  ptrdiff_t offset;
   mr_ptr_t * find = mr_ic_find (ic, key);
   if (NULL == find)
     return (MR_FAILURE);
   
-  offset = (char*)find - (char*)&ic->static_array.static_array[0];
-  
+  ptrdiff_t offset = (char*)find - (char*)&ic->static_array.static_array[0];
   --ic->items_count;
   memmove (find, &find[1], ic->items_count * sizeof (ic->static_array.static_array[0]) - offset);
   ic->static_array.static_array[ic->items_count].long_int_t = 0;
