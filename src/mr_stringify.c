@@ -29,13 +29,29 @@ int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (0);
 }
 
-#define MR_RA_PRINTF_FLOAT(TYPE, TMPLT)					\
+int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (*(bool*)ptrdes->data.ptr ?
+	  mr_ra_printf (mr_ra_str, "true") :
+	  mr_ra_printf (mr_ra_str, "false"));
+}
+
+#define MR_RA_PRINTF_TMPLT(TYPE, TMPLT)					\
   int mr_ra_printf_ ## TYPE ## _default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)	\
   { return (mr_ra_printf (mr_ra_str, TMPLT, *(TYPE *)ptrdes->data.ptr)); }
   
-MR_RA_PRINTF_FLOAT (float, "%.8g")
-MR_RA_PRINTF_FLOAT (double, "%.17g")
-MR_RA_PRINTF_FLOAT (long_double_t, "%.20Lg")
+MR_RA_PRINTF_TMPLT (float, "%.8g")
+MR_RA_PRINTF_TMPLT (double, "%.17g")
+MR_RA_PRINTF_TMPLT (long_double_t, "%.20Lg")
+
+MR_RA_PRINTF_TMPLT (int8_t, "%" SCNi8)
+MR_RA_PRINTF_TMPLT (uint8_t, "%" SCNu8)
+MR_RA_PRINTF_TMPLT (int16_t, "%" SCNi16)
+MR_RA_PRINTF_TMPLT (uint16_t, "%" SCNu16)
+MR_RA_PRINTF_TMPLT (int32_t, "%" SCNi32)
+MR_RA_PRINTF_TMPLT (uint32_t, "%" SCNu32)
+MR_RA_PRINTF_TMPLT (int64_t, "%" SCNi64)
+MR_RA_PRINTF_TMPLT (uint64_t, "%" SCNu64)
 
 #define MR_RA_PRINTF_COMPLEX(TYPE, SUFFIX)				\
   int mr_ra_printf_complex_ ## SUFFIX (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)	\
@@ -56,53 +72,6 @@ MR_RA_PRINTF_FLOAT (long_double_t, "%.20Lg")
 MR_RA_PRINTF_COMPLEX (float, float)
 MR_RA_PRINTF_COMPLEX (double, double)
 MR_RA_PRINTF_COMPLEX (long double, long_double_t)
-
-int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (*(bool*)ptrdes->data.ptr ?
-	  mr_ra_printf (mr_ra_str, "true") :
-	  mr_ra_printf (mr_ra_str, "false"));
-}
-
-int mr_ra_printf_int8_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNi8, *(int8_t *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_uint8_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNu8, *(uint8_t *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_int16_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNi16, *(int16_t *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_uint16_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNu16, *(uint16_t *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_int32_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNi32, *(int32_t *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_uint32_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNu32, *(uint32_t *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_int64_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNi64, *(int64_t *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_uint64_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%" SCNu64, *(uint64_t *)ptrdes->data.ptr));
-}
 
 #define MR_RA_PRINTF_TYPE(TYPE, MR_TYPE)				\
   int mr_ra_printf_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) { \
