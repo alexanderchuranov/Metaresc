@@ -29,20 +29,13 @@ int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (0);
 }
 
-int mr_ra_printf_float_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%.8g", *(float *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_double_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%.17g", *(double *)ptrdes->data.ptr));
-}
-
-int mr_ra_printf_long_double_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  return (mr_ra_printf (mr_ra_str, "%.20Lg", *(long double *)ptrdes->data.ptr));
-}
+#define MR_RA_PRINTF_FLOAT(TYPE, TMPLT)					\
+  int mr_ra_printf_ ## TYPE ## _default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)	\
+  { return (mr_ra_printf (mr_ra_str, TMPLT, *(TYPE *)ptrdes->data.ptr)); }
+  
+MR_RA_PRINTF_FLOAT (float, "%.8g")
+MR_RA_PRINTF_FLOAT (double, "%.17g")
+MR_RA_PRINTF_FLOAT (long_double_t, "%.20Lg")
 
 #define MR_RA_PRINTF_COMPLEX(TYPE, SUFFIX)				\
   int mr_ra_printf_complex_ ## SUFFIX (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)	\
