@@ -7,6 +7,7 @@
 #endif /* HAVE_CONFIG_H */
 #include <stdio.h>
 #include <string.h>
+#include <alloca.h>
 #ifdef HAVE_DLFCN_H
 #define __USE_GNU
 #include <dlfcn.h>
@@ -239,6 +240,10 @@ mr_get_func_wrapper (char * func_name, void * dst)
 
 TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
 
+#ifndef BUF_SIZE_ON_STACK
+#define BUF_SIZE_ON_STACK (1 << 12)
+#endif /* BUF_SIZE_ON_STACK */
+
 static mr_status_t
 mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg)
 {
@@ -249,8 +254,20 @@ mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str
     status = process_quoted_str (quoted_substr->substr.str, arg);
   else
     {
-      char dst[quoted_substr->substr.length + 1];
-  
+      char * dst = NULL;
+      int size = quoted_substr->substr.length + 1;
+      
+      if (size >= BUF_SIZE_ON_STACK)
+	dst = MR_MALLOC (size);
+      else
+	dst = alloca (size);
+
+      if (NULL == dst)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (MR_FAILURE);
+	}
+      
       if (NULL == quoted_substr->unquote)
 	{
 	  memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length);
@@ -260,6 +277,9 @@ mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str
 	quoted_substr->unquote (&quoted_substr->substr, dst);
   
       status = process_quoted_str (dst, arg);
+
+      if (size >= BUF_SIZE_ON_STACK)
+	MR_FREE (dst);
     }
 
   return (status);
