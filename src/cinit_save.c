@@ -89,13 +89,13 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
 
-  if (isdigit (func_str[0])) /* pointer serialized as int */
+  if (func_str) /* pointer serialized as name */
+    return (mr_ra_printf (mr_ra_str, "%s", func_str));
+  else
     {
       char * type = (MR_TYPE_FUNC == ptrdes->fd.mr_type) ? MR_VOIDP_T_STR : ptrdes->fd.type;
-      return (mr_ra_printf (mr_ra_str, "(%s)%s", type, func_str));
+      return (mr_ra_printf (mr_ra_str, "(%s)%p", type, *(void**)ptrdes->data.ptr));
     }
-  else
-    return (mr_ra_printf (mr_ra_str, "%s", func_str));
 }
 
 static int

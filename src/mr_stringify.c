@@ -194,7 +194,6 @@ mr_fn_cache_cleanup (void)
 const char * mr_serialize_func (void * func)
 {
 #ifdef HAVE_LIBDL
-  bool require_resolve = true;
   mr_func_name_t * new_fn = NULL;
 
   if (mr_conf.cache_func_resolve)
@@ -220,35 +219,28 @@ const char * mr_serialize_func (void * func)
 	  if ((add != NULL) && (add->long_int_t != idx))
 	    {
 	      ra_fn.size -= sizeof (ra_fn.ra[0]);
-	      if (ra_fn.ra[add->long_int_t].name)
-		return (ra_fn.ra[add->long_int_t].name);
-	      require_resolve = false;
+	      return (ra_fn.ra[add->long_int_t].name);
 	    }
 	}
     }
   
-  if (require_resolve)
+  Dl_info info;
+  memset (&info, 0, sizeof (info));
+  if (0 != dladdr (func, &info))
     {
-      Dl_info info;
-      memset (&info, 0, sizeof (info));
-      if (0 != dladdr (func, &info))
+      if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
 	{
-	  if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
+	  void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
+	  if (func_ == func)
 	    {
-	      void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
-	      if (func_ == func)
-		{
-		  if (new_fn)
-		    new_fn->name = info.dli_sname;
-		  return (info.dli_sname);
-		}
+	      if (new_fn)
+		new_fn->name = info.dli_sname;
+	      return (info.dli_sname);
 	    }
 	}
     }
 #endif /* HAVE_LIBDL */
-  static char buf[sizeof ("0x") + sizeof (void*) * 2];
-  sprintf (buf, "%p", func);
-  return (buf);
+  return (NULL);
 }
 
 int mr_ra_append_char (mr_rarray_t * mr_ra_str, char c)

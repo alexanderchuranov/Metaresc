@@ -85,8 +85,12 @@ scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   if (true == ptrdes->flags.is_null)
     return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
-
-  return (mr_ra_printf (mr_ra_str, "%s", mr_serialize_func (*(void**)ptrdes->data.ptr)));
+  const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
+  if (func_str)
+    return (mr_ra_printf (mr_ra_str, "%s", func_str));
+  else
+    return (mr_ra_printf (mr_ra_str, "%p", *(void**)ptrdes->data.ptr
+			  ));
 }
 
 /**
