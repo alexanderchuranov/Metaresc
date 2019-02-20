@@ -169,6 +169,14 @@ xml_ra_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrd
   return (mr_ra_printf_complex_long_double_t (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
+#define MR_XML_BITMASK_DELIMITER " | "
+
+static int
+xml_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf_bitmask (mr_ra_str, ptrdes, MR_XML_BITMASK_DELIMITER));
+}
+
 static int
 xml_ra_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -201,7 +209,7 @@ static mr_ra_printf_t xml_ra_printf_tbl[] =
     [MR_TYPE_VOID] = mr_ra_printf_void,
     [MR_TYPE_ENUM] = mr_ra_printf_enum,
     [MR_TYPE_BITFIELD] = mr_ra_printf_bitfield,
-    [MR_TYPE_BITMASK] = mr_ra_printf_enum,
+    [MR_TYPE_BITMASK] = xml_ra_printf_bitmask,
     [MR_TYPE_BOOL] = mr_ra_printf_bool,
     [MR_TYPE_INT8] = mr_ra_printf_int8_t,
     [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,

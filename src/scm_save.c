@@ -34,7 +34,7 @@ static int scm_named_fields[MR_TYPE_LAST] = {
 };
 
 #define MR_SCM_BITMASK_OR_DELIMITER " "
-#define MR_SCM_BITMASK_TEMPLATE "(logior %s)"
+#define MR_SCM_BITMASK_PREFIX "(logior "
 
 #define SCM_SAVE_COMPLEX(TYPE)						\
   static int scm_save_complex_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) \
@@ -51,7 +51,7 @@ SCM_SAVE_COMPLEX (double)
 SCM_SAVE_COMPLEX (long_double_t)
 
 static int
-scm_save_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (*(bool*)ptrdes->data.ptr ?
 	  mr_ra_printf (mr_ra_str, MR_SCM_TRUE) :
@@ -59,7 +59,7 @@ scm_save_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 }
 
 static int
-scm_save_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   if (MR_TYPE_BOOL == ptrdes->fd.mr_type_aux)
     {
@@ -68,10 +68,20 @@ scm_save_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
       mr_save_bitfield_value (ptrdes, &value);
       _ptrdes.data.ptr = &value;
-      return (scm_save_bool (mr_ra_str, &_ptrdes));
+      return (scm_printf_bool (mr_ra_str, &_ptrdes));
     }
 
   return (mr_ra_printf_bitfield (mr_ra_str, ptrdes));
+}  
+
+static int
+scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  int count = 0;
+  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, MR_SCM_BITMASK_PREFIX));
+  count += TRY_CATCH_THROW (mr_ra_printf_bitmask (mr_ra_str, ptrdes, MR_SCM_BITMASK_OR_DELIMITER));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, ')'));
+  return (count);
 }  
 
 /**
@@ -89,8 +99,7 @@ scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   if (func_str)
     return (mr_ra_printf (mr_ra_str, "%s", func_str));
   else
-    return (mr_ra_printf (mr_ra_str, "%p", *(void**)ptrdes->data.ptr
-			  ));
+    return (mr_ra_printf (mr_ra_str, "%p", *(void**)ptrdes->data.ptr));
 }
 
 /**
@@ -157,9 +166,9 @@ static mr_ra_printf_t scm_save_handler[] =
     [MR_TYPE_NONE] = mr_ra_printf_void,
     [MR_TYPE_VOID] = mr_ra_printf_void,
     [MR_TYPE_ENUM] = mr_ra_printf_enum,
-    [MR_TYPE_BITFIELD] = scm_save_bitfield,
-    [MR_TYPE_BITMASK] = mr_ra_printf_enum,
-    [MR_TYPE_BOOL] = scm_save_bool,
+    [MR_TYPE_BITFIELD] = scm_printf_bitfield,
+    [MR_TYPE_BITMASK] = scm_printf_bitmask,
+    [MR_TYPE_BOOL] = scm_printf_bool,
     [MR_TYPE_INT8] = mr_ra_printf_int8_t,
     [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,
     [MR_TYPE_INT16] = mr_ra_printf_int16_t,

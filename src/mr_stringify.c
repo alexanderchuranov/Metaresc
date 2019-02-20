@@ -96,7 +96,6 @@ MR_RA_PRINTF_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
 int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
-  int size = tdp ? tdp->enum_param.size_effective : ptrdes->fd.size;
   /* check whether type descriptor was found */
   if (NULL == tdp)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->fd.type);
@@ -112,7 +111,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       ptrdes->fd.size = tdp->enum_param.size_effective;
     }
   /* save as integer otherwise */
-  switch (size)
+  switch (ptrdes->fd.size)
     {
     case sizeof (uint8_t):
       return (mr_ra_printf_uint8_t (mr_ra_str, ptrdes));
@@ -125,6 +124,53 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     }
   
   return (-1);
+}
+
+int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
+{
+  mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
+  /* check whether type descriptor was found */
+  if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type))
+    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+  
+  if (!tdp->enum_param.is_bitmask)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NOT_BITMASK, tdp->type.str, ptrdes->fd.name.str);
+      return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+    }
+
+  bool first = true;
+  int count = 0;
+  int i, fields_count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int64_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
+      
+  if (0 == value)
+    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+
+  ptrdes->fd.size = tdp->enum_param.size_effective;
+  
+  for (i = 0; i < fields_count; ++i)
+    if (value & tdp->fields[i].fdp->param.enum_value)
+      {
+	if (first)
+	  first = false;
+	else
+	  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
+	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, tdp->fields[i].fdp->name.str));
+	value ^= tdp->fields[i].fdp->param.enum_value;
+	if (0 == value)
+	  break;
+      }
+
+  if (0 != value)
+    {
+      mr_ptrdes_t _ptrdes = { .data = { &value } };
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
+      if (!first)
+	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
+      count += TRY_CATCH_THROW (mr_ra_printf_uint64_t (mr_ra_str, &_ptrdes));
+    }
+  return (count);
 }
 
 int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
