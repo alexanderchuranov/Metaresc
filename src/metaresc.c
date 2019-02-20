@@ -101,9 +101,9 @@ mr_td_visitor (mr_ptr_t key, const void * context)
   mr_td_t * tdp = key.ptr;
   mr_ic_free (&tdp->field_by_name);
   if (MR_TYPE_STRUCT == tdp->mr_type)
-    mr_ic_free (&tdp->field_by_offset);
+    mr_ic_free (&tdp->struct_param.field_by_offset);
   if (MR_TYPE_ENUM == tdp->mr_type)
-    mr_ic_free (&tdp->enum_by_value);
+    mr_ic_free (&tdp->enum_param.enum_by_value);
   return (MR_SUCCESS);
 }
 
@@ -683,7 +683,7 @@ static mr_fd_t *
 mr_get_fd_by_offset (mr_td_t * tdp, mr_offset_t offset)
 {
   mr_fd_t fd = { .offset = offset, };
-  mr_ptr_t * result = mr_ic_find (&tdp->field_by_offset, &fd);
+  mr_ptr_t * result = mr_ic_find (&tdp->struct_param.field_by_offset, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1173,7 +1173,7 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
     i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
     sizeof (enum_t) == 2, but type has size only 1 byte
   */
-  switch (tdp->mr_type_effective)
+  switch (tdp->enum_param.mr_type_effective)
     {
     case MR_TYPE_UINT8:
       enum_value = *(uint8_t*)data;
@@ -1201,7 +1201,7 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
       break;
     default:
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-      memcpy (&enum_value, data, MR_MIN (tdp->size_effective, sizeof (enum_value)));
+      memcpy (&enum_value, data, MR_MIN (tdp->enum_param.size_effective, sizeof (enum_value)));
 #else /*  __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ */
 #error Support for non little endian architectures to be implemented
 #endif /* __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ */
@@ -1254,35 +1254,36 @@ mr_add_enum (mr_td_t * tdp)
     Here we determine effective type size.
     Clang calculates size and effective size according alignment.
   */
-  switch (tdp->mr_type_effective)
+  switch (tdp->enum_param.mr_type_effective)
     {
     case MR_TYPE_INT8:
     case MR_TYPE_UINT8:
-      tdp->size_effective = sizeof (uint8_t);
+      tdp->enum_param.size_effective = sizeof (uint8_t);
       break;
     case MR_TYPE_INT16:
     case MR_TYPE_UINT16:
-      tdp->size_effective = sizeof (uint16_t);
+      tdp->enum_param.size_effective = sizeof (uint16_t);
       break;
     case MR_TYPE_INT32:
     case MR_TYPE_UINT32:
-      tdp->size_effective = sizeof (uint32_t);
+      tdp->enum_param.size_effective = sizeof (uint32_t);
       break;
     case MR_TYPE_INT64:
     case MR_TYPE_UINT64:
-      tdp->size_effective = sizeof (uint64_t);
+      tdp->enum_param.size_effective = sizeof (uint64_t);
       break;
     default:
-      tdp->size_effective = tdp->size;
+      tdp->enum_param.size_effective = tdp->size;
       break;
     }
 
-  mr_ic_new (&tdp->enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
+  mr_ic_new (&tdp->enum_param.enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
-  status = mr_ic_index (&tdp->enum_by_value, &mr_ic_rarray);
+  status = mr_ic_index (&tdp->enum_param.enum_by_value, &mr_ic_rarray);
 
+  tdp->enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
       /* adding to global lookup table by enum literal names */
@@ -1296,6 +1297,9 @@ mr_add_enum (mr_td_t * tdp)
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, key.ptr);
 	  status = MR_FAILURE;
 	}
+      typeof (tdp->fields[i].fdp->param.enum_value) value = tdp->fields[i].fdp->param.enum_value;
+      if ((value != 0) && ((value & (value - 1)) != 0))
+	tdp->enum_param.is_bitmask = false;
     }
 
   return (status);
@@ -1312,7 +1316,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
   mr_fd_t fd = { .param = { .enum_value = value, }, };
-  mr_ptr_t * result = mr_ic_find (&tdp->enum_by_value, &fd);
+  mr_ptr_t * result = mr_ic_find (&tdp->enum_param.enum_by_value, &fd);
   return (result ? result->ptr : NULL);
 }
 
@@ -1816,8 +1820,8 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 
   if (MR_TYPE_STRUCT == tdp->mr_type)
     {
-      mr_ic_new (&tdp->field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
-      if (MR_SUCCESS != mr_ic_index (&tdp->field_by_offset, &mr_ic_rarray))
+      mr_ic_new (&tdp->struct_param.field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+      if (MR_SUCCESS != mr_ic_index (&tdp->struct_param.field_by_offset, &mr_ic_rarray))
 	status = MR_FAILURE;
     }
 

@@ -96,7 +96,7 @@ MR_RA_PRINTF_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
 int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
-  int size = tdp ? tdp->size_effective : ptrdes->fd.size;
+  int size = tdp ? tdp->enum_param.size_effective : ptrdes->fd.size;
   /* check whether type descriptor was found */
   if (NULL == tdp)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->fd.type);
@@ -109,7 +109,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       if (fdp && fdp->name.str)
 	return (mr_ra_printf (mr_ra_str, "%s", fdp->name.str));
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
-      ptrdes->fd.size = tdp->size_effective;
+      ptrdes->fd.size = tdp->enum_param.size_effective;
     }
   /* save as integer otherwise */
   switch (size)

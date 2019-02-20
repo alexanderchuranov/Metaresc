@@ -105,8 +105,8 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      MR_TYPE_COMPLEX_DOUBLE,
 	      MR_TYPE_LONG_DOUBLE,
 	      MR_TYPE_COMPLEX_LONG_DOUBLE,
-	      (MR_TYPE_STRUCT, , "field_by_offset"),
-	      (MR_TYPE_ENUM, , "enum_by_value"),
+	      (MR_TYPE_STRUCT, , "struct_param"),
+	      (MR_TYPE_ENUM, , "enum_param"),
 	      MR_TYPE_FUNC_TYPE,
 	      (MR_TYPE_ENUM_VALUE, , "enum_value"), /* meta field refers to union member in mr_fd_param_t */
 	      (MR_TYPE_FUNC, , "func_param"),
@@ -278,21 +278,30 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "wrapper for mr_fd_t*"),
-		(mr_fd_t *, fdp, , "wrapper for mr_fd_t pointer type")
+		(mr_fd_t *, fdp, , "wrapper for mr_fd_t pointer type"),
+		)
+
+TYPEDEF_STRUCT (mr_enum_param_t,
+		(mr_ic_t, enum_by_value, , "lookup by enum values"),
+		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
+		(mr_size_t, size_effective, , "effective size"),
+		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
+		)
+
+TYPEDEF_STRUCT (mr_struct_param_t,
+		(mr_ic_t, field_by_offset, , "lookup by field offset"),
 		)
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
-		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_size_t, size, , "size of type"),
-		(mr_size_t, size_effective, , "effective size"),
 		(char *, attr, , "stringified typedef attributes"),
 		(mr_ic_t, field_by_name, , "lookup by field names"),
 		ANON_UNION (type_specific),
 		VOID (uint8_t, void_param, , "default serialization"),
-		(mr_ic_t, field_by_offset, , "lookup by field offset"),
-		(mr_ic_t, enum_by_value, , "lookup by enum values"),
+		(mr_enum_param_t, enum_param, , "parameters specific for enums"),
+		(mr_struct_param_t, struct_param, , "parameters specific for structures"),
 		END_ANON_UNION ("mr_type"),
 		(ssize_t, fields_size, , "size of 'fields' array"),
 		(mr_fd_ptr_t *, fields, , "fields or enums descriptors", { .offset = offsetof (mr_td_t, fields_size) }, "offset"),
