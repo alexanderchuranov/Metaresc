@@ -211,13 +211,13 @@ TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "private fields for indexed co
 		(mr_hash_fn_t, hash_fn),
 		/* resizable array for hash table sized by field 'size' mr_ptr_t typed by 'key_type' in mr_ic_t */
 		(mr_ptr_t *, hash_table, , "key_type", { .offset = offsetof (mr_ic_hash_next_t, size) }, "offset"),
-		(ssize_t, size, , "size of hash table"),
+		(int, size, , "size of hash table"),
 		(bool, zero_key),
 		)
 
 TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),
 		(mr_hash_fn_t, hash_fn),
-		(mr_ptr_t, static_array, [3], "key_type"),
+		(mr_ptr_t, static_array, [(sizeof (mr_ic_hash_next_t) - sizeof (mr_hash_fn_t)) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
 TYPEDEF_STRUCT (mr_res_t,
@@ -366,10 +366,10 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		)
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
-		(int, level, , "level from the root element"),
-		(long_int_t, next_typed, , "linked list of nodes with same type and pointer"),
-		(long_int_t, next_untyped, , "linked list of nodes with same pointer"),
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
+		(int, next_typed, , "linked list of nodes with same type and pointer"),
+		(int, next_untyped, , "linked list of nodes with same pointer"),
+		(int, level, , "level from the root element"),
 		)
 
 TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
