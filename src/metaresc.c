@@ -842,10 +842,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    {
 	      ptrs->ra[i].res.type = mr_strdup (*(char**)ptrs->ra[i].data.ptr);
 	      if (NULL == ptrs->ra[i].res.type)
-		{
-		  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-		  goto failure;
-		}
+		goto failure;
 	    }
 	  break;
 	    

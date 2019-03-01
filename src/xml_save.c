@@ -400,10 +400,7 @@ xml2_save (mr_ra_ptrdes_t * ptrs)
   };
 
   if (NULL == mr_ra_str.data.ptr)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (NULL);
-    }
+    return (NULL);
 
   xmlDocPtr doc = xmlNewDoc (BAD_CAST "1.0");
 

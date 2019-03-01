@@ -434,15 +434,8 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_get_str (char * src, void * dst)
 {
-  src = mr_strdup (src);
-  if (NULL == src)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
-    }
-
-  *(char**)dst = src;
-  return (MR_SUCCESS);
+  *(char**)dst = mr_strdup (src);
+  return ((NULL == *(char**)dst) ? MR_FAILURE : MR_SUCCESS);
 }
 
 /**
