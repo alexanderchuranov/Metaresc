@@ -20,8 +20,6 @@
 #include <mr_value.h>
 #include <lexer.h>
 
-TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
-
 /**
  * Post load references setting. If node was marked as references
  * it should be substitute with actual pointer. This substition
@@ -237,8 +235,6 @@ mr_get_func_wrapper (char * func_name, void * dst)
   *(void**)dst = func_addr;
   return (MR_SUCCESS);
 }
-
-TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
 
 #ifndef BUF_SIZE_ON_STACK
 #define BUF_SIZE_ON_STACK (1 << 12)
@@ -470,10 +466,6 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
     }
   return (status);
 }
-
-TYPEDEF_STRUCT (mr_load_node_context_t,
-		int idx,
-		(mr_ra_ptrdes_t *, ptrs))
 
 static mr_status_t
 mr_get_char_array (char * str, void * dst)

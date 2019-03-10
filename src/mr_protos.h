@@ -417,6 +417,34 @@ TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
 		)
 
+TYPEDEF_STRUCT (mr_load_node_context_t,
+		int idx,
+		(mr_ra_ptrdes_t *, ptrs)
+		)
+
+TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
+
+TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
+
+TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
+		(int, lineno, , "parser location - line number"),
+		(int, column, , "parser location - column number"),
+		(int, offset, , "parser location - offset in string"),
+		)
+
+TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
+		(mr_lloc_t, start, , "start of the token"),
+		(mr_lloc_t, end, , "end of the token"),
+		)
+
+TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
+		(mr_lloc_t, lloc, , "current location of parser"),
+		(char *, str, , "string to parse"),
+		(char *, buf, , "parser internal buffer"),
+		(int, parent, , "index of current parent"),
+		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
+		)
+
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),

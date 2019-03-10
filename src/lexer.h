@@ -7,25 +7,6 @@
 
 #include <metaresc.h>
 
-TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
-		(int, lineno, , "parser location - line number"),
-		(int, column, , "parser location - column number"),
-		(int, offset, , "parser location - offset in string"),
-		)
-
-TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
-		(mr_lloc_t, start, , "start of the token"),
-		(mr_lloc_t, end, , "end of the token"),
-		)
-
-TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
-		(mr_lloc_t, lloc, , "current location of parser"),
-		(char *, str, , "string to parse"),
-		(char *, buf, , "parser internal buffer"),
-		(int, parent, , "index of current parent"),
-		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
-		)
-
 #define MR_PARSE_ERROR(LLOCP, SCANNER, ERROR_MSG)			\
   MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
 	      (LLOCP)->start.lineno, (LLOCP)->start.column, (LLOCP)->end.lineno, (LLOCP)->end.column)

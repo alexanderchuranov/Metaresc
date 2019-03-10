@@ -1230,7 +1230,6 @@ extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * r
 
 extern char * mr_get_static_field_name (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
-extern void mr_init_save_xml (void);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 
 extern int64_t mr_get_enum_value (mr_td_t * tdp, void * data);
