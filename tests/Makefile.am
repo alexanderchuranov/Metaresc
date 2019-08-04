@@ -23,7 +23,7 @@ if HAVE_LIBXML2
   check_PROGRAMS += smoke_xml2 mf_xml2_save mf_xml2_load
 endif
 
-  check_PROGRAMS += long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer mr_copy bool complex_float complex_double complex_long_double function ic mr_types
+  check_PROGRAMS += long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer mr_copy bool complex_float complex_double complex_long_double function ic mr_types mem_allocations
 endif
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)

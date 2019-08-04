@@ -29,7 +29,7 @@ mr_copy_method (void * arg)
 MR_START_TEST (mem_failures_mr_copy, "test memory operations failures for MR_COPY_RECURSIVELY") { 
   mr_detect_type (NULL);
   mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);
-  ck_assert_msg (ptrs.ra != NULL, "Failed to save mr_conf got tests of load methods");
+  ck_assert_msg (ptrs.ra != NULL, "Failed to save mr_conf for tests of MR_COPY_RECURSIVELY");
   mem_failures_method (mr_copy_method, &ptrs);
   MR_FREE (ptrs.ra);
 } END_TEST
