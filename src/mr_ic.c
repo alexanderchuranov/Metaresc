@@ -138,6 +138,10 @@ mr_ic_rbtree_free (mr_ic_t * ic)
 mr_ptr_t *
 mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key)
 {
+  mr_ptr_t * find = mr_ic_find (ic, key);
+  if (find != NULL)
+    return (find);
+
   mr_ptr_t * add = mr_tsearch (key, &ic->tree, ic->compar_fn, ic->context.data.ptr);
   if (NULL == add)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
