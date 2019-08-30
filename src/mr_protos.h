@@ -284,8 +284,8 @@ TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "wrapper for mr_fd_t*"),
 
 TYPEDEF_STRUCT (mr_enum_param_t,
 		(mr_ic_t, enum_by_value, , "lookup by enum values"),
-		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(mr_size_t, size_effective, , "effective size"),
+		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
 		)
 
