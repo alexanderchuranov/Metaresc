@@ -103,6 +103,59 @@ print_block (mr_ptr_t x, const void * context)
   return (MR_SUCCESS);
 }
 
+mr_hash_value_t
+stack_entry_hash (mr_ptr_t x, const void * context)
+{
+  const stack_trace_t * stack_trace = context;
+  return (stack_trace->stack[x.long_int_t].long_int_t / sizeof (void*));
+}
+
+int
+stack_entry_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const stack_trace_t * stack_trace = context;
+  return ((stack_trace->stack[x.long_int_t].ptr > stack_trace->stack[y.long_int_t].ptr) -
+	  (stack_trace->stack[x.long_int_t].ptr < stack_trace->stack[y.long_int_t].ptr));
+}
+
+static inline void
+normalize_recursion (stack_trace_t * stack_trace)
+{
+  long_int_t i;
+  int count = stack_trace->size / sizeof (stack_trace->stack[0]);
+  mr_ic_t last_call;
+  mr_res_t res = {
+    .data = { stack_trace },
+    .type = "stack_trace_t",
+    .mr_size = sizeof (stack_trace_t),
+  };
+  mr_status_t status = mr_ic_new (&last_call, stack_entry_hash, stack_entry_cmp, "long_int_t", MR_IC_HASH_NEXT, &res);
+  
+  if (MR_SUCCESS != status)
+    return;
+  
+  for (i = count - 1; i >= 0; --i)
+    {
+      mr_ptr_t * add = mr_ic_add (&last_call, i);
+      if (NULL == add)
+	goto free_index;
+    }
+  
+  int dst = 0;
+  for (i = 0; i < count; ++i)
+    {
+      mr_ptr_t * find = mr_ic_find (&last_call, i);
+      if (NULL == find)
+	goto free_index;
+      i = find->long_int_t;
+      stack_trace->stack[dst++] = stack_trace->stack[i];
+    }
+
+  stack_trace->size = dst * sizeof (stack_trace->stack[0]);
+ free_index:
+  mr_ic_free (&last_call);
+}
+
 static inline stack_trace_t * 
 stack_trace_get ()
 {
@@ -123,6 +176,7 @@ stack_trace_get ()
       if (count < alloc_count)
 	{
 	  stack_trace->size = count * sizeof (stack_trace->stack[0]);
+	  normalize_recursion (stack_trace);
 	  return (stack_trace);
 	}
 
