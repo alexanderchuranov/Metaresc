@@ -124,10 +124,10 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 	      )
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
-		(char *, type, , "type of 'data' pointer"),
 		(mr_ptr_t, data, , "type"),
 		VOID (ssize_t, MR_SIZE, , "used space in bytes"),
 		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
+		(char *, type, , "type of 'data' pointer"),
 		)
 
 TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
@@ -155,17 +155,17 @@ TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
-		(uint8_t, width, , "bit-field width in bits"),
-		(uint8_t, shift, , "bit-field shift in first byte"),
-		(unsigned, size, , "size of bitfield array"),
 		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
 		{ .offset = offsetof (mr_bitfield_param_t, size) }, "offset"), 
+		(unsigned int, size, , "size of bitfield array"),
+		(uint8_t, width, , "bit-field width in bits"),
+		(uint8_t, shift, , "bit-field shift in first byte"),
 		)
 
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
-		(ssize_t, size, , "size of args array"),
 		(struct mr_fd_t *, args, , "function arguments descriptors saved as resizable array of field descriptors",
 		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
+		(unsigned int, size, , "size of args array"),
 		)
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
@@ -202,8 +202,8 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
-		(ssize_t, size, , "size of array"),
 		(mr_ptr_t *, ra, , "key_type", { .offset = offsetof (mr_ic_rarray_t, size) }, "offset"), 
+		(ssize_t, size, , "size of array"),
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
 
@@ -259,8 +259,8 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		BITFIELD (bool, unnamed, : 1 , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(char *, type, , "stringified type name"),
-		(unsigned, offset, , "offset in structure"),
-		(unsigned, size, , "size of field"),
+		(unsigned int, offset, , "offset in structure"),
+		(unsigned int, size, , "size of field"),
 		(mr_fd_param_t, param, , "mr_type"),
 		(char *, meta, , "field meta info"),
 		/*
@@ -333,8 +333,8 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 		)
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
-		(size_t, length),
 		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
+		(size_t, length),
 		)
 
 TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
@@ -377,8 +377,8 @@ TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loadin
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
-		(char *, type, , "copy of fd.type for all basic types and structures"),
 		(mr_ptr_t, data, , "type"),
+		(char *, type, , "copy of fd.type for all basic types and structures"),
 		(ssize_t, MR_SIZE, , "size of dynamic array"),
 		(mr_fd_t, fd, , "field descriptor"),
 		(int32_t, idx, , "public index"),
@@ -402,9 +402,9 @@ TYPEDEF_ENUM (mr_ptrdes_type_t,
 	      )
 
 TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
-		(ssize_t, size, , "size of resizable array"),
 		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements",
 		{ .offset = offsetof (mr_ra_ptrdes_t, size) }, "offset"),
+		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
 		(mr_ptrdes_type_t, ptrdes_type, , "discriminator for anonymous union in mr_ptrdes_t"),
 		(mr_res_t, res, , "extra pointer for user data"),
