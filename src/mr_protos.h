@@ -125,7 +125,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
 		(mr_ptr_t, data, , "type"),
-		VOID (ssize_t, MR_SIZE, , "used space in bytes"),
+		(ssize_t, MR_SIZE, , "used space in bytes"),
 		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
 		(char *, type, , "type of 'data' pointer"),
 		)
