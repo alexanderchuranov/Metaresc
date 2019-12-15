@@ -90,7 +90,7 @@
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
     int size = 2;							\
-    do size += size >> 1; while (test_run (size) < 2);			\
+    do size += size >> 1; while (test_run (size) == 0);			\
     int x1 = test_run (size * MULTIPLE);				\
     int x2 = test_run (size * MULTIPLE * 4);				\
     ck_assert_msg (((double)x2 / (double)x1 < 5), "performance issue for method " #METHOD); \
