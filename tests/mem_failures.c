@@ -130,6 +130,7 @@ normalize_recursion (stack_trace_t * stack_trace)
     .mr_size = sizeof (stack_trace_t),
   };
   mr_status_t status = mr_ic_new (&last_call, stack_entry_hash, stack_entry_cmp, "long_int_t", MR_IC_HASH_NEXT, &res);
+  bool has_duplicates = false;
   
   if (MR_SUCCESS != status)
     return;
@@ -139,19 +140,23 @@ normalize_recursion (stack_trace_t * stack_trace)
       mr_ptr_t * add = mr_ic_add (&last_call, i);
       if (NULL == add)
 	goto free_index;
-    }
-  
-  int dst = 0;
-  for (i = 0; i < count; ++i)
-    {
-      mr_ptr_t * find = mr_ic_find (&last_call, i);
-      if (NULL == find)
-	goto free_index;
-      i = find->long_int_t;
-      stack_trace->stack[dst++] = stack_trace->stack[i];
+      has_duplicates |= (add->long_int_t != i);
     }
 
-  stack_trace->size = dst * sizeof (stack_trace->stack[0]);
+  if (has_duplicates)
+    {
+      int dst = 0;
+      for (i = 0; i < count; ++i)
+	{
+	  mr_ptr_t * find = mr_ic_find (&last_call, i);
+	  if (NULL == find)
+	    goto free_index;
+	  i = find->long_int_t;
+	  stack_trace->stack[dst++] = stack_trace->stack[i];
+	}
+
+      stack_trace->size = dst * sizeof (stack_trace->stack[0]);
+    }
  free_index:
   mr_ic_free (&last_call);
 }
@@ -353,13 +358,15 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
   _mr_mem.malloc = _malloc;
   _mr_mem.realloc = _realloc;
   _mr_mem.free = _free;
-
-  status = mr_ic_new (&alloc_blocks, ab_hash, ab_cmp, "stack_trace_t", MR_IC_RBTREE, NULL);
+  
+#define IC_TYPE MR_IC_RBTREE
+  
+  status = mr_ic_new (&alloc_blocks, ab_hash, ab_cmp, "stack_trace_t", IC_TYPE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for allocated blocks");
 
-  status = mr_ic_new (&malloc_seen, st_hash, st_cmp, "stack_trace_t", MR_IC_RBTREE, NULL);
+  status = mr_ic_new (&malloc_seen, st_hash, st_cmp, "stack_trace_t", IC_TYPE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for malloc");
-  status = mr_ic_new (&realloc_seen, st_hash, st_cmp, "stack_trace_t", MR_IC_RBTREE, NULL);
+  status = mr_ic_new (&realloc_seen, st_hash, st_cmp, "stack_trace_t", IC_TYPE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for realloc");
 
   mr_conf.msg_handler = _mr_message;
