@@ -157,7 +157,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 				   sizeof (mr_save_data->mr_ra_ud[0]));
   /* create a record for further lookups in parent nodes for discriminator value */
   if (NULL == ud)
-    return (mr_union_discriminator_by_name (tdp, NULL));
+    return (NULL);
 
   memset (ud, 0, sizeof (*ud));
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
