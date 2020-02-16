@@ -84,7 +84,12 @@ if [[ x${HAVE_BISON}${HAVE_FLEX} = xyesyes ]]; then
 fi
 
 # Checks for libraries.
-PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
+AC_ARG_WITH([libxml2], AS_HELP_STRING([--with-libxml2], [Build with the ibxml2]))
+
+if test "x$with_libxml2" = "xyes"; then
+  PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
+fi
+
 AM_CONDITIONAL(HAVE_LIBXML2, test x${HAVE_LIBXML2} = xyes)
 if [[ x${HAVE_LIBXML2} = xyes ]]; then
   AC_DEFINE(HAVE_LIBXML2, [], [define if libxml2 is present])

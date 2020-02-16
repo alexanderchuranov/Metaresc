@@ -31,6 +31,7 @@
 #include <ctype.h> /* for isspace () */
 #include <stdarg.h> /* for va_list */
 #include <inttypes.h> /* for int8_t, int16_t, int32_t, int64_t, SCNxXX, etc */
+#include <sys/types.h> /* for ssize_t */
 #include <complex.h> /* for complex */
 #ifdef HAVE_LIBXML2
 # include <libxml/xmlmemory.h>
