@@ -83,10 +83,13 @@ if [[ x${HAVE_BISON}${HAVE_FLEX} = xyesyes ]]; then
   AC_DEFINE(HAVE_BISON_FLEX, [], [Bison & Flex found])
 fi
 
+PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )
+AM_CONDITIONAL(HAVE_CHECK, test x${HAVE_CHECK} = xyes)
+
 # Checks for libraries.
 AC_ARG_WITH([libxml2], AS_HELP_STRING([--with-libxml2], [Build with the ibxml2]))
 
-if test "x$with_libxml2" = "xyes"; then
+if test "x$with_libxml2" != "xno"; then
   PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
 fi
 
@@ -98,9 +101,6 @@ fi
 
 AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
 AC_SUBST(AM_LDFLAGS, ${AM_LDFLAGS})
-
-PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )
-AM_CONDITIONAL(HAVE_CHECK, test x${HAVE_CHECK} = xyes)
 
 AC_CHECK_LIB(execinfo, backtrace, [ LIBS="${LIBS} -lexecinfo" ])
 
