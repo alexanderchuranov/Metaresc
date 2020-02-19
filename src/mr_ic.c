@@ -662,7 +662,7 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
       mr_ic_t dst_ic;
       mr_status_t status;
       if (NULL == ic->static_array.hash_fn)
-	status = mr_ic_rbtree_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
+	status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
       else
 	status = mr_ic_hash_next_new (&dst_ic, ic->static_array.hash_fn, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
@@ -737,7 +737,7 @@ mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
     {
       mr_status_t status;
       if (NULL == ic->static_array.hash_fn)
-	status = mr_ic_rbtree_new (ic, ic->compar_fn, ic->key_type, &ic->context);
+	status = mr_ic_unsorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
       else
 	status = mr_ic_hash_next_new (ic, ic->static_array.hash_fn, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
