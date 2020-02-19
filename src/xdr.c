@@ -762,7 +762,7 @@ _xdr_enum (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   else if (tdp->mr_type != MR_TYPE_ENUM)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_ENUM, tdp->type.str);
   else 
-    switch (tdp->enum_param.mr_type_effective)
+    switch (tdp->param.enum_param.mr_type_effective)
       {
       case MR_TYPE_UINT8: return (_xdr_uint8_t (xdrs, idx, ptrs));
       case MR_TYPE_INT8: return (_xdr_int8_t (xdrs, idx, ptrs));

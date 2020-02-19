@@ -108,7 +108,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       if (fdp && fdp->name.str)
 	return (mr_ra_printf (mr_ra_str, "%s", fdp->name.str));
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->fd.name.str);
-      ptrdes->fd.size = tdp->enum_param.size_effective;
+      ptrdes->fd.size = tdp->param.enum_param.size_effective;
     }
   /* save as integer otherwise */
   switch (ptrdes->fd.size)
@@ -133,7 +133,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type))
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
   
-  if (!tdp->enum_param.is_bitmask)
+  if (!tdp->param.enum_param.is_bitmask)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NOT_BITMASK, tdp->type.str, ptrdes->fd.name.str);
       return (mr_ra_printf_enum (mr_ra_str, ptrdes));
@@ -147,7 +147,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   if (0 == value)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
-  ptrdes->fd.size = tdp->enum_param.size_effective;
+  ptrdes->fd.size = tdp->param.enum_param.size_effective;
   
   for (i = 0; i < fields_count; ++i)
     if (value & tdp->fields[i].fdp->param.enum_value)

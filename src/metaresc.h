@@ -690,7 +690,7 @@
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME) = {	\
     .type = { .str = #MR_TYPE_NAME, .hash_value = 0, },			\
     .mr_type = MR_TYPE,							\
-    .enum_param = { .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),	}, \
+    .param = { .enum_param = { .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME), }, }, \
     .size = sizeof (MR_TYPE_NAME),					\
     .attr = #__VA_ARGS__,						\
     .fields_size = 0,							\
