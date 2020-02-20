@@ -36,10 +36,10 @@ MR_START_TEST (xml_special_string_t, "xml special characters string") { ALL_METH
 MR_START_TEST (pointer_match_content_known, "strings points on known char array") {
   struct_ca_str_t orig = { .x = "string_t" };
   orig.y = orig.x;
-  bool string_is_a_reference = false;
   mr_ra_ptrdes_t ptrs = MR_SAVE (struct_ca_str_t, &orig);
   if (ptrs.ra != NULL)
     {
+      bool string_is_a_reference = false;
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
@@ -57,10 +57,10 @@ MR_START_TEST (pointer_match_content_known, "strings points on known char array"
 MR_START_TEST (pointer_match_content_unknown, "strings points on unknown char array") {
   struct_str_ca_t orig = { .x = "string_t" };
   orig.y = orig.x;
-  bool string_is_a_reference = false;
   mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_ca_t, &orig);
   if (ptrs.ra != NULL)
     {
+      bool string_is_a_reference = false;
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{

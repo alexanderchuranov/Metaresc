@@ -548,11 +548,11 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
     .mr_save_data = mr_save_data,
     .parent = parent,
   };
+  int nodes_added;
   
   for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
     {
       int ref_parent = ra[ref_idx].parent;
-      int nodes_added;
 
       mr_check_ud_ctx.node = ref_idx;
       mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);

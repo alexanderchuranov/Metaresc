@@ -249,10 +249,10 @@ MR_START_TEST (tda_same_ptr_and_bigger, "Two dynamic arrays with same pointers a
   tda.size2 = sizeof (array[0]);
   
   mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  int i;
   bool pointer_resolved_correctly = true;
   if (ptrs.ra != NULL)
     {
+      int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
@@ -278,10 +278,10 @@ MR_START_TEST (tda_overlapping_1, "Two overlaping dynamic arrays. Lower pointer 
   tda.size2 = 2 * sizeof (array[0]);
   
   mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  int i;
   bool pointer_resolved_correctly = false;
   if (ptrs.ra != NULL)
     {
+      int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
@@ -306,10 +306,10 @@ MR_START_TEST (tda_overlapping_2, "Two overlaping dynamic arrays. Lower pointer 
   tda.size2 = 2 * sizeof (array[0]);
   
   mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  int i;
   bool pointer_resolved_correctly = false;
   if (ptrs.ra != NULL)
     {
+      int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
@@ -334,10 +334,10 @@ MR_START_TEST (tda_overlapping_3, "Two overlaping dynamic arrays. First saved po
   tda.size2 = 2 * sizeof (array[0]);
   
   mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  int i;
   bool pointer_resolved_correctly = false;
   if (ptrs.ra != NULL)
     {
+      int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	if (ptrs.ra[i].ref_idx >= 0)
 	  {

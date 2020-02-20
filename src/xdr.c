@@ -33,11 +33,14 @@ static bool_t
 xdrra_getlong (XDR * xdrs, long * lp)
 {
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
-  char * base = ra->data.ptr;
+
   if (NULL == ra)
     return (false);
+  
   if (ra->MR_SIZE - xdrs->x_handy < sizeof (int32_t))
     return (false);
+  
+  char * base = ra->data.ptr;
   *(int32_t*)lp = (int32_t) ntohl ((*((int32_t *)(&base[xdrs->x_handy]))));
   xdrs->x_handy += sizeof (int32_t);
   return (true);
@@ -74,11 +77,14 @@ static bool_t
 xdrra_getbytes (XDR * xdrs, caddr_t addr, u_int len)
 {
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
-  char * base = ra->data.ptr;
+
   if (NULL == ra)
     return (false);
+
   if (ra->MR_SIZE - xdrs->x_handy < len)
     return (false);
+
+  char * base = ra->data.ptr;
   memcpy (addr, &base[xdrs->x_handy], len);
   xdrs->x_handy += len;
   return (true);
@@ -140,11 +146,14 @@ static int32_t *
 xdrra_inline (XDR * xdrs, u_int len)
 {
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
-  char * base = ra->data.ptr;
+
   if (NULL == ra)
     return (false);
+  
   if (ra->MR_SIZE - xdrs->x_handy < len)
     return (NULL);
+
+  char * base = ra->data.ptr;
   return ((int32_t*)&base[xdrs->x_handy]);
 }
 
@@ -714,7 +723,6 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   mr_td_t * tdp = mr_get_td_by_name (ptrs->ra[idx].fd.type); /* look up for type descriptor */
   char * data = ptrs->ra[idx].data.ptr;
   char * discriminator = NULL;
-  mr_fd_t * fdp;
   mr_status_t status = MR_FAILURE;
   mr_ptrdes_t ptrdes = { .data.ptr = &discriminator, }; /* temporary pointer descriptor for union discriminator string */
   mr_ra_ptrdes_t ptrs_ = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }; /* temporary resizeable array */
@@ -734,7 +742,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	status = MR_SUCCESS;
       else
 	{
-	  fdp = mr_get_fd_by_name (tdp, discriminator);
+	  mr_fd_t * fdp = mr_get_fd_by_name (tdp, discriminator);
 	  if (NULL == fdp)
 	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
 	  else
@@ -932,7 +940,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
       
   if (ptrs->ra[idx].ref_idx < 0)
     {
-      int i, count = 0;
+      int count = 0;
       
       if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
@@ -968,6 +976,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	return (xdr_opaque (xdrs, *data, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);
       else
 	{
+	  int i;
 	  fd_.mr_type = fd_.mr_type_aux;
 	  for (i = 0; i < count; ++i)
 	    if (MR_SUCCESS != xdr_load_inner (*data + i * fd_.size, &fd_, xdrs, ptrs, idx))

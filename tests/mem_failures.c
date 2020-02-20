@@ -81,13 +81,13 @@ st_free (mr_ptr_t x, const void * context)
 static void
 st_print (stack_trace_t * stack_trace)
 {
-  int i;
   int size = stack_trace->size / sizeof (stack_trace->stack[0]);
   char ** strings = backtrace_symbols ((void**)stack_trace->stack, size);
   fprintf (stderr, "Pointer %p from file %s function %s line %d:\n", 
 	   stack_trace->ptr.ptr, stack_trace->filename, stack_trace->function, stack_trace->line);
   if (strings)
     {
+      int i;
       for (i = 0; i < size; ++i)
 	fprintf (stderr, "%s\n", strings[i]);
       free (strings);

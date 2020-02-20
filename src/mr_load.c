@@ -252,11 +252,12 @@ mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str
     {
       char * dst = NULL;
       int size = quoted_substr->substr.length + 1;
+      char buf[BUF_SIZE_ON_STACK];
       
       if (size >= BUF_SIZE_ON_STACK)
 	dst = MR_MALLOC (size);
       else
-	dst = alloca (size);
+	dst = buf;
 
       if (NULL == dst)
 	{
@@ -591,6 +592,7 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
 	{
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, mr_load_data->ptrs.ra[idx].fd.name.str);
 	  status = MR_FAILURE;
+	  continue;
 	}
 
       /* recursively load subnode */

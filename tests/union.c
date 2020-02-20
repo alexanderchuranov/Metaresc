@@ -19,10 +19,10 @@
 #define ASSERT_UNION_RESOLUTION(TYPE, VALUE) ({				\
       TYPE orig = { .dummy = 0, { M_PI }, VALUE };			\
       mr_ra_ptrdes_t ptrs = MR_SAVE (TYPE, &orig);			\
-      int i;								\
       bool union_resolved_correctly = false;				\
       if (ptrs.ra != NULL)						\
 	{								\
+	  int i;							\
 	  for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)	\
 	    {								\
 	      if ((ptrs.ra[i].fd.name.str != NULL) &&			\
