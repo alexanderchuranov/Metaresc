@@ -385,4 +385,14 @@ MR_START_TEST (pointer_to_array, "Pointer into the middle of static array loaded
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
+MR_START_TEST (mr_ptr_resolution, "test of mr_ptr_t resolution") {
+  int res_array[] = {1, 2, 3};
+  mr_res_t res = { 
+    .data = { res_array },
+    .type = "int",
+    .mr_size = sizeof (res_array),
+  };
+  ALL_METHODS (ASSERT_SAVE_LOAD, mr_res_t, &res);
+} END_TEST
+
 MAIN ();

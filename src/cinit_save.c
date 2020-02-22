@@ -15,7 +15,7 @@
 #define MR_CINIT_INDENT_SPACES (2)
 #define MR_CINIT_INDENT_TEMPLATE "%*s"
 
-#define MR_CINIT_FIELDS_DELIMITER ",\n"
+#define MR_CINIT_FIELDS_DELIMITER ","
 #define MR_CINIT_NAMED_FIELD_TEMPLATE ".%s = "
 #define MR_JSON_NAMED_FIELD_TEMPLATE "\"%s\" : "
 #define MR_CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
@@ -172,7 +172,7 @@ json_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "]";
   ptrdes->res.type = "char";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "/* (%s[]) */ [\n", ptrdes->fd.type));
+  return (mr_ra_printf (mr_ra_str, "[\n"));
 }
 
 static mr_ra_printf_t json_save_tbl[] = {
@@ -268,9 +268,11 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	idx = ptrs->ra[idx].first_child;
       else
 	{
-	  if (idx != 0)
+	  if (ptrs->ra[idx].next >= 0)
 	    if (mr_ra_append_string (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
 	      return (NULL);
+	  if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+	    return (NULL);
 	  
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
@@ -280,9 +282,11 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 		  level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
 		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
 		    return (NULL);
-		  if (idx != 0)
+		  if (ptrs->ra[idx].next >= 0)
 		    if (mr_ra_append_string (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
 		      return (NULL);
+		  if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+		    return (NULL);
 		}
 	    }
 	  idx = ptrs->ra[idx].next;
