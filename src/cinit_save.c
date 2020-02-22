@@ -166,15 +166,6 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_printf (mr_ra_str, "[\n"));
 }
 
-static int
-json_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  ptrdes->res.data.string = "]";
-  ptrdes->res.type = "char";
-  ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "[\n"));
-}
-
 static mr_ra_printf_t json_save_tbl[] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
   [MR_TYPE_VOID] = mr_ra_printf_void,
@@ -203,7 +194,7 @@ static mr_ra_printf_t json_save_tbl[] = {
   [MR_TYPE_FUNC] = cinit_printf_func,
   [MR_TYPE_FUNC_TYPE] = cinit_printf_func,
   [MR_TYPE_ARRAY] = json_printf_array,
-  [MR_TYPE_POINTER] = json_printf_pointer,
+  [MR_TYPE_POINTER] = json_printf_array,
   [MR_TYPE_UNION] = cinit_printf_struct,
   [MR_TYPE_ANON_UNION] = cinit_printf_struct,
   [MR_TYPE_NAMED_ANON_UNION] = cinit_printf_struct,
