@@ -1,9 +1,10 @@
 #ifndef _REGRESSION_H_
 #define _REGRESSION_H_
 
-#include <check.h>
 #include <string.h>
+#include <stdlib.h>
 
+#include <check.h>
 #include <metaresc.h>
 
 #ifdef HAVE_BISON_FLEX
@@ -80,13 +81,13 @@ extern Suite * suite;
     xy_cmp;								\
   })
 
-#elif HAVE_RPC_XDR_H
+#elif HAVE_RPC_TYPES_H
 
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
       mr_rarray_t x_ = MR_SAVE_XDR_RA (TYPE, X);			\
       mr_rarray_t y_ = MR_SAVE_XDR_RA (TYPE, Y);			\
       int xy_cmp = !0;							\
-      if (x_ && y_)							\
+      if (x_.data.ptr && y_.data.ptr)					\
 	{								\
 	  xy_cmp = (x_.MR_SIZE != y_.MR_SIZE) ||			\
 	    memcmp (x_.data.ptr, y_.data.ptr, x_.MR_SIZE);		\
@@ -97,7 +98,7 @@ extern Suite * suite;
 	MR_FREE (y_.data.ptr);						\
       xy_cmp;								\
     })
-#else /* HAVE_RPC_XDR_H */
+#else /* HAVE_RPC_TYPES_H */
 #error No default serialization method
 #endif /* HAVE_BISON_FLEX */
 

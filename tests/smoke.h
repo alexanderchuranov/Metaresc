@@ -1,6 +1,8 @@
 #include <string.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <sys/times.h>
+
 #include <check.h>
 #include <metaresc.h>
 

@@ -1,6 +1,6 @@
 #include <metaresc.h>
-
 #include <check.h>
+
 #include <regression.h>
 
 #define REFERENCE_SIZE (1 << 10)

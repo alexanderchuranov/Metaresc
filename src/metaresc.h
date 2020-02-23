@@ -1140,7 +1140,6 @@
 #define MR_LOAD_XML MR_LOAD_XML1
 #define MR_LOAD_XML_RA MR_LOAD_XML1_RA
 #else /* ! HAVE_BISON_FLEX */
-#warning There is no support for XML load.
 #define MR_LOAD_XML MR_LOAD_STUB
 #define MR_LOAD_XML_RA MR_LOAD_STUB
 #endif /* HAVE_BISON_FLEX */
