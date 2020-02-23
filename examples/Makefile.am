@@ -10,8 +10,5 @@ noinst_PROGRAMS = gjobs basic separate emptystruct justabuiltin builtins suffixe
 if HAVE_BISON_FLEX
   noinst_PROGRAMS += load_scm load_json load_cinit
 endif
-if HAVE_XDR
-#  noinst_PROGRAMS += load_scm load_json load_cinit
-endif
 
 separate_SOURCES = separate.c separate_employee.c
