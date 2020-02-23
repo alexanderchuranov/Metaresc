@@ -51,7 +51,7 @@ extern Suite * suite;
 
 #if defined (HAVE_BISON_FLEX) || defined (HAVE_LIBXML2)
 
-  #ifndef HAVE_BISON_FLEX
+  #ifdef HAVE_BISON_FLEX
     #define SERIALIZE_METHOD MR_SAVE_CINIT
   #else /* ! HAVE_BISON_FLEX */
     #define SERIALIZE_METHOD(MR_TYPE_NAME, S_PTR) ({			\
@@ -85,8 +85,12 @@ extern Suite * suite;
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
       mr_rarray_t x_ = MR_SAVE_XDR_RA (TYPE, X);			\
       mr_rarray_t y_ = MR_SAVE_XDR_RA (TYPE, Y);			\
-      int xy_cmp = (x_.MR_SIZE != y_.MR_SIZE) ||			\
-	memcmp (x_.data.ptr, y_.data.ptr, x_.MR_SIZE);			\
+      int xy_cmp = !0;							\
+      if (x_ && y_)							\
+	{								\
+	  xy_cmp = (x_.MR_SIZE != y_.MR_SIZE) ||			\
+	    memcmp (x_.data.ptr, y_.data.ptr, x_.MR_SIZE);		\
+	}								\
       if (x_.data.ptr)							\
 	MR_FREE (x_.data.ptr);						\
       if (y_.data.ptr)							\
