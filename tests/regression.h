@@ -50,31 +50,38 @@ extern Suite * suite;
 #define MEM_CMP(TYPE, X, Y, ...) memcmp (X, Y, sizeof (TYPE))
 
 #if defined (HAVE_BISON_FLEX) || defined (HAVE_LIBXML2)
-#ifdef HAVE_BISON_FLEX
-#define SERIALIZE_METHOD MR_SAVE_CINIT
-#else /* ! HAVE_BISON_FLEX */
-#define SERIALIZE_METHOD MR_SAVE_XML2
-#endif /* HAVE_BISON_FLEX */
-#define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
-      char * x_ = SERIALIZE_METHOD (TYPE, X);				\
-      char * y_ = SERIALIZE_METHOD (TYPE, Y);				\
-      int xy_cmp = !0;							\
-      if (x_ && y_)							\
-	{								\
-	  xy_cmp = strcmp (x_, y_);					\
-	  if (xy_cmp)							\
-	    printf (#TYPE " %s = %s;\n"					\
-		    #TYPE " %s = %s;\n", &#X[1], x_, &#Y[1], y_);	\
-	}								\
-      else								\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SERIALIZATION_FAILED);	\
-      if (x_)								\
-	MR_FREE (x_);							\
-      if (y_)								\
-	MR_FREE (y_);							\
-      xy_cmp;								\
-    })
+
+  #ifndef HAVE_BISON_FLEX
+    #define SERIALIZE_METHOD MR_SAVE_CINIT
+  #else /* ! HAVE_BISON_FLEX */
+    #define SERIALIZE_METHOD(MR_TYPE_NAME, S_PTR) ({			\
+    MR_TYPE_NAME * _dump_ = S_PTR;					\
+    MR_SAVE_XML2 (MR_TYPE_NAME, _dump_);				\
+  })
+  #endif /* HAVE_BISON_FLEX */
+
+  #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
+    char * x_ = SERIALIZE_METHOD (TYPE, X);				\
+    char * y_ = SERIALIZE_METHOD (TYPE, Y);				\
+    int xy_cmp = !0;							\
+    if (x_ && y_)							\
+      {									\
+	xy_cmp = strcmp (x_, y_);					\
+	if (xy_cmp)							\
+	  printf (#TYPE " %s = %s;\n"					\
+		  #TYPE " %s = %s;\n", &#X[1], x_, &#Y[1], y_);		\
+      }									\
+    else								\
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SERIALIZATION_FAILED);	\
+    if (x_)								\
+      MR_FREE (x_);							\
+    if (y_)								\
+      MR_FREE (y_);							\
+    xy_cmp;								\
+  })
+
 #elif HAVE_RPC_XDR_H
+
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
       mr_rarray_t x_ = MR_SAVE_XDR_RA (TYPE, X);			\
       mr_rarray_t y_ = MR_SAVE_XDR_RA (TYPE, Y);			\
