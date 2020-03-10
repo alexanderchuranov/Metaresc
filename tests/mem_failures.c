@@ -359,7 +359,7 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
   _mr_mem.realloc = _realloc;
   _mr_mem.free = _free;
   
-#define IC_TYPE MR_IC_RBTREE
+#define IC_TYPE MR_IC_HASH_NEXT
   
   status = mr_ic_new (&alloc_blocks, ab_hash, ab_cmp, "stack_trace_t", IC_TYPE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for allocated blocks");

@@ -196,9 +196,10 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_CUSTOM, , "custom"),
 	      (MR_IC_UNSORTED_ARRAY, , "rarray"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
-	      (MR_IC_RBTREE, , "tree"),
+	      (MR_IC_TREE, , "tree"),
 	      (MR_IC_HASH_NEXT, , "hash_next"),
 	      (MR_IC_STATIC_ARRAY, , "static_array"),
+	      (MR_IC_RBTREE, , "rbtree"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
@@ -218,6 +219,21 @@ TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "private fields for indexed co
 TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),
 		(mr_hash_fn_t, hash_fn),
 		(mr_ptr_t, static_array, [(sizeof (mr_ic_hash_next_t) - sizeof (mr_hash_fn_t)) / sizeof (mr_ptr_t)], "key_type"),
+		)
+
+TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
+		(mr_ptr_t, key, , "key_type"),
+		unsigned int left,
+		unsigned int right,
+		unsigned int parent,
+		bool red,
+		)
+
+TYPEDEF_STRUCT (mr_rbtree_t, ATTRIBUTES ( , "indexed collection for red/black tree"),
+		(mr_rbtree_node_t *, pool, , "mr_rbtree_node_t allocation pool", { .offset = offsetof (mr_rbtree_t, size) }, "offset"),
+		unsigned size,
+		VOID (unsigned, alloc_size),
+		unsigned int root,
 		)
 
 TYPEDEF_STRUCT (mr_res_t,
@@ -241,6 +257,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_red_black_tree_node_t *, tree),
 		(mr_ic_hash_next_t, hash_next),
 		(mr_ic_static_array_t, static_array),
+		(mr_rbtree_t, rbtree),
 		END_ANON_UNION ("ic_type"),
 		)
 

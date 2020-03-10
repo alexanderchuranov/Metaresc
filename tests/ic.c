@@ -1,5 +1,6 @@
 #include <check.h>
 #include <metaresc.h>
+#include <mr_rbtree.h>
 #include <regression.h>
 
 #include <mr_ic.h>
@@ -13,7 +14,7 @@ long_int_t_get_hash (mr_ptr_t node, const void * context)
 static int
 long_int_t_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
-  return (x.long_int_t - y.long_int_t);
+  return (x.long_int_t > y.long_int_t) - (x.long_int_t < y.long_int_t);
 }
 
 static mr_status_t
@@ -34,9 +35,10 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
     mr_ic_types[] = {
     MR_IC_INIT (UNSORTED_ARRAY),
     MR_IC_INIT (SORTED_ARRAY),
-    MR_IC_INIT (RBTREE),
+    MR_IC_INIT (TREE),
     MR_IC_INIT (HASH_NEXT),
     MR_IC_INIT (STATIC_ARRAY),
+    MR_IC_INIT (RBTREE),
   };
 
   for (i = 0; i < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++i)
@@ -194,5 +196,44 @@ static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
 }
 
 MR_START_TEST (ic_find_added, "Check search of added element") { ic_types_foreach (ic_find_add_cb); } END_TEST
+
+MR_START_TEST (ic_rbtree, "Check red/black tree implementation") { 
+  mr_rbtree_t rbtree;
+  mr_rbtree_init (&rbtree);
+
+  mr_ptr_t x = { .long_int_t = 0 };
+  mr_ptr_t * rv0 = mr_rbtree_add (x, &rbtree, long_int_t_cmp, NULL);
+  ck_assert_msg (NULL != rv0, "Failed to add value to rbtree");
+  ck_assert_msg (rv0->long_int_t == x.long_int_t, "Mismatched key");
+  ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
+
+  mr_ptr_t * rv = mr_rbtree_add (x, &rbtree, long_int_t_cmp, NULL);
+  ck_assert_msg (NULL != rv, "Failed to add value to rbtree");
+  ck_assert_msg (rv->long_int_t == x.long_int_t, "Mismatched key");
+  ck_assert_msg (rv == rv0, "Wrong key found");
+  ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
+
+  srand (time (NULL));
+  int i;
+#define N (1024 * 4)
+  for (i = 1; i < N; ++i)
+    {
+      mr_ptr_t value = { .long_int_t = random () };
+      mr_ptr_t * rv1 = mr_rbtree_add (value, &rbtree, long_int_t_cmp, NULL);
+      ck_assert_msg (NULL != rv1, "Failed to add value to rbtree");
+      ck_assert_msg (rv1->long_int_t == value.long_int_t, "Mismatched key");
+      ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
+    }
+
+  for (i = N - 1; i >= 0; --i)
+    {
+      mr_ptr_t value = rbtree.pool[random () % (rbtree.size / sizeof (rbtree.pool[0]))].key;
+      mr_status_t status = mr_rbtree_del (value, &rbtree, long_int_t_cmp, NULL);
+      ck_assert_msg (MR_SUCCESS == status, "Deletion rerurned failed status");
+      ck_assert_msg (i == rbtree.size / sizeof (rbtree.pool[0]), "Failed to del value from rbtree");
+      ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
+    }
+
+} END_TEST
 
 MAIN ();
