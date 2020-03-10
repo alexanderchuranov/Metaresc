@@ -1,3 +1,6 @@
+#include <stdlib.h>
+#include <time.h>
+
 #include <check.h>
 #include <metaresc.h>
 #include <mr_rbtree.h>
