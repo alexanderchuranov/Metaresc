@@ -237,6 +237,7 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
       ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
     }
 
+  mr_rbtree_free (&rbtree);
 } END_TEST
 
 MAIN ();
