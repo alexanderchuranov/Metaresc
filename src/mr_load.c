@@ -7,7 +7,6 @@
 #endif /* HAVE_CONFIG_H */
 #include <stdio.h>
 #include <string.h>
-#include <alloca.h>
 #ifdef HAVE_DLFCN_H
 #define __USE_GNU
 #include <dlfcn.h>
