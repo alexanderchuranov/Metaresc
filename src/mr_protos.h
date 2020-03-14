@@ -10,6 +10,8 @@ TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointe
 	       (char *, string),
 	       (mr_offset_t, offset),
 	       (long_int_t, long_int_t),
+	       (uintptr_t, uintptr_t),
+	       (intptr_t, intptr_t),
 	       )
 
 TYPEDEF_ENUM (mr_log_level_t, ATTRIBUTES ( ,"Log levels enum"),

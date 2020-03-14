@@ -71,7 +71,7 @@ dump_rbtree (mr_rbtree_t * rbtree)
 {
   typed_rbtree_t typed_rbtree = {
     .rbtree = rbtree,
-    .key_type = "long_int_t",
+    .key_type = "intptr_t",
   };
   char * dump = MR_SAVE_CINIT (typed_rbtree_t, &typed_rbtree);
   if (dump)

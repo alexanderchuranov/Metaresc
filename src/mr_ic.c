@@ -384,320 +384,320 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
 
 /* ----------------------- MR_IC_HASH_NEXT ----------------------- */
 
-static mr_ptr_t zero = { .long_int_t = 0, };
+static mr_ptr_t zero = { .intptr_t = 0, };
 
-#define MR_HASH_TABLE_SIZE_MULT (1.61803398875)
+ #define MR_HASH_TABLE_SIZE_MULT (1.61803398875)
 
-void
-mr_ic_hash_next_free (mr_ic_t * ic)
-{
-  if (NULL != ic->hash_next.hash_table)
-    MR_FREE (ic->hash_next.hash_table);
-  ic->hash_next.hash_table = NULL;
-  ic->hash_next.size = 0;
-  ic->hash_next.zero_key = false;
-  ic->items_count = 0;
-}
+ void
+ mr_ic_hash_next_free (mr_ic_t * ic)
+ {
+   if (NULL != ic->hash_next.hash_table)
+     MR_FREE (ic->hash_next.hash_table);
+   ic->hash_next.hash_table = NULL;
+   ic->hash_next.size = 0;
+   ic->hash_next.zero_key = false;
+   ic->items_count = 0;
+ }
 
-static inline int
-mr_ic_hash_get_backet (mr_ic_t * ic, mr_ptr_t key)
-{
-  mr_hash_value_t hash_value = ic->hash_next.hash_fn (key, ic->context.data.ptr);
-  int hash_size = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
-  if (hash_size <= 0)
-    return (-1);
-  return (hash_value % hash_size);
-}
+ static inline int
+ mr_ic_hash_get_backet (mr_ic_t * ic, mr_ptr_t key)
+ {
+   mr_hash_value_t hash_value = ic->hash_next.hash_fn (key, ic->context.data.ptr);
+   int hash_size = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
+   if (hash_size <= 0)
+     return (-1);
+   return (hash_value % hash_size);
+ }
 
-static mr_ptr_t *
-mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, int bucket)
-{
-  int i, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
+ static mr_ptr_t *
+ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key, int bucket)
+ {
+   int i, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
 
-  if (bucket < 0)
-    return (NULL);
-  
-  if (0 == key.long_int_t)
-    {
-      ic->hash_next.zero_key = true;
-      return (&zero);
-    }
+   if (bucket < 0)
+     return (NULL);
 
-  for (i = bucket; ;)
-    {
-      if (0 == ic->hash_next.hash_table[i].long_int_t)
-	{
-	  ic->hash_next.hash_table[i] = key;
-	  return (&ic->hash_next.hash_table[i]);
-	}
-      if (0 == ic->compar_fn (key, ic->hash_next.hash_table[i], ic->context.data.ptr))
-	return (&ic->hash_next.hash_table[i]);
-      if (++i >= count)
-	i = 0;
-      if (i == bucket)
-	break;
-    }
-  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
-  return (NULL);
-}
+   if (0 == key.intptr_t)
+     {
+       ic->hash_next.zero_key = true;
+       return (&zero);
+     }
 
-static mr_ptr_t *
-mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key)
-{
-  int bucket = mr_ic_hash_get_backet (ic, key);
-  if (bucket < 0)
-    return (NULL);
+   for (i = bucket; ;)
+     {
+       if (0 == ic->hash_next.hash_table[i].intptr_t)
+	 {
+	   ic->hash_next.hash_table[i] = key;
+	   return (&ic->hash_next.hash_table[i]);
+	 }
+       if (0 == ic->compar_fn (key, ic->hash_next.hash_table[i], ic->context.data.ptr))
+	 return (&ic->hash_next.hash_table[i]);
+       if (++i >= count)
+	 i = 0;
+       if (i == bucket)
+	 break;
+     }
+   MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
+   return (NULL);
+ }
 
-  mr_ptr_t * add = mr_ic_hash_next_index_add (ic, key, bucket);
-  if ((add != NULL) && (add->ptr == key.ptr))
-    ++ic->items_count;
+ static mr_ptr_t *
+ mr_ic_hash_add_inner (mr_ic_t * ic, mr_ptr_t key)
+ {
+   int bucket = mr_ic_hash_get_backet (ic, key);
+   if (bucket < 0)
+     return (NULL);
 
-  return (add);
-}
+   mr_ptr_t * add = mr_ic_hash_next_index_add (ic, key, bucket);
+   if ((add != NULL) && (add->ptr == key.ptr))
+     ++ic->items_count;
 
-static mr_status_t
-mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
-{
-  mr_ic_t * dst_ic = (void*)context;
-  mr_ptr_t * add = mr_ic_hash_add_inner (dst_ic, key);
-  return ((NULL == add) ? MR_FAILURE : MR_SUCCESS);
-}
+   return (add);
+ }
 
-static mr_status_t
-mr_ic_hash_index_inner (mr_ic_t * src_ic, mr_ic_t * dst_ic, int items_count)
-{
-  
-  dst_ic->items_count = items_count;
+ static mr_status_t
+ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
+ {
+   mr_ic_t * dst_ic = (void*)context;
+   mr_ptr_t * add = mr_ic_hash_add_inner (dst_ic, key);
+   return ((NULL == add) ? MR_FAILURE : MR_SUCCESS);
+ }
 
-  if (0 == dst_ic->items_count)
-    return (MR_SUCCESS);
+ static mr_status_t
+ mr_ic_hash_index_inner (mr_ic_t * src_ic, mr_ic_t * dst_ic, int items_count)
+ {
 
-  dst_ic->hash_next.size = ((int)(dst_ic->items_count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (dst_ic->hash_next.hash_table[0]);
-  dst_ic->hash_next.hash_table = MR_MALLOC (dst_ic->hash_next.size);
-  if (NULL == dst_ic->hash_next.hash_table)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
-    }
+   dst_ic->items_count = items_count;
 
-  memset (dst_ic->hash_next.hash_table, 0, dst_ic->hash_next.size);
+   if (0 == dst_ic->items_count)
+     return (MR_SUCCESS);
 
-  dst_ic->items_count = 0;
-  return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
-}
+   dst_ic->hash_next.size = ((int)(dst_ic->items_count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (dst_ic->hash_next.hash_table[0]);
+   dst_ic->hash_next.hash_table = MR_MALLOC (dst_ic->hash_next.size);
+   if (NULL == dst_ic->hash_next.hash_table)
+     {
+       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+       return (MR_FAILURE);
+     }
 
-mr_status_t
-mr_ic_hash_next_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
-{
-  mr_status_t status;
-  mr_ic_t ic_unsorted_array;
+   memset (dst_ic->hash_next.hash_table, 0, dst_ic->hash_next.size);
 
-  if (NULL == rarray)
-    return (MR_FAILURE);
+   dst_ic->items_count = 0;
+   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
+ }
 
-  mr_ic_unsorted_array_new (&ic_unsorted_array, ic->compar_fn, ic->key_type, &ic->context);
-  mr_ic_unsorted_array_index (&ic_unsorted_array, rarray);
-  status = mr_ic_hash_index_inner (&ic_unsorted_array, ic, rarray->size / sizeof (rarray->ra[0]));
-  mr_ic_free (&ic_unsorted_array);
-  return (status);
-}
+ mr_status_t
+ mr_ic_hash_next_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+ {
+   mr_status_t status;
+   mr_ic_t ic_unsorted_array;
 
-mr_ptr_t *
-mr_ic_hash_next_add (mr_ic_t * ic, mr_ptr_t key)
-{
-  mr_ptr_t * find = mr_ic_find (ic, key);
-  if (find != NULL)
-    return (find);
+   if (NULL == rarray)
+     return (MR_FAILURE);
 
-  if (ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) <= (ic->items_count + 1) * MR_HASH_TABLE_SIZE_MULT)
-    {
-      mr_ic_t dst_ic;
-      if (MR_SUCCESS != mr_ic_new (&dst_ic, ic->hash_next.hash_fn, ic->compar_fn, ic->key_type, ic->ic_type, &ic->context))
-	return (NULL);
+   mr_ic_unsorted_array_new (&ic_unsorted_array, ic->compar_fn, ic->key_type, &ic->context);
+   mr_ic_unsorted_array_index (&ic_unsorted_array, rarray);
+   status = mr_ic_hash_index_inner (&ic_unsorted_array, ic, rarray->size / sizeof (rarray->ra[0]));
+   mr_ic_free (&ic_unsorted_array);
+   return (status);
+ }
 
-      if (MR_SUCCESS != mr_ic_hash_index_inner (ic, &dst_ic, ic->items_count + 1))
-	return (NULL);
+ mr_ptr_t *
+ mr_ic_hash_next_add (mr_ic_t * ic, mr_ptr_t key)
+ {
+   mr_ptr_t * find = mr_ic_find (ic, key);
+   if (find != NULL)
+     return (find);
 
-      mr_ic_free (ic);
-      *ic = dst_ic;
-    }
-  return (mr_ic_hash_add_inner (ic, key));
-}
+   if (ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) <= (ic->items_count + 1) * MR_HASH_TABLE_SIZE_MULT)
+     {
+       mr_ic_t dst_ic;
+       if (MR_SUCCESS != mr_ic_new (&dst_ic, ic->hash_next.hash_fn, ic->compar_fn, ic->key_type, ic->ic_type, &ic->context))
+	 return (NULL);
 
-mr_status_t
-mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
-{
-  mr_ptr_t * find = mr_ic_find (ic, key);
+       if (MR_SUCCESS != mr_ic_hash_index_inner (ic, &dst_ic, ic->items_count + 1))
+	 return (NULL);
 
-  if (NULL == find)
-    return (MR_FAILURE);
+       mr_ic_free (ic);
+       *ic = dst_ic;
+     }
+   return (mr_ic_hash_add_inner (ic, key));
+ }
 
-  --ic->items_count;
-  if (0 == key.long_int_t)
-    ic->hash_next.zero_key = false;
-  else
-    {
-      int i, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
-      int start_bucket = find - ic->hash_next.hash_table;
-      
-      find->long_int_t = 0;
-      for (i = start_bucket; ;) /* need to re-index all elements in sequential blocks after deleted element */
-	{
-	  mr_ptr_t mr_ptr;
-	  if (++i >= count)
-	    i = 0;
-	  
-	  if (0 == ic->hash_next.hash_table[i].long_int_t)
-	    break;
-	  
-	  if (i == start_bucket)
-	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
-	      return (MR_FAILURE);
-	    }
-	  
-	  mr_ptr = ic->hash_next.hash_table[i];
-	  ic->hash_next.hash_table[i].long_int_t = 0;
-	  int bucket = mr_ic_hash_get_backet (ic, mr_ptr);
-	  mr_ic_hash_next_index_add (ic, mr_ptr, bucket);
-	}
-    }
-  
-  return (MR_SUCCESS);
-}
+ mr_status_t
+ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
+ {
+   mr_ptr_t * find = mr_ic_find (ic, key);
 
-mr_ptr_t *
-mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
-{
-  int i, bucket, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
-  
-  if (0 == key.long_int_t)
-    return (ic->hash_next.zero_key ? &zero : NULL);
+   if (NULL == find)
+     return (MR_FAILURE);
 
-  bucket = mr_ic_hash_get_backet (ic, key);
-  if (bucket < 0)
-    return (NULL);
+   --ic->items_count;
+   if (0 == key.intptr_t)
+     ic->hash_next.zero_key = false;
+   else
+     {
+       int i, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
+       int start_bucket = find - ic->hash_next.hash_table;
 
-  for (i = bucket; ;)
-    {
-      if (0 == ic->hash_next.hash_table[i].long_int_t)
-	return (NULL);
-      if (0 == ic->compar_fn (key, ic->hash_next.hash_table[i], ic->context.data.ptr))
-	return (&ic->hash_next.hash_table[i]);
-      if (++i >= count)
-	i = 0;
-      if (i == bucket)
-	break;
-    }
-  return (NULL);
-}
+       find->intptr_t = 0;
+       for (i = start_bucket; ;) /* need to re-index all elements in sequential blocks after deleted element */
+	 {
+	   mr_ptr_t mr_ptr;
+	   if (++i >= count)
+	     i = 0;
 
-mr_status_t
-mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
-{
-  int i;
+	   if (0 == ic->hash_next.hash_table[i].intptr_t)
+	     break;
 
-  if (ic->hash_next.zero_key)
-    if (MR_SUCCESS != visit_fn (zero, context))
-      return (MR_FAILURE);
+	   if (i == start_bucket)
+	     {
+	       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
+	       return (MR_FAILURE);
+	     }
 
-  for (i = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1; i >= 0; --i)
-    if (0 != ic->hash_next.hash_table[i].long_int_t)
-      if (MR_SUCCESS != visit_fn (ic->hash_next.hash_table[i], context))
-	return (MR_FAILURE);
-  return (MR_SUCCESS);
-}
+	   mr_ptr = ic->hash_next.hash_table[i];
+	   ic->hash_next.hash_table[i].intptr_t = 0;
+	   int bucket = mr_ic_hash_get_backet (ic, mr_ptr);
+	   mr_ic_hash_next_index_add (ic, mr_ptr, bucket);
+	 }
+     }
 
-mr_status_t
-mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
-{
-  static mr_ic_virt_func_t virt_func = {
-    .add = mr_ic_hash_next_add,
-    .del = mr_ic_hash_next_del,
-    .find = mr_ic_hash_next_find,
-    .foreach = mr_ic_hash_next_foreach,
-    .index = mr_ic_hash_next_index,
-    .free = mr_ic_hash_next_free,
-  };
-  
-  if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
-    return (MR_FAILURE);
+   return (MR_SUCCESS);
+ }
 
-  ic->ic_type = MR_IC_HASH_NEXT;
-  if (context)
-    ic->context = *context;
-  else
-    memset (&ic->context, 0, sizeof (ic->context));
+ mr_ptr_t *
+ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
+ {
+   int i, bucket, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
 
-  ic->key_type = key_type;
-  ic->compar_fn = compar_fn;
-  ic->virt_func = &virt_func;
-  ic->items_count = 0;
+   if (0 == key.intptr_t)
+     return (ic->hash_next.zero_key ? &zero : NULL);
 
-  memset (&ic->hash_next, 0, sizeof (ic->hash_next));
-  ic->hash_next.hash_fn = hash_fn;
-  ic->hash_next.hash_table = NULL;
-  ic->hash_next.size = 0;
-  ic->hash_next.zero_key = false;
+   bucket = mr_ic_hash_get_backet (ic, key);
+   if (bucket < 0)
+     return (NULL);
 
-  return (MR_SUCCESS);
-}
+   for (i = bucket; ;)
+     {
+       if (0 == ic->hash_next.hash_table[i].intptr_t)
+	 return (NULL);
+       if (0 == ic->compar_fn (key, ic->hash_next.hash_table[i], ic->context.data.ptr))
+	 return (&ic->hash_next.hash_table[i]);
+       if (++i >= count)
+	 i = 0;
+       if (i == bucket)
+	 break;
+     }
+   return (NULL);
+ }
 
-/* ----------------------- MR_IC_STATIC_ARRAY ----------------------- */
+ mr_status_t
+ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+ {
+   int i;
 
-mr_ptr_t *
-mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
-{
-  mr_ptr_t * find = mr_ic_find (ic, key);
-  if (NULL != find)
-    return (find);
+   if (ic->hash_next.zero_key)
+     if (MR_SUCCESS != visit_fn (zero, context))
+       return (MR_FAILURE);
 
-  if (ic->items_count > sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ic->items_count);
-      ic->items_count = 0;
-    }
+   for (i = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1; i >= 0; --i)
+     if (0 != ic->hash_next.hash_table[i].intptr_t)
+       if (MR_SUCCESS != visit_fn (ic->hash_next.hash_table[i], context))
+	 return (MR_FAILURE);
+   return (MR_SUCCESS);
+ }
 
-  if (ic->items_count == sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
-    {
-      mr_ic_t dst_ic;
-      mr_status_t status;
-      if (NULL == ic->static_array.hash_fn)
-	status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
-      else
-	status = mr_ic_hash_next_new (&dst_ic, ic->static_array.hash_fn, ic->compar_fn, ic->key_type, &ic->context);
-      if (MR_SUCCESS != status)
-	return (NULL);
-      
-      mr_ic_rarray_t rarray;
-      rarray.ra = &ic->static_array.static_array[0];
-      rarray.size = sizeof (ic->static_array.static_array);
-      rarray.alloc_size = -1;
-      
-      status = mr_ic_index (&dst_ic, &rarray);
-      if (MR_SUCCESS != status)
-	return (NULL);
-      
-      *ic = dst_ic;
-      return (mr_ic_add (ic, key));
-    }
+ mr_status_t
+ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
+ {
+   static mr_ic_virt_func_t virt_func = {
+     .add = mr_ic_hash_next_add,
+     .del = mr_ic_hash_next_del,
+     .find = mr_ic_hash_next_find,
+     .foreach = mr_ic_hash_next_foreach,
+     .index = mr_ic_hash_next_index,
+     .free = mr_ic_hash_next_free,
+   };
 
-  mr_ptr_t * add = &ic->static_array.static_array[ic->items_count++];
-  *add = key;
-  return (add);
-}
+   if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
+     return (MR_FAILURE);
 
-mr_status_t
-mr_ic_static_array_del (mr_ic_t * ic, mr_ptr_t key)
-{
-  mr_ptr_t * find = mr_ic_find (ic, key);
-  if (NULL == find)
-    return (MR_FAILURE);
-  
-  ptrdiff_t offset = (char*)find - (char*)&ic->static_array.static_array[0];
-  --ic->items_count;
-  memmove (find, &find[1], ic->items_count * sizeof (ic->static_array.static_array[0]) - offset);
-  ic->static_array.static_array[ic->items_count].long_int_t = 0;
+   ic->ic_type = MR_IC_HASH_NEXT;
+   if (context)
+     ic->context = *context;
+   else
+     memset (&ic->context, 0, sizeof (ic->context));
+
+   ic->key_type = key_type;
+   ic->compar_fn = compar_fn;
+   ic->virt_func = &virt_func;
+   ic->items_count = 0;
+
+   memset (&ic->hash_next, 0, sizeof (ic->hash_next));
+   ic->hash_next.hash_fn = hash_fn;
+   ic->hash_next.hash_table = NULL;
+   ic->hash_next.size = 0;
+   ic->hash_next.zero_key = false;
+
+   return (MR_SUCCESS);
+ }
+
+ /* ----------------------- MR_IC_STATIC_ARRAY ----------------------- */
+
+ mr_ptr_t *
+ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
+ {
+   mr_ptr_t * find = mr_ic_find (ic, key);
+   if (NULL != find)
+     return (find);
+
+   if (ic->items_count > sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
+     {
+       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ic->items_count);
+       ic->items_count = 0;
+     }
+
+   if (ic->items_count == sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
+     {
+       mr_ic_t dst_ic;
+       mr_status_t status;
+       if (NULL == ic->static_array.hash_fn)
+	 status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
+       else
+	 status = mr_ic_hash_next_new (&dst_ic, ic->static_array.hash_fn, ic->compar_fn, ic->key_type, &ic->context);
+       if (MR_SUCCESS != status)
+	 return (NULL);
+
+       mr_ic_rarray_t rarray;
+       rarray.ra = &ic->static_array.static_array[0];
+       rarray.size = sizeof (ic->static_array.static_array);
+       rarray.alloc_size = -1;
+
+       status = mr_ic_index (&dst_ic, &rarray);
+       if (MR_SUCCESS != status)
+	 return (NULL);
+
+       *ic = dst_ic;
+       return (mr_ic_add (ic, key));
+     }
+
+   mr_ptr_t * add = &ic->static_array.static_array[ic->items_count++];
+   *add = key;
+   return (add);
+ }
+
+ mr_status_t
+ mr_ic_static_array_del (mr_ic_t * ic, mr_ptr_t key)
+ {
+   mr_ptr_t * find = mr_ic_find (ic, key);
+   if (NULL == find)
+     return (MR_FAILURE);
+
+   ptrdiff_t offset = (char*)find - (char*)&ic->static_array.static_array[0];
+   --ic->items_count;
+   memmove (find, &find[1], ic->items_count * sizeof (ic->static_array.static_array[0]) - offset);
+   ic->static_array.static_array[ic->items_count].intptr_t = 0;
   return (MR_SUCCESS);
 }
 
