@@ -49,7 +49,7 @@ check_tree_rec (mr_rbtree_t * rbtree, unsigned idx)
     print_trace (rbtree, idx);
 
   check_tree_rec (rbtree, rbtree->pool[idx].right);
-  if (-1 == rbtree->pool[idx].left)
+  if (-1 == rbtree->pool[idx].right)
     print_trace (rbtree, idx);
 }
 
