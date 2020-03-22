@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <time.h>
 
 #include <check.h>
 #include <metaresc.h>
@@ -216,12 +215,12 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
   ck_assert_msg (rv == rv0, "Wrong key found");
   ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
 
-  srand (time (NULL));
+  srand (0xDeadBeef);
   int i;
 #define N (1024 * 4)
   for (i = 1; i < N; ++i)
     {
-      mr_ptr_t value = { .long_int_t = random () };
+      mr_ptr_t value = { .uintptr_t = random () };
       mr_ptr_t * rv1 = mr_rbtree_add (value, &rbtree, long_int_t_cmp, NULL);
       ck_assert_msg (NULL != rv1, "Failed to add value to rbtree");
       ck_assert_msg (rv1->long_int_t == value.long_int_t, "Mismatched key");
