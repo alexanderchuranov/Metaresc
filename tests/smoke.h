@@ -59,7 +59,7 @@
     memset (&array, 0, sizeof (array));					\
     array.size = count * sizeof (array.ra[0]);				\
     array.ptr_type = "char";						\
-    array.ra = MR_MALLOC (array.size);					\
+    array.ra = MR_CALLOC (count, sizeof (array.ra[0]));			\
     ck_assert_msg (NULL != array.ra, "Memory allocation failed.");	\
     for (i = 1; i < count; ++i)						\
       {									\

@@ -335,7 +335,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
-		(void *, malloc, (const char *, const char *, int, size_t), "pointer on malloc() function"),
+		(void *, calloc, (const char *, const char *, int, size_t, size_t), "pointer on malloc() function"),
 		(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
 		(void, free, (const char *, const char *, int, void *), "pointer on free() function"),
 		)

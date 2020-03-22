@@ -224,7 +224,7 @@ static inline bool st_is_seen (mr_ic_t * seen)
   return (true);
 }
 
-static void * _malloc (const char * filename, const char * function, int line, size_t size) 
+static void * _calloc (const char * filename, const char * function, int line, size_t count, size_t size) 
 { 
   if (!st_is_seen (&malloc_seen))
     {
@@ -236,7 +236,7 @@ static void * _malloc (const char * filename, const char * function, int line, s
 
   ++malloc_cnt;
 
-  void * rv = mr_mem.malloc (filename, function, line, size);
+  void * rv = mr_mem.calloc (filename, function, line, count, size);
   ck_assert_msg (NULL != rv, "Failed to alloca memory");
 
   mr_conf.mr_mem = mr_mem;
@@ -256,7 +256,7 @@ static void * _malloc (const char * filename, const char * function, int line, s
 static void * _realloc (const char * filename, const char * function, int line, void * ptr, size_t size) 
 {
   if (NULL == ptr)
-    return (_malloc (filename, function, line, size));
+    return (_calloc (filename, function, line, 1, size));
 
   if (!st_is_seen (&realloc_seen))
     {
@@ -355,7 +355,7 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
   
   mr_mem = mr_conf.mr_mem;
   _mr_mem.mem_alloc_strategy = mr_mem.mem_alloc_strategy;
-  _mr_mem.malloc = _malloc;
+  _mr_mem.calloc = _calloc;
   _mr_mem.realloc = _realloc;
   _mr_mem.free = _free;
   

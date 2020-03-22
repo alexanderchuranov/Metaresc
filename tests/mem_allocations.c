@@ -11,10 +11,10 @@ static int mr_malloc_cnt = 0;
 static int mr_realloc_cnt = 0;
 static int mr_free_cnt = 0;
 
-static void * _malloc (const char * filename, const char * function, int line, size_t size)
+static void * _calloc (const char * filename, const char * function, int line, size_t count, size_t size)
 {
   ++mr_malloc_cnt;
-  return (mr_mem.malloc (filename, function, line, size));
+  return (mr_mem.calloc (filename, function, line, count, size));
 }
 
 static void * _realloc (const char * filename, const char * function, int line, void * ptr, size_t size)
@@ -38,7 +38,7 @@ get_number_of_memory_ops (int n, void callback (mr_res_t * res))
   
   res.type = MR_STRINGIFY_READONLY (REFERENCE_TYPE);
   res.MR_SIZE = n * sizeof (REFERENCE_TYPE);
-  res.data.ptr = array = MR_MALLOC (res.MR_SIZE);
+  res.data.ptr = array = MR_CALLOC (n, sizeof (REFERENCE_TYPE));
 
   ck_assert_msg (array != NULL, "Failed to allocate reference array");
 
@@ -58,7 +58,7 @@ check_mem_ops_complexity (void callback (mr_res_t * res), char * method)
 { 
   mr_detect_type (NULL);
   mr_mem = mr_conf.mr_mem;
-  mr_conf.mr_mem.malloc = _malloc;
+  mr_conf.mr_mem.calloc = _calloc;
   mr_conf.mr_mem.realloc = _realloc;
   mr_conf.mr_mem.free = _free;
   

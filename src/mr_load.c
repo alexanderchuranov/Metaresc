@@ -42,7 +42,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
   if (max_idx < 0)
     return (MR_SUCCESS);
 
-  table = MR_MALLOC (sizeof (table[0]) * (max_idx + 1));
+  table = MR_CALLOC (max_idx + 1, sizeof (table[0]));
   if (NULL == table)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -254,7 +254,7 @@ mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str
       char buf[BUF_SIZE_ON_STACK];
       
       if (size >= BUF_SIZE_ON_STACK)
-	dst = MR_MALLOC (size);
+	dst = MR_CALLOC (size, sizeof (*dst));
       else
 	dst = buf;
 
@@ -668,14 +668,13 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
   
   fd_.mr_type = fd_.mr_type_aux;
   /* allocate memory */
-  *data = MR_MALLOC (count * fd_.size);
+  *data = MR_CALLOC (count, fd_.size);
   if (NULL == *data)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
   
-  memset (*data, 0, count * fd_.size);
   /* load recursively */
   count = 0;
   for (node = mr_load_data->ptrs.ra[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra[node].next)

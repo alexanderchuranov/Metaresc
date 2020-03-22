@@ -326,7 +326,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
   if (0 == rarray->size)
     return (MR_SUCCESS);
   
-  ic->rarray.ra = MR_MALLOC (rarray->size);
+  ic->rarray.ra = MR_CALLOC (1, rarray->size);
   if (NULL == ic->rarray.ra)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -473,14 +473,12 @@ static mr_ptr_t zero = { .intptr_t = 0, };
      return (MR_SUCCESS);
 
    dst_ic->hash_next.size = ((int)(dst_ic->items_count * 2 * MR_HASH_TABLE_SIZE_MULT)) * sizeof (dst_ic->hash_next.hash_table[0]);
-   dst_ic->hash_next.hash_table = MR_MALLOC (dst_ic->hash_next.size);
+   dst_ic->hash_next.hash_table = MR_CALLOC (1, dst_ic->hash_next.size);
    if (NULL == dst_ic->hash_next.hash_table)
      {
        MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
        return (MR_FAILURE);
      }
-
-   memset (dst_ic->hash_next.hash_table, 0, dst_ic->hash_next.size);
 
    dst_ic->items_count = 0;
    return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));

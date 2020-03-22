@@ -91,7 +91,7 @@
 #include <mr_tsearch.h>
 #include <metaresc.h>
 
-#define malloc(...) MR_MALLOC(__VA_ARGS__)
+#define malloc(SIZE) MR_CALLOC(1, SIZE)
 #define free(...) MR_FREE(__VA_ARGS__)
 
 #define weak_alias(...)

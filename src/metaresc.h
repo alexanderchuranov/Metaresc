@@ -107,7 +107,7 @@
 
 #define MR_MEM_INIT(FUNC, /* ATTR */ ...) __VA_ARGS__ void mr_mem_init (void) { FUNC; }
 
-#define MR_MALLOC(SIZE) (mr_conf.mr_mem.malloc)(__FILE__, __FUNCTION__, __LINE__, SIZE)
+#define MR_CALLOC(COUNT, SIZE) (mr_conf.mr_mem.calloc)(__FILE__, __FUNCTION__, __LINE__, COUNT, SIZE)
 #define MR_REALLOC(PTR, SIZE) (mr_conf.mr_mem.realloc)(__FILE__, __FUNCTION__, __LINE__, PTR, SIZE)
 #define MR_FREE(PTR) (mr_conf.mr_mem.free)(__FILE__, __FUNCTION__, __LINE__, PTR)
 

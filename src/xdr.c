@@ -620,13 +620,12 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	return (MR_FAILURE);
       if (size < 0)
 	return (MR_SUCCESS);
-      *str = MR_MALLOC (size + 1);
+      *str = MR_CALLOC (size + 1, sizeof (**str));
       if (NULL == *str)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (MR_FAILURE);
 	}
-      memset (*str, 0, size + 1);
       if (!xdr_opaque (xdrs, *str, size))
 	return (MR_FAILURE);
       return (MR_SUCCESS);
@@ -964,13 +963,12 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
       mr_pointer_set_size (idx, ptrs);
       
-      *data = MR_MALLOC (ptrs->ra[idx].MR_SIZE);
+      *data = MR_CALLOC (1, ptrs->ra[idx].MR_SIZE);
       if (NULL == *data)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (MR_FAILURE);
 	}
-      memset (*data, 0, ptrs->ra[idx].MR_SIZE);
       
       if (ptrs->ra[idx].flags.is_opaque_data)
 	return (xdr_opaque (xdrs, *data, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);

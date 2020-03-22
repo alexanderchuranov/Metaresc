@@ -59,7 +59,7 @@ MR_TYPEDEF_DESC_BI (complex_float_t);
 MR_TYPEDEF_DESC_BI (complex_double_t);
 MR_TYPEDEF_DESC_BI (complex_long_double_t);
 
-void * mr_malloc (const char * filename, const char * function, int line, size_t size) { return (malloc (size)); }
+void * mr_calloc (const char * filename, const char * function, int line, size_t count, size_t size) { return (calloc (count, size)); }
 void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
 void mr_free (const char * filename, const char * function, int line, void * ptr) { free (ptr); }
 
@@ -67,7 +67,7 @@ void mr_free (const char * filename, const char * function, int line, void * ptr
 mr_conf_t mr_conf = {
   .mr_mem = { /**< all memory functions may be replaced on user defined */
     .mem_alloc_strategy = 2, /**< Memory allocation strategy. Default is to double buffer every time. */
-    .malloc = mr_malloc, /**< Pointer to malloc function. */
+    .calloc = mr_calloc, /**< Pointer to malloc function. */
     .realloc = mr_realloc, /**< Pointer to realloc function. */
     .free = mr_free, /**< Pointer to free function. */
   },
@@ -139,7 +139,7 @@ mr_vasprintf (char ** strp, const char * fmt, va_list args)
   int len = mr_vscprintf (fmt, args);
   if (len <= 0) 
     return (len);
-  char * str = MR_MALLOC (len + 1);
+  char * str = MR_CALLOC (len + 1, sizeof (*str));
   if (NULL == str) 
     return (-1);
   int _len = vsnprintf (str, len + 1, fmt, args);
@@ -287,7 +287,7 @@ mr_strndup (const char * str, size_t size)
   char * _str = (char*)str;
   int _size;
   for (_size = 0; (_size < size) && *_str++; ++_size);
-  _str = MR_MALLOC (_size + 1);
+  _str = MR_CALLOC (_size + 1, sizeof (*_str));
   if (NULL == _str)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -302,7 +302,7 @@ char *
 mr_strdup (const char * str)
 {
   int _size = strlen (str) + 1;
-  char * _str = MR_MALLOC (_size);
+  char * _str = MR_CALLOC (_size, sizeof (*_str));
   if (NULL == _str)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -871,7 +871,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 		goto failure;
 	      }
 	    
-	    copy = MR_MALLOC (size);
+	    copy = MR_CALLOC (1, size);
 	    if (NULL == copy)
 	      {
 		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -1934,7 +1934,7 @@ mr_read_xml_doc (FILE * fd)
   int count = 2;
 
   max_size = 2 * 1024; /* initial string size */
-  str = (char*)MR_MALLOC (max_size);
+  str = (char*)MR_CALLOC (max_size, sizeof (*str));
   if (NULL == str)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
