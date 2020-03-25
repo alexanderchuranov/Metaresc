@@ -225,8 +225,7 @@ TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for sma
 
 TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
 		(mr_ptr_t, key, , "key_type"),
-		unsigned int left,
-		unsigned int right,
+		(unsigned int, next, [2], "left and right children"),
 		unsigned int parent,
 		bool red,
 		)
