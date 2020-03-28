@@ -223,11 +223,14 @@ TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for sma
 		(mr_ptr_t, static_array, [(sizeof (mr_ic_hash_next_t) - sizeof (mr_hash_fn_t)) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
+TYPEDEF_STRUCT (mr_rbtree_node_idx_t, ATTRIBUTES ( , "index of the binary tree with 1 bit extra property"),
+		BITFIELD (unsigned, idx, : sizeof (unsigned) * __CHAR_BIT__ - 1, "index in the pool"),
+		BITFIELD (bool, bit, : 1),
+		)
+
 TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
 		(mr_ptr_t, key, , "key_type"),
-		(unsigned int, next, [2], "left and right children"),
-		unsigned int parent,
-		bool red,
+		(mr_rbtree_node_idx_t, next, [2], "left and right children"),
 		)
 
 TYPEDEF_STRUCT (mr_rbtree_t, ATTRIBUTES ( , "indexed collection for red/black tree"),

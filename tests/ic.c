@@ -217,7 +217,7 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
 
   srand (0xDeadBeef);
   int i;
-#define N (1024 * 4)
+#define N (1 << 12)
   for (i = 1; i < N; ++i)
     {
       mr_ptr_t value = { .uintptr_t = random () };
