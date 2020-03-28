@@ -6,6 +6,12 @@
 #include <mr_rbtree.h>
 
 #define NONE_IDX 0
+#define FLIP 1
+
+TYPEDEF_ENUM (mr_child_idx_t,
+	      (MR_LEFT, = 0),
+	      (MR_RIGHT, = 1),
+	      )
 
 static unsigned
 mr_rbtree_node_new (mr_rbtree_t * rbtree)
@@ -23,16 +29,17 @@ mr_rbtree_node_new (mr_rbtree_t * rbtree)
 static inline void
 mr_rbtree_update_parent (mr_rbtree_t * rbtree, unsigned dst, unsigned src, unsigned parent)
 {
-  rbtree->pool[parent].next[(rbtree->pool[parent].next[1].idx == src) ? 1 : 0].idx = dst;
+  mr_child_idx_t src_idx = (src == rbtree->pool[parent].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
+  rbtree->pool[parent].next[src_idx].idx = dst;
 }
 
 static inline void
-mr_rbtree_rotate (mr_rbtree_t * rbtree, unsigned node, unsigned parent, bool left)
+mr_rbtree_rotate (mr_rbtree_t * rbtree, unsigned node, unsigned parent, mr_child_idx_t child_idx)
 {
-  unsigned child = rbtree->pool[node].next[!left].idx;
+  unsigned child = rbtree->pool[node].next[child_idx].idx;
   
-  rbtree->pool[node].next[!left].idx = rbtree->pool[child].next[left].idx;
-  rbtree->pool[child].next[left].idx = node;
+  rbtree->pool[node].next[child_idx].idx = rbtree->pool[child].next[child_idx ^ FLIP].idx;
+  rbtree->pool[child].next[child_idx ^ FLIP].idx = node;
 
   mr_rbtree_update_parent (rbtree, child, node, parent);
 }
@@ -44,8 +51,8 @@ mr_rbtree_rebalance_add (mr_rbtree_t * rbtree, unsigned node, unsigned * parents
     {
       unsigned int parent = parents[--parents_cnt];
       unsigned int grand_parent = parents[--parents_cnt];
-      bool left = (parent == rbtree->pool[grand_parent].next[0].idx);
-      unsigned uncle = rbtree->pool[grand_parent].next[left].idx;
+      mr_child_idx_t parent_idx = (parent == rbtree->pool[grand_parent].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
+      unsigned uncle = rbtree->pool[grand_parent].next[parent_idx ^ FLIP].idx;
       
       if (rbtree->pool[uncle].red.bit)
 	{
@@ -56,17 +63,17 @@ mr_rbtree_rebalance_add (mr_rbtree_t * rbtree, unsigned node, unsigned * parents
 	}
       else
 	{
-	  unsigned brother = rbtree->pool[parent].next[left].idx;
+	  unsigned brother = rbtree->pool[parent].next[parent_idx ^ FLIP].idx;
 
 	  if (node != brother)
 	    rbtree->pool[parent].red.bit = false;
 	  else
 	    {
-	      mr_rbtree_rotate (rbtree, parent, grand_parent, !left);
+	      mr_rbtree_rotate (rbtree, parent, grand_parent, parent_idx ^ FLIP);
 	      rbtree->pool[node].red.bit = false;
 	    }
 
-	  mr_rbtree_rotate (rbtree, grand_parent, parents[parents_cnt - 1], left);
+	  mr_rbtree_rotate (rbtree, grand_parent, parents[parents_cnt - 1], parent_idx);
 	  rbtree->pool[grand_parent].red.bit = true;
 	  break;
 	}
@@ -74,13 +81,13 @@ mr_rbtree_rebalance_add (mr_rbtree_t * rbtree, unsigned node, unsigned * parents
 }
 
 static void
-mr_rbtree_rebalance_del (mr_rbtree_t * rbtree, bool left, unsigned * parents, unsigned parents_cnt)
+mr_rbtree_rebalance_del (mr_rbtree_t * rbtree, mr_child_idx_t child_idx, unsigned * parents, unsigned parents_cnt)
 {
   for (;;)
     {
       unsigned parent = parents[parents_cnt - 1];
-      unsigned brother = rbtree->pool[parent].next[left].idx;
-      unsigned child = rbtree->pool[parent].next[!left].idx;
+      unsigned child = rbtree->pool[parent].next[child_idx].idx;
+      unsigned brother = rbtree->pool[parent].next[child_idx ^ FLIP].idx;
 
       if (rbtree->pool[child].red.bit)
 	{
@@ -92,40 +99,40 @@ mr_rbtree_rebalance_del (mr_rbtree_t * rbtree, bool left, unsigned * parents, un
 	{
 	  rbtree->pool[brother].red.bit = false;
 	  rbtree->pool[parent].red.bit = true;
-	  mr_rbtree_rotate (rbtree, parent, parents[parents_cnt - 2], !left);
+	  mr_rbtree_rotate (rbtree, parent, parents[parents_cnt - 2], child_idx ^ FLIP);
 	      
 	  parents[parents_cnt - 1] = brother;
 	  parents[parents_cnt++] = parent;
-	  brother = rbtree->pool[parent].next[left].idx;
+	  brother = rbtree->pool[parent].next[child_idx ^ FLIP].idx;
 	}
       
-      if (!rbtree->pool[rbtree->pool[brother].next[0].idx].red.bit &&
-	  !rbtree->pool[rbtree->pool[brother].next[1].idx].red.bit)
+      if (!rbtree->pool[rbtree->pool[brother].next[MR_LEFT].idx].red.bit &&
+	  !rbtree->pool[rbtree->pool[brother].next[MR_RIGHT].idx].red.bit)
 	rbtree->pool[brother].red.bit = true;
       else
 	{
-	  unsigned nephew = rbtree->pool[brother].next[!left].idx;
+	  unsigned nephew = rbtree->pool[brother].next[child_idx].idx;
 
 	  if (rbtree->pool[nephew].red.bit)
 	    {
 	      rbtree->pool[nephew].red.bit = false;
 	      rbtree->pool[brother].red.bit = true;
-	      mr_rbtree_rotate (rbtree, brother, parent, left);
+	      mr_rbtree_rotate (rbtree, brother, parent, child_idx);
 
 	      brother = nephew;
 	    }
 
 	  rbtree->pool[brother].red.bit = rbtree->pool[parent].red.bit;
 	  rbtree->pool[parent].red.bit = false;
-	  rbtree->pool[rbtree->pool[brother].next[left].idx].red.bit = false;
+	  rbtree->pool[rbtree->pool[brother].next[child_idx ^ FLIP].idx].red.bit = false;
 
-	  mr_rbtree_rotate (rbtree, parent, parents[parents_cnt - 2], !left);
+	  mr_rbtree_rotate (rbtree, parent, parents[parents_cnt - 2], child_idx ^ FLIP);
 	  break;
 	}
 
       if (0 == --parents_cnt)
 	break;
-      left = (rbtree->pool[parents[parents_cnt - 1]].next[0].idx == parent);
+      child_idx = (parent == rbtree->pool[parents[parents_cnt - 1]].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
     }
 
   rbtree->pool->red.bit = false;
@@ -153,18 +160,13 @@ mr_rbtree_find (mr_ptr_t key, mr_rbtree_t * rbtree, mr_compar_fn_t compar_fn, vo
   int cmp = -1;
 
   parents[cnt++] = NONE_IDX;
-  if (rbtree->size > 0)
-    for (idx = rbtree->pool->root.idx; idx != NONE_IDX; )
+  if (rbtree->size > sizeof (rbtree->pool[0]))
+    for (idx = rbtree->pool->root.idx; idx != NONE_IDX; idx = rbtree->pool[idx].next[(cmp > 0) ? MR_RIGHT : MR_LEFT].idx)
       {
 	parents[cnt++] = idx;
 	cmp = compar_fn (key, rbtree->pool[idx].key, context);
 	if (0 == cmp)
 	  break;
-
-	if (cmp < 0)
-	  idx = rbtree->pool[idx].next[0].idx;
-	else
-	  idx = rbtree->pool[idx].next[1].idx;
       }
   *parents_cnt = cnt;
   return (cmp);
@@ -182,15 +184,16 @@ mr_rbtree_del (mr_ptr_t key, mr_rbtree_t * rbtree, mr_compar_fn_t compar_fn, voi
 
   unsigned node = parents[parents_cnt - 1];
   unsigned del = node;
-  if ((rbtree->pool[node].next[0].idx != NONE_IDX) && (rbtree->pool[node].next[1].idx != NONE_IDX))
-    for (del = rbtree->pool[node].next[1].idx; rbtree->pool[del].next[0].idx != NONE_IDX; del = rbtree->pool[del].next[0].idx)
-      parents[parents_cnt++] = del;
-  else
+  if ((NONE_IDX == rbtree->pool[node].next[MR_LEFT].idx) ||
+      (NONE_IDX == rbtree->pool[node].next[MR_RIGHT].idx))
     --parents_cnt;
+  else
+    for (del = rbtree->pool[node].next[MR_RIGHT].idx; rbtree->pool[del].next[MR_LEFT].idx != NONE_IDX; del = rbtree->pool[del].next[MR_LEFT].idx)
+      parents[parents_cnt++] = del;
 
-  unsigned child = rbtree->pool[del].next[(rbtree->pool[del].next[1].idx != NONE_IDX) ? 1 : 0].idx;
+  unsigned child = rbtree->pool[del].next[(rbtree->pool[del].next[MR_RIGHT].idx != NONE_IDX) ? MR_RIGHT : MR_LEFT].idx;
   unsigned parent = parents[parents_cnt - 1];
-  bool left = (rbtree->pool[parent].next[0].idx == del);
+  mr_child_idx_t del_idx = (del == rbtree->pool[parent].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
 
   mr_rbtree_update_parent (rbtree, child, del, parent);
 
@@ -198,7 +201,7 @@ mr_rbtree_del (mr_ptr_t key, mr_rbtree_t * rbtree, mr_compar_fn_t compar_fn, voi
     rbtree->pool[node].key = rbtree->pool[del].key;
 
   if ((parent != NONE_IDX) && !rbtree->pool[del].red.bit)
-    mr_rbtree_rebalance_del (rbtree, left, parents, parents_cnt);
+    mr_rbtree_rebalance_del (rbtree, del_idx, parents, parents_cnt);
 
   rbtree->pool[rbtree->pool->root.idx].red.bit = false;
 
@@ -238,7 +241,7 @@ mr_rbtree_add (mr_ptr_t key, mr_rbtree_t * rbtree, mr_compar_fn_t compar_fn, voi
   
   rbtree->pool[idx].key = key;
   rbtree->pool[idx].red.bit = true;
-  rbtree->pool[parent].next[(cmp > 0) ? 1 : 0].idx = idx;
+  rbtree->pool[parent].next[(cmp > 0) ? MR_RIGHT : MR_LEFT].idx = idx;
   if (rbtree->pool[parent].red.bit)
     mr_rbtree_rebalance_add (rbtree, idx, parents, parents_cnt);
   
@@ -318,20 +321,20 @@ mr_rbtree_is_valid (mr_rbtree_t * rbtree, mr_compar_fn_t cmp, void * context)
   unsigned idx;
   for (idx = 0; idx < count; ++idx)
     {
-      if (rbtree->pool[idx].next[0].idx >= count)
+      if (rbtree->pool[idx].next[MR_LEFT].idx >= count)
 	{
-	  fprintf (stderr, "Node [%u] has a left child reference out of range %u > %u\n", idx, rbtree->pool[idx].next[0].idx, count);
+	  fprintf (stderr, "Node [%u] has a left child reference out of range %u > %u\n", idx, rbtree->pool[idx].next[MR_LEFT].idx, count);
 	  return (false);
 	}
-      if (rbtree->pool[idx].next[1].idx >= count)
+      if (rbtree->pool[idx].next[MR_RIGHT].idx >= count)
 	{
-	  fprintf (stderr, "Node [%u] has a right child reference out of range %u > %u\n", idx, rbtree->pool[idx].next[1].idx, count);
+	  fprintf (stderr, "Node [%u] has a right child reference out of range %u > %u\n", idx, rbtree->pool[idx].next[MR_RIGHT].idx, count);
 	  return (false);
 	}
     }
 
   int height = 0;
-  for (idx = rbtree->pool->root.idx; NONE_IDX != idx; idx = rbtree->pool[idx].next[0].idx)
+  for (idx = rbtree->pool->root.idx; NONE_IDX != idx; idx = rbtree->pool[idx].next[MR_LEFT].idx)
     height += !rbtree->pool[idx].red.bit;
 
   bool visited[count];
