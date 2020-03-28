@@ -224,7 +224,7 @@ TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for sma
 		)
 
 TYPEDEF_STRUCT (mr_tree_node_idx_t, ATTRIBUTES ( , "index of the binary tree with 1 bit extra property"),
-		BITFIELD (unsigned, idx, : sizeof (unsigned) * __CHAR_BIT__ - 1, "index in the pool"),
+		BITFIELD (unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		BITFIELD (bool, bit, : 1),
 		)
 
