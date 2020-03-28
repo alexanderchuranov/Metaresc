@@ -233,6 +233,7 @@ TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
 		ANON_UNION (),
 		(mr_tree_node_idx_t, next, [2], "left and right children"),
 		(mr_tree_node_idx_t, red),
+		(mr_tree_node_idx_t, root),
 		END_ANON_UNION (),
 		)
 
@@ -240,7 +241,6 @@ TYPEDEF_STRUCT (mr_rbtree_t, ATTRIBUTES ( , "indexed collection for red/black tr
 		(mr_rbtree_node_t *, pool, , "mr_rbtree_node_t allocation pool", { .offset = offsetof (mr_rbtree_t, size) }, "offset"),
 		unsigned size,
 		VOID (unsigned, alloc_size),
-		unsigned int root,
 		)
 
 TYPEDEF_STRUCT (mr_res_t,

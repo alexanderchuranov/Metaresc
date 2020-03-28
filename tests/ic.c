@@ -216,8 +216,9 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
   ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
 
   srand (0xDeadBeef);
-  int i;
+
 #define N (1 << 12)
+  int i;
   for (i = 1; i < N; ++i)
     {
       mr_ptr_t value = { .uintptr_t = random () };
@@ -227,9 +228,9 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
       ck_assert_msg (mr_rbtree_is_valid (&rbtree, long_int_t_cmp, NULL), "Invalid tree");
     }
 
-  for (i = rbtree.size / sizeof (rbtree.pool[0]) - 1; i >= 0; --i)
+  for (i = rbtree.size / sizeof (rbtree.pool[0]) - 1; i > 0; --i)
     {
-      mr_ptr_t value = rbtree.pool[random () % (rbtree.size / sizeof (rbtree.pool[0]))].key;
+      mr_ptr_t value = rbtree.pool[1 + random () % (rbtree.size / sizeof (rbtree.pool[0]) - 1)].key;
       mr_status_t status = mr_rbtree_del (value, &rbtree, long_int_t_cmp, NULL);
       ck_assert_msg (MR_SUCCESS == status, "Deletion rerurned failed status");
       ck_assert_msg (i == rbtree.size / sizeof (rbtree.pool[0]), "Failed to del value from rbtree");

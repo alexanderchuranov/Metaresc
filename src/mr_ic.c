@@ -788,7 +788,7 @@ mr_ptr_t *
 mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key)
 {
   mr_ptr_t * add = mr_rbtree_add (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr);
-  ic->items_count = ic->rbtree.size / sizeof (ic->rbtree.pool[0]);
+  ic->items_count = ic->rbtree.size / sizeof (ic->rbtree.pool[0]) - 1;
   return (add);
 }
 
@@ -796,7 +796,7 @@ mr_status_t
 mr_ic_rbtree_del (mr_ic_t * ic, mr_ptr_t key)
 {
   mr_status_t status = mr_rbtree_del (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr);
-  ic->items_count = ic->rbtree.size / sizeof (ic->rbtree.pool[0]);
+  ic->items_count = ic->rbtree.size / sizeof (ic->rbtree.pool[0]) - 1;
   return (status);
 }
 
