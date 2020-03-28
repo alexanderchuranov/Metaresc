@@ -803,12 +803,13 @@ mr_ic_rbtree_del (mr_ic_t * ic, mr_ptr_t key)
 mr_ptr_t *
 mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  int cmp;
-  unsigned node = mr_rbtree_find (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr, &cmp);
+  unsigned parents[sizeof (ic->rbtree.pool[0].next[0]) * __CHAR_BIT__ << 1];
+  unsigned parents_cnt = 0;  
+  int cmp = mr_rbtree_find (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr, parents, &parents_cnt);
 
-  if ((-1 == node) || (cmp != 0))
+  if ((0 == parents_cnt) || (cmp != 0))
     return (NULL);
-  return (&ic->rbtree.pool[node].key);
+  return (&ic->rbtree.pool[parents[parents_cnt - 1]].key);
 }
 
 mr_status_t
