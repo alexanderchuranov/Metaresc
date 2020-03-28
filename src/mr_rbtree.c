@@ -2,8 +2,6 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-#include <sys/types.h> /* ssize_t */
-
 #include <metaresc.h>
 #include <mr_rbtree.h>
 
@@ -13,11 +11,7 @@ static unsigned
 mr_rbtree_node_new (mr_rbtree_t * rbtree)
 {
   unsigned idx = rbtree->size / sizeof (rbtree->pool[0]);
-  ssize_t size = rbtree->size;
-  ssize_t alloc_size = rbtree->alloc_size;
-  mr_rbtree_node_t * node = mr_rarray_allocate_element ((void**)&rbtree->pool, &size, &alloc_size, sizeof (rbtree->pool[0]));
-  rbtree->alloc_size = alloc_size;
-  rbtree->size = size;
+  mr_rbtree_node_t * node = mr_rarray_allocate_element ((void**)&rbtree->pool, &rbtree->size, &rbtree->alloc_size, sizeof (rbtree->pool[0]));
 
   if (NULL == node)
     return (-1);

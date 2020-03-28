@@ -239,8 +239,8 @@ TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
 
 TYPEDEF_STRUCT (mr_rbtree_t, ATTRIBUTES ( , "indexed collection for red/black tree"),
 		(mr_rbtree_node_t *, pool, , "mr_rbtree_node_t allocation pool", { .offset = offsetof (mr_rbtree_t, size) }, "offset"),
-		unsigned size,
-		VOID (unsigned, alloc_size),
+		(ssize_t, size),
+		VOID (ssize_t, alloc_size),
 		)
 
 TYPEDEF_STRUCT (mr_res_t,
