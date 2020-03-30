@@ -54,14 +54,7 @@ mr_rbtree_rebalance_add (mr_rbtree_t * rbtree, unsigned node, unsigned * parents
       mr_child_idx_t parent_idx = (parent == rbtree->pool[grand_parent].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
       unsigned uncle = rbtree->pool[grand_parent].next[parent_idx ^ FLIP].idx;
       
-      if (rbtree->pool[uncle].red.bit)
-	{
-	  rbtree->pool[parent].red.bit = false;
-	  rbtree->pool[uncle].red.bit = false;
-	  rbtree->pool[grand_parent].red.bit = true;
-	  node = grand_parent;
-	}
-      else
+      if (!rbtree->pool[uncle].red.bit)
 	{
 	  unsigned brother = rbtree->pool[parent].next[parent_idx ^ FLIP].idx;
 
@@ -77,6 +70,11 @@ mr_rbtree_rebalance_add (mr_rbtree_t * rbtree, unsigned node, unsigned * parents
 	  rbtree->pool[grand_parent].red.bit = true;
 	  break;
 	}
+
+      rbtree->pool[parent].red.bit = false;
+      rbtree->pool[uncle].red.bit = false;
+      rbtree->pool[grand_parent].red.bit = true;
+      node = grand_parent;
     }
 }
 
@@ -107,10 +105,8 @@ mr_rbtree_rebalance_del (mr_rbtree_t * rbtree, mr_child_idx_t child_idx, unsigne
 	  brother = rbtree->pool[parent].next[child_idx ^ FLIP].idx;
 	}
       
-      if (!rbtree->pool[rbtree->pool[brother].next[MR_LEFT].idx].red.bit &&
-	  !rbtree->pool[rbtree->pool[brother].next[MR_RIGHT].idx].red.bit)
-	rbtree->pool[brother].red.bit = true;
-      else
+      if (rbtree->pool[rbtree->pool[brother].next[MR_LEFT].idx].red.bit ||
+	  rbtree->pool[rbtree->pool[brother].next[MR_RIGHT].idx].red.bit)
 	{
 	  unsigned nephew = rbtree->pool[brother].next[child_idx].idx;
 
@@ -131,6 +127,8 @@ mr_rbtree_rebalance_del (mr_rbtree_t * rbtree, mr_child_idx_t child_idx, unsigne
 	  mr_rbtree_rotate (rbtree, parent, parents[parents_cnt - 2], child_idx ^ FLIP);
 	  break;
 	}
+
+      rbtree->pool[brother].red.bit = true;
 
       if (0 == --parents_cnt)
 	break;
@@ -162,7 +160,7 @@ mr_rbtree_find (mr_ptr_t key, mr_rbtree_t * rbtree, mr_compar_fn_t compar_fn, vo
   int cmp = -1;
 
   parents[cnt++] = NONE_IDX;
-  if (rbtree->size > sizeof (rbtree->pool[0]))
+  if (rbtree->size >= 2 * sizeof (rbtree->pool[0]))
     for (idx = rbtree->pool->root.idx; idx != NONE_IDX; idx = rbtree->pool[idx].next[(cmp > 0) ? MR_RIGHT : MR_LEFT].idx)
       {
 	parents[cnt++] = idx;
