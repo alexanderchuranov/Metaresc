@@ -807,7 +807,7 @@ mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key)
   unsigned parents_cnt = 0;  
   int cmp = mr_rbtree_find (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr, parents, &parents_cnt);
 
-  if ((0 == parents_cnt) || (cmp != 0))
+  if (cmp != 0)
     return (NULL);
   return (&ic->rbtree.pool[parents[parents_cnt - 1]].key);
 }
@@ -816,7 +816,7 @@ mr_status_t
 mr_ic_rbtree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   int i;
-  for (i = ic->rbtree.size / sizeof (ic->rbtree.pool[0]) - 1; i >= 0; --i)
+  for (i = ic->rbtree.size / sizeof (ic->rbtree.pool[0]) - 1; i > 0; --i)
     if (MR_SUCCESS != visit_fn (ic->rbtree.pool[i].key, context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
