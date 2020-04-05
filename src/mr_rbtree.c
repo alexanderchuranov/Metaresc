@@ -213,8 +213,8 @@ mr_rbtree_del (mr_ptr_t key, mr_rbtree_t * rbtree, mr_compar_fn_t compar_fn, voi
       if (cmp != 0)
 	return (MR_FAILURE);
       
-      mr_rbtree_update_parent (rbtree, del, last, parents[parents_cnt - 2]);
       rbtree->pool[del] = rbtree->pool[last];
+      mr_rbtree_update_parent (rbtree, del, last, parents[parents_cnt - 2]);
     }
 
   return (MR_SUCCESS);
