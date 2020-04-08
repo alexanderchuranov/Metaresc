@@ -235,7 +235,8 @@ TYPEDEF_ENUM (mr_child_idx_t,
 
 TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "traverse index and discent direction"), 
 		(unsigned int, idx, , "index in the pool"),
-		(mr_child_idx_t, child_idx),
+		BITFIELD (mr_child_idx_t, child_idx, : 1),
+		BITFIELD (bool, equal, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_avltree_node_t, ATTRIBUTES ( , "node of the avl tree"),
