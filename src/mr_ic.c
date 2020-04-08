@@ -805,7 +805,7 @@ mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key)
 {
   unsigned parents[sizeof (ic->rbtree.pool[0].next[0]) * __CHAR_BIT__ << 1];
   unsigned parents_cnt = 0;  
-  int cmp = mr_rbtree_find (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr, parents, &parents_cnt);
+  int cmp = mr_tree_find (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr, parents, &parents_cnt);
 
   if (cmp != 0)
     return (NULL);
@@ -826,7 +826,7 @@ void
 mr_ic_rbtree_free (mr_ic_t * ic)
 {
   ic->items_count = 0;
-  mr_rbtree_free (&ic->rbtree);
+  mr_tree_free (&ic->rbtree);
 }
 
 mr_status_t mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
