@@ -8,32 +8,6 @@
 #define NONE_IDX 0
 #define FLIP 1
 
-unsigned int
-mr_avltree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_path_t * parents)
-{
-  unsigned idx;
-  unsigned cnt = 0;
-
-  parents[cnt].idx = NONE_IDX;
-  parents[cnt].equal = false;
-  parents[cnt++].child_idx = MR_LEFT;
-  if (tree->size >= 2 * sizeof (tree->pool[0]))
-    for (idx = tree->pool->root.idx; idx != NONE_IDX; )
-      {
-	parents[cnt].idx = idx;
-	int cmp = compar_fn (key, tree->pool[idx].key, context);
-	bool equal = (0 == cmp);
-	mr_child_idx_t child_idx = (cmp > 0) ? MR_RIGHT : MR_LEFT;
-	
-	parents[cnt].child_idx = child_idx;
-	parents[cnt++].equal = equal;
-	if (equal)
-	  break;
-	idx = tree->pool[idx].next[child_idx].idx;
-      }
-  return (cnt);
-}
-
 void
 mr_tree_init (mr_tree_t * tree)
 {
@@ -61,26 +35,34 @@ mr_tree_node_new (mr_tree_t * tree)
   return (tree->size / sizeof (tree->pool[0]) - 1);
 }
 
-static inline void
-mr_rbtree_update_parent (mr_tree_t * rbtree, unsigned dst, unsigned src, unsigned parent)
+unsigned int
+mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_path_t * parents)
 {
-  mr_child_idx_t src_idx = (src == rbtree->pool[parent].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
-  rbtree->pool[parent].next[src_idx].idx = dst;
+  unsigned idx;
+  unsigned cnt = 0;
+
+  parents[cnt].idx = NONE_IDX;
+  parents[cnt].equal = false;
+  parents[cnt++].child_idx = MR_LEFT;
+  if (tree->size >= 2 * sizeof (tree->pool[0]))
+    for (idx = tree->pool->root.idx; idx != NONE_IDX; )
+      {
+	parents[cnt].idx = idx;
+	int cmp = compar_fn (key, tree->pool[idx].key, context);
+	bool equal = (0 == cmp);
+	mr_child_idx_t child_idx = (cmp > 0) ? MR_RIGHT : MR_LEFT;
+	
+	parents[cnt].child_idx = child_idx;
+	parents[cnt++].equal = equal;
+	if (equal)
+	  break;
+	idx = tree->pool[idx].next[child_idx].idx;
+      }
+  return (cnt);
 }
 
 static inline void
-mr_rbtree_rotate (mr_tree_t * rbtree, unsigned node, unsigned parent, mr_child_idx_t child_idx)
-{
-  unsigned child = rbtree->pool[node].next[child_idx].idx;
-  
-  rbtree->pool[node].next[child_idx].idx = rbtree->pool[child].next[child_idx ^ FLIP].idx;
-  rbtree->pool[child].next[child_idx ^ FLIP].idx = node;
-
-  mr_rbtree_update_parent (rbtree, child, node, parent);
-}
-
-static inline void
-mr_rbtree_rotate_2 (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned idx, mr_child_idx_t child_idx)
+mr_rbtree_rotate (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned idx, mr_child_idx_t child_idx)
 {
   unsigned node = path[idx].idx;
   unsigned child = rbtree->pool[node].next[child_idx].idx;
@@ -92,10 +74,11 @@ mr_rbtree_rotate_2 (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned idx, mr_
 }
 
 static void 
-mr_rbtree_rebalance_add (mr_tree_t * rbtree, unsigned node, mr_tree_path_t * path, unsigned path_size)
+mr_rbtree_rebalance_add (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned path_size)
 {
   while ((path_size > 2) && rbtree->pool[path[path_size - 1].idx].red.bit)
     {
+      unsigned node = path[path_size].idx;
       unsigned parent = path[--path_size].idx;
       unsigned grand_parent = path[--path_size].idx;
       mr_child_idx_t parent_idx = path[path_size].child_idx;
@@ -109,11 +92,11 @@ mr_rbtree_rebalance_add (mr_tree_t * rbtree, unsigned node, mr_tree_path_t * pat
 	    rbtree->pool[parent].red.bit = false;
 	  else
 	    {
-	      mr_rbtree_rotate_2 (rbtree, path, path_size + 1, parent_idx ^ FLIP);
+	      mr_rbtree_rotate (rbtree, path, path_size + 1, parent_idx ^ FLIP);
 	      rbtree->pool[node].red.bit = false;
 	    }
 
-	  mr_rbtree_rotate_2 (rbtree, path, path_size, parent_idx);
+	  mr_rbtree_rotate (rbtree, path, path_size, parent_idx);
 	  rbtree->pool[grand_parent].red.bit = true;
 	  break;
 	}
@@ -121,7 +104,6 @@ mr_rbtree_rebalance_add (mr_tree_t * rbtree, unsigned node, mr_tree_path_t * pat
       rbtree->pool[parent].red.bit = false;
       rbtree->pool[uncle].red.bit = false;
       rbtree->pool[grand_parent].red.bit = true;
-      node = grand_parent;
     }
 }
 
@@ -133,7 +115,7 @@ mr_rbtree_add (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void 
       return (NULL);
 
   mr_tree_path_t path[sizeof (rbtree->pool[0].next[0]) * __CHAR_BIT__ << 1];
-  unsigned path_size = mr_avltree_find (key, rbtree, compar_fn, context, path);
+  unsigned path_size = mr_tree_find (key, rbtree, compar_fn, context, path);
   
   if (path[path_size - 1].equal)
     return (&rbtree->pool[path[path_size - 1].idx].key);
@@ -142,11 +124,12 @@ mr_rbtree_add (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void 
   if (-1 == idx)
     return (NULL);
 
+  path[path_size].idx = idx;
   rbtree->pool[idx].key = key;
   rbtree->pool[idx].red.bit = true;
   rbtree->pool[path[path_size - 1].idx].next[path[path_size - 1].child_idx].idx = idx;
   if (rbtree->pool[path[path_size - 1].idx].red.bit)
-    mr_rbtree_rebalance_add (rbtree, idx, path, path_size);
+    mr_rbtree_rebalance_add (rbtree, path, path_size);
   
   rbtree->pool[rbtree->pool->root.idx].red.bit = false;
   
@@ -154,11 +137,12 @@ mr_rbtree_add (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void 
 }
 
 static void
-mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_child_idx_t child_idx, unsigned * parents, unsigned parents_cnt)
+mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned path_size)
 {
-  for (;;)
+  for ( ; path_size > 0; --path_size)
     {
-      unsigned parent = parents[parents_cnt - 1];
+      unsigned parent = path[path_size - 1].idx;
+      mr_child_idx_t child_idx = path[path_size - 1].child_idx;
       unsigned child = rbtree->pool[parent].next[child_idx].idx;
       unsigned brother = rbtree->pool[parent].next[child_idx ^ FLIP].idx;
 
@@ -173,10 +157,11 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_child_idx_t child_idx, unsigned 
 	  rbtree->pool[brother].red.bit = false;
 	  rbtree->pool[parent].red.bit = true;
 	  
-	  mr_rbtree_rotate (rbtree, parent, parents[parents_cnt - 2], child_idx ^ FLIP);
+	  mr_rbtree_rotate (rbtree, path, path_size - 1, child_idx ^ FLIP);
 	      
-	  parents[parents_cnt - 1] = brother;
-	  parents[parents_cnt++] = parent;
+	  path[path_size - 1].idx = brother;
+	  path[path_size].child_idx = child_idx;
+	  path[path_size++].idx = parent;
 	  brother = rbtree->pool[parent].next[child_idx ^ FLIP].idx;
 	}
       
@@ -189,8 +174,10 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_child_idx_t child_idx, unsigned 
 	    {
 	      rbtree->pool[nephew].red.bit = false;
 	      rbtree->pool[brother].red.bit = true;
-	      
-	      mr_rbtree_rotate (rbtree, brother, parent, child_idx);
+
+	      path[path_size].idx = brother;
+	      path[path_size - 1].child_idx ^= FLIP;
+	      mr_rbtree_rotate (rbtree, path, path_size, child_idx);
 
 	      brother = nephew;
 	    }
@@ -199,70 +186,49 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_child_idx_t child_idx, unsigned 
 	  rbtree->pool[parent].red.bit = false;
 	  rbtree->pool[rbtree->pool[brother].next[child_idx ^ FLIP].idx].red.bit = false;
 
-	  mr_rbtree_rotate (rbtree, parent, parents[parents_cnt - 2], child_idx ^ FLIP);
+	  mr_rbtree_rotate (rbtree, path, path_size - 1, child_idx ^ FLIP);
 	  break;
 	}
 
       rbtree->pool[brother].red.bit = true;
-
-      if (0 == --parents_cnt)
-	break;
-      child_idx = (parent == rbtree->pool[parents[parents_cnt - 1]].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
     }
 
   rbtree->pool->red.bit = false;
 }
 
-int
-mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, unsigned * parents, unsigned * parents_cnt)
-{
-  unsigned idx;
-  unsigned cnt = 0;
-  int cmp = -1;
-
-  parents[cnt++] = NONE_IDX;
-  if (tree->size >= 2 * sizeof (tree->pool[0]))
-    for (idx = tree->pool->root.idx; idx != NONE_IDX; idx = tree->pool[idx].next[(cmp > 0) ? MR_RIGHT : MR_LEFT].idx)
-      {
-	parents[cnt++] = idx;
-	cmp = compar_fn (key, tree->pool[idx].key, context);
-	if (0 == cmp)
-	  break;
-      }
-  *parents_cnt = cnt;
-  return (cmp);
-}
-
 mr_status_t
 mr_rbtree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * context)
 {
-  unsigned parents[sizeof (rbtree->pool[0].next[0]) * __CHAR_BIT__ << 1];
-  unsigned parents_cnt = 0;  
-  int cmp = mr_tree_find (key, rbtree, compar_fn, context, parents, &parents_cnt);
+  mr_tree_path_t path[sizeof (rbtree->pool[0].next[0]) * __CHAR_BIT__ << 1];
+  unsigned path_size = mr_tree_find (key, rbtree, compar_fn, context, path);
 
-  if (cmp != 0)
+  if (!path[path_size - 1].equal)
     return (MR_FAILURE);
 
-  unsigned node = parents[parents_cnt - 1];
+  unsigned node = path[path_size - 1].idx;
   unsigned del = node;
   if ((NONE_IDX == rbtree->pool[node].next[MR_LEFT].idx) ||
       (NONE_IDX == rbtree->pool[node].next[MR_RIGHT].idx))
-    --parents_cnt;
+    --path_size;
   else
-    for (del = rbtree->pool[node].next[MR_RIGHT].idx; rbtree->pool[del].next[MR_LEFT].idx != NONE_IDX; del = rbtree->pool[del].next[MR_LEFT].idx)
-      parents[parents_cnt++] = del;
+    {
+      path[path_size - 1].child_idx = MR_RIGHT;
+      for (del = rbtree->pool[node].next[MR_RIGHT].idx;
+	   rbtree->pool[del].next[MR_LEFT].idx != NONE_IDX;
+	   del = rbtree->pool[del].next[MR_LEFT].idx)
+	{
+	  path[path_size].child_idx = MR_LEFT;
+	  path[path_size++].idx = del;
+	}
+    }
 
-  unsigned child = rbtree->pool[del].next[(rbtree->pool[del].next[MR_RIGHT].idx != NONE_IDX) ? MR_RIGHT : MR_LEFT].idx;
-  unsigned parent = parents[parents_cnt - 1];
-  mr_child_idx_t del_idx = (del == rbtree->pool[parent].next[MR_RIGHT].idx) ? MR_RIGHT : MR_LEFT;
+  rbtree->pool[path[path_size - 1].idx].next[path[path_size - 1].child_idx].idx =
+    rbtree->pool[del].next[(rbtree->pool[del].next[MR_RIGHT].idx != NONE_IDX) ? MR_RIGHT : MR_LEFT].idx;
 
-  mr_rbtree_update_parent (rbtree, child, del, parent);
+  rbtree->pool[node].key = rbtree->pool[del].key;
 
-  if (node != del)
-    rbtree->pool[node].key = rbtree->pool[del].key;
-
-  if ((parent != NONE_IDX) && !rbtree->pool[del].red.bit)
-    mr_rbtree_rebalance_del (rbtree, del_idx, parents, parents_cnt);
+  if (!rbtree->pool[del].red.bit)
+    mr_rbtree_rebalance_del (rbtree, path, path_size);
 
   rbtree->pool[rbtree->pool->root.idx].red.bit = false;
 
@@ -270,12 +236,12 @@ mr_rbtree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void 
   unsigned last = rbtree->size / sizeof (rbtree->pool[0]);
   if (del != last)
     {
-      cmp = mr_tree_find (rbtree->pool[last].key, rbtree, compar_fn, context, parents, &parents_cnt);
-      if (cmp != 0)
+      path_size = mr_tree_find (rbtree->pool[last].key, rbtree, compar_fn, context, path);
+      if (!path[path_size - 1].equal)
 	return (MR_FAILURE);
       
       rbtree->pool[del] = rbtree->pool[last];
-      mr_rbtree_update_parent (rbtree, del, last, parents[parents_cnt - 2]);
+      rbtree->pool[path[path_size - 2].idx].next[path[path_size - 2].child_idx].idx = del;
     }
 
   return (MR_SUCCESS);
@@ -410,7 +376,7 @@ mr_avltree_rebalance_add (mr_tree_t * avltree, unsigned node, mr_tree_path_t * p
       avltree->pool[path[idx].idx].longer.child_idx = path[idx].child_idx;
     }
 
-  if (NONE_IDX == idx)
+  if (0 == idx)
     return;
 
   if (avltree->pool[path[idx].idx].longer.child_idx != path[idx].child_idx)
@@ -460,7 +426,7 @@ mr_avltree_add (mr_ptr_t key, mr_tree_t * avltree, mr_compar_fn_t compar_fn, voi
       return (NULL);
 
   mr_tree_path_t path[sizeof (avltree->pool[0].next[0]) * __CHAR_BIT__ << 1];
-  unsigned path_size = mr_avltree_find (key, avltree, compar_fn, context, path);
+  unsigned path_size = mr_tree_find (key, avltree, compar_fn, context, path);
   
   if (path[path_size - 1].equal)
     return (&avltree->pool[path[path_size - 1].idx].key);
