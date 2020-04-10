@@ -787,36 +787,36 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
 mr_ptr_t *
 mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_ptr_t * add = mr_rbtree_add (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr);
-  ic->items_count = ic->rbtree.size / sizeof (ic->rbtree.pool[0]) - 1;
+  mr_ptr_t * add = mr_rbtree_add (key, &ic->rb, ic->compar_fn, ic->context.data.ptr);
+  ic->items_count = ic->rb.size / sizeof (ic->rb.pool[0]) - 1;
   return (add);
 }
 
 mr_status_t
 mr_ic_rbtree_del (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_status_t status = mr_rbtree_del (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr);
-  ic->items_count = ic->rbtree.size / sizeof (ic->rbtree.pool[0]) - 1;
+  mr_status_t status = mr_rbtree_del (key, &ic->rb, ic->compar_fn, ic->context.data.ptr);
+  ic->items_count = ic->rb.size / sizeof (ic->rb.pool[0]) - 1;
   return (status);
 }
 
 mr_ptr_t *
 mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_tree_path_t path[sizeof (ic->rbtree.pool[0].next[0]) * __CHAR_BIT__ << 1];
-  unsigned path_size = mr_tree_find (key, &ic->rbtree, ic->compar_fn, ic->context.data.ptr, path);
+  mr_tree_path_t path[MR_PATH_SIZE] = MR_PATH_STATIC_INIT;
+  unsigned path_size = mr_tree_find (key, &ic->rb, ic->compar_fn, ic->context.data.ptr, path);
 
   if (!path[path_size - 1].equal)
     return (NULL);
-  return (&ic->rbtree.pool[path[path_size - 1].idx].key);
+  return (&ic->rb.pool[path[path_size - 1].idx].key);
 }
 
 mr_status_t
 mr_ic_rbtree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   int i;
-  for (i = ic->rbtree.size / sizeof (ic->rbtree.pool[0]) - 1; i > 0; --i)
-    if (MR_SUCCESS != visit_fn (ic->rbtree.pool[i].key, context))
+  for (i = ic->rb.size / sizeof (ic->rb.pool[0]) - 1; i > 0; --i)
+    if (MR_SUCCESS != visit_fn (ic->rb.pool[i].key, context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -825,7 +825,7 @@ void
 mr_ic_rbtree_free (mr_ic_t * ic)
 {
   ic->items_count = 0;
-  mr_tree_free (&ic->rbtree);
+  mr_tree_free (&ic->rb);
 }
 
 mr_status_t mr_ic_rbtree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
@@ -867,7 +867,97 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
   ic->virt_func = &virt_func;
   ic->items_count = 0;
 
-  memset (&ic->rbtree, 0, sizeof (ic->rbtree));
+  mr_tree_init (&ic->rb);
+
+  return (MR_SUCCESS);
+}
+
+/* ----------------------- MR_IC_AVLTREE ----------------------- */
+
+mr_ptr_t *
+mr_ic_avltree_add (mr_ic_t * ic, mr_ptr_t key)
+{
+  mr_ptr_t * add = mr_avltree_add (key, &ic->avl, ic->compar_fn, ic->context.data.ptr);
+  ic->items_count = ic->avl.size / sizeof (ic->avl.pool[0]) - 1;
+  return (add);
+}
+
+mr_status_t
+mr_ic_avltree_del (mr_ic_t * ic, mr_ptr_t key)
+{
+  mr_status_t status = mr_avltree_del (key, &ic->avl, ic->compar_fn, ic->context.data.ptr);
+  ic->items_count = ic->avl.size / sizeof (ic->avl.pool[0]) - 1;
+  return (status);
+}
+
+mr_ptr_t *
+mr_ic_avltree_find (mr_ic_t * ic, mr_ptr_t key)
+{
+  mr_tree_path_t path[MR_PATH_SIZE] = MR_PATH_STATIC_INIT;
+  unsigned path_size = mr_tree_find (key, &ic->avl, ic->compar_fn, ic->context.data.ptr, path);
+
+  if (!path[path_size - 1].equal)
+    return (NULL);
+  return (&ic->avl.pool[path[path_size - 1].idx].key);
+}
+
+mr_status_t
+mr_ic_avltree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+{
+  int i;
+  for (i = ic->avl.size / sizeof (ic->avl.pool[0]) - 1; i > 0; --i)
+    if (MR_SUCCESS != visit_fn (ic->avl.pool[i].key, context))
+      return (MR_FAILURE);
+  return (MR_SUCCESS);
+}
+
+void
+mr_ic_avltree_free (mr_ic_t * ic)
+{
+  ic->items_count = 0;
+  mr_tree_free (&ic->avl);
+}
+
+mr_status_t mr_ic_avltree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+{
+  int i;
+  
+  mr_ic_avltree_free (ic);
+  
+  for (i = rarray->size / sizeof (rarray->ra[0]) - 1; i >= 0; --i)
+    if (NULL == mr_ic_add (ic, rarray->ra[i]))
+      return (MR_FAILURE);
+
+  return (MR_SUCCESS);
+}
+
+mr_status_t
+mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
+{
+  static mr_ic_virt_func_t virt_func = {
+    .add = mr_ic_avltree_add,
+    .del = mr_ic_avltree_del,
+    .find = mr_ic_avltree_find,
+    .foreach = mr_ic_avltree_foreach,
+    .index = mr_ic_avltree_index,
+    .free = mr_ic_avltree_free,
+  };
+  
+  if ((NULL == ic) || (NULL == compar_fn))
+    return (MR_FAILURE);
+
+  ic->ic_type = MR_IC_AVLTREE;
+  if (context)
+    ic->context = *context;
+  else
+    memset (&ic->context, 0, sizeof (ic->context));
+
+  ic->key_type = key_type;
+  ic->compar_fn = compar_fn;
+  ic->virt_func = &virt_func;
+  ic->items_count = 0;
+
+  mr_tree_init (&ic->avl);
 
   return (MR_SUCCESS);
 }

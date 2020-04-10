@@ -201,7 +201,8 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_TREE, , "tree"),
 	      (MR_IC_HASH_NEXT, , "hash_next"),
 	      (MR_IC_STATIC_ARRAY, , "static_array"),
-	      (MR_IC_RBTREE, , "rbtree"),
+	      (MR_IC_RBTREE, , "rb"),
+	      (MR_IC_AVLTREE, , "avl"),
 	      )
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
@@ -223,11 +224,6 @@ TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for sma
 		(mr_ptr_t, static_array, [(sizeof (mr_ic_hash_next_t) - sizeof (mr_hash_fn_t)) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
-TYPEDEF_STRUCT (mr_tree_node_idx_t, ATTRIBUTES ( , "index of the binary tree with 1 bit extra property"),
-		BITFIELD (unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
-		BITFIELD (bool, bit, : 1),
-		)
-
 TYPEDEF_ENUM (mr_child_idx_t,
 	      (MR_LEFT, = 0),
 	      (MR_RIGHT, = 1),
@@ -239,21 +235,33 @@ TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "traverse index and discent direc
 		BITFIELD (bool, equal, : 1),
 		)
 
-TYPEDEF_STRUCT (mr_avltree_node_t, ATTRIBUTES ( , "node of the avl tree"),
-		(mr_tree_node_idx_t, left),
+TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
+		BITFIELD (unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		VOID (bool, unused, : 1),
 		BITFIELD (unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
-		BITFIELD (mr_child_idx_t, child_idx, : 1),
+		BITFIELD (bool, red, : 1),
+		)
+
+TYPEDEF_STRUCT (mr_avltree_node_t, ATTRIBUTES ( , "node of the avl tree"),
+		BITFIELD (unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		BITFIELD (bool, balanced, : 1),
+		BITFIELD (unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		BITFIELD (mr_child_idx_t, longer, : 1),
+		)
+
+TYPEDEF_STRUCT (mr_tree_node_idx_t, ATTRIBUTES ( , "index of the binary tree with 1 bit extra property"),
+		BITFIELD (unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		BITFIELD (bool, bit, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_tree_node_t, ATTRIBUTES ( , "node of the red/black or avl tree"),
 		(mr_ptr_t, key, , "key_type"),
 		ANON_UNION (),
 		(mr_tree_node_idx_t, next, [2], "left and right children"),
-		(mr_tree_node_idx_t, red),
 		(mr_tree_node_idx_t, root),
-		(mr_tree_node_idx_t, balanced),
-		(mr_avltree_node_t, longer),
-		END_ANON_UNION (),
+		(mr_avltree_node_t, avl),
+		(mr_rbtree_node_t, rb),
+		END_ANON_UNION ("ic_type"),
 		)
 
 TYPEDEF_STRUCT (mr_tree_t, ATTRIBUTES ( , "indexed collection for red/black tree"),
@@ -283,7 +291,8 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_red_black_tree_node_t *, tree),
 		(mr_ic_hash_next_t, hash_next),
 		(mr_ic_static_array_t, static_array),
-		(mr_tree_t, rbtree),
+		(mr_tree_t, rb),
+		(mr_tree_t, avl),
 		END_ANON_UNION ("ic_type"),
 		)
 
