@@ -137,20 +137,6 @@ TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      MR_FAILURE,
 	      )
 
-TYPEDEF_ENUM (mr_rb_visit_order_t, ATTRIBUTES ( , "red/black tree traverse states"),
-	      MR_RB_VISIT_PREORDER,
-	      MR_RB_VISIT_POSTORDER,
-	      MR_RB_VISIT_ENDORDER,
-	      MR_RB_VISIT_LEAF,
-	      )
-
-TYPEDEF_STRUCT (mr_red_black_tree_node_t, ATTRIBUTES ( , "red/black tree node"),
-		(mr_ptr_t, key, , "key_type"),
-		(mr_red_black_tree_node_t *, left, , "left child"),
-		(mr_red_black_tree_node_t *, right, , "right child"),
-		(bool, red),
-		)
-
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		(unsigned int, count, , "array size"),
 		(unsigned int, row_count, , "row size"),
@@ -180,11 +166,7 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 
 TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
 
-TYPEDEF_FUNC (void, mr_action_fn_t, (__const mr_red_black_tree_node_t * /* nodep */, mr_rb_visit_order_t /* value */, int /* level */, __const void * /* context */))
-
 TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
-
-TYPEDEF_FUNC (void, mr_free_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
@@ -198,7 +180,6 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_CUSTOM, , "custom"),
 	      (MR_IC_UNSORTED_ARRAY, , "rarray"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
-	      (MR_IC_TREE, , "tree"),
 	      (MR_IC_HASH_NEXT, , "hash_next"),
 	      (MR_IC_STATIC_ARRAY, , "static_array"),
 	      (MR_IC_RBTREE, , "rb"),
@@ -288,7 +269,6 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(void *, void_ptr, , "default serialization"),
 		(mr_res_t, custom, , "pointer on custom data for extended IC types"),
 		(mr_ic_rarray_t, rarray),
-		(mr_red_black_tree_node_t *, tree),
 		(mr_ic_hash_next_t, hash_next),
 		(mr_ic_static_array_t, static_array),
 		(mr_tree_t, rb),

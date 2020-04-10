@@ -21,7 +21,6 @@
 #endif /* HAVE_EXECINFO_H */
 
 #include <metaresc.h>
-#include <mr_tsearch.h>
 #include <mr_save.h>
 #include <mr_ic.h>
 #include <mr_stringify.h>

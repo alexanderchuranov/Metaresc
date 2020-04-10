@@ -2,7 +2,6 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-#include <mr_tsearch.h>
 #ifdef HAVE_CONFIG_H
 # include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
