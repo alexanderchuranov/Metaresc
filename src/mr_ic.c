@@ -9,7 +9,7 @@
 #include <metaresc.h>
 #include <mr_tsearch.h>
 #include <mr_hsort.h>
-#include <mr_rbtree.h>
+#include <mr_btree.h>
 #include <mr_ic.h>
 
 /* ----------------------- MR_IC_UNSORTED_ARRAY ----------------------- */

@@ -3,7 +3,7 @@
 
 #include <check.h>
 #include <metaresc.h>
-#include <mr_rbtree.h>
+#include <mr_btree.h>
 #include <regression.h>
 
 #include <mr_ic.h>
@@ -240,36 +240,44 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
   mr_tree_free (&rbtree);
 } END_TEST
 
-MR_START_TEST (ic_avltree, "Check red/black tree implementation") { 
-  mr_tree_t avltree;
-  mr_tree_init (&avltree);
+MR_START_TEST (ic_avltree, "Check AVL tree implementation") { 
+  mr_tree_t tree;
+  mr_tree_init (&tree);
 
   mr_ptr_t x = { .long_int_t = 0 };
-  mr_ptr_t * rv0 = mr_avltree_add (x, &avltree, long_int_t_cmp, NULL);
+  mr_ptr_t * rv0 = mr_avltree_add (x, &tree, long_int_t_cmp, NULL);
   ck_assert_msg (NULL != rv0, "Failed to add value to rbtree");
   ck_assert_msg (rv0->long_int_t == x.long_int_t, "Mismatched key");
-  ck_assert_msg (mr_avltree_is_valid (&avltree, long_int_t_cmp, NULL), "Invalid tree");
+  ck_assert_msg (mr_avltree_is_valid (&tree, long_int_t_cmp, NULL), "Invalid tree");
 
-  mr_ptr_t * rv = mr_avltree_add (x, &avltree, long_int_t_cmp, NULL);
+  mr_ptr_t * rv = mr_avltree_add (x, &tree, long_int_t_cmp, NULL);
   ck_assert_msg (NULL != rv, "Failed to add value to rbtree");
   ck_assert_msg (rv->long_int_t == x.long_int_t, "Mismatched key");
   ck_assert_msg (rv == rv0, "Wrong key found");
-  ck_assert_msg (mr_avltree_is_valid (&avltree, long_int_t_cmp, NULL), "Invalid tree");
+  ck_assert_msg (mr_avltree_is_valid (&tree, long_int_t_cmp, NULL), "Invalid tree");
 
   srand (0xDeadBeef);
-  srand (time (0));
 
   int i;
   for (i = 1; i < 1 << 12; ++i)
     {
       mr_ptr_t value = { .uintptr_t = random () };
-      mr_ptr_t * rv1 = mr_avltree_add (value, &avltree, long_int_t_cmp, NULL);
+      mr_ptr_t * rv1 = mr_avltree_add (value, &tree, long_int_t_cmp, NULL);
       ck_assert_msg (NULL != rv1, "Failed to add value to rbtree");
       ck_assert_msg (rv1->long_int_t == value.long_int_t, "Mismatched key");
-      ck_assert_msg (mr_avltree_is_valid (&avltree, long_int_t_cmp, NULL), "Invalid tree");
+      ck_assert_msg (mr_avltree_is_valid (&tree, long_int_t_cmp, NULL), "Invalid tree");
     }
 
-  mr_tree_free (&avltree);
+  for (i = tree.size / sizeof (tree.pool[0]) - 1; i > 0; --i)
+    {
+      mr_ptr_t value = tree.pool[1 + random () % (tree.size / sizeof (tree.pool[0]) - 1)].key;
+      mr_status_t status = mr_avltree_del (value, &tree, long_int_t_cmp, NULL);
+      ck_assert_msg (MR_SUCCESS == status, "Deletion rerurned failed status");
+      ck_assert_msg (i == tree.size / sizeof (tree.pool[0]), "Failed to del value from rbtree");
+      ck_assert_msg (mr_avltree_is_valid (&tree, long_int_t_cmp, NULL), "Invalid tree");
+    }
+  
+  mr_tree_free (&tree);
 } END_TEST
 
 MAIN ();

@@ -3,7 +3,7 @@
 /* This file is part of Metaresc project */
 
 #include <metaresc.h>
-#include <mr_rbtree.h>
+#include <mr_btree.h>
 
 #define NONE_IDX 0
 #define FLIP 1
