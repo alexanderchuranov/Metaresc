@@ -9,7 +9,6 @@ TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointe
 	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "char"),
 	       (char *, string),
 	       (mr_offset_t, offset),
-	       (long_int_t, long_int_t),
 	       (uintptr_t, uintptr_t),
 	       (intptr_t, intptr_t),
 	       )
