@@ -68,7 +68,7 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
     if (mr_tree_node_new (tree) == -1)
       return (NULL);
 
-  mr_tree_path_t path[MR_PATH_SIZE] = MR_PATH_STATIC_INIT;
+  mr_tree_path_t path[MR_PATH_SIZE];
   unsigned path_size = mr_tree_find (key, tree, compar_fn, context, path);
   
   if (path[path_size - 1].equal)
@@ -90,7 +90,7 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
 static mr_status_t
 mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_path_t *, unsigned))
 {
-  mr_tree_path_t path[MR_PATH_SIZE] = MR_PATH_STATIC_INIT;
+  mr_tree_path_t path[MR_PATH_SIZE];
   unsigned path_size = mr_tree_find (key, rbtree, compar_fn, context, path);
 
   if (!path[path_size - 1].equal)

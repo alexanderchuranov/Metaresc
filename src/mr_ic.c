@@ -683,7 +683,7 @@ mr_ic_rbtree_del (mr_ic_t * ic, mr_ptr_t key)
 mr_ptr_t *
 mr_ic_rbtree_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_tree_path_t path[MR_PATH_SIZE] = MR_PATH_STATIC_INIT;
+  mr_tree_path_t path[MR_PATH_SIZE];
   unsigned path_size = mr_tree_find (key, &ic->rb, ic->compar_fn, ic->context.data.ptr, path);
 
   if (!path[path_size - 1].equal)
