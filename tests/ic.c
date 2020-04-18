@@ -218,7 +218,7 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
   srand (0xDeadBeef);
 
   int i;
-  for (i = 1; i < (1 << 12); ++i)
+  for (i = 1; i < (1 << 10); ++i)
     {
       mr_ptr_t value = { .uintptr_t = random () };
       mr_ptr_t * rv1 = mr_rbtree_add (value, &rbtree, uintptr_t_cmp, NULL);
@@ -258,7 +258,7 @@ MR_START_TEST (ic_avltree, "Check AVL tree implementation") {
   srand (0xDeadBeef);
 
   int i;
-  for (i = 1; i < 1 << 12; ++i)
+  for (i = 1; i < 1 << 10; ++i)
     {
       mr_ptr_t value = { .uintptr_t = random () };
       mr_ptr_t * rv1 = mr_avltree_add (value, &tree, uintptr_t_cmp, NULL);

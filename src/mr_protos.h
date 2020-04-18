@@ -195,8 +195,9 @@ TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "private fields for indexed co
 		(mr_hash_fn_t, hash_fn),
 		/* resizable array for hash table sized by field 'size' mr_ptr_t typed by 'key_type' in mr_ic_t */
 		(mr_ptr_t *, hash_table, , "key_type", { .offset = offsetof (mr_ic_hash_next_t, size) }, "offset"),
-		(int, size, , "size of hash table"),
-		(bool, zero_key),
+		(unsigned, size, , "size of hash table"),
+		BITFIELD (unsigned, resize_count, : sizeof (unsigned) * __CHAR_BIT__ - 1, "size of hash table"),
+		BITFIELD (bool, zero_key, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),

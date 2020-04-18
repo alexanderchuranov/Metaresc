@@ -32,7 +32,7 @@ mr_hash_value_t
 ab_hash (mr_ptr_t x, const void * context)
 {
   stack_trace_t * x_ = x.ptr;
-  return (x_->ptr.long_int_t);
+  return (x_->ptr.uintptr_t);
 }
 
 int
@@ -40,14 +40,14 @@ ab_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   stack_trace_t * x_ = x.ptr;
   stack_trace_t * y_ = y.ptr;
-  return (x_->ptr.long_int_t - y_->ptr.long_int_t);
+  return ((x_->ptr.ptr > y_->ptr.ptr) - (x_->ptr.ptr < y_->ptr.ptr));
 }
 
 mr_hash_value_t
 st_hash (mr_ptr_t x, const void * context)
 {
   stack_trace_t * x_ = x.ptr;
-  return (x_->size + (x_->stack ? x_->stack[0].long_int_t : 0));
+  return (x_->size + (x_->stack ? x_->stack[0].uintptr_t : 0));
 }
 
 int
@@ -107,21 +107,21 @@ mr_hash_value_t
 stack_entry_hash (mr_ptr_t x, const void * context)
 {
   const stack_trace_t * stack_trace = context;
-  return (stack_trace->stack[x.long_int_t].long_int_t / sizeof (void*));
+  return (stack_trace->stack[x.uintptr_t].uintptr_t / sizeof (void*));
 }
 
 int
 stack_entry_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const stack_trace_t * stack_trace = context;
-  return ((stack_trace->stack[x.long_int_t].ptr > stack_trace->stack[y.long_int_t].ptr) -
-	  (stack_trace->stack[x.long_int_t].ptr < stack_trace->stack[y.long_int_t].ptr));
+  return ((stack_trace->stack[x.uintptr_t].ptr > stack_trace->stack[y.uintptr_t].ptr) -
+	  (stack_trace->stack[x.uintptr_t].ptr < stack_trace->stack[y.uintptr_t].ptr));
 }
 
 static inline void
 normalize_recursion (stack_trace_t * stack_trace)
 {
-  long_int_t i;
+  intptr_t i;
   int count = stack_trace->size / sizeof (stack_trace->stack[0]);
   mr_ic_t last_call;
   mr_res_t res = {
@@ -129,7 +129,7 @@ normalize_recursion (stack_trace_t * stack_trace)
     .type = "stack_trace_t",
     .mr_size = sizeof (stack_trace_t),
   };
-  mr_status_t status = mr_ic_new (&last_call, stack_entry_hash, stack_entry_cmp, "long_int_t", MR_IC_HASH_NEXT, &res);
+  mr_status_t status = mr_ic_new (&last_call, stack_entry_hash, stack_entry_cmp, "intptr_t", MR_IC_HASH_NEXT, &res);
   bool has_duplicates = false;
   
   if (MR_SUCCESS != status)
@@ -140,7 +140,7 @@ normalize_recursion (stack_trace_t * stack_trace)
       mr_ptr_t * add = mr_ic_add (&last_call, i);
       if (NULL == add)
 	goto free_index;
-      has_duplicates |= (add->long_int_t != i);
+      has_duplicates |= (add->uintptr_t != i);
     }
 
   if (has_duplicates)
@@ -151,7 +151,7 @@ normalize_recursion (stack_trace_t * stack_trace)
 	  mr_ptr_t * find = mr_ic_find (&last_call, i);
 	  if (NULL == find)
 	    goto free_index;
-	  i = find->long_int_t;
+	  i = find->uintptr_t;
 	  stack_trace->stack[dst++] = stack_trace->stack[i];
 	}
 
@@ -168,7 +168,7 @@ stack_trace_get ()
   if (NULL == stack_trace)
     return (NULL);
   memset (stack_trace, 0, sizeof (*stack_trace));
-  stack_trace->type = "long_int_t";
+  stack_trace->type = "uintptr_t";
   stack_trace->size = 8 * sizeof (stack_trace->stack[0]);
   stack_trace->stack = malloc (stack_trace->size);
   if (NULL == stack_trace->stack)

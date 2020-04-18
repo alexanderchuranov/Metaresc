@@ -295,7 +295,7 @@ mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum
   for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
     {
       unsigned child = rbtree->pool[idx].next[child_idx].idx;
-      if (rbtree->pool[idx].rb.red && (rbtree->pool[child].rb.red))
+      if (rbtree->pool[idx].rb.red && rbtree->pool[child].rb.red)
 	{
 	  fprintf (stderr, "Two red nodes %u -> %u\n", idx, child);
 	  return (false);
@@ -323,12 +323,6 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
   if (0 == count)
     {
       fprintf (stderr, "Tree is not empty, but it has no root\n");
-      return (false);
-    }
-
-  if (rbtree->pool->root.idx >= count)
-    {
-      fprintf (stderr, "Root reference is out of range\n");
       return (false);
     }
 
@@ -454,7 +448,7 @@ static void
 mr_avltree_rebalance_del (mr_tree_t * avltree, mr_tree_path_t * path, unsigned path_size)
 {
   int idx;
-  for (idx = path_size - 1; (idx > 0); --idx)
+  for (idx = path_size - 1; idx > 0; --idx)
     {
       unsigned node = path[idx].idx;
       mr_child_idx_t child_idx = path[idx].child_idx;
@@ -585,12 +579,6 @@ mr_avltree_is_valid (mr_tree_t * avltree, mr_compar_fn_t cmp, void * context)
   if (0 == count)
     {
       fprintf (stderr, "Tree is not empty, but it has no root\n");
-      return (false);
-    }
-
-  if (avltree->pool->root.idx >= count)
-    {
-      fprintf (stderr, "Root reference is out of range\n");
       return (false);
     }
 

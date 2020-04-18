@@ -9,9 +9,9 @@
 #include <mr_hsort.h>
 
 static inline void
-sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context, int idx0)
+sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context, unsigned idx0)
 {
-  int idx1;
+  unsigned idx1;
   char x[size];
   memcpy (x, &array[idx0 * size], size);
 
@@ -35,9 +35,9 @@ sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * 
 void
 hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context)
 {
-  int i;
+  size_t i;
 
-  if (0 == count)
+  if (count <= 1)
     return;
 
   for (i = --count >> 1; i > 0; --i)
