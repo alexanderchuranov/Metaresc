@@ -303,7 +303,7 @@ mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum
       if ((NONE_IDX != child) &&
 	  ((cmp (rbtree->pool[child].key, rbtree->pool[idx].key, context) > 0) ^ child_idx))
 	{
-	  fprintf (stderr, "Left child (%u) > parent(%u)\n", child, idx);
+	  fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
 	  return (false);
 	}
       if (!mr_rbtree_is_valid_recurse (rbtree, child, b_height_accum, b_height_expected, visited, cmp, context))
@@ -518,52 +518,63 @@ mr_avltree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void *
 }
 
 static bool
-mr_avltree_is_valid_recurse (mr_tree_t * avltree, unsigned node, int * height, mr_compar_fn_t cmp, void * context)
+mr_avltree_is_valid_recurse (mr_tree_t * avltree, unsigned idx, int * height, mr_compar_fn_t cmp, void * context)
 {
-  if (node == NONE_IDX)
+  if (NONE_IDX == idx)
     return (true);
   
-  if (!mr_avltree_is_valid_recurse (avltree, avltree->pool[node].next[MR_LEFT].idx, height, cmp, context))
-    return (false);
-  if (!mr_avltree_is_valid_recurse (avltree, avltree->pool[node].next[MR_RIGHT].idx, height, cmp, context))
-    return (false);
-
-  int left_height = height[avltree->pool[node].next[MR_LEFT].idx];
-  int right_height = height[avltree->pool[node].next[MR_RIGHT].idx];
+  int child_idx;
+  for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
+    {
+      unsigned child = avltree->pool[idx].next[child_idx].idx;
+      if (NONE_IDX != child)
+	{
+	  if ((cmp (avltree->pool[child].key, avltree->pool[idx].key, context) > 0) ^ child_idx)
+	    {
+	      fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
+	      return (false);
+	    }
+	  if (!mr_avltree_is_valid_recurse (avltree, child, height, cmp, context))
+	    return (false);
+	}
+    }
+  
+  int left_height = height[avltree->pool[idx].next[MR_LEFT].idx];
+  int right_height = height[avltree->pool[idx].next[MR_RIGHT].idx];
   int delta;
   mr_child_idx_t longer;
   
   if (left_height > right_height)
     {
-      height[node] = left_height + 1;
+      height[idx] = left_height + 1;
       delta = left_height - right_height;
       longer = MR_LEFT;
     }
   else
     {
-      height[node] = right_height + 1;
+      height[idx] = right_height + 1;
       delta = right_height - left_height;
       longer = MR_RIGHT;
     }
 
   if (delta > 1)
     {
-      fprintf (stderr, "Node [%u] height delta is mode then 1 (%d)\n", node, delta);
+      fprintf (stderr, "Node [%u] height delta is mode then 1 (%d)\n", idx, delta);
       return (false);
     }
   
   if (0 == delta)
     {
-      if (avltree->pool[node].avl.balanced)
+      if (avltree->pool[idx].avl.balanced)
 	return (true);
       
-      fprintf (stderr, "Node [%u] height delta is zero, but node marked as unbalanced\n", node);
+      fprintf (stderr, "Node [%u] height delta is zero, but node marked as unbalanced\n", idx);
       return (false);
     }
 
-  if (longer != avltree->pool[node].avl.longer)
+  if (longer != avltree->pool[idx].avl.longer)
     {
-      fprintf (stderr, "Node [%u] wrong longer path marked\n", node);
+      fprintf (stderr, "Node [%u] wrong longer path marked\n", idx);
       return (false);
     }
   return (true);
