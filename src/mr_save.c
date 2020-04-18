@@ -326,7 +326,7 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
   const mr_ptrdes_t * ptrdes = &ra_ptrdes->ra[x.intptr_t];
-  return (ptrdes->data.intptr_t + ptrdes->fd.mr_type);
+  return (ptrdes->data.uintptr_t + ptrdes->fd.mr_type);
 }
 
 int
@@ -340,7 +340,7 @@ mr_hash_value_t __attribute__ ((unused))
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return ((long)ra_ptrdes->ra[x.intptr_t].data.ptr);
+  return (ra_ptrdes->ra[x.intptr_t].data.uintptr_t);
 }
 
 int
