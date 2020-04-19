@@ -347,8 +347,9 @@ int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (ra_ptrdes->ra[x.intptr_t].data.ptr > ra_ptrdes->ra[y.intptr_t].data.ptr) -
-    (ra_ptrdes->ra[x.intptr_t].data.ptr < ra_ptrdes->ra[y.intptr_t].data.ptr);
+  void * x_ptr = ra_ptrdes->ra[x.intptr_t].data.ptr;
+  void * y_ptr = ra_ptrdes->ra[y.intptr_t].data.ptr;
+  return ((x_ptr > y_ptr) - (x_ptr < y_ptr));
 }
 
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,
@@ -1080,8 +1081,9 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   };
 
   memset (mr_save_data, 0, sizeof (*mr_save_data));
-  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr_t", MR_IC_HASH_NEXT, &context);
-  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr_t", MR_IC_HASH_NEXT, &context);
+#define MR_IC_METHOD MR_IC_HASH_NEXT
+  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr_t", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr_t", MR_IC_METHOD, &context);
 
   mr_save_data->mr_ra_ud_size = 0;
   mr_save_data->mr_ra_ud = NULL;
@@ -1106,7 +1108,10 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     }
 
   for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
-    mr_ic_free (&mr_save_data->ptrs.ra[i].save_params.union_discriminator);
+    {
+      mr_ic_free (&mr_save_data->ptrs.ra[i].save_params.union_discriminator);
+      mr_save_data->ptrs.ra[i].save_params.union_discriminator.context.data.ptr = NULL;
+    }
 
   if ((nodes_added < 0) && (mr_save_data->ptrs.ra != NULL))
     {

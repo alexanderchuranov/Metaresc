@@ -255,8 +255,6 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
 
 /* ----------------------- MR_IC_HASH_NEXT ----------------------- */
 
-static mr_ptr_t zero = { .intptr_t = 0, };
-
 #define MR_HASH_TABLE_SIZE_MULT (1.61803398875) /* golden ratio */
 #define MR_HASH_MULT_FIXEDPOINT ((sizeof (int) - 1) * __CHAR_BIT__)
 
@@ -266,6 +264,7 @@ mr_ic_hash_next_free (mr_ic_t * ic)
   if (NULL != ic->hash_next.hash_table)
     MR_FREE (ic->hash_next.hash_table);
   ic->hash_next.hash_table = NULL;
+  ic->hash_next.zero.intptr_t = 0;
   ic->hash_next.size = 0;
   ic->hash_next.resize_count = 0;
   ic->hash_next.zero_key = false;
@@ -278,7 +277,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
   if (0 == key.intptr_t)
     {
       ic->hash_next.zero_key = true;
-      return (&zero);
+      return (&ic->hash_next.zero);
     }
 
   if (ic->hash_next.size >= sizeof (ic->hash_next.hash_table[0]))
@@ -385,7 +384,6 @@ mr_ic_hash_next_add (mr_ic_t * ic, mr_ptr_t key)
 
       if (MR_SUCCESS != mr_ic_hash_reindex (ic, &dst_ic, ic->items_count))
 	return (NULL);
-
       mr_ic_free (ic);
       *ic = dst_ic;
     }
@@ -402,7 +400,12 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 
   --ic->items_count;
   if (0 == key.intptr_t)
-    ic->hash_next.zero_key = false;
+    {
+      /* release zero element */
+      ic->hash_next.zero_key = false;
+      /* possibly it was modified so we need to reinitilize it again */
+      ic->hash_next.zero.intptr_t = 0;
+    }
   else
     {
       unsigned i;
@@ -438,8 +441,8 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 mr_ptr_t *
 mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  if (0 == key.intptr_t)
-    return (ic->hash_next.zero_key ? &zero : NULL);
+  if (ic->hash_next.zero_key && (0 == ic->compar_fn (key, ic->hash_next.zero, ic->context.data.ptr)))
+    return (&ic->hash_next.zero);
 
   if (ic->hash_next.size < sizeof (ic->hash_next.hash_table[0]))
     return (NULL);
@@ -466,9 +469,8 @@ mr_status_t
 mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   int i;
-
   if (ic->hash_next.zero_key)
-    if (MR_SUCCESS != visit_fn (zero, context))
+    if (MR_SUCCESS != visit_fn (ic->hash_next.zero, context))
       return (MR_FAILURE);
 
   for (i = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1; i >= 0; --i)

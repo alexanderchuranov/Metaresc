@@ -200,7 +200,7 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
 TYPEDEF_STRUCT (mr_func_name_t,
 		ANON_UNION (),
-		(long, func_),
+		(uintptr_t, func_),
 		(void *, func),
 		END_ANON_UNION (),
 		(const char *, name))
@@ -214,7 +214,7 @@ mr_hash_value_t
 mr_fn_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_fn_t * ra_fn = context;
-  return ((long)ra_fn->ra[x.intptr_t].func);
+  return (ra_fn->ra[x.intptr_t].func_);
 }
 
 int
