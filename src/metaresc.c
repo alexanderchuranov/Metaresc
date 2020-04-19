@@ -1289,7 +1289,10 @@ mr_add_enum (mr_td_t * tdp)
       mr_ptr_t key = { .ptr = tdp->fields[i].fdp };
       mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key);
       if (NULL == result)
-	status = MR_FAILURE;
+	{
+	  status = MR_FAILURE;
+	  continue;
+	}
       if (result->ptr != key.ptr)
 	{
 	  mr_fd_t * fdp = result->ptr;

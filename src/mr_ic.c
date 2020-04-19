@@ -264,7 +264,6 @@ mr_ic_hash_next_free (mr_ic_t * ic)
   if (NULL != ic->hash_next.hash_table)
     MR_FREE (ic->hash_next.hash_table);
   ic->hash_next.hash_table = NULL;
-  ic->hash_next.zero.intptr_t = 0;
   ic->hash_next.size = 0;
   ic->hash_next.resize_count = 0;
   ic->hash_next.zero_key = false;
@@ -274,17 +273,17 @@ mr_ic_hash_next_free (mr_ic_t * ic)
 static mr_ptr_t *
 mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
 {
-  if (0 == key.intptr_t)
+  if (ic->hash_next.size >= 2 * sizeof (ic->hash_next.hash_table[0]))
     {
-      ic->hash_next.zero_key = true;
-      return (&ic->hash_next.zero);
-    }
+      unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
+      
+      if (0 == key.intptr_t)
+	{
+	  ic->hash_next.zero_key = true;
+	  return (&ic->hash_next.hash_table[count]);
+	}
 
-  if (ic->hash_next.size >= sizeof (ic->hash_next.hash_table[0]))
-    {
-      unsigned i;
-      unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
-      unsigned bucket = ic->hash_next.hash_fn (key, ic->context.data.ptr) % count;
+      unsigned i, bucket = ic->hash_next.hash_fn (key, ic->context.data.ptr) % count;
 
       for (i = bucket; ;)
 	{
@@ -324,14 +323,14 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic, unsigned items_count)
   if (0 == items_count)
     return (MR_SUCCESS);
 
-  unsigned count = ((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * items_count) >> MR_HASH_MULT_FIXEDPOINT;
+  unsigned count = 1 + (((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * items_count) >> MR_HASH_MULT_FIXEDPOINT);
   dst_ic->hash_next.hash_table = MR_CALLOC (count, sizeof (dst_ic->hash_next.hash_table[0]));
   if (NULL == dst_ic->hash_next.hash_table)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
-  dst_ic->hash_next.resize_count = (count + 1) >> 1;
+  dst_ic->hash_next.resize_count = count >> 1;
   dst_ic->hash_next.size = count * sizeof (dst_ic->hash_next.hash_table[0]);
   dst_ic->items_count = items_count;
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
@@ -384,6 +383,7 @@ mr_ic_hash_next_add (mr_ic_t * ic, mr_ptr_t key)
 
       if (MR_SUCCESS != mr_ic_hash_reindex (ic, &dst_ic, ic->items_count))
 	return (NULL);
+
       mr_ic_free (ic);
       *ic = dst_ic;
     }
@@ -399,18 +399,18 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
     return (MR_FAILURE);
 
   --ic->items_count;
+  unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
+  
   if (0 == key.intptr_t)
     {
       /* release zero element */
       ic->hash_next.zero_key = false;
-      /* possibly it was modified so we need to reinitilize it again */
-      ic->hash_next.zero.intptr_t = 0;
+      /* possibly zero element (last in table) was modified so we need to reinitilize it again */
+      ic->hash_next.hash_table[count].intptr_t = 0;
     }
   else
     {
-      unsigned i;
-      unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
-      unsigned start_bucket = find - ic->hash_next.hash_table;
+      unsigned i, start_bucket = find - ic->hash_next.hash_table;
 
       find->intptr_t = 0;
       for (i = start_bucket; ;) /* need to re-index all elements in sequential blocks after deleted element */
@@ -441,15 +441,16 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 mr_ptr_t *
 mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  if (ic->hash_next.zero_key && (0 == ic->compar_fn (key, ic->hash_next.zero, ic->context.data.ptr)))
-    return (&ic->hash_next.zero);
-
-  if (ic->hash_next.size < sizeof (ic->hash_next.hash_table[0]))
+  if (ic->hash_next.size < 2 * sizeof (ic->hash_next.hash_table[0]))
     return (NULL);
   
-  unsigned i;
-  unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]);
-  unsigned bucket = ic->hash_next.hash_fn (key, ic->context.data.ptr) % count;
+  unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
+  
+  if (ic->hash_next.zero_key &&
+      (0 == ic->compar_fn (key, ic->hash_next.hash_table[count], ic->context.data.ptr)))
+    return (&ic->hash_next.hash_table[count]);
+
+  unsigned i, bucket = ic->hash_next.hash_fn (key, ic->context.data.ptr) % count;
 
   for (i = bucket; ;)
     {
@@ -468,12 +469,17 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
 mr_status_t
 mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
-  int i;
+  if (ic->hash_next.size < 2 * sizeof (ic->hash_next.hash_table[0]))
+    return (MR_SUCCESS);
+  
+  unsigned i;
+  unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
+  
   if (ic->hash_next.zero_key)
-    if (MR_SUCCESS != visit_fn (ic->hash_next.zero, context))
+    if (MR_SUCCESS != visit_fn (ic->hash_next.hash_table[count], context))
       return (MR_FAILURE);
 
-  for (i = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1; i >= 0; --i)
+  for (i = 0; i < count; ++i)
     if (0 != ic->hash_next.hash_table[i].intptr_t)
       if (MR_SUCCESS != visit_fn (ic->hash_next.hash_table[i], context))
 	return (MR_FAILURE);
