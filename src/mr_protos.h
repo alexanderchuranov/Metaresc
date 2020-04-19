@@ -273,6 +273,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_ic_static_array_t, static_array),
 		(mr_tree_t, rb),
 		(mr_tree_t, avl),
+		(mr_tree_t, tree),
 		END_ANON_UNION ("ic_type"),
 		)
 

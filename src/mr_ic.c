@@ -472,8 +472,7 @@ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
   if (ic->hash_next.size < 2 * sizeof (ic->hash_next.hash_table[0]))
     return (MR_SUCCESS);
   
-  unsigned i;
-  unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
+  unsigned i, count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
   
   if (ic->hash_next.zero_key)
     if (MR_SUCCESS != visit_fn (ic->hash_next.hash_table[count], context))
@@ -679,16 +678,16 @@ mr_ptr_t *
 mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
 {
   mr_tree_path_t path[MR_PATH_SIZE];
-  unsigned path_size = mr_tree_find (key, &ic->rb, ic->compar_fn, ic->context.data.ptr, path);
-  return (path[path_size - 1].equal ? &ic->rb.pool[path[path_size - 1].idx].key : NULL);
+  unsigned path_size = mr_tree_find (key, &ic->tree, ic->compar_fn, ic->context.data.ptr, path);
+  return (path[path_size - 1].equal ? &ic->tree.pool[path[path_size - 1].idx].key : NULL);
 }
 
 mr_status_t
 mr_ic_tree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
   int i;
-  for (i = ic->rb.size / sizeof (ic->rb.pool[0]) - 1; i > 0; --i)
-    if (MR_SUCCESS != visit_fn (ic->rb.pool[i].key, context))
+  for (i = ic->tree.size / sizeof (ic->tree.pool[0]) - 1; i > 0; --i)
+    if (MR_SUCCESS != visit_fn (ic->tree.pool[i].key, context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -697,7 +696,7 @@ void
 mr_ic_tree_free (mr_ic_t * ic)
 {
   ic->items_count = 0;
-  mr_tree_free (&ic->rb);
+  mr_tree_free (&ic->tree);
 }
 
 mr_status_t mr_ic_tree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
