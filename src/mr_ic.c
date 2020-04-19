@@ -197,11 +197,6 @@ mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 mr_status_t
 mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 {
-  mr_ic_sorted_array_free (ic);
-
-  if (0 == rarray->size)
-    return (MR_SUCCESS);
-  
   ic->rarray.ra = MR_CALLOC (rarray->size, 1);
   if (NULL == ic->rarray.ra)
     {
@@ -357,14 +352,18 @@ mr_ic_hash_next_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
   mr_status_t status;
   mr_ic_t ic_unsorted_array;
 
-  if (NULL == rarray)
-    return (MR_FAILURE);
-
-  mr_ic_unsorted_array_new (&ic_unsorted_array, ic->compar_fn, ic->key_type, &ic->context);
-  mr_ic_unsorted_array_index (&ic_unsorted_array, rarray);
+  status = mr_ic_unsorted_array_new (&ic_unsorted_array, ic->compar_fn, ic->key_type, &ic->context);
+  if (MR_SUCCESS != status)
+    return (status);
+  
+  status = mr_ic_index (&ic_unsorted_array, rarray);
+  if (MR_SUCCESS != status)
+    return (status);
+  
   status = mr_ic_hash_reindex (&ic_unsorted_array, ic, rarray->size / sizeof (rarray->ra[0]));
   mr_ic_free (&ic_unsorted_array);
 
+  /* there might be duplicates in input data, so we need to count number of unique elemenets */
   ic->items_count = 0;
   mr_ic_foreach (ic, mr_ic_hash_count_visitor, ic);
   
@@ -600,8 +599,6 @@ mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 {
   int i;
   
-  mr_ic_static_array_free (ic);
-  
   if (rarray->size > sizeof (ic->static_array.static_array))
     {
       mr_status_t status;
@@ -698,9 +695,6 @@ mr_ic_tree_free (mr_ic_t * ic)
 mr_status_t mr_ic_tree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 {
   int i;
-  
-  mr_ic_tree_free (ic);
-  
   for (i = rarray->size / sizeof (rarray->ra[0]) - 1; i >= 0; --i)
     if (NULL == mr_ic_add (ic, rarray->ra[i]))
       return (MR_FAILURE);

@@ -88,21 +88,21 @@ mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, __const void * context)
   return (ic->virt_func->foreach (ic, visit_fn, context));
 }
 
-static inline mr_status_t
-mr_ic_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
-{
-  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->index) || (NULL == rarray))
-    return (MR_FAILURE);
-  return (ic->virt_func->index (ic, rarray));
-}
-
 static inline void
 mr_ic_free (mr_ic_t * ic)
 {
   if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->free))
     return;
   ic->virt_func->free (ic);
-  memset (ic, 0, sizeof (*ic));
+}
+
+static inline mr_status_t
+mr_ic_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+{
+  if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->index) || (NULL == rarray))
+    return (MR_FAILURE);
+  mr_ic_free (ic);
+  return (ic->virt_func->index (ic, rarray));
 }
 
 static inline mr_status_t
