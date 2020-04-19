@@ -176,7 +176,6 @@ TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup o
 
 TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_UNINITIALIZED, = 0, "void_ptr"),
-	      (MR_IC_CUSTOM, , "custom"),
 	      (MR_IC_UNSORTED_ARRAY, , "rarray"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
 	      (MR_IC_HASH_NEXT, , "hash_next"),
@@ -267,7 +266,6 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		
 		ANON_UNION (type_specific),
 		(void *, void_ptr, , "default serialization"),
-		(mr_res_t, custom, , "pointer on custom data for extended IC types"),
 		(mr_ic_rarray_t, rarray),
 		(mr_ic_hash_next_t, hash_next),
 		(mr_ic_static_array_t, static_array),
@@ -450,34 +448,6 @@ TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_load_data_t, mr_ra_idx_size) }, "offset"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),
-		)
-
-TYPEDEF_STRUCT (mr_load_node_context_t,
-		int idx,
-		(mr_ra_ptrdes_t *, ptrs)
-		)
-
-TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
-
-TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
-
-TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
-		(int, lineno, , "parser location - line number"),
-		(int, column, , "parser location - column number"),
-		(int, offset, , "parser location - offset in string"),
-		)
-
-TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
-		(mr_lloc_t, start, , "start of the token"),
-		(mr_lloc_t, end, , "end of the token"),
-		)
-
-TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
-		(mr_lloc_t, lloc, , "current location of parser"),
-		(char *, str, , "string to parse"),
-		(char *, buf, , "parser internal buffer"),
-		(int, parent, , "index of current parent"),
-		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
