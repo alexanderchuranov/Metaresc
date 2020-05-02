@@ -528,11 +528,7 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
   if (ic->items_count == sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
     {
       mr_ic_t dst_ic;
-      mr_status_t status;
-      if (NULL == ic->static_array.hash_fn)
-	status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
-      else
-	status = mr_ic_hash_next_new (&dst_ic, ic->static_array.hash_fn, ic->compar_fn, ic->key_type, &ic->context);
+      mr_status_t status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
 	return (NULL);
 
@@ -601,11 +597,7 @@ mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
   
   if (rarray->size > sizeof (ic->static_array.static_array))
     {
-      mr_status_t status;
-      if (NULL == ic->static_array.hash_fn)
-	status = mr_ic_unsorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
-      else
-	status = mr_ic_hash_next_new (ic, ic->static_array.hash_fn, ic->compar_fn, ic->key_type, &ic->context);
+      mr_status_t status = mr_ic_unsorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
 	return (status);
       return (mr_ic_index (ic, rarray));
@@ -644,7 +636,6 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
   ic->items_count = 0;
 
   memset (&ic->static_array, 0, sizeof (ic->static_array));
-  ic->static_array.hash_fn = hash_fn;
 
   return (MR_SUCCESS);
 }

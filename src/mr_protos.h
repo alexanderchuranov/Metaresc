@@ -200,8 +200,7 @@ TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "private fields for indexed co
 		)
 
 TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),
-		(mr_hash_fn_t, hash_fn),
-		(mr_ptr_t, static_array, [(sizeof (mr_ic_hash_next_t) - sizeof (mr_hash_fn_t)) / sizeof (mr_ptr_t)], "key_type"),
+		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_next_t) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
 TYPEDEF_ENUM (mr_child_idx_t,
