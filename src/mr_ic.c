@@ -280,6 +280,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
       if (0 == key.intptr_t)
 	{
 	  ic->hash_next.zero_key = true;
+	  ic->hash_next.hash_table[count].intptr_t = 0;
 	  return (&ic->hash_next.hash_table[count]);
 	}
 
@@ -347,10 +348,8 @@ mr_ic_hash_count_visitor (mr_ptr_t key, const void * context)
 mr_status_t
 mr_ic_hash_next_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 {
-  mr_status_t status;
   mr_ic_t ic_unsorted_array;
-
-  status = mr_ic_unsorted_array_new (&ic_unsorted_array, ic->compar_fn, ic->key_type, &ic->context);
+  mr_status_t status = mr_ic_unsorted_array_new (&ic_unsorted_array, ic->compar_fn, ic->key_type, &ic->context);
   if (MR_SUCCESS != status)
     return (status);
   
@@ -394,7 +393,6 @@ mr_status_t
 mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 {
   mr_ptr_t * find = mr_ic_find (ic, key);
-
   if (NULL == find)
     return (MR_FAILURE);
 
@@ -402,12 +400,7 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
   unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
   
   if (0 == key.intptr_t)
-    {
-      /* release zero element */
-      ic->hash_next.zero_key = false;
-      /* possibly zero element (last in table) was modified so we need to reinitilize it again */
-      ic->hash_next.hash_table[count].intptr_t = 0;
-    }
+    ic->hash_next.zero_key = false; /* release zero element */
   else
     {
       unsigned i, start_bucket = find - ic->hash_next.hash_table;
@@ -445,11 +438,6 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
     return (NULL);
   
   unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
-  
-  if (ic->hash_next.zero_key &&
-      (0 == ic->compar_fn (key, ic->hash_next.hash_table[count], ic->context.data.ptr)))
-    return (&ic->hash_next.hash_table[count]);
-
   unsigned i, bucket = ic->hash_next.hash_fn (key, ic->context.data.ptr) % count;
 
   for (i = bucket; ;)
@@ -463,6 +451,11 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
       if (i == bucket)
 	break;
     }
+  
+  if (ic->hash_next.zero_key &&
+      (0 == ic->compar_fn (key, ic->hash_next.hash_table[count], ic->context.data.ptr)))
+    return (&ic->hash_next.hash_table[count]);
+
   return (NULL);
 }
 
