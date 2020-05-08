@@ -3,7 +3,6 @@
 /* This file is part of Metaresc project */
 
 #include <string.h>
-#include <sys/types.h>
 
 #include <metaresc.h>
 #include <mr_hsort.h>
@@ -146,13 +145,12 @@ mr_ic_sorted_array_find_idx (mr_ic_t * ic, mr_ptr_t key, int * diff)
 mr_ptr_t *
 mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_ptr_t * add;
   int diff = !0;
   unsigned idx = mr_ic_sorted_array_find_idx (ic, key, &diff);
   if (0 == diff)
     return (&ic->rarray.ra[idx]);
 
-  add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, sizeof (ic->rarray.ra[0]));
+  mr_ptr_t * add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, sizeof (ic->rarray.ra[0]));
   if (NULL == add)
     return (NULL);
 
@@ -166,14 +164,14 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 mr_status_t
 mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_ptr_t * find = mr_ic_find (ic, key);
-  if (NULL == find)
+  int diff = !0;
+  unsigned idx = mr_ic_sorted_array_find_idx (ic, key, &diff);
+  if (diff != 0)
     return (MR_FAILURE);
    
-  ptrdiff_t offset = (char*)find - (char*)ic->rarray.ra;
   ic->rarray.size -= sizeof (ic->rarray.ra[0]);
   ic->items_count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
-  memmove (find, &find[1], ic->rarray.size - offset);
+  memmove (&ic->rarray.ra[idx], &ic->rarray.ra[idx + 1], (ic->items_count - idx) * sizeof (ic->rarray.ra[0]));
   return (MR_SUCCESS);
 }
 
@@ -197,18 +195,21 @@ mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 mr_status_t
 mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 {
-  ic->rarray.ra = MR_CALLOC (rarray->size, 1);
-  if (NULL == ic->rarray.ra)
+  unsigned items_count = rarray->size / sizeof (rarray->ra[0]);
+  if (items_count > 0)
     {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
+      ic->rarray.ra = MR_CALLOC (items_count, sizeof (rarray->ra[0]));
+      if (NULL == ic->rarray.ra)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (MR_FAILURE);
+	}
+
+      ic->rarray.size = ic->rarray.alloc_size = items_count * sizeof (rarray->ra[0]);
+      memcpy (ic->rarray.ra, rarray->ra, ic->rarray.size);
+      hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
+      ic->items_count = items_count;
     }
-
-  ic->rarray.size = ic->rarray.alloc_size = rarray->size;
-  memcpy (ic->rarray.ra, rarray->ra, rarray->size);
-  hsort (ic->rarray.ra, ic->rarray.size / sizeof (ic->rarray.ra[0]), sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
-  ic->items_count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
-
   return (MR_SUCCESS);
 }
 
