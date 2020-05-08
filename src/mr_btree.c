@@ -36,24 +36,30 @@ mr_tree_node_new (mr_tree_t * tree)
 }
 
 unsigned int
-mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_path_t * parents)
+mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_path_t * path)
 {
   unsigned idx;
   unsigned cnt = 0;
 
-  parents[cnt].idx = NONE_IDX;
-  parents[cnt].equal = false;
-  parents[cnt++].child_idx = MR_LEFT;
+  path[cnt++] = (typeof (path[0])){
+    .idx = NONE_IDX,
+    .child_idx = MR_LEFT,
+    .equal = false,
+  };
+  
   if (tree->size >= 2 * sizeof (tree->pool[0]))
     for (idx = tree->pool->root.idx; idx != NONE_IDX; )
       {
-	parents[cnt].idx = idx;
 	int cmp = compar_fn (key, tree->pool[idx].key, context);
 	bool equal = (0 == cmp);
 	mr_child_idx_t child_idx = (cmp > 0) ? MR_RIGHT : MR_LEFT;
 	
-	parents[cnt].child_idx = child_idx;
-	parents[cnt++].equal = equal;
+	path[cnt++] = (typeof (path[0])){
+	  .idx = idx,
+	  .child_idx = child_idx,
+	  .equal = equal,
+	};
+	
 	if (equal)
 	  break;
 	idx = tree->pool[idx].next[child_idx].idx;
@@ -98,8 +104,7 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * 
 
   unsigned node = path[path_size - 1].idx;
   unsigned del = node;
-  if ((NONE_IDX == rbtree->pool[node].next[MR_LEFT].idx) ||
-      (NONE_IDX == rbtree->pool[node].next[MR_RIGHT].idx))
+  if ((NONE_IDX == rbtree->pool[node].next[MR_LEFT].idx) || (NONE_IDX == rbtree->pool[node].next[MR_RIGHT].idx))
     --path_size;
   else
     {
@@ -107,10 +112,7 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * 
       for (del = rbtree->pool[node].next[MR_RIGHT].idx;
 	   rbtree->pool[del].next[MR_LEFT].idx != NONE_IDX;
 	   del = rbtree->pool[del].next[MR_LEFT].idx)
-	{
-	  path[path_size].child_idx = MR_LEFT;
-	  path[path_size++].idx = del;
-	}
+	path[path_size++] = (typeof (path[0])){ .child_idx = MR_LEFT, .idx = del, };
       path[path_size].idx = del;
     }
 
@@ -278,7 +280,38 @@ mr_rbtree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * 
 }
 
 static bool
-mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum, int b_height_expected, bool * visited, mr_compar_fn_t cmp, void * context)
+mr_btree_is_valid (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, void * context)
+{
+  if (NONE_IDX == idx)
+    return (true);
+  
+  mr_child_idx_t child_idx;
+  for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
+    {
+      unsigned child = tree->pool[idx].next[child_idx].idx;
+      if (NONE_IDX != child)
+	{
+	  int diff = cmp (tree->pool[child].key, tree->pool[idx].key, context);
+	  if (0 == diff)
+	    {
+	      fprintf (stderr, "Tree unordered. Child (%u) == parent (%u)\n", child, idx);
+	      return (false);
+	    }	    
+	  if ((diff > 0) ^ child_idx)
+	    {
+	      fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
+	      return (false);
+	    }
+	  if (!mr_btree_is_valid (tree, child, cmp, context))
+	    return (false);
+	}
+    }
+  
+  return (true);
+}
+
+static bool
+mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum, int b_height_expected, bool * visited)
 {
   visited[idx] = true;
 
@@ -291,7 +324,7 @@ mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum
 
   b_height_accum += !rbtree->pool[idx].rb.red;
 
-  int child_idx;
+  mr_child_idx_t child_idx;
   for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
     {
       unsigned child = rbtree->pool[idx].next[child_idx].idx;
@@ -300,13 +333,7 @@ mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum
 	  fprintf (stderr, "Two red nodes %u -> %u\n", idx, child);
 	  return (false);
 	}
-      if ((NONE_IDX != child) &&
-	  ((cmp (rbtree->pool[child].key, rbtree->pool[idx].key, context) > 0) ^ child_idx))
-	{
-	  fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
-	  return (false);
-	}
-      if (!mr_rbtree_is_valid_recurse (rbtree, child, b_height_accum, b_height_expected, visited, cmp, context))
+      if (!mr_rbtree_is_valid_recurse (rbtree, child, b_height_accum, b_height_expected, visited))
 	return (false);
     }
 
@@ -338,7 +365,8 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
       return (false);
     }
 
-  unsigned idx, child_idx;
+  unsigned idx;
+  mr_child_idx_t child_idx;
   for (idx = 0; idx < count; ++idx)
     for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
       if (rbtree->pool[idx].next[child_idx].idx >= count)
@@ -347,13 +375,16 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
 	  return (false);
 	}
 
+  if (!mr_btree_is_valid (rbtree, rbtree->pool->root.idx, cmp, context))
+    return (false);
+  
   int height = 0;
   for (idx = rbtree->pool->root.idx; NONE_IDX != idx; idx = rbtree->pool[idx].next[MR_LEFT].idx)
     height += !rbtree->pool[idx].rb.red;
 
   bool visited[count];
   memset (visited, 0, sizeof (visited));
-  if (!mr_rbtree_is_valid_recurse (rbtree, rbtree->pool->root.idx, 0, height, visited, cmp, context))
+  if (!mr_rbtree_is_valid_recurse (rbtree, rbtree->pool->root.idx, 0, height, visited))
     return (false);
   
   for (idx = 0; idx < count; ++idx)
@@ -518,26 +549,15 @@ mr_avltree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void *
 }
 
 static bool
-mr_avltree_is_valid_recurse (mr_tree_t * avltree, unsigned idx, int * height, mr_compar_fn_t cmp, void * context)
+mr_avltree_is_valid_recurse (mr_tree_t * avltree, unsigned idx, int * height)
 {
   if (NONE_IDX == idx)
     return (true);
   
-  int child_idx;
+  mr_child_idx_t child_idx;
   for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
-    {
-      unsigned child = avltree->pool[idx].next[child_idx].idx;
-      if (NONE_IDX != child)
-	{
-	  if ((cmp (avltree->pool[child].key, avltree->pool[idx].key, context) > 0) ^ child_idx)
-	    {
-	      fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
-	      return (false);
-	    }
-	  if (!mr_avltree_is_valid_recurse (avltree, child, height, cmp, context))
-	    return (false);
-	}
-    }
+    if (!mr_avltree_is_valid_recurse (avltree, avltree->pool[idx].next[child_idx].idx, height))
+      return (false);
   
   int left_height = height[avltree->pool[idx].next[MR_LEFT].idx];
   int right_height = height[avltree->pool[idx].next[MR_RIGHT].idx];
@@ -602,9 +622,12 @@ mr_avltree_is_valid (mr_tree_t * avltree, mr_compar_fn_t cmp, void * context)
 	  return (false);
 	}
 
+  if (!mr_btree_is_valid (avltree, avltree->pool->root.idx, cmp, context))
+    return (false);
+  
   int height[count];
   memset (height, 0, sizeof (height));
-  if (!mr_avltree_is_valid_recurse (avltree, avltree->pool->root.idx, height, cmp, context))
+  if (!mr_avltree_is_valid_recurse (avltree, avltree->pool->root.idx, height))
     return (false);
   
   for (idx = 1; idx < count; ++idx)
