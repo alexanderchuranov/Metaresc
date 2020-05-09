@@ -120,34 +120,31 @@ mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_typ
 
 /* ----------------------- MR_IC_SORTED_ARRAY ----------------------- */
 
-static unsigned
-mr_ic_sorted_array_find_idx (mr_ic_t * ic, mr_ptr_t key, int * diff)
+static inline int
+mr_ic_sorted_array_find_idx (mr_ic_t * ic, mr_ptr_t key, unsigned * idx)
 {
   unsigned down = 0;
   unsigned up = ic->rarray.size / sizeof (ic->rarray.ra[0]);
+  int diff = !0;
 
-  *diff = !0;
-
-  while (up != down)
+  while ((up != down) && (diff != 0))
     {
       unsigned mid = (down + up) >> 1;
-      *diff = ic->compar_fn (key, ic->rarray.ra[mid], ic->context.data.ptr);
-      if (0 == *diff)
-	return (mid);
-      if (*diff < 0)
+      diff = ic->compar_fn (key, ic->rarray.ra[mid], ic->context.data.ptr);
+      if (diff <= 0)
 	up = mid;
       else
 	down = mid + 1;
     }
-  return (down);
+  *idx = up;
+  return (diff);
 }
 
 mr_ptr_t *
 mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 {
-  int diff = !0;
-  unsigned idx = mr_ic_sorted_array_find_idx (ic, key, &diff);
-  if (0 == diff)
+  unsigned idx;
+  if (mr_ic_sorted_array_find_idx (ic, key, &idx) == 0)
     return (&ic->rarray.ra[idx]);
 
   mr_ptr_t * add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, sizeof (ic->rarray.ra[0]));
@@ -164,9 +161,8 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 mr_status_t
 mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
-  int diff = !0;
-  unsigned idx = mr_ic_sorted_array_find_idx (ic, key, &diff);
-  if (diff != 0)
+  unsigned idx;
+  if (mr_ic_sorted_array_find_idx (ic, key, &idx) != 0)
     return (MR_FAILURE);
    
   ic->rarray.size -= sizeof (ic->rarray.ra[0]);
@@ -178,9 +174,8 @@ mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key)
 mr_ptr_t *
 mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  int diff = !0;
-  unsigned idx = mr_ic_sorted_array_find_idx (ic, key, &diff);
-  return ((0 == diff) ? &ic->rarray.ra[idx] : NULL);
+  unsigned idx;
+  return ((mr_ic_sorted_array_find_idx (ic, key, &idx) == 0) ? &ic->rarray.ra[idx] : NULL);
 }
 
 static int
@@ -205,10 +200,17 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 	  return (MR_FAILURE);
 	}
 
-      ic->rarray.size = ic->rarray.alloc_size = items_count * sizeof (rarray->ra[0]);
-      memcpy (ic->rarray.ra, rarray->ra, ic->rarray.size);
+      memcpy (ic->rarray.ra, rarray->ra, items_count * sizeof (rarray->ra[0]));
       hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
-      ic->items_count = items_count;
+      
+      unsigned src, dst = 0;
+      ic->rarray.ra[dst++] = ic->rarray.ra[0];
+      for (src = 1; src < items_count; ++src)
+	if (ic->compar_fn (ic->rarray.ra[src], ic->rarray.ra[src - 1], ic->context.data.ptr) != 0)
+	  ic->rarray.ra[dst++] = ic->rarray.ra[src];
+      
+      ic->items_count = dst;
+      ic->rarray.size = ic->rarray.alloc_size = ic->items_count * sizeof (ic->rarray.ra[0]);
     }
   return (MR_SUCCESS);
 }
