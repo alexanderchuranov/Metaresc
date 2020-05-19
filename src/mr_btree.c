@@ -35,6 +35,31 @@ mr_tree_node_new (mr_tree_t * tree)
   return (tree->size / sizeof (tree->pool[0]) - 1);
 }
 
+mr_status_t
+mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, const void * context)
+{
+  unsigned i, cnt = 0;
+  unsigned path[MR_PATH_SIZE];
+  
+  if (tree->size < 2 * sizeof (tree->pool[0]))
+    return (MR_SUCCESS);
+
+  for (i = NONE_IDX; tree->pool[i].next[MR_LEFT].idx != NONE_IDX; i = tree->pool[i].next[MR_LEFT].idx)
+    path[cnt++] = i;
+  
+  while (i != NONE_IDX)
+    {
+      if (MR_SUCCESS != visit_fn (tree->pool[i].key, context))
+	return (MR_FAILURE);
+      if (tree->pool[i].next[MR_RIGHT].idx == NONE_IDX)
+	i = path[--cnt];
+      else
+	for (i = tree->pool[i].next[MR_RIGHT].idx; tree->pool[i].next[MR_LEFT].idx != NONE_IDX; i = tree->pool[i].next[MR_LEFT].idx)
+	  path[cnt++] = i;
+    }
+  return (MR_SUCCESS);
+}
+
 unsigned int
 mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_path_t * path)
 {

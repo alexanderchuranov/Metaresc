@@ -670,13 +670,20 @@ mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
 }
 
 mr_status_t
-mr_ic_tree_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+mr_ic_tree_foreach_unsorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
 {
-  int i;
-  for (i = ic->tree.size / sizeof (ic->tree.pool[0]) - 1; i > 0; --i)
-    if (MR_SUCCESS != visit_fn (ic->tree.pool[i].key, context))
-      return (MR_FAILURE);
+  unsigned i;
+  if (ic->tree.size >= 2 * sizeof (ic->tree.pool[0]))
+    for (i = ic->tree.size / sizeof (ic->tree.pool[0]) - 1; i > 0; --i)
+      if (MR_SUCCESS != visit_fn (ic->tree.pool[i].key, context))
+	return (MR_FAILURE);
   return (MR_SUCCESS);
+}
+
+mr_status_t
+mr_ic_tree_foreach_sorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+{
+  return (mr_tree_walk (&ic->tree, visit_fn, context));
 }
 
 void
@@ -703,7 +710,7 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
     .add = mr_ic_rbtree_add,
     .del = mr_ic_rbtree_del,
     .find = mr_ic_tree_find,
-    .foreach = mr_ic_tree_foreach,
+    .foreach = mr_ic_tree_foreach_unsorted,
     .index = mr_ic_tree_index,
     .free = mr_ic_tree_free,
   };
@@ -752,7 +759,7 @@ mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_r
     .add = mr_ic_avltree_add,
     .del = mr_ic_avltree_del,
     .find = mr_ic_tree_find,
-    .foreach = mr_ic_tree_foreach,
+    .foreach = mr_ic_tree_foreach_unsorted,
     .index = mr_ic_tree_index,
     .free = mr_ic_tree_free,
   };
