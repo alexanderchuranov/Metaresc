@@ -38,24 +38,24 @@ mr_tree_node_new (mr_tree_t * tree)
 mr_status_t
 mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, const void * context)
 {
-  unsigned i, cnt = 0;
+  unsigned idx, cnt = 0;
   unsigned path[MR_PATH_SIZE];
   
   if (tree->size < 2 * sizeof (tree->pool[0]))
     return (MR_SUCCESS);
 
-  for (i = NONE_IDX; tree->pool[i].next[MR_LEFT].idx != NONE_IDX; i = tree->pool[i].next[MR_LEFT].idx)
-    path[cnt++] = i;
+  for (idx = NONE_IDX; tree->pool[idx].next[MR_LEFT].idx != NONE_IDX; idx = tree->pool[idx].next[MR_LEFT].idx)
+    path[cnt++] = idx;
   
-  while (i != NONE_IDX)
+  while (idx != NONE_IDX)
     {
-      if (MR_SUCCESS != visit_fn (tree->pool[i].key, context))
+      if (MR_SUCCESS != visit_fn (tree->pool[idx].key, context))
 	return (MR_FAILURE);
-      if (tree->pool[i].next[MR_RIGHT].idx == NONE_IDX)
-	i = path[--cnt];
+      if (tree->pool[idx].next[MR_RIGHT].idx == NONE_IDX)
+	idx = path[--cnt];
       else
-	for (i = tree->pool[i].next[MR_RIGHT].idx; tree->pool[i].next[MR_LEFT].idx != NONE_IDX; i = tree->pool[i].next[MR_LEFT].idx)
-	  path[cnt++] = i;
+	for (idx = tree->pool[idx].next[MR_RIGHT].idx; tree->pool[idx].next[MR_LEFT].idx != NONE_IDX; idx = tree->pool[idx].next[MR_LEFT].idx)
+	  path[cnt++] = idx;
     }
   return (MR_SUCCESS);
 }
