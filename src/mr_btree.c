@@ -163,6 +163,60 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * 
   return (MR_SUCCESS);
 }
 
+static bool
+mr_btree_is_valid_recurse (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, void * context)
+{
+  if (NONE_IDX == idx)
+    return (true);
+  
+  mr_child_idx_t child_idx;
+  for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
+    {
+      unsigned child = tree->pool[idx].next[child_idx].idx;
+      if (NONE_IDX != child)
+	{
+	  int diff = cmp (tree->pool[child].key, tree->pool[idx].key, context);
+	  if (0 == diff)
+	    {
+	      fprintf (stderr, "Tree unordered. Child (%u) == parent (%u)\n", child, idx);
+	      return (false);
+	    }	    
+	  if ((diff > 0) ^ child_idx)
+	    {
+	      fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
+	      return (false);
+	    }
+	  if (!mr_btree_is_valid_recurse (tree, child, cmp, context))
+	    return (false);
+	}
+    }
+  
+  return (true);
+}
+
+static bool
+mr_btree_is_valid (mr_tree_t * tree, mr_compar_fn_t cmp, void * context)
+{
+  unsigned idx, count = tree->size / sizeof (tree->pool[0]);
+  mr_child_idx_t child_idx;
+  
+  if (0 == count)
+    {
+      fprintf (stderr, "Tree is not empty, but it has no root\n");
+      return (false);
+    }
+
+  for (idx = 0; idx < count; ++idx)
+    for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
+      if (tree->pool[idx].next[child_idx].idx >= count)
+	{
+	  fprintf (stderr, "Node [%u] has a child reference out of range %u > %u\n", idx, tree->pool[idx].next[child_idx].idx, count);
+	  return (false);
+	}
+  
+  return (mr_btree_is_valid_recurse (tree, tree->pool->root.idx, cmp, context));
+}
+
 static inline void
 mr_tree_rotate (mr_tree_t * tree, mr_tree_path_t * path, unsigned idx, mr_child_idx_t child_idx)
 {
@@ -305,49 +359,14 @@ mr_rbtree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * 
 }
 
 static bool
-mr_btree_is_valid (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, void * context)
+mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum, int * height)
 {
-  if (NONE_IDX == idx)
-    return (true);
-  
-  mr_child_idx_t child_idx;
-  for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
-    {
-      unsigned child = tree->pool[idx].next[child_idx].idx;
-      if (NONE_IDX != child)
-	{
-	  int diff = cmp (tree->pool[child].key, tree->pool[idx].key, context);
-	  if (0 == diff)
-	    {
-	      fprintf (stderr, "Tree unordered. Child (%u) == parent (%u)\n", child, idx);
-	      return (false);
-	    }	    
-	  if ((diff > 0) ^ child_idx)
-	    {
-	      fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
-	      return (false);
-	    }
-	  if (!mr_btree_is_valid (tree, child, cmp, context))
-	    return (false);
-	}
-    }
-  
-  return (true);
-}
-
-static bool
-mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum, int b_height_expected, bool * visited)
-{
-  visited[idx] = true;
-
-  if (NONE_IDX == idx)
-    {
-      if (b_height_accum != b_height_expected)
-	fprintf (stderr, "Mismatched black height %d != %d\n", b_height_accum, b_height_expected);
-      return (b_height_accum == b_height_expected);
-    }
-
+  int b_height = height[idx];
   b_height_accum += !rbtree->pool[idx].rb.red;
+  height[idx] = b_height_accum;
+  
+  if (NONE_IDX == idx)
+    return ((0 == b_height) || (b_height == b_height_accum));
 
   mr_child_idx_t child_idx;
   for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
@@ -358,7 +377,7 @@ mr_rbtree_is_valid_recurse (mr_tree_t * rbtree, unsigned idx, int b_height_accum
 	  fprintf (stderr, "Two red nodes %u -> %u\n", idx, child);
 	  return (false);
 	}
-      if (!mr_rbtree_is_valid_recurse (rbtree, child, b_height_accum, b_height_expected, visited))
+      if (!mr_rbtree_is_valid_recurse (rbtree, child, b_height_accum, height))
 	return (false);
     }
 
@@ -371,13 +390,9 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
   if (rbtree->size <= 0)
     return (true);
 
-  unsigned count = rbtree->size / sizeof (rbtree->pool[0]);
-  if (0 == count)
-    {
-      fprintf (stderr, "Tree is not empty, but it has no root\n");
-      return (false);
-    }
-
+  if (!mr_btree_is_valid (rbtree, cmp, context))
+    return (false);
+  
   if (rbtree->pool[NONE_IDX].rb.red)
     {
       fprintf (stderr, "NONE node is not black\n");
@@ -390,30 +405,15 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
       return (false);
     }
 
-  unsigned idx;
-  mr_child_idx_t child_idx;
-  for (idx = 0; idx < count; ++idx)
-    for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
-      if (rbtree->pool[idx].next[child_idx].idx >= count)
-	{
-	  fprintf (stderr, "Node [%u] has a child reference out of range %u > %u\n", idx, rbtree->pool[idx].next[child_idx].idx, count);
-	  return (false);
-	}
-
-  if (!mr_btree_is_valid (rbtree, rbtree->pool->root.idx, cmp, context))
+  unsigned idx, count = rbtree->size / sizeof (rbtree->pool[0]);
+  int height[count];
+  
+  memset (height, 0, sizeof (height));
+  if (!mr_rbtree_is_valid_recurse (rbtree, rbtree->pool->root.idx, 0, height))
     return (false);
   
-  int height = 0;
-  for (idx = rbtree->pool->root.idx; NONE_IDX != idx; idx = rbtree->pool[idx].next[MR_LEFT].idx)
-    height += !rbtree->pool[idx].rb.red;
-
-  bool visited[count];
-  memset (visited, 0, sizeof (visited));
-  if (!mr_rbtree_is_valid_recurse (rbtree, rbtree->pool->root.idx, 0, height, visited))
-    return (false);
-  
-  for (idx = 0; idx < count; ++idx)
-    if (!visited[idx])
+  for (idx = 1; idx < count; ++idx)
+    if (0 == height[idx])
       {
 	fprintf (stderr, "Node [%u] is not reachable\n", idx);
 	return (false);
@@ -631,32 +631,18 @@ mr_avltree_is_valid (mr_tree_t * avltree, mr_compar_fn_t cmp, void * context)
   if (avltree->size <= 0)
     return (true);
 
-  unsigned count = avltree->size / sizeof (avltree->pool[0]);
-  if (0 == count)
-    {
-      fprintf (stderr, "Tree is not empty, but it has no root\n");
-      return (false);
-    }
-
-  unsigned idx, child_idx;
-  for (idx = 0; idx < count; ++idx)
-    for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
-      if (avltree->pool[idx].next[child_idx].idx >= count)
-	{
-	  fprintf (stderr, "Node [%u] has a child reference out of range %u > %u\n", idx, avltree->pool[idx].next[child_idx].idx, count);
-	  return (false);
-	}
-
-  if (!mr_btree_is_valid (avltree, avltree->pool->root.idx, cmp, context))
+  if (!mr_btree_is_valid (avltree, cmp, context))
     return (false);
   
+  unsigned idx, count = avltree->size / sizeof (avltree->pool[0]);
   int height[count];
+  
   memset (height, 0, sizeof (height));
   if (!mr_avltree_is_valid_recurse (avltree, avltree->pool->root.idx, height))
     return (false);
   
   for (idx = 1; idx < count; ++idx)
-    if (height[idx] == 0)
+    if (0 == height[idx])
       {
 	fprintf (stderr, "Node [%u] is not reachable\n", idx);
 	return (false);
