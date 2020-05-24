@@ -575,10 +575,10 @@
 	     .param =							\
 	     {								\
 	       .array_param = {						\
-		 .count = sizeof (((MR_TYPE_NAME*)0)->NAME) /		\
-		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
-		 .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) /	\
-		 (sizeof (TYPE) == 0 ? 1 : sizeof (TYPE)),		\
+		 .count = (sizeof (TYPE) == 0 ? 0 :			\
+			   sizeof (((MR_TYPE_NAME*)0)->NAME) / sizeof (TYPE)), \
+		 .row_count = (sizeof (TYPE) == 0 ? 1 :			\
+			       sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / sizeof (TYPE)), \
 	       },							\
 	     },								\
 	     .meta = "" __VA_ARGS__,					\
@@ -756,7 +756,6 @@
       status;							\
     })
       
-
 #define MR_SAVE MR_SAVE_TYPED
 #define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR) ({				\
       mr_fd_t __fd__ =							\
@@ -765,17 +764,19 @@
 	  .type = #MR_TYPE_NAME,					\
 	  .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	  .size = sizeof (MR_TYPE_NAME),				\
-	  .param = 							\
-	  {								\
-	    .array_param = {						\
-	      .count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
-	      .row_count = 1,						\
-	    },								\
-	  },								\
 	};								\
       MR_TYPE_NAME * check_type = S_PTR;				\
       mr_save_data_t __mr_save_data__ = { .ptrs.ptrdes_type = MR_PD_SAVE, }; \
       mr_detect_type (&__fd__);						\
+      if (__builtin_types_compatible_p (MR_TYPE_NAME[], __typeof__ (S_PTR)) && \
+	  (sizeof (MR_TYPE_NAME) > 0) &&				\
+	  (sizeof (S_PTR) >= sizeof (MR_TYPE_NAME)))			\
+	{								\
+	  __fd__.mr_type_aux = __fd__.mr_type;				\
+	  __fd__.mr_type = MR_TYPE_ARRAY;				\
+	  __fd__.param.array_param.count = sizeof (S_PTR) / sizeof (MR_TYPE_NAME); \
+	  __fd__.param.array_param.row_count = 1;			\
+	}								\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
       if (check_type == NULL)						\
@@ -873,13 +874,6 @@
 	    .name = { .str = NULL, .hash_value = 0, },			\
 	    .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	    .size = sizeof (MR_TYPE_NAME),				\
-	    .param = 							\
-	    {								\
-	      .array_param = {						\
-		.count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
-		.row_count = 1,						\
-	      },							\
-	    },								\
 	  };								\
 	  MR_TYPE_NAME * __check_type__ = S_PTR + 0;			\
 	  mr_detect_type (&__fd__);					\
@@ -953,13 +947,6 @@
 	.name = { .str = NULL, .hash_value = 0, },			\
 	.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	.size = sizeof (MR_TYPE_NAME),					\
-	.param = 							\
-	{								\
-	  .array_param = {						\
-	    .count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
-	    .row_count = 1,						\
-	  },								\
-	},								\
       };								\
       MR_TYPE_NAME * __check_type__ = S_PTR + 0;			\
       xmlNodePtr __xml__ = (XML);					\
@@ -1063,13 +1050,6 @@
 		.name = { .str = NULL, .hash_value = 0, },		\
 		.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),		\
 		.size = sizeof (MR_TYPE_NAME),				\
-		.param = 						\
-		{							\
-		  .array_param = {					\
-		    .count = sizeof (S_PTR) / (sizeof (MR_TYPE_NAME) ? sizeof (MR_TYPE_NAME) : 1), \
-		    .row_count = 1,					\
-		  },							\
-		},							\
 	      };							\
 	      mr_detect_type (&_fd_);					\
 	      _status_ = mr_load (_check_type_, &_fd_, 0, &_load_data_); \
