@@ -466,6 +466,34 @@ TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *))
 
 TYPEDEF_FUNC (void, mr_msg_handler_t, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), ATTRIBUTES ( , "handler for error messages"))
 
+TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
+		(int, lineno, , "parser location - line number"),
+		(int, column, , "parser location - column number"),
+		(int, offset, , "parser location - offset in string"),
+		)
+
+TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
+		(mr_lloc_t, start, , "start of the token"),
+		(mr_lloc_t, end, , "end of the token"),
+		)
+
+TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
+		(mr_lloc_t, lloc, , "current location of parser"),
+		(char *, str, , "string to parse"),
+		(char *, buf, , "parser internal buffer"),
+		(int, parent, , "index of current parent"),
+		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
+		)
+
+TYPEDEF_STRUCT (mr_load_node_context_t,
+		int idx,
+		(mr_ra_ptrdes_t *, ptrs)
+		)
+
+TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
+
+TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
+
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
