@@ -722,7 +722,7 @@
   #define MR_CHECK_TYPES(...)
 */
 #ifndef MR_CHECK_TYPES
-#define MR_CHECK_TYPES(MR_TYPE_NAME, ...) ({ (void) ((MR_TYPE_NAME*)0 - (__typeof__ (__VA_ARGS__ + 0))0); })
+#define MR_CHECK_TYPES(MR_TYPE_NAME, ...) (void) ((MR_TYPE_NAME*)0 - (__typeof__ (__VA_ARGS__ + 0))0)
 #endif /* MR_CHECK_TYPES */
 
 #define MR_COPY_RECURSIVELY(MR_TYPE_NAME, ...) MR_COPY_RECURSIVELY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
@@ -757,7 +757,13 @@
     })
       
 #define MR_SAVE MR_SAVE_TYPED
-#define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR) ({				\
+
+#define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR)		\
+  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))		\
+    (MR_SAVE_TYPED_ (__typeof__ (*(S_PTR)), S_PTR))	\
+  (MR_SAVE_TYPED_ (MR_TYPE_NAME, S_PTR))
+
+#define MR_SAVE_TYPED_(MR_TYPE_NAME, S_PTR) ({				\
       mr_fd_t __fd__ =							\
 	{								\
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
@@ -779,6 +785,7 @@
 	}								\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
+      (void)(0 / (uintptr_t)S_PTR);					\
       if (check_type == NULL)						\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
       else								\
