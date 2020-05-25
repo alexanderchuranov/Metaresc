@@ -774,7 +774,7 @@
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
-	  __fd__.param.array_param.count = sizeof (S_PTR) / sizeof (MR_TYPE_NAME); \
+	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (MR_TYPE_NAME); \
 	  __fd__.param.array_param.row_count = 1;			\
 	}								\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
