@@ -633,7 +633,9 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
       else 
 	ra[idx].type = type_name[fdp->mr_type];
     }
-  
+
+  if (MR_TYPE_ARRAY == fdp->mr_type)
+    count = fdp->param.array_param.count;
   ra[idx].MR_SIZE = fdp->size * count;
 
   /* forward reference resolving */
@@ -973,6 +975,7 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
   for (idx = 1; idx < count; ++idx)
     if ((MR_TYPE_VOID == ptrs->ra[idx].fd.mr_type) ||
 	(MR_TYPE_STRUCT == ptrs->ra[idx].fd.mr_type) ||
+	(MR_TYPE_ARRAY == ptrs->ra[idx].fd.mr_type) ||
 	(MR_TYPE_UNION == ptrs->ra[idx].fd.mr_type) ||
 	(MR_TYPE_ANON_UNION == ptrs->ra[idx].fd.mr_type) ||
 	(MR_TYPE_NAMED_ANON_UNION == ptrs->ra[idx].fd.mr_type))
