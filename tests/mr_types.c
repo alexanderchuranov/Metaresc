@@ -123,9 +123,12 @@ MR_START_TEST (check_array_save, "check that MR_SAVE handles array correctly") {
   complex long double array[] = {1, 2, 3};
   mr_ra_ptrdes_t ptrs = MR_SAVE ( ,  array);
   ck_assert_msg (ptrs.size / sizeof (ptrs.ra[0]) == sizeof (array) / sizeof (array[0]) + 1, "Incorrect introspection of the array");
+  ck_assert_msg (ptrs.ra != NULL, "Failed to serialize array sructure");
   ck_assert_msg (ptrs.ra[0].fd.mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
   ck_assert_msg (ptrs.ra[0].fd.mr_type_aux == MR_TYPE_COMPLEX_LONG_DOUBLE, "Incorrect auxiliary type of root node");
   ck_assert_msg (ptrs.ra[0].fd.param.array_param.count == sizeof (array) / sizeof (array[0]), "Incorrect array size");
+  if (ptrs.ra)
+    MR_FREE (ptrs.ra);
 } END_TEST
 
 MR_START_TEST (check_types_detection, "check that types detected correctly") {

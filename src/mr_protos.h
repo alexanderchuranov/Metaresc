@@ -203,15 +203,15 @@ TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for sma
 		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_next_t) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
-TYPEDEF_ENUM (mr_child_idx_t,
+TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))), "tree traversal to the left/right"),
 	      (MR_LEFT, = 0),
 	      (MR_RIGHT, = 1),
 	      )
 
 TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "traverse index and discent direction"), 
 		(unsigned int, idx, , "index in the pool"),
-		BITFIELD (mr_child_idx_t, child_idx, : 1),
-		BITFIELD (bool, equal, : 1),
+		(mr_child_idx_t, child_idx),
+		(bool, equal),
 		)
 
 TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
