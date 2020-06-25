@@ -628,6 +628,12 @@ mr_avlnode_is_valid (mr_tree_t * avltree, unsigned idx, uint8_t * height)
       return (false);
     }
 
+  if (avltree->pool[idx].avl.balanced)
+    {
+      fprintf (stderr, "Node [%u] marked as balanced, but it is not true\n", idx);
+      return (false);
+    }
+  
   if (longer != avltree->pool[idx].avl.longer)
     {
       fprintf (stderr, "Node [%u] wrong longer path marked\n", idx);
