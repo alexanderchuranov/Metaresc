@@ -252,21 +252,21 @@ mr_btree_is_valid (mr_tree_t * tree, mr_compar_fn_t cmp, void * context, node_va
 }
 
 static inline void
-mr_tree_rotate (mr_tree_t * tree, mr_tree_path_t * path, unsigned idx, mr_child_idx_t child_idx)
+mr_tree_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t child_idx)
 {
-  unsigned node = path[idx].idx;
+  unsigned node = path[1].idx;
   unsigned child = tree->pool[node].next[child_idx].idx;
   
   tree->pool[node].next[child_idx].idx = tree->pool[child].next[child_idx ^ FLIP].idx;
   tree->pool[child].next[child_idx ^ FLIP].idx = node;
 
-  tree->pool[path[idx - 1].idx].next[path[idx - 1].child_idx].idx = child;
+  tree->pool[path[0].idx].next[path[0].child_idx].idx = child;
 }
 
 static inline void 
-mr_tree_grand_rotate (mr_tree_t * tree, mr_tree_path_t * path, unsigned idx, mr_child_idx_t child_idx)
+mr_tree_grand_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t child_idx)
 {
-  unsigned node = path[idx].idx;
+  unsigned node = path[1].idx;
   unsigned child = tree->pool[node].next[child_idx].idx;
   unsigned grand_child = tree->pool[child].next[child_idx ^ FLIP].idx;
   
@@ -276,7 +276,7 @@ mr_tree_grand_rotate (mr_tree_t * tree, mr_tree_path_t * path, unsigned idx, mr_
   tree->pool[grand_child].next[child_idx ^ FLIP].idx = node;
   tree->pool[grand_child].next[child_idx].idx = child;
 
-  tree->pool[path[idx - 1].idx].next[path[idx - 1].child_idx].idx = grand_child;
+  tree->pool[path[0].idx].next[path[0].child_idx].idx = grand_child;
 }
 
 static void 
@@ -301,11 +301,11 @@ mr_rbtree_rebalance_add (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned pat
 	      rbtree->pool[parent].rb.red = false;
 	    else
 	      {
-		mr_tree_rotate (rbtree, path, path_size + 1, parent_idx ^ FLIP);
+		mr_tree_rotate (rbtree, &path[path_size], parent_idx ^ FLIP);
 		rbtree->pool[node].rb.red = false;
 	      }
 
-	    mr_tree_rotate (rbtree, path, path_size, parent_idx);
+	    mr_tree_rotate (rbtree, &path[path_size - 1], parent_idx);
 	    rbtree->pool[grand_parent].rb.red = true;
 	    break;
 	  }
@@ -346,7 +346,7 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned pat
 	    rbtree->pool[brother].rb.red = false;
 	    rbtree->pool[parent].rb.red = true;
 	  
-	    mr_tree_rotate (rbtree, path, path_size - 1, child_idx ^ FLIP);
+	    mr_tree_rotate (rbtree, &path[path_size - 2], child_idx ^ FLIP);
 	      
 	    path[path_size - 1].idx = brother;
 	    path[path_size].child_idx = child_idx;
@@ -366,7 +366,7 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned pat
 
 		path[path_size].idx = brother;
 		path[path_size - 1].child_idx ^= FLIP;
-		mr_tree_rotate (rbtree, path, path_size, child_idx);
+		mr_tree_rotate (rbtree, &path[path_size - 1], child_idx);
 
 		brother = nephew;
 	      }
@@ -375,7 +375,7 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned pat
 	    rbtree->pool[parent].rb.red = false;
 	    rbtree->pool[rbtree->pool[brother].next[child_idx ^ FLIP].idx].rb.red = false;
 
-	    mr_tree_rotate (rbtree, path, path_size - 1, child_idx ^ FLIP);
+	    mr_tree_rotate (rbtree, &path[path_size - 2], child_idx ^ FLIP);
 	    break;
 	  }
 
@@ -474,7 +474,7 @@ mr_avltree_rebalance_add (mr_tree_t * avltree, mr_tree_path_t * path, unsigned p
 	  /* unreachable */
 	  avltree->pool[child].avl.balanced = false;
 	  avltree->pool[child].avl.longer = child_idx ^ FLIP;
-	  mr_tree_rotate (avltree, path, idx, child_idx);
+	  mr_tree_rotate (avltree, &path[idx - 1], child_idx);
 	  break;
 	}
       
@@ -482,7 +482,7 @@ mr_avltree_rebalance_add (mr_tree_t * avltree, mr_tree_path_t * path, unsigned p
 	{
 	  avltree->pool[node].avl.balanced = true;
 	  avltree->pool[child].avl.balanced = true;
-	  mr_tree_rotate (avltree, path, idx, child_idx);
+	  mr_tree_rotate (avltree, &path[idx - 1], child_idx);
 	  break;
 	}
 
@@ -508,7 +508,7 @@ mr_avltree_rebalance_add (mr_tree_t * avltree, mr_tree_path_t * path, unsigned p
 	  avltree->pool[grand_child].avl.balanced = true;
 	}
 	
-      mr_tree_grand_rotate (avltree, path, idx, child_idx);
+      mr_tree_grand_rotate (avltree, &path[idx - 1], child_idx);
       break;
     }
 }
@@ -548,7 +548,7 @@ mr_avltree_rebalance_del (mr_tree_t * avltree, mr_tree_path_t * path, unsigned p
 	{
 	  avltree->pool[child].avl.balanced = false;
 	  avltree->pool[child].avl.longer = child_idx;
-	  mr_tree_rotate (avltree, path, idx, child_idx ^ FLIP);
+	  mr_tree_rotate (avltree, &path[idx - 1], child_idx ^ FLIP);
 	  break;
 	}
       
@@ -556,7 +556,7 @@ mr_avltree_rebalance_del (mr_tree_t * avltree, mr_tree_path_t * path, unsigned p
 	{
 	  avltree->pool[node].avl.balanced = true;
 	  avltree->pool[child].avl.balanced = true;
-	  mr_tree_rotate (avltree, path, idx, child_idx ^ FLIP);
+	  mr_tree_rotate (avltree, &path[idx - 1], child_idx ^ FLIP);
 	  continue;
 	}
 
@@ -582,7 +582,7 @@ mr_avltree_rebalance_del (mr_tree_t * avltree, mr_tree_path_t * path, unsigned p
 	  avltree->pool[grand_child].avl.balanced = true;
 	}
 	
-      mr_tree_grand_rotate (avltree, path, idx, child_idx ^ FLIP);
+      mr_tree_grand_rotate (avltree, &path[idx - 1], child_idx ^ FLIP);
     }
 }
 
