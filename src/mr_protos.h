@@ -208,10 +208,14 @@ TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeo
 	      (MR_RIGHT, = 1),
 	      )
 
+TYPEDEF_STRUCT (mr_tree_find_res_t, ATTRIBUTES ( , "size of tree traversal and zero flag for the last comparison"), 
+		(unsigned int, size, , "size of tree traversal"),
+		(bool, equal, , "equal flag for the last comparison in the traversal"),
+		)
+
 TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "traverse index and discent direction"), 
 		(unsigned int, idx, , "index in the pool"),
 		(mr_child_idx_t, child_idx),
-		(bool, equal),
 		)
 
 TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),

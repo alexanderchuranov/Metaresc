@@ -665,8 +665,8 @@ mr_ptr_t *
 mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
 {
   mr_tree_path_t path[MR_PATH_SIZE];
-  unsigned path_size = mr_tree_find (key, &ic->tree, ic->compar_fn, ic->context.data.ptr, path);
-  return (path[path_size - 1].equal ? &ic->tree.pool[path[path_size - 1].idx].key : NULL);
+  mr_tree_find_res_t find_res = mr_tree_find (key, &ic->tree, ic->compar_fn, ic->context.data.ptr, path);
+  return (find_res.equal ? &ic->tree.pool[path[find_res.size - 1].idx].key : NULL);
 }
 
 mr_status_t

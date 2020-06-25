@@ -38,38 +38,37 @@ mr_tree_node_new (mr_tree_t * tree)
 mr_status_t
 mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, const void * context)
 {
-  unsigned idx, cnt = 0;
+  unsigned idx, size = 0;
   unsigned path[MR_PATH_SIZE];
   
   if (tree->size < 2 * sizeof (tree->pool[0]))
     return (MR_SUCCESS);
 
   for (idx = NONE_IDX; tree->pool[idx].next[MR_LEFT].idx != NONE_IDX; idx = tree->pool[idx].next[MR_LEFT].idx)
-    path[cnt++] = idx;
+    path[size++] = idx;
   
   while (idx != NONE_IDX)
     {
       if (MR_SUCCESS != visit_fn (tree->pool[idx].key, context))
 	return (MR_FAILURE);
       if (tree->pool[idx].next[MR_RIGHT].idx == NONE_IDX)
-	idx = path[--cnt];
+	idx = path[--size];
       else
 	for (idx = tree->pool[idx].next[MR_RIGHT].idx; tree->pool[idx].next[MR_LEFT].idx != NONE_IDX; idx = tree->pool[idx].next[MR_LEFT].idx)
-	  path[cnt++] = idx;
+	  path[size++] = idx;
     }
   return (MR_SUCCESS);
 }
 
-unsigned int
+mr_tree_find_res_t
 mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_path_t * path)
 {
   unsigned idx;
-  unsigned cnt = 0;
+  unsigned size = 0;
 
-  path[cnt++] = (typeof (path[0])){
+  path[size++] = (typeof (path[0])){
     .idx = NONE_IDX,
     .child_idx = MR_LEFT,
-    .equal = false,
   };
   
   if (tree->size >= 2 * sizeof (tree->pool[0]))
@@ -79,17 +78,16 @@ mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * c
 	bool equal = (0 == cmp);
 	mr_child_idx_t child_idx = (cmp > 0) ? MR_RIGHT : MR_LEFT;
 	
-	path[cnt++] = (typeof (path[0])){
+	path[size++] = (typeof (path[0])){
 	  .idx = idx,
 	  .child_idx = child_idx,
-	  .equal = equal,
 	};
 	
 	if (equal)
-	  break;
+	  return ((mr_tree_find_res_t){ .size = size, .equal = true, });
 	idx = tree->pool[idx].next[child_idx].idx;
       }
-  return (cnt);
+  return ((mr_tree_find_res_t){ .size = size, .equal = false, });
 }
 
 static mr_ptr_t *
@@ -100,20 +98,20 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
       return (NULL);
 
   mr_tree_path_t path[MR_PATH_SIZE];
-  unsigned path_size = mr_tree_find (key, tree, compar_fn, context, path);
+  mr_tree_find_res_t find_res = mr_tree_find (key, tree, compar_fn, context, path);
   
-  if (path[path_size - 1].equal)
-    return (&tree->pool[path[path_size - 1].idx].key);
+  if (find_res.equal)
+    return (&tree->pool[path[find_res.size - 1].idx].key);
 
   unsigned idx = mr_tree_node_new (tree);
   if (-1 == idx)
     return (NULL);
 
-  path[path_size].idx = idx;
+  path[find_res.size].idx = idx;
   tree->pool[idx].key = key;
-  tree->pool[path[path_size - 1].idx].next[path[path_size - 1].child_idx].idx = idx;
+  tree->pool[path[find_res.size - 1].idx].next[path[find_res.size - 1].child_idx].idx = idx;
 
-  rebalance (tree, path, path_size);
+  rebalance (tree, path, find_res.size);
   
   return (&tree->pool[idx].key);
 }
@@ -122,11 +120,12 @@ static mr_status_t
 mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_path_t *, unsigned))
 {
   mr_tree_path_t path[MR_PATH_SIZE];
-  unsigned path_size = mr_tree_find (key, rbtree, compar_fn, context, path);
+  mr_tree_find_res_t find_res = mr_tree_find (key, rbtree, compar_fn, context, path);
 
-  if (!path[path_size - 1].equal)
+  if (!find_res.equal)
     return (MR_FAILURE);
 
+  unsigned path_size = find_res.size;
   unsigned node = path[path_size - 1].idx;
   unsigned del = node;
   if ((NONE_IDX == rbtree->pool[node].next[MR_LEFT].idx) || (NONE_IDX == rbtree->pool[node].next[MR_RIGHT].idx))
@@ -152,12 +151,12 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * 
   unsigned last = rbtree->size / sizeof (rbtree->pool[0]);
   if (del != last)
     {
-      path_size = mr_tree_find (rbtree->pool[last].key, rbtree, compar_fn, context, path);
-      if (!path[path_size - 1].equal)
+      find_res = mr_tree_find (rbtree->pool[last].key, rbtree, compar_fn, context, path);
+      if (!find_res.equal)
 	return (MR_FAILURE);
       
       rbtree->pool[del] = rbtree->pool[last];
-      rbtree->pool[path[path_size - 2].idx].next[path[path_size - 2].child_idx].idx = del;
+      rbtree->pool[path[find_res.size - 2].idx].next[path[find_res.size - 2].child_idx].idx = del;
     }
 
   return (MR_SUCCESS);
