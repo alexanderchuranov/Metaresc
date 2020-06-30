@@ -90,7 +90,7 @@ mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * c
   return ((mr_tree_find_res_t){ .size = size, .equal = false, });
 }
 
-static mr_ptr_t *
+static inline mr_ptr_t *
 mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_path_t *, unsigned))
 {
   if (tree->size <= 0)
@@ -116,7 +116,7 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
   return (&tree->pool[idx].key);
 }
 
-static mr_status_t
+static inline mr_status_t
 mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_path_t *, unsigned))
 {
   mr_tree_path_t path[MR_PATH_SIZE];
@@ -279,7 +279,7 @@ mr_tree_grand_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t ch
   tree->pool[path[-1].idx].next[path[-1].child_idx].idx = grand_child;
 }
 
-static void 
+static inline void 
 mr_rbtree_rebalance_add (mr_tree_t * rbtree, mr_tree_path_t * path, unsigned path_size)
 {
   rbtree->pool[path[path_size].idx].rb.red = true;
@@ -441,7 +441,7 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
   return (true);
 }
 
-static void 
+static inline void 
 mr_avltree_rebalance_add (mr_tree_t * avltree, mr_tree_path_t * path, unsigned path_size)
 {
   int idx;

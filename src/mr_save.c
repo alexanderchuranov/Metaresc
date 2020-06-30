@@ -230,7 +230,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 static inline int
 mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 {
-  int diff = x->data.uintptr_t - y->data.uintptr_t;
+  int diff = ((x->data.uintptr_t > y->data.uintptr_t) - (x->data.uintptr_t < y->data.uintptr_t));
   if (diff)
     return (diff);
   
