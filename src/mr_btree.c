@@ -43,19 +43,16 @@ mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, const void * context)
   
   if (tree->size < 2 * sizeof (tree->pool[0]))
     return (MR_SUCCESS);
-
-  for (idx = NONE_IDX; tree->pool[idx].next[MR_LEFT].idx != NONE_IDX; idx = tree->pool[idx].next[MR_LEFT].idx)
-    path[size++] = idx;
   
-  while (idx != NONE_IDX)
+  for (idx = tree->pool->root.idx; ; idx = tree->pool[idx].next[MR_RIGHT].idx)
     {
+      for ( ; idx != NONE_IDX; idx = tree->pool[idx].next[MR_LEFT].idx)
+	path[size++] = idx;
+      if (0 == size)
+	break;
+      idx = path[--size];
       if (MR_SUCCESS != visit_fn (tree->pool[idx].key, context))
 	return (MR_FAILURE);
-      if (tree->pool[idx].next[MR_RIGHT].idx == NONE_IDX)
-	idx = path[--size];
-      else
-	for (idx = tree->pool[idx].next[MR_RIGHT].idx; tree->pool[idx].next[MR_LEFT].idx != NONE_IDX; idx = tree->pool[idx].next[MR_LEFT].idx)
-	  path[size++] = idx;
     }
   return (MR_SUCCESS);
 }
