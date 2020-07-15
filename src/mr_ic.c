@@ -664,9 +664,9 @@ mr_ic_rbtree_del (mr_ic_t * ic, mr_ptr_t key)
 mr_ptr_t *
 mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  mr_tree_path_t path[MR_PATH_SIZE];
-  mr_tree_find_res_t find_res = mr_tree_find (key, &ic->tree, ic->compar_fn, ic->context.data.ptr, path);
-  return (find_res.equal ? &ic->tree.pool[path[find_res.size - 1].idx].key : NULL);
+  mr_tree_traverse_t traverse;
+  mr_tree_find (key, &ic->tree, ic->compar_fn, ic->context.data.ptr, &traverse);
+  return (traverse.equal ? &ic->tree.pool[traverse.path[traverse.size - 1].idx].key : NULL);
 }
 
 mr_status_t

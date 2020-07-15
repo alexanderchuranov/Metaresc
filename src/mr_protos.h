@@ -203,20 +203,10 @@ TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for sma
 		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_next_t) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
-TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))), "tree traversal to the left/right"),
+TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))), "tree traverse to the left/right"),
 	      (MR_LEFT, = 0),
 	      (MR_RIGHT, = 1),
 	      )
-
-TYPEDEF_STRUCT (mr_tree_find_res_t, ATTRIBUTES ( , "size of tree traversal and zero flag for the last comparison"), 
-		(unsigned int, size, , "size of tree traversal"),
-		(bool, equal, , "equal flag for the last comparison in the traversal"),
-		)
-
-TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "traverse index and discent direction"), 
-		(unsigned int, idx, , "index in the pool"),
-		(mr_child_idx_t, child_idx),
-		)
 
 TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
 		BITFIELD (unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
@@ -251,6 +241,17 @@ TYPEDEF_STRUCT (mr_tree_t, ATTRIBUTES ( , "indexed collection for red/black tree
 		(mr_tree_node_t *, pool, , "mr_tree_node_t allocation pool", { .offset = offsetof (mr_tree_t, size) }, "offset"),
 		(ssize_t, size),
 		VOID (ssize_t, alloc_size),
+		)
+
+TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "element of traverse index and discent direction"), 
+		(mr_child_idx_t, child_idx, , "descent direction"),
+		(unsigned int, idx, , "index in the pool"),
+		)
+
+TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag for the last comparison"),
+		(unsigned int, size, , "size of tree traverse"),
+		(bool, equal, , "equal flag for the last comparison in the traverse"),
+		(mr_tree_path_t, path, [(sizeof (mr_tree_node_idx_t) * __CHAR_BIT__ << 1) - 1], "tree traverse path"),
 		)
 
 TYPEDEF_STRUCT (mr_res_t,
