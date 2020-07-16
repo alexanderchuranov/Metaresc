@@ -66,19 +66,16 @@ mr_tree_next (mr_tree_t * tree, mr_tree_traverse_t * traverse, mr_child_idx_t ne
   
   if (traverse->equal || (traverse->path[traverse->size - 1].child_idx == next))
     {
-      if (tree->pool[traverse->path[traverse->size - 1].idx].next[next].idx != NONE_IDX)
-	{
-	  unsigned idx = traverse->path[traverse->size - 1].idx;
-
-	  traverse->path[traverse->size - 1].child_idx = next;
-	  for (idx = tree->pool[idx].next[next].idx;
-	       idx != NONE_IDX;
-	       idx = tree->pool[idx].next[next ^ FLIP].idx)
-	    traverse->path[traverse->size++] = (typeof (traverse->path[0])){
-	      .idx = idx,
-	      .child_idx = next ^ FLIP,
-	    };
-	}
+      unsigned idx = traverse->path[traverse->size - 1].idx;
+      traverse->path[traverse->size - 1].child_idx = next;
+      if (tree->pool[idx].next[next].idx != NONE_IDX)
+	for (idx = tree->pool[idx].next[next].idx;
+	     idx != NONE_IDX;
+	     idx = tree->pool[idx].next[next ^ FLIP].idx)
+	  traverse->path[traverse->size++] = (typeof (traverse->path[0])){
+	    .idx = idx,
+	    .child_idx = next ^ FLIP,
+	  };
       else
 	while (--traverse->size > 1)
 	  if (traverse->path[traverse->size - 1].child_idx != next)
