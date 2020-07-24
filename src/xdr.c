@@ -1051,7 +1051,7 @@ xdr_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 mr_status_t
 xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs)
 {
-  return (mr_ptrs_ds (ptrs, xdr_save_node, xdrs));
+  return (mr_ptrs_dfs (ptrs, xdr_save_node, xdrs));
 }
 
 /**

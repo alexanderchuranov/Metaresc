@@ -889,7 +889,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	}
 
   /* depth search thru the graph and calculate new addresses for all nodes */
-  mr_ptrs_ds (ptrs, calc_relative_addr, NULL);
+  mr_ptrs_dfs (ptrs, calc_relative_addr, NULL);
 
   /* now we should update pointers in a copy */
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)

@@ -409,7 +409,7 @@ xml2_save (mr_ra_ptrdes_t * ptrs)
   else
     {
       ptrs->res.data.ptr = doc;
-      mr_ptrs_ds (ptrs, xml2_save_node, &mr_ra_str);
+      mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       
       if ((ptrs->size > 0) && (NULL != ptrs->ra[0].res.data.ptr))
 	xmlDocSetRootElement (doc, ptrs->ra[0].res.data.ptr);
