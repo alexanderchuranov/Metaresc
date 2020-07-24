@@ -850,8 +850,14 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   return (i);
 }
 
+/**
+ * Abstract DFS for pointers descriptors
+ * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param processor visitor function
+ * @param context untyped pointer on context passed through DFS traverse
+ */
 mr_status_t
-mr_ptrs_ds (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
+mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
 {
   int idx = 0;
   while (idx >= 0)
@@ -871,6 +877,12 @@ mr_ptrs_ds (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * conte
   return (MR_SUCCESS);
 }
 
+/**
+ * DFS visitor for nodes renumbering
+ * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param idx index of processed node
+ * @param context untyped pointer on context passed through DFS traverse
+ */
 mr_status_t
 mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
@@ -879,17 +891,26 @@ mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Post process void pointers and strings.
+ * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param idx index of processed node
+ * @param context untyped pointer on context passed through DFS traverse
+ */
 static mr_status_t
-mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
+mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_save_data_t * mr_save_data = context;
   int parent = ptrs->ra[idx].parent;
 
+  /* set depth level on the node */
   if (parent < 0)
     ptrs->ra[idx].save_params.level = 0;
   else
     ptrs->ra[idx].save_params.level = ptrs->ra[parent].save_params.level + 1;
 
+  /* Try resolve void pointers that were not resolved at save time.
+     Those pointers might be saved as typed entries on a later stages. */
   if ((MR_TYPE_POINTER == ptrs->ra[idx].fd.mr_type) &&
       ((MR_TYPE_NONE == ptrs->ra[idx].fd.mr_type_aux) || (MR_TYPE_VOID == ptrs->ra[idx].fd.mr_type_aux)) &&
       !ptrs->ra[idx].flags.is_null)
@@ -910,6 +931,7 @@ mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
   
       if (find_result != NULL)
 	{
+	  /* typed entry was found and here we configure reference on it */
 	  int ref_idx = find_result->intptr_t;
 	  ptrs->ra[idx].ref_idx = ref_idx;
 	  ptrs->ra[ref_idx].flags.is_referenced = true;
@@ -918,45 +940,61 @@ mr_post_process_node  (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 	ptrs->ra[idx].flags.is_null = true; /* unresolved void pointers are saved as NULL */
     }
 
+  /* Save procedure creates additional entries for strings content required for pointers resolution.
+     Those additional entries are not required for serialization process and we remove them here, but
+     before that we need to update all references on string content.
+   */
   if (ptrs->ra[idx].ref_idx >= 0)
     {
       int ref_parent = ptrs->ra[ptrs->ra[idx].ref_idx].parent;
       if ((ref_parent >= 0) && (MR_TYPE_STRING == ptrs->ra[ref_parent].fd.mr_type))
 	{
+	  /* move ref_idx on a parent node (of type MR_TYPE_STRING) */
 	  ptrs->ra[idx].ref_idx = ref_parent;
+	  /* mark that this is a reference on content, but not on an entry itself */
 	  ptrs->ra[idx].flags.is_content_reference = true;
+	  /* mark parent entry as referenced */
 	  ptrs->ra[ref_parent].flags.is_referenced = true;
 	}
     }
 
+  /* unlink string content, but keep links from content on a parent node */
   if (MR_TYPE_STRING == ptrs->ra[idx].fd.mr_type)
     ptrs->ra[idx].first_child = ptrs->ra[idx].last_child = -1;
 
   return (MR_SUCCESS);
 }
 
+/**
+ * Memory allocation failure test for XDR can't properly deallocate strings if it is saved as forward reference.
+ * This function makes first reference on a string in DFS traverse as a primary entry and point other references
+ * on this entry.
+ * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ */
 static void
 mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 {
   int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
   for (i = 0; i < count; ++i)
-    if ((MR_TYPE_STRING == ptrs->ra[i].fd.mr_type) && (ptrs->ra[i].ref_idx < 0))
+    if ((MR_TYPE_STRING == ptrs->ra[i].fd.mr_type) && (ptrs->ra[i].ref_idx < 0)) /* primary entry for the string */
       {
 	int min_idx = i;
-
+	/* iterate over other references on this string and find the one with minimal DFS index */
 	for (idx = ptrs->ra[i].save_params.next_typed; idx >= 0; idx = ptrs->ra[idx].save_params.next_typed)
 	  if (ptrs->ra[idx].idx < ptrs->ra[min_idx].idx)
 	    min_idx = idx;
-
-	if (min_idx != i)
+	
+	if (min_idx != i) /* check if reindexing is required */
 	  {
+	    /* point other references on new primary entry */
 	    for (idx = ptrs->ra[i].save_params.next_typed; idx >= 0; idx = ptrs->ra[idx].save_params.next_typed)
 	      ptrs->ra[idx].ref_idx = min_idx;
 
+	    /* change old primary entry to be a reference on a new one */
 	    ptrs->ra[i].ref_idx = min_idx;
 	    ptrs->ra[i].flags.is_referenced = false;
 	    ptrs->ra[i].flags.is_content_reference = true;
-
+	    /* configure new primary entry */
 	    ptrs->ra[min_idx].ref_idx = -1;
 	    ptrs->ra[min_idx].flags.is_referenced = true;
 	    ptrs->ra[min_idx].flags.is_content_reference = false;
@@ -964,11 +1002,15 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
       }
 }
 
+/**
+ * There is no need to save empty nodes and possibly their parent structures 
+ * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ */
 void
 mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 {
   int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  for (idx = 1; idx < count; ++idx)
+  for (idx = 1; idx < count; ++idx) /* skip root node */
     if ((MR_TYPE_VOID == ptrs->ra[idx].fd.mr_type) ||
 	(MR_TYPE_STRUCT == ptrs->ra[idx].fd.mr_type) ||
 	(MR_TYPE_ARRAY == ptrs->ra[idx].fd.mr_type) ||
@@ -979,32 +1021,34 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 	{
 	  if (ptrs->ra[i].first_child >= 0)
 	    break;
-	  
-	  if (ptrs->ra[i].prev < 0)
+	  /* empty node found - unchain it from parent node */
+	  if (ptrs->ra[i].prev < 0) /* node was a first child at parent node */
 	    ptrs->ra[ptrs->ra[i].parent].first_child = ptrs->ra[i].next;
 	  else
 	    ptrs->ra[ptrs->ra[i].prev].next = ptrs->ra[i].next;
 	  
-	  if (ptrs->ra[i].next < 0)
+	  if (ptrs->ra[i].next < 0) /* node was a last child at parent node */
 	    ptrs->ra[ptrs->ra[i].parent].last_child = ptrs->ra[i].prev;
 	  else
 	    ptrs->ra[ptrs->ra[i].next].prev = ptrs->ra[i].prev;
 	}
-
+  /* re-enumerate nodes after empty nodes removal */
   int idx_ = 0;
-  mr_ptrs_ds (ptrs, mr_renumber_node, &idx_);
+  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
 }
 
 /**
- * Set indexes to nodes according saving sequence.
+ * Post process void pointers and strings.
+ * Set indexes to nodes according to DFS saving sequence.
+ * Adjust primary etries for strings to be first in DFS sequence.
  * @param mr_save_data save routines data and lookup structures
  */
 static void
 mr_post_process (mr_save_data_t * mr_save_data)
 {
   int idx_ = 0;
-  mr_ptrs_ds (&mr_save_data->ptrs, mr_post_process_node, mr_save_data);
-  mr_ptrs_ds (&mr_save_data->ptrs, mr_renumber_node, &idx_); /* enumeration of nodes should be done only after strings processing */
+  mr_ptrs_dfs (&mr_save_data->ptrs, mr_post_process_node, mr_save_data);
+  mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &idx_); /* enumeration of nodes should be done only after strings processing */
   mr_reorder_strings (&mr_save_data->ptrs);
 }
 
