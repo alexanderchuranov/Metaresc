@@ -23,6 +23,9 @@ SUFFIXES = .y .l .lex.h .tab.h .lex.c .tab.c
 pkgincludedir = $(includedir)
 
 lib_LTLIBRARIES = libmetaresc.la 
+noinst_PROGRAMS = mr_dwarf
+
+mr_dwarf_LDADD = -ldwarf -lelf libmetaresc.la $(LIBXML2_LIBS)
 
 libmetaresc_la_SOURCES = metaresc.c mr_stringify.c mr_save.c mr_load.c xml_save.c cinit_save.c scm_save.c mr_ic.c mr_hsort.c mr_value.c mr_btree.c
 if HAVE_BISON_FLEX
