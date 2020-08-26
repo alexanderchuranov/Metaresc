@@ -1,11 +1,25 @@
 #include <assert.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 
-#include <dwarf.h>
-#include <libdwarf.h>
-
 #include <metaresc.h>
+#include <mr_config.h>
+#include <mr_ic.h>
+
+#ifdef HAVE_DWARF_H
+#include <dwarf.h>
+#endif /* HAVE_DWARF_H */
+#ifdef HAVE_LIBDWARF_H
+#include <libdwarf.h>
+#endif /* HAVE_LIBDWARF_H */
+
+#ifdef HAVE_LIBDWARF_DWARF_H
+#include <libdwarf/dwarf.h>
+#endif /* HAVE_LIBDWARF_DWARF_H */
+#ifdef HAVE_LIBDWARF_LIBDWARF_H
+#include <libdwarf/libdwarf.h>
+#endif /* HAVE_LIBDWARF_LIBDWARF_H */
 
 /* grep "#define DW_TAG_" /usr/include/libdwarf/dwarf.h | awk '{print "(_"$2", = "$3"),"}' */
 TYPEDEF_ENUM (mr_dw_tag_t, ATTRIBUTES ( , "grep '#define DW_TAG_' /usr/include/libdwarf/dwarf.h | awk '{print \"(_\"$2\", = \"$3\"),\"}'"),
@@ -307,7 +321,7 @@ TYPEDEF_STRUCT (mr_dw_attribute_t,
 		(mr_dw_attribute_code_t, code),
 		(mr_dw_form_t, form),
 		ANON_UNION (),
-		VOID (bool, dw_default),
+		VOID (int, dw_default),
 		(Dwarf_Bool, dw_flag),
 		(Dwarf_Signed, dw_signed),
 		(Dwarf_Unsigned, dw_unsigned),
@@ -325,6 +339,19 @@ TYPEDEF_STRUCT (mr_die_t,
 		(mr_die_t *, children, , "", { "children_size" }, "char"),
 		VOID (ssize_t, children_size),
 		VOID (ssize_t, children_alloc_size),
+		)
+
+TYPEDEF_STRUCT (mr_type_sign_t,
+		(mr_hashed_string_t, type),
+		(mr_size_t, size),
+		(mr_type_t, mr_type),
+		)
+
+TYPEDEF_STRUCT (context_t,
+		(mr_ic_t, die_off_ic),
+		(mr_ic_t, mr_type_sign_ic),
+		(mr_ic_t, types_names_ic),
+		(int, anonymous_type_cnt),
 		)
 
 static void
@@ -451,8 +478,7 @@ dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
 
   for (;;)
     {
-      rv = dwarf_next_cu_header (debug, NULL, NULL, NULL, NULL,
-				  &next_cu_header, NULL);
+      rv = dwarf_next_cu_header (debug, NULL, NULL, NULL, NULL, &next_cu_header, NULL);
       if (rv == DW_DLV_NO_ENTRY)
 	break;
       assert (rv == DW_DLV_OK);
@@ -467,6 +493,445 @@ dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
     }
 }
 
+static void
+walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray)
+{
+  mr_ptr_t * die_ptr;
+  
+  switch (mr_die->tag)
+    {
+    case _DW_TAG_base_type:
+    case _DW_TAG_typedef:
+    case _DW_TAG_structure_type:
+    case _DW_TAG_union_type:
+    case _DW_TAG_enumeration_type:
+    case _DW_TAG_array_type:
+    case _DW_TAG_const_type:
+    case _DW_TAG_pointer_type:
+    case _DW_TAG_subroutine_type:
+      die_ptr = mr_rarray_allocate_element ((void*)&ic_rarray->ra, &ic_rarray->size, &ic_rarray->alloc_size, sizeof (ic_rarray->ra[0]));
+      assert (die_ptr != NULL);
+      die_ptr->ptr = mr_die;
+      break;
+    default:
+      break;
+    }
+  
+  int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
+  for (i = 0; i < count; ++i)
+    walk_dies (&mr_die->children[i], ic_rarray);
+}
+
+static inline mr_dw_attribute_t *
+die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
+{
+  int i;
+  for (i = mr_die->attributes_size / sizeof (mr_die->attributes[0]) - 1; i >= 0; --i)
+    if (mr_die->attributes[i].code == code)
+      return (&mr_die->attributes[i]);
+  return (NULL);
+}
+
+static void
+get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+{
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
+  if (attr == NULL)
+    {
+#define ANONYMOUS_TYPE_TEMPLATE "mr_type_anonymous_%d_t"
+      char type_name[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof ("9999")];
+      sprintf (type_name, ANONYMOUS_TYPE_TEMPLATE, context->anonymous_type_cnt++);
+      mr_die->attributes = MR_REALLOC (mr_die->attributes, mr_die->attributes_size + sizeof (mr_die->attributes[0]));
+      assert (mr_die->attributes != NULL);
+      int idx = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
+      mr_die->attributes_size += sizeof (mr_die->attributes[0]);
+      mr_die->attributes[idx].code = _DW_AT_name;
+      mr_die->attributes[idx].form = _DW_FORM_strp;
+      mr_die->attributes[idx].dw_str = mr_strdup (type_name);
+      attr = &mr_die->attributes[idx];
+    }
+  assert (_DW_FORM_strp == attr->form);
+  assert (attr->dw_str != NULL);
+  if (fdp->type == NULL)
+    fdp->type = mr_strdup (attr->dw_str);
+}
+
+static void
+get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+{
+  for (;;)
+    {
+      mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_type);
+      assert (attr != NULL);
+      assert (_DW_FORM_ref4 == attr->form);
+	
+      mr_ptr_t * find = mr_ic_find (&context->die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
+      assert (find != NULL);
+      mr_die = find->ptr;
+      
+      switch (mr_die->tag)
+	{
+	case _DW_TAG_base_type:
+	  attr = die_attribute (mr_die, _DW_AT_byte_size);
+	  assert (attr != NULL);
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  mr_type_sign_t mr_type_sign;
+	  mr_type_sign.size = attr->dw_unsigned;
+	
+	  attr = die_attribute (mr_die, _DW_AT_name);
+	  assert (attr != NULL);
+	  assert (_DW_FORM_strp == attr->form);
+	  mr_type_sign.type.str = attr->dw_str;
+	  mr_type_sign.type.hash_value = 0;
+
+	  find = mr_ic_find (&context->mr_type_sign_ic, &mr_type_sign);
+	  assert (find != NULL);
+
+	  mr_type_sign_t * found_sign = find->ptr;
+	  fdp->mr_type_aux = found_sign->mr_type;
+	  fdp->size = mr_type_sign.size;
+	  if (fdp->type == NULL)
+	    fdp->type = mr_strdup (mr_type_sign.type.str);
+	  return;
+      
+	case _DW_TAG_subroutine_type:
+	  assert (fdp->mr_type == MR_TYPE_POINTER);
+	  fdp->mr_type = MR_TYPE_FUNC_TYPE;
+	  return;
+	
+	case _DW_TAG_array_type:
+	  assert (fdp->mr_type == MR_TYPE_NONE);
+	  fdp->mr_type = MR_TYPE_ARRAY;
+	  assert (mr_die->children_size == sizeof (mr_die->children[0]));
+	  assert (mr_die->children[0].tag == _DW_TAG_subrange_type);
+	  attr = die_attribute (&mr_die->children[0], _DW_AT_count);
+	  assert (attr != NULL);
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  fdp->param.array_param.count = attr->dw_unsigned;
+	  fdp->param.array_param.row_count = 1;
+	  break;
+	
+	case _DW_TAG_pointer_type:
+	  if (fdp->mr_type != MR_TYPE_NONE)
+	    return;
+	  fdp->mr_type = MR_TYPE_POINTER;
+	  if (die_attribute (mr_die, _DW_AT_type) == NULL)
+	    return;
+	  break;
+	
+	case _DW_TAG_typedef:
+	  get_type_name (fdp, mr_die, context);
+	  break;
+
+	case _DW_TAG_structure_type:
+	  fdp->mr_type_aux = MR_TYPE_STRUCT;
+	  get_type_name (fdp, mr_die, context);
+	  return;
+	
+	case _DW_TAG_union_type:
+	  fdp->mr_type_aux = MR_TYPE_UNION;
+	  get_type_name (fdp, mr_die, context);
+	  return;
+	
+	case _DW_TAG_enumeration_type:
+	  fdp->mr_type_aux = MR_TYPE_ENUM;
+	  get_type_name (fdp, mr_die, context);
+	  return;
+	
+	case _DW_TAG_const_type:
+	  break;
+	  
+	default:
+	  assert (false);
+	  break;
+	}
+    }
+}
+
+static void
+load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+{
+  memset (fdp, 0, sizeof (*fdp));
+  fdp->mr_type = MR_TYPE_ENUM_VALUE;
+  
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
+  assert (attr != NULL);
+  assert (_DW_FORM_strp == attr->form);
+  assert (attr->dw_str != NULL);
+  fdp->name.str = mr_strdup (attr->dw_str);
+
+  attr = die_attribute (mr_die, _DW_AT_const_value);
+  assert (attr != NULL);
+  assert (_DW_FORM_udata == attr->form);
+  fdp->param.enum_value = attr->dw_unsigned;
+}
+
+static void
+load_member (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+{
+  memset (fdp, 0, sizeof (*fdp));
+  
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
+  if (attr != NULL)
+    {
+      assert (_DW_FORM_strp == attr->form);
+      assert (attr->dw_str != NULL);
+      fdp->name.str = mr_strdup (attr->dw_str);
+    }
+  if (fdp->name.str == NULL)
+    fdp->unnamed = true;
+
+  attr = die_attribute (mr_die, _DW_AT_data_member_location);
+  if (attr != NULL)
+    {
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      fdp->offset = attr->dw_unsigned;
+    }
+  else
+    {
+      attr = die_attribute (mr_die, _DW_AT_bit_size);
+      assert (attr != NULL);
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      fdp->mr_type = MR_TYPE_BITFIELD;
+      fdp->param.bitfield_param.width = attr->dw_unsigned;
+      
+      attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
+      assert (attr != NULL);
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      fdp->param.bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
+      fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
+    }
+
+  get_mr_type (fdp, mr_die, context);
+  if (MR_TYPE_NONE == fdp->mr_type)
+    fdp->mr_type = fdp->mr_type_aux;
+}
+
+static void
+create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
+{
+  /* skip empty type declarations */
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_declaration);
+  if (attr != NULL)
+    return;
+
+  /* skip unnamed anonymous types */
+  attr = die_attribute (mr_die, _DW_AT_name);
+  if (attr == NULL)
+    return;
+  
+  assert (_DW_FORM_strp == attr->form);
+  assert (attr->dw_str != NULL);
+
+  /* skip types that are already extracted */
+  mr_ptr_t * find = mr_ic_find (&context->types_names_ic, attr->dw_str);
+  if (find != NULL)
+    return;
+
+  while (_DW_TAG_typedef == mr_die->tag)
+    {
+      /* traverse nexted typedef definitions */
+      mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_type);
+      assert (attr != NULL);
+      assert (_DW_FORM_ref4 == attr->form);
+	
+      mr_ptr_t * find = mr_ic_find (&context->die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
+      assert (find != NULL);
+      mr_die = find->ptr;
+    }
+
+  mr_type_t mr_type = MR_TYPE_NONE;
+  mr_dw_tag_t children_tag = _DW_TAG_undefined;
+  void (*load_child) (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context) = NULL;
+
+  switch (mr_die->tag)
+    {
+    case _DW_TAG_structure_type:
+      mr_type = MR_TYPE_STRUCT;
+      children_tag = _DW_TAG_member;
+      load_child = load_member;
+      break;
+    case _DW_TAG_union_type:
+      mr_type = MR_TYPE_UNION;
+      children_tag = _DW_TAG_member;
+      load_child = load_member;
+      break;
+    case _DW_TAG_enumeration_type:
+      mr_type = MR_TYPE_ENUM;
+      children_tag = _DW_TAG_enumerator;
+      load_child = load_enumerator;
+      break;
+    case _DW_TAG_pointer_type:
+      mr_type = MR_TYPE_FUNC_TYPE;
+      break;
+    case _DW_TAG_array_type:
+      mr_type = MR_TYPE_ARRAY;
+      break;
+    default:
+      return;
+    }
+
+  mr_td_t * tdp = mr_rarray_allocate_element ((void*)&ra_td->ra, &ra_td->size, &ra_td->alloc_size, sizeof (ra_td->ra[0]));
+  assert (tdp != NULL);
+  
+  memset (tdp, 0, sizeof (*tdp));
+  tdp->mr_type = mr_type;
+  tdp->type.str = mr_strdup (attr->dw_str);
+
+  find = mr_ic_add (&context->types_names_ic, tdp->type.str);
+  assert (find != NULL);
+
+  if (load_child == NULL)
+    return;
+  
+  attr = die_attribute (mr_die, _DW_AT_byte_size);
+  assert (attr != NULL);  
+  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+  tdp->size = attr->dw_unsigned;
+
+  int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
+  ssize_t alloc_size = 0;
+  for (i = 0; i < count; ++i)
+    if (mr_die->children[i].tag == children_tag)
+      {
+	mr_fd_ptr_t * fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
+	assert (fdp_ptr != NULL);
+	fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
+	assert (fdp_ptr->fdp != NULL);
+      
+	load_child (fdp_ptr->fdp, &mr_die->children[i], context);
+      }
+  
+  mr_fd_ptr_t * fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
+  assert (fdp_ptr != NULL);
+  fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
+  assert (fdp_ptr->fdp != NULL);
+  fdp_ptr->fdp->mr_type = MR_TYPE_TRAILING_RECORD;
+}
+
+mr_hash_value_t
+str_hash (mr_ptr_t x, const void * context)
+{
+  return (mr_hash_str (x.ptr));
+}
+
+int
+str_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  return (strcmp (x.ptr, y.ptr));
+}
+
+mr_hash_value_t
+die_off_hash (mr_ptr_t x, const void * context)
+{
+  mr_die_t * x_ = x.ptr;
+  return (x_->off);
+}
+
+int
+die_off_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_die_t * x_ = x.ptr;
+  const mr_die_t * y_ = y.ptr;
+  return ((x_->off > y_->off) - (x_->off < y_->off));
+}
+
+mr_hash_value_t
+mr_type_sign_hash (mr_ptr_t x, const void * context)
+{
+  mr_type_sign_t * x_ = x.ptr;
+  return (mr_hashed_string_get_hash (&x_->type) + x_->size);
+}
+
+int
+mr_type_sign_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_type_sign_t * x_ = x.ptr;
+  const mr_type_sign_t * y_ = y.ptr;
+  int diff = (x_->size > y_->size) - (x_->size < y_->size);
+  if (diff)
+    return (diff);
+  return (mr_hashed_string_cmp (&x_->type, &y_->type));
+}
+
+#define MR_BI_SIGN_(TYPE, TYPE_STR) (mr_type_sign_t[]){{ .type = { .str = TYPE_STR, .hash_value = 0, }, .size = sizeof (TYPE), .mr_type = MR_TYPE_DETECT (TYPE), }}
+#define MR_BI_SIGN(TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_SIGN_ (TYPE, #TYPE)) (MR_BI_SIGN_ (TYPE, __VA_ARGS__)) 
+
+static mr_type_sign_t * mr_type_sign[] =
+{
+  MR_BI_SIGN (_Bool),
+  MR_BI_SIGN (typeof (sizeof (0)), "__ARRAY_SIZE_TYPE__"),
+  MR_BI_SIGN (char),
+  MR_BI_SIGN (complex float, "complex"),
+  MR_BI_SIGN (complex double, "complex"),
+  MR_BI_SIGN (complex long double, "complex"),
+  MR_BI_SIGN (double),
+  MR_BI_SIGN (float),
+  MR_BI_SIGN (int),
+  MR_BI_SIGN (long double),
+  MR_BI_SIGN (long int),
+  MR_BI_SIGN (long long int),
+  MR_BI_SIGN (long long unsigned int),
+  MR_BI_SIGN (long unsigned int),
+  MR_BI_SIGN (short),
+  MR_BI_SIGN (signed char),
+  MR_BI_SIGN (unsigned char),
+  MR_BI_SIGN (unsigned int),
+  MR_BI_SIGN (unsigned short),
+};
+
+static void
+extract_type_descriptors (mr_ra_td_t * ra_td, mr_die_t * mr_die)
+{
+  mr_ic_rarray_t ra_die_ptr;
+  context_t context;
+  mr_status_t status;
+  
+  memset (&ra_die_ptr, 0, sizeof (ra_die_ptr));
+  walk_dies (mr_die, &ra_die_ptr);
+
+  memset (&context, 0, sizeof (context));
+  status = mr_ic_new (&context.die_off_ic, die_off_hash, die_off_cmp, "mr_die_t", MR_IC_HASH_NEXT, NULL);
+  assert (status == MR_SUCCESS);
+  status = mr_ic_index (&context.die_off_ic, &ra_die_ptr);
+  assert (status == MR_SUCCESS);
+  
+  mr_ic_rarray_t ic_rarray = { .ra = (void*)mr_type_sign, .size = sizeof (mr_type_sign), };
+  status = mr_ic_new (&context.mr_type_sign_ic, mr_type_sign_hash, mr_type_sign_cmp, "mr_type_sign_t", MR_IC_HASH_NEXT, NULL);
+  assert (status == MR_SUCCESS);
+  status = mr_ic_index (&context.mr_type_sign_ic, &ic_rarray);
+  assert (status == MR_SUCCESS);
+
+  status = mr_ic_new (&context.types_names_ic, str_hash, str_cmp, "char", MR_IC_HASH_NEXT, NULL);
+  assert (status == MR_SUCCESS);
+
+  int i, j;
+  for (j = 0; j < 2; ++j) /* required anonymous types identified on a first iteration and extracted on a second */
+    for (i = ra_die_ptr.size / sizeof (ra_die_ptr.ra[0]) - 1; i >= 0; --i)
+      {
+	mr_die_t * mr_die = ra_die_ptr.ra[i].ptr;
+      
+	switch (mr_die->tag)
+	  {
+	  case _DW_TAG_typedef:
+	  case _DW_TAG_structure_type:
+	  case _DW_TAG_union_type:
+	  case _DW_TAG_enumeration_type:
+	    create_td (ra_td, mr_die, &context);
+	    break;
+	  default:
+	    break;
+	  }
+      }
+  
+  if (ra_die_ptr.ra)
+    MR_FREE (ra_die_ptr.ra);
+  
+  mr_ic_free (&context.types_names_ic);
+  mr_ic_free (&context.mr_type_sign_ic);
+  mr_ic_free (&context.die_off_ic);
+}
+
 int
 main (int argc, char * argv [])
 {
@@ -478,8 +943,8 @@ main (int argc, char * argv [])
   
   Dwarf_Debug debug;
   Dwarf_Error error = 0;
-  char buf[1 << 13];
-  int rv = dwarf_init_path (argv[1], buf, sizeof (buf), DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, NULL, 0, NULL, &error);
+  char path[1 << 13];
+  int rv = dwarf_init_path (argv[1], path, sizeof (path), DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, NULL, 0, NULL, &error);
   if (rv != DW_DLV_OK)
     {
       printf ("libdwarf error: exit code %d, error code %llu, %s\n", rv, dwarf_errno (error), dwarf_errmsg (error));
@@ -490,15 +955,32 @@ main (int argc, char * argv [])
   memset (&mr_die, 0, sizeof (mr_die));
   dump_cu_list (debug, &mr_die);
 
-  char * dump = MR_SAVE_CINIT (mr_die_t, &mr_die);
+  mr_ra_td_t ra_td;
+  memset (&ra_td, 0, sizeof (ra_td));
+  extract_type_descriptors (&ra_td, &mr_die);
+
+#ifdef DEBUG
+  {
+    char * dump = MR_SAVE_CINIT (mr_die_t, &mr_die);
+    if (dump)
+      {
+	printf ("mr_die_root = %s", dump);
+	MR_FREE (dump);
+      }
+  }
+#endif
+  
+  MR_FREE_RECURSIVELY (mr_die_t, &mr_die);
+
+  char * dump = MR_SAVE_CINIT (mr_ra_td_t, &ra_td);
   if (dump)
     {
       printf ("%s", dump);
       MR_FREE (dump);
     }
 
-  MR_FREE_RECURSIVELY (mr_die_t, &mr_die);
-  
+  MR_FREE_RECURSIVELY (mr_ra_td_t, &ra_td);
+
   rv = dwarf_finish (debug, NULL);
   assert (rv == DW_DLV_OK);
   
