@@ -51,7 +51,7 @@ scm_load.tab.c: scm_load.y scm_load.lex.h
 scm_load.lex.c: scm_load.l scm_load.tab.h
 $(libmetaresc_la_OBJECTS): mr_pp.h
 mr_pp.h: mr_pp.sh mr_export.h
-	$(srcdir)/mr_pp.sh `grep MR_PP_DEPTH mr_export.h | cut -d " " -f 3` > mr_pp.h
+	$(srcdir)/mr_pp.sh $(PP_DEPTH) > mr_pp.h
 
 valgrind:
 	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"

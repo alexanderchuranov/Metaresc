@@ -125,6 +125,7 @@ AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routine
 AC_MSG_CHECKING(preprocessor routines depth)
 AC_MSG_RESULT(${PP_DEPTH})
 AC_DEFINE_UNQUOTED(MR_PP_DEPTH, ${PP_DEPTH}, [Preprocessor routines depth])
+AC_SUBST(PP_DEPTH, ${PP_DEPTH})
 
 UNCOVERED_TYPE="long long"
 SIZEOF_UNCOVERED_TYPE=64

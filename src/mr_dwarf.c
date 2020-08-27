@@ -730,7 +730,7 @@ create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
 
   while (_DW_TAG_typedef == mr_die->tag)
     {
-      /* traverse nexted typedef definitions */
+      /* traverse nested typedef definitions */
       mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_type);
       assert (attr != NULL);
       assert (_DW_FORM_ref4 == attr->form);
@@ -902,7 +902,7 @@ extract_type_descriptors (mr_ra_td_t * ra_td, mr_die_t * mr_die)
   status = mr_ic_index (&context.mr_type_sign_ic, &ic_rarray);
   assert (status == MR_SUCCESS);
 
-  status = mr_ic_new (&context.types_names_ic, str_hash, str_cmp, "char", MR_IC_HASH_NEXT, NULL);
+  status = mr_ic_new (&context.types_names_ic, str_hash, str_cmp, "string", MR_IC_HASH_NEXT, NULL);
   assert (status == MR_SUCCESS);
 
   int i, j;
@@ -923,7 +923,7 @@ extract_type_descriptors (mr_ra_td_t * ra_td, mr_die_t * mr_die)
 	    break;
 	  }
       }
-  
+
   if (ra_die_ptr.ra)
     MR_FREE (ra_die_ptr.ra);
   

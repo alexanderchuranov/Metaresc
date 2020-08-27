@@ -4,7 +4,7 @@ AUTOMAKE_OPTIONS = parallel-tests
 AM_CFLAGS = @AM_CFLAGS@
 AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src
-LIBS += ../src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
+LIBS += $(top_srcdir)/src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
@@ -34,7 +34,7 @@ check_PROGRAMS += ic mr_types mem_allocations mr_copy
 endif
 
 dw_export.h: $(top_srcdir)/src/libmetaresc.la
-	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`grep "^dlname=" $< | sed -e "s|^dlname='\(.*\)'|\1|"` > $@
+	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(GREP) "^dlname=" $< | $(SED) -e "s|^dlname='\(.*\)'|\1|"` > $@
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)
 mf_mr_copy_LDADD = mem_failures.$(OBJEXT)
