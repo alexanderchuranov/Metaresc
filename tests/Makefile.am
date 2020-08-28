@@ -33,6 +33,7 @@ check_PROGRAMS += ic mr_types mem_allocations mr_copy
 
 endif
 
+dw_export.$(OBJEXT): dw_export.h
 dw_export.h: $(top_srcdir)/src/libmetaresc.la
 	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(GREP) "^dlname=" $< | $(SED) -e "s|^dlname='\(.*\)'|\1|"` > $@
 

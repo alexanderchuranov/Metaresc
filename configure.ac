@@ -106,9 +106,13 @@ AC_CHECK_LIB(execinfo, backtrace, [ LIBS="${LIBS} -lexecinfo" ])
 
 save_LIBS=${LIBS}
 LIBS="-lelf -lz"
-AC_CHECK_LIB(dwarf, dwarf_init_path, [ HAVE_LIBDWARF=yes ])
+AC_CHECK_LIB(dwarf, dwarf_init_b, [ HAVE_LIBDWARF=yes ])
+AC_CHECK_LIB(dwarf, dwarf_init_path, [ HAVE_DWARF_INIT_PATH=yes ])
 LIBS=${save_LIBS}
 AM_CONDITIONAL(HAVE_LIBDWARF, test x${HAVE_LIBDWARF} = xyes)
+if [[ x${HAVE_DWARF_INIT_PATH} = xyes ]]; then
+  AC_DEFINE(HAVE_DWARF_INIT_PATH, [], [define is dwarf_init_path si present])
+fi
 
 AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#include <rpc/types.h>
 #include <rpc/xdr.h>]])

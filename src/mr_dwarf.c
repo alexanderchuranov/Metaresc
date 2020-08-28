@@ -1,24 +1,28 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <stdlib.h> /* EXIT_SUCCESS/EXIT_FAILURE */
+#include <fcntl.h> /* open () */
+#include <unistd.h> /* close () */
 
 #include <metaresc.h>
 #include <mr_config.h>
 #include <mr_ic.h>
 
-#ifdef HAVE_DWARF_H
-#include <dwarf.h>
-#endif /* HAVE_DWARF_H */
-#ifdef HAVE_LIBDWARF_H
-#include <libdwarf.h>
-#endif /* HAVE_LIBDWARF_H */
-
 #ifdef HAVE_LIBDWARF_DWARF_H
 #include <libdwarf/dwarf.h>
+#else /* ! HAVE_LIBDWARF_DWARF_H */
+# ifdef HAVE_DWARF_H
+# include <dwarf.h>
+# endif /* HAVE_DWARF_H */
 #endif /* HAVE_LIBDWARF_DWARF_H */
+
 #ifdef HAVE_LIBDWARF_LIBDWARF_H
 #include <libdwarf/libdwarf.h>
+#else /* ! HAVE_LIBDWARF_LIBDWARF_H */
+# ifdef HAVE_LIBDWARF_H
+# include <libdwarf.h>
+# endif /* HAVE_LIBDWARF_H */
 #endif /* HAVE_LIBDWARF_LIBDWARF_H */
 
 /* grep "#define DW_TAG_" /usr/include/libdwarf/dwarf.h | awk '{print "(_"$2", = "$3"),"}' */
@@ -562,7 +566,8 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
   for (;;)
     {
       mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_type);
-      assert (attr != NULL);
+      if (attr == NULL)
+	return;
       assert (_DW_FORM_ref4 == attr->form);
 	
       mr_ptr_t * find = mr_ic_find (&context->die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
@@ -576,11 +581,12 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 	  assert (attr != NULL);
 	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
 	  mr_type_sign_t mr_type_sign;
+	  memset (&mr_type_sign, 0, sizeof (mr_type_sign));
 	  mr_type_sign.size = attr->dw_unsigned;
 	
 	  attr = die_attribute (mr_die, _DW_AT_name);
 	  assert (attr != NULL);
-	  assert (_DW_FORM_strp == attr->form);
+	  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
 	  mr_type_sign.type.str = attr->dw_str;
 	  mr_type_sign.type.hash_value = 0;
 
@@ -605,9 +611,15 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 	  assert (mr_die->children_size == sizeof (mr_die->children[0]));
 	  assert (mr_die->children[0].tag == _DW_TAG_subrange_type);
 	  attr = die_attribute (&mr_die->children[0], _DW_AT_count);
-	  assert (attr != NULL);
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-	  fdp->param.array_param.count = attr->dw_unsigned;
+	  if (attr == NULL)
+	    attr = die_attribute (&mr_die->children[0], _DW_AT_upper_bound);
+	  
+	  if (attr != NULL)
+	    {
+	      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	      fdp->param.array_param.count = attr->dw_unsigned;
+	    }
+	  
 	  fdp->param.array_param.row_count = 1;
 	  break;
 	
@@ -656,13 +668,15 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
   
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   assert (attr != NULL);
-  assert (_DW_FORM_strp == attr->form);
+  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
   assert (attr->dw_str != NULL);
   fdp->name.str = mr_strdup (attr->dw_str);
 
   attr = die_attribute (mr_die, _DW_AT_const_value);
-  assert (attr != NULL);
-  assert (_DW_FORM_udata == attr->form);
+  assert (attr != NULL);  
+  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
+	  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
+	  (_DW_FORM_udata == attr->form));
   fdp->param.enum_value = attr->dw_unsigned;
 }
 
@@ -674,7 +688,7 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   if (attr != NULL)
     {
-      assert (_DW_FORM_strp == attr->form);
+      assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
       assert (attr->dw_str != NULL);
       fdp->name.str = mr_strdup (attr->dw_str);
     }
@@ -690,16 +704,18 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
   else
     {
       attr = die_attribute (mr_die, _DW_AT_bit_size);
-      assert (attr != NULL);
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-      fdp->mr_type = MR_TYPE_BITFIELD;
-      fdp->param.bitfield_param.width = attr->dw_unsigned;
+      if (attr != NULL)
+	{
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  fdp->mr_type = MR_TYPE_BITFIELD;
+	  fdp->param.bitfield_param.width = attr->dw_unsigned;
       
-      attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
-      assert (attr != NULL);
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-      fdp->param.bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
-      fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
+	  attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
+	  assert (attr != NULL);
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  fdp->param.bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
+	  fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
+	}
     }
 
   get_mr_type (fdp, mr_die, context);
@@ -720,7 +736,7 @@ create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
   if (attr == NULL)
     return;
   
-  assert (_DW_FORM_strp == attr->form);
+  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
   assert (attr->dw_str != NULL);
 
   /* skip types that are already extracted */
@@ -732,7 +748,8 @@ create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
     {
       /* traverse nested typedef definitions */
       mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_type);
-      assert (attr != NULL);
+      if (attr == NULL)
+	return;
       assert (_DW_FORM_ref4 == attr->form);
 	
       mr_ptr_t * find = mr_ic_find (&context->die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
@@ -785,9 +802,11 @@ create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
     return;
   
   attr = die_attribute (mr_die, _DW_AT_byte_size);
-  assert (attr != NULL);  
-  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-  tdp->size = attr->dw_unsigned;
+  if (attr != NULL)
+    {
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      tdp->size = attr->dw_unsigned;
+    }
 
   int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
   ssize_t alloc_size = 0;
@@ -865,6 +884,9 @@ static mr_type_sign_t * mr_type_sign[] =
   MR_BI_SIGN (complex float, "complex"),
   MR_BI_SIGN (complex double, "complex"),
   MR_BI_SIGN (complex long double, "complex"),
+  MR_BI_SIGN (complex float),
+  MR_BI_SIGN (complex double),
+  MR_BI_SIGN (complex long double),
   MR_BI_SIGN (double),
   MR_BI_SIGN (float),
   MR_BI_SIGN (int),
@@ -874,6 +896,8 @@ static mr_type_sign_t * mr_type_sign[] =
   MR_BI_SIGN (long long unsigned int),
   MR_BI_SIGN (long unsigned int),
   MR_BI_SIGN (short),
+  MR_BI_SIGN (short int),
+  MR_BI_SIGN (short unsigned int),
   MR_BI_SIGN (signed char),
   MR_BI_SIGN (unsigned char),
   MR_BI_SIGN (unsigned int),
@@ -943,8 +967,16 @@ main (int argc, char * argv [])
   
   Dwarf_Debug debug;
   Dwarf_Error error = 0;
+
+#ifdef HAVE_DWARF_INIT_PATH
   char path[1 << 13];
   int rv = dwarf_init_path (argv[1], path, sizeof (path), DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, NULL, 0, NULL, &error);
+#else /* ! HAVE_DWARF_INIT_PATH */
+  int fd = open (argv[1], O_RDONLY);
+  assert (fd > 0);
+  int rv = dwarf_init_b (fd, DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, &error);
+#endif /* HAVE_DWARF_INIT_PATH */
+  
   if (rv != DW_DLV_OK)
     {
       printf ("libdwarf error: exit code %d, error code %llu, %s\n", rv, dwarf_errno (error), dwarf_errmsg (error));
@@ -954,10 +986,6 @@ main (int argc, char * argv [])
   mr_die_t mr_die;
   memset (&mr_die, 0, sizeof (mr_die));
   dump_cu_list (debug, &mr_die);
-
-  mr_ra_td_t ra_td;
-  memset (&ra_td, 0, sizeof (ra_td));
-  extract_type_descriptors (&ra_td, &mr_die);
 
 #ifdef DEBUG
   {
@@ -970,6 +998,10 @@ main (int argc, char * argv [])
   }
 #endif
   
+  mr_ra_td_t ra_td;
+  memset (&ra_td, 0, sizeof (ra_td));
+  extract_type_descriptors (&ra_td, &mr_die);
+
   MR_FREE_RECURSIVELY (mr_die_t, &mr_die);
 
   char * dump = MR_SAVE_CINIT (mr_ra_td_t, &ra_td);
@@ -983,6 +1015,11 @@ main (int argc, char * argv [])
 
   rv = dwarf_finish (debug, NULL);
   assert (rv == DW_DLV_OK);
+  
+#ifndef HAVE_DWARF_INIT_PATH
+  rv = close (fd);
+  assert (rv == 0);
+#endif /* HAVE_DWARF_INIT_PATH */
   
   return (EXIT_SUCCESS);
 }
