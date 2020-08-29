@@ -283,7 +283,7 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_block1, = 0x0a),
 	      (_DW_FORM_data1, = 0x0b, "dw_unsigned"),
 	      (_DW_FORM_flag, = 0x0c, "dw_flag"),
-	      (_DW_FORM_sdata, = 0x0d),
+	      (_DW_FORM_sdata, = 0x0d, "dw_signed"),
 	      (_DW_FORM_strp, = 0x0e, "dw_str"),
 	      (_DW_FORM_udata, = 0x0f, "dw_unsigned"),
 	      (_DW_FORM_ref_addr, = 0x10, "dw_off"),
@@ -673,11 +673,15 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
   fdp->name.str = mr_strdup (attr->dw_str);
 
   attr = die_attribute (mr_die, _DW_AT_const_value);
-  assert (attr != NULL);  
+  assert (attr != NULL);
   assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
 	  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-	  (_DW_FORM_udata == attr->form));
-  fdp->param.enum_value = attr->dw_unsigned;
+	  (_DW_FORM_udata == attr->form) || (_DW_FORM_sdata == attr->form));
+
+  if (_DW_FORM_sdata == attr->form)
+    fdp->param.enum_value = attr->dw_signed;
+  else
+    fdp->param.enum_value = attr->dw_unsigned;
 }
 
 static void
