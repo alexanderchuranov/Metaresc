@@ -978,7 +978,7 @@ main (int argc, char * argv [])
 #else /* ! HAVE_DWARF_INIT_PATH */
   int fd = open (argv[1], O_RDONLY);
   assert (fd > 0);
-  int rv = dwarf_init_b (fd, DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, &error);
+  int rv = dwarf_init (fd, DW_DLC_READ, NULL, NULL, &debug, &error);
 #endif /* HAVE_DWARF_INIT_PATH */
   
   if (rv != DW_DLV_OK)
