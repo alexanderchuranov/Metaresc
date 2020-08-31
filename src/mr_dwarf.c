@@ -539,25 +539,27 @@ die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
 static void
 get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 {
-  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
-  if (attr == NULL)
-    {
-#define ANONYMOUS_TYPE_TEMPLATE "mr_type_anonymous_%d_t"
-      char type_name[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof ("9999")];
-      sprintf (type_name, ANONYMOUS_TYPE_TEMPLATE, context->anonymous_type_cnt++);
-      mr_die->attributes = MR_REALLOC (mr_die->attributes, mr_die->attributes_size + sizeof (mr_die->attributes[0]));
-      assert (mr_die->attributes != NULL);
-      int idx = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
-      mr_die->attributes_size += sizeof (mr_die->attributes[0]);
-      mr_die->attributes[idx].code = _DW_AT_name;
-      mr_die->attributes[idx].form = _DW_FORM_strp;
-      mr_die->attributes[idx].dw_str = mr_strdup (type_name);
-      attr = &mr_die->attributes[idx];
-    }
-  assert (_DW_FORM_strp == attr->form);
-  assert (attr->dw_str != NULL);
   if (fdp->type == NULL)
-    fdp->type = mr_strdup (attr->dw_str);
+    {
+      mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
+      if (attr == NULL)
+	{
+#define ANONYMOUS_TYPE_TEMPLATE "mr_type_anonymous_%d_t"
+	  char type_name[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof ("9999")];
+	  sprintf (type_name, ANONYMOUS_TYPE_TEMPLATE, context->anonymous_type_cnt++);
+	  mr_die->attributes = MR_REALLOC (mr_die->attributes, mr_die->attributes_size + sizeof (mr_die->attributes[0]));
+	  assert (mr_die->attributes != NULL);
+	  int idx = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
+	  mr_die->attributes_size += sizeof (mr_die->attributes[0]);
+	  mr_die->attributes[idx].code = _DW_AT_name;
+	  mr_die->attributes[idx].form = _DW_FORM_strp;
+	  mr_die->attributes[idx].dw_str = mr_strdup (type_name);
+	  attr = &mr_die->attributes[idx];
+	}
+      assert (_DW_FORM_strp == attr->form);
+      assert (attr->dw_str != NULL);
+      fdp->type = mr_strdup (attr->dw_str);
+    }
 }
 
 static void
@@ -728,7 +730,7 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 }
 
 static void
-create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
+create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
 {
   /* skip empty type declarations */
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_declaration);
@@ -744,7 +746,7 @@ create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
   assert (attr->dw_str != NULL);
 
   /* skip types that are already extracted */
-  mr_ptr_t * find = mr_ic_find (&context->types_names_ic, attr->dw_str);
+  mr_ptr_t * find = mr_ic_find (td_ic, (mr_td_t[]){ { .type = { .str = attr->dw_str, .hash_value = 0 } } });
   if (find != NULL)
     return;
 
@@ -792,14 +794,14 @@ create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
       return;
     }
 
-  mr_td_t * tdp = mr_rarray_allocate_element ((void*)&ra_td->ra, &ra_td->size, &ra_td->alloc_size, sizeof (ra_td->ra[0]));
+  mr_td_t * tdp = MR_CALLOC (1, sizeof (*tdp));
   assert (tdp != NULL);
   
   memset (tdp, 0, sizeof (*tdp));
   tdp->mr_type = mr_type;
   tdp->type.str = mr_strdup (attr->dw_str);
 
-  find = mr_ic_add (&context->types_names_ic, tdp->type.str);
+  find = mr_ic_add (td_ic, tdp);
   assert (find != NULL);
 
   if (load_child == NULL)
@@ -832,26 +834,14 @@ create_td (mr_ra_td_t * ra_td, mr_die_t * mr_die, context_t * context)
   fdp_ptr->fdp->mr_type = MR_TYPE_TRAILING_RECORD;
 }
 
-mr_hash_value_t
-str_hash (mr_ptr_t x, const void * context)
-{
-  return (mr_hash_str (x.ptr));
-}
-
-int
-str_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
-{
-  return (strcmp (x.ptr, y.ptr));
-}
-
-mr_hash_value_t
+static mr_hash_value_t
 die_off_hash (mr_ptr_t x, const void * context)
 {
   mr_die_t * x_ = x.ptr;
   return (x_->off);
 }
 
-int
+static int
 die_off_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_die_t * x_ = x.ptr;
@@ -859,14 +849,14 @@ die_off_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return ((x_->off > y_->off) - (x_->off < y_->off));
 }
 
-mr_hash_value_t
+static mr_hash_value_t
 mr_type_sign_hash (mr_ptr_t x, const void * context)
 {
   mr_type_sign_t * x_ = x.ptr;
   return (mr_hashed_string_get_hash (&x_->type) + x_->size);
 }
 
-int
+static int
 mr_type_sign_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_type_sign_t * x_ = x.ptr;
@@ -909,7 +899,7 @@ static mr_type_sign_t * mr_type_sign[] =
 };
 
 static void
-extract_type_descriptors (mr_ra_td_t * ra_td, mr_die_t * mr_die)
+extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 {
   mr_ic_rarray_t ra_die_ptr;
   context_t context;
@@ -930,9 +920,6 @@ extract_type_descriptors (mr_ra_td_t * ra_td, mr_die_t * mr_die)
   status = mr_ic_index (&context.mr_type_sign_ic, &ic_rarray);
   assert (status == MR_SUCCESS);
 
-  status = mr_ic_new (&context.types_names_ic, str_hash, str_cmp, "string", MR_IC_HASH_NEXT, NULL);
-  assert (status == MR_SUCCESS);
-
   int i, j;
   for (j = 0; j < 2; ++j) /* required anonymous types identified on a first iteration and extracted on a second */
     for (i = ra_die_ptr.size / sizeof (ra_die_ptr.ra[0]) - 1; i >= 0; --i)
@@ -945,7 +932,7 @@ extract_type_descriptors (mr_ra_td_t * ra_td, mr_die_t * mr_die)
 	  case _DW_TAG_structure_type:
 	  case _DW_TAG_union_type:
 	  case _DW_TAG_enumeration_type:
-	    create_td (ra_td, mr_die, &context);
+	    create_td (td_ic, mr_die, &context);
 	    break;
 	  default:
 	    break;
@@ -955,9 +942,19 @@ extract_type_descriptors (mr_ra_td_t * ra_td, mr_die_t * mr_die)
   if (ra_die_ptr.ra)
     MR_FREE (ra_die_ptr.ra);
   
-  mr_ic_free (&context.types_names_ic);
   mr_ic_free (&context.mr_type_sign_ic);
   mr_ic_free (&context.die_off_ic);
+}
+
+static mr_status_t
+td_to_ra (mr_ptr_t key, const void * context)
+{
+  mr_ra_td_t * ra_td = (void*)context;
+  assert (ra_td->size < ra_td->alloc_size);
+  ra_td->ra[ra_td->size / sizeof (ra_td->ra[0])] = *(mr_td_t*)key.ptr;
+  ra_td->size +=  sizeof (ra_td->ra[0]);
+  MR_FREE (key.ptr);
+  return (MR_SUCCESS);
 }
 
 int
@@ -969,45 +966,67 @@ main (int argc, char * argv [])
       return (EXIT_FAILURE);
     }
   
-  Dwarf_Debug debug;
-  Dwarf_Error error = 0;
+  mr_ic_t td_ic;
+  mr_status_t status = mr_ic_new (&td_ic, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
+  assert (status == MR_SUCCESS);
 
+  int i;
+  for (i = 1; i < argc; ++i)
+    {
+      Dwarf_Debug debug;
+      Dwarf_Error error = 0;
+  
 #ifdef HAVE_DWARF_INIT_PATH
-  char path[1 << 13];
-  int rv = dwarf_init_path (argv[1], path, sizeof (path), DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, NULL, 0, NULL, &error);
+      char path[1 << 13];
+      int rv = dwarf_init_path (argv[i], path, sizeof (path), DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, NULL, 0, NULL, &error);
 #else /* ! HAVE_DWARF_INIT_PATH */
-  int fd = open (argv[1], O_RDONLY);
-  assert (fd > 0);
-  int rv = dwarf_init (fd, DW_DLC_READ, NULL, NULL, &debug, &error);
+      int fd = open (argv[i], O_RDONLY);
+      assert (fd > 0);
+      int rv = dwarf_init (fd, DW_DLC_READ, NULL, NULL, &debug, &error);
 #endif /* HAVE_DWARF_INIT_PATH */
   
-  if (rv != DW_DLV_OK)
-    {
-      printf ("libdwarf error: exit code %d, error code %llu, %s\n", rv, dwarf_errno (error), dwarf_errmsg (error));
-      return (EXIT_FAILURE);
-    }
+      if (rv != DW_DLV_OK)
+	{
+	  printf ("libdwarf error: exit code %d, error code %llu, %s\n", rv, dwarf_errno (error), dwarf_errmsg (error));
+	  return (EXIT_FAILURE);
+	}
 
-  mr_die_t mr_die;
-  memset (&mr_die, 0, sizeof (mr_die));
-  dump_cu_list (debug, &mr_die);
+      mr_die_t mr_die;
+      memset (&mr_die, 0, sizeof (mr_die));
+      dump_cu_list (debug, &mr_die);
 
 #ifdef DEBUG
-  {
-    char * dump = MR_SAVE_CINIT (mr_die_t, &mr_die);
-    if (dump)
       {
-	printf ("mr_die_root = %s", dump);
-	MR_FREE (dump);
+	char * dump = MR_SAVE_CINIT (mr_die_t, &mr_die);
+	if (dump)
+	  {
+	    printf ("mr_die_root = %s", dump);
+	    MR_FREE (dump);
+	  }
       }
-  }
 #endif
   
+      extract_type_descriptors (&td_ic, &mr_die);
+
+      MR_FREE_RECURSIVELY (mr_die_t, &mr_die);
+
+      rv = dwarf_finish (debug, NULL);
+      assert (rv == DW_DLV_OK);
+  
+#ifndef HAVE_DWARF_INIT_PATH
+      rv = close (fd);
+      assert (rv == 0);
+#endif /* HAVE_DWARF_INIT_PATH */
+    }
+
   mr_ra_td_t ra_td;
-  memset (&ra_td, 0, sizeof (ra_td));
-  extract_type_descriptors (&ra_td, &mr_die);
+  ra_td.size = 0;
+  ra_td.ra = MR_CALLOC (td_ic.items_count, sizeof (ra_td.ra[0]));
+  ra_td.alloc_size = td_ic.items_count * sizeof (ra_td.ra[0]);
 
-  MR_FREE_RECURSIVELY (mr_die_t, &mr_die);
-
+  mr_ic_foreach (&td_ic, td_to_ra, &ra_td);
+  mr_ic_free (&td_ic);
+  
   char * dump = MR_SAVE_CINIT (mr_ra_td_t, &ra_td);
   if (dump)
     {
@@ -1017,13 +1036,5 @@ main (int argc, char * argv [])
 
   MR_FREE_RECURSIVELY (mr_ra_td_t, &ra_td);
 
-  rv = dwarf_finish (debug, NULL);
-  assert (rv == DW_DLV_OK);
-  
-#ifndef HAVE_DWARF_INIT_PATH
-  rv = close (fd);
-  assert (rv == 0);
-#endif /* HAVE_DWARF_INIT_PATH */
-  
   return (EXIT_SUCCESS);
 }

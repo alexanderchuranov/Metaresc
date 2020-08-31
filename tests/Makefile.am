@@ -35,7 +35,7 @@ endif
 
 dw_export.$(OBJEXT): dw_export.h
 dw_export.h: $(top_srcdir)/src/libmetaresc.la
-	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(GREP) "^dlname=" $< | $(SED) -e "s|^dlname='\(.*\)'|\1|"` > $@
+	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $<` > $@
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)
 mf_mr_copy_LDADD = mem_failures.$(OBJEXT)
