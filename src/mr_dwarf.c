@@ -354,7 +354,6 @@ TYPEDEF_STRUCT (mr_type_sign_t,
 TYPEDEF_STRUCT (context_t,
 		(mr_ic_t, die_off_ic),
 		(mr_ic_t, mr_type_sign_ic),
-		(mr_ic_t, types_names_ic),
 		(int, anonymous_type_cnt),
 		)
 
@@ -947,13 +946,17 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 }
 
 static mr_status_t
-td_to_ra (mr_ptr_t key, const void * context)
+print_td (mr_ptr_t key, const void * context)
 {
-  mr_ra_td_t * ra_td = (void*)context;
-  assert (ra_td->size < ra_td->alloc_size);
-  ra_td->ra[ra_td->size / sizeof (ra_td->ra[0])] = *(mr_td_t*)key.ptr;
-  ra_td->size +=  sizeof (ra_td->ra[0]);
-  MR_FREE (key.ptr);
+  mr_td_t * tdp = key.ptr;
+  char * dump = MR_SAVE_CINIT (mr_td_t, tdp);
+  if (dump)
+    {
+      printf ("%s,\n", dump);
+      MR_FREE (dump);
+    }
+  MR_FREE_RECURSIVELY (mr_td_t, tdp);
+  MR_FREE (tdp);
   return (MR_SUCCESS);
 }
 
@@ -1019,22 +1022,8 @@ main (int argc, char * argv [])
 #endif /* HAVE_DWARF_INIT_PATH */
     }
 
-  mr_ra_td_t ra_td;
-  ra_td.size = 0;
-  ra_td.ra = MR_CALLOC (td_ic.items_count, sizeof (ra_td.ra[0]));
-  ra_td.alloc_size = td_ic.items_count * sizeof (ra_td.ra[0]);
-
-  mr_ic_foreach (&td_ic, td_to_ra, &ra_td);
+  mr_ic_foreach (&td_ic, print_td, NULL);
   mr_ic_free (&td_ic);
-  
-  char * dump = MR_SAVE_CINIT (mr_ra_td_t, &ra_td);
-  if (dump)
-    {
-      printf ("%s", dump);
-      MR_FREE (dump);
-    }
-
-  MR_FREE_RECURSIVELY (mr_ra_td_t, &ra_td);
 
   return (EXIT_SUCCESS);
 }

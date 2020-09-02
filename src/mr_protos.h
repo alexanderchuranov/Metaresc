@@ -349,12 +349,6 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		) /* type descriptor */
 
-TYPEDEF_STRUCT (mr_ra_td_t, ATTRIBUTES ( , "resizable array of type descriptors"),
-		(mr_td_t *, ra, , "array of type descriptors", { .offset = offsetof (mr_ra_td_t, size) }, "offset"),
-		(ssize_t, size, , "size of resizable array"),
-		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
-		)
-
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(float, mem_alloc_strategy, , "memory allocation strategy"),
 		(void *, calloc, (const char *, const char *, int, size_t, size_t), "pointer on malloc() function"),

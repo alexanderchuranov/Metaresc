@@ -3,19 +3,19 @@
 #include <metaresc.h>
 #include <regression.h>
 
-static mr_ra_td_t ra_td =
+static mr_td_t ra_td[] = {
 #include <dw_export.h>
-  ;
+};
 
 static mr_td_t *
 get_td_by_name (char * type)
 {
   int i;
-  for (i = ra_td.size / sizeof (ra_td.ra[0]) - 1; i >= 0; --i)
-    if (0 == strcmp (ra_td.ra[i].type.str, type))
+  for (i = sizeof (ra_td) / sizeof (ra_td[0]) - 1; i >= 0; --i)
+    if (0 == strcmp (ra_td[i].type.str, type))
       break;
   ck_assert_msg (i >= 0, "Failed to find type descriptor for type %s", type);
-  return (&ra_td.ra[i]);
+  return (&ra_td[i]);
 }
 
 static void
