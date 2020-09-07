@@ -25,8 +25,8 @@
 # endif /* HAVE_LIBDWARF_H */
 #endif /* HAVE_LIBDWARF_LIBDWARF_H */
 
-/* grep "#define DW_TAG_" /usr/include/libdwarf/dwarf.h | awk '{print "(_"$2", = "$3"),"}' */
-TYPEDEF_ENUM (mr_dw_tag_t, ATTRIBUTES ( , "grep '#define DW_TAG_' /usr/include/libdwarf/dwarf.h | awk '{print \"(_\"$2\", = \"$3\"),\"}'"),
+/* awk '/#define DW_TAG_/{print "(_"$2", = "$3"),"}' < /usr/include/libdwarf/dwarf.h */
+TYPEDEF_ENUM (mr_dw_tag_t, ATTRIBUTES ( , "awk '/#define DW_TAG_/{print \"(_\"$2\", = \"$3\"),\"}' < /usr/include/libdwarf/dwarf.h"),
 	      (_DW_TAG_undefined, = 0),
 	      (_DW_TAG_array_type, = 0x01),
 	      (_DW_TAG_class_type, = 0x02),
@@ -794,13 +794,14 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
       {
 	mr_fd_t fd = { .mr_type = MR_TYPE_POINTER };
 	get_mr_type (&fd, mr_die, context);
+	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
+	
 	if (MR_TYPE_CHAR == fd.mr_type_aux)
 	  mr_type = MR_TYPE_STRING;
 	else if (MR_TYPE_FUNC_TYPE == fd.mr_type)
 	  mr_type = MR_TYPE_FUNC_TYPE;
 	else
-	  assert (true);
-	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
+	  return;
       }
       break;
     case _DW_TAG_array_type:
