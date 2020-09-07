@@ -926,6 +926,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   char ** data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = ptrs->ra[idx].fd;
 
+  mr_pointer_fd_set_size (&fd_);
   *data = NULL;
   
   if (!xdr_int32_t (xdrs, (void*)&ptrs->ra[idx].flags))

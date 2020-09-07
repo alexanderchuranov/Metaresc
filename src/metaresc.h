@@ -630,7 +630,7 @@
 
 #define MR_BITMASK_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_BITMASK, __VA_ARGS__)
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
-#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
+#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE*, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
     .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
@@ -1200,6 +1200,8 @@ extern void mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs);
 extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
+extern void mr_detect_fields_types (mr_td_t * tdp);
+extern void mr_pointer_fd_set_size (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);

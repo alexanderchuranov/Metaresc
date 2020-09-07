@@ -667,6 +667,7 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
     return (MR_SUCCESS);
   
   fd_.mr_type = fd_.mr_type_aux;
+  mr_pointer_fd_set_size (&fd_);
   /* allocate memory */
   *data = MR_CALLOC (count, fd_.size);
   if (NULL == *data)

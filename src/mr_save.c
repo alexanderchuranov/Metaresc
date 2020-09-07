@@ -52,6 +52,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
       discriminator = *(void**)discriminator;
       mr_type = parent_fdp->mr_type_aux;
     }
+  if (MR_TYPE_VOID == parent_fdp->mr_type)
+    mr_type = parent_fdp->mr_type_aux;
 
   /* switch over basic types */
   if (discriminator)
@@ -632,7 +634,9 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   if (MR_TYPE_ARRAY == fdp->mr_type)
     count = fdp->param.array_param.count;
-  ra[idx].MR_SIZE = fdp->size * count;
+  if (MR_TYPE_POINTER == fdp->mr_type)
+    mr_pointer_fd_set_size (&ra[idx].fd);
+  ra[idx].MR_SIZE = ra[idx].fd.size * count;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
@@ -838,7 +842,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.unnamed = true;
   fd_.param.array_param.count = count;
   fd_.param.array_param.row_count = 1;
-      
+
   for (i = 0; i < count; )
     {
       int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, count - i, mr_save_data, idx);

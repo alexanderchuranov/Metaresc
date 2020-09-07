@@ -700,27 +700,34 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
   if (fdp->name.str == NULL)
     fdp->unnamed = true;
 
+  attr = die_attribute (mr_die, _DW_AT_bit_size);
+  if (attr != NULL)
+    {
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      fdp->mr_type = MR_TYPE_BITFIELD;
+      fdp->param.bitfield_param.width = attr->dw_unsigned;
+
+      attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
+      if (attr != NULL)
+	{
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  fdp->param.bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
+	  fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
+	}
+
+      attr = die_attribute (mr_die, _DW_AT_bit_offset);
+      if (attr != NULL)
+	{
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  fdp->param.bitfield_param.shift = attr->dw_unsigned;
+	}
+    }
+
   attr = die_attribute (mr_die, _DW_AT_data_member_location);
   if (attr != NULL)
     {
       assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
       fdp->offset = attr->dw_unsigned;
-    }
-  else
-    {
-      attr = die_attribute (mr_die, _DW_AT_bit_size);
-      if (attr != NULL)
-	{
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-	  fdp->mr_type = MR_TYPE_BITFIELD;
-	  fdp->param.bitfield_param.width = attr->dw_unsigned;
-      
-	  attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
-	  assert (attr != NULL);
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-	  fdp->param.bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
-	  fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
-	}
     }
 
   get_mr_type (fdp, mr_die, context);
@@ -784,7 +791,17 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
       load_child = load_enumerator;
       break;
     case _DW_TAG_pointer_type:
-      mr_type = MR_TYPE_FUNC_TYPE;
+      {
+	mr_fd_t fd = { .mr_type = MR_TYPE_POINTER };
+	get_mr_type (&fd, mr_die, context);
+	if (MR_TYPE_CHAR == fd.mr_type_aux)
+	  mr_type = MR_TYPE_STRING;
+	else if (MR_TYPE_FUNC_TYPE == fd.mr_type)
+	  mr_type = MR_TYPE_FUNC_TYPE;
+	else
+	  assert (true);
+	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
+      }
       break;
     case _DW_TAG_array_type:
       mr_type = MR_TYPE_ARRAY;
@@ -799,13 +816,12 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
   memset (tdp, 0, sizeof (*tdp));
   tdp->mr_type = mr_type;
   tdp->type.str = mr_strdup (attr->dw_str);
+  if ((MR_TYPE_STRING == mr_type) || (MR_TYPE_FUNC_TYPE == mr_type))
+    tdp->size = sizeof (void *);
 
   find = mr_ic_add (td_ic, tdp);
   assert (find != NULL);
 
-  if (load_child == NULL)
-    return;
-  
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
@@ -813,18 +829,21 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
       tdp->size = attr->dw_unsigned;
     }
 
-  int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
   ssize_t alloc_size = 0;
-  for (i = 0; i < count; ++i)
-    if (mr_die->children[i].tag == children_tag)
-      {
-	mr_fd_ptr_t * fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
-	assert (fdp_ptr != NULL);
-	fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
-	assert (fdp_ptr->fdp != NULL);
+  if (load_child != NULL)
+    {
+      int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
+      for (i = 0; i < count; ++i)
+	if (mr_die->children[i].tag == children_tag)
+	  {
+	    mr_fd_ptr_t * fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
+	    assert (fdp_ptr != NULL);
+	    fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
+	    assert (fdp_ptr->fdp != NULL);
       
-	load_child (fdp_ptr->fdp, &mr_die->children[i], context);
-      }
+	    load_child (fdp_ptr->fdp, &mr_die->children[i], context);
+	  }
+    }
   
   mr_fd_ptr_t * fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
   assert (fdp_ptr != NULL);
@@ -946,15 +965,89 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 }
 
 static mr_status_t
+process_td (mr_ptr_t key, const void * context)
+{
+  mr_td_t * tdp = key.ptr;
+  mr_ic_t * td_ic = (mr_ic_t*)context;
+  int i;
+
+  if (tdp->mr_type == MR_TYPE_ENUM)
+    {
+      tdp->param.enum_param.size_effective = tdp->size;
+      switch (tdp->size)
+	{
+	case sizeof (uint8_t):
+	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT8;
+	  break;
+	case sizeof (uint16_t):
+	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT16;
+	  break;
+	case sizeof (uint32_t):
+	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT32;
+	  break;
+	case sizeof (uint64_t):
+	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT64;
+	  break;
+	}
+    }
+
+  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
+    {
+      mr_fd_t * fdp = tdp->fields[i].fdp;
+      mr_ptr_t * find;
+
+      switch (fdp->mr_type)
+	{
+	case MR_TYPE_ENUM:
+	case MR_TYPE_STRUCT:
+	case MR_TYPE_UNION:
+	case MR_TYPE_ARRAY:
+	case MR_TYPE_BITFIELD:
+	  find = mr_ic_find (td_ic, (mr_td_t[]){{ .type = { .str = fdp->type, .hash_value = 0 }}});
+	  if (find)
+	    {
+	      mr_td_t * field_tdp = find->ptr;
+	      fdp->size = field_tdp->size;
+	    }
+	  break;
+
+	case MR_TYPE_FUNC_TYPE:
+	  fdp->size = sizeof (void *);
+	  break;
+
+	case MR_TYPE_POINTER:
+	  fdp->size = sizeof (void *);
+	  if (fdp->mr_type_aux == MR_TYPE_CHAR)
+	    fdp->mr_type = MR_TYPE_STRING;
+	  if (fdp->mr_type_aux == MR_TYPE_NONE)
+	    fdp->mr_type_aux = MR_TYPE_VOID;
+	  break;
+
+	default:
+	  break;
+	}
+    }
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
 print_td (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
+  tdp->type.hash_value = 0;
   char * dump = MR_SAVE_CINIT (mr_td_t, tdp);
   if (dump)
     {
       printf ("%s,\n", dump);
       MR_FREE (dump);
     }
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+free_td (mr_ptr_t key, const void * context)
+{
+  mr_td_t * tdp = key.ptr;
   MR_FREE_RECURSIVELY (mr_td_t, tdp);
   MR_FREE (tdp);
   return (MR_SUCCESS);
@@ -1003,7 +1096,7 @@ main (int argc, char * argv [])
 	char * dump = MR_SAVE_CINIT (mr_die_t, &mr_die);
 	if (dump)
 	  {
-	    printf ("mr_die_root = %s", dump);
+	    fprintf (stderr, "mr_die_root = %s", dump);
 	    MR_FREE (dump);
 	  }
       }
@@ -1022,7 +1115,9 @@ main (int argc, char * argv [])
 #endif /* HAVE_DWARF_INIT_PATH */
     }
 
+  mr_ic_foreach (&td_ic, process_td, &td_ic);
   mr_ic_foreach (&td_ic, print_td, NULL);
+  mr_ic_foreach (&td_ic, free_td, NULL);
   mr_ic_free (&td_ic);
 
   return (EXIT_SUCCESS);

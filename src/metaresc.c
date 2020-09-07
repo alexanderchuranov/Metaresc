@@ -1296,7 +1296,7 @@ mr_add_enum (mr_td_t * tdp)
       if (result->ptr != key.ptr)
 	{
 	  mr_fd_t * fdp = result->ptr;
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, key.ptr);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, tdp->type.str);
 	  status = MR_FAILURE;
 	}
       typeof (tdp->fields[i].fdp->param.enum_value) value = tdp->fields[i].fdp->param.enum_value;
@@ -1469,23 +1469,20 @@ mr_check_fields (mr_td_t * tdp)
 	  if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
 	    *name = 0; /* truncate on first invalid charecter */
 	}
-      mr_normalize_type (fdp);
+      if (fdp->type)
+	mr_normalize_type (fdp);
       if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_init_bitfield (fdp);
     }
 }
 
-/**
- * Initialize AUTO fields. Detect types, size, pointers etc.
- * @param fdp pointer on a field descriptor
- */
-static void
-mr_auto_field_detect (mr_fd_t * fdp)
+void
+mr_pointer_fd_set_size (mr_fd_t * fdp)
 {
   static size_t types_sizes[] =
     {
       [0 ... MR_TYPE_LAST - 1] = 0,
-      [MR_TYPE_VOID] = sizeof (void),
+      [MR_TYPE_VOID] = sizeof (void*),
       [MR_TYPE_BOOL] = sizeof (bool),
       [MR_TYPE_INT8] = sizeof (int8_t),
       [MR_TYPE_UINT8] = sizeof (uint8_t),
@@ -1502,10 +1499,25 @@ mr_auto_field_detect (mr_fd_t * fdp)
       [MR_TYPE_LONG_DOUBLE] = sizeof (long double),
       [MR_TYPE_COMPLEX_LONG_DOUBLE] = sizeof (complex long double),
       [MR_TYPE_CHAR] = sizeof (char),
-      [MR_TYPE_CHAR_ARRAY] = sizeof (char),
       [MR_TYPE_STRING] = sizeof (char*),
     };
 
+  fdp->size = types_sizes[fdp->mr_type_aux];
+  if (fdp->size == 0)
+    {
+      mr_td_t * tdp = mr_get_td_by_name (fdp->type);
+      if (tdp)
+	fdp->size = tdp->size;
+    }
+}
+
+/**
+ * Initialize AUTO fields. Detect types, size, pointers etc.
+ * @param fdp pointer on a field descriptor
+ */
+static void
+mr_auto_field_detect (mr_fd_t * fdp)
+{
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);
   /* check if type is in registery */
   if (tdp)
@@ -1515,10 +1527,11 @@ mr_auto_field_detect (mr_fd_t * fdp)
     }
   else
     {
+      /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
       if (fdp->mr_type_aux != MR_TYPE_NONE)
 	{
 	  fdp->mr_type = MR_TYPE_POINTER;
-	  fdp->size = types_sizes[fdp->mr_type_aux];
+	  fdp->size = sizeof (void *);
 	}	  
       /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
@@ -1529,31 +1542,27 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	    --end;
 	  *end = 0; /* trancate type name */
 	  fdp->mr_type = MR_TYPE_POINTER;
-	  fdp->size = types_sizes[fdp->mr_type_aux];
-	  /* autodetect structures and enums */
-	  switch (fdp->mr_type_aux)
-	    {
-	    case MR_TYPE_NONE:
-	    case MR_TYPE_INT8:
-	    case MR_TYPE_UINT8:
-	    case MR_TYPE_INT16:
-	    case MR_TYPE_UINT16:
-	    case MR_TYPE_INT32:
-	    case MR_TYPE_UINT32:
-	    case MR_TYPE_INT64:
-	    case MR_TYPE_UINT64:
-	    case MR_TYPE_CHAR_ARRAY: /* NB! need to detect size of char array */
-	      tdp = mr_get_td_by_name (fdp->type);
-	      if (tdp)
-		{
-		  fdp->mr_type_aux = tdp->mr_type;
-		  fdp->size = tdp->size;
-		}
-	      break;
+	  fdp->size = sizeof (void *);
+	}
+      /* autodetect structures and enums */
+      switch (fdp->mr_type_aux)
+	{
+	case MR_TYPE_NONE:
+	case MR_TYPE_INT8:
+	case MR_TYPE_UINT8:
+	case MR_TYPE_INT16:
+	case MR_TYPE_UINT16:
+	case MR_TYPE_INT32:
+	case MR_TYPE_UINT32:
+	case MR_TYPE_INT64:
+	case MR_TYPE_UINT64:
+	  tdp = mr_get_td_by_name (fdp->type);
+	  if (tdp)
+	    fdp->mr_type_aux = tdp->mr_type;
+	  break;
 
-	    default:
-	      break;
-	    }
+	default:
+	  break;
 	}
     }
 }
@@ -1615,13 +1624,12 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       break;
 
       /*
-	pointer on structure refers to forward declarations and can't calculate type size at compile time.
+	pointer and arrays need to detect mr_type_aux for elements
       */
     case MR_TYPE_POINTER:
     case MR_TYPE_ARRAY:
       if (tdp)
 	{
-	  fdp->size = tdp->size;
 	  switch (fdp->mr_type_aux)
 	    {
 	    case MR_TYPE_NONE:
@@ -1674,7 +1682,7 @@ mr_fd_detect_res_size (mr_fd_t * fdp)
  * @param args auxiliary arguments
  * @return status
  */
-static void
+void
 mr_detect_fields_types (mr_td_t * tdp)
 {
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
@@ -1827,9 +1835,11 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->type))
     status = MR_FAILURE;
 
-  for (count = 0; count < tdp->fields_size / sizeof (tdp->fields[0]); ++count)
-    if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[count].fdp->name))
-      status = MR_FAILURE;
+  int i;
+  for (i = 0; i < count; ++i)
+    if (tdp->fields[i].fdp->name.str != NULL)
+      if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[i].fdp->name))
+	status = MR_FAILURE;
 
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
