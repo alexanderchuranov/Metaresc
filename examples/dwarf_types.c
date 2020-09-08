@@ -6,7 +6,7 @@ static mr_td_t mr_td[] = {
 
 static inline void __attribute__((constructor)) dwarf_types (void)
 {
-  int i;
-  for (i = sizeof (mr_td) / sizeof (mr_td[0]) - 1; i >= 0; --i)
+  int i, count = sizeof (mr_td) / sizeof (mr_td[0]);
+  for (i = 0; i < count; ++i)
     mr_add_type (&mr_td[i], "", NULL);
 }

@@ -9,6 +9,15 @@ AC_CONFIG_HEADERS([src/mr_config.h src/mr_export.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_LANG(C)
 
+AC_CANONICAL_HOST
+build_mac=no
+case "${host_os}" in
+     darwin*)
+	build_mac=yes
+	;;
+esac
+AM_CONDITIONAL([OSX], [test "${build_mac}" = "yes"])
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
