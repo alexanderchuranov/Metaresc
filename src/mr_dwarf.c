@@ -351,11 +351,7 @@ TYPEDEF_STRUCT (mr_type_sign_t,
 		(mr_type_t, mr_type),
 		)
 
-TYPEDEF_STRUCT (context_t,
-		(mr_ic_t, die_off_ic),
-		(mr_ic_t, mr_type_sign_ic),
-		(int, anonymous_type_cnt),
-		)
+static mr_ic_t mr_type_sign_ic;
 
 static void
 dump_attribute (Dwarf_Attribute dw_attribute, mr_dw_attribute_t * mr_attr)
@@ -536,16 +532,16 @@ die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
 }
 
 static void
-get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   if (fdp->type == NULL)
     {
       mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
       if (attr == NULL)
 	{
-#define ANONYMOUS_TYPE_TEMPLATE "mr_type_anonymous_%d_t"
-	  char type_name[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof ("9999")];
-	  sprintf (type_name, ANONYMOUS_TYPE_TEMPLATE, context->anonymous_type_cnt++);
+#define ANONYMOUS_TYPE_TEMPLATE "mr_type_anonymous_%" SCNu64 "_t"
+	  char type_name[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof (mr_die->off) * 3];
+	  sprintf (type_name, ANONYMOUS_TYPE_TEMPLATE, (uint64_t)mr_die->off);
 	  mr_die->attributes = MR_REALLOC (mr_die->attributes, mr_die->attributes_size + sizeof (mr_die->attributes[0]));
 	  assert (mr_die->attributes != NULL);
 	  int idx = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
@@ -562,7 +558,7 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 }
 
 static void
-get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   for (;;)
     {
@@ -571,7 +567,7 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 	return;
       assert (_DW_FORM_ref4 == attr->form);
 	
-      mr_ptr_t * find = mr_ic_find (&context->die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
+      mr_ptr_t * find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
       assert (find != NULL);
       mr_die = find->ptr;
       
@@ -591,7 +587,7 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 	  mr_type_sign.type.str = attr->dw_str;
 	  mr_type_sign.type.hash_value = 0;
 
-	  find = mr_ic_find (&context->mr_type_sign_ic, &mr_type_sign);
+	  find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
 	  assert (find != NULL);
 
 	  mr_type_sign_t * found_sign = find->ptr;
@@ -633,22 +629,22 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 	  break;
 	
 	case _DW_TAG_typedef:
-	  get_type_name (fdp, mr_die, context);
+	  get_type_name (fdp, mr_die, die_off_ic);
 	  break;
 
 	case _DW_TAG_structure_type:
 	  fdp->mr_type_aux = MR_TYPE_STRUCT;
-	  get_type_name (fdp, mr_die, context);
+	  get_type_name (fdp, mr_die, die_off_ic);
 	  return;
 	
 	case _DW_TAG_union_type:
 	  fdp->mr_type_aux = MR_TYPE_UNION;
-	  get_type_name (fdp, mr_die, context);
+	  get_type_name (fdp, mr_die, die_off_ic);
 	  return;
 	
 	case _DW_TAG_enumeration_type:
 	  fdp->mr_type_aux = MR_TYPE_ENUM;
-	  get_type_name (fdp, mr_die, context);
+	  get_type_name (fdp, mr_die, die_off_ic);
 	  return;
 	
 	case _DW_TAG_const_type:
@@ -662,7 +658,7 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 }
 
 static void
-load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   memset (fdp, 0, sizeof (*fdp));
   fdp->mr_type = MR_TYPE_ENUM_VALUE;
@@ -686,7 +682,7 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
 }
 
 static void
-load_member (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
+load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   memset (fdp, 0, sizeof (*fdp));
   
@@ -730,13 +726,13 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context)
       fdp->offset = attr->dw_unsigned;
     }
 
-  get_mr_type (fdp, mr_die, context);
+  get_mr_type (fdp, mr_die, die_off_ic);
   if (MR_TYPE_NONE == fdp->mr_type)
     fdp->mr_type = fdp->mr_type_aux;
 }
 
 static void
-create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
+create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   /* skip empty type declarations */
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_declaration);
@@ -764,14 +760,14 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
 	return;
       assert (_DW_FORM_ref4 == attr->form);
 	
-      mr_ptr_t * find = mr_ic_find (&context->die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
+      mr_ptr_t * find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
       assert (find != NULL);
       mr_die = find->ptr;
     }
 
   mr_type_t mr_type = MR_TYPE_NONE;
   mr_dw_tag_t children_tag = _DW_TAG_undefined;
-  void (*load_child) (mr_fd_t * fdp, mr_die_t * mr_die, context_t * context) = NULL;
+  void (*load_child) (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
 
   switch (mr_die->tag)
     {
@@ -793,7 +789,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
     case _DW_TAG_pointer_type:
       {
 	mr_fd_t fd = { .mr_type = MR_TYPE_POINTER };
-	get_mr_type (&fd, mr_die, context);
+	get_mr_type (&fd, mr_die, die_off_ic);
 	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
 	
 	if (MR_TYPE_CHAR == fd.mr_type_aux)
@@ -803,9 +799,6 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
 	else
 	  return;
       }
-      break;
-    case _DW_TAG_array_type:
-      mr_type = MR_TYPE_ARRAY;
       break;
     default:
       return;
@@ -842,7 +835,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, context_t * context)
 	    fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
 	    assert (fdp_ptr->fdp != NULL);
       
-	    load_child (fdp_ptr->fdp, &mr_die->children[i], context);
+	    load_child (fdp_ptr->fdp, &mr_die->children[i], die_off_ic);
 	  }
     }
   
@@ -921,24 +914,17 @@ static void
 extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 {
   mr_ic_rarray_t ra_die_ptr;
-  context_t context;
+  mr_ic_t die_off_ic;
   mr_status_t status;
   
   memset (&ra_die_ptr, 0, sizeof (ra_die_ptr));
   walk_dies (mr_die, &ra_die_ptr);
 
-  memset (&context, 0, sizeof (context));
-  status = mr_ic_new (&context.die_off_ic, die_off_hash, die_off_cmp, "mr_die_t", MR_IC_HASH_NEXT, NULL);
+  status = mr_ic_new (&die_off_ic, die_off_hash, die_off_cmp, "mr_die_t", MR_IC_HASH_NEXT, NULL);
   assert (status == MR_SUCCESS);
-  status = mr_ic_index (&context.die_off_ic, &ra_die_ptr);
+  status = mr_ic_index (&die_off_ic, &ra_die_ptr);
   assert (status == MR_SUCCESS);
   
-  mr_ic_rarray_t ic_rarray = { .ra = (void*)mr_type_sign, .size = sizeof (mr_type_sign), };
-  status = mr_ic_new (&context.mr_type_sign_ic, mr_type_sign_hash, mr_type_sign_cmp, "mr_type_sign_t", MR_IC_HASH_NEXT, NULL);
-  assert (status == MR_SUCCESS);
-  status = mr_ic_index (&context.mr_type_sign_ic, &ic_rarray);
-  assert (status == MR_SUCCESS);
-
   int i, j;
   for (j = 0; j < 2; ++j) /* required anonymous types identified on a first iteration and extracted on a second */
     for (i = ra_die_ptr.size / sizeof (ra_die_ptr.ra[0]) - 1; i >= 0; --i)
@@ -951,7 +937,7 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 	  case _DW_TAG_structure_type:
 	  case _DW_TAG_union_type:
 	  case _DW_TAG_enumeration_type:
-	    create_td (td_ic, mr_die, &context);
+	    create_td (td_ic, mr_die, &die_off_ic);
 	    break;
 	  default:
 	    break;
@@ -961,8 +947,7 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
   if (ra_die_ptr.ra)
     MR_FREE (ra_die_ptr.ra);
   
-  mr_ic_free (&context.mr_type_sign_ic);
-  mr_ic_free (&context.die_off_ic);
+  mr_ic_free (&die_off_ic);
 }
 
 static mr_status_t
@@ -1085,8 +1070,14 @@ main (int argc, char * argv [])
       return (EXIT_FAILURE);
     }
   
+  mr_ic_rarray_t ic_rarray = { .ra = (void*)mr_type_sign, .size = sizeof (mr_type_sign), };
+  mr_status_t status = mr_ic_new (&mr_type_sign_ic, mr_type_sign_hash, mr_type_sign_cmp, "mr_type_sign_t", MR_IC_HASH_NEXT, NULL);
+  assert (status == MR_SUCCESS);
+  status = mr_ic_index (&mr_type_sign_ic, &ic_rarray);
+  assert (status == MR_SUCCESS);
+
   mr_ic_t td_ic;
-  mr_status_t status = mr_ic_new (&td_ic, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
+  status = mr_ic_new (&td_ic, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
   assert (status == MR_SUCCESS);
 
   int i;
@@ -1142,6 +1133,8 @@ main (int argc, char * argv [])
   mr_ic_foreach (&td_ic, print_td, NULL);
   mr_ic_foreach (&td_ic, free_td, NULL);
   mr_ic_free (&td_ic);
+
+  mr_ic_free (&mr_type_sign_ic);
 
   return (EXIT_SUCCESS);
 }
