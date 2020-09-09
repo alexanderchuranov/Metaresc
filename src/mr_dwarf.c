@@ -991,43 +991,65 @@ process_td (mr_ptr_t key, const void * context)
 	  break;
 	}
     }
+  else
+    for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
+      {
+	mr_fd_t * fdp = tdp->fields[i].fdp;
+	mr_ptr_t * find;
 
-  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
-    {
-      mr_fd_t * fdp = tdp->fields[i].fdp;
-      mr_ptr_t * find;
+	switch (fdp->mr_type)
+	  {
+	  case MR_TYPE_UNION:
+#define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
+	    if (fdp->name.str != NULL)
+	      {
+		char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
+		assert (discriminator != NULL);
+		strcpy (discriminator, fdp->name.str);
+		strcat (discriminator, UNION_DISCRIMINATOR_SUFFIX);
+		fdp->meta = discriminator;
+	      }
+	  case MR_TYPE_ENUM:
+	  case MR_TYPE_STRUCT:
+	  case MR_TYPE_ARRAY:
+	  case MR_TYPE_BITFIELD:
+	    find = mr_ic_find (td_ic, (mr_td_t[]){{ .type = { .str = fdp->type, .hash_value = 0 }}});
+	    if (find)
+	      {
+		mr_td_t * field_tdp = find->ptr;
+		fdp->size = field_tdp->size;
+	      }
+	    break;
 
-      switch (fdp->mr_type)
-	{
-	case MR_TYPE_ENUM:
-	case MR_TYPE_STRUCT:
-	case MR_TYPE_UNION:
-	case MR_TYPE_ARRAY:
-	case MR_TYPE_BITFIELD:
-	  find = mr_ic_find (td_ic, (mr_td_t[]){{ .type = { .str = fdp->type, .hash_value = 0 }}});
-	  if (find)
-	    {
-	      mr_td_t * field_tdp = find->ptr;
-	      fdp->size = field_tdp->size;
-	    }
-	  break;
+	  case MR_TYPE_FUNC_TYPE:
+	    fdp->size = sizeof (void *);
+	    break;
 
-	case MR_TYPE_FUNC_TYPE:
-	  fdp->size = sizeof (void *);
-	  break;
+	  case MR_TYPE_POINTER:
+	    fdp->size = sizeof (void *);
+	    if (fdp->mr_type_aux == MR_TYPE_NONE)
+	      fdp->mr_type_aux = MR_TYPE_VOID;
+	    else if (fdp->mr_type_aux == MR_TYPE_CHAR)
+	      fdp->mr_type = MR_TYPE_STRING;
+	    else
+	      {
+#define POINTER_SIZE_SUFFIX "_size"
+		assert (fdp->name.str != NULL);
+		char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));
+		assert (size != NULL);
+		strcpy (size, fdp->name.str);
+		strcat (size, POINTER_SIZE_SUFFIX);
+		fdp->res.ptr = size;
+		fdp->res_type = mr_strdup ("char");
+		assert (fdp->res_type != NULL);
+		fdp->mr_size = sizeof (size[0]);
+	      }
+	    break;
 
-	case MR_TYPE_POINTER:
-	  fdp->size = sizeof (void *);
-	  if (fdp->mr_type_aux == MR_TYPE_CHAR)
-	    fdp->mr_type = MR_TYPE_STRING;
-	  if (fdp->mr_type_aux == MR_TYPE_NONE)
-	    fdp->mr_type_aux = MR_TYPE_VOID;
-	  break;
-
-	default:
-	  break;
-	}
-    }
+	  default:
+	    break;
+	  }
+      }
   return (MR_SUCCESS);
 }
 
