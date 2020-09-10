@@ -413,20 +413,24 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
       break;
 
     case _DW_FORM_block1:
-      if (_DW_AT_data_member_location == code)
-	{
-	  Dwarf_Locdesc **locdescs;
-	  Dwarf_Signed len;
-	  rv = dwarf_loclist_n (dw_attribute, &locdescs, &len, NULL);
-	  assert (rv == DW_DLV_OK);
-	  assert ((len == 1) && (locdescs[0]->ld_cents == 1) && (locdescs[0]->ld_s[0].lr_atom == DW_OP_plus_uconst));
+      {
+	Dwarf_Block * block;
+	rv = dwarf_formblock (dw_attribute, &block, NULL);
+	assert (rv == DW_DLV_OK);
 
-	  mr_attr->dw_unsigned = locdescs[0]->ld_s[0].lr_number;
-
-	  dwarf_dealloc (debug, locdescs[0]->ld_s, DW_DLA_LOC_BLOCK);
-	  dwarf_dealloc (debug, locdescs[0], DW_DLA_LOCDESC);
-	  dwarf_dealloc (debug, locdescs, DW_DLA_LIST);
-	}
+	if (DW_OP_plus_uconst == *(uint8_t*)block->bl_data)
+	  {
+	    uint8_t * leb128 = block->bl_data + sizeof (uint8_t);
+	    Dwarf_Unsigned value = 0;
+	    int i, shift = 0;
+	    for (i = 1; i < block->bl_len; ++i)
+	      {
+		value |= (*leb128++ & ((1 << 7) - 1)) << shift;
+		shift += 7;
+	      }
+	    mr_attr->dw_unsigned = value;
+	  }
+      }
       break;
     }
 }
