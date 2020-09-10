@@ -280,7 +280,7 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_data8, = 0x07, "dw_unsigned"),
 	      (_DW_FORM_string, = 0x08, "dw_str"),
 	      (_DW_FORM_block, = 0x09),
-	      (_DW_FORM_block1, = 0x0a),
+	      (_DW_FORM_block1, = 0x0a, "dw_unsigned"),
 	      (_DW_FORM_data1, = 0x0b, "dw_unsigned"),
 	      (_DW_FORM_flag, = 0x0c, "dw_flag"),
 	      (_DW_FORM_sdata, = 0x0d, "dw_signed"),
@@ -410,6 +410,18 @@ dump_attribute (Dwarf_Attribute dw_attribute, mr_dw_attribute_t * mr_attr)
     case _DW_FORM_udata:
       rv = dwarf_formudata (dw_attribute, &mr_attr->dw_unsigned, NULL);
       assert (rv == DW_DLV_OK);
+      break;
+
+    case _DW_FORM_block1:
+      if (_DW_AT_data_member_location == code)
+	{
+	  Dwarf_Locdesc **locdescs;
+	  Dwarf_Signed len;
+	  rv = dwarf_loclist_n (dw_attribute, &locdescs, &len, NULL);
+	  assert (rv == DW_DLV_OK);
+	  assert ((len == 1) && (locdescs[0]->ld_cents == 1) && (locdescs[0]->ld_s[0].lr_atom == DW_OP_plus_uconst));
+	  mr_attr->dw_unsigned = locdescs[0]->ld_s[0].lr_number;
+	}
       break;
     }
 }
@@ -722,7 +734,11 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   attr = die_attribute (mr_die, _DW_AT_data_member_location);
   if (attr != NULL)
     {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      assert ((_DW_FORM_data1 == attr->form) ||
+	      (_DW_FORM_data2 == attr->form) ||
+	      (_DW_FORM_data4 == attr->form) ||
+	      (_DW_FORM_data8 == attr->form) ||
+	      (_DW_FORM_block1 == attr->form));
       fdp->offset = attr->dw_unsigned;
     }
 
