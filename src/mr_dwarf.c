@@ -354,7 +354,7 @@ TYPEDEF_STRUCT (mr_type_sign_t,
 static mr_ic_t mr_type_sign_ic;
 
 static void
-dump_attribute (Dwarf_Attribute dw_attribute, mr_dw_attribute_t * mr_attr)
+dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute_t * mr_attr)
 {
   Dwarf_Half code, form;
   int rv = dwarf_whatattr (dw_attribute, &code, NULL);
@@ -420,7 +420,12 @@ dump_attribute (Dwarf_Attribute dw_attribute, mr_dw_attribute_t * mr_attr)
 	  rv = dwarf_loclist_n (dw_attribute, &locdescs, &len, NULL);
 	  assert (rv == DW_DLV_OK);
 	  assert ((len == 1) && (locdescs[0]->ld_cents == 1) && (locdescs[0]->ld_s[0].lr_atom == DW_OP_plus_uconst));
+
 	  mr_attr->dw_unsigned = locdescs[0]->ld_s[0].lr_number;
+
+	  dwarf_dealloc (debug, locdescs[0]->ld_s, DW_DLA_LOC_BLOCK);
+	  dwarf_dealloc (debug, locdescs[0], DW_DLA_LOCDESC);
+	  dwarf_dealloc (debug, locdescs, DW_DLA_LIST);
 	}
       break;
     }
@@ -458,7 +463,7 @@ dump_die_tree (Dwarf_Debug debug, Dwarf_Die die, mr_die_t * mr_parent_die)
   
       /* Process the attribute list. */
       for (i = 0; i < dw_count; ++i)
-	dump_attribute (dw_attributes[i], &mr_die->attributes[i]);
+	dump_attribute (debug, dw_attributes[i], &mr_die->attributes[i]);
       dwarf_dealloc (debug, dw_attributes, DW_DLA_LIST);
     }
   
