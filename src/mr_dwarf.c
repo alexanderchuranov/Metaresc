@@ -1086,6 +1086,38 @@ free_td (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
+static void
+tweak_td_meta (char * type, char * name, ...)
+{
+  va_list args;
+  va_start (args, name);
+
+  assert (type != NULL);
+  mr_td_t * tdp = mr_get_td_by_name (type);
+  assert (tdp != NULL);
+
+  while (name)
+    {
+      assert (name != NULL);
+      mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
+      assert (fdp != NULL);
+      fdp->mr_type = MR_TYPE_VOID;
+
+      name = va_arg (args, char *);
+    }
+
+  va_end (args);
+}
+
+static void
+tweak_mr_conf ()
+{
+  tweak_td_meta ("mr_td_t", "field_by_name", "attr", "meta", "res", "res_type", "mr_size", NULL);
+  tweak_td_meta ("mr_struct_param_t", "field_by_offset", NULL);
+  tweak_td_meta ("mr_enum_param_t", "enum_by_value", "is_bitmask", NULL);
+  tweak_td_meta ("mr_hashed_string_t", "hash_value", NULL);
+}
+
 int
 main (int argc, char * argv [])
 {
@@ -1154,6 +1186,7 @@ main (int argc, char * argv [])
 #endif /* HAVE_DWARF_INIT_PATH */
     }
 
+  tweak_mr_conf ();
   mr_ic_foreach (&td_ic, process_td, &td_ic);
   mr_ic_foreach (&td_ic, print_td, NULL);
   mr_ic_foreach (&td_ic, free_td, NULL);
