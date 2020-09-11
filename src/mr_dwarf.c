@@ -1086,8 +1086,8 @@ free_td (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
-static void
-tweak_td_meta (char * type, char * name, ...)
+static void __attribute__ ((sentinel(0)))
+mr_type_void_fields (char * type, char * name, ...)
 {
   va_list args;
   va_start (args, name);
@@ -1112,10 +1112,10 @@ tweak_td_meta (char * type, char * name, ...)
 static void
 tweak_mr_conf ()
 {
-  tweak_td_meta ("mr_td_t", "field_by_name", "attr", "meta", "res", "res_type", "mr_size", NULL);
-  tweak_td_meta ("mr_struct_param_t", "field_by_offset", NULL);
-  tweak_td_meta ("mr_enum_param_t", "enum_by_value", "is_bitmask", NULL);
-  tweak_td_meta ("mr_hashed_string_t", "hash_value", NULL);
+  mr_type_void_fields ("mr_td_t", "field_by_name", "attr", "meta", "res", "res_type", "mr_size", NULL);
+  mr_type_void_fields ("mr_struct_param_t", "field_by_offset", NULL);
+  mr_type_void_fields ("mr_enum_param_t", "enum_by_value", "is_bitmask", NULL);
+  mr_type_void_fields ("mr_hashed_string_t", "hash_value", NULL);
 }
 
 int
