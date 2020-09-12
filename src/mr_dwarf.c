@@ -1010,15 +1010,6 @@ process_td (mr_ptr_t key, const void * context)
 	switch (fdp->mr_type)
 	  {
 	  case MR_TYPE_UNION:
-#define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
-	    if (fdp->name.str != NULL)
-	      {
-		char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
-		assert (discriminator != NULL);
-		strcpy (discriminator, fdp->name.str);
-		strcat (discriminator, UNION_DISCRIMINATOR_SUFFIX);
-		fdp->meta = discriminator;
-	      }
 	  case MR_TYPE_ENUM:
 	  case MR_TYPE_STRUCT:
 	  case MR_TYPE_ARRAY:
@@ -1050,14 +1041,24 @@ process_td (mr_ptr_t key, const void * context)
 		strcpy (size, fdp->name.str);
 		strcat (size, POINTER_SIZE_SUFFIX);
 		fdp->res.ptr = size;
-		fdp->res_type = mr_strdup ("char");
+		fdp->res_type = mr_strdup ("string");
 		assert (fdp->res_type != NULL);
-		fdp->mr_size = sizeof (size[0]);
 	      }
 	    break;
 
 	  default:
 	    break;
+	  }
+	if ((fdp->name.str != NULL) &&
+	    ((MR_TYPE_UNION == fdp->mr_type) ||
+	     ((MR_TYPE_POINTER == fdp->mr_type) && (MR_TYPE_UNION == fdp->mr_type_aux))))
+	  {
+#define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
+	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
+	    assert (discriminator != NULL);
+	    strcpy (discriminator, fdp->name.str);
+	    strcat (discriminator, UNION_DISCRIMINATOR_SUFFIX);
+	    fdp->meta = discriminator;
 	  }
       }
   return (MR_SUCCESS);
@@ -1113,6 +1114,7 @@ static void
 tweak_mr_conf ()
 {
   mr_type_void_fields ("mr_td_t", "field_by_name", "attr", "meta", "res", "res_type", "mr_size", NULL);
+  mr_type_void_fields ("mr_fd_t", "mr_size", NULL);
   mr_type_void_fields ("mr_struct_param_t", "field_by_offset", NULL);
   mr_type_void_fields ("mr_enum_param_t", "enum_by_value", "is_bitmask", NULL);
   mr_type_void_fields ("mr_hashed_string_t", "hash_value", NULL);
