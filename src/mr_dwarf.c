@@ -579,13 +579,59 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 }
 
 static void
+get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
+{
+  mr_type_sign_t mr_type_sign;
+  memset (&mr_type_sign, 0, sizeof (mr_type_sign));
+
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_byte_size);
+  assert (attr != NULL);
+  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+  mr_type_sign.size = attr->dw_unsigned;
+	
+  attr = die_attribute (mr_die, _DW_AT_name);
+  assert (attr != NULL);
+  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
+  mr_type_sign.type.str = attr->dw_str;
+
+  mr_ptr_t * find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
+  assert (find != NULL);
+
+  mr_type_sign_t * found_sign = find->ptr;
+  fdp->mr_type_aux = found_sign->mr_type;
+  fdp->size = mr_type_sign.size;
+  if (fdp->type == NULL)
+    fdp->type = mr_strdup (mr_type_sign.type.str);
+}
+
+static void
+get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
+{
+  assert (fdp->mr_type == MR_TYPE_NONE);
+  fdp->mr_type = MR_TYPE_ARRAY;
+  assert (mr_die->children_size == sizeof (mr_die->children[0]));
+  assert (mr_die->children[0].tag == _DW_TAG_subrange_type);
+  
+  mr_dw_attribute_t * attr = die_attribute (&mr_die->children[0], _DW_AT_count);
+  if (attr == NULL)
+    attr = die_attribute (&mr_die->children[0], _DW_AT_upper_bound);
+  if (attr != NULL)
+    {
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      fdp->param.array_param.count = attr->dw_unsigned;
+    }
+	  
+  fdp->param.array_param.row_count = 1;
+}
+
+static void
 get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   for (;;)
     {
       mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_type);
       if (attr == NULL)
-	return;
+	break;
       assert (_DW_FORM_ref4 == attr->form);
 	
       mr_ptr_t * find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
@@ -595,86 +641,50 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       switch (mr_die->tag)
 	{
 	case _DW_TAG_base_type:
-	  attr = die_attribute (mr_die, _DW_AT_byte_size);
-	  assert (attr != NULL);
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-	  mr_type_sign_t mr_type_sign;
-	  memset (&mr_type_sign, 0, sizeof (mr_type_sign));
-	  mr_type_sign.size = attr->dw_unsigned;
-	
-	  attr = die_attribute (mr_die, _DW_AT_name);
-	  assert (attr != NULL);
-	  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
-	  mr_type_sign.type.str = attr->dw_str;
-	  mr_type_sign.type.hash_value = 0;
-
-	  find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
-	  assert (find != NULL);
-
-	  mr_type_sign_t * found_sign = find->ptr;
-	  fdp->mr_type_aux = found_sign->mr_type;
-	  fdp->size = mr_type_sign.size;
-	  if (fdp->type == NULL)
-	    fdp->type = mr_strdup (mr_type_sign.type.str);
-	  return;
+	  get_base_mr_type (fdp, mr_die);
+	  break;
       
 	case _DW_TAG_subroutine_type:
 	  assert (fdp->mr_type == MR_TYPE_POINTER);
 	  fdp->mr_type = MR_TYPE_FUNC_TYPE;
-	  return;
+	  break;
 	
 	case _DW_TAG_array_type:
-	  assert (fdp->mr_type == MR_TYPE_NONE);
-	  fdp->mr_type = MR_TYPE_ARRAY;
-	  assert (mr_die->children_size == sizeof (mr_die->children[0]));
-	  assert (mr_die->children[0].tag == _DW_TAG_subrange_type);
-	  attr = die_attribute (&mr_die->children[0], _DW_AT_count);
-	  if (attr == NULL)
-	    attr = die_attribute (&mr_die->children[0], _DW_AT_upper_bound);
-	  
-	  if (attr != NULL)
-	    {
-	      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-	      fdp->param.array_param.count = attr->dw_unsigned;
-	    }
-	  
-	  fdp->param.array_param.row_count = 1;
-	  break;
+	  get_array_mr_type (fdp, mr_die);
+	  continue;
 	
 	case _DW_TAG_pointer_type:
 	  if (fdp->mr_type != MR_TYPE_NONE)
-	    return;
+	    break;
 	  fdp->mr_type = MR_TYPE_POINTER;
-	  if (die_attribute (mr_die, _DW_AT_type) == NULL)
-	    return;
-	  break;
+	  continue;
 	
 	case _DW_TAG_typedef:
 	  get_type_name (fdp, mr_die, die_off_ic);
-	  break;
+	  continue;
 
 	case _DW_TAG_structure_type:
 	  fdp->mr_type_aux = MR_TYPE_STRUCT;
 	  get_type_name (fdp, mr_die, die_off_ic);
-	  return;
+	  break;
 	
 	case _DW_TAG_union_type:
 	  fdp->mr_type_aux = MR_TYPE_UNION;
 	  get_type_name (fdp, mr_die, die_off_ic);
-	  return;
+	  break;
 	
 	case _DW_TAG_enumeration_type:
 	  fdp->mr_type_aux = MR_TYPE_ENUM;
 	  get_type_name (fdp, mr_die, die_off_ic);
-	  return;
+	  break;
 	
 	case _DW_TAG_const_type:
-	  break;
+	  continue;
 	  
 	default:
 	  assert (false);
-	  break;
 	}
+      break;
     }
 }
 
@@ -1049,9 +1059,9 @@ process_td (mr_ptr_t key, const void * context)
 	  default:
 	    break;
 	  }
+	
 	if ((fdp->name.str != NULL) &&
-	    ((MR_TYPE_UNION == fdp->mr_type) ||
-	     ((MR_TYPE_POINTER == fdp->mr_type) && (MR_TYPE_UNION == fdp->mr_type_aux))))
+	    ((MR_TYPE_UNION == fdp->mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux)))
 	  {
 #define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
 	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
@@ -1068,7 +1078,6 @@ static mr_status_t
 print_td (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  tdp->type.hash_value = 0;
   char * dump = MR_SAVE_CINIT (mr_td_t, tdp);
   if (dump)
     {
