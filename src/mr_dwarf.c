@@ -338,9 +338,9 @@ TYPEDEF_STRUCT (mr_dw_attribute_t,
 TYPEDEF_STRUCT (mr_die_t,
 		(Dwarf_Off, off),
 		(mr_dw_tag_t, tag),
-		(mr_dw_attribute_t *, attributes, , "", { "attributes_size" }, "char"),
+		(mr_dw_attribute_t *, attributes, , "", { "attributes_size" }, "string"),
 		VOID (ssize_t, attributes_size),
-		(mr_die_t *, children, , "", { "children_size" }, "char"),
+		(mr_die_t *, children, , "", { "children_size" }, "string"),
 		VOID (ssize_t, children_size),
 		VOID (ssize_t, children_alloc_size),
 		)
@@ -527,6 +527,7 @@ walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray)
     case _DW_TAG_enumeration_type:
     case _DW_TAG_array_type:
     case _DW_TAG_const_type:
+    case _DW_TAG_volatile_type:
     case _DW_TAG_pointer_type:
     case _DW_TAG_subroutine_type:
       die_ptr = mr_rarray_allocate_element ((void*)&ic_rarray->ra, &ic_rarray->size, &ic_rarray->alloc_size, sizeof (ic_rarray->ra[0]));
@@ -679,6 +680,7 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  break;
 	
 	case _DW_TAG_const_type:
+	case _DW_TAG_volatile_type:
 	  continue;
 	  
 	default:
