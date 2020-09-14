@@ -634,7 +634,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   if (MR_TYPE_ARRAY == fdp->mr_type)
     count = fdp->param.array_param.count;
-  if (MR_TYPE_POINTER == fdp->mr_type)
+  if ((MR_TYPE_POINTER == fdp->mr_type) || (MR_TYPE_ARRAY == fdp->mr_type))
     mr_pointer_fd_set_size (&ra[idx].fd);
   ra[idx].MR_SIZE = ra[idx].fd.size * count;
 

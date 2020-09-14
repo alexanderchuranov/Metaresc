@@ -79,6 +79,30 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' offset %d != %d",
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->offset, dw_fdp->offset);
       
+      if (mr_fdp->mr_type == MR_TYPE_ARRAY)
+	{
+	  ck_assert_msg (mr_fdp->param.array_param.count == dw_fdp->param.array_param.count,
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' count %d != %d",
+			 mr_td->type.str, mr_fdp->name.str,
+			 mr_fdp->param.array_param.count, dw_fdp->param.array_param.count);
+	  ck_assert_msg (mr_fdp->param.array_param.row_count == dw_fdp->param.array_param.row_count,
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' row count %d != %d",
+			 mr_td->type.str, mr_fdp->name.str,
+			 mr_fdp->param.array_param.row_count, dw_fdp->param.array_param.row_count);
+	}
+      
+      if (mr_fdp->mr_type == MR_TYPE_BITFIELD)
+	{
+	  ck_assert_msg (mr_fdp->param.bitfield_param.width == dw_fdp->param.bitfield_param.width,
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' width %d != %d",
+			 mr_td->type.str, mr_fdp->name.str,
+			 mr_fdp->param.bitfield_param.width, dw_fdp->param.bitfield_param.width);
+	  ck_assert_msg (mr_fdp->param.bitfield_param.shift == dw_fdp->param.bitfield_param.shift,
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' shift %d != %d",
+			 mr_td->type.str, mr_fdp->name.str,
+			 mr_fdp->param.bitfield_param.shift, dw_fdp->param.bitfield_param.shift);
+	}
+      
       if ((mr_fdp->mr_type == MR_TYPE_STRUCT) ||
 	  (mr_fdp->mr_type == MR_TYPE_UNION) ||
 	  (mr_fdp->mr_type == MR_TYPE_ENUM) ||

@@ -5,8 +5,8 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , , { MR_SIZE_STR }, "char", .unnamed = true),
-	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "char"),
+	       (void *, ptr, , , { MR_SIZE_STR }, "string", .unnamed = true),
+	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "string"),
 	       (char *, string),
 	       (mr_offset_t, offset),
 	       (uintptr_t, uintptr_t),
@@ -306,7 +306,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		  or
 		  VOID (void *, ptr, , "user extended info", { (ext_info_t[]){ {.field = XXX}, {.field = YYY} } }, "ext_info_t", 2 * sizeof (ext_info_t))
 		  or
-		  VOID (void *, ptr, , "user extended info", { "one more extra string" }, "char")
+		  VOID (void *, ptr, , "user extended info", { "one more extra string" }, "string")
 		*/
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),

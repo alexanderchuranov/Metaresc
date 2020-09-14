@@ -29,9 +29,8 @@
 #include <mr_protos.h>
 
 /* meta data for type 'char' - required as a discriminator for mr_ptr union */
-MR_TYPEDEF_DESC_BI_ (char, MR_TYPE_CHAR_ARRAY, "type descriptor for 'char'");
+MR_TYPEDEF_DESC_BI (char, "type descriptor for 'char'");
 /* meta data for all scallar types */
-MR_TYPEDEF_DESC_BI (char_t, "alias for type 'char' for serialization as array of char");
 MR_TYPEDEF_DESC_BI (string_t);
 MR_TYPEDEF_DESC_BI (bool);
 MR_TYPEDEF_DESC_BI (uint8_t);
@@ -695,10 +694,6 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   char * name = NULL;
   memset (ptrdes, 0, sizeof (*ptrdes));
   
-  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("char", ptrs->ra[idx].fd.res_type)) &&
-      mr_is_valid_field_name (ptrs->ra[idx].fd.res.ptr))
-    name = ptrs->ra[idx].fd.res.ptr;
-
   if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("string", ptrs->ra[idx].fd.res_type)) &&
       mr_is_valid_field_name (ptrs->ra[idx].fd.res.ptr))
     name = ptrs->ra[idx].fd.res.ptr;
@@ -1512,7 +1507,7 @@ mr_pointer_fd_set_size (mr_fd_t * fdp)
 }
 
 /**
- * Initialize AUTO fields. Detect types, size, pointers etc.
+ * Initialize AUTO fields. Detect mr_type and pointers.
  * @param fdp pointer on a field descriptor
  */
 static void
@@ -1521,18 +1516,12 @@ mr_auto_field_detect (mr_fd_t * fdp)
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);
   /* check if type is in registery */
   if (tdp)
-    {
-      fdp->mr_type = tdp->mr_type;
-      fdp->size = tdp->size; /* size of forward pointers could be resolved only at the time of type registration */
-    }
+    fdp->mr_type = tdp->mr_type;
   else
     {
       /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
       if (fdp->mr_type_aux != MR_TYPE_NONE)
-	{
-	  fdp->mr_type = MR_TYPE_POINTER;
-	  fdp->size = sizeof (void *);
-	}	  
+	fdp->mr_type = MR_TYPE_POINTER;
       /* auto detect pointers */
       char * end = strchr (fdp->type, 0) - 1;
       if ('*' == *end)
@@ -1542,30 +1531,11 @@ mr_auto_field_detect (mr_fd_t * fdp)
 	    --end;
 	  *end = 0; /* trancate type name */
 	  fdp->mr_type = MR_TYPE_POINTER;
-	  fdp->size = sizeof (void *);
-	}
-      /* autodetect structures and enums */
-      switch (fdp->mr_type_aux)
-	{
-	case MR_TYPE_NONE:
-	case MR_TYPE_INT8:
-	case MR_TYPE_UINT8:
-	case MR_TYPE_INT16:
-	case MR_TYPE_UINT16:
-	case MR_TYPE_INT32:
-	case MR_TYPE_UINT32:
-	case MR_TYPE_INT64:
-	case MR_TYPE_UINT64:
-	  tdp = mr_get_td_by_name (fdp->type);
-	  if (tdp)
-	    fdp->mr_type_aux = tdp->mr_type;
-	  break;
-
-	default:
-	  break;
 	}
     }
 }
+
+static void mr_fd_detect_field_type (mr_fd_t * fdp);
 
 /**
  * Initialize fields that are pointers on functions. Detects types of arguments.
@@ -1579,22 +1549,7 @@ mr_func_field_detect (mr_fd_t * fdp)
   for (i = 0; fdp->param.func_param.args[i].mr_type != MR_TYPE_TRAILING_RECORD; ++i)
     {
       mr_normalize_type (&fdp->param.func_param.args[i]);
-      switch (fdp->param.func_param.args[i].mr_type)
-	{
-	case MR_TYPE_NONE:
-	case MR_TYPE_INT8:
-	case MR_TYPE_UINT8:
-	case MR_TYPE_INT16:
-	case MR_TYPE_UINT16:
-	case MR_TYPE_INT32:
-	case MR_TYPE_UINT32:
-	case MR_TYPE_INT64:
-	case MR_TYPE_UINT64:
-	  mr_auto_field_detect (&fdp->param.func_param.args[i]);
-	  break;
-	default:
-	  break;
-	}
+      mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
     }
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
 }
@@ -1602,7 +1557,24 @@ mr_func_field_detect (mr_fd_t * fdp)
 static void
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
+  switch (fdp->mr_type)
+    {
+    case MR_TYPE_NONE: /* MR_AUTO type resolution */
+      mr_auto_field_detect (fdp);
+      break;
+      
+    case MR_TYPE_FUNC:
+      mr_func_field_detect (fdp);
+      return;
+      
+    default:
+      break;
+    }
+
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);
+  if (NULL == tdp)
+    return;
+  
   switch (fdp->mr_type)
     {
       /* Enum detection */
@@ -1614,49 +1586,16 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
     case MR_TYPE_UINT32:
     case MR_TYPE_INT64:
     case MR_TYPE_UINT64:
-      if (tdp)
-	fdp->mr_type = tdp->mr_type;
+      fdp->mr_type = tdp->mr_type;
       break;
-
-    case MR_TYPE_BITFIELD:
-      if (tdp)
-	fdp->mr_type_aux = tdp->mr_type;
-      break;
-
+	
       /*
-	pointer and arrays need to detect mr_type_aux for elements
+	pointer, arrays and bit fields need to detect mr_type_aux for basic type
       */
+    case MR_TYPE_BITFIELD:
     case MR_TYPE_POINTER:
     case MR_TYPE_ARRAY:
-      if (tdp)
-	{
-	  switch (fdp->mr_type_aux)
-	    {
-	    case MR_TYPE_NONE:
-	    case MR_TYPE_INT8:
-	    case MR_TYPE_UINT8:
-	    case MR_TYPE_INT16:
-	    case MR_TYPE_UINT16:
-	    case MR_TYPE_INT32:
-	    case MR_TYPE_UINT32:
-	    case MR_TYPE_INT64:
-	    case MR_TYPE_UINT64:
-	      fdp->mr_type_aux = tdp->mr_type;
-	      break;
-
-	    default:
-	      break;
-	    }
-	}
-      break;
-
-    case MR_TYPE_NONE: /* MR_AUTO type resolution */
-      mr_auto_field_detect (fdp);
-      break;
-
-    case MR_TYPE_FUNC:
-      fdp->size = sizeof (void*);
-      mr_func_field_detect (fdp);
+      fdp->mr_type_aux = tdp->mr_type;
       break;
 
     default:
@@ -1735,7 +1674,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   *fdp = *union_tdp->fields[0].fdp;
   fdp->type = tdp->type.str;
   fdp->name = tdp->type;
-  fdp->size = tdp->size;
+  fdp->size = sizeof (void *);
   fdp->offset = 0;
   fdp->mr_type = MR_TYPE_POINTER;
   fdp->mr_type_aux = tdp->mr_type;

@@ -867,6 +867,8 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int count = fd_.param.array_param.count;
   int row_count = fd_.param.array_param.row_count;
 
+  mr_pointer_fd_set_size (&fd_);
+
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type = fd_.mr_type_aux;
   else

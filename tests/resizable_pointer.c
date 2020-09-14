@@ -7,7 +7,7 @@
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		int size,
 		);
 
@@ -23,7 +23,7 @@ MR_START_TEST (resizable_array, "test pointer as a resizable array casted by nam
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_bool_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		bool size,
 		);
 
@@ -39,7 +39,7 @@ MR_START_TEST (resizable_array_size_as_bool, "test pointer as a resizable array 
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int8_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		int8_t size,
 		);
 
@@ -55,7 +55,7 @@ MR_START_TEST (resizable_array_size_as_int8, "test pointer as a resizable array 
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int16_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		int16_t size,
 		);
 
@@ -71,7 +71,7 @@ MR_START_TEST (resizable_array_size_as_int16, "test pointer as a resizable array
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int32_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		int32_t size,
 		);
 
@@ -87,7 +87,7 @@ MR_START_TEST (resizable_array_size_as_int32, "test pointer as a resizable array
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int64_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		int64_t size,
 		);
 
@@ -103,7 +103,7 @@ MR_START_TEST (resizable_array_size_as_int64, "test pointer as a resizable array
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_bitfield_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		BITFIELD (int8_t, size, :3),
 		);
 
@@ -125,7 +125,7 @@ TYPEDEF_ENUM (array_size_t,
 	      );
 
 TYPEDEF_STRUCT (resizable_array_size_as_enum_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		(array_size_t, size),
 		);
 
@@ -143,7 +143,7 @@ MR_START_TEST (resizable_array_size_as_enum, "test pointer as a resizable array 
 #define CMP_RPTR_SIZEPTR(TYPE, X, Y, ...) ((*(X)->size != *(Y)->size) || memcmp ((X)->data, (Y)->data, *(X)->size))
 
 TYPEDEF_STRUCT (resizable_array_size_as_int_ptr_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		(int *, size),
 		);
 
@@ -159,7 +159,7 @@ MR_START_TEST (resizable_array_size_as_int_ptr, "test pointer as a resizable arr
   /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_without_size_t,
-		(int8_t *, data, , , { "size" }, "char"),
+		(int8_t *, data, , , { "size" }, "string"),
 		VOID (int, size),
 		);
 
@@ -262,7 +262,7 @@ MR_START_TEST (resizable_mr_ptr, "test mr_ptr_t as a resizable array") {
 #define CMP_OPAQUE_DATA(TYPE, X, Y, ...) CMP_SERIALIAZED (resizable_array_t, ((resizable_array_t*)X), ((resizable_array_t*)Y), __VA_ARGS__)
 
 TYPEDEF_STRUCT (resizable_array_as_opaque_data_t,
-		(int8_t *, MR_OPAQUE_DATA, , , { "size" }, "char"),
+		(int8_t *, MR_OPAQUE_DATA, , , { "size" }, "string"),
 		VOID (int, size),
 		);
 

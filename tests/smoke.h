@@ -46,28 +46,28 @@
   TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));	\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
-  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "char"), (ssize_t, size), (char *, ptr_type)); \
+  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "string"), (ssize_t, size), (char *, ptr_type)); \
 									\
   int test_run (int count)						\
   {									\
     int i;								\
     array_t array, array_;						\
     mr_rarray_t ra;							\
-    typed_list_t list_, typed_list = { .ptr_type = "char", };		\
+    typed_list_t list_, typed_list = { .ptr_type = "string", };		\
     struct tms start, end;						\
     times (&start);							\
     memset (&array, 0, sizeof (array));					\
     array.size = count * sizeof (array.ra[0]);				\
-    array.ptr_type = "char";						\
+    array.ptr_type = "string";						\
     array.ra = MR_CALLOC (count, sizeof (array.ra[0]));			\
     ck_assert_msg (NULL != array.ra, "Memory allocation failed.");	\
     for (i = 1; i < count; ++i)						\
       {									\
 	array.ra[i - 1].next = &array.ra[i];				\
-	array.ra[i - 1].mr_ptr.ptr = "string_t";			\
+	array.ra[i - 1].mr_ptr.ptr = "string";				\
       }									\
     array.ra[count - 1].next = &array.ra[0];				\
-    array.ra[count - 1].mr_ptr.ptr = "string_t";			\
+    array.ra[count - 1].mr_ptr.ptr = "string";				\
     typed_list.root = &array.ra[0];					\
     ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);		\
       ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\

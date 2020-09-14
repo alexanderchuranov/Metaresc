@@ -86,7 +86,7 @@ static int
 cinit_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
-  ptrdes->res.type = "char";
+  ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
   return (mr_ra_printf (mr_ra_str, "{\n"));
 }
@@ -109,7 +109,7 @@ static int
 cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
-  ptrdes->res.type = "char";
+  ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
   return (mr_ra_printf (mr_ra_str, "(%s[]){\n", ptrdes->fd.type));
 }
@@ -118,7 +118,7 @@ static int
 cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
-  ptrdes->res.type = "char";
+  ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
   return (mr_ra_printf (mr_ra_str, "\"\", {\n"));
 }
@@ -161,7 +161,7 @@ static int
 json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "]";
-  ptrdes->res.type = "char";
+  ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
   return (mr_ra_printf (mr_ra_str, "[\n"));
 }
@@ -206,7 +206,7 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },
     .MR_SIZE = sizeof (""),
-    .type = "char",
+    .type = "string",
     .alloc_size = sizeof (""),
   };
   int idx = 0;

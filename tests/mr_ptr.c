@@ -38,7 +38,7 @@ MR_START_TEST (union_mr_ptr_string_y, "mr_ptr_t is a pointer on any Metaresc typ
 } END_TEST
 
 MR_START_TEST (union_mr_ptr_string, "mr_ptr_t is a pointer on any Metaresc type") {
-  struct_mr_ptr_t x = { .dummy = 0, { "string_t" }, "char" };
+  struct_mr_ptr_t x = { .dummy = 0, { "string_t" }, "string" };
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_mr_ptr_t, &x);
   x.ptr.ptr = "string longer then sizeof (char)";
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_mr_ptr_t, &x);

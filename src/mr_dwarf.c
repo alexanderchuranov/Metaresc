@@ -619,7 +619,7 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   if (attr != NULL)
     {
       assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-      fdp->param.array_param.count = attr->dw_unsigned;
+      fdp->param.array_param.count = attr->dw_unsigned + 1;
     }
 	  
   fdp->param.array_param.row_count = 1;
@@ -729,6 +729,13 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (fdp->name.str == NULL)
     fdp->unnamed = true;
 
+  attr = die_attribute (mr_die, _DW_AT_byte_size);
+  if (attr != NULL)
+    {
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      fdp->size = attr->dw_unsigned;
+    }
+  
   attr = die_attribute (mr_die, _DW_AT_bit_size);
   if (attr != NULL)
     {
@@ -748,7 +755,7 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       if (attr != NULL)
 	{
 	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-	  fdp->param.bitfield_param.shift = attr->dw_unsigned;
+	  fdp->param.bitfield_param.shift = fdp->size * __CHAR_BIT__ - fdp->param.bitfield_param.width - attr->dw_unsigned;
 	}
     }
 
@@ -1017,7 +1024,6 @@ process_td (mr_ptr_t key, const void * context)
     for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
       {
 	mr_fd_t * fdp = tdp->fields[i].fdp;
-	mr_ptr_t * find;
 
 	switch (fdp->mr_type)
 	  {
@@ -1026,11 +1032,14 @@ process_td (mr_ptr_t key, const void * context)
 	  case MR_TYPE_STRUCT:
 	  case MR_TYPE_ARRAY:
 	  case MR_TYPE_BITFIELD:
-	    find = mr_ic_find (td_ic, (mr_td_t[]){{ .type = { .str = fdp->type, .hash_value = 0 }}});
-	    if (find)
+	    if (0 == fdp->size)
 	      {
-		mr_td_t * field_tdp = find->ptr;
-		fdp->size = field_tdp->size;
+		mr_ptr_t * find = mr_ic_find (td_ic, (mr_td_t[]){{ .type = { .str = fdp->type, .hash_value = 0 }}});
+		if (find)
+		  {
+		    mr_td_t * field_tdp = find->ptr;
+		    fdp->size = field_tdp->size;
+		  }
 	      }
 	    break;
 
@@ -1061,7 +1070,10 @@ process_td (mr_ptr_t key, const void * context)
 	  default:
 	    break;
 	  }
-	
+
+	if (MR_TYPE_ARRAY == fdp->mr_type)
+	  fdp->size *= fdp->param.array_param.count;
+
 	if ((fdp->name.str != NULL) &&
 	    ((MR_TYPE_UNION == fdp->mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux)))
 	  {

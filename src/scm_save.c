@@ -204,7 +204,7 @@ static mr_ra_printf_t scm_save_handler[] =
 char *
 scm_save (mr_ra_ptrdes_t * ptrs)
 {
-  mr_rarray_t mr_ra_str = { .data = { mr_strdup ("") }, .MR_SIZE = sizeof (""), .type = "char", .alloc_size = sizeof (""), };
+  mr_rarray_t mr_ra_str = { .data = { mr_strdup ("") }, .MR_SIZE = sizeof (""), .type = "string", .alloc_size = sizeof (""), };
   int idx = 0;
 
   if (NULL == mr_ra_str.data.ptr)

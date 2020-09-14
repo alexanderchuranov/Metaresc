@@ -619,6 +619,8 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   int i = 0;
   mr_status_t status = MR_SUCCESS;
 
+  mr_pointer_fd_set_size (&fd_);
+
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
   else

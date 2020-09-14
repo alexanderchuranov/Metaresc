@@ -567,7 +567,7 @@
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
 	  .type = MR_STRINGIFY (TYPE),					\
-	     .size = sizeof (TYPE),					\
+	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_ARRAY,					\
@@ -856,7 +856,7 @@
 #define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (scm_save, MR_TYPE_NAME, S_PTR)
 
 #define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
-      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "char" }; \
+      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "string" }; \
       _ra_.data.ptr = METHOD (MR_TYPE_NAME, S_PTR);			\
       if (_ra_.data.ptr)						\
 	_ra_.MR_SIZE = _ra_.alloc_size = strlen (_ra_.data.ptr) + 1;	\
@@ -1134,7 +1134,6 @@
 #endif /* HAVE_LIBXML2 */
 
 typedef char * string_t;
-typedef char char_t;
 typedef long int long_int_t;
 typedef long long int long_long_int_t;
 typedef long double long_double_t;

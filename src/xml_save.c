@@ -248,7 +248,7 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup (MR_XML1_DOCUMENT_HEADER) },
     .MR_SIZE = sizeof (MR_XML1_DOCUMENT_HEADER),
-    .type = "char",
+    .type = "string",
     .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER),
   };
   int idx = 0;
@@ -395,7 +395,7 @@ xml2_save (mr_ra_ptrdes_t * ptrs)
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },
     .MR_SIZE = sizeof (""),
-    .type = "char",
+    .type = "string",
     .alloc_size = sizeof (""),
   };
 
