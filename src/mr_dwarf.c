@@ -616,6 +616,7 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   for (i = mr_die->children_size / sizeof (mr_die->children[0]) - 1; i >= 0; --i)
     {
       assert (mr_die->children[i].tag == _DW_TAG_subrange_type);
+      count *= dimension;
       dimension = 1;
       mr_dw_attribute_t * attr = die_attribute (&mr_die->children[i], _DW_AT_count);
       if (attr != NULL)
@@ -630,14 +631,10 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
 	  dimension = attr->dw_unsigned + 1;
 	}
-      count *= dimension;
     }
   
-  if (dimension == 0)
-    dimension = 1;
-  
-  fdp->param.array_param.count = count;
-  fdp->param.array_param.row_count = count / dimension;
+  fdp->param.array_param.count = count * dimension;
+  fdp->param.array_param.row_count = count;
 }
 
 static void
