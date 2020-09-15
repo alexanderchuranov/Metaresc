@@ -610,24 +610,34 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 {
   assert (fdp->mr_type == MR_TYPE_NONE);
   fdp->mr_type = MR_TYPE_ARRAY;
-  assert (mr_die->children_size == sizeof (mr_die->children[0]));
-  assert (mr_die->children[0].tag == _DW_TAG_subrange_type);
-  
-  mr_dw_attribute_t * attr = die_attribute (&mr_die->children[0], _DW_AT_count);
-  if (attr != NULL)
-    {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-      fdp->param.array_param.count = attr->dw_unsigned;
-    }
 
-  attr = die_attribute (&mr_die->children[0], _DW_AT_upper_bound);
-  if (attr != NULL)
+  unsigned count = 1, dimension = 1;
+  int i;
+  for (i = mr_die->children_size / sizeof (mr_die->children[0]) - 1; i >= 0; --i)
     {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
-      fdp->param.array_param.count = attr->dw_unsigned + 1;
-    }      
-	  
-  fdp->param.array_param.row_count = 1;
+      assert (mr_die->children[i].tag == _DW_TAG_subrange_type);
+      dimension = 1;
+      mr_dw_attribute_t * attr = die_attribute (&mr_die->children[i], _DW_AT_count);
+      if (attr != NULL)
+	{
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  dimension = attr->dw_unsigned;
+	}
+
+      attr = die_attribute (&mr_die->children[i], _DW_AT_upper_bound);
+      if (attr != NULL)
+	{
+	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+	  dimension = attr->dw_unsigned + 1;
+	}
+      count *= dimension;
+    }
+  
+  if (dimension == 0)
+    dimension = 1;
+  
+  fdp->param.array_param.count = count;
+  fdp->param.array_param.row_count = count / dimension;
 }
 
 static void

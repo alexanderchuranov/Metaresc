@@ -13,6 +13,12 @@
 
 TYPEDEF_FUNC (int, mr_save_handler_t, (mr_save_data_t *))
 
+TYPEDEF_STRUCT (mr_array_t,
+		(int, array1d, [2]),
+		(int, array2d, [2][3]),
+		(int, array3d, [2][3][4]),
+		)
+
 static mr_save_handler_t mr_save_handler[];
 
 static mr_fd_t *
