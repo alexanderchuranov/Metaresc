@@ -670,7 +670,8 @@
 	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
 	  .name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .mr_type = MR_TYPE_ENUM_VALUE,				\
-	     .param = { .enum_value = NAME, },				\
+	  .mr_type_aux = MR_TYPE_DETECT (MR_TYPE_NAME),			\
+	     .param = { .enum_value = { NAME }, },			\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 #define MR_END_ENUM_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)

@@ -34,7 +34,13 @@ int main ()
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
-      printf ("%d: %s = %" PRId64 "\n", i, fdp->name.str, fdp->param.enum_value);
+      if ((MR_TYPE_UINT8 == fdp->mr_type_aux) ||
+	  (MR_TYPE_UINT16 == fdp->mr_type_aux) ||
+	  (MR_TYPE_UINT32 == fdp->mr_type_aux) ||
+	  (MR_TYPE_UINT64 == fdp->mr_type_aux))
+	printf ("%d: %s = %" PRIu64 "\n", i, fdp->name.str, fdp->param.enum_value._unsigned);
+      else
+	printf ("%d: %s = %" PRIi64 "\n", i, fdp->name.str, fdp->param.enum_value._signed);
     }
   return (EXIT_SUCCESS);
 }

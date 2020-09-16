@@ -171,7 +171,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 	{
 	  int i;
 	  for (i = 0; MR_TYPE_ENUM_VALUE == tdp->fields[i].fdp->mr_type; ++i)
-	    messages[tdp->fields[i].fdp->param.enum_value] = tdp->fields[i].fdp->meta;
+	    messages[tdp->fields[i].fdp->param.enum_value._unsigned] = tdp->fields[i].fdp->meta;
 	  messages_inited = true;
 	}
     }
@@ -1214,7 +1214,7 @@ mr_hash_value_t
 mr_enumfd_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * fdp = x.ptr;
-  return (fdp->param.enum_value);
+  return (fdp->param.enum_value._unsigned);
 }
 
 /**
@@ -1228,7 +1228,8 @@ cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
   mr_fd_t * y_ = y.ptr;
-  return ((x_->param.enum_value > y_->param.enum_value) - (x_->param.enum_value < y_->param.enum_value));
+  return ((x_->param.enum_value._unsigned > y_->param.enum_value._unsigned) -
+	  (x_->param.enum_value._unsigned < y_->param.enum_value._unsigned));
 }
 
 /**
@@ -1294,7 +1295,7 @@ mr_add_enum (mr_td_t * tdp)
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, tdp->type.str);
 	  status = MR_FAILURE;
 	}
-      typeof (tdp->fields[i].fdp->param.enum_value) value = tdp->fields[i].fdp->param.enum_value;
+      typeof (tdp->fields[i].fdp->param.enum_value._unsigned) value = tdp->fields[i].fdp->param.enum_value._unsigned;
       if ((value != 0) && ((value & (value - 1)) != 0))
 	tdp->param.enum_param.is_bitmask = false;
     }
@@ -1312,7 +1313,7 @@ mr_add_enum (mr_td_t * tdp)
 mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
-  mr_fd_t fd = { .param = { .enum_value = value, }, };
+  mr_fd_t fd = { .param = { .enum_value = { value }, }, };
   mr_ptr_t * result = mr_ic_find (&tdp->param.enum_param.enum_by_value, &fd);
   return (result ? result->ptr : NULL);
 }

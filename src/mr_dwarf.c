@@ -721,9 +721,15 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  (_DW_FORM_udata == attr->form) || (_DW_FORM_sdata == attr->form));
 
   if (_DW_FORM_sdata == attr->form)
-    fdp->param.enum_value = attr->dw_signed;
+    {
+      fdp->param.enum_value._signed = attr->dw_signed;
+      fdp->mr_type_aux = MR_TYPE_INT64;
+    }
   else
-    fdp->param.enum_value = attr->dw_unsigned;
+    {
+      fdp->param.enum_value._unsigned = attr->dw_unsigned;
+      fdp->mr_type_aux = MR_TYPE_UINT64;
+    }
 }
 
 static void
@@ -1015,20 +1021,22 @@ process_td (mr_ptr_t key, const void * context)
 
   if (tdp->mr_type == MR_TYPE_ENUM)
     {
+      bool _signed = ((tdp->fields_size >= sizeof (tdp->fields[0])) &&
+		      (tdp->fields[0].fdp->mr_type_aux == MR_TYPE_INT64));
       tdp->param.enum_param.size_effective = tdp->size;
       switch (tdp->size)
 	{
 	case sizeof (uint8_t):
-	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT8;
+	  tdp->param.enum_param.mr_type_effective = _signed ? MR_TYPE_INT8 : MR_TYPE_UINT8;
 	  break;
 	case sizeof (uint16_t):
-	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT16;
+	  tdp->param.enum_param.mr_type_effective = _signed ? MR_TYPE_INT16 : MR_TYPE_UINT16;
 	  break;
 	case sizeof (uint32_t):
-	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT32;
+	  tdp->param.enum_param.mr_type_effective = _signed ? MR_TYPE_INT32 : MR_TYPE_UINT32;
 	  break;
 	case sizeof (uint64_t):
-	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT64;
+	  tdp->param.enum_param.mr_type_effective = _signed ? MR_TYPE_INT64 : MR_TYPE_UINT64;
 	  break;
 	}
     }
