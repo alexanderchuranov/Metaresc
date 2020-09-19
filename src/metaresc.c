@@ -1281,6 +1281,10 @@ mr_add_enum (mr_td_t * tdp)
   tdp->param.enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
+      typeof (tdp->fields[i].fdp->param.enum_value._unsigned) value = tdp->fields[i].fdp->param.enum_value._unsigned;
+      if ((value != 0) && ((value & (value - 1)) != 0))
+	tdp->param.enum_param.is_bitmask = false;
+      
       /* adding to global lookup table by enum literal names */
       mr_ptr_t key = { .ptr = tdp->fields[i].fdp };
       mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key);
@@ -1289,15 +1293,12 @@ mr_add_enum (mr_td_t * tdp)
 	  status = MR_FAILURE;
 	  continue;
 	}
-      if (result->ptr != key.ptr)
+      mr_fd_t * fdp = result->ptr;
+      if (fdp->param.enum_value._unsigned != value)
 	{
-	  mr_fd_t * fdp = result->ptr;
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DUPLICATED_ENUMS, fdp->name.str, tdp->type.str);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_ENUMS, fdp->name.str, tdp->type.str, value, fdp->type, fdp->param.enum_value._unsigned);
 	  status = MR_FAILURE;
 	}
-      typeof (tdp->fields[i].fdp->param.enum_value._unsigned) value = tdp->fields[i].fdp->param.enum_value._unsigned;
-      if ((value != 0) && ((value & (value - 1)) != 0))
-	tdp->param.enum_param.is_bitmask = false;
     }
 
   return (status);
@@ -1846,6 +1847,8 @@ mr_detect_type (mr_fd_t * fdp)
   if (NULL == fdp)
     return;
   
+  mr_normalize_type (fdp);
+
   switch (fdp->mr_type)
     {
     case MR_TYPE_UINT8:

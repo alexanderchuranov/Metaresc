@@ -768,7 +768,7 @@
       mr_fd_t __fd__ =							\
 	{								\
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
-	  .type = #MR_TYPE_NAME,					\
+	  .type = MR_STRINGIFY (MR_TYPE_NAME),				\
 	  .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	  .size = sizeof (MR_TYPE_NAME),				\
 	};								\
@@ -878,7 +878,7 @@
       else								\
 	{								\
 	  mr_fd_t __fd__ = {						\
-	    .type = #MR_TYPE_NAME,					\
+	    .type = MR_STRINGIFY (MR_TYPE_NAME),			\
 	    .name = { .str = NULL, .hash_value = 0, },			\
 	    .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	    .size = sizeof (MR_TYPE_NAME),				\
@@ -951,7 +951,7 @@
 	.mr_ra_idx_alloc_size = 0,					\
       };								\
       mr_fd_t __fd__ = {						\
-	.type = #MR_TYPE_NAME,						\
+	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
 	.name = { .str = NULL, .hash_value = 0, },			\
 	.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	.size = sizeof (MR_TYPE_NAME),					\
@@ -1054,7 +1054,7 @@
 	  if (MR_SUCCESS == _status_)					\
 	    {								\
 	      mr_fd_t _fd_ = {						\
-		.type = #MR_TYPE_NAME,					\
+		.type = MR_STRINGIFY (MR_TYPE_NAME),			\
 		.name = { .str = NULL, .hash_value = 0, },		\
 		.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),		\
 		.size = sizeof (MR_TYPE_NAME),				\
