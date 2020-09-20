@@ -17,5 +17,6 @@ mr_save_method (void * arg)
   return (MR_FAILURE);
 }
 
-MR_START_TEST (mem_failures_mr_save, "test memory operations failures for MR_SAVE") { mem_failures_method (mr_save_method, NULL); } END_TEST
+MR_START_TEST (mem_failures_mr_save_once_per_allocation, "test memory operations failures for MR_SAVE") { mem_failures_method (mr_save_method, NULL, true); } END_TEST
+MR_START_TEST (mem_failures_mr_save_on_every_allocation, "test memory operations failures for MR_SAVE") { mem_failures_method (mr_save_method, NULL, false); } END_TEST
 

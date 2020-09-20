@@ -5,16 +5,16 @@
 #include <metaresc.h>
 #include <mr_ic.h>
 #include <regression.h>
+#include <mem_failures.h>
 
 #define TRACK_ALLOCATED_BLOCKS
 
 static int malloc_cnt = 0;
 static int realloc_cnt = 0;
 static int free_cnt = 0;
+static int successful_allocs = -1; 
 
-static mr_ic_t malloc_seen;
-static mr_ic_t realloc_seen;
-
+static mr_ic_t alloc_seen;
 static mr_ic_t alloc_blocks;
 
 mr_mem_t _mr_mem, mr_mem;
@@ -200,13 +200,21 @@ stack_trace_get ()
   return (NULL);
 }
 
-static inline bool st_is_seen (mr_ic_t * seen)
+static inline bool alloc_fail ()
 {
+  if (0 == successful_allocs)
+    return (true);
+  if (successful_allocs > 0)
+    {
+      --successful_allocs;
+      return (false);
+    }
+  
   mr_conf.mr_mem = mr_mem;
   stack_trace_t * stack_trace = stack_trace_get ();
   ck_assert_msg (NULL != stack_trace, "Failed to alloca memory");
 
-  mr_ptr_t * add = mr_ic_add (seen, stack_trace);
+  mr_ptr_t * add = mr_ic_add (&alloc_seen, stack_trace);
   ck_assert_msg (NULL != add, "Failed to alloca memory");
   mr_conf.mr_mem = _mr_mem;
 
@@ -216,17 +224,17 @@ static inline bool st_is_seen (mr_ic_t * seen)
       fprintf (stderr, "Fire error from:\n");
       st_print (stack_trace);
 #endif /* DEBUG */
-      return (false);
+      return (true);
     }
 
   free (stack_trace->stack);
   free (stack_trace);
-  return (true);
+  return (false);
 }
 
 static void * _calloc (const char * filename, const char * function, int line, size_t count, size_t size) 
 { 
-  if (!st_is_seen (&malloc_seen))
+  if (alloc_fail ())
     {
 #ifdef DEBUG
       fprintf (stderr, "Fire error from: %s %s %d\n", filename, function, line);
@@ -258,7 +266,7 @@ static void * _realloc (const char * filename, const char * function, int line, 
   if (NULL == ptr)
     return (_calloc (filename, function, line, 1, size));
 
-  if (!st_is_seen (&realloc_seen))
+  if (alloc_fail ())
     {
 #ifdef DEBUG
       fprintf (stderr, "Fire error from: %s %s %d\n", filename, function, line);
@@ -344,7 +352,7 @@ static void _free (const char * filename, const char * function, int line, void 
 static void _mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args) {}
 
 void 
-mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
+mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_per_allocation)
 {
   mr_status_t status;
   int i;
@@ -364,17 +372,16 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
   status = mr_ic_new (&alloc_blocks, ab_hash, ab_cmp, "stack_trace_t", IC_TYPE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for allocated blocks");
 
-  status = mr_ic_new (&malloc_seen, st_hash, st_cmp, "stack_trace_t", IC_TYPE, NULL);
+  status = mr_ic_new (&alloc_seen, st_hash, st_cmp, "stack_trace_t", IC_TYPE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for malloc");
-  status = mr_ic_new (&realloc_seen, st_hash, st_cmp, "stack_trace_t", IC_TYPE, NULL);
-  ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for realloc");
 
   mr_conf.msg_handler = _mr_message;
   mr_conf.mr_mem = _mr_mem;
 
-  for (i = 1; ; ++i)
+  for (i = 0; ; ++i)
     {
       malloc_cnt = realloc_cnt = free_cnt = 0;
+      successful_allocs = once_per_allocation ? -1 : i;
       status = method (arg);
 
 #ifdef DEBUG
@@ -390,10 +397,8 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg)
   mr_conf.mr_mem = mr_mem;
   mr_conf.msg_handler = NULL;
 
-  mr_ic_foreach (&malloc_seen, st_free, NULL);
-  mr_ic_free (&malloc_seen);
-  mr_ic_foreach (&realloc_seen, st_free, NULL);
-  mr_ic_free (&realloc_seen);
+  mr_ic_foreach (&alloc_seen, st_free, NULL);
+  mr_ic_free (&alloc_seen);
 
   mr_ic_foreach (&alloc_blocks, print_block, NULL);
   mr_ic_foreach (&alloc_blocks, st_free, NULL);

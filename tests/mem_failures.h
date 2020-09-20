@@ -5,7 +5,7 @@
 #include <check.h>
 #include <regression.h>
 
-extern void mem_failures_method (mr_status_t (*method) (void * arg), void * arg);
+extern void mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_per_allocation);
 extern mr_mem_t _mr_mem, mr_mem;
 
 #define TEST_MF_SAVE_METHOD(METHOD)					\
@@ -20,9 +20,12 @@ extern mr_mem_t _mr_mem, mr_mem;
       }									\
     return (MR_FAILURE);						\
   }									\
-  MR_START_TEST (mem_save_failures_ ## METHOD,				\
+  MR_START_TEST (mem_save_failures_one_per_allocation_ ## METHOD,	\
 		 "test save memory operations failures for " #METHOD)	\
-  { mem_failures_method (METHOD ## _save_method, NULL); } END_TEST	
+  { mem_failures_method (METHOD ## _save_method, NULL, true); } END_TEST \
+  MR_START_TEST (mem_save_failures_on_every_allocation_ ## METHOD,	\
+		 "test save memory operations failures for " #METHOD)	\
+  { mem_failures_method (METHOD ## _save_method, NULL, false); } END_TEST  
 
 #define TEST_MF_LOAD_METHOD(METHOD)					\
   static mr_status_t							\
@@ -49,7 +52,7 @@ extern mr_mem_t _mr_mem, mr_mem;
     mr_detect_type (NULL); /* explicitly init library */		\
     mr_rarray_t ra = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf);	\
     ck_assert_msg (ra.data.ptr != NULL, "Failed to save mr_conf for tests of load methods"); \
-    mem_failures_method (METHOD ## _load_method, &ra);			\
+    mem_failures_method (METHOD ## _load_method, &ra, true);		\
     MR_FREE (ra.data.ptr);						\
   } END_TEST
 

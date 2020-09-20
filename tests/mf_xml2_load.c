@@ -18,7 +18,7 @@ xml2_load_method (void * arg)
   if (ptrs.ra != NULL)
     {
       mr_free_recursively (&ptrs);
-      mr_mem.free (NULL, NULL, 0, ptrs.ra);
+      mr_mem.free (__FILE__, __FUNCTION__, __LINE__, ptrs.ra);
     }
   return (status);
 }
@@ -33,6 +33,6 @@ MR_START_TEST (mem_load_failures_xml2, "test load memory operations failures for
   ck_assert_msg (doc != NULL, "Failed to parse xml");
   xmlNodePtr node = xmlDocGetRootElement (doc);
   ck_assert_msg (node != NULL, "Failed to get root element from xml document");
-  mem_failures_method (xml2_load_method, node);
+  mem_failures_method (xml2_load_method, node, true);
   xmlFreeDoc (doc);
 } END_TEST
