@@ -13,6 +13,11 @@ TYPEDEF_STRUCT (embeded_struct_t,
 		int x
 		)
 
+TYPEDEF_UNION (embeded_union_t,
+	       int x,
+	       float y,
+	       )
+
 TYPEDEF_STRUCT (struct_t,
 		bool bool_,
 		int8_t int8_,
@@ -85,6 +90,11 @@ TYPEDEF_STRUCT (struct_t,
 		(const volatile struct embeded_struct_t, const_volatile_struct_embeded_struct),
 		(embeded_struct_t *, embeded_struct_ptr),
 		(const volatile struct embeded_struct_t *, const_volatile_struct_embeded_struct_ptr),
+
+		(embeded_union_t, embeded_union),
+		(const volatile union embeded_union_t, const_volatile_union_embeded_union),
+		(embeded_union_t *, embeded_union_ptr),
+		(const volatile union embeded_union_t *, const_volatile_union_embeded_union_ptr),
 
 		(_enum_t, _enum),
 		(const volatile enum _enum_t, const_volatile_enum_enum),
@@ -239,6 +249,11 @@ MR_START_TEST (check_types_detection, "check that types detected correctly") {
   ASSERT_STRUCT_FIELD_TYPE (const_volatile_struct_embeded_struct, MR_TYPE_STRUCT, MR_TYPE_NONE);
   ASSERT_STRUCT_FIELD_TYPE (embeded_struct_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
   ASSERT_STRUCT_FIELD_TYPE (const_volatile_struct_embeded_struct_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  
+  ASSERT_STRUCT_FIELD_TYPE (embeded_union, MR_TYPE_UNION, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (const_volatile_union_embeded_union, MR_TYPE_UNION, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (embeded_union_ptr, MR_TYPE_POINTER, MR_TYPE_UNION);
+  ASSERT_STRUCT_FIELD_TYPE (const_volatile_union_embeded_union_ptr, MR_TYPE_POINTER, MR_TYPE_UNION);
   
   ASSERT_STRUCT_FIELD_TYPE (_enum, MR_TYPE_ENUM, MR_TYPE_NONE);
   ASSERT_STRUCT_FIELD_TYPE (const_volatile_enum_enum, MR_TYPE_ENUM, MR_TYPE_NONE);
