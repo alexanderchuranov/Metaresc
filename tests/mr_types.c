@@ -5,6 +5,14 @@
 typedef char char_array_t[1];
 typedef char * char_ptr_t;
 
+TYPEDEF_ENUM (_enum_t,
+	      ZERO
+	      )
+
+TYPEDEF_STRUCT (embeded_struct_t,
+		int x
+		)
+
 TYPEDEF_STRUCT (struct_t,
 		bool bool_,
 		int8_t int8_,
@@ -72,6 +80,28 @@ TYPEDEF_STRUCT (struct_t,
 		(string_t volatile *, string_t_volatile_ptr_),
 		(string_t const volatile *, string_t_const_volatile_ptr_),
 		(string_t volatile const *, string_t_volatile_const_ptr_),
+
+		(embeded_struct_t, embeded_struct),
+		(const volatile struct embeded_struct_t, const_volatile_struct_embeded_struct),
+		(embeded_struct_t *, embeded_struct_ptr),
+		(const volatile struct embeded_struct_t *, const_volatile_struct_embeded_struct_ptr),
+
+		(_enum_t, _enum),
+		(const volatile enum _enum_t, const_volatile_enum_enum),
+		(_enum_t *, _enum_ptr),
+		(const volatile enum _enum_t *, const_volatile_enum_enum_ptr),
+
+		BITFIELD (bool, bf_bool, :1),
+		BITFIELD (uint8_t, bf_uint8_t, :__CHAR_BIT__ * sizeof (uint8_t) - 1),
+		BITFIELD (int8_t, bf_int8_t, :__CHAR_BIT__ * sizeof (int8_t) - 1),
+		BITFIELD (uint16_t, bf_uint16_t, :__CHAR_BIT__ * sizeof (uint16_t) - 1),
+		BITFIELD (int16_t, bf_int16_t, :__CHAR_BIT__ * sizeof (int16_t) - 1),
+		BITFIELD (uint32_t, bf_uint32_t, :__CHAR_BIT__ * sizeof (uint32_t) - 1),
+		BITFIELD (int32_t, bf_int32_t, :__CHAR_BIT__ * sizeof (int32_t) - 1),
+		BITFIELD (uint64_t, bf_uint64_t, :__CHAR_BIT__ * sizeof (uint64_t) - 1),
+		BITFIELD (int64_t, bf_int64_t, :__CHAR_BIT__ * sizeof (int64_t) - 1),
+		BITFIELD (_enum_t, bf_enum, :1),
+		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, :1),
 		)
 
 typedef struct ext_struct_t {
@@ -205,6 +235,28 @@ MR_START_TEST (check_types_detection, "check that types detected correctly") {
   ASSERT_STRUCT_FIELD_TYPE (string_t_const_volatile_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
   ASSERT_STRUCT_FIELD_TYPE (string_t_volatile_const_ptr_, MR_TYPE_POINTER, MR_TYPE_STRING);
 
+  ASSERT_STRUCT_FIELD_TYPE (embeded_struct, MR_TYPE_STRUCT, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (const_volatile_struct_embeded_struct, MR_TYPE_STRUCT, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (embeded_struct_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_STRUCT_FIELD_TYPE (const_volatile_struct_embeded_struct_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  
+  ASSERT_STRUCT_FIELD_TYPE (_enum, MR_TYPE_ENUM, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (const_volatile_enum_enum, MR_TYPE_ENUM, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (_enum_ptr, MR_TYPE_POINTER, MR_TYPE_ENUM);
+  ASSERT_STRUCT_FIELD_TYPE (const_volatile_enum_enum_ptr, MR_TYPE_POINTER, MR_TYPE_ENUM);
+  
+  ASSERT_STRUCT_FIELD_TYPE (bf_bool, MR_TYPE_BITFIELD, MR_TYPE_BOOL);
+  ASSERT_STRUCT_FIELD_TYPE (bf_uint8_t, MR_TYPE_BITFIELD, MR_TYPE_UINT8);
+  ASSERT_STRUCT_FIELD_TYPE (bf_int8_t, MR_TYPE_BITFIELD, MR_TYPE_INT8);
+  ASSERT_STRUCT_FIELD_TYPE (bf_uint16_t, MR_TYPE_BITFIELD, MR_TYPE_UINT16);
+  ASSERT_STRUCT_FIELD_TYPE (bf_int16_t, MR_TYPE_BITFIELD, MR_TYPE_INT16);
+  ASSERT_STRUCT_FIELD_TYPE (bf_uint32_t, MR_TYPE_BITFIELD, MR_TYPE_UINT32);
+  ASSERT_STRUCT_FIELD_TYPE (bf_int32_t, MR_TYPE_BITFIELD, MR_TYPE_INT32);
+  ASSERT_STRUCT_FIELD_TYPE (bf_uint64_t, MR_TYPE_BITFIELD, MR_TYPE_UINT64);
+  ASSERT_STRUCT_FIELD_TYPE (bf_int64_t, MR_TYPE_BITFIELD, MR_TYPE_INT64);
+  ASSERT_STRUCT_FIELD_TYPE (bf_enum, MR_TYPE_BITFIELD, MR_TYPE_ENUM);
+  ASSERT_STRUCT_FIELD_TYPE (bf_const_volatile_enum_enum, MR_TYPE_BITFIELD, MR_TYPE_ENUM);
+  
 } END_TEST
 
 MAIN ();
