@@ -919,8 +919,10 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
     if ((MR_TYPE_STRING == ptrs->ra[i].fd.mr_type) && (ptrs->ra[i].res.type != NULL))
       MR_FREE (ptrs->ra[i].res.type);
-    else if ((MR_TYPE_POINTER == ptrs->ra[i].fd.mr_type) && (ptrs->ra[i].res.data.ptr != NULL))
-      MR_FREE (ptrs->ra[i].res.data.ptr);
+    else if ((MR_TYPE_POINTER == ptrs->ra[i].fd.mr_type) &&
+	     (ptrs->ra[i].first_child >= 0) &&
+	     (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr != NULL))
+      MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
 
   return (MR_FAILURE);
 }
