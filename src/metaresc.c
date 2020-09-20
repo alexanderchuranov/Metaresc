@@ -856,9 +856,6 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 		goto failure;
 	      }
 	    
-	    if ((MR_TYPE_CHAR_ARRAY == ptrs->ra[i].fd.mr_type_aux) && (sizeof (char) == ptrs->ra[i].fd.size))
-	      size = strlen (*(void**)ptrs->ra[i].data.ptr) + 1;
-	    
 	    if (size < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
