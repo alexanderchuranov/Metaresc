@@ -61,7 +61,7 @@ st_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   int i, count = x_->size / sizeof (x_->stack[0]);
   for (i = 0; i < count; ++i)
     {
-      diff = x_->stack[i].ptr - y_->stack[i].ptr;
+      diff = (x_->stack[i].ptr > y_->stack[i].ptr) - (x_->stack[i].ptr < y_->stack[i].ptr);
       if (diff)
 	return (diff);
     }
