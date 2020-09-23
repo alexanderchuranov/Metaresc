@@ -419,15 +419,6 @@ mr_ud_get_hash (mr_ptr_t x, const void * context)
 	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr_t].discriminator));
 }
 
-static mr_status_t
-register_type_name (mr_ptr_t key, const void * context)
-{
-  mr_td_t * tdp = key.ptr;
-  char ** type_name = (void*)context;
-  type_name[tdp->mr_type] = tdp->type.str;
-  return (MR_SUCCESS);
-}
-
 static bool
 ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
 {
@@ -599,20 +590,27 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 static int
 mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
 {
-  static char * type_name[] = { [0 ... MR_TYPE_LAST - 1] = NULL };
-  static bool initialized = false;
-  static bool is_serializable[] = {
-    [0 ... MR_TYPE_LAST - 1] = true,
-    [MR_TYPE_BITFIELD] = false,
-    [MR_TYPE_FUNC_TYPE] = false,
-    [MR_TYPE_FUNC] = false,
-    [MR_TYPE_POINTER] = false,
-    [MR_TYPE_ANON_UNION] = false,
-    [MR_TYPE_NAMED_ANON_UNION] = false,
-    [MR_TYPE_END_ANON_UNION] = false,
-    [MR_TYPE_TRAILING_RECORD] = false,
+  static char * type_name[] = {
+    [0 ... MR_TYPE_LAST - 1] = NULL,
+    [MR_TYPE_STRING] = MR_STRINGIFY_READONLY (string_t),
+    [MR_TYPE_CHAR_ARRAY] = MR_STRINGIFY_READONLY (string),
+    [MR_TYPE_CHAR] = MR_STRINGIFY_READONLY (char),
+    [MR_TYPE_BOOL] = MR_STRINGIFY_READONLY (bool),
+    [MR_TYPE_INT8] = MR_STRINGIFY_READONLY (int8_t),
+    [MR_TYPE_UINT8] = MR_STRINGIFY_READONLY (uint8_t),
+    [MR_TYPE_INT16] = MR_STRINGIFY_READONLY (int16_t),
+    [MR_TYPE_UINT16] = MR_STRINGIFY_READONLY (uint16_t),
+    [MR_TYPE_INT32] = MR_STRINGIFY_READONLY (int32_t),
+    [MR_TYPE_UINT32] = MR_STRINGIFY_READONLY (uint32_t),
+    [MR_TYPE_INT64] = MR_STRINGIFY_READONLY (int64_t),
+    [MR_TYPE_UINT64] = MR_STRINGIFY_READONLY (uint64_t),
+    [MR_TYPE_FLOAT] = MR_STRINGIFY_READONLY (float),
+    [MR_TYPE_COMPLEX_FLOAT] = MR_STRINGIFY_READONLY (complex_float_t),
+    [MR_TYPE_DOUBLE] = MR_STRINGIFY_READONLY (double),
+    [MR_TYPE_COMPLEX_DOUBLE] = MR_STRINGIFY_READONLY (complex_double_t),
+    [MR_TYPE_LONG_DOUBLE] = MR_STRINGIFY_READONLY (long_double_t),
+    [MR_TYPE_COMPLEX_LONG_DOUBLE] = MR_STRINGIFY_READONLY (complex_long_double_t),
   };
-  
   intptr_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   if (idx < 0)
@@ -623,20 +621,10 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].save_params.next_typed = -1;
   ra[idx].save_params.next_untyped = -1;
 
-  if (!initialized)
-    {
-      mr_ic_foreach (&mr_conf.type_by_name, register_type_name, type_name);
-      initialized = true;
-    }
-
-  ra[idx].type = NULL;
-  if ((fdp->mr_type < MR_TYPE_LAST) && is_serializable[fdp->mr_type])
-    {
-      if (mr_get_td_by_name (fdp->type) != NULL)
-	ra[idx].type = fdp->type;
-      else 
-	ra[idx].type = type_name[fdp->mr_type];
-    }
+  if ((fdp->mr_type == MR_TYPE_STRUCT) || (fdp->mr_type == MR_TYPE_ENUM))
+    ra[idx].type = fdp->type;
+  else 
+    ra[idx].type = type_name[fdp->mr_type];
 
   if (MR_TYPE_ARRAY == fdp->mr_type)
     count = fdp->param.array_param.count;
