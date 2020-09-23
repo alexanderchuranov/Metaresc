@@ -201,7 +201,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 	}
 
       memcpy (ic->rarray.ra, rarray->ra, items_count * sizeof (rarray->ra[0]));
-      hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
+      mr_hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
       
       unsigned src, dst = 0;
       ic->rarray.ra[dst++] = ic->rarray.ra[0];

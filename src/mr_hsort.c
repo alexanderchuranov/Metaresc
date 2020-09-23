@@ -33,7 +33,7 @@ sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * 
 }
 
 void
-hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context)
+mr_hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context)
 {
   size_t i;
 
