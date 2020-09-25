@@ -280,10 +280,10 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
     {
       unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
       
-      if (0 == key.intptr_t)
+      if (0 == key.intptr)
 	{
 	  ic->hash_next.zero_key = true;
-	  ic->hash_next.hash_table[count].intptr_t = 0;
+	  ic->hash_next.hash_table[count].intptr = 0;
 	  return (&ic->hash_next.hash_table[count]);
 	}
 
@@ -291,7 +291,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
 
       for (i = bucket; ;)
 	{
-	  if (0 == ic->hash_next.hash_table[i].intptr_t)
+	  if (0 == ic->hash_next.hash_table[i].intptr)
 	    {
 	      ic->hash_next.hash_table[i] = key;
 	      return (&ic->hash_next.hash_table[i]);
@@ -402,19 +402,19 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
   --ic->items_count;
   unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
   
-  if (0 == key.intptr_t)
+  if (0 == key.intptr)
     ic->hash_next.zero_key = false; /* release zero element */
   else
     {
       unsigned i, start_bucket = find - ic->hash_next.hash_table;
 
-      find->intptr_t = 0;
+      find->intptr = 0;
       for (i = start_bucket; ;) /* need to re-index all elements in sequential blocks after deleted element */
 	{
 	  if (++i >= count)
 	    i = 0;
 
-	  if (0 == ic->hash_next.hash_table[i].intptr_t)
+	  if (0 == ic->hash_next.hash_table[i].intptr)
 	    break;
 
 	  if (i == start_bucket)
@@ -424,7 +424,7 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 	    }
 
 	  mr_ptr_t key = ic->hash_next.hash_table[i];
-	  ic->hash_next.hash_table[i].intptr_t = 0;
+	  ic->hash_next.hash_table[i].intptr = 0;
 	  
 	  if (mr_ic_hash_next_index_add (ic, key) == NULL)
 	    return (MR_FAILURE);
@@ -445,7 +445,7 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
 
   for (i = bucket; ;)
     {
-      if (0 == ic->hash_next.hash_table[i].intptr_t)
+      if (0 == ic->hash_next.hash_table[i].intptr)
 	break;
       if (0 == ic->compar_fn (key, ic->hash_next.hash_table[i], ic->context.data.ptr))
 	return (&ic->hash_next.hash_table[i]);
@@ -475,7 +475,7 @@ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
       return (MR_FAILURE);
 
   for (i = 0; i < count; ++i)
-    if (0 != ic->hash_next.hash_table[i].intptr_t)
+    if (0 != ic->hash_next.hash_table[i].intptr)
       if (MR_SUCCESS != visit_fn (ic->hash_next.hash_table[i], context))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
@@ -563,7 +563,7 @@ mr_ic_static_array_del (mr_ic_t * ic, mr_ptr_t key)
   ptrdiff_t offset = (char*)find - (char*)&ic->static_array.static_array[0];
   --ic->items_count;
   memmove (find, &find[1], ic->items_count * sizeof (ic->static_array.static_array[0]) - offset);
-  ic->static_array.static_array[ic->items_count].intptr_t = 0;
+  ic->static_array.static_array[ic->items_count].intptr = 0;
   return (MR_SUCCESS);
 }
 

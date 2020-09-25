@@ -214,14 +214,14 @@ mr_hash_value_t
 mr_fn_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_fn_t * ra_fn = context;
-  return (ra_fn->ra[x.intptr_t].func_);
+  return (ra_fn->ra[x.intptr].func_);
 }
 
 int
 mr_fn_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_fn_t * ra_fn = context;
-  return ((ra_fn->ra[x.intptr_t].func > ra_fn->ra[y.intptr_t].func) - (ra_fn->ra[x.intptr_t].func < ra_fn->ra[y.intptr_t].func));
+  return ((ra_fn->ra[x.intptr].func > ra_fn->ra[y.intptr].func) - (ra_fn->ra[x.intptr].func < ra_fn->ra[y.intptr].func));
 }
 
 static mr_ic_t cache = { .ic_type = MR_IC_UNINITIALIZED, };
@@ -259,13 +259,13 @@ const char * mr_serialize_func (void * func)
 		.type = "mr_ra_fn_t",
 		.MR_SIZE = sizeof (ra_fn),
 	      };
-	      mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "intptr_t", MR_IC_HASH_NEXT, &context);
+	      mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "intptr", MR_IC_HASH_NEXT, &context);
 	    }
 	  mr_ptr_t * add = mr_ic_add (&cache, idx);
-	  if ((add != NULL) && (add->intptr_t != idx))
+	  if ((add != NULL) && (add->intptr != idx))
 	    {
 	      ra_fn.size -= sizeof (ra_fn.ra[0]);
-	      return (ra_fn.ra[add->intptr_t].name);
+	      return (ra_fn.ra[add->intptr].name);
 	    }
 	}
     }

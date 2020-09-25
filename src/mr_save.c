@@ -169,7 +169,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
   memset (ud, 0, sizeof (*ud));
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud_size -= sizeof (mr_save_data->mr_ra_ud[0]);
-  ud_idx.intptr_t = mr_save_data->mr_ra_ud_size / sizeof (mr_save_data->mr_ra_ud[0]); /* index of lookup record */
+  ud_idx.intptr = mr_save_data->mr_ra_ud_size / sizeof (mr_save_data->mr_ra_ud[0]); /* index of lookup record */
   ud->type.str = union_type; /* union type */
   ud->discriminator.str = discriminator; /* union discriminator */
 
@@ -201,7 +201,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
     }
 
   if (NULL != ud_find)
-    fdp = mr_save_data->mr_ra_ud[ud_find->intptr_t].fdp; /* union discriminator info was found in some of the parents */
+    fdp = mr_save_data->mr_ra_ud[ud_find->intptr].fdp; /* union discriminator info was found in some of the parents */
   else
     {
       if (NULL == fdp)
@@ -238,7 +238,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 static inline int
 mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 {
-  int diff = ((x->data.uintptr_t > y->data.uintptr_t) - (x->data.uintptr_t < y->data.uintptr_t));
+  int diff = ((x->data.uintptr > y->data.uintptr) - (x->data.uintptr < y->data.uintptr));
   if (diff)
     return (diff);
   
@@ -329,30 +329,30 @@ mr_hash_value_t
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  const mr_ptrdes_t * ptrdes = &ra_ptrdes->ra[x.intptr_t];
-  return (ptrdes->data.uintptr_t + ptrdes->fd.mr_type * 5);
+  const mr_ptrdes_t * ptrdes = &ra_ptrdes->ra[x.intptr];
+  return (ptrdes->data.uintptr + ptrdes->fd.mr_type * 5);
 }
 
 int
 mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (mr_cmp_ptrdes (&ra_ptrdes->ra[x.intptr_t], &ra_ptrdes->ra[y.intptr_t]));
+  return (mr_cmp_ptrdes (&ra_ptrdes->ra[x.intptr], &ra_ptrdes->ra[y.intptr]));
 }
 
 mr_hash_value_t
 mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (ra_ptrdes->ra[x.intptr_t].data.uintptr_t);
+  return (ra_ptrdes->ra[x.intptr].data.uintptr);
 }
 
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  void * x_ptr = ra_ptrdes->ra[x.intptr_t].data.ptr;
-  void * y_ptr = ra_ptrdes->ra[y.intptr_t].data.ptr;
+  void * x_ptr = ra_ptrdes->ra[x.intptr].data.ptr;
+  void * y_ptr = ra_ptrdes->ra[y.intptr].data.ptr;
   return ((x_ptr > y_ptr) - (x_ptr < y_ptr));
 }
 
@@ -376,7 +376,7 @@ mr_check_ud (mr_ptr_t key, const void * context)
 {
   const mr_check_ud_ctx_t * mr_check_ud_ctx = context;
   mr_save_data_t * mr_save_data = mr_check_ud_ctx->mr_save_data;
-  mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr_t];
+  mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr];
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
   char * discriminator = ud->discriminator.str;
   char * type = ud->type.str;
@@ -403,20 +403,20 @@ int
 mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  int diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr_t].type,
-				   &mr_save_data->mr_ra_ud[y.intptr_t].type);
+  int diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].type,
+				   &mr_save_data->mr_ra_ud[y.intptr].type);
   if (diff)
     return (diff);
-  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr_t].discriminator,
-				&mr_save_data->mr_ra_ud[y.intptr_t].discriminator));
+  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].discriminator,
+				&mr_save_data->mr_ra_ud[y.intptr].discriminator));
 }
 
 mr_hash_value_t __attribute__ ((unused))
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr_t].type) << 1) +
-	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr_t].discriminator));
+  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
+	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator));
 }
 
 static bool
@@ -636,32 +636,32 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
   if (NULL == search_result)
     return (-1);
-  if (search_result->intptr_t != idx)
+  if (search_result->intptr != idx)
     {
       mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-      int nodes_matched = resolve_matched (mr_save_data, idx, parent, search_result->intptr_t);
+      int nodes_matched = resolve_matched (mr_save_data, idx, parent, search_result->intptr);
       if (nodes_matched >= 0)
 	return (nodes_matched);
 
       mr_save_data->ptrs.size += sizeof (mr_save_data->ptrs.ra[0]);
-      mr_save_data->ptrs.ra[idx].save_params.next_typed = search_result->intptr_t;
-      search_result->intptr_t = idx;
+      mr_save_data->ptrs.ra[idx].save_params.next_typed = search_result->intptr;
+      search_result->intptr = idx;
     }
 
   search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx);
   if (NULL == search_result)
     return (-1);
-  if (search_result->intptr_t != idx)
+  if (search_result->intptr != idx)
     {
-      if (ra[idx].MR_SIZE > ra[search_result->intptr_t].MR_SIZE)
+      if (ra[idx].MR_SIZE > ra[search_result->intptr].MR_SIZE)
 	{
-	  ra[idx].save_params.next_untyped = search_result->intptr_t;
-	  search_result->intptr_t = idx;
+	  ra[idx].save_params.next_untyped = search_result->intptr;
+	  search_result->intptr = idx;
 	}
       else
 	{
-	  ra[idx].save_params.next_untyped = ra[search_result->intptr_t].save_params.next_untyped;
-	  ra[search_result->intptr_t].save_params.next_untyped = idx;
+	  ra[idx].save_params.next_untyped = ra[search_result->intptr].save_params.next_untyped;
+	  ra[search_result->intptr].save_params.next_untyped = idx;
 	}
     }
 
@@ -670,7 +670,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     .type = "mr_save_data_t",
     .MR_SIZE = sizeof (mr_save_data_t),
   };
-  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "intptr_t", MR_IC_STATIC_ARRAY, &context);
+  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "intptr", MR_IC_STATIC_ARRAY, &context);
 
   mr_add_child (parent, idx, ra);
   /* route saving handler */
@@ -930,7 +930,7 @@ mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
       if (find_result != NULL)
 	{
 	  /* typed entry was found and here we configure reference on it */
-	  int ref_idx = find_result->intptr_t;
+	  int ref_idx = find_result->intptr;
 	  ptrs->ra[idx].ref_idx = ref_idx;
 	  ptrs->ra[ref_idx].flags.is_referenced = true;
 	}
@@ -1123,8 +1123,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 
   memset (mr_save_data, 0, sizeof (*mr_save_data));
 #define MR_IC_METHOD MR_IC_HASH_NEXT
-  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr_t", MR_IC_METHOD, &context);
-  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr_t", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
 
   mr_save_data->mr_ra_ud_size = 0;
   mr_save_data->mr_ra_ud = NULL;
