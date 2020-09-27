@@ -1130,30 +1130,6 @@ free_td (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
-static void __attribute__ ((sentinel(0)))
-mr_type_void_fields (char * type, char * name, ...)
-{
-  va_list args;
-  va_start (args, name);
-
-  assert (type != NULL);
-  mr_td_t * tdp = mr_get_td_by_name (type);
-  assert (tdp != NULL);
-
-  while (name)
-    {
-      assert (name != NULL);
-      mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
-      assert (fdp != NULL);
-      fdp->mr_type_aux = fdp->mr_type;
-      fdp->mr_type = MR_TYPE_VOID;
-
-      name = va_arg (args, char *);
-    }
-
-  va_end (args);
-}
-
 static void
 tweak_mr_conf ()
 {

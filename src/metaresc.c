@@ -1942,6 +1942,31 @@ mr_register_type_pointer (mr_td_t * tdp)
   return ((NULL == mr_ic_add (&union_tdp->field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
+void __attribute__ ((sentinel(0)))
+mr_type_void_fields (char * type, char * name, ...)
+{
+  va_list args;
+  va_start (args, name);
+
+  if (type == NULL)
+    return;
+  mr_td_t * tdp = mr_get_td_by_name (type);
+  if (tdp == NULL)
+    return;
+
+  for ( ; name; name = va_arg (args, char *))
+    {
+      mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
+      if (fdp != NULL)
+	{
+	  fdp->mr_type_aux = fdp->mr_type;
+	  fdp->mr_type = MR_TYPE_VOID;
+	}
+    }
+
+  va_end (args);
+}
+
 static mr_status_t
 fields_names_visitor (mr_ptr_t key, const void * context)
 {

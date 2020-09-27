@@ -1220,6 +1220,7 @@ extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern void mr_detect_fields_types (mr_td_t * tdp);
+extern void __attribute__ ((sentinel(0))) mr_type_void_fields (char * type, char * name, ...);
 extern void mr_pointer_fd_set_size (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
