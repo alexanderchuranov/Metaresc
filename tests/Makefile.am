@@ -29,7 +29,7 @@ if HAVE_LIBDWARF
   check_PROGRAMS += dw_export
 endif
 
-check_PROGRAMS += ic mr_types mem_allocations mr_copy
+check_PROGRAMS += ic mr_types mem_allocations mr_copy mr_hash_cmp
 
 endif
 

@@ -24,6 +24,7 @@
 #include <mr_save.h>
 #include <mr_ic.h>
 #include <mr_stringify.h>
+#include <mr_hsort.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
@@ -922,6 +923,265 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
       MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
 
   return (MR_FAILURE);
+}
+
+static int
+cmp_idx (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_ra_ptrdes_t * ptrs = context;
+  const unsigned * _x = x.ptr;
+  const unsigned * _y = y.ptr;
+  return ((ptrs->ra[*_x].idx < ptrs->ra[*_y].idx) - (ptrs->ra[*_x].idx > ptrs->ra[*_y].idx));
+}
+
+static mr_hash_value_t
+mr_hash_block (void * block, mr_size_t size)
+{
+  mr_hash_value_t * _block = block;
+  mr_hash_value_t hash_value = 0;
+  while (size > sizeof (hash_value))
+    {
+      hash_value += *_block++;
+      size -= sizeof (hash_value);
+    }
+  
+  if (size > 0)
+    {
+      mr_hash_value_t last = 0;
+      memcpy (&last, _block, size);
+      hash_value += last;
+    }
+  
+  return (hash_value);
+}
+
+mr_hash_value_t
+mr_hash_struct (mr_ra_ptrdes_t * ptrs)
+{
+  mr_conf_init ();
+  
+  if ((NULL == ptrs) || (NULL == ptrs->ra) || (ptrs->size < sizeof (ptrs->ra[0])))
+    return (0);
+
+  unsigned i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  unsigned * idx = MR_CALLOC (count, sizeof (*idx));
+  if (NULL == idx)
+    return (0);
+  
+  for (i = 0; i < count; ++i)
+    {
+      idx[i] = i;
+      ptrs->ra[i].res.data.uintptr = 0;
+      ptrs->ra[i].res.type = "uintptr";
+    }
+
+  mr_hsort (idx, count, sizeof (idx[0]), cmp_idx, ptrs);
+
+  for (i = 0; i < count; ++i)
+    {
+      mr_ptrdes_t * ptrdes = &ptrs->ra[idx[i]];
+      switch (ptrdes->fd.mr_type)
+	{
+	case MR_TYPE_STRING:
+	  ptrdes->res.data.uintptr = mr_hash_str (*(char**)ptrdes->data.ptr);
+	  break;
+	  
+	case MR_TYPE_CHAR_ARRAY:
+	  ptrdes->res.data.uintptr = mr_hash_str ((char*)ptrdes->data.ptr);
+	  break;
+	  
+	case MR_TYPE_BOOL:
+	  ptrdes->res.data.uintptr = *(bool*)ptrdes->data.ptr;
+	  break;
+
+#define CASE_MR_TYPE_HASH(MR_TYPE, TYPE)				\
+	  case MR_TYPE:							\
+	    ptrdes->res.data.uintptr =					\
+	      mr_hash_block (ptrdes->data.ptr, sizeof (TYPE));		\
+	    break;
+
+	  CASE_MR_TYPE_HASH (MR_TYPE_CHAR, char);
+	  CASE_MR_TYPE_HASH (MR_TYPE_INT8, int8_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_UINT8, uint8_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_INT16, int16_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_UINT16, uint16_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_INT32, int32_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_UINT32, uint32_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_INT64, int64_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_UINT64, uint64_t);
+	  CASE_MR_TYPE_HASH (MR_TYPE_FLOAT, float);
+	  CASE_MR_TYPE_HASH (MR_TYPE_COMPLEX_FLOAT, complex float);
+	  CASE_MR_TYPE_HASH (MR_TYPE_DOUBLE, double);
+	  CASE_MR_TYPE_HASH (MR_TYPE_COMPLEX_DOUBLE, complex double);
+	  
+	case MR_TYPE_LONG_DOUBLE:
+	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
+	  break;
+	  
+	case MR_TYPE_COMPLEX_LONG_DOUBLE:
+	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
+	    mr_hash_block (&((long double *)ptrdes->data.ptr)[1], MR_SIZEOF_LONG_DOUBLE);
+	  break;
+	  
+	case MR_TYPE_STRUCT:
+	case MR_TYPE_ARRAY:
+	case MR_TYPE_POINTER:
+	case MR_TYPE_UNION:
+	  {
+	    int child;
+	    mr_hash_value_t hash_value = 0;
+	    for (child = ptrdes->first_child; child >= 0; child = ptrs->ra[child].next)
+	      hash_value = hash_value * 3 + ptrs->ra[child].res.data.uintptr;
+	    ptrdes->res.data.uintptr = hash_value;
+	    break;
+	  }
+	  
+	case MR_TYPE_ENUM:
+	case MR_TYPE_BITMASK:
+	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, ptrdes->fd.size);
+	  break;
+	  
+	case MR_TYPE_BITFIELD:
+	  {
+	    uint64_t value;
+	    mr_save_bitfield_value (ptrdes, &value);
+	    ptrdes->res.data.uintptr = mr_hash_block (&value, sizeof (value));
+	    break;
+	  }
+	  
+	case MR_TYPE_FUNC_TYPE:
+	case MR_TYPE_FUNC:
+	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, sizeof (void *));
+	  break;
+
+	default:
+	  break;
+	}
+      
+      if (0 == idx[i])
+	break;
+    }
+  
+  MR_FREE (idx);
+  return (ptrs->ra[0].res.data.uintptr);
+}
+
+bool
+mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
+{
+  mr_conf_init ();
+  
+  if ((NULL == x) || (NULL == x->ra) || (x->size < sizeof (x->ra[0])) ||
+      (NULL == y) || (NULL == y->ra) || (y->size < sizeof (y->ra[0])))
+    return (true);
+
+  if (x->size != y->size)
+    return (true);
+
+  x->ra[0].type = y->ra[0].type;
+  x->ra[0].fd.name = y->ra[0].fd.name;
+  x->ra[0].fd.type = y->ra[0].fd.type;
+
+  if ((x->ra[0].fd.mr_type == MR_TYPE_ARRAY) && (y->ra[0].fd.mr_type == MR_TYPE_ARRAY))
+    {
+      int child;
+      if (x->ra[0].first_child != y->ra[0].first_child)
+	return (true);
+      
+      for (child = x->ra[0].first_child; child >= 0; child = x->ra[child].next)
+	{
+	  x->ra[child].type = y->ra[child].type;
+	  x->ra[child].fd.name = y->ra[child].fd.name;
+	  x->ra[child].fd.type = y->ra[child].fd.type;
+	  if (x->ra[child].next != y->ra[child].next)
+	    return (true);
+	}
+    }
+  
+  unsigned i, count = x->size / sizeof (x->ra[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_ptrdes_t * x_i = &x->ra[i];
+      mr_ptrdes_t * y_i = &y->ra[i];
+
+      if (x_i->idx != y_i->idx)
+	return (true);
+      if (x_i->idx < 0)
+	continue;
+      
+      if (memcmp (&x_i->type, &y_i->type, offsetof (mr_ptrdes_t, type_specific) - offsetof (mr_ptrdes_t, type)) != 0)
+	return (true);
+      
+      switch (x_i->fd.mr_type)
+	{
+	case MR_TYPE_STRING:
+	  {
+	    char * _x = *(char**)x_i->data.ptr;
+	    char * _y = *(char**)y_i->data.ptr;
+	    if (_x == _y)
+	      break;
+	    if ((NULL == _x) || (NULL == _y))
+	      return (true);
+	    if (strcmp (_x, _y) != 0)
+	      return (true);
+	    break;
+	  }
+	  
+	case MR_TYPE_CHAR_ARRAY:
+	  if (strcmp (x_i->data.ptr, y_i->data.ptr) != 0)
+	    return (true);
+	  break;
+
+#define CASE_MR_TYPE_EQUAL(MR_TYPE, TYPE)			\
+	  case MR_TYPE:						\
+	    if (*(TYPE*)x_i->data.ptr != *(TYPE*)y_i->data.ptr)	\
+	      return (true);					\
+	    break;
+
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_CHAR, char);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_BOOL, bool);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT8, int8_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT8, uint8_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT16, int16_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT16, uint16_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT32, int32_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT32, uint32_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT64, int64_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT64, uint64_t);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_FLOAT, float);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_COMPLEX_FLOAT, complex float);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_DOUBLE, double);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_COMPLEX_DOUBLE, complex double);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_LONG_DOUBLE, long double);
+	  CASE_MR_TYPE_EQUAL (MR_TYPE_COMPLEX_LONG_DOUBLE, complex long double);
+
+	case MR_TYPE_ENUM:
+	case MR_TYPE_BITMASK:
+	  if (memcmp (x_i->data.ptr, y_i->data.ptr, x_i->fd.size) != 0)
+	    return (true);
+	  break;
+	  
+	case MR_TYPE_BITFIELD:
+	  {
+	    uint64_t x_value, y_value;
+	    mr_save_bitfield_value (x_i, &x_value);
+	    mr_save_bitfield_value (y_i, &y_value);
+	    if (x_value != y_value)
+	      return (true);
+	    break;
+	  }
+	  
+	case MR_TYPE_FUNC_TYPE:
+	case MR_TYPE_FUNC:
+	  if (*(void**)x_i->data.ptr != *(void**)y_i->data.ptr)
+	    return (true);
+	  break;
+
+	default:
+	  break;
+	}
+    }
+  return (false);
 }
 
 /**

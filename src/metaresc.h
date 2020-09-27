@@ -756,7 +756,26 @@
 	MR_FREE (ptrs.ra);					\
       status;							\
     })
-      
+
+#define MR_HASH_STRUCT(MR_TYPE_NAME, S_PTR) ({			\
+      mr_ra_ptrdes_t _s_ptr_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_hash_value_t _hash_value_ = mr_hash_struct (&_s_ptr_);	\
+      if (_s_ptr_.ra)						\
+	MR_FREE (_s_ptr_.ra);					\
+      _hash_value_;						\
+    })
+
+#define MR_CMP_STRUCTS(MR_TYPE_NAME, X, Y) ({			\
+      mr_ra_ptrdes_t _x_ = MR_SAVE (MR_TYPE_NAME, X);		\
+      mr_ra_ptrdes_t _y_ = MR_SAVE (MR_TYPE_NAME, Y);		\
+      bool _non_equal_ = mr_cmp_structs (&_x_, &_y_);		\
+      if (_x_.ra)						\
+	MR_FREE (_x_.ra);					\
+      if (_y_.ra)						\
+	MR_FREE (_y_.ra);					\
+      _non_equal_;						\
+    })
+    
 #define MR_SAVE MR_SAVE_TYPED
 
 #define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR)		\
@@ -1205,6 +1224,8 @@ extern void mr_pointer_fd_set_size (mr_fd_t * fdp);
 extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
+extern mr_hash_value_t mr_hash_struct (mr_ra_ptrdes_t * ptrs);
+extern bool mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, int64_t value);
 extern mr_fd_t * mr_get_enum_by_name (char * name);
