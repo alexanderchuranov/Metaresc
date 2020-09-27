@@ -481,6 +481,23 @@ mr_ic_hash_next_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * cont
   return (MR_SUCCESS);
 }
 
+#undef MR_SAVE
+#define MR_SAVE MR_SAVE_STR_TYPED
+
+mr_hash_value_t
+mr_generic_hash (mr_ptr_t x, const void * context)
+{
+  const mr_ic_t * ic = context;
+  return (MR_HASH_STRUCT (ic->key_type, x.ptr));
+}
+
+int
+mr_generic_equals (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_ic_t * ic = context;
+  return (MR_CMP_STRUCTS (ic->key_type, x.ptr, y.ptr));
+}
+ 
 mr_status_t
 mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
@@ -492,7 +509,22 @@ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
     .index = mr_ic_hash_next_index,
     .free = mr_ic_hash_next_free,
   };
+  
+  mr_res_t generic_context = {
+    .data = { ic },
+    .type = "mr_ic_t",
+    .mr_size = sizeof (*ic),
+  };
 
+  if ((NULL != ic) &&
+      (NULL == compar_fn) && (NULL == hash_fn) && (NULL == context) &&
+      (mr_get_td_by_name (key_type) != NULL))
+    {
+      hash_fn = mr_generic_hash;
+      compar_fn = mr_generic_equals;
+      context = &generic_context;
+    }
+  
   if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
     return (MR_FAILURE);
 
