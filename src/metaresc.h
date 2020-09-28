@@ -1160,7 +1160,7 @@ typedef long double long_double_t;
 typedef complex float complex_float_t;
 typedef complex double complex_double_t;
 typedef complex long double complex_long_double_t;
-typedef unsigned int mr_hash_value_t;
+typedef uintptr_t mr_hash_value_t;
 typedef struct mr_ic_t mr_ic_t_; /* required for forward definition of struct mr_ic_t which is used in mr_ic_hash_t */
 typedef struct mr_dummy_struct_t {
   char dummy_field[0];
