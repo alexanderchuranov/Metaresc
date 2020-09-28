@@ -1227,7 +1227,7 @@ extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
 extern mr_hash_value_t mr_hash_struct (mr_ra_ptrdes_t * ptrs);
-extern bool mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y);
+extern int mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, int64_t value);
 extern mr_fd_t * mr_get_enum_by_name (char * name);

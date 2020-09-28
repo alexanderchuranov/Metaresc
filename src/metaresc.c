@@ -1067,17 +1067,18 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
   return (ptrs->ra[0].res.data.uintptr);
 }
 
-bool
+int
 mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 {
   mr_conf_init ();
   
   if ((NULL == x) || (NULL == x->ra) || (x->size < sizeof (x->ra[0])) ||
       (NULL == y) || (NULL == y->ra) || (y->size < sizeof (y->ra[0])))
-    return (true);
+    return (0);
 
-  if (x->size != y->size)
-    return (true);
+  int diff = (x->size > y->size) - (x->size < y->size);
+  if (diff)
+    return (diff);
 
   x->ra[0].type = y->ra[0].type;
   x->ra[0].fd.name = y->ra[0].fd.name;
@@ -1085,17 +1086,21 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 
   if ((x->ra[0].fd.mr_type == MR_TYPE_ARRAY) && (y->ra[0].fd.mr_type == MR_TYPE_ARRAY))
     {
-      int child;
-      if (x->ra[0].first_child != y->ra[0].first_child)
-	return (true);
+      diff = (x->ra[0].first_child > y->ra[0].first_child) -
+	(x->ra[0].first_child < y->ra[0].first_child);
+      if (diff)
+	return (diff);
       
+      int child;
       for (child = x->ra[0].first_child; child >= 0; child = x->ra[child].next)
 	{
 	  x->ra[child].type = y->ra[child].type;
 	  x->ra[child].fd.name = y->ra[child].fd.name;
 	  x->ra[child].fd.type = y->ra[child].fd.type;
-	  if (x->ra[child].next != y->ra[child].next)
-	    return (true);
+	  diff = (x->ra[child].next > y->ra[child].next) -
+	    (x->ra[child].next < y->ra[child].next);
+	  if (diff)
+	    return (diff);
 	}
     }
   
@@ -1105,13 +1110,16 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
       mr_ptrdes_t * x_i = &x->ra[i];
       mr_ptrdes_t * y_i = &y->ra[i];
 
-      if (x_i->idx != y_i->idx)
-	return (true);
+      diff = (x_i->idx > y_i->idx) - (x_i->idx < y_i->idx);
+      if (diff)
+	return (diff);
+      
       if (x_i->idx < 0)
 	continue;
       
-      if (memcmp (&x_i->type, &y_i->type, offsetof (mr_ptrdes_t, type_specific) - offsetof (mr_ptrdes_t, type)) != 0)
-	return (true);
+      diff = memcmp (&x_i->type, &y_i->type, offsetof (mr_ptrdes_t, type_specific) - offsetof (mr_ptrdes_t, type));
+      if (diff)
+	return (diff);
       
       switch (x_i->fd.mr_type)
 	{
@@ -1122,44 +1130,74 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    if (_x == _y)
 	      break;
 	    if ((NULL == _x) || (NULL == _y))
-	      return (true);
-	    if (strcmp (_x, _y) != 0)
-	      return (true);
+	      return ((_x > _y) - (_x < _y));
+	    diff = strcmp (_x, _y);
+	    if (diff)
+	      return (diff);
 	    break;
 	  }
 	  
 	case MR_TYPE_CHAR_ARRAY:
-	  if (strcmp (x_i->data.ptr, y_i->data.ptr) != 0)
-	    return (true);
+	  diff = strcmp (x_i->data.ptr, y_i->data.ptr);
+	  if (diff)
+	    return (diff);
 	  break;
 
-#define CASE_MR_TYPE_EQUAL(MR_TYPE, TYPE)			\
-	  case MR_TYPE:						\
-	    if (*(TYPE*)x_i->data.ptr != *(TYPE*)y_i->data.ptr)	\
-	      return (true);					\
+#define CASE_MR_TYPE_CMP(MR_TYPE, TYPE)			     \
+	  case MR_TYPE:						     \
+	    diff = (*(TYPE*)x_i->data.ptr > *(TYPE*)y_i->data.ptr) - \
+	      (*(TYPE*)x_i->data.ptr < *(TYPE*)y_i->data.ptr);	     \
+	    if (diff)						     \
+	      return (diff);					     \
 	    break;
 
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_CHAR, char);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_BOOL, bool);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT8, int8_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT8, uint8_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT16, int16_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT16, uint16_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT32, int32_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT32, uint32_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_INT64, int64_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_UINT64, uint64_t);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_FLOAT, float);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_COMPLEX_FLOAT, complex float);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_DOUBLE, double);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_COMPLEX_DOUBLE, complex double);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_LONG_DOUBLE, long double);
-	  CASE_MR_TYPE_EQUAL (MR_TYPE_COMPLEX_LONG_DOUBLE, complex long double);
+#define CASE_MR_TYPE_CMP_COMPLEX(MR_TYPE, TYPE)			     \
+	  case MR_TYPE:							\
+	    diff = (__real__ *(TYPE*)x_i->data.ptr > __real__ *(TYPE*)y_i->data.ptr) - \
+	      (__real__ *(TYPE*)x_i->data.ptr < __real__ *(TYPE*)y_i->data.ptr); \
+	    if (diff)							\
+	      return (diff);						\
+	    diff = (__imag__ *(TYPE*)x_i->data.ptr > __imag__ *(TYPE*)y_i->data.ptr) - \
+	      (__imag__ *(TYPE*)x_i->data.ptr < __imag__ *(TYPE*)y_i->data.ptr); \
+	    if (diff)							\
+	      return (diff);						\
+	    break;
+
+	  CASE_MR_TYPE_CMP (MR_TYPE_CHAR, char);
+	  CASE_MR_TYPE_CMP (MR_TYPE_BOOL, bool);
+	  CASE_MR_TYPE_CMP (MR_TYPE_INT8, int8_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_UINT8, uint8_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_INT16, int16_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_UINT16, uint16_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_INT32, int32_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_UINT32, uint32_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_INT64, int64_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_UINT64, uint64_t);
+	  CASE_MR_TYPE_CMP (MR_TYPE_FLOAT, float);
+	  CASE_MR_TYPE_CMP_COMPLEX (MR_TYPE_COMPLEX_FLOAT, complex float);
+	  CASE_MR_TYPE_CMP (MR_TYPE_DOUBLE, double);
+	  CASE_MR_TYPE_CMP_COMPLEX (MR_TYPE_COMPLEX_DOUBLE, complex double);
+	  CASE_MR_TYPE_CMP (MR_TYPE_LONG_DOUBLE, long double);
+	  CASE_MR_TYPE_CMP_COMPLEX (MR_TYPE_COMPLEX_LONG_DOUBLE, complex long double);
 
 	case MR_TYPE_ENUM:
 	case MR_TYPE_BITMASK:
-	  if (memcmp (x_i->data.ptr, y_i->data.ptr, x_i->fd.size) != 0)
-	    return (true);
+	  switch (x_i->fd.mr_type_aux)
+	    {
+	      CASE_MR_TYPE_CMP (MR_TYPE_INT8, int8_t);
+	      CASE_MR_TYPE_CMP (MR_TYPE_UINT8, uint8_t);
+	      CASE_MR_TYPE_CMP (MR_TYPE_INT16, int16_t);
+	      CASE_MR_TYPE_CMP (MR_TYPE_UINT16, uint16_t);
+	      CASE_MR_TYPE_CMP (MR_TYPE_INT32, int32_t);
+	      CASE_MR_TYPE_CMP (MR_TYPE_UINT32, uint32_t);
+	      CASE_MR_TYPE_CMP (MR_TYPE_INT64, int64_t);
+	      CASE_MR_TYPE_CMP (MR_TYPE_UINT64, uint64_t);
+	    default:
+	      diff = memcmp (x_i->data.ptr, y_i->data.ptr, x_i->fd.size);
+	      if (diff)
+		return (diff);
+	      break;
+	    }
 	  break;
 	  
 	case MR_TYPE_BITFIELD:
@@ -1167,22 +1205,25 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    uint64_t x_value, y_value;
 	    mr_save_bitfield_value (x_i, &x_value);
 	    mr_save_bitfield_value (y_i, &y_value);
-	    if (x_value != y_value)
-	      return (true);
+	    diff = (x_value > y_value) - (x_value < y_value);
+	    if (diff)
+	      return (diff);
 	    break;
 	  }
 	  
 	case MR_TYPE_FUNC_TYPE:
 	case MR_TYPE_FUNC:
-	  if (*(void**)x_i->data.ptr != *(void**)y_i->data.ptr)
-	    return (true);
+	  diff = (*(void**)x_i->data.ptr > *(void**)y_i->data.ptr) -
+	    (*(void**)x_i->data.ptr < *(void**)y_i->data.ptr);
+	  if (diff)
+	    return (diff);
 	  break;
 
 	default:
 	  break;
 	}
     }
-  return (false);
+  return (0);
 }
 
 /**
