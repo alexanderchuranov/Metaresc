@@ -768,12 +768,12 @@
 #define MR_CMP_STRUCTS(MR_TYPE_NAME, X, Y) ({			\
       mr_ra_ptrdes_t _x_ = MR_SAVE (MR_TYPE_NAME, X);		\
       mr_ra_ptrdes_t _y_ = MR_SAVE (MR_TYPE_NAME, Y);		\
-      bool _non_equal_ = mr_cmp_structs (&_x_, &_y_);		\
+      int _cmp_ = mr_cmp_structs (&_x_, &_y_);			\
       if (_x_.ra)						\
 	MR_FREE (_x_.ra);					\
       if (_y_.ra)						\
 	MR_FREE (_y_.ra);					\
-      _non_equal_;						\
+      _cmp_;							\
     })
     
 #define MR_SAVE MR_SAVE_TYPED
