@@ -330,7 +330,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
 	  return (&ic->hash_next.hash_table[count]);
 	}
 
-      unsigned i, bucket = ic->hash_next.hash_fn (key, ic->context.data.ptr) % count;
+      unsigned i, bucket = (ic->hash_next.hash_fn (key, ic->context.data.ptr) << 1) % count;
 
       for (i = bucket; ;)
 	{
@@ -484,7 +484,7 @@ mr_ic_hash_next_find (mr_ic_t * ic, mr_ptr_t key)
     return (NULL);
   
   unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
-  unsigned i, bucket = ic->hash_next.hash_fn (key, ic->context.data.ptr) % count;
+  unsigned i, bucket = (ic->hash_next.hash_fn (key, ic->context.data.ptr) << 1) % count;
 
   for (i = bucket; ;)
     {
