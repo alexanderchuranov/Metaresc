@@ -1137,7 +1137,7 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_fd_t", "mr_size", NULL);
   mr_type_void_fields ("mr_struct_param_t", "field_by_offset", NULL);
   mr_type_void_fields ("mr_enum_param_t", "enum_by_value", "is_bitmask", NULL);
-  mr_type_void_fields ("mr_hashed_string_t", "hash_value", NULL);
+  mr_type_void_fields ("mr_hashed_string_t", "hash_value", "padding", NULL);
 }
 
 int
