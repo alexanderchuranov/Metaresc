@@ -1999,7 +1999,7 @@ mr_type_void_fields (char * type, char * name, ...)
   for ( ; name; name = va_arg (args, char *))
     {
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
-      if (fdp != NULL)
+      if ((fdp != NULL) && (fdp->mr_type != MR_TYPE_VOID))
 	{
 	  fdp->mr_type_aux = fdp->mr_type;
 	  fdp->mr_type = MR_TYPE_VOID;

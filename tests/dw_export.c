@@ -53,8 +53,8 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	mr_type = MR_TYPE_STRING;
       else if (mr_fdp->mr_type == MR_TYPE_VOID)
 	{
-	  if (dw_fdp->mr_type == MR_TYPE_BITFIELD)
-	    mr_type = MR_TYPE_BITFIELD;
+	  if ((dw_fdp->mr_type == MR_TYPE_BITFIELD) || (dw_fdp->mr_type == MR_TYPE_ARRAY))
+	    mr_type = dw_fdp->mr_type;
 	  else
 	    mr_type = mr_fdp->mr_type_aux;
 	}
@@ -70,9 +70,10 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_aux %d != %d",
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type_aux, dw_fdp->mr_type_aux);
       
-      ck_assert_msg (mr_fdp->size == dw_fdp->size,
-		     "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %d != %d",
-		     mr_td->type.str, mr_fdp->name.str, mr_fdp->size, dw_fdp->size);
+      if (mr_fdp->mr_type != MR_TYPE_VOID)
+	ck_assert_msg (mr_fdp->size == dw_fdp->size,
+		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %d != %d",
+		       mr_td->type.str, mr_fdp->name.str, mr_fdp->size, dw_fdp->size);
 
       if (mr_fdp->mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->offset == dw_fdp->offset,

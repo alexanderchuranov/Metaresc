@@ -592,7 +592,7 @@
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_VOID,					\
-	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
+	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
 	     .meta = "" __VA_ARGS__,					\
 	     } } },
 
