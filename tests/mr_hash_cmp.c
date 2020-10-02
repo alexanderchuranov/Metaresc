@@ -265,4 +265,11 @@ MR_START_TEST (mr_hash_cmp_all_types, "check hash and compare for struct with al
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 } END_TEST
 
+MR_START_TEST (mr_hash_cmp_mr_conf, "Check hash and generic compare function on MR_COPY_RECURSIVELY") {
+  mr_conf_t _mr_conf = MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf);
+  ck_assert_msg (MR_HASH_STRUCT (mr_conf_t, &mr_conf) == MR_HASH_STRUCT (mr_conf_t, &_mr_conf), "mismatch of hash for mr_conf copy");
+  ck_assert_msg (MR_CMP_STRUCTS (mr_conf_t, &mr_conf, &_mr_conf) == 0, "wrong equals check for mr_conf copy");
+  MR_FREE_RECURSIVELY (mr_conf_t, &_mr_conf);
+} END_TEST
+
 MAIN ();
