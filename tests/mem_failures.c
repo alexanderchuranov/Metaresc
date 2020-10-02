@@ -32,7 +32,7 @@ mr_hash_value_t
 ab_hash (mr_ptr_t x, const void * context)
 {
   stack_trace_t * x_ = x.ptr;
-  return (x_->ptr.uintptr_t);
+  return (x_->ptr.uintptr);
 }
 
 int
@@ -47,7 +47,7 @@ mr_hash_value_t
 st_hash (mr_ptr_t x, const void * context)
 {
   stack_trace_t * x_ = x.ptr;
-  return (x_->size + (x_->stack ? x_->stack[0].uintptr_t : 0));
+  return (x_->size + (x_->stack ? x_->stack[0].uintptr : 0));
 }
 
 int
@@ -107,15 +107,15 @@ mr_hash_value_t
 stack_entry_hash (mr_ptr_t x, const void * context)
 {
   const stack_trace_t * stack_trace = context;
-  return (stack_trace->stack[x.uintptr_t].uintptr_t / sizeof (void*));
+  return (stack_trace->stack[x.uintptr].uintptr / sizeof (void*));
 }
 
 int
 stack_entry_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const stack_trace_t * stack_trace = context;
-  return ((stack_trace->stack[x.uintptr_t].ptr > stack_trace->stack[y.uintptr_t].ptr) -
-	  (stack_trace->stack[x.uintptr_t].ptr < stack_trace->stack[y.uintptr_t].ptr));
+  return ((stack_trace->stack[x.uintptr].ptr > stack_trace->stack[y.uintptr].ptr) -
+	  (stack_trace->stack[x.uintptr].ptr < stack_trace->stack[y.uintptr].ptr));
 }
 
 static inline void
@@ -140,7 +140,7 @@ normalize_recursion (stack_trace_t * stack_trace)
       mr_ptr_t * add = mr_ic_add (&last_call, i);
       if (NULL == add)
 	goto free_index;
-      has_duplicates |= (add->uintptr_t != i);
+      has_duplicates |= (add->uintptr != i);
     }
 
   if (has_duplicates)
@@ -151,7 +151,7 @@ normalize_recursion (stack_trace_t * stack_trace)
 	  mr_ptr_t * find = mr_ic_find (&last_call, i);
 	  if (NULL == find)
 	    goto free_index;
-	  i = find->uintptr_t;
+	  i = find->uintptr;
 	  stack_trace->stack[dst++] = stack_trace->stack[i];
 	}
 
@@ -168,7 +168,7 @@ stack_trace_get ()
   if (NULL == stack_trace)
     return (NULL);
   memset (stack_trace, 0, sizeof (*stack_trace));
-  stack_trace->type = "uintptr_t";
+  stack_trace->type = "uintptr";
   stack_trace->size = 8 * sizeof (stack_trace->stack[0]);
   stack_trace->stack = malloc (stack_trace->size);
   if (NULL == stack_trace->stack)
