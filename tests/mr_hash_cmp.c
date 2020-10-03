@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
@@ -270,6 +272,33 @@ MR_START_TEST (mr_hash_cmp_mr_conf, "Check hash and generic compare function on 
   ck_assert_msg (MR_HASH_STRUCT (mr_conf_t, &mr_conf) == MR_HASH_STRUCT (mr_conf_t, &_mr_conf), "mismatch of hash for mr_conf copy");
   ck_assert_msg (MR_CMP_STRUCTS (mr_conf_t, &mr_conf, &_mr_conf) == 0, "wrong equals check for mr_conf copy");
   MR_FREE_RECURSIVELY (mr_conf_t, &_mr_conf);
+} END_TEST
+
+#undef MR_MODE
+#define MR_MODE DESC
+TYPEDEF_STRUCT (div_t, quot, rem)
+
+MR_START_TEST (mr_hash_cmp_great_or_less, "Check that compare works correctly") {
+  div_t x, y;
+  memset (&x, 0, sizeof (x));
+  memset (&y, 0, sizeof (y));
+  ck_assert_msg (MR_HASH_STRUCT (div_t, &x) == MR_HASH_STRUCT (div_t, &y), "match of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, &x, &y) == 0, "equals check for identical structs");
+  x.quot = 1;
+  ck_assert_msg (MR_HASH_STRUCT (div_t, &x) != MR_HASH_STRUCT (div_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, &x, &y) > 0, "compare check for non-identical structs");
+  x.quot = -1;
+  ck_assert_msg (MR_HASH_STRUCT (div_t, &x) != MR_HASH_STRUCT (div_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, &x, &y) < 0, "compare check for non-identical structs");
+  y.quot = -1;
+  ck_assert_msg (MR_HASH_STRUCT (div_t, &x) == MR_HASH_STRUCT (div_t, &y), "match of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, &x, &y) == 0, "compare check for identical structs");
+  x.rem = 1;
+  ck_assert_msg (MR_HASH_STRUCT (div_t, &x) != MR_HASH_STRUCT (div_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, &x, &y) > 0, "compare check for non-identical structs");
+  x.rem = -1;
+  ck_assert_msg (MR_HASH_STRUCT (div_t, &x) != MR_HASH_STRUCT (div_t, &y), "match of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, &x, &y) < 0, "compare check for non-identical structs");
 } END_TEST
 
 MAIN ();
