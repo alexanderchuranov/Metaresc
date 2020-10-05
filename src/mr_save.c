@@ -590,26 +590,27 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 static int
 mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
 {
+#define MR_TYPE_NAME_STRING(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE)
   static char * type_name[] = {
     [0 ... MR_TYPE_LAST - 1] = NULL,
-    [MR_TYPE_STRING] = MR_STRINGIFY_READONLY (string_t),
     [MR_TYPE_CHAR_ARRAY] = MR_STRINGIFY_READONLY (string),
-    [MR_TYPE_CHAR] = MR_STRINGIFY_READONLY (char),
-    [MR_TYPE_BOOL] = MR_STRINGIFY_READONLY (bool),
-    [MR_TYPE_INT8] = MR_STRINGIFY_READONLY (int8_t),
-    [MR_TYPE_UINT8] = MR_STRINGIFY_READONLY (uint8_t),
-    [MR_TYPE_INT16] = MR_STRINGIFY_READONLY (int16_t),
-    [MR_TYPE_UINT16] = MR_STRINGIFY_READONLY (uint16_t),
-    [MR_TYPE_INT32] = MR_STRINGIFY_READONLY (int32_t),
-    [MR_TYPE_UINT32] = MR_STRINGIFY_READONLY (uint32_t),
-    [MR_TYPE_INT64] = MR_STRINGIFY_READONLY (int64_t),
-    [MR_TYPE_UINT64] = MR_STRINGIFY_READONLY (uint64_t),
-    [MR_TYPE_FLOAT] = MR_STRINGIFY_READONLY (float),
-    [MR_TYPE_COMPLEX_FLOAT] = MR_STRINGIFY_READONLY (complex_float_t),
-    [MR_TYPE_DOUBLE] = MR_STRINGIFY_READONLY (double),
-    [MR_TYPE_COMPLEX_DOUBLE] = MR_STRINGIFY_READONLY (complex_double_t),
-    [MR_TYPE_LONG_DOUBLE] = MR_STRINGIFY_READONLY (long_double_t),
-    [MR_TYPE_COMPLEX_LONG_DOUBLE] = MR_STRINGIFY_READONLY (complex_long_double_t),
+    MR_TYPE_NAME_STRING (string_t),
+    MR_TYPE_NAME_STRING (char),
+    MR_TYPE_NAME_STRING (bool),
+    MR_TYPE_NAME_STRING (int8_t),
+    MR_TYPE_NAME_STRING (uint8_t),
+    MR_TYPE_NAME_STRING (int16_t),
+    MR_TYPE_NAME_STRING (uint16_t),
+    MR_TYPE_NAME_STRING (int32_t),
+    MR_TYPE_NAME_STRING (uint32_t),
+    MR_TYPE_NAME_STRING (int64_t),
+    MR_TYPE_NAME_STRING (uint64_t),
+    MR_TYPE_NAME_STRING (float),
+    MR_TYPE_NAME_STRING (complex_float_t),
+    MR_TYPE_NAME_STRING (double),
+    MR_TYPE_NAME_STRING (complex_double_t),
+    MR_TYPE_NAME_STRING (long_double_t),
+    MR_TYPE_NAME_STRING (complex_long_double_t),
   };
   intptr_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
