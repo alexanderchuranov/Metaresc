@@ -445,15 +445,16 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 
   --ic->items_count;
   unsigned count = ic->hash_next.size / sizeof (ic->hash_next.hash_table[0]) - 1;
+  unsigned bucket = find - ic->hash_next.hash_table;
   
-  if (0 == key.intptr)
+  if (bucket == count)
     ic->hash_next.zero_key = false; /* release zero element */
   else
     {
-      unsigned i, start_bucket = find - ic->hash_next.hash_table;
+      unsigned i = bucket;
 
-      find->intptr = 0;
-      for (i = start_bucket; ;) /* need to re-index all elements in sequential blocks after deleted element */
+      ic->hash_next.hash_table[i].intptr = 0;
+      for (;;) /* need to re-index all elements in sequential blocks after deleted element */
 	{
 	  if (++i >= count)
 	    i = 0;
@@ -461,7 +462,7 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 	  if (0 == ic->hash_next.hash_table[i].intptr)
 	    break;
 
-	  if (i == start_bucket)
+	  if (i == bucket)
 	    {
 	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
 	      return (MR_FAILURE);
