@@ -328,6 +328,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
 	{
 	  ic->hash_next.zero_key = true;
 	  ic->hash_next.hash_table[count].intptr = 0;
+	  ++ic->items_count;
 	  return (&ic->hash_next.hash_table[count]);
 	}
 
@@ -338,6 +339,7 @@ mr_ic_hash_next_index_add (mr_ic_t * ic, mr_ptr_t key)
 	  if (0 == ic->hash_next.hash_table[i].intptr)
 	    {
 	      ic->hash_next.hash_table[i] = key;
+	      ++ic->items_count;
 	      return (&ic->hash_next.hash_table[i]);
 	    }
 	  if (0 == ic->compar_fn (key, ic->hash_next.hash_table[i], ic->context.data.ptr))
@@ -361,17 +363,14 @@ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
 }
 
 static mr_status_t
-mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic, unsigned items_count)
+mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
 {
-  if (MR_IC_HASH_NEXT != dst_ic->ic_type)
-    return (EXIT_FAILURE);
-  
   mr_ic_hash_next_free (dst_ic);
 
-  if (0 == items_count)
+  if (0 == src_ic->items_count)
     return (MR_SUCCESS);
 
-  unsigned count = 1 + (((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * items_count) >> MR_HASH_MULT_FIXEDPOINT);
+  unsigned count = 1 + (((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * src_ic->items_count) >> MR_HASH_MULT_FIXEDPOINT);
   dst_ic->hash_next.hash_table = MR_CALLOC (count, sizeof (dst_ic->hash_next.hash_table[0]));
   if (NULL == dst_ic->hash_next.hash_table)
     {
@@ -380,16 +379,7 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic, unsigned items_count)
     }
   dst_ic->hash_next.resize_count = count >> 1;
   dst_ic->hash_next.size = count * sizeof (dst_ic->hash_next.hash_table[0]);
-  dst_ic->items_count = items_count;
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
-}
-
-static mr_status_t
-mr_ic_hash_count_visitor (mr_ptr_t key, const void * context)
-{
-  mr_ic_t * ic = (void*)context;
-  ++ic->items_count;
-  return (MR_SUCCESS);
 }
 
 mr_status_t
@@ -404,13 +394,9 @@ mr_ic_hash_next_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
   if (MR_SUCCESS != status)
     return (status);
   
-  status = mr_ic_hash_reindex (&ic_unsorted_array, ic, rarray->size / sizeof (rarray->ra[0]));
+  status = mr_ic_hash_reindex (&ic_unsorted_array, ic);
   mr_ic_free (&ic_unsorted_array);
 
-  /* there might be duplicates in input data, so we need to count number of unique elemenets */
-  ic->items_count = 0;
-  mr_ic_foreach (ic, mr_ic_hash_count_visitor, ic);
-  
   return (status);
 }
 
@@ -421,13 +407,13 @@ mr_ic_hash_next_add (mr_ic_t * ic, mr_ptr_t key)
   if (find != NULL)
     return (find);
 
-  if (++ic->items_count >= ic->hash_next.resize_count)
+  if (ic->items_count >= ic->hash_next.resize_count)
     {
       mr_ic_t dst_ic;
-      if (MR_SUCCESS != mr_ic_new (&dst_ic, ic->hash_next.hash_fn, ic->compar_fn, ic->key_type, ic->ic_type, &ic->context))
+      if (MR_SUCCESS != mr_ic_hash_next_new (&dst_ic, ic->hash_next.hash_fn, ic->compar_fn, ic->key_type, &ic->context))
 	return (NULL);
-
-      if (MR_SUCCESS != mr_ic_hash_reindex (ic, &dst_ic, ic->items_count))
+      ++ic->items_count;
+      if (MR_SUCCESS != mr_ic_hash_reindex (ic, &dst_ic))
 	return (NULL);
 
       mr_ic_free (ic);
@@ -470,6 +456,7 @@ mr_ic_hash_next_del (mr_ic_t * ic, mr_ptr_t key)
 
 	  mr_ptr_t key = ic->hash_next.hash_table[i];
 	  ic->hash_next.hash_table[i].intptr = 0;
+	  --ic->items_count;
 	  
 	  if (mr_ic_hash_next_index_add (ic, key) == NULL)
 	    return (MR_FAILURE);
@@ -544,9 +531,7 @@ mr_ic_hash_next_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_f
     .mr_size = sizeof (key_type),
   };
 
-  if ((NULL != ic) &&
-      (NULL == compar_fn) && (NULL == hash_fn) && (NULL == context) &&
-      (mr_get_td_by_name (key_type) != NULL))
+  if ((NULL == compar_fn) && (NULL == hash_fn) && (mr_get_td_by_name (key_type) != NULL))
     {
       hash_fn = mr_generic_hash;
       compar_fn = mr_generic_cmp;
