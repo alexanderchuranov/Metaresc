@@ -240,7 +240,8 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 	  ic->rarray.ra[dst++] = ic->rarray.ra[src];
       
       ic->items_count = dst;
-      ic->rarray.size = ic->rarray.alloc_size = ic->items_count * sizeof (ic->rarray.ra[0]);
+      ic->rarray.size = ic->items_count * sizeof (ic->rarray.ra[0]);
+      ic->rarray.alloc_size = items_count * sizeof (ic->rarray.ra[0]);
     }
   return (MR_SUCCESS);
 }
