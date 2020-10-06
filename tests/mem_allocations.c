@@ -67,7 +67,7 @@ check_mem_ops_complexity (void callback (mr_res_t * res), char * method)
 
   mr_conf.mr_mem = mr_mem;
   
-  ck_assert_msg (mem_ops_for_doubled_size < 8,
+  ck_assert_msg (mem_ops_for_doubled_size < 12,
 		 "Number of memory operations (%d) grows higher than logarithmically for method %s",
 		 mem_ops_for_doubled_size, method);
 }
