@@ -304,7 +304,7 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
 
 #define MR_HASH_TABLE_SIZE_MULT (1.61803398875) /* golden ratio */
 #define MR_HASH_MULT_FIXEDPOINT ((sizeof (int) - 1) * __CHAR_BIT__)
-
+#define MR_HASH_SHIFT (0)
 void
 mr_ic_hash_free (mr_ic_t * ic)
 {
@@ -332,7 +332,7 @@ mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
 	  return (&ic->hash.hash_table[count]);
 	}
 
-      unsigned i, bucket = (ic->hash.hash_fn (key, ic->context.data.ptr) << 1) % count;
+      unsigned i, bucket = (ic->hash.hash_fn (key, ic->context.data.ptr) << MR_HASH_SHIFT) % count;
 
       for (i = bucket; ;)
 	{
@@ -370,7 +370,7 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
   if (0 == src_ic->items_count)
     return (MR_SUCCESS);
 
-  unsigned count = 1 + (((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * src_ic->items_count) >> MR_HASH_MULT_FIXEDPOINT);
+  unsigned count = 3 | (((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * src_ic->items_count) >> MR_HASH_MULT_FIXEDPOINT);
   dst_ic->hash.hash_table = MR_CALLOC (count, sizeof (dst_ic->hash.hash_table[0]));
   if (NULL == dst_ic->hash.hash_table)
     {
@@ -473,7 +473,7 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key)
     return (NULL);
   
   unsigned count = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1;
-  unsigned i, bucket = (ic->hash.hash_fn (key, ic->context.data.ptr) << 1) % count;
+  unsigned i, bucket = (ic->hash.hash_fn (key, ic->context.data.ptr) << MR_HASH_SHIFT) % count;
 
   for (i = bucket; ;)
     {

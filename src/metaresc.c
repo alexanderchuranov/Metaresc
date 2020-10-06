@@ -1573,7 +1573,7 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->param.enum_param.enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH, NULL);
+  mr_ic_new (&tdp->param.enum_param.enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
@@ -2112,13 +2112,13 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
   
-  mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+  mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
   if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, &mr_ic_rarray))
     status = MR_FAILURE;
 
   if (MR_TYPE_STRUCT == tdp->mr_type)
     {
-      mr_ic_new (&tdp->param.struct_param.field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_SORTED_ARRAY, NULL);
+      mr_ic_new (&tdp->param.struct_param.field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
       if (MR_SUCCESS != mr_ic_index (&tdp->param.struct_param.field_by_offset, &mr_ic_rarray))
 	status = MR_FAILURE;
     }
