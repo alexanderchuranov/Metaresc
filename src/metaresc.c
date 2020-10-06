@@ -1573,7 +1573,7 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->param.enum_param.enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
+  mr_ic_new (&tdp->param.enum_param.enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_HASH, NULL);
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;
@@ -2057,13 +2057,13 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   int count = 0;
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
-    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH_NEXT, NULL);
+    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
 
   if (MR_IC_UNINITIALIZED == mr_conf.type_by_name.ic_type)
-    mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
+    mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
   
   if (MR_IC_UNINITIALIZED == mr_conf.fields_names.ic_type)
-    mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH_NEXT, NULL);
+    mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH, NULL);
 
   if (NULL == tdp)
     return (MR_FAILURE); /* assert */

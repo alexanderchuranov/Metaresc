@@ -184,7 +184,7 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_UNINITIALIZED, = 0, "void_ptr"),
 	      (MR_IC_UNSORTED_ARRAY, , "rarray"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
-	      (MR_IC_HASH_NEXT, , "hash_next"),
+	      (MR_IC_HASH, , "hash"),
 	      (MR_IC_STATIC_ARRAY, , "static_array"),
 	      (MR_IC_RBTREE, , "rb"),
 	      (MR_IC_AVLTREE, , "avl"),
@@ -196,17 +196,17 @@ TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers fo
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
 		)
 
-TYPEDEF_STRUCT (mr_ic_hash_next_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
+TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(mr_hash_fn_t, hash_fn),
 		/* resizable array for hash table sized by field 'size' mr_ptr_t typed by 'key_type' in mr_ic_t */
-		(mr_ptr_t *, hash_table, , "key_type", { .offset = offsetof (mr_ic_hash_next_t, size) }, "offset"),
+		(mr_ptr_t *, hash_table, , "key_type", { .offset = offsetof (mr_ic_hash_t, size) }, "offset"),
 		(unsigned, size, , "size of hash table"),
 		BITFIELD (unsigned, resize_count, : sizeof (unsigned) * __CHAR_BIT__ - 1, "Next resize after this amount"),
 		BITFIELD (bool, zero_key, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),
-		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_next_t) / sizeof (mr_ptr_t)], "key_type"),
+		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_t) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
 TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))), "tree traverse to the left/right"),
@@ -277,7 +277,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		ANON_UNION (type_specific),
 		(void *, void_ptr, , "default serialization"),
 		(mr_ic_rarray_t, rarray),
-		(mr_ic_hash_next_t, hash_next),
+		(mr_ic_hash_t, hash),
 		(mr_ic_static_array_t, static_array),
 		(mr_tree_t, rb),
 		(mr_tree_t, avl),

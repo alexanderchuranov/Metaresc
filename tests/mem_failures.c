@@ -129,7 +129,7 @@ normalize_recursion (stack_trace_t * stack_trace)
     .type = "stack_trace_t",
     .mr_size = sizeof (stack_trace_t),
   };
-  mr_status_t status = mr_ic_new (&last_call, stack_entry_hash, stack_entry_cmp, "intptr_t", MR_IC_HASH_NEXT, &res);
+  mr_status_t status = mr_ic_new (&last_call, stack_entry_hash, stack_entry_cmp, "intptr_t", MR_IC_HASH, &res);
   bool has_duplicates = false;
   
   if (MR_SUCCESS != status)
@@ -367,7 +367,7 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
   _mr_mem.realloc = _realloc;
   _mr_mem.free = _free;
   
-#define IC_TYPE MR_IC_HASH_NEXT
+#define IC_TYPE MR_IC_HASH
   
   status = mr_ic_new (&alloc_blocks, ab_hash, ab_cmp, "stack_trace_t", IC_TYPE, NULL);
   ck_assert_msg (MR_SUCCESS == status, "failed to init indexed collection for allocated blocks");

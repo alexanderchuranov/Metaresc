@@ -259,7 +259,7 @@ const char * mr_serialize_func (void * func)
 		.type = "mr_ra_fn_t",
 		.MR_SIZE = sizeof (ra_fn),
 	      };
-	      mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "intptr", MR_IC_HASH_NEXT, &context);
+	      mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "intptr", MR_IC_HASH, &context);
 	    }
 	  mr_ptr_t * add = mr_ic_add (&cache, idx);
 	  if ((add != NULL) && (add->intptr != idx))

@@ -982,7 +982,7 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
   memset (&ra_die_ptr, 0, sizeof (ra_die_ptr));
   walk_dies (mr_die, &ra_die_ptr);
 
-  status = mr_ic_new (&die_off_ic, die_off_hash, die_off_cmp, "mr_die_t", MR_IC_HASH_NEXT, NULL);
+  status = mr_ic_new (&die_off_ic, die_off_hash, die_off_cmp, "mr_die_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
   status = mr_ic_index (&die_off_ic, &ra_die_ptr);
   assert (status == MR_SUCCESS);
@@ -1150,13 +1150,13 @@ main (int argc, char * argv [])
     }
   
   mr_ic_rarray_t ic_rarray = { .ra = (void*)mr_type_sign, .size = sizeof (mr_type_sign), };
-  mr_status_t status = mr_ic_new (&mr_type_sign_ic, mr_type_sign_hash, mr_type_sign_cmp, "mr_type_sign_t", MR_IC_HASH_NEXT, NULL);
+  mr_status_t status = mr_ic_new (&mr_type_sign_ic, mr_type_sign_hash, mr_type_sign_cmp, "mr_type_sign_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
   status = mr_ic_index (&mr_type_sign_ic, &ic_rarray);
   assert (status == MR_SUCCESS);
 
   mr_ic_t td_ic;
-  status = mr_ic_new (&td_ic, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH_NEXT, NULL);
+  status = mr_ic_new (&td_ic, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
 
   int i;
