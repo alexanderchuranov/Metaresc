@@ -326,9 +326,9 @@ mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
       
       if (0 == key.intptr)
 	{
+	  ++ic->items_count;
 	  ic->hash.zero_key = true;
 	  ic->hash.hash_table[count].intptr = 0;
-	  ++ic->items_count;
 	  return (&ic->hash.hash_table[count]);
 	}
 
@@ -338,8 +338,8 @@ mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
 	{
 	  if (0 == ic->hash.hash_table[i].intptr)
 	    {
-	      ic->hash.hash_table[i] = key;
 	      ++ic->items_count;
+	      ic->hash.hash_table[i] = key;
 	      return (&ic->hash.hash_table[i]);
 	    }
 	  if (0 == ic->compar_fn (key, ic->hash.hash_table[i], ic->context.data.ptr))
@@ -370,14 +370,14 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
   if (0 == src_ic->items_count)
     return (MR_SUCCESS);
 
-  unsigned count = 3 | (((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * src_ic->items_count) >> MR_HASH_MULT_FIXEDPOINT);
+  unsigned count = 4 | (((long long)((2LL << MR_HASH_MULT_FIXEDPOINT) * MR_HASH_TABLE_SIZE_MULT) * src_ic->items_count) >> MR_HASH_MULT_FIXEDPOINT);
   dst_ic->hash.hash_table = MR_CALLOC (count, sizeof (dst_ic->hash.hash_table[0]));
   if (NULL == dst_ic->hash.hash_table)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
-  dst_ic->hash.resize_count = count >> 1;
+  dst_ic->hash.resize_count = (count >> 1) + 1;
   dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
 }
