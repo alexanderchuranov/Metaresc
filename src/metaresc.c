@@ -1777,27 +1777,14 @@ mr_check_fields (mr_td_t * tdp)
 void
 mr_pointer_fd_set_size (mr_fd_t * fdp)
 {
+#define MR_TYPE_SIZE(TYPE) [MR_TYPE_DETECT (TYPE)] = sizeof (TYPE),
   static size_t types_sizes[] =
     {
       [0 ... MR_TYPE_LAST - 1] = 0,
-      [MR_TYPE_VOID] = sizeof (void*),
-      [MR_TYPE_BOOL] = sizeof (bool),
-      [MR_TYPE_INT8] = sizeof (int8_t),
-      [MR_TYPE_UINT8] = sizeof (uint8_t),
-      [MR_TYPE_INT16] = sizeof (int16_t),
-      [MR_TYPE_UINT16] = sizeof (uint16_t),
-      [MR_TYPE_INT32] = sizeof (int32_t),
-      [MR_TYPE_UINT32] = sizeof (uint32_t),
-      [MR_TYPE_INT64] = sizeof (int64_t),
-      [MR_TYPE_UINT64] = sizeof (uint64_t),
-      [MR_TYPE_FLOAT] = sizeof (float),
-      [MR_TYPE_COMPLEX_FLOAT] = sizeof (complex float),
-      [MR_TYPE_DOUBLE] = sizeof (double),
-      [MR_TYPE_COMPLEX_DOUBLE] = sizeof (complex double),
-      [MR_TYPE_LONG_DOUBLE] = sizeof (long double),
-      [MR_TYPE_COMPLEX_LONG_DOUBLE] = sizeof (complex long double),
-      [MR_TYPE_CHAR] = sizeof (char),
-      [MR_TYPE_STRING] = sizeof (char*),
+      MR_FOREACH (MR_TYPE_SIZE,
+		  string_t, char, bool,
+		  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+		  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };
 
   fdp->size = types_sizes[fdp->mr_type_aux];
@@ -1826,7 +1813,7 @@ mr_auto_field_detect (mr_fd_t * fdp)
       if (fdp->mr_type_aux != MR_TYPE_NONE)
 	fdp->mr_type = MR_TYPE_POINTER;
       /* auto detect pointers */
-      char * end = strchr (fdp->type, 0) - 1;
+      char * end = &fdp->type[strlen (fdp->type) - 1];
       if ('*' == *end)
 	{
 	  /* remove whitespaces before * */

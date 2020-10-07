@@ -590,27 +590,14 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 static int
 mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
 {
-#define MR_TYPE_NAME_STRING(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE)
+#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
   static char * type_name[] = {
     [0 ... MR_TYPE_LAST - 1] = NULL,
-    [MR_TYPE_CHAR_ARRAY] = MR_STRINGIFY_READONLY (string),
-    MR_TYPE_NAME_STRING (string_t),
-    MR_TYPE_NAME_STRING (char),
-    MR_TYPE_NAME_STRING (bool),
-    MR_TYPE_NAME_STRING (int8_t),
-    MR_TYPE_NAME_STRING (uint8_t),
-    MR_TYPE_NAME_STRING (int16_t),
-    MR_TYPE_NAME_STRING (uint16_t),
-    MR_TYPE_NAME_STRING (int32_t),
-    MR_TYPE_NAME_STRING (uint32_t),
-    MR_TYPE_NAME_STRING (int64_t),
-    MR_TYPE_NAME_STRING (uint64_t),
-    MR_TYPE_NAME_STRING (float),
-    MR_TYPE_NAME_STRING (complex_float_t),
-    MR_TYPE_NAME_STRING (double),
-    MR_TYPE_NAME_STRING (complex_double_t),
-    MR_TYPE_NAME_STRING (long_double_t),
-    MR_TYPE_NAME_STRING (complex_long_double_t),
+    [MR_TYPE_CHAR_ARRAY] = "string",
+    MR_FOREACH (MR_TYPE_NAME,
+		string_t, char, bool,
+		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };
   intptr_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
