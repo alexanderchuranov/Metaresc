@@ -754,6 +754,17 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       fdp->size = attr->dw_unsigned;
     }
   
+  attr = die_attribute (mr_die, _DW_AT_data_member_location);
+  if (attr != NULL)
+    {
+      assert ((_DW_FORM_data1 == attr->form) ||
+	      (_DW_FORM_data2 == attr->form) ||
+	      (_DW_FORM_data4 == attr->form) ||
+	      (_DW_FORM_data8 == attr->form) ||
+	      (_DW_FORM_block1 == attr->form));
+      fdp->offset = attr->dw_unsigned;
+    }
+
   attr = die_attribute (mr_die, _DW_AT_bit_size);
   if (attr != NULL)
     {
@@ -774,18 +785,9 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	{
 	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
 	  fdp->param.bitfield_param.shift = fdp->size * __CHAR_BIT__ - fdp->param.bitfield_param.width - attr->dw_unsigned;
+	  fdp->offset += fdp->param.bitfield_param.shift / __CHAR_BIT__;
+	  fdp->param.bitfield_param.shift %= __CHAR_BIT__;
 	}
-    }
-
-  attr = die_attribute (mr_die, _DW_AT_data_member_location);
-  if (attr != NULL)
-    {
-      assert ((_DW_FORM_data1 == attr->form) ||
-	      (_DW_FORM_data2 == attr->form) ||
-	      (_DW_FORM_data4 == attr->form) ||
-	      (_DW_FORM_data8 == attr->form) ||
-	      (_DW_FORM_block1 == attr->form));
-      fdp->offset = attr->dw_unsigned;
     }
 
   get_mr_type (fdp, mr_die, die_off_ic);
