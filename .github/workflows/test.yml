@@ -1,4 +1,4 @@
-name: Minetest Container Image
+name: metaresc ci
 on:
   push
 jobs:
