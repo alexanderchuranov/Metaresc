@@ -9,7 +9,7 @@ VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
-  check_PROGRAMS = mf_mr_save mf_mr_copy
+  check_PROGRAMS = mf_mr_save mf_mr_copy long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic mr_types mem_allocations mr_copy mr_hash_cmp mem_failures dw_types
 
 if HAVE_XDR
   check_PROGRAMS += smoke_xdr mf_xdr_save mf_xdr_load
@@ -23,19 +23,23 @@ if HAVE_LIBXML2
   check_PROGRAMS += smoke_xml2 mf_xml2_save mf_xml2_load
 endif
 
-  check_PROGRAMS += long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function
-
 if HAVE_LIBDWARF
   check_PROGRAMS += dw_export
 endif
 
-check_PROGRAMS += ic mr_types mem_allocations mr_copy mr_hash_cmp
-
 endif
 
-dw_export.$(OBJEXT): dw_export.h
+dw_export.$(OBJEXT): dw_export.h dw_types.h
 dw_export.h: $(top_srcdir)/src/libmetaresc.la
 	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $<` > $@
+if OSX
+dw_types.h: dw_types
+	dsymutil .libs/$<
+	$(top_srcdir)/src/mr_dwarf .libs/$< > $@
+else
+dw_types.h: dw_types.$(OBJEXT)
+	$(top_srcdir)/src/mr_dwarf $< > $@
+endif
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)
 mf_mr_copy_LDADD = mem_failures.$(OBJEXT)
@@ -51,6 +55,7 @@ mf_xml1_save_LDADD = mem_failures.$(OBJEXT)
 mf_xml1_load_LDADD = mem_failures.$(OBJEXT)
 mf_xml2_save_LDADD = mem_failures.$(OBJEXT)
 mf_xml2_load_LDADD = mem_failures.$(OBJEXT)
+dw_types_LDADD = mem_failures.$(OBJEXT)
 
 TESTS=$(check_PROGRAMS)
 

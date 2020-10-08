@@ -6,6 +6,7 @@
 
 static mr_td_t ra_td[] = {
 #include <dw_export.h>
+#include <dw_types.h>
 };
 
 static mr_td_t *
