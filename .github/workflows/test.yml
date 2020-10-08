@@ -1,0 +1,14 @@
+name: metaresc ci
+on:
+  push
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: |
+          sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check libdwarf1
+          ./autogen.sh
+          ./configure   
+          make check
