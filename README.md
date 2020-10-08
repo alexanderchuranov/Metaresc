@@ -1,6 +1,6 @@
 # METARESC: META data and RESource library for C language
 
-[![YourActionName Actions Status](https://github.com/alexanderchuranov/Metaresc/workflows/metaresc+ci/badge.svg)](https://github.com/alexanderchuranov/Metaresc/actions)
+[![YourActionName Actions Status](https://github.com/alexanderchuranov/Metaresc/workflows/ci/badge.svg)](https://github.com/alexanderchuranov/Metaresc/actions)
 
 METARESC is a software library written in C programming language. It
 allows declaring types using a special METARESC grammar. The variables

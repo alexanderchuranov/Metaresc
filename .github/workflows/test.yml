@@ -1,4 +1,4 @@
-name: metaresc ci
+name: ci
 on:
   push
 jobs:
