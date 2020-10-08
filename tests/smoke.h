@@ -1,7 +1,7 @@
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
-#include <sys/times.h>
+#include <time.h>
 
 #include <check.h>
 #include <metaresc.h>
@@ -21,7 +21,7 @@
   SKIP_PERFORMANCE_TEST_{METHOD} to 0
 */
 
-#define MULTIPLE (32)
+#define MULTIPLE (8)
 
 #define SMOKE_METHOD(METHOD, ...) START_TEST (mr_conf_save_load) {	\
     mr_conf_t mr_conf_saved = mr_conf;					\
@@ -54,8 +54,7 @@
     array_t array, array_;						\
     mr_rarray_t ra;							\
     typed_list_t list_, typed_list = { .ptr_type = "string", };		\
-    struct tms start, end;						\
-    times (&start);							\
+    clock_t start = clock ();						\
     memset (&array, 0, sizeof (array));					\
     array.size = count * sizeof (array.ra[0]);				\
     array.ptr_type = "string";						\
@@ -86,16 +85,15 @@
 	MR_FREE_RECURSIVELY (array_t, &array_);				\
 	MR_FREE (ra.data.ptr);						\
 	MR_FREE (array.ra);						\
-	times (&end);							\
-	return ((int)((end.tms_utime - start.tms_utime)));		\
+	return (clock () - start);					\
   }									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
     int size = 2;							\
-    do size += size >> 1; while (test_run (size) == 0);			\
+    do size += size >> 1; while (test_run (size) < CLOCKS_PER_SEC / 100); \
     int x1 = test_run (size * MULTIPLE);				\
     int x2 = test_run (size * MULTIPLE * 4);				\
-    ck_assert_msg (((double)x2 / (double)x1 < 5), "performance issue for method " #METHOD); \
+    ck_assert_msg (x2 / x1 < 5, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
   {									\
