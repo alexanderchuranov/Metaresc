@@ -49,6 +49,7 @@ cinit_load.tab.c: cinit_load.y cinit_load.lex.h
 cinit_load.lex.c: cinit_load.l cinit_load.tab.h
 scm_load.tab.c: scm_load.y scm_load.lex.h
 scm_load.lex.c: scm_load.l scm_load.tab.h
+$(libmetaresc_la_SOURCES) mr_dwarf.c: metaresc.h
 metaresc.h: mr_pp.h
 mr_pp.h: mr_pp.sh
 	$(srcdir)/mr_pp.sh $(PP_DEPTH) > $@.tmp
