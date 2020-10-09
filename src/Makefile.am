@@ -52,7 +52,7 @@ scm_load.lex.c: scm_load.l scm_load.tab.h
 metaresc.h: mr_pp.h
 mr_pp.h: mr_pp.sh
 	$(srcdir)/mr_pp.sh $(PP_DEPTH) > $@.tmp
-	$(MV) $@.tmp $@
+	$(am__mv) $@.tmp $@
 
 valgrind:
 	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"
