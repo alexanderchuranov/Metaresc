@@ -59,24 +59,10 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
   if (discriminator)
     switch (mr_type)
       {
-      case MR_TYPE_BOOL:
-	return (mr_union_discriminator_by_idx (tdp, *(bool*)discriminator));
-      case MR_TYPE_UINT8:
-	return (mr_union_discriminator_by_idx (tdp, *(uint8_t*)discriminator));
-      case MR_TYPE_INT8:
-	return (mr_union_discriminator_by_idx (tdp, *(int8_t*)discriminator));
-      case MR_TYPE_UINT16:
-	return (mr_union_discriminator_by_idx (tdp, *(uint16_t*)discriminator));
-      case MR_TYPE_INT16:
-	return (mr_union_discriminator_by_idx (tdp, *(int16_t*)discriminator));
-      case MR_TYPE_UINT32:
-	return (mr_union_discriminator_by_idx (tdp, *(uint32_t*)discriminator));
-      case MR_TYPE_INT32:
-	return (mr_union_discriminator_by_idx (tdp, *(int32_t*)discriminator));
-      case MR_TYPE_UINT64:
-	return (mr_union_discriminator_by_idx (tdp, *(uint64_t*)discriminator));
-      case MR_TYPE_INT64:
-	return (mr_union_discriminator_by_idx (tdp, *(int64_t*)discriminator));
+#define CASE_RETURN_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): return (mr_union_discriminator_by_idx (tdp, *(TYPE*)discriminator));
+
+	MR_FOREACH (CASE_RETURN_BY_TYPE, bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
       case MR_TYPE_BITFIELD:
 	{
 	  uint64_t value = 0;

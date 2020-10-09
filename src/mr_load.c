@@ -146,50 +146,16 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 
   switch (ptrdes->fd.mr_type)
     {
-    case MR_TYPE_BOOL:
-      *(bool*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_INT8:
-      *(int8_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_UINT8:
-      *(uint8_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_INT16:
-      *(int16_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_UINT16:
-      *(uint16_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_INT32:
-      *(int32_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_UINT32:
-      *(uint32_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_INT64:
-      *(int64_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-    case MR_TYPE_UINT64:
-      *(uint64_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      break;
-
+#define CASE_SET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
+      MR_FOREACH (CASE_SET_VALUE_BY_TYPE, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+      
     case MR_TYPE_ENUM:
     case MR_TYPE_BITMASK:
       switch (ptrdes->fd.size)
 	{
-	case sizeof (uint8_t):
-	  *(uint8_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-	  break;
-	case sizeof (uint16_t):
-	  *(uint16_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-	  break;
-	case sizeof (uint32_t):
-	  *(uint32_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-	  break;
-	case sizeof (uint64_t):
-	  *(uint64_t*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-	  break;
+#define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
+	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
+
 	default:
 	  memcpy (ptrdes->data.ptr, &ptrdes->load_params.mr_value.vt_int,
 		  MR_MIN (ptrdes->fd.size, sizeof (ptrdes->load_params.mr_value.vt_int)));
@@ -340,15 +306,9 @@ mr_load_float (int idx, mr_load_data_t * mr_load_data)
 
   switch (ptrdes->fd.mr_type)
     {
-    case MR_TYPE_FLOAT:
-      *(float*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_float;
-      break;
-    case MR_TYPE_DOUBLE:
-      *(double*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_float;
-      break;
-    case MR_TYPE_LONG_DOUBLE:
-      *(long double*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_float;
-      break;
+#define CASE_SET_FLOAT_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_float; break;
+      MR_FOREACH (CASE_SET_FLOAT_BY_TYPE, float, double, long double);
+
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
       return (MR_FAILURE);
@@ -365,15 +325,9 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
 
   switch (ptrdes->fd.mr_type)
     {
-    case MR_TYPE_COMPLEX_FLOAT:
-      *(complex float*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_complex;
-      break;
-    case MR_TYPE_COMPLEX_DOUBLE:
-      *(complex double*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_complex;
-      break;
-    case MR_TYPE_COMPLEX_LONG_DOUBLE:
-      *(complex long double*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_complex;
-      break;
+#define CASE_SET_COMPLEX_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_complex; break;
+      MR_FOREACH (CASE_SET_COMPLEX_BY_TYPE, complex float, complex double, complex long double);
+
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
       return (MR_FAILURE);

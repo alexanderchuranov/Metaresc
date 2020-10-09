@@ -29,35 +29,11 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
-/* meta data for type 'char' - required as a discriminator for mr_ptr union */
-MR_TYPEDEF_DESC_BI (char, "type descriptor for 'char'");
-/* meta data for all scallar types */
-MR_TYPEDEF_DESC_BI (mr_string_t);
-MR_TYPEDEF_DESC_BI (string_t);
-MR_TYPEDEF_DESC_BI (bool);
-MR_TYPEDEF_DESC_BI (uint8_t);
-MR_TYPEDEF_DESC_BI (int8_t);
-MR_TYPEDEF_DESC_BI (uint16_t);
-MR_TYPEDEF_DESC_BI (int16_t);
-MR_TYPEDEF_DESC_BI (uint32_t);
-MR_TYPEDEF_DESC_BI (int32_t);
-MR_TYPEDEF_DESC_BI (uint64_t);
-MR_TYPEDEF_DESC_BI (int64_t);
-MR_TYPEDEF_DESC_BI (signed);
-MR_TYPEDEF_DESC_BI (unsigned);
-MR_TYPEDEF_DESC_BI (int);
-MR_TYPEDEF_DESC_BI (short);
-MR_TYPEDEF_DESC_BI (long);
-MR_TYPEDEF_DESC_BI (long_int_t);
-MR_TYPEDEF_DESC_BI (long_long_int_t);
-MR_TYPEDEF_DESC_BI (uintptr_t);
-MR_TYPEDEF_DESC_BI (intptr_t);
-MR_TYPEDEF_DESC_BI (float);
-MR_TYPEDEF_DESC_BI (double);
-MR_TYPEDEF_DESC_BI (long_double_t);
-MR_TYPEDEF_DESC_BI (complex_float_t);
-MR_TYPEDEF_DESC_BI (complex_double_t);
-MR_TYPEDEF_DESC_BI (complex_long_double_t);
+MR_FOREACH (MR_TYPEDEF_DESC_BI, char, mr_string_t, string_t,
+	    bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
+	    signed, unsigned, int, short, long, float, double,
+	    long_int_t, long_long_int_t, uintptr_t, intptr_t, long_double_t,
+	    complex_float_t, complex_double_t, complex_long_double_t);
 
 void * mr_calloc (const char * filename, const char * function, int line, size_t count, size_t size) { return (calloc (count, size)); }
 void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size) { return (realloc (ptr, size)); }
@@ -551,50 +527,14 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_ENUM:
       switch (src->fd.size)
 	{
-	case sizeof (uint8_t):
-	  value = *(uint8_t*)src_data;
-	  break;
-	case sizeof (uint16_t):
-	  value = *(uint16_t*)src_data;
-	  break;
-	case sizeof (uint32_t):
-	  value = *(uint32_t*)src_data;
-	  break;
-	case sizeof (uint64_t):
-	  value = *(uint64_t*)src_data;
-	  break;
+#define GET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): value = *(TYPE*)src_data; break;
+	  MR_FOREACH (GET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 	}
       break;
-    case MR_TYPE_BOOL:
-      value = *(bool*)src_data;
-      break;
-    case MR_TYPE_CHAR:
-      value = *(char*)src_data;
-      break;
-    case MR_TYPE_UINT8:
-      value = *(uint8_t*)src_data;
-      break;
-    case MR_TYPE_INT8:
-      value = *(int8_t*)src_data;
-      break;
-    case MR_TYPE_UINT16:
-      value = *(uint16_t*)src_data;
-      break;
-    case MR_TYPE_INT16:
-      value = *(int16_t*)src_data;
-      break;
-    case MR_TYPE_UINT32:
-      value = *(uint32_t*)src_data;
-      break;
-    case MR_TYPE_INT32:
-      value = *(int32_t*)src_data;
-      break;
-    case MR_TYPE_UINT64:
-      value = *(uint64_t*)src_data;
-      break;
-    case MR_TYPE_INT64:
-      value = *(int64_t*)src_data;
-      break;
+      
+#define GET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): value = *(TYPE*)src_data; break;
+      MR_FOREACH (GET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
     case MR_TYPE_BITFIELD:
       mr_save_bitfield_value (src, &value); /* get value of the bitfield */
       break;
@@ -613,50 +553,14 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_ENUM:
       switch (dst->fd.size)
 	{
-	case sizeof (uint8_t):
-	  *(uint8_t*)dst_data = value;
-	  break;
-	case sizeof (uint16_t):
-	  *(uint16_t*)dst_data = value;
-	  break;
-	case sizeof (uint32_t):
-	  *(uint32_t*)dst_data = value;
-	  break;
-	case sizeof (uint64_t):
-	  *(uint64_t*)dst_data = value;
-	  break;
+#define SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)dst_data = value; break;
+	  MR_FOREACH (SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 	}
       break;
-    case MR_TYPE_BOOL:
-      *(bool*)dst_data = value;
-      break;
-    case MR_TYPE_CHAR:
-      *(char*)dst_data = value;
-      break;
-    case MR_TYPE_UINT8:
-      *(uint8_t*)dst_data = value;
-      break;
-    case MR_TYPE_INT8:
-      *(int8_t*)dst_data = value;
-      break;
-    case MR_TYPE_UINT16:
-      *(uint16_t*)dst_data = value;
-      break;
-    case MR_TYPE_INT16:
-      *(int16_t*)dst_data = value;
-      break;
-    case MR_TYPE_UINT32:
-      *(uint32_t*)dst_data = value;
-      break;
-    case MR_TYPE_INT32:
-      *(int32_t*)dst_data = value;
-      break;
-    case MR_TYPE_UINT64:
-      *(uint64_t*)dst_data = value;
-      break;
-    case MR_TYPE_INT64:
-      *(int64_t*)dst_data = value;
-      break;
+
+#define SET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)dst_data = value; break;
+      MR_FOREACH (SET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
     case MR_TYPE_BITFIELD:
       mr_load_bitfield_value (dst, &value); /* set value of the bitfield */
       break;
@@ -995,25 +899,14 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
 	  ptrdes->res.data.uintptr = *(bool*)ptrdes->data.ptr;
 	  break;
 
-#define CASE_MR_TYPE_HASH(MR_TYPE, TYPE)				\
-	  case MR_TYPE:							\
+#define CASE_MR_TYPE_HASH(TYPE)						\
+	  case MR_TYPE_DETECT (TYPE):					\
 	    ptrdes->res.data.uintptr =					\
 	      mr_hash_block (ptrdes->data.ptr, sizeof (TYPE));		\
 	    break;
 
-	  CASE_MR_TYPE_HASH (MR_TYPE_CHAR, char);
-	  CASE_MR_TYPE_HASH (MR_TYPE_INT8, int8_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_UINT8, uint8_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_INT16, int16_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_UINT16, uint16_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_INT32, int32_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_UINT32, uint32_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_INT64, int64_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_UINT64, uint64_t);
-	  CASE_MR_TYPE_HASH (MR_TYPE_FLOAT, float);
-	  CASE_MR_TYPE_HASH (MR_TYPE_COMPLEX_FLOAT, complex float);
-	  CASE_MR_TYPE_HASH (MR_TYPE_DOUBLE, double);
-	  CASE_MR_TYPE_HASH (MR_TYPE_COMPLEX_DOUBLE, complex double);
+	  MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
+		      float, complex_float_t, double, complex_double_t);
 	  
 	case MR_TYPE_LONG_DOUBLE:
 	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
@@ -1143,16 +1036,16 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    return (diff);
 	  break;
 
-#define CASE_MR_TYPE_CMP(MR_TYPE, TYPE)			     \
-	  case MR_TYPE:						     \
+#define CASE_MR_TYPE_CMP(TYPE)					     \
+	  case MR_TYPE_DETECT (TYPE):				     \
 	    diff = (*(TYPE*)x_i->data.ptr > *(TYPE*)y_i->data.ptr) - \
 	      (*(TYPE*)x_i->data.ptr < *(TYPE*)y_i->data.ptr);	     \
 	    if (diff)						     \
 	      return (diff);					     \
 	    break;
 
-#define CASE_MR_TYPE_CMP_COMPLEX(MR_TYPE, TYPE)			     \
-	  case MR_TYPE:							\
+#define CASE_MR_TYPE_CMP_COMPLEX(TYPE)					\
+	  case MR_TYPE_DETECT (TYPE):					\
 	    diff = (__real__ *(TYPE*)x_i->data.ptr > __real__ *(TYPE*)y_i->data.ptr) - \
 	      (__real__ *(TYPE*)x_i->data.ptr < __real__ *(TYPE*)y_i->data.ptr); \
 	    if (diff)							\
@@ -1163,35 +1056,15 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	      return (diff);						\
 	    break;
 
-	  CASE_MR_TYPE_CMP (MR_TYPE_CHAR, char);
-	  CASE_MR_TYPE_CMP (MR_TYPE_BOOL, bool);
-	  CASE_MR_TYPE_CMP (MR_TYPE_INT8, int8_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_UINT8, uint8_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_INT16, int16_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_UINT16, uint16_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_INT32, int32_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_UINT32, uint32_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_INT64, int64_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_UINT64, uint64_t);
-	  CASE_MR_TYPE_CMP (MR_TYPE_FLOAT, float);
-	  CASE_MR_TYPE_CMP_COMPLEX (MR_TYPE_COMPLEX_FLOAT, complex float);
-	  CASE_MR_TYPE_CMP (MR_TYPE_DOUBLE, double);
-	  CASE_MR_TYPE_CMP_COMPLEX (MR_TYPE_COMPLEX_DOUBLE, complex double);
-	  CASE_MR_TYPE_CMP (MR_TYPE_LONG_DOUBLE, long double);
-	  CASE_MR_TYPE_CMP_COMPLEX (MR_TYPE_COMPLEX_LONG_DOUBLE, complex long double);
+	  MR_FOREACH (CASE_MR_TYPE_CMP, char, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, long_double_t);
+	  MR_FOREACH (CASE_MR_TYPE_CMP_COMPLEX, complex float, complex double, complex long double);
 
 	case MR_TYPE_ENUM:
 	case MR_TYPE_BITMASK:
 	  switch (x_i->fd.mr_type_aux)
 	    {
-	      CASE_MR_TYPE_CMP (MR_TYPE_INT8, int8_t);
-	      CASE_MR_TYPE_CMP (MR_TYPE_UINT8, uint8_t);
-	      CASE_MR_TYPE_CMP (MR_TYPE_INT16, int16_t);
-	      CASE_MR_TYPE_CMP (MR_TYPE_UINT16, uint16_t);
-	      CASE_MR_TYPE_CMP (MR_TYPE_INT32, int32_t);
-	      CASE_MR_TYPE_CMP (MR_TYPE_UINT32, uint32_t);
-	      CASE_MR_TYPE_CMP (MR_TYPE_INT64, int64_t);
-	      CASE_MR_TYPE_CMP (MR_TYPE_UINT64, uint64_t);
+	  MR_FOREACH (CASE_MR_TYPE_CMP, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+	  
 	    default:
 	      diff = memcmp (x_i->data.ptr, y_i->data.ptr, x_i->fd.size);
 	      if (diff)
@@ -1470,30 +1343,10 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
   */
   switch (tdp->param.enum_param.mr_type_effective)
     {
-    case MR_TYPE_UINT8:
-      enum_value = *(uint8_t*)data;
-      break;
-    case MR_TYPE_INT8:
-      enum_value = *(int8_t*)data;
-      break;
-    case MR_TYPE_UINT16:
-      enum_value = *(uint16_t*)data;
-      break;
-    case MR_TYPE_INT16:
-      enum_value = *(int16_t*)data;
-      break;
-    case MR_TYPE_UINT32:
-      enum_value = *(uint32_t*)data;
-      break;
-    case MR_TYPE_INT32:
-      enum_value = *(int32_t*)data;
-      break;
-    case MR_TYPE_UINT64:
-      enum_value = *(uint64_t*)data;
-      break;
-    case MR_TYPE_INT64:
-      enum_value = *(int64_t*)data;
-      break;
+#define CASE_GET_ENUM_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): enum_value = *(TYPE*)data; break;
+
+      MR_FOREACH (CASE_GET_ENUM_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
     default:
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
       memcpy (&enum_value, data, MR_MIN (tdp->param.enum_param.size_effective, sizeof (enum_value)));
@@ -1552,22 +1405,10 @@ mr_add_enum (mr_td_t * tdp)
   */
   switch (tdp->param.enum_param.mr_type_effective)
     {
-    case MR_TYPE_INT8:
-    case MR_TYPE_UINT8:
-      tdp->param.enum_param.size_effective = sizeof (uint8_t);
-      break;
-    case MR_TYPE_INT16:
-    case MR_TYPE_UINT16:
-      tdp->param.enum_param.size_effective = sizeof (uint16_t);
-      break;
-    case MR_TYPE_INT32:
-    case MR_TYPE_UINT32:
-      tdp->param.enum_param.size_effective = sizeof (uint32_t);
-      break;
-    case MR_TYPE_INT64:
-    case MR_TYPE_UINT64:
-      tdp->param.enum_param.size_effective = sizeof (uint64_t);
-      break;
+#define CASE_SET_SIZE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): tdp->param.enum_param.size_effective = sizeof (TYPE); break;
+
+      MR_FOREACH (CASE_SET_SIZE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
     default:
       tdp->param.enum_param.size_effective = tdp->size;
       break;
