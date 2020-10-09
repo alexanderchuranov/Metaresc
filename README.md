@@ -11,14 +11,14 @@ purposes far beyond just achieving the persistence.
 
 ## How to build:
 
-Install external dependencies `autoconf`, `automake`, `libtool`, `pkg-config`, `flex`, `bison`, `libxml2-dev`, `check`.
+Install external dependencies `autoconf`, `automake`, `libtool`, `pkg-config`, `flex`, `bison`, `libxml2-dev`, `check`, `libdwarf-dev`.
 
 ### Ubuntu
 
 On Ubuntu, run the following command:
 
 ```console
-$ apt-get install autoconf automake libtool pkg-config flex bison libxml2-dev check
+$ apt-get install autoconf automake libtool pkg-config flex bison libxml2-dev check libdwarf-dev
 ```
 
 Checkout Metaresc from github
