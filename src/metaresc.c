@@ -29,10 +29,11 @@
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
 
-MR_FOREACH (MR_TYPEDEF_DESC_BI, char, mr_string_t, string_t,
+MR_FOREACH (MR_TYPEDEF_DESC_BI,
+	    char, signed, unsigned, int, short, long, float, double,
 	    bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-	    signed, unsigned, int, short, long, float, double,
-	    long_int_t, long_long_int_t, uintptr_t, intptr_t, long_double_t,
+	    mr_string_t, mr_hash_value_t, mr_offset_t, mr_size_t,
+	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, long_double_t,
 	    complex_float_t, complex_double_t, complex_long_double_t);
 
 void * mr_calloc (const char * filename, const char * function, int line, size_t count, size_t size) { return (calloc (count, size)); }
@@ -1607,12 +1608,15 @@ mr_check_fields (mr_td_t * tdp)
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
 	  if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
 	    *name = 0; /* truncate on first invalid charecter */
+	  mr_ic_add (&mr_conf.fields_names, &fdp->name);
 	}
       if (fdp->type)
 	mr_normalize_type (fdp);
       if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_init_bitfield (fdp);
     }
+  
+  mr_ic_add (&mr_conf.fields_names, &tdp->type);
 }
 
 void
@@ -1628,7 +1632,9 @@ mr_pointer_fd_set_size (mr_fd_t * fdp)
 		  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };
 
-  fdp->size = types_sizes[fdp->mr_type_aux];
+  if (fdp->mr_type_aux < MR_TYPE_LAST)
+    fdp->size = types_sizes[fdp->mr_type_aux];
+  
   if (fdp->size == 0)
     {
       mr_td_t * tdp = mr_get_td_by_name (fdp->type);
@@ -1927,15 +1933,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 
   mr_check_fields (tdp);
   
-  if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->type))
-    status = MR_FAILURE;
-
-  int i;
-  for (i = 0; i < count; ++i)
-    if (tdp->fields[i].fdp->name.str != NULL)
-      if (NULL == mr_ic_add (&mr_conf.fields_names, &tdp->fields[i].fdp->name))
-	status = MR_FAILURE;
-
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
   mr_ic_rarray.alloc_size = -1;

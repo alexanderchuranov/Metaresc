@@ -171,6 +171,13 @@ MR_START_TEST (mr_hash_cmp_all_types, "check hash and compare for struct with al
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
+  x._complex_float = 1;
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
+  y._complex_float = 1;
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
+
   x._complex_float = 1 + I;
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
@@ -185,6 +192,13 @@ MR_START_TEST (mr_hash_cmp_all_types, "check hash and compare for struct with al
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
+  x._complex_double = 1;
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
+  y._complex_double = 1;
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
+
   x._complex_double = 1 + I;
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
@@ -196,6 +210,13 @@ MR_START_TEST (mr_hash_cmp_all_types, "check hash and compare for struct with al
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
   y._long_double = 1;
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
+
+  x._complex_long_double = 1;
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
+  y._complex_long_double = 1;
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 

@@ -591,7 +591,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   if ((fdp->mr_type == MR_TYPE_STRUCT) || (fdp->mr_type == MR_TYPE_ENUM))
     ra[idx].type = fdp->type;
-  else 
+  else if (fdp->mr_type < MR_TYPE_LAST)
     ra[idx].type = type_name[fdp->mr_type];
 
   if (MR_TYPE_ARRAY == fdp->mr_type)

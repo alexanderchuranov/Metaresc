@@ -21,8 +21,6 @@
   SKIP_PERFORMANCE_TEST_{METHOD} to 0
 */
 
-#define MULTIPLE (8)
-
 #define SMOKE_METHOD(METHOD, ...) START_TEST (mr_conf_save_load) {	\
     mr_conf_t mr_conf_saved = mr_conf;					\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
@@ -90,9 +88,9 @@
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
     int size = 2;							\
-    do size += size >> 1; while (test_run (size) < CLOCKS_PER_SEC / 100); \
-    int x1 = test_run (size * MULTIPLE);				\
-    int x2 = test_run (size * MULTIPLE * 4);				\
+    do size += size >> 1; while (test_run (size) < CLOCKS_PER_SEC / 8); \
+    int x1 = test_run (size);						\
+    int x2 = test_run (size * 4);					\
     ck_assert_msg (x2 / x1 < 5, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
