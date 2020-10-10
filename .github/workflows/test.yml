@@ -10,5 +10,9 @@ jobs:
         run: |
           sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check libdwarf-dev
           ./autogen.sh
-          ./configure   
+          ./configure
           make check
+          make distclean
+          ./configure CC=clang
+          make check
+          make distclean
