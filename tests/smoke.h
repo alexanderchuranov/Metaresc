@@ -87,9 +87,11 @@
   }									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
-    int size = 2;							\
-    do size += size >> 1; while (test_run (size) < CLOCKS_PER_SEC / 8); \
-    int x1 = test_run (size);						\
+      int x1, size = 256;						\
+    do {								\
+      size += size >> 1;						\
+      x1 = test_run (size);						\
+    } while (x1 < CLOCKS_PER_SEC / 8);					\
     int x2 = test_run (size * 4);					\
     ck_assert_msg (x2 / x1 < 5, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\

@@ -48,59 +48,7 @@ extern Suite * suite;
   };									\
   START_TEST (NAME)
 
-#define MEM_CMP(TYPE, X, Y, ...) memcmp (X, Y, sizeof (TYPE))
-
-#if defined (HAVE_BISON_FLEX) || defined (HAVE_LIBXML2)
-
-  #ifdef HAVE_BISON_FLEX
-    #define SERIALIZE_METHOD MR_SAVE_CINIT
-  #else /* ! HAVE_BISON_FLEX */
-    #define SERIALIZE_METHOD(MR_TYPE_NAME, S_PTR) ({			\
-    MR_TYPE_NAME * _dump_ = S_PTR;					\
-    MR_SAVE_XML2 (MR_TYPE_NAME, _dump_);				\
-  })
-  #endif /* HAVE_BISON_FLEX */
-
-  #define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
-    char * x_ = SERIALIZE_METHOD (TYPE, X);				\
-    char * y_ = SERIALIZE_METHOD (TYPE, Y);				\
-    int xy_cmp = !0;							\
-    if (x_ && y_)							\
-      {									\
-	xy_cmp = strcmp (x_, y_);					\
-	if (xy_cmp)							\
-	  printf (#TYPE " %s = %s;\n"					\
-		  #TYPE " %s = %s;\n", &#X[1], x_, &#Y[1], y_);		\
-      }									\
-    else								\
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SERIALIZATION_FAILED);	\
-    if (x_)								\
-      MR_FREE (x_);							\
-    if (y_)								\
-      MR_FREE (y_);							\
-    xy_cmp;								\
-  })
-
-#elif HAVE_RPC_TYPES_H
-
-#define CMP_SERIALIAZED(TYPE, X, Y, ...) ({				\
-      mr_rarray_t x_ = MR_SAVE_XDR_RA (TYPE, X);			\
-      mr_rarray_t y_ = MR_SAVE_XDR_RA (TYPE, Y);			\
-      int xy_cmp = !0;							\
-      if (x_.data.ptr && y_.data.ptr)					\
-	{								\
-	  xy_cmp = (x_.MR_SIZE != y_.MR_SIZE) ||			\
-	    memcmp (x_.data.ptr, y_.data.ptr, x_.MR_SIZE);		\
-	}								\
-      if (x_.data.ptr)							\
-	MR_FREE (x_.data.ptr);						\
-      if (y_.data.ptr)							\
-	MR_FREE (y_.data.ptr);						\
-      xy_cmp;								\
-    })
-#else /* HAVE_RPC_TYPES_H */
-#error No default serialization method
-#endif /* HAVE_BISON_FLEX */
+#define CMP_SERIALIAZED(TYPE, X, Y, ...) MR_CMP_STRUCTS(TYPE, X, Y)
 
 #define SKIP_METHOD_ 0
 
@@ -142,9 +90,6 @@ extern Suite * suite;
 #define ASSERT_ITERATOR_(TEST, METHOD, ...) MR_IF_ELSE (SKIP_METHOD_ ## METHOD) (TEST (METHOD, __VA_ARGS__)) ()
 #define SERIAL(NAME, I, REC, X) REC; X
 #define ALL_METHODS(...) MR_FOR ((__VA_ARGS__), MR_NARG (TEST_METHODS), SERIAL, ASSERT_ITERATOR, TEST_METHODS)
-
-#define SCALAR_CMP(TYPE, X, Y, ...) (*(X) != *(Y))
-#define STRUCT_X_CMP(TYPE, X, Y, ...) ((X)->x != (Y)->x)
 
 #define MAIN(...)							\
   Suite * suite = NULL;							\

@@ -43,13 +43,13 @@ MR_START_TEST (embed_anon_union, "embeded anonymous union") {
 } END_TEST
 
 MR_START_TEST (anon_union, "anonymous union") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_FLOAT, STRUCT_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_INT32, STRUCT_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_FLOAT);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_anon_union_enum_t, UD_INT32);
 } END_TEST
 
 MR_START_TEST (named_anon_union, "named anonymous union") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_ANON_UNION, struct_named_anon_union_enum_t, UD_FLOAT, STRUCT_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_ANON_UNION, struct_named_anon_union_enum_t, UD_INT32, STRUCT_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_ANON_UNION, struct_named_anon_union_enum_t, UD_FLOAT);
+  ALL_METHODS (ASSERT_SAVE_LOAD_ANON_UNION, struct_named_anon_union_enum_t, UD_INT32);
 } END_TEST
 
 #define STRUCT_XY_X_CMP(TYPE, X, Y, ...) ((X)->xy.x != (Y)->xy.x)

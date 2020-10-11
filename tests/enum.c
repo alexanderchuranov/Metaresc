@@ -55,16 +55,11 @@ TYPEDEF_STRUCT (struct_mr_bitmask_t, BITMASK (mr_bitmask_t, x))
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_mr_bitmask_t, VALUE, __VA_ARGS__); \
     })
 
-/*
-  sizeof (mr_enum_uintXX_t) is determined by alignment attribute, but real size if sizeof (uint8_t) due to attribute packed.
-  That's why we can't compare results by MEM_CMP macro, which uses object size.
- */
+MR_START_TEST (zero_mr_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0); } END_TEST
+MR_START_TEST (zero_mr_struct_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0); } END_TEST
 
-MR_START_TEST (zero_mr_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, 0, SCALAR_CMP); } END_TEST
-MR_START_TEST (zero_mr_struct_enum_t, "zero as number enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, 0, STRUCT_X_CMP); } END_TEST
-
-MR_START_TEST (three_mr_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, (int)THREE, SCALAR_CMP); } END_TEST
-MR_START_TEST (three_mr_struct_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, (int)THREE, STRUCT_X_CMP); } END_TEST
+MR_START_TEST (three_mr_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, (int)THREE); } END_TEST
+MR_START_TEST (three_mr_struct_enum_t, "three as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, (int)THREE); } END_TEST
 
 static int warnings = 0;
 
@@ -81,8 +76,8 @@ MR_START_TEST (invalid_mr_enum_t, "invalid enum") {
   int checked = 0;
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
   
-#define CMP_ENUMS(...) ({ ++checked; SCALAR_CMP (__VA_ARGS__);})
-#define CMP_STRUCT_ENUMS(...) ({ ++checked; STRUCT_X_CMP (__VA_ARGS__);})
+#define CMP_ENUMS(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
+#define CMP_STRUCT_ENUMS(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
 
   mr_conf.msg_handler = msg_handler;
   ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, -1, CMP_ENUMS);

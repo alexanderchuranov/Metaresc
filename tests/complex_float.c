@@ -7,8 +7,8 @@
 #include <flt_values.h>
 
 #define ASSERT_SAVE_LOAD_COMPLEX_FLOAT(METHOD, VALUE) ({		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, complex float, VALUE, MEM_CMP);	\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_complex_float_t, VALUE, MEM_CMP); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, complex float, VALUE);		\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_complex_float_t, VALUE);	\
     })
 
 TYPEDEF_STRUCT (struct_complex_float_t, complex float x)

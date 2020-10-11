@@ -26,8 +26,8 @@ TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (_enum_t) 
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_bitfield_uint64_t, VALUE, __VA_ARGS__); \
     })
 
-MR_START_TEST (bitfield_enum_zero, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO, STRUCT_X_CMP); } END_TEST
-MR_START_TEST (bitfield_enum_three, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE, STRUCT_X_CMP); } END_TEST
+MR_START_TEST (bitfield_enum_zero, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO); } END_TEST
+MR_START_TEST (bitfield_enum_three, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE); } END_TEST
 
 static int warnings = 0;
 
@@ -44,7 +44,7 @@ MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
   int checked = 0;
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
 
-#define CMP_STRUCT_(...) ({ ++checked; STRUCT_X_CMP (__VA_ARGS__);})
+#define CMP_STRUCT_(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
 
   mr_conf.msg_handler = msg_handler;
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, -1, CMP_STRUCT_);
@@ -56,15 +56,15 @@ MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
 #undef SKIP_METHOD_XDR
 
 MR_START_TEST (bitfield_int_0, "bitfield as integer for value 0") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, 0, STRUCT_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, 0);
 } END_TEST
 
 MR_START_TEST (bitfield_int_3, "bitfield as integer for value 3") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, 3, STRUCT_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, 3);
 } END_TEST
 
 MR_START_TEST (bitfield_int_m1, "bitfield as integer for value -1") {
-  ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, -1, STRUCT_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, -1);
 } END_TEST
 
 MAIN ();

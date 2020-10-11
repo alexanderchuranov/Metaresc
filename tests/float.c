@@ -7,8 +7,8 @@
 
 
 #define ASSERT_SAVE_LOAD_FLOAT(METHOD, VALUE) ({			\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE, MEM_CMP);		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float_t, VALUE, MEM_CMP);	\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, float, VALUE);			\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_float_t, VALUE);		\
     })
 
 TYPEDEF_STRUCT (struct_float_t, float x)

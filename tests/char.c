@@ -11,8 +11,8 @@ MR_START_TEST (all_chars, "run whole charset") {
   for (i = 0; i < (1 << __CHAR_BIT__); ++i)
     {
       char c = i;
-      ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char, c, SCALAR_CMP);
-      ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c, STRUCT_X_CMP);
+      ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char, c);
+      ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c);
     }
 } END_TEST
 
@@ -28,8 +28,8 @@ MR_START_TEST (print_chars, "run printable charset for libxml2") {
       char c = i;
       if (isprint (c))
 	{
-	  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char, c, SCALAR_CMP);
-	  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c, STRUCT_X_CMP);
+	  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char, c);
+	  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c);
 	}
     }
 } END_TEST
