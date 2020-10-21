@@ -184,9 +184,9 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
   else if (log_level > mr_conf.log_level)
     {
       const char * log_level_str_ = "Unknown";
-#define LL_INIT(LEVEL) [MR_LL_##LEVEL] = #LEVEL
+#define LL_INIT(LEVEL) [MR_LL_##LEVEL] = #LEVEL,
       static const char * log_level_str[] =
-	{ LL_INIT (ALL), LL_INIT (TRACE), LL_INIT (DEBUG), LL_INIT (INFO), LL_INIT (WARN), LL_INIT (ERROR), LL_INIT (FATAL), LL_INIT (OFF) };
+	{ MR_FOREACH (LL_INIT, ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF) };
 
       if (((int)log_level >= 0)
 	  && ((int)log_level <= sizeof (log_level_str) / sizeof (log_level_str[0]))
