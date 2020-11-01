@@ -10,7 +10,7 @@ MR_START_TEST (ld_ptr, "pointer on a long double (type name with spaces)") {
 } END_TEST
 
 TYPEDEF_ENUM (_enum_t, ZERO, ONE);
-TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint16_t))))), PE_ZERO, PE_ONE);
+TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed))), PE_ZERO, PE_ONE);
 TYPEDEF_STRUCT (enum_ptr_t, (_enum_t *, x));
 TYPEDEF_STRUCT (packed_enum_ptr_t, (packed_enum_t *, x));
 

@@ -6,10 +6,10 @@ TYPEDEF_STRUCT (empty_struct_t)
 TYPEDEF_UNION (union_int32_float_t, float x, int32_t y)
 
 TYPEDEF_ENUM (enum_discriminator_t, (UD_FLOAT, , "x"), (UD_INT32, , "y"))
-TYPEDEF_ENUM (enum8_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t))))), (U8D_FLOAT, , "x"), (U8D_INT32, , "y"))
-TYPEDEF_ENUM (enum16_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint16_t))))), (U16D_FLOAT, , "x"), (U16D_INT32, , "y"))
-TYPEDEF_ENUM (enum32_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint32_t))))), (U32D_FLOAT, , "x"), (U32D_INT32, , "y"))
-TYPEDEF_ENUM (enum64_discriminator_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint64_t))))), (U64D_FLOAT, , "x"), (U64D_INT32, , "y"))
+TYPEDEF_ENUM (enum8_discriminator_t, ATTRIBUTES (__attribute__ ((packed))), (U8D_FLOAT, , "x"), (U8D_INT32, , "y"))
+TYPEDEF_ENUM (enum16_discriminator_t, ATTRIBUTES (__attribute__ ((packed))), (U16D_FLOAT, , "x"), (U16D_INT32, , "y"), (U16D_LAST, = 1UL << __CHAR_BIT__ * (sizeof (uint16_t) >> 1)))
+TYPEDEF_ENUM (enum32_discriminator_t, ATTRIBUTES (__attribute__ ((packed))), (U32D_FLOAT, , "x"), (U32D_INT32, , "y"), (U32D_LAST, = 1UL << __CHAR_BIT__ * (sizeof (uint16_t) >> 1)))
+TYPEDEF_ENUM (enum64_discriminator_t, ATTRIBUTES (__attribute__ ((packed))), (U64D_FLOAT, , "x"), (U64D_INT32, , "y"), (U64D_LAST, = 1UL << __CHAR_BIT__ * (sizeof (uint16_t) >> 1)))
 
 TYPEDEF_STRUCT (struct_embed_anon_union_t,
 		int dummy,

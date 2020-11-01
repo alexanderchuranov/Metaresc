@@ -89,7 +89,7 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
 
 #define YY_NO_INPUT
 #define YYINITDEPTH 256
-#define YYMAXDEPTH (1 << 31)
+#define YYMAXDEPTH ((unsigned)-1)
 
 #define MR_LOAD_FUNC(METHOD)						\
   mr_status_t METHOD ## _load (char * str, mr_ra_ptrdes_t * ptrs) {	\

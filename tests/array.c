@@ -2,7 +2,7 @@
 #include <metaresc.h>
 #include <regression.h>
 
-TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint16_t))))), ZERO, ONE, TWO, THREE)
+TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed))), ZERO, ONE, TWO, THREE)
 TYPEDEF_STRUCT (char_array_t, (char, x, [2]))
 TYPEDEF_STRUCT (packed_enum_array_t, (packed_enum_t, x, [2]))
 TYPEDEF_STRUCT (int8_array_t, (int8_t, x, [2]))

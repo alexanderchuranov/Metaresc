@@ -209,7 +209,7 @@ TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for sma
 		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_t) / sizeof (mr_ptr_t)], "key_type"),
 		)
 
-TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed, aligned (sizeof (uint8_t)))), "tree traverse to the left/right"),
+TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed)), "tree traverse to the left/right"),
 	      (MR_LEFT, = 0),
 	      (MR_RIGHT, = 1),
 	      )
