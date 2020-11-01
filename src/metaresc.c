@@ -1037,16 +1037,20 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    return (diff);
 	  break;
 
-#define CASE_MR_TYPE_CMP(TYPE)					     \
-	  case MR_TYPE_DETECT (TYPE):				     \
-	    diff = (*(TYPE*)x_i->data.ptr > *(TYPE*)y_i->data.ptr) - \
-	      (*(TYPE*)x_i->data.ptr < *(TYPE*)y_i->data.ptr);	     \
-	    if (diff)						     \
-	      return (diff);					     \
+#define CASE_MR_TYPE_CMP(TYPE)						\
+	  case MR_TYPE_DETECT (TYPE):					\
+	    if (0 == memcmp (x_i->data.ptr, y_i->data.ptr, sizeof (TYPE))) \
+	      break;							\
+	    diff = (*(TYPE*)x_i->data.ptr > *(TYPE*)y_i->data.ptr) -	\
+	      (*(TYPE*)x_i->data.ptr < *(TYPE*)y_i->data.ptr);		\
+	    if (diff)							\
+	      return (diff);						\
 	    break;
 
 #define CASE_MR_TYPE_CMP_COMPLEX(TYPE)					\
 	  case MR_TYPE_DETECT (TYPE):					\
+	    if (0 == memcmp (x_i->data.ptr, y_i->data.ptr, sizeof (TYPE))) \
+	      break;							\
 	    diff = (__real__ *(TYPE*)x_i->data.ptr > __real__ *(TYPE*)y_i->data.ptr) - \
 	      (__real__ *(TYPE*)x_i->data.ptr < __real__ *(TYPE*)y_i->data.ptr); \
 	    if (diff)							\
