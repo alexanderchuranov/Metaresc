@@ -31,7 +31,7 @@ AC_PROG_YACC
 AC_PROG_LEX
 
 AM_CFLAGS=""
-aux_CFLAGS=--fast-math
+aux_CFLAGS=-ffast-math
 save_CFLAGS=${CFLAGS}
 CFLAGS="${CFLAGS} ${aux_CFLAGS}"
 AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])

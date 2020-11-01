@@ -31,14 +31,14 @@ endif
 
 dw_export.$(OBJEXT): dw_export.h dw_types.h
 dw_export.h: $(top_srcdir)/src/libmetaresc.la
-	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $<` > $@
+	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
 if OSX
 dw_types.h: dw_types
-	dsymutil .libs/$<
-	$(top_srcdir)/src/mr_dwarf .libs/$< > $@
+	dsymutil .libs/$?
+	$(top_srcdir)/src/mr_dwarf .libs/$? > $@
 else
 dw_types.h: dw_types.$(OBJEXT)
-	$(top_srcdir)/src/mr_dwarf $< > $@
+	$(top_srcdir)/src/mr_dwarf $? > $@
 endif
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)

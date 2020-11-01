@@ -22,9 +22,9 @@ dwarf_types.c: dwarf_types.h
 
 if OSX
 dwarf_types.h: dwarf_no_types
-	dsymutil .libs/$<
-	$(top_srcdir)/src/mr_dwarf .libs/$< > $@
+	dsymutil .libs/$?
+	$(top_srcdir)/src/mr_dwarf .libs/$? > $@
 else
 dwarf_types.h: dwarf.$(OBJEXT)
-	$(top_srcdir)/src/mr_dwarf $< > $@
+	$(top_srcdir)/src/mr_dwarf $? > $@
 endif

@@ -498,7 +498,7 @@ dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
 
   for (;;)
     {
-      rv = dwarf_next_cu_header (debug, NULL, NULL, NULL, NULL, &next_cu_header, NULL);
+      rv = dwarf_next_cu_header_c (debug, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &next_cu_header, NULL);
       if (rv == DW_DLV_NO_ENTRY)
 	break;
       assert (rv == DW_DLV_OK);
@@ -1165,7 +1165,7 @@ main (int argc, char * argv [])
   for (i = 1; i < argc; ++i)
     {
       Dwarf_Debug debug;
-      Dwarf_Error error = 0;
+      Dwarf_Error error;
   
 #ifdef HAVE_DWARF_INIT_PATH
       char path[1 << 13];
@@ -1178,7 +1178,7 @@ main (int argc, char * argv [])
   
       if (rv != DW_DLV_OK)
 	{
-	  printf ("libdwarf error: exit code %d, error code %llu, %s\n", rv, dwarf_errno (error), dwarf_errmsg (error));
+	  printf ("libdwarf error: exit code %d, error code %d, %s\n", rv, (int)dwarf_errno (error), dwarf_errmsg (error));
 	  return (EXIT_FAILURE);
 	}
 
