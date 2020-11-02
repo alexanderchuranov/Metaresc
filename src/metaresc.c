@@ -25,6 +25,7 @@
 #include <mr_ic.h>
 #include <mr_stringify.h>
 #include <mr_hsort.h>
+#include <flt_values.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
@@ -1039,29 +1040,50 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 
 #define CASE_MR_TYPE_CMP(TYPE)						\
 	  case MR_TYPE_DETECT (TYPE):					\
-	    if (0 == memcmp (x_i->data.ptr, y_i->data.ptr, sizeof (TYPE))) \
-	      break;							\
 	    diff = (*(TYPE*)x_i->data.ptr > *(TYPE*)y_i->data.ptr) -	\
 	      (*(TYPE*)x_i->data.ptr < *(TYPE*)y_i->data.ptr);		\
 	    if (diff)							\
 	      return (diff);						\
 	    break;
 
-#define CASE_MR_TYPE_CMP_COMPLEX(TYPE)					\
+#define CASE_MR_TYPE_CMP_FLOAT(TYPE)					\
 	  case MR_TYPE_DETECT (TYPE):					\
-	    if (0 == memcmp (x_i->data.ptr, y_i->data.ptr, sizeof (TYPE))) \
-	      break;							\
-	    diff = (__real__ *(TYPE*)x_i->data.ptr > __real__ *(TYPE*)y_i->data.ptr) - \
-	      (__real__ *(TYPE*)x_i->data.ptr < __real__ *(TYPE*)y_i->data.ptr); \
-	    if (diff)							\
-	      return (diff);						\
-	    diff = (__imag__ *(TYPE*)x_i->data.ptr > __imag__ *(TYPE*)y_i->data.ptr) - \
-	      (__imag__ *(TYPE*)x_i->data.ptr < __imag__ *(TYPE*)y_i->data.ptr); \
-	    if (diff)							\
-	      return (diff);						\
+	    {								\
+	      TYPE _x_ = *(TYPE*)x_i->data.ptr;				\
+	      TYPE _y_ = *(TYPE*)y_i->data.ptr;				\
+	      if (!MR_ISNAN (_x_) || !MR_ISNAN (_y_))			\
+		{							\
+		  diff = (_x_ > _y_) - (_x_ < _y_);			\
+		  if (diff)						\
+		    return (diff);					\
+		}							\
+	    }								\
 	    break;
 
-	  MR_FOREACH (CASE_MR_TYPE_CMP, char, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, long_double_t);
+#define CASE_MR_TYPE_CMP_COMPLEX(TYPE)					\
+	  case MR_TYPE_DETECT (TYPE):					\
+	    {								\
+	      TYPE _x_ = *(TYPE*)x_i->data.ptr;				\
+	      TYPE _y_ = *(TYPE*)y_i->data.ptr;				\
+	      if (!MR_ISNAN (__real__ _x_) || !MR_ISNAN (__real__ _y_)) \
+		{							\
+		  diff = (__real__ _x_ > __real__ _y_) -		\
+		    (__real__ _x_ < __real__ _y_);			\
+		  if (diff)						\
+		    return (diff);					\
+		}							\
+	      if (!MR_ISNAN (__imag__ _x_) || !MR_ISNAN (__imag__ _y_)) \
+		{							\
+		  diff = (__imag__ _x_ > __imag__ _y_) -		\
+		    (__imag__ _x_ < __imag__ _y_);			\
+		  if (diff)						\
+		    return (diff);					\
+		}							\
+	    }								\
+	    break;
+
+	  MR_FOREACH (CASE_MR_TYPE_CMP, char, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+	  MR_FOREACH (CASE_MR_TYPE_CMP_FLOAT, float, double, long_double_t);
 	  MR_FOREACH (CASE_MR_TYPE_CMP_COMPLEX, complex float, complex double, complex long double);
 
 	case MR_TYPE_ENUM:

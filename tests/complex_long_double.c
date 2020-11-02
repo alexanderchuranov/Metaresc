@@ -14,15 +14,11 @@
       long double _y_real_ = __real__ _y_cld_;				\
       long double _y_imag_ = __imag__ _y_cld_;				\
       bool cmp_real = (_x_real_ != _y_real_);				\
-      if (isinf (_x_real_))						\
-	cmp_real = !isinf (_y_real_);					\
-      if (isnan (_x_real_))						\
-	cmp_real = !isnan (_y_real_);					\
+      if (MR_ISNAN (_x_real_))						\
+	cmp_real = !MR_ISNAN (_y_real_);				\
       bool cmp_imag = (_x_imag_ != _y_imag_);				\
-      if (isinf (_x_imag_))						\
-	cmp_imag = !isinf (_y_imag_);					\
-      if (isnan (_x_imag_))						\
-	cmp_imag = !isnan (_y_imag_);					\
+      if (MR_ISNAN (_x_imag_))						\
+	cmp_imag = !MR_ISNAN (_y_imag_);				\
       cmp_real || cmp_imag;						\
     })
 
