@@ -182,6 +182,9 @@ check_td (mr_ptr_t key, const void * context)
 MR_START_TEST (dw_check_all, "Check DWARF export")
 {
   mr_detect_type (NULL);
+  mr_type_void_fields ("ieee_float_t", "is_nan", NULL);
+  mr_type_void_fields ("ieee_double_t", "is_nan", NULL);
+  mr_type_void_fields ("ieee_long_double_t", "is_nan", NULL);
   mr_ic_foreach (&mr_conf.type_by_name, check_td, NULL);
 } END_TEST
 

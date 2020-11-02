@@ -1049,11 +1049,11 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 #define CASE_MR_TYPE_CMP_FLOAT(TYPE)					\
 	  case MR_TYPE_DETECT (TYPE):					\
 	    {								\
-	      TYPE _x_ = *(TYPE*)x_i->data.ptr;				\
-	      TYPE _y_ = *(TYPE*)y_i->data.ptr;				\
-	      if (!MR_ISNAN (_x_) || !MR_ISNAN (_y_))			\
+	      TYPE _x = *(TYPE*)x_i->data.ptr;				\
+	      TYPE _y = *(TYPE*)y_i->data.ptr;				\
+	      if (!MR_ISNAN (_x) || !MR_ISNAN (_y))			\
 		{							\
-		  diff = (_x_ > _y_) - (_x_ < _y_);			\
+		  diff = (_x > _y) - (_x < _y);				\
 		  if (diff)						\
 		    return (diff);					\
 		}							\
@@ -1063,19 +1063,17 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 #define CASE_MR_TYPE_CMP_COMPLEX(TYPE)					\
 	  case MR_TYPE_DETECT (TYPE):					\
 	    {								\
-	      TYPE _x_ = *(TYPE*)x_i->data.ptr;				\
-	      TYPE _y_ = *(TYPE*)y_i->data.ptr;				\
-	      if (!MR_ISNAN (__real__ _x_) || !MR_ISNAN (__real__ _y_)) \
+	      TYPE _x = *(TYPE*)x_i->data.ptr;				\
+	      TYPE _y = *(TYPE*)y_i->data.ptr;				\
+	      if (!MR_ISNAN (__real__ _x) || !MR_ISNAN (__real__ _y))	\
 		{							\
-		  diff = (__real__ _x_ > __real__ _y_) -		\
-		    (__real__ _x_ < __real__ _y_);			\
+		  diff = (__real__ _x > __real__ _y) - (__real__ _x < __real__ _y); \
 		  if (diff)						\
 		    return (diff);					\
 		}							\
-	      if (!MR_ISNAN (__imag__ _x_) || !MR_ISNAN (__imag__ _y_)) \
+	      if (!MR_ISNAN (__imag__ _x) || !MR_ISNAN (__imag__ _y))	\
 		{							\
-		  diff = (__imag__ _x_ > __imag__ _y_) -		\
-		    (__imag__ _x_ < __imag__ _y_);			\
+		  diff = (__imag__ _x > __imag__ _y) - (__imag__ _x < __imag__ _y); \
 		  if (diff)						\
 		    return (diff);					\
 		}							\
