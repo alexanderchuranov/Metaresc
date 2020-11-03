@@ -256,8 +256,6 @@
 
 #define P00_IS_ATTRIBUTES_EQ_ATTRIBUTES(...) 0 /* help macro for ATTRIBUTES test IF clause */
 #define P00_REMOVE_ATTRIBUTES(...) __VA_ARGS__
-#define P00_GET_FIRST_ATTRIBUTES(FIRST, ...) FIRST /* extract typedef attributes */
-#define P00_GET_OTHER_ATTRIBUTES(FIRST, ...) __VA_ARGS__ /* extract typedef meta information */
 
 /* Outputs only arguments that start with ATTRIBUTES. Removes key word ATTRIBUTES and parenthesis. */
 #define P00_EXTRACT_ATTRIBUTES(ARG)					\
@@ -306,9 +304,9 @@
 #define MR_SER(NAME, I, REC, X) REC X
 
 #define TYPEDEF_ATTR(P00_MODE, P00_TYPE, ATTR_META_RES, P00_TYPE_NAME, ...) \
-  P00_UNFOLD (MR_TYPEDEF_, P00_TYPE, P00_MODE, P00_TYPE_NAME, MR_PASTE2 (P00_GET_FIRST_, ATTR_META_RES)) \
+  P00_UNFOLD (MR_TYPEDEF_, P00_TYPE, P00_MODE, P00_TYPE_NAME)		\
   MR_FOR ((P00_MODE, P00_TYPE_NAME), MR_NARG (__VA_ARGS__), MR_SER, MR_PASTE3 (P00_, P00_TYPE, _HANDLER), __VA_ARGS__) \
-  P00_UNFOLD (MR_END_, P00_TYPE, P00_MODE, P00_TYPE_NAME, MR_PASTE2 (P00_GET_OTHER_, ATTR_META_RES))
+  P00_UNFOLD (MR_END_, P00_TYPE, P00_MODE, P00_TYPE_NAME, MR_PASTE2 (P00_REMOVE_, ATTR_META_RES))
 
 #define P00_STRUCT_HANDLER P00_FIELD
 #define P00_UNION_HANDLER P00_FIELD
@@ -518,10 +516,12 @@
 #define MR_TYPEDEF_FUNC(...) MR_UNFOLD (MR_TYPEDEF_FUNC, __VA_ARGS__)
 
 /* Macroses for prototypes generation mode */
-#define MR_TYPEDEF_STRUCT_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) MR_TYPE_NAME; struct __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
-#define MR_END_STRUCT_PROTO(MR_TYPE_NAME, ...) };
-#define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef union __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
-#define MR_END_UNION_PROTO(MR_TYPE_NAME, ...) } MR_TYPE_NAME;
+#define MR_TYPEDEF_STRUCT_PROTO(MR_TYPE_NAME) typedef struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) MR_TYPE_NAME; struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
+#define MR_END_STRUCT_PROTO(MR_TYPE_NAME, ATTR, ...) } ATTR;
+#define MR_TYPEDEF_UNION_PROTO(MR_TYPE_NAME) typedef union MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
+#define MR_END_UNION_PROTO(MR_TYPE_NAME, ATTR, ...) } ATTR MR_TYPE_NAME;
+#define MR_TYPEDEF_ENUM_PROTO(MR_TYPE_NAME) typedef enum MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
+#define MR_END_ENUM_PROTO(MR_TYPE_NAME, ATTR, ...) } ATTR MR_TYPE_NAME;
 
 /* next macro adds empty argument. Required for MR_AUTO, MR_VOID, MR_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */
 #define MR_AUTO_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
@@ -538,10 +538,8 @@
 #define MR_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, ... /* ATTR */) MR_IF_ELSE (MR_IS_EMPTY (NAME)) () (char NAME[0];) union __VA_ARGS__ {
 #define MR_END_ANON_UNION_PROTO(MR_TYPE_NAME, ...) };
 
-#define MR_TYPEDEF_ENUM_PROTO(MR_TYPE_NAME, /* ATTR */ ...) typedef enum __VA_ARGS__ MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
 #define MR_ENUM_DEF_PROTO(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_PROTO_ (MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_PROTO_(MR_TYPE_NAME, NAME, RHS, ...) NAME RHS,
-#define MR_END_ENUM_PROTO(MR_TYPE_NAME, ...) } MR_TYPE_NAME;
 
 #define MR_TYPEDEF_CHAR_ARRAY_PROTO(MR_TYPE_NAME, SIZE, /* ATTR */...) MR_TYPEDEF_CHAR_ARRAY_PROTO_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
 #define MR_TYPEDEF_CHAR_ARRAY_PROTO_(MR_TYPE_NAME, SIZE, ATTR, /* META */ ...) typedef ATTR char MR_TYPE_NAME[SIZE];
@@ -549,8 +547,6 @@
 #define MR_TYPEDEF_FUNC_PROTO_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) typedef ATTR RET_TYPE (*MR_TYPE_NAME) ARGS;
 
 /* Macroses for descriptors generation mode */
-
-#define MR_TYPEDEF_STRUCT_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_STRUCT, __VA_ARGS__)
 
 #define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) { \
     (mr_fd_t[]){ {							\
@@ -640,19 +636,20 @@
 	 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),		\
 	 .meta = "" __VA_ARGS__,				\
 	 },
+
+#define MR_TYPEDEF_STRUCT_DESC(MR_TYPE_NAME) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_STRUCT)
 #define MR_END_STRUCT_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_TYPEDEF_UNION_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_UNION, __VA_ARGS__)
+#define MR_TYPEDEF_UNION_DESC(MR_TYPE_NAME) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_UNION)
 #define MR_END_UNION_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, ... /* ATTR */) {	\
+#define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...) {	\
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = "",							\
 	     .offset = 0,						\
 	     .unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false), \
 	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
-	     .meta = #__VA_ARGS__,					\
 	     .res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
 	     .res_type = "mr_td_t",					\
 		} } },
@@ -663,7 +660,8 @@
 	  .meta = "" __VA_ARGS__,					\
 	  } } },
 
-#define MR_TYPEDEF_ENUM_DESC(MR_TYPE_NAME, /* ATTR */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_ENUM, __VA_ARGS__)
+#define MR_TYPEDEF_ENUM_DESC(MR_TYPE_NAME) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_ENUM)
+
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...) { \
     (mr_fd_t[]){ {							\
@@ -678,25 +676,25 @@
 
 #define MR_FUNC_ARG_PTR(...) { (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) } },
 
-#define MR_TYPEDEF_CHAR_ARRAY_DESC(MR_TYPE_NAME, SIZE, /* ATTR */ ...) MR_TYPEDEF_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
-#define MR_TYPEDEF_CHAR_ARRAY_DESC_(MR_TYPE_NAME, SIZE, ATTR, /* META */ ...) MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY, ATTR) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
-#define MR_TYPEDEF_FUNC_DESC(RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
-#define MR_TYPEDEF_FUNC_DESC_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) \
-  MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_FUNC_TYPE, ATTR)		\
+#define MR_TYPEDEF_CHAR_ARRAY_DESC(MR_TYPE_NAME, SIZE, /* ATTR */ ...)	\
+  MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY)			\
+    MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
+
+#define MR_TYPEDEF_FUNC_DESC(RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) \
+  MR_TYPEDEF_DESC (MR_TYPE_NAME, MR_TYPE_FUNC_TYPE)			\
   MR_FUNC_ARG_PTR (RET_TYPE, "return value")				\
   MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))			\
   MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_TYPEDEF_DESC(MR_TYPE_NAME, MR_TYPE, /* ATTR */ ...)		\
+#define MR_TYPEDEF_DESC(MR_TYPE_NAME, MR_TYPE)				\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME) = {	\
     .type = { .str = #MR_TYPE_NAME, .hash_value = 0, },			\
     .mr_type = MR_TYPE,							\
     .param = { .enum_param = { .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME), }, }, \
     .size = sizeof (MR_TYPE_NAME),					\
-    .attr = #__VA_ARGS__,						\
     .fields_size = 0,							\
     .fields = (mr_fd_ptr_t[]){
-#define MR_TYPEDEF_END_DESC(MR_TYPE_NAME, /* META */ ...) {		\
+#define MR_TYPEDEF_END_DESC(MR_TYPE_NAME, ATTR, /* META */ ...) {	\
     (mr_fd_t[]){ {							\
 	.type = #MR_TYPE_NAME,						\
 	  .mr_type = MR_TYPE_TRAILING_RECORD,				\

@@ -1327,7 +1327,6 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
-	    tdp_->attr = fdp->meta; /* anonymous union stringified attributes are saved into metas field */
 	    tdp_->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
 	    tdp_->fields = &tdp->fields[count - fields_count + 1];
 

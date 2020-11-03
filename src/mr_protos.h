@@ -344,7 +344,6 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_size_t, size, , "size of type"),
-		(char *, attr, , "stringified typedef attributes"),
 		(mr_td_param_t, param, , "mr_type"),
 		(mr_ic_t, field_by_name, , "lookup by field names"),
 		(ssize_t, fields_size, , "size of 'fields' array"),
