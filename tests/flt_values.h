@@ -138,14 +138,4 @@ TYPEDEF_UNION (ieee_long_double_t,
 	       long double long_double,
 	       )
 
-#define MR_ISNAN(X)							\
-  __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (X), float), \
-			 ((ieee_float_t)(float)(X)).ieee_754_float_nan.exponent == IEEE_754_FLOAT_NAN_ENUM_T, \
-			 __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (X), double), \
-						((ieee_double_t)(double)(X)).ieee_754_double_nan.exponent == IEEE_754_DOUBLE_NAN_ENUM_T, \
-						__builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (X), long double), \
-								       ((((ieee_long_double_t)(long double)(X)).ieee_854_long_double_nan.exponent == IEEE_854_LONG_DOUBLE_NAN_ENUM_T) || \
-									(((ieee_long_double_t)(long double)(X)).ieee_854_long_double_nan.exponent == IEEE_854_LONG_DOUBLE_NAN_ZERO_ONE_ENUM_T)), \
-								       false)))
-
 #endif /* _FLT_VALUES_H_ */

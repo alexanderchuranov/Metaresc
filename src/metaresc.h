@@ -69,6 +69,7 @@
 #define MR_SIZEOF_LONG_DOUBLE (10)
 
 #define MR_MAX_INDENT_LEVEL (30) /* the same constant as in libxml2 */
+#define MR_ISNAN(X) ({ __typeof__ (X) __x__ = (X); __x__ != __x__; })
 #define MR_MIN(X,Y) ({ __typeof__ (X) _x_ = (X); __typeof__ (Y) _y_ = (Y); (_x_ < _y_) ? _x_ : _y_; })
 #define MR_MAX(X,Y) ({ __typeof__ (X) _x_ = (X); __typeof__ (Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
 #define MR_LIMIT_LEVEL(LEVEL) MR_MIN (LEVEL, MR_MAX_INDENT_LEVEL)
