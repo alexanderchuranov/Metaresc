@@ -25,6 +25,7 @@
 #include <mr_ic.h>
 #include <mr_stringify.h>
 #include <mr_hsort.h>
+#include <flt_values.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
@@ -1039,6 +1040,14 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 
 #define CASE_MR_TYPE_CMP(TYPE)						\
 	  case MR_TYPE_DETECT (TYPE):					\
+	    diff = (*(TYPE*)x_i->data.ptr > *(TYPE*)y_i->data.ptr) -	\
+	      (*(TYPE*)x_i->data.ptr < *(TYPE*)y_i->data.ptr);		\
+	    if (diff)							\
+	      return (diff);						\
+	    break;
+
+#define CASE_MR_TYPE_CMP_FLOAT(TYPE)					\
+	  case MR_TYPE_DETECT (TYPE):					\
 	    {								\
 	      TYPE _x = *(TYPE*)x_i->data.ptr;				\
 	      TYPE _y = *(TYPE*)y_i->data.ptr;				\
@@ -1071,7 +1080,8 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    }								\
 	    break;
 
-	  MR_FOREACH (CASE_MR_TYPE_CMP, char, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, long_double_t);
+	  MR_FOREACH (CASE_MR_TYPE_CMP, char, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+	  MR_FOREACH (CASE_MR_TYPE_CMP_FLOAT, float, double, long_double_t);
 	  MR_FOREACH (CASE_MR_TYPE_CMP_COMPLEX, complex float, complex double, complex long double);
 
 	case MR_TYPE_ENUM:
