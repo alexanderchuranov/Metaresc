@@ -554,7 +554,6 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
-	     .unnamed = false,						\
 	     .mr_type = MR_TYPE,					\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
@@ -565,7 +564,6 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
-	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_ARRAY,					\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .param =							\
@@ -586,7 +584,6 @@
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
-	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_VOID,					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
 	     .meta = "" __VA_ARGS__,					\
@@ -597,7 +594,6 @@
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
-	     .unnamed = false,						\
 	     .mr_type = MR_TYPE_BITFIELD,				\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .param = {							\

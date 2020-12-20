@@ -335,7 +335,6 @@ int mr_ra_append_string (mr_rarray_t * mr_ra_str, char * str)
 
 char mr_esc_char_map[MR_ESC_CHAR_MAP_SIZE] =
   {
-    [0 ... MR_ESC_CHAR_MAP_SIZE - 1] = 0,
     [(unsigned char)'\a'] = (unsigned char)'a',
     [(unsigned char)'\b'] = (unsigned char)'b',
     [(unsigned char)'\t'] = (unsigned char)'t',
