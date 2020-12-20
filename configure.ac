@@ -52,6 +52,13 @@ AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
 AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
 CFLAGS=${save_CFLAGS}
 
+aux_CFLAGS=-Wno-initializer-overrides
+save_CFLAGS=${CFLAGS}
+CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+CFLAGS=${save_CFLAGS}
+
 aux_CFLAGS=-Wno-constant-conversion
 save_CFLAGS=${CFLAGS}
 CFLAGS="${CFLAGS} ${aux_CFLAGS}"
