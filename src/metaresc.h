@@ -709,7 +709,7 @@
   By default meta and res fields could initialized in MR_END_STRUCT & MR_END_ENUM.
   Arguments in MR_ADD_TYPE will override those settings.
 */
-#define MR_ADD_TYPE(MR_TYPE_NAME, /* META */ ...) mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME), "" __VA_ARGS__, NULL)
+#define MR_ADD_TYPE(MR_TYPE_NAME) mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME))
 
 /*
   User can turn off strict types checking for Metaresc macroses, so compilation will produce only warnings.
@@ -1175,7 +1175,7 @@ typedef __typeof__ (sizeof (0)) mr_size_t;
 
 extern mr_conf_t mr_conf;
 
-extern mr_status_t __attribute__ ((sentinel(0))) mr_add_type (mr_td_t * tdp, char * meta, ...);
+extern mr_status_t mr_add_type (mr_td_t * tdp);
 extern char * mr_read_xml_doc (FILE * fd);
 
 extern void mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data);

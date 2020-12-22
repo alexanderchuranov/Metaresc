@@ -1340,7 +1340,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	      fdp->name.str = fdp->type;
 	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
-	    if (MR_SUCCESS != mr_add_type (tdp_, NULL, NULL))
+	    if (MR_SUCCESS != mr_add_type (tdp_))
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->type.str);
 		return (MR_FAILURE);
@@ -1902,17 +1902,13 @@ mr_get_static_field_name (mr_substr_t * substr)
 /**
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
- * @param meta meta info for the type
- * @param ... auxiliary void pointer
  * @return status
  */
 mr_status_t
-mr_add_type (mr_td_t * tdp, char * meta, ...)
+mr_add_type (mr_td_t * tdp)
 {
   mr_status_t status = MR_SUCCESS;
   mr_ic_rarray_t mr_ic_rarray;
-  va_list args;
-  void * res;
   int count = 0;
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
@@ -1930,10 +1926,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   if (mr_get_td_by_name (tdp->type.str))
     return (MR_SUCCESS); /* this type is already registered */
 
-  va_start (args, meta);
-  res = va_arg (args, void*);
-  va_end (args);
-
   for (count = 0; ; ++count)
     {
       mr_fd_t * fdp = tdp->fields[count].fdp;
@@ -1946,12 +1938,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 	break;
     }
   tdp->fields_size = count * sizeof (tdp->fields[0]);
-
-  if ((NULL != meta) && meta[0])
-    tdp->meta = meta;
-
-  if (NULL != res)
-    tdp->res.ptr = res;
 
   if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
     status = MR_FAILURE;
