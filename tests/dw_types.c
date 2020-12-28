@@ -14,3 +14,5 @@ TYPEDEF_STRUCT (mr_bitfields_t,
 		)
 
 mr_bitfields_t mr_bitfields;
+
+int __attribute__ ((weak)) main () { return (0); }

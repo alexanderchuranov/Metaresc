@@ -4,7 +4,7 @@
 
 TYPEDEF_STRUCT (ld_ptr_t, (const volatile long double *, x))
 
-MR_START_TEST (ld_ptr, "pointer on a long double (type name with spaces)") {
+START_TEST (ld_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, ld_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, ld_ptr_t, (long double[]){ 0 });
 } END_TEST
@@ -14,7 +14,7 @@ TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed))), PE_ZERO, PE_
 TYPEDEF_STRUCT (enum_ptr_t, (_enum_t *, x));
 TYPEDEF_STRUCT (packed_enum_ptr_t, (packed_enum_t *, x));
 
-MR_START_TEST (enum_ptr, "pointer on enum") {
+START_TEST (enum_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, (_enum_t[]){ ZERO });
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, enum_ptr_t, (_enum_t[]){ ONE });
@@ -33,7 +33,7 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 
 #define SKIP_METHOD_XDR 0
 
-MR_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
+START_TEST (invalid_enum_ptr) {
   int checked = 0;
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
 
@@ -51,7 +51,7 @@ MR_START_TEST (invalid_enum_ptr, "pointer on invalid enum") {
 
 TYPEDEF_STRUCT (char_ptr_t, POINTER (char, x));
 
-MR_START_TEST (char_ptr, "pointer on char") {
+START_TEST (char_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, "x");
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, (char[]){ 0 });
@@ -61,7 +61,7 @@ MR_START_TEST (char_ptr, "pointer on char") {
 TYPEDEF_STRUCT (charp_ptr_t, (char**, x));
 TYPEDEF_STRUCT (string_ptr_t, (string_t*, x));
 
-MR_START_TEST (string_ptr, "pointer on string") {
+START_TEST (string_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, charp_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, charp_ptr_t, (char*[]){ "x" });
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, string_ptr_t, NULL);
@@ -70,7 +70,7 @@ MR_START_TEST (string_ptr, "pointer on string") {
 
 TYPEDEF_STRUCT (struct_ptr_t, (enum_ptr_t*, x));
 
-MR_START_TEST (struct_ptr, "pointer on struct") {
+START_TEST (struct_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_ptr_t, (enum_ptr_t[]){ { NULL } });
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_ptr_t, (enum_ptr_t[]){ { (_enum_t[]){ ZERO } } });
@@ -78,7 +78,7 @@ MR_START_TEST (struct_ptr, "pointer on struct") {
 
 TYPEDEF_STRUCT (self_ref_ptr_t, (_enum_t *, x), (_enum_t, y));
 
-MR_START_TEST (self_ref_ptr, "self referenced pointer") {
+START_TEST (self_ref_ptr) {
   self_ref_ptr_t x = { (_enum_t[]){ ZERO }, ONE };
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_ptr_t, &x);
   x.x = &x.y;
@@ -91,7 +91,7 @@ TYPEDEF_STRUCT (self_ref_string_t,
 		(string_t *, z),
 		mr_ptr_t v);
 
-MR_START_TEST (self_ref_string, "self referenced strings") {
+START_TEST (self_ref_string) {
   self_ref_string_t x = { "x", "y", (string_t[]){ "z" }};
   x.v.ptr = &x.z; /* resolved not-NULL void pointer */
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
@@ -112,7 +112,7 @@ TYPEDEF_STRUCT (resolve_typed_forward_ref_t,
 		(int *, y) /* pointers are loaded via stack, so one level ponters will be loaded in a reverse order */
 		);
 
-MR_START_TEST (resolve_typed_forward_ref, "test of forvard reference resolution") {
+START_TEST (resolve_typed_forward_ref) {
   resolve_typed_forward_ref_t x = { (rtfr_struct_t[]){ {0, 1} } };
   x.y = &x.x->y;
   ALL_METHODS (ASSERT_SAVE_LOAD, resolve_typed_forward_ref_t, &x);
@@ -134,7 +134,7 @@ TYPEDEF_STRUCT (union_resolution_t,
 		(int_float_t *, uifp, , "type"),
 		)
 
-MR_START_TEST (union_resolution_correctness, "test correctness of union resolution") {
+START_TEST (union_resolution_correctness) {
   union_resolution_t union_resolution = {
     .type = "_float",
     .typed_union = (typed_union_t[]){
@@ -177,7 +177,7 @@ TYPEDEF_STRUCT (linked_list_t,
 TYPEDEF_STRUCT (root_struct_t,
 		(linked_list_ptr_t *, ll_ptr));
 
-MR_START_TEST (backward_ref_is_a_field, "Saved pointer is a field in struct") {
+START_TEST (backward_ref_is_a_field) {
   linked_list_t ll;
   root_struct_t root_struct;
   ll.next.ptr = &ll;
@@ -210,7 +210,7 @@ TYPEDEF_STRUCT (two_dynamic_arrays_t,
 		(ssize_t, size2),
 		);
 
-MR_START_TEST (tda_same_ptr_and_size, "Two dynamic arrays with same pointers and size") {
+START_TEST (tda_same_ptr_and_size) {
   two_dynamic_arrays_t tda;
   int array[2] = { 1, 2, };
 
@@ -239,7 +239,7 @@ MR_START_TEST (tda_same_ptr_and_size, "Two dynamic arrays with same pointers and
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
-MR_START_TEST (tda_same_ptr_and_bigger, "Two dynamic arrays with same pointers and one is bigger") {
+START_TEST (tda_same_ptr_and_bigger) {
   two_dynamic_arrays_t tda;
   int array[2] = { 1, 2, };
 
@@ -268,7 +268,7 @@ MR_START_TEST (tda_same_ptr_and_bigger, "Two dynamic arrays with same pointers a
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
-MR_START_TEST (tda_overlapping_1, "Two overlaping dynamic arrays. Lower pointer saved first") {
+START_TEST (tda_overlapping_1) {
   two_dynamic_arrays_t tda;
   int array[3] = { 1, 2, 3, };
 
@@ -296,7 +296,7 @@ MR_START_TEST (tda_overlapping_1, "Two overlaping dynamic arrays. Lower pointer 
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
-MR_START_TEST (tda_overlapping_2, "Two overlaping dynamic arrays. Lower pointer saved second") {
+START_TEST (tda_overlapping_2) {
   two_dynamic_arrays_t tda;
   int array[3] = { 1, 2, 3, };
 
@@ -324,7 +324,7 @@ MR_START_TEST (tda_overlapping_2, "Two overlaping dynamic arrays. Lower pointer 
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
-MR_START_TEST (tda_overlapping_3, "Two overlaping dynamic arrays. First saved pointer is embeded into second one") {
+START_TEST (tda_overlapping_3) {
   two_dynamic_arrays_t tda;
   int array[] = { 1, 2, 3, 4, };
 
@@ -359,7 +359,7 @@ TYPEDEF_STRUCT (pointer_to_array_t,
 		(ssize_t, size),
 		);
 
-MR_START_TEST (pointer_to_array, "Pointer into the middle of static array loaded first") {
+START_TEST (pointer_to_array) {
   pointer_to_array_t pointer_to_array;
   int_array_t array = { { 1, 2, 3 }, };
   pointer_to_array.array_ptr = &array;
@@ -385,7 +385,7 @@ MR_START_TEST (pointer_to_array, "Pointer into the middle of static array loaded
   ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
 } END_TEST
 
-MR_START_TEST (mr_ptr_resolution, "test of mr_ptr_t resolution") {
+START_TEST (mr_ptr_resolution) {
   int res_array[] = {1, 2, 3};
   mr_res_t res = { 
     .data = { res_array },
@@ -395,4 +395,22 @@ MR_START_TEST (mr_ptr_resolution, "test of mr_ptr_t resolution") {
   ALL_METHODS (ASSERT_SAVE_LOAD, mr_res_t, &res);
 } END_TEST
 
-MAIN ();
+MAIN_TEST_SUITE ((ld_ptr, "pointer on a long double (type name with spaces)"),
+		 (enum_ptr, "pointer on enum"),
+		 (invalid_enum_ptr, "pointer on invalid enum"),
+		 (char_ptr, "pointer on char"),
+		 (string_ptr, "pointer on string"),
+		 (struct_ptr, "pointer on struct"),
+		 (self_ref_ptr, "self referenced pointer"),
+		 (self_ref_string, "self referenced strings"),
+		 (resolve_typed_forward_ref, "test of forvard reference resolution"),
+		 (union_resolution_correctness, "test correctness of union resolution"),
+		 (backward_ref_is_a_field, "Saved pointer is a field in struct"),
+		 (tda_same_ptr_and_size, "Two dynamic arrays with same pointers and size"),
+		 (tda_same_ptr_and_bigger, "Two dynamic arrays with same pointers and one is bigger"),
+		 (tda_overlapping_1, "Two overlaping dynamic arrays. Lower pointer saved first"),
+		 (tda_overlapping_2, "Two overlaping dynamic arrays. Lower pointer saved second"),
+		 (tda_overlapping_3, "Two overlaping dynamic arrays. First saved pointer is embeded into second one"),
+		 (pointer_to_array, "Pointer into the middle of static array loaded first"),
+		 (mr_ptr_resolution, "test of mr_ptr_t resolution")
+		 );

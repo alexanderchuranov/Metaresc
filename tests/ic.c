@@ -71,7 +71,7 @@ static int ic_empty_cb (mr_ic_t * ic, char * mr_ic_type)
   return (0 == sum);
 }
 
-MR_START_TEST (ic_empty, "Check empty ic") { ic_types_foreach (ic_empty_cb); } END_TEST
+START_TEST (ic_empty) { ic_types_foreach (ic_empty_cb); } END_TEST
 
 static int ic_index_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -87,7 +87,7 @@ static int ic_index_cb (mr_ic_t * ic, char * mr_ic_type)
   return (sum_ == sum);
 }
 
-MR_START_TEST (ic_index, "Check indexing") { ic_types_foreach (ic_index_cb); } END_TEST
+START_TEST (ic_index) { ic_types_foreach (ic_index_cb); } END_TEST
 
 static int ic_add_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -98,7 +98,7 @@ static int ic_add_empty_cb (mr_ic_t * ic, char * mr_ic_type)
   return (x.uintptr == sum);
 }
 
-MR_START_TEST (ic_add_empty, "Check add to empty collection") { ic_types_foreach (ic_add_empty_cb); } END_TEST
+START_TEST (ic_add_empty) { ic_types_foreach (ic_add_empty_cb); } END_TEST
 
 static int ic_add_existing_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -116,7 +116,7 @@ static int ic_add_existing_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   return (sum_ == sum);
 }
 
-MR_START_TEST (ic_add_indexed, "Add existing element to indexed collection") { ic_types_foreach (ic_add_existing_indexed_cb); } END_TEST
+START_TEST (ic_add_indexed) { ic_types_foreach (ic_add_existing_indexed_cb); } END_TEST
 
 static int ic_add_non_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -134,7 +134,7 @@ static int ic_add_non_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   return (sum_ == sum);
 }
 
-MR_START_TEST (ic_add_non_indexed, "Add new element to indexed collection") { ic_types_foreach (ic_add_non_indexed_cb); } END_TEST
+START_TEST (ic_add_non_indexed) { ic_types_foreach (ic_add_non_indexed_cb); } END_TEST
 
 static int ic_del_add_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -146,7 +146,7 @@ static int ic_del_add_cb (mr_ic_t * ic, char * mr_ic_type)
   return (0 == sum);
 }
 
-MR_START_TEST (ic_del_added, "Check deletion of added element") { ic_types_foreach (ic_del_add_cb); } END_TEST
+START_TEST (ic_del_added) { ic_types_foreach (ic_del_add_cb); } END_TEST
 
 static int ic_del_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -163,7 +163,7 @@ static int ic_del_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   return (sum_ == sum);
 }
 
-MR_START_TEST (ic_del_indexed, "Check deletion of indexed element") { ic_types_foreach (ic_del_indexed_cb); } END_TEST
+START_TEST (ic_del_indexed) { ic_types_foreach (ic_del_indexed_cb); } END_TEST
 
 static int ic_find_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -186,7 +186,7 @@ static int ic_find_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   return (!0);
 }
 
-MR_START_TEST (ic_find_indexed, "Check find over indexed data") { ic_types_foreach (ic_find_indexed_cb); } END_TEST
+START_TEST (ic_find_indexed) { ic_types_foreach (ic_find_indexed_cb); } END_TEST
 
 static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -197,9 +197,9 @@ static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
   return (x.uintptr == find->uintptr);
 }
 
-MR_START_TEST (ic_find_added, "Check search of added element") { ic_types_foreach (ic_find_add_cb); } END_TEST
+START_TEST (ic_find_added) { ic_types_foreach (ic_find_add_cb); } END_TEST
 
-MR_START_TEST (ic_rbtree, "Check red/black tree implementation") { 
+START_TEST (ic_rbtree) { 
   mr_tree_t rbtree;
   mr_tree_init (&rbtree);
 
@@ -239,7 +239,7 @@ MR_START_TEST (ic_rbtree, "Check red/black tree implementation") {
   mr_tree_free (&rbtree);
 } END_TEST
 
-MR_START_TEST (ic_avltree, "Check AVL tree implementation") { 
+START_TEST (ic_avltree) { 
   mr_tree_t tree;
   mr_tree_init (&tree);
 
@@ -279,4 +279,15 @@ MR_START_TEST (ic_avltree, "Check AVL tree implementation") {
   mr_tree_free (&tree);
 } END_TEST
 
-MAIN ();
+MAIN_TEST_SUITE ((ic_empty, "Check empty ic"),
+		 (ic_index, "Check indexing"),
+		 (ic_add_empty, "Check add to empty collection"),
+		 (ic_add_indexed, "Add existing element to indexed collection"),
+		 (ic_add_non_indexed, "Add new element to indexed collection"),
+		 (ic_del_added, "Check deletion of added element"),
+		 (ic_del_indexed, "Check deletion of indexed element"),
+		 (ic_find_indexed, "Check find over indexed data"),
+		 (ic_find_added, "Check search of added element"),
+		 (ic_rbtree, "Check red/black tree implementation"),
+		 (ic_avltree, "Check AVL tree implementation")
+		 );

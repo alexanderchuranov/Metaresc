@@ -117,7 +117,7 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
     }
 
   ck_assert_msg (dw_td->fields_size == mr_td->fields_size + named_anon_union_count * sizeof (mr_td->fields[0]),
-		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
+		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %zd != %zd",
 		 mr_td->type.str, dw_td->fields_size, mr_td->fields_size);
 }
 
@@ -126,7 +126,7 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
   ck_assert_msg (mr_td->param.enum_param.size_effective == dw_td->param.enum_param.size_effective,
 		 "DWARF descriptor for type '%s' mismatched builtin: effective size %d != %d",
-		 mr_td->type.str, mr_td->param.enum_param.size_effective, dw_td->param.enum_param.size_effective);
+		 mr_td->type.str, (int)mr_td->param.enum_param.size_effective, (int)dw_td->param.enum_param.size_effective);
   
   int i;
   for (i = mr_td->fields_size / sizeof (mr_td->fields[0]) - 1; i >= 0; --i)
@@ -145,7 +145,7 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
     }
 
   ck_assert_msg (dw_td->fields_size == mr_td->fields_size,
-		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
+		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %zd != %zd",
 		 mr_td->type.str, dw_td->fields_size, mr_td->fields_size);
 }
 
@@ -158,9 +158,9 @@ check_td (mr_ptr_t key, const void * context)
   if (dw_td != NULL)
     {
       ck_assert_msg (dw_td->mr_type == mr_td->mr_type, "DWARF descriptor for type '%s' mismatched builtin: mr_type %d != %d",
-		     mr_td->type, dw_td->mr_type, mr_td->mr_type);
+		     mr_td->type.str, dw_td->mr_type, mr_td->mr_type);
       ck_assert_msg (dw_td->size == mr_td->size, "DWARF descriptor for type '%s' mismatched builtin: type size %d != %d",
-		     mr_td->type, dw_td->size, mr_td->size);
+		     mr_td->type.str, (int)dw_td->size, (int)mr_td->size);
 
       dw_td->fields_size -= sizeof (dw_td->fields[0]);
       mr_detect_fields_types (dw_td);
@@ -181,7 +181,7 @@ check_td (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
-MR_START_TEST (dw_check_all, "Check DWARF export")
+START_TEST (dw_check_all)
 {
   mr_detect_type (NULL);
   mr_type_void_fields ("ieee_float_t", "is_nan", NULL);
@@ -194,4 +194,4 @@ MR_START_TEST (dw_check_all, "Check DWARF export")
   mr_ic_foreach (&mr_conf.type_by_name, check_td, NULL);
 } END_TEST
 
-MAIN ();
+MAIN_TEST_SUITE ((dw_check_all, "Check DWARF export"));

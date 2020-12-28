@@ -1178,7 +1178,7 @@ main (int argc, char * argv [])
   
       if (rv != DW_DLV_OK)
 	{
-	  printf ("libdwarf error: exit code %d, error code %d, %s\n", rv, (int)dwarf_errno (error), dwarf_errmsg (error));
+	  fprintf (stderr, "libdwarf error (%d): failed to open file '%s'\n", rv, argv[i]);
 	  return (EXIT_FAILURE);
 	}
 

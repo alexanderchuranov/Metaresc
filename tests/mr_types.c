@@ -148,7 +148,7 @@ TYPEDEF_STRUCT (ext_struct_t,
 #define ASSERT_EXT_STRUCT_FIELD_TYPE(FIELD) ASSERT_FIELD_TYPE (ext_struct_t, FIELD, MR_TYPE_DETECT (__typeof__ (((ext_struct_t*)0)->FIELD)))
 #define ASSERT_EXT_STRUCT_FIELD_TYPE_PTR(FIELD) ASSERT_FIELD_TYPE (ext_struct_t, FIELD, MR_TYPE_POINTER, MR_TYPE_DETECT_PTR (__typeof__ (((ext_struct_t*)0)->FIELD)))
 
-MR_START_TEST (check_ext_struct, "check that descriptor for external type is correct") {
+START_TEST (check_ext_struct) {
   mr_detect_type (NULL);
   
   ASSERT_EXT_STRUCT_FIELD_TYPE (x);
@@ -159,7 +159,7 @@ MR_START_TEST (check_ext_struct, "check that descriptor for external type is cor
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cvz);
 } END_TEST
 
-MR_START_TEST (check_array_save, "check that MR_SAVE handles array correctly") {
+START_TEST (check_array_save) {
   complex long double array[] = {1, 2, 3};
   mr_ra_ptrdes_t ptrs = MR_SAVE ( ,  array);
   ck_assert_msg (ptrs.size / sizeof (ptrs.ra[0]) == sizeof (array) / sizeof (array[0]) + 1, "Incorrect introspection of the array");
@@ -171,7 +171,7 @@ MR_START_TEST (check_array_save, "check that MR_SAVE handles array correctly") {
     MR_FREE (ptrs.ra);
 } END_TEST
 
-MR_START_TEST (check_types_detection, "check that types detected correctly") {
+START_TEST (check_types_detection) {
   mr_detect_type (NULL);
 
   ASSERT_STRUCT_FIELD_TYPE (bool_, MR_TYPE_BOOL);
@@ -274,4 +274,7 @@ MR_START_TEST (check_types_detection, "check that types detected correctly") {
   
 } END_TEST
 
-MAIN ();
+MAIN_TEST_SUITE ((check_ext_struct, "check that descriptor for external type is correct"),
+		 (check_array_save, "check that MR_SAVE handles array correctly"),
+		 (check_types_detection, "check that types detected correctly")
+		 );

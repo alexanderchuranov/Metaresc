@@ -25,8 +25,10 @@ TYPEDEF_STRUCT (struct_func_type_t, (int_int_func_t, func))
 int public_int_int_func (int x) { return (x); }
 static int private_int_int_func (int x) { return (x); }
 
-MR_START_TEST (public_func, "public function") { ALL_METHODS (ASSERT_SAVE_LOAD_FUNC, public_int_int_func); } END_TEST
-MR_START_TEST (private_func, "private function") { ALL_METHODS (ASSERT_SAVE_LOAD_FUNC, private_int_int_func); } END_TEST
+START_TEST (public_func) { ALL_METHODS (ASSERT_SAVE_LOAD_FUNC, public_int_int_func); } END_TEST
+START_TEST (private_func) { ALL_METHODS (ASSERT_SAVE_LOAD_FUNC, private_int_int_func); } END_TEST
 
-MAIN ();
+MAIN_TEST_SUITE ((public_func, "public function"),
+		 (private_func, "private function")
+		 );
 

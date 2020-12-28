@@ -80,7 +80,7 @@ mr_save_callback (mr_res_t * res)
     MR_FREE (ptrs.ra);
 }
 
-MR_START_TEST (mem_allocation_complexity_mr_save, "test number of memory allocations for MR_SAVE") {
+START_TEST (mem_allocation_complexity_mr_save) {
   check_mem_ops_complexity (mr_save_callback, "MR_SAVE");
 } END_TEST
 
@@ -91,11 +91,17 @@ MR_START_TEST (mem_allocation_complexity_mr_save, "test number of memory allocat
     if (ra.data.ptr)							\
       MR_FREE (ra.data.ptr);						\
   }									\
-  MR_START_TEST (mem_allocation_complexity_ ## METHOD,			\
-		 "test number of memory allocations for " #METHOD) {	\
+  START_TEST (mem_allocation_complexity_ ## METHOD) {			\
     check_mem_ops_complexity (MR_SAVE_ ## METHOD ## _CALLBACK, #METHOD); \
   } END_TEST
 
-ALL_METHODS (CHECK_MEM_OPS_COMPLEXITY);
+  ALL_METHODS (CHECK_MEM_OPS_COMPLEXITY);
 
-MAIN ();
+#define MEM_OPS_COMPLEXITY(METHOD)					\
+  (mem_allocation_complexity_ ## METHOD,				\
+   "test number of memory allocations for " #METHOD),
+
+MAIN_TEST_SUITE (
+		 MR_FOREACH (MEM_OPS_COMPLEXITY, TEST_METHODS)
+		 (mem_allocation_complexity_mr_save, "test number of memory allocations for MR_SAVE")
+		 );

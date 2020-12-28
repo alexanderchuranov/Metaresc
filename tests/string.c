@@ -28,12 +28,12 @@ TYPEDEF_STRUCT (struct_str_str_t, string_t x, string_t y)
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_ca_type_t, __VA_ARGS__);	\
     })
 
-MR_START_TEST (null_string_t, "NULL string") { ALL_METHODS (ASSERT_SAVE_LOAD_CHAR_POINTER, NULL); } END_TEST
-MR_START_TEST (empty_string_t, "empty string") { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, ""); } END_TEST
-MR_START_TEST (printable_string_t, "all printable characters string") { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, "\040\041\042\043\044\045\046\047\050\051\052\053\054\055\056\057\060\061\062\063\064\065\066\067\070\071\072\073\074\075\076\077\100\101\102\103\104\105\106\107\110\111\112\113\114\115\116\117\120\121\122\123\124\125\126\127\130\131\132\133\134\135\136\137\140\141\142\143\144\145\146\147\150\151\152\153\154\155\156\157\160\161\162\163\164\165\166\167\170\171\172\173\174\175\176"); } END_TEST
-MR_START_TEST (xml_special_string_t, "xml special characters string") { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, "&<>;'\"\t\r\n"); } END_TEST
+START_TEST (null_string_t) { ALL_METHODS (ASSERT_SAVE_LOAD_CHAR_POINTER, NULL); } END_TEST
+START_TEST (empty_string_t) { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, ""); } END_TEST
+START_TEST (printable_string_t) { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, "\040\041\042\043\044\045\046\047\050\051\052\053\054\055\056\057\060\061\062\063\064\065\066\067\070\071\072\073\074\075\076\077\100\101\102\103\104\105\106\107\110\111\112\113\114\115\116\117\120\121\122\123\124\125\126\127\130\131\132\133\134\135\136\137\140\141\142\143\144\145\146\147\150\151\152\153\154\155\156\157\160\161\162\163\164\165\166\167\170\171\172\173\174\175\176"); } END_TEST
+START_TEST (xml_special_string_t) { ALL_METHODS (ASSERT_SAVE_LOAD_STRING, "&<>;'\"\t\r\n"); } END_TEST
 
-MR_START_TEST (pointer_match_content_known, "strings points on known char array") {
+START_TEST (pointer_match_content_known) {
   struct_ca_str_t orig = { .x = "string_t" };
   orig.y = orig.x;
   mr_ra_ptrdes_t ptrs = MR_SAVE (struct_ca_str_t, &orig);
@@ -54,7 +54,7 @@ MR_START_TEST (pointer_match_content_known, "strings points on known char array"
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_ca_str_t, &orig);
 } END_TEST
 
-MR_START_TEST (pointer_match_content_unknown, "strings points on unknown char array") {
+START_TEST (pointer_match_content_unknown) {
   struct_str_ca_t orig = { .x = "string_t" };
   orig.y = orig.x;
   mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_ca_t, &orig);
@@ -75,7 +75,7 @@ MR_START_TEST (pointer_match_content_unknown, "strings points on unknown char ar
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_ca_t, &orig);
 } END_TEST
 
-MR_START_TEST (pointer_match_another_pointer, "two strings points on the same content") {
+START_TEST (pointer_match_another_pointer) {
   struct_str_str_t orig = { .x = "string_t", };
   orig.y = orig.x;
   mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_str_t, &orig);
@@ -95,4 +95,11 @@ MR_START_TEST (pointer_match_another_pointer, "two strings points on the same co
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_str_t, &orig);
 } END_TEST
 
-MAIN ();
+MAIN_TEST_SUITE ((null_string_t, "NULL string"),
+		 (empty_string_t, "empty string"),
+		 (printable_string_t, "all printable characters string"),
+		 (xml_special_string_t, "xml special characters string"),
+		 (pointer_match_content_known, "strings points on known char array"),
+		 (pointer_match_content_unknown, "strings points on unknown char array"),
+		 (pointer_match_another_pointer, "two strings points on the same content")
+		 );

@@ -27,27 +27,6 @@
 
 #define TEST_METHODS LIBXML2_METHODS BISON_FLEX_METHODS XDR_METHODS
 
-extern Suite * suite;
-
-#define MR_START_TEST(NAME, ...)					\
-  static void NAME (int);						\
-  static inline void __attribute__ ((constructor)) init_ ## NAME (void) \
-  {									\
-    if (NULL == suite)							\
-      suite = suite_create ("main");					\
-    if (suite)								\
-      {									\
-	TCase * tcase = tcase_create ("" __VA_ARGS__);			\
-	if (tcase)							\
-	  {								\
-	    tcase_set_timeout (tcase, 120);				\
-	    tcase_add_test (tcase, NAME);				\
-	    suite_add_tcase (suite, tcase);				\
-	  }								\
-      }									\
-  };									\
-  START_TEST (NAME)
-
 #define CMP_SERIALIAZED(TYPE, X, Y, ...) MR_CMP_STRUCTS(TYPE, X, Y)
 
 #define SKIP_METHOD_ 0
@@ -91,13 +70,25 @@ extern Suite * suite;
 #define SERIAL(NAME, I, REC, X) REC; X
 #define ALL_METHODS(...) MR_FOR ((__VA_ARGS__), MR_NARG (TEST_METHODS), SERIAL, ASSERT_ITERATOR, TEST_METHODS)
 
-#define MAIN(...)							\
-  Suite * suite = NULL;							\
+#define ADD_TCASE(NAME_DESCRIPTION) {					\
+    TCase * tcase = tcase_create ("" P00_GET_SECOND NAME_DESCRIPTION);	\
+    if (tcase)								\
+      {									\
+	tcase_set_timeout (tcase, 120);					\
+	tcase_add_test (tcase, P00_GET_FIRST NAME_DESCRIPTION);		\
+	suite_add_tcase (suite, tcase);					\
+      }									\
+  }
+
+#define MAIN_TEST_SUITE(...)						\
   int main (int argc, char * argv[])					\
   {									\
     int number_failed;							\
+    Suite * suite = suite_create (__FILE__);				\
+    if (NULL == suite)							\
+      return (EXIT_FAILURE);						\
+    MR_FOREACH (ADD_TCASE, __VA_ARGS__);				\
     SRunner * srunner = srunner_create (suite);				\
-    __VA_ARGS__;							\
     srunner_run_all (srunner, CK_ENV);					\
     number_failed = srunner_ntests_failed (srunner);			\
     srunner_free (srunner);						\

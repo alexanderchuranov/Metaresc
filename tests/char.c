@@ -6,7 +6,7 @@ TYPEDEF_STRUCT (struct_char_t, char x)
 
 #define SKIP_METHOD_XML2 0
 
-MR_START_TEST (all_chars, "run whole charset") {
+START_TEST (all_chars) {
   int i;
   for (i = 0; i < (1 << __CHAR_BIT__); ++i)
     {
@@ -21,7 +21,7 @@ MR_START_TEST (all_chars, "run whole charset") {
 #ifdef HAVE_LIBXML2
 #undef TEST_METHODS
 #define TEST_METHODS XML2
-MR_START_TEST (print_chars, "run printable charset for libxml2") {
+START_TEST (print_chars) {
   int i;
   for (i = 0; i < (1 << __CHAR_BIT__); ++i)
     {
@@ -35,4 +35,6 @@ MR_START_TEST (print_chars, "run printable charset for libxml2") {
 } END_TEST
 #endif
 
-MAIN ();
+MAIN_TEST_SUITE ((all_chars, "run whole charset"),
+		 (print_chars, "run printable charset for libxml2")
+		 );

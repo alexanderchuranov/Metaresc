@@ -406,5 +406,3 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
 
   ck_assert_msg (malloc_cnt == free_cnt, "Mismatch of allocations (%d) and free (%d) on round %d", malloc_cnt, free_cnt, i);
 }
-
-MAIN ();

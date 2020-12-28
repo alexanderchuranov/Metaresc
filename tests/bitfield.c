@@ -26,8 +26,8 @@ TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (_enum_t) 
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_bitfield_uint64_t, VALUE, __VA_ARGS__); \
     })
 
-MR_START_TEST (bitfield_enum_zero, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO); } END_TEST
-MR_START_TEST (bitfield_enum_three, "bitfield as enum") { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE); } END_TEST
+START_TEST (bitfield_enum_zero) { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO); } END_TEST
+START_TEST (bitfield_enum_three) { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE); } END_TEST
 
 static int warnings = 0;
 
@@ -40,7 +40,7 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 
 #define SKIP_METHOD_XDR 0
 
-MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
+START_TEST (invalid_bitfield_enum_t) {
   int checked = 0;
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
 
@@ -55,16 +55,22 @@ MR_START_TEST (invalid_bitfield_enum_t, "invalid enum") {
 
 #undef SKIP_METHOD_XDR
 
-MR_START_TEST (bitfield_int_0, "bitfield as integer for value 0") {
+START_TEST (bitfield_int_0) {
   ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, 0);
 } END_TEST
 
-MR_START_TEST (bitfield_int_3, "bitfield as integer for value 3") {
+START_TEST (bitfield_int_3) {
   ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, 3);
 } END_TEST
 
-MR_START_TEST (bitfield_int_m1, "bitfield as integer for value -1") {
+START_TEST (bitfield_int_m1) {
   ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, -1);
 } END_TEST
 
-MAIN ();
+MAIN_TEST_SUITE ((bitfield_enum_zero, "bitfield as enum"),
+		 (bitfield_enum_three, "bitfield as enum"),
+		 (invalid_bitfield_enum_t, "invalid enum"),
+		 (bitfield_int_0, "bitfield as integer for value 0"),
+		 (bitfield_int_3, "bitfield as integer for value 3"),
+		 (bitfield_int_m1, "bitfield as integer for value -1")
+		 );

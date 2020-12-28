@@ -23,7 +23,7 @@ xml2_load_method (void * arg)
   return (status);
 }
 
-MR_START_TEST (mem_load_failures_xml2, "test load memory operations failures for XML2")
+START_TEST (mem_load_failures_xml2)
 {
   mr_detect_type (NULL); /* explicitly init library */
   char * xml2 = MR_SAVE_XML2 (mr_conf_t, &mr_conf);
@@ -36,3 +36,5 @@ MR_START_TEST (mem_load_failures_xml2, "test load memory operations failures for
   mem_failures_method (xml2_load_method, node, true);
   xmlFreeDoc (doc);
 } END_TEST
+
+MAIN_TEST_SUITE ((mem_load_failures_xml2, "test load memory operations failures for XML2"));
