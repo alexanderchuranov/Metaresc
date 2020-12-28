@@ -147,6 +147,7 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(unsigned int, size, , "size of bitfield array"),
 		(uint8_t, width, , "bit-field width in bits"),
 		(uint8_t, shift, , "bit-field shift in first byte"),
+		(bool, initialized, , "flag that width and shift are initialized"),
 		)
 
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),

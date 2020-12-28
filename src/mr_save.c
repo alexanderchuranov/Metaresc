@@ -571,8 +571,7 @@ static int
 mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
 {
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
-  static char * type_name[] = {
-    [0 ... MR_TYPE_LAST - 1] = NULL,
+  static char * type_name[MR_TYPE_LAST] = {
     [MR_TYPE_CHAR_ARRAY] = "string",
     MR_FOREACH (MR_TYPE_NAME,
 		string_t, char, bool,

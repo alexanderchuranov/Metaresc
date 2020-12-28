@@ -1340,7 +1340,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	      fdp->name.str = fdp->type;
 	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
-	    if (MR_SUCCESS != mr_add_type (tdp_, NULL, NULL))
+	    if (MR_SUCCESS != mr_add_type (tdp_))
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->type.str);
 		return (MR_FAILURE);
@@ -1524,7 +1524,6 @@ mr_normalize_type (mr_fd_t * fdp)
     };
   static bool isdelimiter [1 << (__CHAR_BIT__ * sizeof (uint8_t))] =
     {
-      [0 ... (1 << (__CHAR_BIT__ * sizeof (char))) - 1] = false,
       [0] = true,
       [(uint8_t)' '] = true,
       [(uint8_t)'\t'] = true,
@@ -1580,15 +1579,16 @@ static void
 mr_init_bitfield (mr_fd_t * fdp)
 {
   int i, j;
-  if ((NULL == fdp->param.bitfield_param.bitfield) ||
-      (0 == fdp->param.bitfield_param.size))
+  if (fdp->param.bitfield_param.initialized)
     return;
-
+  
+  fdp->param.bitfield_param.initialized = true;
+  
   for (i = 0; i < fdp->param.bitfield_param.size; ++i)
     if (fdp->param.bitfield_param.bitfield[i])
       break;
   /* if bitmask is clear then there is no need to initialize anything */
-  if (!fdp->param.bitfield_param.bitfield[i])
+  if (i >= fdp->param.bitfield_param.size)
     return;
 
   fdp->offset = i;
@@ -1646,9 +1646,8 @@ void
 mr_pointer_fd_set_size (mr_fd_t * fdp)
 {
 #define MR_TYPE_SIZE(TYPE) [MR_TYPE_DETECT (TYPE)] = sizeof (TYPE),
-  static size_t types_sizes[] =
+  static size_t types_sizes[MR_TYPE_LAST] =
     {
-      [0 ... MR_TYPE_LAST - 1] = 0,
       MR_FOREACH (MR_TYPE_SIZE,
 		  string_t, char, bool,
 		  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
@@ -1903,17 +1902,13 @@ mr_get_static_field_name (mr_substr_t * substr)
 /**
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
- * @param meta meta info for the type
- * @param ... auxiliary void pointer
  * @return status
  */
 mr_status_t
-mr_add_type (mr_td_t * tdp, char * meta, ...)
+mr_add_type (mr_td_t * tdp)
 {
   mr_status_t status = MR_SUCCESS;
   mr_ic_rarray_t mr_ic_rarray;
-  va_list args;
-  void * res;
   int count = 0;
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
@@ -1931,10 +1926,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
   if (mr_get_td_by_name (tdp->type.str))
     return (MR_SUCCESS); /* this type is already registered */
 
-  va_start (args, meta);
-  res = va_arg (args, void*);
-  va_end (args);
-
   for (count = 0; ; ++count)
     {
       mr_fd_t * fdp = tdp->fields[count].fdp;
@@ -1947,12 +1938,6 @@ mr_add_type (mr_td_t * tdp, char * meta, ...)
 	break;
     }
   tdp->fields_size = count * sizeof (tdp->fields[0]);
-
-  if ((NULL != meta) && meta[0])
-    tdp->meta = meta;
-
-  if (NULL != res)
-    tdp->res.ptr = res;
 
   if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
     status = MR_FAILURE;

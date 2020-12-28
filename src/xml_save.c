@@ -30,7 +30,6 @@
 #define ESC_SIZE (sizeof (XML_QUOTE_CHAR_PATTERN))
 #define ESC_CHAR_MAP_SIZE (1 << __CHAR_BIT__)
 static char * esc_char_map[MR_ESC_CHAR_MAP_SIZE] = {
-  [0 ... MR_ESC_CHAR_MAP_SIZE - 1] = NULL,
   [(unsigned char)'&'] = "&amp;",
   [(unsigned char)'<'] = "&lt;",
   [(unsigned char)'>'] = "&gt;",
