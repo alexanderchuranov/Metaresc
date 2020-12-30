@@ -607,6 +607,7 @@
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX,			\
 		 MR_TYPE_DETECT (TYPE), __VA_ARGS__,			\
+		 .self_ptr = __builtin_types_compatible_p (MR_TYPE_NAME *, __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
 		 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE)		\
 		 + 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)))
 /* Generate division by zero error if type of the field mismatches
@@ -696,20 +697,7 @@
 	  .mr_type = MR_TYPE_TRAILING_RECORD,				\
 	  } } } },							\
     .meta = "" __VA_ARGS__ };						\
-  static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (MR_TYPE_NAME) (void) { MR_ADD_TYPE (MR_TYPE_NAME); }
-
-/*
-  Macro for type registration.
-  Usage:
-  MR_ADD_TYPE(foo_t);
-  MR_ADD_TYPE(foo_t, "Text Meta Info");
-  MR_ADD_TYPE(foo_t, "TMI", "One more TMI");
-  MR_ADD_TYPE(foo_t, "TMI", &meta_info_struct);
-  MR_ADD_TYPE(foo_t, "TMI", &meta_info_struct, unused, unused, unused);
-  By default meta and res fields could initialized in MR_END_STRUCT & MR_END_ENUM.
-  Arguments in MR_ADD_TYPE will override those settings.
-*/
-#define MR_ADD_TYPE(MR_TYPE_NAME) mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME))
+  static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (MR_TYPE_NAME) (void) { mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME)); }
 
 /*
   User can turn off strict types checking for Metaresc macroses, so compilation will produce only warnings.

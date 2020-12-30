@@ -118,16 +118,18 @@ typedef struct ext_struct_t {
   int16_t x;
   int32_t y;
   uint8_t * z;
-  const uint16_t * cz;
-  volatile int32_t * vz;
-  const volatile int64_t * cvz;
+  const float * cz;
+  volatile double * vz;
+  const volatile long double * cvz;
+  struct ext_struct_t * self_ptr;
 } ext_struct_t;
 
 #define MR_MODE DESC
 TYPEDEF_STRUCT (ext_struct_t,
 		x,
 		( , y),
-		z, cz, vz, cvz
+		z, cz, vz, cvz,
+		self_ptr,
 		)
 
 #define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({	\
@@ -157,6 +159,7 @@ START_TEST (check_ext_struct) {
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cz);
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (vz);
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cvz);
+  ASSERT_FIELD_TYPE (ext_struct_t, self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
 } END_TEST
 
 START_TEST (check_array_save) {

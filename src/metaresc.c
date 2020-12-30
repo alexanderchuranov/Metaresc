@@ -1786,6 +1786,13 @@ mr_detect_fields_types (mr_td_t * tdp)
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
+      if (tdp->fields[i].fdp->self_ptr)
+	{
+	  tdp->fields[i].fdp->type = tdp->type.str;
+	  tdp->fields[i].fdp->mr_type = MR_TYPE_POINTER;
+	  tdp->fields[i].fdp->mr_type_aux = tdp->mr_type;
+	}
+
       mr_fd_detect_field_type (tdp->fields[i].fdp);
       mr_fd_detect_res_size (tdp->fields[i].fdp);
     }
