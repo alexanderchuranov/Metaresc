@@ -118,18 +118,29 @@ typedef struct ext_struct_t {
   int16_t x;
   int32_t y;
   uint8_t * z;
-  const float * cz;
-  volatile double * vz;
-  const volatile long double * cvz;
+  complex float const * z_c;
+  complex double volatile * z_v;
+  complex long double const volatile * z_cv;
+  const float * c_z;
+  volatile double * v_z;
+  const volatile long double * cv_z;
   struct ext_struct_t * self_ptr;
+  const struct ext_struct_t * c_self_ptr;
+  volatile struct ext_struct_t * v_self_ptr;
+  const volatile struct ext_struct_t * cv_self_ptr;
+  struct ext_struct_t const * self_ptr_c;
+  struct ext_struct_t volatile * self_ptr_v;
+  struct ext_struct_t const volatile * self_ptr_cv;
+  const struct ext_struct_t const * c_self_ptr_c;
+  volatile struct ext_struct_t volatile * v_self_ptr_v;
 } ext_struct_t;
 
 #define MR_MODE DESC
 TYPEDEF_STRUCT (ext_struct_t,
 		x,
 		( , y),
-		z, cz, vz, cvz,
-		self_ptr,
+		z, z_c, z_v, z_cv, c_z, v_z, cv_z,
+		self_ptr, c_self_ptr, v_self_ptr, cv_self_ptr, self_ptr_c, self_ptr_v, self_ptr_cv, c_self_ptr_c, v_self_ptr_v,
 		)
 
 #define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({	\
@@ -156,10 +167,21 @@ START_TEST (check_ext_struct) {
   ASSERT_EXT_STRUCT_FIELD_TYPE (x);
   ASSERT_EXT_STRUCT_FIELD_TYPE (y);
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (z);
-  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cz);
-  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (vz);
-  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cvz);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (z_c);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (z_v);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (z_cv);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (c_z);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (v_z);
+  ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cv_z);
   ASSERT_FIELD_TYPE (ext_struct_t, self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, c_self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, v_self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, cv_self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, self_ptr_c, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, self_ptr_v, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, self_ptr_cv, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, c_self_ptr_c, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+  ASSERT_FIELD_TYPE (ext_struct_t, v_self_ptr_v, MR_TYPE_POINTER, MR_TYPE_STRUCT);
 } END_TEST
 
 START_TEST (check_array_save) {

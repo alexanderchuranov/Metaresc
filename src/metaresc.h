@@ -607,7 +607,10 @@
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX,			\
 		 MR_TYPE_DETECT (TYPE), __VA_ARGS__,			\
-		 .self_ptr = __builtin_types_compatible_p (MR_TYPE_NAME *, __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
+		 .self_ptr = __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)) | \
+		 __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME const *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)) | \
+		 __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME volatile *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)) | \
+		 __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME const volatile *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
 		 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE)		\
 		 + 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)))
 /* Generate division by zero error if type of the field mismatches
