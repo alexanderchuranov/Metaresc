@@ -403,6 +403,6 @@ corresponding types
 * JSON - [JavaScript Object Notation](https://www.json.org/json-en.html)
 * XML1 - builtin parser/serializer of XML
 * XML2 - interface to libxml2
-* SCM - List-like notation
+* SCM - Lisp-like notation
 * XDR - binary format for [External Data Representation
 Standard](https://tools.ietf.org/html/rfc4506)
