@@ -5,10 +5,10 @@
 *.tab.[ch]
 /Makefile
 /Makefile.in
-COPYING
 INSTALL
 aclocal.m4
 autom4te.cache/*
+compile
 config.guess
 config.log
 config.status
@@ -23,8 +23,8 @@ m4/*
 missing
 src/.deps/*
 src/.libs/*
-src/rlpp.h
 src/stamp-h1
 src/stamp-h2
+test-driver
 tests/.deps/*
 tests/.libs/*

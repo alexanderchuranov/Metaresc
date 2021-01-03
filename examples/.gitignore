@@ -13,6 +13,9 @@
 /deserialization_3_args
 /deserializing_xml
 /double_pointer
+/dwarf
+/dwarf_no_types
+/dwarf_types.h
 /emptystruct
 /enums
 /enums_metadata
