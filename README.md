@@ -130,7 +130,7 @@ and is not installed into the system.
 Create a folder at the same level as Metaresc. Start with hello world
 stub that will use `metaresc.h`.
 
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -147,7 +147,7 @@ Compiler should be instructed where to find Metaresc header file, so
 we should add `-I../Metaresc/src` as a compilation flag. Minimal
 `Makefile` for this app should be as follows: 
 
-```
+```make
 all: sample
 
 CFLAGS += -I../Metaresc/src
@@ -166,7 +166,7 @@ standard semantics of types definition in C, but still require some
 learning curve. In the following example it should be
 self-explanatory.
 
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -198,7 +198,7 @@ int main (int argc, char * argv[])
 
 At this point we need to link our application against statically build
 Metaresc library files. `Makefile` should be extended as follows:
-```
+```make
 all: sample
 
 CFLAGS += -I../Metaresc/src
@@ -211,7 +211,7 @@ declaration specifier [-Wduplicate-decl-specifier]` You may suppress
 it with the `-Wno-duplicate-decl-specifier` flag. I.e. final `Makefile` is
 as follows:
 
-```
+```make
 all: sample
 
 CFLAGS += -I../Metaresc/src -Wno-duplicate-decl-specifier
@@ -219,7 +219,7 @@ LDLIBS += ../Metaresc/src/.libs/libmetaresc.a
 ```
 
 Output of this sample application is as follows:
-```console
+```c
 {
   .value = "root",
   .left = (tree_node_t[]){
@@ -247,7 +247,7 @@ once in standard C and one more time with a Metaresc macro
 language. In this case global preprocessor variable `MR_MODE` should
 be defined into `DESC`. Example above will look as follows:
 
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -289,7 +289,7 @@ language for all fields of basic types (boolean, integer, float,
 complex, single characters, strings, pointers on all types listed
 above and even pointers on structures of base type). So example above
 could be reduced to:
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -328,7 +328,7 @@ way to generate metadata from compiler debug symbols. It adds some
 complexity to a build process, but doesn't require any interaction
 with a macro language. In this case sample above will look as follows:
 
-```
+```c
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -359,7 +359,7 @@ int main (int argc, char * argv[])
 ```
 You need to add one more file to the project `sample_types.c`:
 
-```
+```c
 #include <metaresc.h>
 
 mr_td_t mr_td[] = {
@@ -376,7 +376,7 @@ static void __attribute__ ((constructor)) mr_types_init ()
 
 `Makefile` should be modified as follows:
 
-```
+```make
 all: sample
 
 sample: sample.o sample_types.o
