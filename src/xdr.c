@@ -339,26 +339,6 @@ xdr_none (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   return (xdr_void () ? MR_SUCCESS : MR_FAILURE);
 }
 
-/*
-  LIBC implementation of xdr_char is too old and has some pitfalls. For readonly memory (statically inited strings) XDR_ENCODE operation produce GPF due to unnecessary write.
-
-bool_t xdr_char (xdrs, cp)
-     XDR *xdrs;
-     char *cp;
-{
-  int i;
-
-  i = (*cp);
-  if (!xdr_int (xdrs, &i)) {
-    return (false);
-  }
-  *cp = i;
-  return (true);
-}
-
-  Here is workaround.
-*/
-
 /**
  * Handler for type char.
  * @param xdrs XDR stream descriptor
@@ -368,7 +348,7 @@ bool_t xdr_char (xdrs, cp)
 static bool_t __attribute__((unused))
 xdr_char_ (XDR * xdrs, char * cp)
 {
-  int32_t x = 0;
+  int x = 0;
   if (XDR_ENCODE == xdrs->x_op)
     x = *cp;
   if (!xdr_int (xdrs, &x))
@@ -376,6 +356,42 @@ xdr_char_ (XDR * xdrs, char * cp)
   if (XDR_DECODE == xdrs->x_op)
     *cp = x;
   return (true);
+}
+
+bool_t
+xdr_int64_t (XDR * xdrs, int64_t * int64)
+{
+  int32_t hi, low;
+
+  switch (xdrs->x_op)
+    {
+    case XDR_ENCODE:
+      hi = *int64 >> 32;
+      low = *int64;
+      if (!XDR_PUTINT32 (xdrs, &hi))
+	return (false);
+      return (XDR_PUTINT32 (xdrs, &low));
+
+    case XDR_DECODE:
+      if (!XDR_GETINT32 (xdrs, &hi))
+	return (false);
+      if (!XDR_GETINT32 (xdrs, &low))
+	return (false);
+      *int64 = ((int64_t) hi) << 32 | (uint32_t) low;
+      return (true);
+
+    case XDR_FREE:
+      return (true);
+
+    default:
+      return (false);
+    }
+}
+
+bool_t
+xdr_uint64_t (XDR * xdrs, uint64_t * uint64)
+{
+  return (xdr_int64_t (xdrs, (int64_t*) uint64));
 }
 
 /**
@@ -420,14 +436,6 @@ xdr_ssize_t (XDR * xdrs, ssize_t * cp)
 #    define xdr_uint32_t xdr_u_int
 #  endif /* HAVE_XDR_U_INT32_T */
 #endif /* HAVE_XDR_UINT32_T */
-
-#ifndef HAVE_XDR_UINT64_T
-#  ifdef HAVE_XDR_U_INT64_T
-#    define xdr_uint64_t xdr_u_int64_t
-#  else /* HAVE_XDR_U_INT64_T */
-#    define xdr_uint64_t xdr_u_longlong_t
-#  endif /* HAVE_XDR_U_INT64_T */
-#endif /* HAVE_XDR_UINT64_T */
 
 #define XDR_INT_TYPE(TYPE)						\
   static mr_status_t _xdr_ ## TYPE (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)	\
