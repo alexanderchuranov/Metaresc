@@ -19,7 +19,7 @@ Clone Metaresc from the Github, configure and build according to the standard au
 On Ubuntu, run the following command:
 
 ```console
-$ apt-get install autoconf automake libtool pkg-config flex bison libxml2-dev check libdwarf-dev
+# apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev check libdwarf-dev
 ```
 
 Checkout Metaresc from github
@@ -43,7 +43,7 @@ $ ./configure
 Build and check library
 
 ```console
-$ make check
+$ make -j 4 check
 ```
 ### MacOs
 
@@ -55,7 +55,7 @@ $ xcode-select --install
 
 Install external dependencies:
 ```console
-$ brew install autoconf automake libtool pkg-config flex bison libxml2 check
+# brew install autoconf automake libtool pkg-config flex bison libxml2 check
 ```
 
 For DWARF (debug info format) support install libdwarf:
@@ -66,7 +66,7 @@ $ cd libdwarf-code
 $ sh scripts/FIX-CONFIGURE-TIMES
 $ ./configure
 $ make
-$ sudo make install
+# make install
 ```
 
 Checkout and build Metaresc:
@@ -76,7 +76,24 @@ $ git clone https://github.com/alexanderchuranov/Metaresc.git
 $ cd Metaresc
 $ ./autogen.sh
 $ ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison LIBS="-lz -ll"
-$ make check
+$ make -j 4 check
+```
+
+### FreeBSD
+
+On FreeBSD 12.1 install external dependencies:
+```console
+# pkg install git autoconf automake libtool pkgconf flex bison libxml2 check libdwarf 
+```
+
+Checkout and build Metaresc:
+
+```console
+$ git clone https://github.com/alexanderchuranov/Metaresc.git
+$ cd Metaresc
+$ ./autogen.sh
+$ ./configure
+$ make -j 4 check
 ```
 
 ### Windows
