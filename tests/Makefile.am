@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = parallel-tests
 AM_CFLAGS = @AM_CFLAGS@ $(CHECK_CFLAGS)
-AM_LDFLAGS = @AM_LDFLAGS@ $(CHECK_LDFLAGS)
+AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src
 LIBS += $(top_srcdir)/src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet

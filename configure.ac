@@ -38,14 +38,21 @@ AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
 AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
 CFLAGS=${save_CFLAGS}
 
-aux_CFLAGS=-Wall
+aux_CFLAGS="-Wall -Werror"
 save_CFLAGS=${CFLAGS}
 CFLAGS="${CFLAGS} ${aux_CFLAGS}"
 AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
 AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
 CFLAGS=${save_CFLAGS}
 
-aux_CFLAGS=-Werror
+aux_CFLAGS=-O2
+save_CFLAGS=${CFLAGS}
+CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+CFLAGS=${save_CFLAGS}
+
+aux_CFLAGS=-g
 save_CFLAGS=${CFLAGS}
 CFLAGS="${CFLAGS} ${aux_CFLAGS}"
 AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
@@ -129,7 +136,7 @@ AC_CHECK_HEADER([rpc/types.h], [ HAVE_XDR=yes ])
 AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 
 # Checks for library functions.
-AC_CHECK_FUNCS([ backtrace xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t xdr_uint64_t xdr_u_int64_t])
+AC_CHECK_FUNCS([ backtrace xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t ])
 
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=256)
 AC_MSG_CHECKING(preprocessor routines depth)
