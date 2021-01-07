@@ -402,6 +402,8 @@
 #define P00_COMMA_uint32_t AUTO_BI, uint32_t,
 #define P00_COMMA_int64_t AUTO_BI, int64_t,
 #define P00_COMMA_uint64_t AUTO_BI, uint64_t,
+#define P00_COMMA_size_t AUTO_BI, size_t,
+#define P00_COMMA_ssize_t AUTO_BI, ssize_t,
 #define P00_COMMA_long_double_t AUTO_BI, long_double_t,
 #define P00_COMMA_string_t AUTO_BI, string_t,
 #define P00_COMMA_mr_ptr_t AUTO_BI, mr_ptr_t,
@@ -448,6 +450,8 @@
 #define MR_IS_BUILTIN_uint32_t uint32_t,
 #define MR_IS_BUILTIN_int64_t int64_t,
 #define MR_IS_BUILTIN_uint64_t uint64_t,
+#define MR_IS_BUILTIN_size_t size_t,
+#define MR_IS_BUILTIN_ssize_t ssize_t,
 #define MR_IS_BUILTIN_long_double_t long_double_t,
 #define MR_IS_BUILTIN_string_t string_t,
 #define MR_IS_BUILTIN_mr_ptr_t mr_ptr_t,
@@ -617,7 +621,9 @@
    with type provided in macro. This is possible for descriptors
    generated for external types */
 
-#define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_IF_ELSE (MR_IS_EMPTY (TYPE)) \
+/* ensure that name is a token without parentheses of braces at the end */
+#define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC__ (NAME ## _, MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
+#define MR_AUTO_DESC__(VALIDATED_NAME, MR_TYPE_NAME, TYPE, NAME, ...) MR_IF_ELSE (MR_IS_EMPTY (TYPE)) \
     (MR_AUTO_DESC_ (MR_TYPE_NAME, __typeof__ (((MR_TYPE_NAME*)0)->NAME), NAME, __VA_ARGS__)) \
     (MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__))
 

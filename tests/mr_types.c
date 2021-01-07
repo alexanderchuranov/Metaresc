@@ -35,6 +35,8 @@ TYPEDEF_STRUCT (struct_t,
 		long double long_double_,
 		complex long double complex_long_double_,
 		const volatile unsigned long long int const_volatile_unsigned_long_long_int_,
+		size_t size,
+		ssize_t ssize,
 		(char_array_t, char_array_),
 		char char_,
 		string_t string,
@@ -215,6 +217,9 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (complex_double_, MR_TYPE_COMPLEX_DOUBLE);
   ASSERT_STRUCT_FIELD_TYPE (long_double_, MR_TYPE_LONG_DOUBLE);
   ASSERT_STRUCT_FIELD_TYPE (complex_long_double_, MR_TYPE_COMPLEX_LONG_DOUBLE);
+
+  ASSERT_STRUCT_FIELD_TYPE (size, MR_TYPE_DETECT (size_t));
+  ASSERT_STRUCT_FIELD_TYPE (ssize, MR_TYPE_DETECT (ssize_t));
 
   ASSERT_STRUCT_FIELD_TYPE (char_array_, MR_TYPE_CHAR_ARRAY);
   ASSERT_STRUCT_FIELD_TYPE (char_, MR_TYPE_CHAR);

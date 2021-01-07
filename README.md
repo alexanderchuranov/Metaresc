@@ -139,7 +139,7 @@ Build and check library
 $ make check
 ```
 
-## How to build sample app
+## How to build a sample app
 
 Instruction below will cover scenario when Metaresc is build locally
 and is not installed into the system.
@@ -423,3 +423,168 @@ corresponding types
 * SCM - Lisp-like notation
 * XDR - binary format for [External Data Representation
 Standard](https://tools.ietf.org/html/rfc4506)
+
+## Types definition macro language
+
+Metaresc provides 4 top level macro definitions.
+* `TYPEDEF_STRUCT` - equivalent for `typedef struct type_t {} type_t;`
+* `TYPEDEF_UNION` - equivalent for `typedef union type_t {} type_t;`
+* `TYPEDEF_ENUM` - equivalent for `typedef enum type_t {} type_t;`
+* `TYPEDEF_FUNC` - works for definition of function pointer types
+
+### Structures definition
+`TYPEDEF_STRUCT` must have at least one argument - struct type name.
+All consequent arguments are delimited by comma and considered as a
+structure fields declarations. Empty declarations are ignored. Fields
+declarations could be presented in a multiple forms:
+1. most of the basic types could be declared in a standard C notation
+2. pointers, fields of a custom types, arrays, function pointers
+should be declared as a structured set in parentheses
+3. non-serializable fields, bitfields, anonymous unions looks like a
+macro calls, i.e. a `keyword` followed by a set of arguments in parentheses.
+
+#### Fields of a basic types
+This is a simplified notation for basic types. It allows declaration
+of a **single** field with a type name that consists of the following
+keywords:
+* `char`
+* `short`
+* `int`
+* `unsigned`
+* `signed`
+* `long`
+* `float`
+* `double`
+* `bool`
+* `_Bool`
+* `complex`
+* `__complex__`
+* `_Complex`
+* `int8_t`
+* `uint8_t`
+* `int16_t`
+* `uint16_t`
+* `int32_t`
+* `uint32_t`
+* `int64_t`
+* `uint64_t`
+* `size_t`
+* `ssize_t`
+* `long_double_t`
+* `string_t`
+* `mr_ptr_t`
+* `volatile`
+* `__volatile`
+* `__volatile__`
+* `const`
+* `__const`
+* `__const__`
+Here is a valid example:
+```c
+TYPEDEF_STRUCT (sample_t,
+		int x,
+		long int y,
+		long long int z,
+		volatile long long int v,
+		);
+```
+
+#### Extended semantics for fields declaration
+Extended semantics allows not only declaration itself, but also a
+metadata definition. User could augment fields with text metadata and
+arbitrary structured resources. User could access metadata and
+resources at runtime via reflection API provided by Metaresc. Field
+declaration is presented as positional set of parameters in
+parentheses:
+
+(type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
+
+Only the first two parameters are mandatory, the rest are optional.
+1. **type** is a field type
+2. **name** is a field name
+3. **_suffix_** is used for declaration of arrays and function pointers
+4. **_text\_metadata_** is a user defined string
+5. **_pointer\_on\_resources\_array_** is a `void*` pointer that user can \
+initialize with a pointer on array of structured resources
+6. **_resource\_type_** is a string that defines type of resource pointer
+7. **_resource\_array\_size_** is an integer value that denotes size of \
+resource array
+
+Example below demonstrates extended semantics:
+```c
+TYPEDEF_STRUCT (sample_t,
+		(int, field),
+		(int *, pointer),
+		(int, array, [2]),
+		(int, function, (int)),
+		(int, metadata, /* suffix */, "text metadata"),
+		(int, void_resource, /* suffix */, /* text metadata */, { "string as a void pointer" }),
+		(int, structured_resource, /* suffix */, /* text metadata */, { (sample_t[]){{0}} }, "sample_t"),
+		(int, structured_resources_array, /* suffix */, /* text metadata */, { (sample_t[]){{0}, {1}} }, "sample_t", 2 * sizeof (sample_t)),
+		);
+```
+
+##### Fields declaration
+Type of the field may consist of multiple tokens and could include
+keywords: `const`, `volatile`, `restrict`, `struct`, `union`,
+`enum`. Name of the field must be strictly one token.
+
+##### Pointer declaration
+Metaresc is capable to resolve pointers on basic types and on custom
+user's types. `char *` is treated as pointer on a NULL-terminated
+string, but not a pointer on a single character.
+
+Double pointers are not supported and user should use intermediate
+wrapper structure to represent each level of indirect
+access. I.e. `int ** double_pointer` should be declared as follows:
+
+```c
+TYPEDEF_STRUCT (int_ptr_t,
+		(int *, ptr));
+
+TYPEDEF_STRUCT (sample_t,
+		(int_ptr_t *, double_pointer));
+```
+
+Default serialization of pointer is a single instance of designated
+type, but Metaresc also supports representation of pointers as arrays
+of variable size. Size of array in case should be another field of the
+same structure as a pointer. User may specify name of this field via
+structured resource of the pointer field. There are two options how to
+do this.
+1. User may specify name of the `size` field as a string and denote 
+that type of the resource is a `"string"`. Sample declaration as 
+follows:
+
+```c
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array, /* suffix */, /* text metadata */, { "array_size" }, "string"),
+		ssize_t array_size,
+		);
+```
+Existence of the `size` field could be validated only at the run-time,
+so this method makes a loosely-coupled definition.
+2. Another way to specify `size` field is to provide `offset` of this
+field as a structured resource. Sample declaration as follows:
+
+```c
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array, /* suffix */, /* text metadata */, { .offset = offsetof (resizable_array_t, array_size) }, "offset"),
+		ssize_t array_size,
+		);
+```
+This method allows to ensure that `size` field is presented in
+designated structure, but does not verify that `pointer` and `size`
+fields are within the same structure and `size` field has appropriate
+type. This validation happens at run-time. `size` field might be of
+any integer type including `bool` and `char`. It could also be a
+`enum` or `bitfield` which are integer types by language design. `size`
+field could also be a pointer on any type listed above except
+`bitfield`. `bitfields` could be specified as `size` field only with
+the first declaration method, because compiler can't calculate
+`offsetof` the `bitfields`.
+
+Descriptors for pointer fields that are generated from DWARF debug
+info have structured resource configured according to the first
+method. I.e. `size` field configured as a string identifier and formed
+from the name of the field with `_size` suffix.
