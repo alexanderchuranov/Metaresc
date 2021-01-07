@@ -479,6 +479,7 @@ keywords:
 * `const`
 * `__const`
 * `__const__`
+
 Here is a valid example:
 ```c
 TYPEDEF_STRUCT (sample_t,
@@ -548,10 +549,10 @@ TYPEDEF_STRUCT (sample_t,
 
 Default serialization of pointer is a single instance of designated
 type, but Metaresc also supports representation of pointers as arrays
-of variable size. Size of array in case should be another field of the
-same structure as a pointer. User may specify name of this field via
-structured resource of the pointer field. There are two options how to
-do this.
+of variable size. Size of the array in this case should be another
+field of the same structure. User may specify name of
+this field via structured resource of the pointer field. There are two
+options how to do this.
 1. User may specify name of the `size` field as a string and denote 
 that type of the resource is a `"string"`. Sample declaration as 
 follows:
@@ -564,6 +565,7 @@ TYPEDEF_STRUCT (resizable_array_t,
 ```
 Existence of the `size` field could be validated only at the run-time,
 so this method makes a loosely-coupled definition.
+
 2. Another way to specify `size` field is to provide `offset` of this
 field as a structured resource. Sample declaration as follows:
 
@@ -573,18 +575,52 @@ TYPEDEF_STRUCT (resizable_array_t,
 		ssize_t array_size,
 		);
 ```
-This method allows to ensure that `size` field is presented in
+This method ensures that `size` field is presented in
 designated structure, but does not verify that `pointer` and `size`
 fields are within the same structure and `size` field has appropriate
 type. This validation happens at run-time. `size` field might be of
-any integer type including `bool` and `char`. It could also be a
+any integer type including `bool` and `char`. It could also be an
 `enum` or `bitfield` which are integer types by language design. `size`
 field could also be a pointer on any type listed above except
 `bitfield`. `bitfields` could be specified as `size` field only with
 the first declaration method, because compiler can't calculate
-`offsetof` the `bitfields`.
+`offsetof` for the `bitfields`.
 
 Descriptors for pointer fields that are generated from DWARF debug
 info have structured resource configured according to the first
 method. I.e. `size` field configured as a string identifier and formed
 from the name of the field with `_size` suffix.
+
+##### Arrays declaration
+Third argument `suffix` in the field's declaration denotes dimensions
+of the array. Metaresc is capable to distinguish one- and two-
+dimensional arrays. Higher orders of dimensions are treated as
+two-dimensional arrays with aggregated lower dimension. User should
+use intermediate wrapper types for propper serialization of 3+
+dimensional arrays.
+
+```c
+TYPEDEF_STRUCT (array_1d_t,
+		(int, array, [2]));
+TYPEDEF_STRUCT (array_2d_t,
+		(int, array, [2][2]));
+TYPEDEF_STRUCT (array_3d_t,
+		(array_1d_t, array, [2][2]));
+TYPEDEF_STRUCT (_array_3d_t,
+		(array_2d_t, array, [2]));
+TYPEDEF_STRUCT (array_4d_t,
+		(array_2d_t, array, [2][2]));
+```
+
+Zero-size arrays are also supported. Type descriptor will have all
+meta information for those fields, but serializaiton will omit them as
+empty fields. C standard allows empty-size declaration at the end of
+the structure. In Metaresc those fields could be declared as
+non-serializable.
+
+```c
+TYPEDEF_STRUCT (array_t,
+		(int, zero_size_array, [0]),
+		VOID (int, empty_size_array, []));
+```
+
