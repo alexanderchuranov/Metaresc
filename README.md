@@ -511,6 +511,9 @@ initialize with a pointer on array of structured resources
 7. **_resource\_array\_size_** is an integer value that denotes size of \
 resource array
 
+**_text\_metadata_** and **_resource_** information are available at
+  run-time through reflection API.
+
 Example below demonstrates extended semantics:
 ```c
 TYPEDEF_STRUCT (sample_t,
@@ -624,3 +627,34 @@ TYPEDEF_STRUCT (array_t,
 		VOID (int, empty_size_array, []));
 ```
 
+##### Function pointers declaration
+If `suffix` is an expression in parentheses, then this field is
+treated as a function pointer declaration. I.e. declaration is
+equivalent of `type (*name) suffix;` as a standard type
+declaration. List of function agruments is processed and Metaresc type
+descriptor contains this list in a structured way. This information
+could be retrieved at run-time trhough reflection API. User must not
+use arguments names in this declaration. Variadic functions should be
+declared as non-serializable fields. Metaresc serialize function
+pointers as function names retrieved via `dladdr ()`. If function name
+is not available then pointer is serialized as hex value.
+
+```c
+TYPEDEF_STRUCT (functions_t,
+		(int, my_fork, ()),
+		(int, my_fork_implicit_void, (void)),
+		(int, my_vprintf, (const char * restrict /* format */, va_list /* ap */)),
+		VOID (int, (*my_printf), (const char * restrict /* format */, ...)),
+		);
+```
+
+##### Text metadata and resource information
+Text metadata is a user defined string that could be retrieved at
+run-time through reflection API. This property is also used for union
+fields discrimination (a way to identify at run-time which union field
+to use).
+
+Resource information (_text\_metadata_, _{
+pointer\_on\_resources\_array }_, _resource\_type_,
+_resources\_array\_size_) is also available at run-time through
+reflection API and is used for dynamic arrays size specification.
