@@ -116,6 +116,18 @@ TYPEDEF_STRUCT (struct_t,
 		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, :1),
 		)
 
+TYPEDEF_STRUCT (void_function_field_t,
+		VOID (void, (*func), (void)))
+
+START_TEST (check_void_function_field) {
+  mr_detect_type (NULL);
+
+  mr_td_t * tdp = mr_get_td_by_name ("void_function_field_t");
+  ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type void_function_field_t.");
+  mr_fd_t * fdp = mr_get_fd_by_name (tdp, "func");
+  ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field 'func'.");
+}
+
 typedef struct ext_struct_t {
   int16_t x;
   int32_t y;
@@ -304,7 +316,8 @@ START_TEST (check_types_detection) {
   
 } END_TEST
 
-MAIN_TEST_SUITE ((check_ext_struct, "check that descriptor for external type is correct"),
+MAIN_TEST_SUITE ((check_void_function_field, "check that non-serializable function pointer is declared correctly"),
+		 (check_ext_struct, "check that descriptor for external type is correct"),
 		 (check_array_save, "check that MR_SAVE handles array correctly"),
 		 (check_types_detection, "check that types detected correctly")
 		 );

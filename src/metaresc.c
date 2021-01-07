@@ -1628,6 +1628,8 @@ mr_check_fields (mr_td_t * tdp)
       char * name = fdp->name.str;
       if (name)
 	{
+	  for (; !(isalnum (*name) || (*name == '_')); ++name); /* skip invalid characters */
+	  fdp->name.str = name;
 	  for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
 	  if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
 	    *name = 0; /* truncate on first invalid charecter */

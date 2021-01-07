@@ -81,9 +81,10 @@ $ make -j 4 check
 
 ### FreeBSD
 
-On FreeBSD 12.1 install external dependencies:
+On FreeBSD 12.1 install external dependencies (libdwarf is available
+by default):
 ```console
-# pkg install git autoconf automake libtool pkgconf flex bison libxml2 check libdwarf 
+# pkg install git autoconf automake libtool pkgconf flex bison libxml2 check
 ```
 
 Checkout and build Metaresc:
