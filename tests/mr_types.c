@@ -126,7 +126,7 @@ START_TEST (check_void_function_field) {
   ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type void_function_field_t.");
   mr_fd_t * fdp = mr_get_fd_by_name (tdp, "func");
   ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field 'func'.");
-}
+} END_TEST
 
 typedef struct ext_struct_t {
   int16_t x;
