@@ -529,6 +529,23 @@ TYPEDEF_STRUCT (sample_t,
 		);
 ```
 
+##### Non-serializable fields
+For the fields that should not be serialized use keyword `VOID` as a
+prefix to declatation. Metaresc still detect type of those fields, but
+skip them at serialization/deserialization process.
+Sample declaration as follows:
+
+```c
+TYPEDEF_STRUCT (non_serializable_t,
+		VOID (int, field),
+		VOID (int *, pointer),
+		VOID (int, array, [2]),
+		VOID (int, _array[2]),
+		VOID (int, (*function), (int)),
+		VOID (int, bitfield, :4),
+		);
+```
+
 ##### Fields declaration
 Type of the field may consist of multiple tokens and could include
 keywords: `const`, `volatile`, `restrict`, `struct`, `union`,
@@ -670,7 +687,7 @@ on an array or characters of a certain length.
 
 By default `char *` is classified by Metaresc as a NULL-terminated
 string. For declaration of a pointer on a single character or an array
-user should use keyword `POINTER`.
+the user should use the keyword `POINTER`.
 
 POINTER (type, name, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
 
@@ -689,7 +706,7 @@ The same problem is applicable for the declaration of characters
 array. In most cases this declaration implies limited length
 NULL-terminated static string, but in some cases user might want to
 serialize this field as an array of characters. Standard declaration
-of the array will considered as a second case. For limited length
+of the array will be considered as a second case. For limited length
 NULL-terminated static strings user should use either keyword
 CHAR_ARRAY or declare custom type. Example as follows:
 
@@ -702,10 +719,10 @@ TYPEDEF_STRUCT (char_array_t,
 		(static_string_t, static_string, , "static NULL-terminated string"));
 ```
 
-Serializaiton of this structure into C-init format produces the
+Serialization of this structure into C-init format produces the
 following output.
 
-```console
+```c
 {
   .array = {
     'M',
@@ -722,3 +739,4 @@ following output.
   .static_string = "Metaresc"
 }
 ```
+
