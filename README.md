@@ -659,3 +659,66 @@ Resource information (_text\_metadata_, _{
 pointer\_on\_resources\_array }_, _resource\_type_,
 _resources\_array\_size_) is also available at run-time through
 reflection API and is used for dynamic arrays size specification.
+
+##### NULL-terminated strings vs character arrays
+There are multiple notions for `char *` fields.
+* The most common case is a NULL-terminated string.
+* In some cases this pointer is considered as a pointer on a single
+character.
+* It is also possible that pointer should be considered as a pointer
+on an array or characters of a certain length.
+
+By default `char *` is classified by Metaresc as a NULL-terminated
+string. For declaration of a pointer on a single character or an array
+user should use keyword `POINTER`.
+
+POINTER (type, name, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
+
+It is similar to standard declaration, but doesn't have **_suffix_**
+argument. Pointer on an array could be declared in the same fashion
+as for any other pointer. Here is a sample declaration of substring
+type.
+
+```c
+TYPEDEF_STRUCT (substr_t,
+		POINTER (char, str, , { .offset = offsetof (substr_t, length) }, "offset"),
+		size_t length)
+```
+
+The same problem is applicable for the declaration of characters
+array. In most cases this declaration implies limited length
+NULL-terminated static string, but in some cases user might want to
+serialize this field as an array of characters. Standard declaration
+of the array will considered as a second case. For limited length
+NULL-terminated static strings user should use either keyword
+CHAR_ARRAY or declare custom type. Example as follows:
+
+```c
+typedef char static_string_t[sizeof ("Metaresc")];
+
+TYPEDEF_STRUCT (char_array_t,
+		(char, array, [sizeof ("Metaresc")], "array of characters"),
+		CHAR_ARRAY (char, inline_static_string, [sizeof ("Metaresc")], "inline static NULL-terminated string"),
+		(static_string_t, static_string, , "static NULL-terminated string"));
+```
+
+Serializaiton of this structure into C-init format produces the
+following output.
+
+```console
+{
+  .array = {
+    'M',
+    'e',
+    't',
+    'a',
+    'r',
+    'e',
+    's',
+    'c',
+    '\000'
+  },
+  .inline_static_string = "Metaresc",
+  .static_string = "Metaresc"
+}
+```
