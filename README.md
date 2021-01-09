@@ -677,7 +677,7 @@ For bitfields use keyword `BITFIELD` as a prefix for declaration.
 BITFIELD (type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
 
 **type** must be one of integer types including `bool`. `enums` are
-  also represented by integer types by language design.
+  also represented as an integer types by language design.
 
 Sample declaration as follows:
 
@@ -720,7 +720,7 @@ type.
 ```c
 TYPEDEF_STRUCT (substr_t,
 		POINTER (char, str, , { .offset = offsetof (substr_t, length) }, "offset"),
-		size_t length)
+		VOID (size_t, length));
 ```
 
 The same problem is applicable for the declaration of characters
