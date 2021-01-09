@@ -524,8 +524,8 @@ TYPEDEF_STRUCT (sample_t,
 
 ##### Non-serializable fields
 For the fields that should not be serialized use keyword `VOID` as a
-prefix for declatation. Metaresc still detect type of those fields, but
-skip them at serialization/deserialization process.
+prefix for declaration. Metaresc still detect type of those fields, but
+skip them at the serialization/deserialization process.
 Sample declaration as follows:
 
 ```c
@@ -539,7 +539,7 @@ TYPEDEF_STRUCT (non_serializable_t,
 		);
 ```
 
-##### Fields declaration
+##### Field declaration
 Type of the field may consist of multiple tokens and could include
 keywords: `const`, `volatile`, `restrict`, `struct`, `union`,
 `enum`. Name of the field must be strictly one token.
@@ -605,7 +605,7 @@ info have structured resource configured according to the first
 method. I.e. `size` field configured as a string identifier and formed
 from the name of the field with `_size` suffix.
 
-##### Arrays declaration
+##### Array declaration
 Third argument `suffix` in the field's declaration denotes dimensions
 of the array. Metaresc is capable to distinguish one- and two-
 dimensional arrays. Higher orders of dimensions are treated as
@@ -627,7 +627,7 @@ TYPEDEF_STRUCT (array_4d_t,
 ```
 
 Zero-size arrays are also supported. Type descriptor will have all
-meta information for those fields, but serializaiton will omit them as
+meta information for those fields, but serialization will omit them as
 empty fields. C standard allows empty-size declaration at the end of
 the structure. In Metaresc those fields could be declared as
 non-serializable.
@@ -650,17 +650,17 @@ TYPEDEF_STRUCT (sample_t,
 		(int_ptr_t, pointers_array, [2]));
 ```
 
-##### Function pointers declaration
+##### Function pointer declaration
 If `suffix` is an expression in parentheses, then this field is
 treated as a function pointer declaration. I.e. declaration is
 equivalent of `type (*name) suffix;` as a standard type
-declaration. List of function agruments is processed and Metaresc type
+declaration. List of function arguments is processed and Metaresc type
 descriptor contains this list in a structured way. This information
-could be retrieved at run-time trhough reflection API. User must not
+could be retrieved at run-time through reflection API. User must not
 use arguments names in this declaration. Variadic functions should be
 declared as non-serializable fields. Metaresc serialize function
 pointers as function names retrieved via `dladdr ()`. If function name
-is not available then pointer is serialized as hex value.
+is not available then the pointer is serialized as hex value.
 
 ```c
 TYPEDEF_STRUCT (functions_t,
@@ -672,12 +672,12 @@ TYPEDEF_STRUCT (functions_t,
 ```
 
 ##### Bitfields declaration
-For bitfields use keyword `BITFIELD` as a prefix for declaration. 
+For bitfields use the keyword `BITFIELD` as a prefix for declaration.
 
 BITFIELD (type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
 
 **type** must be one of integer types including `bool`. `enums` are
-  also represented as an integer types by language design.
+  also represented as integer types by language design.
 
 Sample declaration as follows:
 
@@ -685,6 +685,84 @@ Sample declaration as follows:
 TYPEDEF_STRUCT (bitfields_t,
 		BITFIELD (int, size, : sizeof (int) * __CHAR_BIT__ - 1),
 		BITFIELD (bool, used, : 1));
+```
+
+##### Union declaration
+Union field declaration works as declaration of any other type. The
+tricky part is how to differentiate which field of the union to
+serialize at run-time. **_text\_metadata_** of the union field works
+for identification of discriminators. Discriminator is some field in
+serialization hierarchy that in run-time identifies active branch of
+the union. The reason why this field might not be in parent structure
+is because for structures like linked lists or trees it make sense to
+have this discriminator only at the top level, but not in individual
+nodes. If **_text\_metadata_** is not specified union is serialized as
+a first branch in union declaration. The same default serialization
+works in case if discriminor was not found at run-time. Identification
+of the active branch is based on the type of the discriminator field:
+
+* Integer types and booleans are interpreted as an index of active
+  branch. 0-indexing is used.
+
+* Dynamic (`char *`) and static (`char[]`) strings are interpreted as
+  a name of the active branch.
+
+* `enums` resolves to a name of active branch based on
+  **_text\_metadata_** of `enam` value.
+
+* Bitfields resolve based on their base type.
+
+Example below demonstrates the concept:
+
+```c
+TYPEDEF_UNION (union_t,
+	       (intptr_t, int_value),
+	       (double, dbl_value),
+	       (char *, str_value),
+	       (void *, ptr_value),
+	       );
+
+TYPEDEF_ENUM (union_discriminator_t,
+	      (UD_INT, , "int_value"),
+	      (UD_DBL, , "dbl_value"),
+	      (UD_STR, , "str_value"),
+	      (UD_PTR, , "ptr_value"),
+	      );
+
+TYPEDEF_STRUCT (tree_node_t,
+		(union_t, value, , "discriminator"),
+		(struct tree_node_t *, left),
+		(struct tree_node_t *, right),
+		);
+
+TYPEDEF_STRUCT (tree_t,
+		(union_discriminator_t, discriminator),
+		(tree_node_t *, root),
+		);
+```
+
+For declaration of anonymous union use keywords `ANON_UNION (name,
+attributes)` and `END_ANON_UNION (text_metadata, {
+pointer_on_resources_array }, resource_type,
+resource_array_size)`. All arguments for them are optional. Even
+though union is anonymous it still require some **name** for
+serialization into self-descriptive formats like XML or JSON. If name
+is not specified Metaresc will auto-generate the name for it. Compiler
+specific `__attributes__ (())` modifiers could be passed over
+**attributes** argument. Previous example with anonymous union will
+look as follows:
+
+```c
+TYPEDEF_STRUCT (tree_node_t,
+		ANON_UNION (value, __attribute__ ((packed, transparent_union))),
+		(intptr_t, int_value),
+		(double, dbl_value),
+		(char *, str_value),
+		(void *, ptr_value),
+		END_ANON_UNION ("discriminator"),
+		(struct tree_node_t *, left),
+		(struct tree_node_t *, right),
+		);
 ```
 
 ##### Text metadata and resource information
@@ -760,4 +838,3 @@ following output.
   .static_string = "Metaresc"
 }
 ```
-
