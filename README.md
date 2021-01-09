@@ -448,19 +448,16 @@ macro calls, i.e. a `keyword` followed by a set of arguments in parentheses.
 This is a simplified notation for basic types. It allows declaration
 of a **single** field with a type name that consists of the following
 keywords:
+* `unsigned`
+* `signed`
 * `char`
 * `short`
 * `int`
-* `unsigned`
-* `signed`
 * `long`
+* `bool`
 * `float`
 * `double`
-* `bool`
-* `_Bool`
 * `complex`
-* `__complex__`
-* `_Complex`
 * `int8_t`
 * `uint8_t`
 * `int16_t`
@@ -475,11 +472,7 @@ keywords:
 * `string_t`
 * `mr_ptr_t`
 * `volatile`
-* `__volatile`
-* `__volatile__`
 * `const`
-* `__const`
-* `__const__`
 
 Here is a valid example:
 ```c
@@ -531,7 +524,7 @@ TYPEDEF_STRUCT (sample_t,
 
 ##### Non-serializable fields
 For the fields that should not be serialized use keyword `VOID` as a
-prefix to declatation. Metaresc still detect type of those fields, but
+prefix for declatation. Metaresc still detect type of those fields, but
 skip them at serialization/deserialization process.
 Sample declaration as follows:
 
@@ -568,10 +561,10 @@ TYPEDEF_STRUCT (sample_t,
 		(int_ptr_t *, double_pointer));
 ```
 
-Default serialization of pointer is a single instance of designated
+Default serialization of a pointer is a single instance of designated
 type, but Metaresc also supports representation of pointers as arrays
-of variable size. Size of the array in this case should be another
-field of the same structure. User may specify name of
+of variable size. Size of the array in this case should provided as
+another field of the same structure. User may specify name of
 this field via structured resource of the pointer field. There are two
 options how to do this.
 1. User may specify name of the `size` field as a string and denote 
@@ -645,6 +638,18 @@ TYPEDEF_STRUCT (array_t,
 		VOID (int, empty_size_array, []));
 ```
 
+Metaresc doesn't support arrays of pointers. You need to use
+intermediate wrapper structure for this. I.e. `int *
+pointers_array[2]` should be declared as:
+
+```c
+TYPEDEF_STRUCT (int_ptr_t,
+		(int *, ptr));
+
+TYPEDEF_STRUCT (sample_t,
+		(int_ptr_t, pointers_array, [2]));
+```
+
 ##### Function pointers declaration
 If `suffix` is an expression in parentheses, then this field is
 treated as a function pointer declaration. I.e. declaration is
@@ -664,6 +669,22 @@ TYPEDEF_STRUCT (functions_t,
 		(int, my_vprintf, (const char * restrict /* format */, va_list /* ap */)),
 		VOID (int, (*my_printf), (const char * restrict /* format */, ...)),
 		);
+```
+
+##### Bitfields declaration
+For bitfields use keyword `BITFIELD` as a prefix for declaration. 
+
+BITFIELD (type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
+
+**type** must be one of integer types including `bool`. `enums` are
+  also represented by integer types by language design.
+
+Sample declaration as follows:
+
+```c
+TYPEDEF_STRUCT (bitfields_t,
+		BITFIELD (int, size, : sizeof (int) * __CHAR_BIT__ - 1),
+		BITFIELD (bool, used, : 1));
 ```
 
 ##### Text metadata and resource information
