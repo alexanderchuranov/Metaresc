@@ -691,7 +691,7 @@ TYPEDEF_STRUCT (bitfields_t,
 Union field declaration works as declaration of any other type. The
 tricky part is how to differentiate which field of the union to
 serialize at run-time. **_text\_metadata_** of the union field works
-for identification of discriminator. Discriminator is a field in
+for identification of discriminators. Discriminator is a field in
 serialization hierarchy that in run-time identifies active branch of
 the union. The reason why this field might not be in parent structure
 is because for structures like linked lists or trees it make sense to
@@ -846,9 +846,9 @@ following output.
 ```
 
 ### Union type declaration
-Union declaratin is matching structure type declaration on 100%. Use
+Union declaration is matching structure type declaration on 100%. Use
 macro `TYPEDEF_UNION` for union type declaration. Everything that
-works for structures works for unions, including transprarent unions.
+works for structures works for unions, including transparent unions.
 
 ### Enumeration type declaration
 Macro `TYPEDEF_ENUM` works for enumeration types declaration. First
@@ -905,7 +905,11 @@ TYPEDEF_FUNC (int, compar_fn_t, (const void * /* x */, const void * /* y */));
 ```
 
 ### Metadata and resources definition for types
-All type declaration macroses accepts keyword `ATTRIBUTE (attributes,
-text_metadata, { pointer_on_resources_array }, resource_type,
-resource_array_size)` as an argument at any position. All arguments
-for `ATTRIBUTES` are optional. 
+All type declaration macroses accepts keyword `ATTRIBUTES` as an
+argument at any position.
+
+```c
+ATTRIBUTE (attributes, text_metadata, { pointer_on_resources_array }, resource_type, resource_array_size)
+```
+
+All arguments for `ATTRIBUTES` are optional. 
