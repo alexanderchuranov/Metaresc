@@ -766,6 +766,11 @@ TYPEDEF_STRUCT (tree_node_t,
 		);
 ```
 
+Descriptors for union fields that are generated from DWARF debug
+info have **text\_metadata** set to the name of the field with
+`_discriminator` suffix. Names for anonymous unions are auto-generated
+based on DWARF internal indexing schema.
+
 #### Text metadata and resource information
 Text metadata is a user defined string that could be retrieved at
 run-time through reflection API. This property is also used for union
