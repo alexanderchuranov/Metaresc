@@ -19,14 +19,14 @@ int main ()
       MR_FREE (serialized);
     }
 
-  printf("BLACK: %i\nRED: %i\nGREEN: %i\nYELLOW: %i\nBLUE: %i\nMAGENTA: %i\nCYAN: %i\nWHITE: %i\n",
-         BLACK, RED, GREEN, YELLOW, BLUE, MAGENTA, CYAN, WHITE);
+  printf("RED: %i\nORANGE: %i\nYELLOW: %i\nGREEN: %i\nBLUE: %i\nPURPLE: %i\nPINK: %i\nBROWN: %i\n",
+         RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, PINK, BROWN);
 
-  character_place_t place = { 'A', WHITE, BLUE };
+  character_place_t place = { 'A', RED, BROWN };
   serialized = MR_SAVE_CINIT (character_place_t, &place);
   if (serialized)
     {
-      printf ("place = %s;\n", serialized);
+      printf ("place = %s", serialized);
       MR_FREE (serialized);
     }
   return (EXIT_SUCCESS);

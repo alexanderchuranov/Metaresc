@@ -425,7 +425,7 @@ corresponding types
 * XDR - binary format for [External Data Representation
 Standard](https://tools.ietf.org/html/rfc4506)
 
-## Types definition macro language
+## Types declaration macro language
 
 Metaresc provides 4 top level macro definitions.
 * `TYPEDEF_STRUCT` - equivalent for `typedef struct type_t {} type_t;`
@@ -433,7 +433,7 @@ Metaresc provides 4 top level macro definitions.
 * `TYPEDEF_ENUM` - equivalent for `typedef enum type_t {} type_t;`
 * `TYPEDEF_FUNC` - works for definition of function pointer types
 
-### Structures definition
+### Structure type declaration
 `TYPEDEF_STRUCT` must have at least one argument - struct type name.
 All consequent arguments are delimited by comma and considered as a
 structure fields declarations. Empty declarations are ignored. Fields
@@ -522,7 +522,7 @@ TYPEDEF_STRUCT (sample_t,
 		);
 ```
 
-##### Non-serializable fields
+#### Non-serializable fields
 For the fields that should not be serialized use keyword `VOID` as a
 prefix for declaration. Metaresc still detect type of those fields, but
 skip them at the serialization/deserialization process.
@@ -539,12 +539,12 @@ TYPEDEF_STRUCT (non_serializable_t,
 		);
 ```
 
-##### Field declaration
+#### Field declaration
 Type of the field may consist of multiple tokens and could include
 keywords: `const`, `volatile`, `restrict`, `struct`, `union`,
 `enum`. Name of the field must be strictly one token.
 
-##### Pointer declaration
+#### Pointer declaration
 Metaresc is capable to resolve pointers on basic types and on custom
 user's types. `char *` is treated as pointer on a NULL-terminated
 string, but not a pointer on a single character.
@@ -605,7 +605,7 @@ info have structured resource configured according to the first
 method. I.e. `size` field configured as a string identifier and formed
 from the name of the field with `_size` suffix.
 
-##### Array declaration
+#### Array declaration
 Third argument `suffix` in the field's declaration denotes dimensions
 of the array. Metaresc is capable to distinguish one- and two-
 dimensional arrays. Higher orders of dimensions are treated as
@@ -650,7 +650,7 @@ TYPEDEF_STRUCT (sample_t,
 		(int_ptr_t, pointers_array, [2]));
 ```
 
-##### Function pointer declaration
+#### Function pointer declaration
 If `suffix` is an expression in parentheses, then this field is
 treated as a function pointer declaration. I.e. declaration is
 equivalent of `type (*name) suffix;` as a standard type
@@ -671,7 +671,7 @@ TYPEDEF_STRUCT (functions_t,
 		);
 ```
 
-##### Bitfields declaration
+#### Bitfields declaration
 For bitfields use the keyword `BITFIELD` as a prefix for declaration.
 
 BITFIELD (type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
@@ -687,11 +687,11 @@ TYPEDEF_STRUCT (bitfields_t,
 		BITFIELD (bool, used, : 1));
 ```
 
-##### Union declaration
+#### Union declaration
 Union field declaration works as declaration of any other type. The
 tricky part is how to differentiate which field of the union to
 serialize at run-time. **_text\_metadata_** of the union field works
-for identification of discriminators. Discriminator is some field in
+for identification of discriminator. Discriminator is a field in
 serialization hierarchy that in run-time identifies active branch of
 the union. The reason why this field might not be in parent structure
 is because for structures like linked lists or trees it make sense to
@@ -741,20 +741,21 @@ TYPEDEF_STRUCT (tree_t,
 		);
 ```
 
-For declaration of anonymous union use keywords `ANON_UNION (name,
-attributes)` and `END_ANON_UNION (text_metadata, {
-pointer_on_resources_array }, resource_type,
-resource_array_size)`. All arguments for them are optional. Even
-though union is anonymous it still require some **name** for
-serialization into self-descriptive formats like XML or JSON. If name
-is not specified Metaresc will auto-generate the name for it. Compiler
-specific `__attributes__ (())` modifiers could be passed over
-**attributes** argument. Previous example with anonymous union will
-look as follows:
+For declaration of anonymous union use keywords:
+
+* `ANON_UNION (name, attributes)`
+* `END_ANON_UNION (text_metadata, { pointer_on_resources_array }, resource_type, resource_array_size)`
+
+All arguments for them are optional. Even though union is anonymous it
+still require some **name** for serialization into self-descriptive
+formats like XML or JSON. If name is not specified Metaresc will
+auto-generate the name for it. Compiler specific `__attributes__ (())`
+modifiers could be passed over **attributes** argument. Previous
+example with anonymous union will look as follows:
 
 ```c
 TYPEDEF_STRUCT (tree_node_t,
-		ANON_UNION (value, __attribute__ ((packed, transparent_union))),
+		ANON_UNION (value, __attribute__ ((transparent_union))),
 		(intptr_t, int_value),
 		(double, dbl_value),
 		(char *, str_value),
@@ -765,7 +766,7 @@ TYPEDEF_STRUCT (tree_node_t,
 		);
 ```
 
-##### Text metadata and resource information
+#### Text metadata and resource information
 Text metadata is a user defined string that could be retrieved at
 run-time through reflection API. This property is also used for union
 fields discrimination (a way to identify at run-time which union field
@@ -776,7 +777,7 @@ pointer\_on\_resources\_array }_, _resource\_type_,
 _resources\_array\_size_) is also available at run-time through
 reflection API and is used for dynamic arrays size specification.
 
-##### NULL-terminated strings vs character arrays
+#### NULL-terminated strings vs character arrays
 There are multiple notions for `char *` fields.
 * The most common case is a NULL-terminated string.
 * In some cases this pointer is considered as a pointer on a single
@@ -838,3 +839,68 @@ following output.
   .static_string = "Metaresc"
 }
 ```
+
+### Union type declaration
+Union declaratin is matching structure type declaration on 100%. Use
+macro `TYPEDEF_UNION` for union type declaration. Everything that
+works for structures works for unions, including transprarent unions.
+
+### Enumeration type declaration
+Macro `TYPEDEF_ENUM` works for enumeration types declaration. First
+argument of the macro is a type name and the rest are enumeration
+values. For enumeration values you can use either simplified semantics
+or extended variant.
+
+(name, _value\_assignment_, _text\_metadata_,
+{ _pointer\_on\_resources\_array_ }, _resource\_type_,
+_resource\_array\_size_)
+
+All arguments except the first one are optional. Example below
+demonstrates the use of the macro:
+
+```c
+TYPEDEF_ENUM (color_t, ATTRIBUTES (__attribute__ ((packed))),
+              RED,           /* auto-enumerated and becomes 0 */
+              (ORANGE),      /* auto-enumerated and becomes 1 */
+
+              (YELLOW, = 2), /* explicitly set to 2 */
+              (GREEN,  = 3,  "set to 3 - this is a textual meta info"),
+              (BLUE, ,  "auto-enumerated", { "a void pointer for arbitrary resource" }),
+
+              (PURPLE,
+	       /* value argument may be empty */,
+	       "becomes 5",
+	       { "next argument is a type of this poiner" },
+	       "string"
+	       ),
+
+              (PINK,
+	       /* auto-enumerated */,
+	       /* no meta         */,
+	       { (color_t[]){ PINK } },
+	       "color_t" /* type itself might be used for initialization of resource */
+	       ),
+
+              (BROWN,
+	       /* auto-enumerated */,
+	       /* no meta         */,
+	       { (color_t[]){ RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, PINK, BROWN } },
+	       "color_t",
+	       8 * sizeof (color_t) /* size of resource array */
+	       )           /* trailing comma is optional */
+              );
+```
+
+### Function pointer type declaration
+For declaration of function types use macro `TYPEDEF_FUNC`. Here is an
+example of the usage:
+
+```c
+TYPEDEF_FUNC (int, compar_fn_t, (const void * /* x */, const void * /* y */));
+```
+
+### Metadata and resources definition for types
+All type declaration macroses accepts keyword `ATTRIBUTE (attributes,
+text_metadata, { pointer_on_resources_array }, resource_type,
+resource_array_size)` as an argument at any position. All arguments
+for `ATTRIBUTES` are optional. 
