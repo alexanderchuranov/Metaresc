@@ -659,8 +659,10 @@ descriptor contains this list in a structured way. This information
 could be retrieved at run-time through reflection API. User must not
 use arguments names in this declaration. Variadic functions should be
 declared as non-serializable fields. Metaresc serialize function
-pointers as function names retrieved via `dladdr ()`. If function name
-is not available then the pointer is serialized as hex value.
+pointers as function names retrieved via `dladdr ()`. You need to
+compile with `-rdynamic` flag to enable resolution of pointers into
+function names at run time. If function name is not available then the
+pointer is serialized as hex value.
 
 ```c
 TYPEDEF_STRUCT (functions_t,
@@ -909,7 +911,7 @@ All type declaration macroses accepts keyword `ATTRIBUTES` as an
 argument at any position.
 
 ```c
-ATTRIBUTE (attributes, text_metadata, { pointer_on_resources_array }, resource_type, resource_array_size)
+ATTRIBUTES (attributes, text_metadata, { pointer_on_resources_array }, resource_type, resource_array_size)
 ```
 
 All arguments for `ATTRIBUTES` are optional. 

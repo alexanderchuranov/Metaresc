@@ -86,7 +86,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
-TYPEDEF_ENUM (mr_type_t, ATTRIBUTES ( , "Metaresc types"),
+TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"),
 	      (MR_TYPE_NONE, = 0),
 	      MR_TYPE_STRING,
 	      MR_TYPE_CHAR_ARRAY,
@@ -297,9 +297,9 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"),
-		BITFIELD (mr_type_t, mr_type_aux, : sizeof (mr_type_t) * __CHAR_BIT__ - 2, "Metaresc type if field is a pointer on builtin types or bit-field"),
-		BITFIELD (bool, self_ptr, : 1 , "true if field is a pointer on a base type"),
-		BITFIELD (bool, unnamed, : 1 , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
+		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
+		(bool, self_ptr, , "true if field is a pointer on a base type"),
+		(bool, unnamed, , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(char *, type, , "stringified type name"),
 		(unsigned int, offset, , "offset in structure"),
@@ -327,7 +327,7 @@ TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "wrapper for mr_fd_t*"),
 
 TYPEDEF_STRUCT (mr_enum_param_t,
 		(mr_ic_t, enum_by_value, , "lookup by enum values"),
-		(mr_size_t, size_effective, , "effective size"),
+		(uint8_t, size_effective, , "effective size"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
 		)
@@ -378,7 +378,7 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
-		(size_t, length),
+		VOID (size_t, length),
 		)
 
 TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
