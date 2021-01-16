@@ -5,18 +5,22 @@
 typedef char char_array_t[1];
 typedef char * char_ptr_t;
 
+TYPEDEF_STRUCT (mr_empty_t);
+
+TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));
+
 TYPEDEF_ENUM (_enum_t,
 	      ZERO
-	      )
+	      );
 
 TYPEDEF_STRUCT (embeded_struct_t,
 		int x
-		)
+		);
 
 TYPEDEF_UNION (embeded_union_t,
 	       int x,
 	       float y,
-	       )
+	       );
 
 TYPEDEF_STRUCT (struct_t,
 		bool bool_,
@@ -114,10 +118,10 @@ TYPEDEF_STRUCT (struct_t,
 		BITFIELD (int64_t, bf_int64_t, :__CHAR_BIT__ * sizeof (int64_t) - 1),
 		BITFIELD (_enum_t, bf_enum, :1),
 		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, :1),
-		)
+		);
 
 TYPEDEF_STRUCT (void_function_field_t,
-		VOID (void, (*func), (void)))
+		VOID (void, (*func), (void)));
 
 START_TEST (check_void_function_field) {
   mr_detect_type (NULL);
@@ -155,7 +159,7 @@ TYPEDEF_STRUCT (ext_struct_t,
 		( , y),
 		z, z_c, z_v, z_cv, c_z, v_z, cv_z,
 		self_ptr, c_self_ptr, v_self_ptr, cv_self_ptr, self_ptr_c, self_ptr_v, self_ptr_cv, c_self_ptr_c, v_self_ptr_v,
-		)
+		);
 
 #define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({	\
       mr_td_t * tdp = mr_get_td_by_name (#TYPE);			\

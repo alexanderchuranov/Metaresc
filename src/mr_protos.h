@@ -344,6 +344,7 @@ TYPEDEF_UNION (mr_td_param_t,
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
+		(bool, is_dynamically_allocated, , "mark types that require free at exit"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_size_t, size, , "size of type"),
 		(mr_td_param_t, param, , "mr_type"),
@@ -378,7 +379,7 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
-		VOID (size_t, length),
+		(size_t, length),
 		)
 
 TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),

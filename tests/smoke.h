@@ -22,6 +22,7 @@
 */
 
 #define SMOKE_METHOD(METHOD, ...) START_TEST (mr_conf_save_load) {	\
+    mr_detect_type (NULL); /* explicitly init library */		\
     mr_conf_t mr_conf_saved = mr_conf;					\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
       ck_assert_msg (((0 != mr_conf_serialized.MR_SIZE) && (NULL != mr_conf_serialized.data.ptr)), \
@@ -40,8 +41,6 @@
 	MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);		\
   } END_TEST								\
 									\
-  TYPEDEF_STRUCT (mr_empty_t);						\
-  TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));	\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
   TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "string"), (ssize_t, size), (char *, ptr_type)); \
