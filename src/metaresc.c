@@ -996,7 +996,7 @@ mr_fd_cmp (mr_fd_t * x, mr_fd_t * y)
   if (diff)							\
     return (diff);
 
-  MR_FOREACH (X_Y_FIELD_CMP, name.str, type);
+  MR_FOREACH (X_Y_FIELD_CMP, mr_type, mr_type_aux, name.str, type);
   return (0);
 }
 
