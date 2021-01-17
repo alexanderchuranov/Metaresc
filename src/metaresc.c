@@ -987,6 +987,19 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
   return (ptrs->ra[0].res.data.uintptr);
 }
 
+static inline int
+mr_fd_cmp (mr_fd_t * x, mr_fd_t * y)
+{
+  int diff;
+#define X_Y_FIELD_CMP(FIELD)					\
+  diff = (x->FIELD > y->FIELD) - (x->FIELD < y->FIELD);		\
+  if (diff)							\
+    return (diff);
+
+  MR_FOREACH (X_Y_FIELD_CMP, name.str, type);
+  return (0);
+}
+
 int
 mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 {
@@ -1038,6 +1051,10 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	continue;
       
       diff = memcmp (&x_i->type, &y_i->type, offsetof (mr_ptrdes_t, type_specific) - offsetof (mr_ptrdes_t, type));
+      if (diff)
+	return (diff);
+
+      diff = mr_fd_cmp (&x_i->fd, &y_i->fd);
       if (diff)
 	return (diff);
       

@@ -423,9 +423,9 @@ TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loadin
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptr_t, data, , "type"),
+		(mr_fd_t, fd, , "field descriptor"),
 		(char *, type, , "copy of fd.type for all basic types and structures"),
 		(ssize_t, MR_SIZE, , "size of dynamic array"),
-		(mr_fd_t, fd, , "field descriptor"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
