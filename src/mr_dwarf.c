@@ -706,7 +706,7 @@ static void
 load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   memset (fdp, 0, sizeof (*fdp));
-  fdp->mr_type = MR_TYPE_ENUM_VALUE;
+  fdp->mr_type = MR_TYPE_ENUM;
   
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   assert (attr != NULL);
@@ -722,12 +722,12 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
   if (_DW_FORM_sdata == attr->form)
     {
-      fdp->param.enum_value._signed = attr->dw_signed;
+      fdp->param.enum_param._signed = attr->dw_signed;
       fdp->mr_type_aux = MR_TYPE_INT64;
     }
   else
     {
-      fdp->param.enum_value._unsigned = attr->dw_unsigned;
+      fdp->param.enum_param._unsigned = attr->dw_unsigned;
       fdp->mr_type_aux = MR_TYPE_UINT64;
     }
 }
@@ -907,7 +907,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   assert (fdp_ptr != NULL);
   fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
   assert (fdp_ptr->fdp != NULL);
-  fdp_ptr->fdp->mr_type = MR_TYPE_TRAILING_RECORD;
+  fdp_ptr->fdp->mr_type = MR_TYPE_LAST;
 }
 
 static mr_hash_value_t

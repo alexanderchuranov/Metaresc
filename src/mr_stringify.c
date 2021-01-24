@@ -144,14 +144,14 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   ptrdes->fd.size = tdp->param.enum_param.size_effective;
   
   for (i = 0; i < fields_count; ++i)
-    if (value & tdp->fields[i].fdp->param.enum_value._unsigned)
+    if (value & tdp->fields[i].fdp->param.enum_param._unsigned)
       {
 	if (first)
 	  first = false;
 	else
 	  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
 	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, tdp->fields[i].fdp->name.str));
-	value ^= tdp->fields[i].fdp->param.enum_value._unsigned;
+	value ^= tdp->fields[i].fdp->param.enum_param._unsigned;
 	if (0 == value)
 	  break;
       }

@@ -47,7 +47,7 @@ mr_get_enum (char * str, uint64_t * data)
 	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
 	    return (NULL);
 	  }
-	*data = fdp->param.enum_value._unsigned;
+	*data = fdp->param.enum_param._unsigned;
       }
   }
   return (str);
@@ -263,7 +263,7 @@ mr_value_id (mr_value_t * value)
       if (NULL == fdp)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, value->vt_string);
       else
-	vt_int = fdp->param.enum_value._signed;
+	vt_int = fdp->param.enum_param._signed;
       value->vt_int = vt_int;
     }
 }

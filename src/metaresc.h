@@ -629,7 +629,7 @@
 
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_TRAILING_RECORD, }, }, }, })
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_LAST, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
     .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
       .type = MR_STRINGIFY (TYPE),				\
@@ -669,9 +669,9 @@
     (mr_fd_t[]){ {							\
 	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
 	  .name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
-	  .mr_type = MR_TYPE_ENUM_VALUE,				\
+	  .mr_type = MR_TYPE_ENUM,					\
 	  .mr_type_aux = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-	     .param = { .enum_value = { NAME }, },			\
+	     .param = { .enum_param = { NAME }, },			\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 #define MR_END_ENUM_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
@@ -699,7 +699,7 @@
 #define MR_TYPEDEF_END_DESC(MR_TYPE_NAME, ATTR, /* META */ ...) {	\
     (mr_fd_t[]){ {							\
 	.type = #MR_TYPE_NAME,						\
-	  .mr_type = MR_TYPE_TRAILING_RECORD,				\
+	.mr_type = MR_TYPE_LAST,					\
 	  } } } },							\
     .meta = "" __VA_ARGS__ };						\
   static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (MR_TYPE_NAME) (void) { mr_add_type (&MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME)); }

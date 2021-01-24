@@ -109,7 +109,6 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      (MR_TYPE_STRUCT, , "struct_param"),
 	      (MR_TYPE_ENUM, , "enum_param"),
 	      MR_TYPE_FUNC_TYPE,
-	      (MR_TYPE_ENUM_VALUE, , "enum_value"), /* meta field refers to union member in mr_fd_param_t */
 	      (MR_TYPE_FUNC, , "func_param"),
 	      (MR_TYPE_BITFIELD, , "bitfield_param"),
 	      (MR_TYPE_ARRAY, , "array_param"),
@@ -118,7 +117,6 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_ANON_UNION,
 	      MR_TYPE_NAMED_ANON_UNION,
 	      MR_TYPE_END_ANON_UNION,
-	      MR_TYPE_TRAILING_RECORD,
 	      MR_TYPE_LAST, /* keep it last */
 	      )
 
@@ -162,7 +160,7 @@ TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enu
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       VOID (uint8_t, dummy, , "default serialization is empty"),
 	       (mr_array_param_t, array_param, , "array parameters"),
-	       (mr_enum_value_t, enum_value, , "mr_type_aux"),
+	       (mr_enum_value_t, enum_param, , "mr_type_aux"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
 	       )

@@ -294,9 +294,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 	return (diff);
       break;
       
-    case MR_TYPE_ENUM_VALUE:
     case MR_TYPE_END_ANON_UNION:
-    case MR_TYPE_TRAILING_RECORD:
     case MR_TYPE_LAST:
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_UNEXPECTED_MR_TYPE);
       break;

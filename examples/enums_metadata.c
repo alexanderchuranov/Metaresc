@@ -38,9 +38,9 @@ int main ()
 	  (MR_TYPE_UINT16 == fdp->mr_type_aux) ||
 	  (MR_TYPE_UINT32 == fdp->mr_type_aux) ||
 	  (MR_TYPE_UINT64 == fdp->mr_type_aux))
-	printf ("%d: %s = %" PRIu64 "\n", i, fdp->name.str, fdp->param.enum_value._unsigned);
+	printf ("%d: %s = %" PRIu64 "\n", i, fdp->name.str, fdp->param.enum_param._unsigned);
       else
-	printf ("%d: %s = %" PRIi64 "\n", i, fdp->name.str, fdp->param.enum_value._signed);
+	printf ("%d: %s = %" PRIi64 "\n", i, fdp->name.str, fdp->param.enum_param._signed);
     }
   return (EXIT_SUCCESS);
 }

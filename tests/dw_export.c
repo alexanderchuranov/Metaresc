@@ -139,9 +139,9 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		     mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type, dw_fdp->mr_type);
       ck_assert_msg (dw_fdp != NULL, "DWARF descriptor for type '%s' mismatched builtin: missed enumeration '%s'",
 		     mr_td->type.str, mr_fdp->name.str);
-      ck_assert_msg (mr_fdp->param.enum_value._signed == dw_fdp->param.enum_value._signed,
+      ck_assert_msg (mr_fdp->param.enum_param._signed == dw_fdp->param.enum_param._signed,
 		     "DWARF descriptor for type '%s' mismatched builtin: enumeration value '%'" SCNi64 " != '%'" SCNi64,
-		     mr_td->type.str, mr_fdp->param.enum_value._signed, dw_fdp->param.enum_value._signed);
+		     mr_td->type.str, mr_fdp->param.enum_param._signed, dw_fdp->param.enum_param._signed);
     }
 
   ck_assert_msg (dw_td->fields_size == mr_td->fields_size,
