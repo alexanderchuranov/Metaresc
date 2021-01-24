@@ -36,7 +36,7 @@ TYPEDEF_STRUCT (struct_mr_enum_uint8_t, (mr_enum_uint8_t, x))
 TYPEDEF_STRUCT (struct_mr_enum_uint16_t, (mr_enum_uint16_t, x))
 TYPEDEF_STRUCT (struct_mr_enum_uint32_t, (mr_enum_uint32_t, x))
 TYPEDEF_STRUCT (struct_mr_enum_uint64_t, (mr_enum_uint64_t, x))
-TYPEDEF_STRUCT (struct_mr_bitmask_t, BITMASK (mr_bitmask_t, x))
+TYPEDEF_STRUCT (struct_mr_bitmask_t, (mr_bitmask_t, x))
 
 #define ASSERT_SAVE_LOAD_ENUM(METHOD, VALUE, ...) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, mr_enum_t, VALUE, __VA_ARGS__);	\

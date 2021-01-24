@@ -958,7 +958,6 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
 	  }
 	  
 	case MR_TYPE_ENUM:
-	case MR_TYPE_BITMASK:
 	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, ptrdes->fd.size);
 	  break;
 	  
@@ -1127,7 +1126,6 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	  MR_FOREACH (CASE_MR_TYPE_CMP_COMPLEX, complex float, complex double, complex long double);
 
 	case MR_TYPE_ENUM:
-	case MR_TYPE_BITMASK:
 	  switch (x_i->fd.mr_type_aux)
 	    {
 	  MR_FOREACH (CASE_MR_TYPE_CMP, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);

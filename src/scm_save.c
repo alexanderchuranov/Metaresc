@@ -22,6 +22,9 @@
 #define MR_SCM_ARRAY_PREFIX "#"
 #define MR_SCM_ATTR_INT ";(%s %d)"
 
+#define MR_SCM_BITMASK_OR_DELIMITER " "
+#define MR_SCM_BITMASK_PREFIX "(logior "
+
 #define MR_SCM_UNNAMED_FIELDS (0)
 #define MR_SCM_NAMED_FIELDS (!MR_SCM_UNNAMED_FIELDS)
 
@@ -31,9 +34,6 @@ static int scm_named_fields[MR_TYPE_LAST] = {
   [MR_TYPE_ANON_UNION] = MR_SCM_NAMED_FIELDS,
   [MR_TYPE_NAMED_ANON_UNION] = MR_SCM_NAMED_FIELDS,
 };
-
-#define MR_SCM_BITMASK_OR_DELIMITER " "
-#define MR_SCM_BITMASK_PREFIX "(logior "
 
 #define SCM_SAVE_COMPLEX(TYPE)						\
   static int scm_save_complex_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) \
@@ -76,12 +76,38 @@ scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
+  mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type);
+  if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
+    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+
+  int tokens = 0;
+  int i, fields_count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int64_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
+
+  if (0 == value)
+    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+
+  for (i = 0; i < fields_count; ++i)
+    if (value & tdp->fields[i].fdp->param.enum_value._unsigned)
+      {
+	++tokens;
+	value ^= tdp->fields[i].fdp->param.enum_value._unsigned;
+	if (0 == value)
+	  break;
+      }
+
+  if (0 != value)
+    ++tokens;
+
+  if (1 == tokens)
+    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+
   int count = 0;
   count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, MR_SCM_BITMASK_PREFIX));
   count += TRY_CATCH_THROW (mr_ra_printf_bitmask (mr_ra_str, ptrdes, MR_SCM_BITMASK_OR_DELIMITER));
   count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, ')'));
   return (count);
-}  
+}
 
 /**
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler.
@@ -164,9 +190,8 @@ static mr_ra_printf_t scm_save_handler[] =
   {
     [MR_TYPE_NONE] = mr_ra_printf_void,
     [MR_TYPE_VOID] = mr_ra_printf_void,
-    [MR_TYPE_ENUM] = mr_ra_printf_enum,
+    [MR_TYPE_ENUM] = scm_printf_bitmask,
     [MR_TYPE_BITFIELD] = scm_printf_bitfield,
-    [MR_TYPE_BITMASK] = scm_printf_bitmask,
     [MR_TYPE_BOOL] = scm_printf_bool,
     [MR_TYPE_INT8] = mr_ra_printf_int8_t,
     [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,

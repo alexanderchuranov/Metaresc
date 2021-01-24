@@ -283,7 +283,6 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       break;
       
     case MR_TYPE_STRUCT:
-    case MR_TYPE_BITMASK:
     case MR_TYPE_FUNC_TYPE:
     case MR_TYPE_FUNC:
     case MR_TYPE_ENUM:

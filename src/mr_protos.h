@@ -57,7 +57,6 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_RANGE_CHECK, , "Range check error in array '%s'."),
 	      (MR_MESSAGE_READ_REF, , "Can't read '%s' as index."),
 	      (MR_MESSAGE_SAVE_ENUM, , "Can't find enum name for value %" SCNd64 " type '%s' field '%s'."),
-	      (MR_MESSAGE_NOT_BITMASK, , "Type '%s' of field '%s' is not a bit mask."),
 	      (MR_MESSAGE_SAVE_BITMASK, , "Can't decompose on bitmask %" SCNu64 "."),
 	      (MR_MESSAGE_CONFLICTED_ENUMS, , "Literal enum `%s` has a different value in types '%s' (%" SCNu64") and '%s' (%" SCNu64 ")."),
 	      (MR_MESSAGE_INT_OF_UNKNOWN_SIZE, , "Failed to stringify integer of unknown size: %" SCNd32 "."),
@@ -113,7 +112,6 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      (MR_TYPE_ENUM_VALUE, , "enum_value"), /* meta field refers to union member in mr_fd_param_t */
 	      (MR_TYPE_FUNC, , "func_param"),
 	      (MR_TYPE_BITFIELD, , "bitfield_param"),
-	      MR_TYPE_BITMASK,
 	      (MR_TYPE_ARRAY, , "array_param"),
 	      MR_TYPE_POINTER,
 	      MR_TYPE_UNION,

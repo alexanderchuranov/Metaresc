@@ -126,9 +126,8 @@ cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static mr_ra_printf_t cinit_save_tbl[] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
   [MR_TYPE_VOID] = mr_ra_printf_void,
-  [MR_TYPE_ENUM] = mr_ra_printf_enum,
+  [MR_TYPE_ENUM] = cinit_printf_bitmask,
   [MR_TYPE_BITFIELD] = mr_ra_printf_bitfield,
-  [MR_TYPE_BITMASK] = cinit_printf_bitmask,
   [MR_TYPE_BOOL] = mr_ra_printf_bool,
   [MR_TYPE_INT8] = mr_ra_printf_int8_t,
   [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,
@@ -169,9 +168,8 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static mr_ra_printf_t json_save_tbl[] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
   [MR_TYPE_VOID] = mr_ra_printf_void,
-  [MR_TYPE_ENUM] = mr_ra_printf_enum,
+  [MR_TYPE_ENUM] = cinit_printf_bitmask,
   [MR_TYPE_BITFIELD] = mr_ra_printf_bitfield,
-  [MR_TYPE_BITMASK] = cinit_printf_bitmask,
   [MR_TYPE_BOOL] = mr_ra_printf_bool,
   [MR_TYPE_INT8] = mr_ra_printf_int8_t,
   [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,

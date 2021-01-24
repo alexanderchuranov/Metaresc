@@ -150,7 +150,6 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
       MR_FOREACH (CASE_SET_VALUE_BY_TYPE, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
       
     case MR_TYPE_ENUM:
-    case MR_TYPE_BITMASK:
       switch (ptrdes->fd.size)
 	{
 #define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
@@ -715,7 +714,6 @@ static mr_load_handler_t mr_load_handler[] =
     [MR_TYPE_VOID] = mr_load_none,
     [MR_TYPE_ENUM] = mr_load_integer,
     [MR_TYPE_BITFIELD] = mr_load_bitfield,
-    [MR_TYPE_BITMASK] = mr_load_integer,
     [MR_TYPE_BOOL] = mr_load_integer,
     [MR_TYPE_INT8] = mr_load_integer,
     [MR_TYPE_UINT8] = mr_load_integer,

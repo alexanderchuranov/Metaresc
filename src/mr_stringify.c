@@ -130,14 +130,8 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
 {
   mr_td_t * tdp = mr_get_td_by_name (ptrdes->fd.type); /* look up for type descriptor */
   /* check whether type descriptor was found */
-  if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type))
+  if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
-  
-  if (!tdp->param.enum_param.is_bitmask)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NOT_BITMASK, tdp->type.str, ptrdes->fd.name.str);
-      return (mr_ra_printf_enum (mr_ra_str, ptrdes));
-    }
 
   bool first = true;
   int count = 0;
