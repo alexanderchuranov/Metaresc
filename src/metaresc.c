@@ -994,19 +994,6 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
   return (ptrs->ra[0].res.data.uintptr);
 }
 
-static inline int
-mr_fd_cmp (mr_fd_t * x, mr_fd_t * y)
-{
-  int diff;
-#define X_Y_FIELD_CMP(FIELD)					\
-  diff = (x->FIELD > y->FIELD) - (x->FIELD < y->FIELD);		\
-  if (diff)							\
-    return (diff);
-
-  MR_FOREACH (X_Y_FIELD_CMP, mr_type, mr_type_aux, name.str, type);
-  return (0);
-}
-
 int
 mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 {
