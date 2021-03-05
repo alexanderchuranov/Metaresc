@@ -209,7 +209,7 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   mr_load->ptrs->ra[child].prev = prev;
 
   mr_load->ptrs->ra[child].parent = parent;
-  mr_load->ptrs->ra[child].fd.name.str = mr_get_static_field_name (&$4);
+  mr_load->ptrs->ra[child].name = mr_get_static_field_name (&$4);
 
   mr_load->parent = child;
 }

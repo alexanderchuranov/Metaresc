@@ -767,7 +767,7 @@
 
 #define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR)		\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))		\
-    (MR_SAVE_TYPED_ (__typeof__ (*(S_PTR)), S_PTR))	\
+  (MR_SAVE_TYPED_ (__typeof__ (*(S_PTR)), S_PTR))	\
   (MR_SAVE_TYPED_ (MR_TYPE_NAME, S_PTR))
 
 #define MR_SAVE_TYPED_(MR_TYPE_NAME, S_PTR) ({				\
@@ -775,6 +775,7 @@
 	{								\
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
 	  .type = MR_STRINGIFY (MR_TYPE_NAME),				\
+	  .non_persistent = true,					\
 	  .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	  .size = sizeof (MR_TYPE_NAME),				\
 	};								\
@@ -787,6 +788,7 @@
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
+	  __fd__.size = sizeof (S_PTR);					\
 	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (MR_TYPE_NAME); \
 	  __fd__.param.array_param.row_count = 1;			\
 	}								\
@@ -804,6 +806,7 @@
       mr_fd_t __fd__ =							\
 	{								\
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
+	  .non_persistent = true,					\
 	  .type = MR_TYPE_NAME_STR,					\
 	  .mr_type = MR_TYPE_NONE,					\
 	  .size = 0,							\
@@ -886,6 +889,7 @@
 	  mr_fd_t __fd__ = {						\
 	    .type = MR_STRINGIFY (MR_TYPE_NAME),			\
 	    .name = { .str = NULL, .hash_value = 0, },			\
+	    .non_persistent = true,					\
 	    .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	    .size = sizeof (MR_TYPE_NAME),				\
 	  };								\
@@ -959,6 +963,7 @@
       mr_fd_t __fd__ = {						\
 	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
 	.name = { .str = NULL, .hash_value = 0, },			\
+	.non_persistent = true,						\
 	.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	.size = sizeof (MR_TYPE_NAME),					\
       };								\
@@ -1209,7 +1214,7 @@ extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern void mr_detect_fields_types (mr_td_t * tdp);
 extern void __attribute__ ((sentinel(0))) mr_type_void_fields (char * type, char * name, ...);
-extern void mr_pointer_fd_set_size (mr_fd_t * fdp);
+extern mr_size_t mr_type_size (mr_type_t mr_type, char * type);
 extern char * mr_normalize_name (char * name);
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);

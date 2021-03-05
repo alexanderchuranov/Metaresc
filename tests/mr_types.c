@@ -207,9 +207,9 @@ START_TEST (check_array_save) {
   mr_ra_ptrdes_t ptrs = MR_SAVE ( ,  array);
   ck_assert_msg (ptrs.size / sizeof (ptrs.ra[0]) == sizeof (array) / sizeof (array[0]) + 1, "Incorrect introspection of the array");
   ck_assert_msg (ptrs.ra != NULL, "Failed to serialize array sructure");
-  ck_assert_msg (ptrs.ra[0].fd.mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
-  ck_assert_msg (ptrs.ra[0].fd.mr_type_aux == MR_TYPE_COMPLEX_LONG_DOUBLE, "Incorrect auxiliary type of root node");
-  ck_assert_msg (ptrs.ra[0].fd.param.array_param.count == sizeof (array) / sizeof (array[0]), "Incorrect array size");
+  ck_assert_msg (ptrs.ra[0].mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
+  ck_assert_msg (ptrs.ra[0].mr_type_aux == MR_TYPE_COMPLEX_LONG_DOUBLE, "Incorrect auxiliary type of root node");
+  ck_assert_msg (ptrs.ra[0].size == sizeof (array), "Incorrect array size");
   if (ptrs.ra)
     MR_FREE (ptrs.ra);
 } END_TEST

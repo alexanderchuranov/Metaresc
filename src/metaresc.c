@@ -327,19 +327,19 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   uint8_t * ptr = ptrdes->data.ptr;
   int i;
 
-  *value = *ptr++ >> ptrdes->fd.param.bitfield_param.shift;
-  for (i = __CHAR_BIT__ - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += __CHAR_BIT__)
+  *value = *ptr++ >> ptrdes->fdp->param.bitfield_param.shift;
+  for (i = __CHAR_BIT__ - ptrdes->fdp->param.bitfield_param.shift; i < ptrdes->fdp->param.bitfield_param.width; i += __CHAR_BIT__)
     *value |= ((uint64_t)*ptr++) << i;
-  *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
-  switch (ptrdes->fd.mr_type_aux)
+  *value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
+  switch (ptrdes->mr_type_aux)
     {
     case MR_TYPE_INT8:
     case MR_TYPE_INT16:
     case MR_TYPE_INT32:
     case MR_TYPE_INT64:
       /* extend sign bit */
-      if (*value & (1 << (ptrdes->fd.param.bitfield_param.width - 1)))
-	*value |= -1 - ((2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1);
+      if (*value & (1 << (ptrdes->fdp->param.bitfield_param.width - 1)))
+	*value |= -1 - ((2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1);
       break;
     default:
       break;
@@ -359,18 +359,18 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   uint8_t * ptr = ptrdes->data.ptr;
   int i;
 
-  *value &= (2LL << (ptrdes->fd.param.bitfield_param.width - 1)) - 1;
-  if (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width >= __CHAR_BIT__)
-    *ptr &= ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
+  *value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
+  if (ptrdes->fdp->param.bitfield_param.shift + ptrdes->fdp->param.bitfield_param.width >= __CHAR_BIT__)
+    *ptr &= ((1 << ptrdes->fdp->param.bitfield_param.shift) - 1);
   else
-    *ptr &= (-1 - ((1 << (ptrdes->fd.param.bitfield_param.shift + ptrdes->fd.param.bitfield_param.width)) - 1)) | ((1 << ptrdes->fd.param.bitfield_param.shift) - 1);
-  *ptr++ |= *value << ptrdes->fd.param.bitfield_param.shift;
-  for (i = __CHAR_BIT__ - ptrdes->fd.param.bitfield_param.shift; i < ptrdes->fd.param.bitfield_param.width; i += __CHAR_BIT__)
-    if (ptrdes->fd.param.bitfield_param.width - i >= __CHAR_BIT__)
+    *ptr &= (-1 - ((1 << (ptrdes->fdp->param.bitfield_param.shift + ptrdes->fdp->param.bitfield_param.width)) - 1)) | ((1 << ptrdes->fdp->param.bitfield_param.shift) - 1);
+  *ptr++ |= *value << ptrdes->fdp->param.bitfield_param.shift;
+  for (i = __CHAR_BIT__ - ptrdes->fdp->param.bitfield_param.shift; i < ptrdes->fdp->param.bitfield_param.width; i += __CHAR_BIT__)
+    if (ptrdes->fdp->param.bitfield_param.width - i >= __CHAR_BIT__)
       *ptr++ = *value >> i;
     else
       {
-	*ptr &= -1 - ((1 << (ptrdes->fd.param.bitfield_param.width - i)) - 1);
+	*ptr &= -1 - ((1 << (ptrdes->fdp->param.bitfield_param.width - i)) - 1);
 	*ptr++ |= *value >> i;
       }
   return (MR_SUCCESS);
@@ -531,28 +531,28 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
   void * src_data = src->data.ptr;
   void * dst_data = dst->data.ptr;
 
-  if (MR_TYPE_POINTER == src->fd.mr_type)
+  if (MR_TYPE_POINTER == src->mr_type)
     src_data = *(void**)src_data;
 
   if (NULL == src_data)
     return;
   
-  if (MR_TYPE_POINTER == dst->fd.mr_type)
+  if (MR_TYPE_POINTER == dst->mr_type)
     dst_data = *(void**)dst_data;
 
   if (NULL == dst_data)
     return;
   
-  if ((MR_TYPE_VOID == src->fd.mr_type) || (MR_TYPE_POINTER == src->fd.mr_type))
-    mr_type = src->fd.mr_type_aux;
+  if ((MR_TYPE_VOID == src->mr_type) || (MR_TYPE_POINTER == src->mr_type))
+    mr_type = src->mr_type_aux;
   else
-    mr_type = src->fd.mr_type;
-  
+    mr_type = src->mr_type;
+
   switch (mr_type)
     {
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
-      switch (src->fd.size)
+      switch (src->size)
 	{
 #define GET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): value = *(TYPE*)src_data; break;
 	  MR_FOREACH (GET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
@@ -569,16 +569,16 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
       break;
     }
 
-  if ((MR_TYPE_VOID == dst->fd.mr_type) || (MR_TYPE_POINTER == dst->fd.mr_type))
-    mr_type = dst->fd.mr_type_aux;
+  if ((MR_TYPE_VOID == dst->mr_type) || (MR_TYPE_POINTER == dst->mr_type))
+    mr_type = dst->mr_type_aux;
   else
-    mr_type = dst->fd.mr_type;
+    mr_type = dst->mr_type;
 
   switch (mr_type)
     {
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
-      switch (dst->fd.size)
+      switch (dst->size)
 	{
 #define SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)dst_data = value; break;
 	  MR_FOREACH (SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
@@ -627,11 +627,11 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   char * name = NULL;
   memset (ptrdes, 0, sizeof (*ptrdes));
   
-  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("string", ptrs->ra[idx].fd.res_type)) &&
-      mr_is_valid_field_name (ptrs->ra[idx].fd.res.ptr))
-    name = ptrs->ra[idx].fd.res.ptr;
+  if ((NULL != ptrs->ra[idx].fdp->res_type) && (0 == strcmp ("string", ptrs->ra[idx].fdp->res_type)) &&
+      mr_is_valid_field_name (ptrs->ra[idx].fdp->res.ptr))
+    name = ptrs->ra[idx].fdp->res.ptr;
 
-  if ((NULL != ptrs->ra[idx].fd.res_type) && (0 == strcmp ("offset", ptrs->ra[idx].fd.res_type)))
+  if ((NULL != ptrs->ra[idx].fdp->res_type) && (0 == strcmp ("offset", ptrs->ra[idx].fdp->res_type)))
     name = "";
   
   if (name != NULL)
@@ -639,27 +639,35 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
       int parent;
       /* traverse through parents up to first structure */
       for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
-	if (MR_TYPE_STRUCT == ptrs->ra[parent].fd.mr_type)
+	if (MR_TYPE_STRUCT == ptrs->ra[parent].mr_type)
 	  break;
       
       if (parent >= 0)
 	{
 	  mr_fd_t * parent_fdp;
-	  mr_td_t * parent_tdp = mr_get_td_by_name (ptrs->ra[parent].fd.type);
+	  mr_td_t * parent_tdp = mr_get_td_by_name (ptrs->ra[parent].type);
   
 	  if (NULL == parent_tdp)
 	    return;
 
 	  /* lookup for a size field in this parent */
 	  if (0 == name[0])
-	    parent_fdp = mr_get_fd_by_offset (parent_tdp, ptrs->ra[idx].fd.res.offset);
+	    parent_fdp = mr_get_fd_by_offset (parent_tdp, ptrs->ra[idx].fdp->res.offset);
 	  else
 	    parent_fdp = mr_get_fd_by_name (parent_tdp, name);
 	      
 	  if (NULL == parent_fdp)
 	    return;
 
-	  ptrdes->fd = *parent_fdp;
+	  ptrdes->fdp = parent_fdp;
+	  ptrdes->mr_type = parent_fdp->mr_type;
+	  ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
+	  ptrdes->type = parent_fdp->type;
+	  ptrdes->name = parent_fdp->name.str;
+	  ptrdes->unnamed = parent_fdp->unnamed;
+	  ptrdes->non_persistent = parent_fdp->non_persistent;
+	  ptrdes->MR_SIZE = ptrdes->size = parent_fdp->size;
+
 	  ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
 	}
     }
@@ -674,7 +682,7 @@ mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
   if (dst.data.ptr != NULL)
     {
       src.data.ptr = &ptrs->ra[idx].MR_SIZE;
-      src.fd.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].MR_SIZE));
+      src.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].MR_SIZE));
       mr_assign_int (&dst, &src);
     }
 }
@@ -701,7 +709,7 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
       ptrdes->res.data.ptr = NULL;
 
       if ((ptrdes->ref_idx < 0) && (ptrdes->idx >= 0) && !ptrdes->flags.is_null &&
-	  ((MR_TYPE_POINTER == ptrdes->fd.mr_type) || (MR_TYPE_STRING == ptrdes->fd.mr_type)))
+	  ((MR_TYPE_POINTER == ptrdes->mr_type) || (MR_TYPE_STRING == ptrdes->mr_type)))
 	{
 	  if (NULL == ptrdes->data.ptr)
 	    {
@@ -748,7 +756,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
     return (MR_FAILURE);
 
   /* copy first level struct */
-  memcpy (dst, ptrs->ra[0].data.ptr, ptrs->ra[0].fd.size);
+  memcpy (dst, ptrs->ra[0].data.ptr, ptrs->ra[0].size);
   ptrs->ra[0].res.data.ptr = dst;
 
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
@@ -765,7 +773,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
       and not a NULL pointer
     */
     if ((ptrs->ra[i].idx >= 0) && (ptrs->ra[i].ref_idx < 0) && (true != ptrs->ra[i].flags.is_null))
-      switch (ptrs->ra[i].fd.mr_type)
+      switch (ptrs->ra[i].mr_type)
 	{
 	case MR_TYPE_STRING:
 	  if (*(char**)ptrs->ra[i].data.ptr != NULL)
@@ -785,7 +793,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    if (ptrs->ra[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			    ptrs->ra[i].fd.type, ptrs->ra[i].fd.name.str);
+			    ptrs->ra[i].type, ptrs->ra[i].name);
 		goto failure;
 	      }
 	    
@@ -819,7 +827,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
   /* now we should update pointers in a copy */
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
     if ((ptrs->ra[i].idx >= 0) && (true != ptrs->ra[i].flags.is_null)) /* skip NULL and invalid nodes */
-      switch (ptrs->ra[i].fd.mr_type)
+      switch (ptrs->ra[i].mr_type)
 	{
 	case MR_TYPE_STRING:
 	  /* update pointer in the copy */
@@ -847,9 +855,9 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 
  failure:
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
-    if ((MR_TYPE_STRING == ptrs->ra[i].fd.mr_type) && (ptrs->ra[i].res.type != NULL))
+    if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].res.type != NULL))
       MR_FREE (ptrs->ra[i].res.type);
-    else if ((MR_TYPE_POINTER == ptrs->ra[i].fd.mr_type) &&
+    else if ((MR_TYPE_POINTER == ptrs->ra[i].mr_type) &&
 	     (ptrs->ra[i].first_child >= 0) &&
 	     (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr != NULL))
       MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
@@ -912,7 +920,7 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
   for (i = 0; i < count; ++i)
     {
       mr_ptrdes_t * ptrdes = &ptrs->ra[idx[i]];
-      switch (ptrdes->fd.mr_type)
+      switch (ptrdes->mr_type)
 	{
 	case MR_TYPE_STRING:
 	  ptrdes->res.data.uintptr = mr_hash_str (*(char**)ptrdes->data.ptr);
@@ -958,7 +966,7 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
 	  }
 	  
 	case MR_TYPE_ENUM:
-	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, ptrdes->fd.size);
+	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, ptrdes->size); // NB! size_effective
 	  break;
 	  
 	case MR_TYPE_BITFIELD:
@@ -1012,11 +1020,11 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
   if (diff)
     return (diff);
 
+  x->ra[0].data_discriminator = y->ra[0].data_discriminator;
+  x->ra[0].name = y->ra[0].name;
   x->ra[0].type = y->ra[0].type;
-  x->ra[0].fd.name = y->ra[0].fd.name;
-  x->ra[0].fd.type = y->ra[0].fd.type;
 
-  if ((x->ra[0].fd.mr_type == MR_TYPE_ARRAY) && (y->ra[0].fd.mr_type == MR_TYPE_ARRAY))
+  if ((x->ra[0].mr_type == MR_TYPE_ARRAY) && (y->ra[0].mr_type == MR_TYPE_ARRAY))
     {
       diff = (x->ra[0].first_child > y->ra[0].first_child) -
 	(x->ra[0].first_child < y->ra[0].first_child);
@@ -1026,9 +1034,9 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
       int child;
       for (child = x->ra[0].first_child; child >= 0; child = x->ra[child].next)
 	{
+	  x->ra[child].data_discriminator = y->ra[child].data_discriminator;
+	  x->ra[child].name = y->ra[child].name;
 	  x->ra[child].type = y->ra[child].type;
-	  x->ra[child].fd.name = y->ra[child].fd.name;
-	  x->ra[child].fd.type = y->ra[child].fd.type;
 	  diff = (x->ra[child].next > y->ra[child].next) -
 	    (x->ra[child].next < y->ra[child].next);
 	  if (diff)
@@ -1045,19 +1053,15 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
       diff = (x_i->idx > y_i->idx) - (x_i->idx < y_i->idx);
       if (diff)
 	return (diff);
-      
+
       if (x_i->idx < 0)
 	continue;
       
-      diff = memcmp (&x_i->type, &y_i->type, offsetof (mr_ptrdes_t, type_specific) - offsetof (mr_ptrdes_t, type));
-      if (diff)
-	return (diff);
-
-      diff = mr_fd_cmp (&x_i->fd, &y_i->fd);
+      diff = memcmp (&x_i->mr_type, &y_i->mr_type, offsetof (mr_ptrdes_t, type_specific) - offsetof (mr_ptrdes_t, mr_type));
       if (diff)
 	return (diff);
       
-      switch (x_i->fd.mr_type)
+      switch (x_i->mr_type)
 	{
 	case MR_TYPE_STRING:
 	  {
@@ -1126,17 +1130,14 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	  MR_FOREACH (CASE_MR_TYPE_CMP_COMPLEX, complex float, complex double, complex long double);
 
 	case MR_TYPE_ENUM:
-	  switch (x_i->fd.mr_type_aux)
+	  switch (x_i->mr_type_aux)
 	    {
-	  MR_FOREACH (CASE_MR_TYPE_CMP, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+	      MR_FOREACH (CASE_MR_TYPE_CMP, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
 	  
 	    default:
-	      diff = memcmp (x_i->data.ptr, y_i->data.ptr, x_i->fd.size);
-	      if (diff)
-		return (diff);
 	      break;
 	    }
-	  break;
+	    break;
 	  
 	case MR_TYPE_BITFIELD:
 	  {
@@ -1684,27 +1685,33 @@ mr_check_fields (mr_td_t * tdp)
   mr_ic_add (&mr_conf.fields_names, &tdp->type);
 }
 
-void
-mr_pointer_fd_set_size (mr_fd_t * fdp)
+mr_size_t
+mr_type_size (mr_type_t mr_type, char * type)
 {
 #define MR_TYPE_SIZE(TYPE) [MR_TYPE_DETECT (TYPE)] = sizeof (TYPE),
   static size_t types_sizes[MR_TYPE_LAST] =
     {
+      [MR_TYPE_VOID] = sizeof (void*),
+      [MR_TYPE_POINTER] = sizeof (void*),
+      [MR_TYPE_FUNC] = sizeof (void*),
+      [MR_TYPE_FUNC_TYPE] = sizeof (void*),
       MR_FOREACH (MR_TYPE_SIZE,
 		  string_t, char, bool,
 		  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
 		  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };
+  mr_size_t size = 0;
 
-  if (fdp->mr_type_aux < MR_TYPE_LAST)
-    fdp->size = types_sizes[fdp->mr_type_aux];
+  if (mr_type < MR_TYPE_LAST)
+    size = types_sizes[mr_type];
   
-  if (fdp->size == 0)
+  if (0 == size)
     {
-      mr_td_t * tdp = mr_get_td_by_name (fdp->type);
+      mr_td_t * tdp = mr_get_td_by_name (type);
       if (tdp)
-	fdp->size = tdp->size;
+	size = tdp->size;
     }
+  return (size);
 }
 
 /**

@@ -258,17 +258,16 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
     {
       int level = 0;
       bool empty_tag = true;
-      mr_fd_t * fdp = &ptrs->ra[idx].fd;
 
       /* route saving handler */
       mr_ra_printf_t save_handler = mr_ra_printf_void;
-      if ((fdp->mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[fdp->mr_type])
-	save_handler = xml_ra_printf_tbl[fdp->mr_type];
+      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[ptrs->ra[idx].mr_type])
+	save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
       else
-	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
 
       level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
-      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].fd.name.str) < 0)
+      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
 	return (NULL);
       if (ptrs->ra[idx].ref_idx >= 0)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT,
@@ -305,13 +304,13 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
       else
 	{
 	  if (!empty_tag)
-	    if (mr_ra_printf (&mr_ra_str, MR_XML1_CLOSE_TAG, ptrs->ra[idx].fd.name.str) < 0)
+	    if (mr_ra_printf (&mr_ra_str, MR_XML1_CLOSE_TAG, ptrs->ra[idx].name) < 0)
 	      return (NULL);
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra[idx].parent;
 	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
-	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].fd.name.str) < 0)
+	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
 		return (NULL);
 	    }
 	  idx = ptrs->ra[idx].next;
@@ -328,16 +327,15 @@ static mr_status_t
 xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_rarray_t * mr_ra_str = context;
-  mr_fd_t * fdp = &ptrs->ra[idx].fd;
   int parent = ptrs->ra[idx].parent;
   char number[MR_INT_TO_STRING_BUF_SIZE];
 
   /* route saving handler */
   mr_ra_printf_t save_handler = mr_ra_printf_void;
-  if ((fdp->mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[fdp->mr_type])
-    save_handler = xml_ra_printf_tbl[fdp->mr_type];
+  if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[ptrs->ra[idx].mr_type])
+    save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
 
   mr_ra_str->MR_SIZE = sizeof ("");
   mr_ra_str->data.string[0] = 0;
@@ -346,7 +344,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
     if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
       return (MR_FAILURE);
   
-  xmlNodePtr node = xmlNewNode (NULL, BAD_CAST fdp->name.str);
+  xmlNodePtr node = xmlNewNode (NULL, BAD_CAST ptrs->ra[idx].name);
 
   ptrs->ra[idx].res.data.ptr = node;
   if (NULL == node)

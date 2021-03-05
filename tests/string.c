@@ -43,8 +43,8 @@ START_TEST (pointer_match_content_known) {
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  if ((ptrs.ra[i].fd.name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].fd.name.str, "y")) &&
+	  if ((ptrs.ra[i].name != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].name, "y")) &&
 	      (ptrs.ra[i].ref_idx >= 0))
 	    string_is_a_reference = true;
 	}
@@ -64,8 +64,8 @@ START_TEST (pointer_match_content_unknown) {
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  if ((ptrs.ra[i].fd.name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].fd.name.str, "y")) &&
+	  if ((ptrs.ra[i].name != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].name, "y")) &&
 	      (ptrs.ra[i].ref_idx >= 0))
 	    string_is_a_reference = true;
 	}
@@ -84,8 +84,8 @@ START_TEST (pointer_match_another_pointer) {
       int i, count = 0;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  if ((ptrs.ra[i].fd.type != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].fd.type, "string_t")) &&
+	  if ((ptrs.ra[i].type != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].type, "string_t")) &&
 	      (ptrs.ra[i].ref_idx >= 0))
 	    ++count;
 	}

@@ -57,7 +57,7 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   mr_substr_t substr;
   substr.str = (char*)node->name;
   substr.length = strlen ((char*)node->name);
-  ptrs->ra[idx].fd.name.str = mr_get_static_field_name (&substr);
+  ptrs->ra[idx].name = mr_get_static_field_name (&substr);
   
   ptrs->ra[idx].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
   ptrs->ra[idx].load_params.mr_value.vt_quoted_substr.substr.str = content;

@@ -25,8 +25,8 @@
 	  int i;							\
 	  for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)	\
 	    {								\
-	      if ((ptrs.ra[i].fd.name.str != NULL) &&			\
-		  (0 == strcmp (ptrs.ra[i].fd.name.str, "y")))		\
+	      if ((ptrs.ra[i].name != NULL) &&				\
+		  (0 == strcmp (ptrs.ra[i].name, "y")))			\
 		{							\
 		  union_resolved_correctly = true;			\
 		  break;						\

@@ -95,11 +95,15 @@ START_TEST (self_ref_string) {
   self_ref_string_t x = { "x", "y", (string_t[]){ "z" }};
   x.v.ptr = &x.z; /* resolved not-NULL void pointer */
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
+  x.v.ptr = x.z;
+  ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
+  x.v.ptr = *x.z;
+  ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
+  x.v.ptr = "xxx"; /* unresolved not-NULL void pointer */
+  ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
   x.z = &x.y;
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
   x.y = x.x;
-  ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
-  x.v.ptr = "z"; /* unresolved not-NULL void pointer */
   ALL_METHODS (ASSERT_SAVE_LOAD, self_ref_string_t, &x);
 } END_TEST
 
@@ -153,11 +157,11 @@ START_TEST (union_resolution_correctness) {
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  if ((ptrs.ra[i].fd.name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].fd.name.str, "uif")) &&
+	  if ((ptrs.ra[i].name != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].name, "uif")) &&
 	      (ptrs.ra[i].first_child >= 0) &&
-	      (ptrs.ra[ptrs.ra[i].first_child].fd.name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].fd.name.str, union_resolution.typed_union->type)))
+	      (ptrs.ra[ptrs.ra[i].first_child].name != NULL) &&
+	      (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].name, union_resolution.typed_union->type)))
 	    {
 	      union_resolved_correctly = true;
 	      break;

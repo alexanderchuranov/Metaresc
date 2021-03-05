@@ -66,7 +66,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
       case MR_TYPE_BITFIELD:
 	{
 	  uint64_t value = 0;
-	  mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fd = *parent_fdp, };
+	  mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
 	  mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
 	  mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
 	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
@@ -103,7 +103,7 @@ static mr_fd_t *
 mr_node_get_discriminator_fd (mr_save_data_t * mr_save_data, int node, char * discriminator)
 {
   /* get type descriptor for this node */
-  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[node].fd.type);
+  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[node].type);
   if (NULL == tdp)
     return (NULL);
   /* lookup for a discriminator field in this parent */
@@ -165,8 +165,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       if (ud_find)
 	break;
 
-      if ((MR_TYPE_ARRAY == mr_save_data->ptrs.ra[parent].fd.mr_type)
-	  || (MR_TYPE_POINTER == mr_save_data->ptrs.ra[parent].fd.mr_type))
+      if ((MR_TYPE_ARRAY == mr_save_data->ptrs.ra[parent].mr_type)
+	  || (MR_TYPE_POINTER == mr_save_data->ptrs.ra[parent].mr_type))
 	continue;
       
       parent_fdp = mr_node_get_discriminator_fd (mr_save_data, parent, ud->discriminator.str);
@@ -222,11 +222,11 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
   if (diff)
     return (diff);
   
-  diff = x->fd.mr_type - y->fd.mr_type;
+  diff = x->mr_type - y->mr_type;
   if (diff)
     return (diff);
 
-  switch (x->fd.mr_type)
+  switch (x->mr_type)
     {
     case MR_TYPE_STRING:
     case MR_TYPE_CHAR_ARRAY:
@@ -251,33 +251,27 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       break;
       
     case MR_TYPE_ARRAY:
-      diff = x->fd.param.array_param.count - y->fd.param.array_param.count;
-      if (diff)
-	return (diff);
-      diff = x->fd.param.array_param.row_count - y->fd.param.array_param.row_count;
+      diff = (x->MR_SIZE > y->MR_SIZE) - (x->MR_SIZE < y->MR_SIZE);
       if (diff)
 	return (diff);
       
     case MR_TYPE_POINTER:
-      diff = x->fd.mr_type_aux - y->fd.mr_type_aux;
+      diff = x->mr_type_aux - y->mr_type_aux;
       if (diff)
 	return (diff);
       
-      if ((MR_TYPE_STRUCT == x->fd.mr_type_aux) ||
-	  (MR_TYPE_UNION == x->fd.mr_type_aux) ||
-	  (MR_TYPE_ENUM == x->fd.mr_type_aux))
+      if ((MR_TYPE_STRUCT == x->mr_type_aux) ||
+	  (MR_TYPE_UNION == x->mr_type_aux) ||
+	  (MR_TYPE_ENUM == x->mr_type_aux))
 	{
-	  diff = strcmp (x->fd.type, y->fd.type);
+	  diff = strcmp (x->type, y->type);
 	  if (diff)
 	    return (diff);
 	}
       break;
       
     case MR_TYPE_BITFIELD:
-      diff = x->fd.param.bitfield_param.shift - y->fd.param.bitfield_param.shift;
-      if (diff)
-	return (diff);
-      diff = x->fd.param.bitfield_param.width - y->fd.param.bitfield_param.width;
+      diff = (x->fdp > y->fdp) - (x->fdp < y->fdp);
       if (diff)
 	return (diff);
       break;
@@ -289,7 +283,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_UNION:
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
-      diff = strcmp (x->fd.type, y->fd.type);
+      diff = strcmp (x->type, y->type);
       if (diff)
 	return (diff);
       break;
@@ -307,7 +301,7 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
   const mr_ptrdes_t * ptrdes = &ra_ptrdes->ra[x.intptr];
-  return (ptrdes->data.uintptr + ptrdes->fd.mr_type * 5);
+  return (ptrdes->data.uintptr + ptrdes->mr_type * 5);
 }
 
 int
@@ -417,8 +411,16 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx)
   for (count = 0; ref_idx >= 0; ++count)
     {
       int next = ra[ref_idx].next;
-      ra[ref_idx].fd = ra[idx].fd;
-      ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * ra[idx].fd.size;
+      ra[ref_idx].fdp = ra[idx].fdp;
+      ra[ref_idx].mr_type = ra[idx].mr_type;
+      ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
+      ra[ref_idx].type = ra[idx].type;
+      ra[ref_idx].name = ra[idx].name;
+      ra[ref_idx].unnamed = ra[idx].unnamed;
+      ra[ref_idx].non_persistent = ra[idx].non_persistent;
+      ra[ref_idx].size = ra[idx].size;
+
+      ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * ra[idx].size;
       mr_add_child (parent, ref_idx, ra);
       ref_idx = next;
     }
@@ -440,10 +442,10 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	  /* new resizable pointer is a part of already saved */
 	  ra[parent].ref_idx = ref_idx;
 	  ra[ref_idx].flags.is_referenced = true;
-	  return (ra[idx].MR_SIZE / ra[idx].fd.size);
+	  return (ra[idx].MR_SIZE / ra[idx].size);
 	}
       /* otherwise we can handle only match with another resizable pointer */
-      if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
+      if (MR_TYPE_POINTER == ra[ref_parent].mr_type)
 	{
 	  if (ra[ref_idx].prev < 0)
 	    /*
@@ -454,7 +456,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	  else
 	    {
 	      ssize_t size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
-	      mr_size_t fd_size = ra[ref_idx].fd.size;
+	      mr_size_t fd_size = ra[ref_idx].size;
 	      int i, count =  size_delta / fd_size;
 	      char * data = ((char*)ra[ref_idx].data.ptr) + ra[ref_idx].MR_SIZE;
 	      int node;
@@ -473,7 +475,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 			  
 	      for (i = 0; i < count; )
 		{
-		  int nodes_added = mr_save_inner (data + i * fd_size, &ra[ref_idx].fd, count - i, mr_save_data, ref_parent);
+		  int nodes_added = mr_save_inner (data + i * fd_size, ra[ref_idx].fdp, count - i, mr_save_data, ref_parent);
 		  if (nodes_added <= 0)
 		    break;
 		  i += nodes_added;
@@ -485,7 +487,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
   else
     {
       /* we can handle only match with another resizable pointer */
-      if (MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
+      if (MR_TYPE_POINTER == ra[ref_parent].mr_type)
 	{
 	  /*
 	    in the middle of saving of resizable pointer we matched another resizable pointer
@@ -529,7 +531,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
       mr_check_ud_ctx.node = ref_idx;
       mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
       if (MR_SUCCESS == status)
-	switch (ra[parent].fd.mr_type)
+	switch (ra[parent].mr_type)
 	  {
 	  case MR_TYPE_STRING:
 	    ra[parent].ref_idx = ref_idx;
@@ -545,8 +547,8 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	    
 	  default:
 	    if ((ref_parent >= 0)
-		&& ((MR_TYPE_STRING == ra[ref_parent].fd.mr_type)
-		    || ((MR_TYPE_POINTER == ra[ref_parent].fd.mr_type)
+		&& ((MR_TYPE_STRING == ra[ref_parent].mr_type)
+		    || ((MR_TYPE_POINTER == ra[ref_parent].mr_type)
 			&& (ra[ref_idx].prev < 0)
 			&& (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
 		&& !ref_is_parent (ra, parent, ref_idx)
@@ -581,20 +583,22 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     return (-1); /* memory allocation error occured */
 
   ra[idx].data.ptr = data;
-  ra[idx].fd = *fdp;
+
+  ra[idx].fdp = fdp;
+  ra[idx].mr_type = fdp->mr_type;
+  ra[idx].mr_type_aux = fdp->mr_type_aux;
+  ra[idx].type = fdp->type;
+  ra[idx].name = fdp->name.str;
+  ra[idx].unnamed = fdp->unnamed;
+  ra[idx].non_persistent = fdp->non_persistent;
+  ra[idx].size = fdp->size;
+  ra[idx].MR_SIZE = ra[idx].size * count;
+
   ra[idx].save_params.next_typed = -1;
   ra[idx].save_params.next_untyped = -1;
 
-  if ((fdp->mr_type == MR_TYPE_STRUCT) || (fdp->mr_type == MR_TYPE_ENUM))
-    ra[idx].type = fdp->type;
-  else if (fdp->mr_type < MR_TYPE_LAST)
-    ra[idx].type = type_name[fdp->mr_type];
-
-  if (MR_TYPE_ARRAY == fdp->mr_type)
-    count = fdp->param.array_param.count;
-  if ((MR_TYPE_POINTER == fdp->mr_type) || (MR_TYPE_ARRAY == fdp->mr_type))
-    mr_pointer_fd_set_size (&ra[idx].fd);
-  ra[idx].MR_SIZE = ra[idx].fd.size * count;
+  if (fdp->mr_type < MR_TYPE_LAST)
+    ra[idx].data_discriminator = type_name[fdp->mr_type];
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
@@ -676,11 +680,43 @@ mr_save_string (mr_save_data_t * mr_save_data)
       mr_save_data->ptrs.ra[idx].flags.is_null = true;
       return (1);
     }
-  mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
+  mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
+  fd_.non_persistent = true;
   fd_.mr_type = MR_TYPE_CHAR_ARRAY;
   fd_.size = sizeof (char);
   fd_.type = "char";
   return (mr_save_inner (str, &fd_, 1, mr_save_data, idx));
+}
+
+/**
+ * MR_TYPE_ENUM saving handler. Set mr_type_aux to mr_type from type descriptor.
+ * @param mr_save_data save routines data and lookup structures
+ */
+static int
+mr_save_enum (mr_save_data_t * mr_save_data)
+{
+  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_save_data->ptrs.ra[idx].data_discriminator = mr_save_data->ptrs.ra[idx].fdp->type;
+
+  switch (mr_save_data->ptrs.ra[idx].mr_type_aux)
+    {
+    case MR_TYPE_UINT8:
+    case MR_TYPE_INT8:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_INT16:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_INT32:
+    case MR_TYPE_UINT64:
+    case MR_TYPE_INT64:
+      break;
+    default:
+      {
+	mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type);
+	mr_save_data->ptrs.ra[idx].mr_type_aux = tdp ? tdp->param.enum_param.mr_type_effective : MR_TYPE_UINT8;
+	break;
+      }
+    }
+  return (1);
 }
 
 /**
@@ -691,13 +727,13 @@ static int
 mr_save_struct (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].fd.type);
+  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type);
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   int i, count;
 
   if (NULL == tdp) /* check whether type descriptor was found */
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].fd.type);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
       return (0);
     }
 
@@ -707,6 +743,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
       return (0);
     }
 
+  mr_save_data->ptrs.ra[idx].data_discriminator = mr_save_data->ptrs.ra[idx].fdp->type;
   count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
@@ -727,12 +764,12 @@ mr_save_union (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
-  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].fd.type); /* look up for type descriptor */
+  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type); /* look up for type descriptor */
   mr_fd_t * fdp;
 
   if (NULL == tdp) /* check whether type descriptor was found */
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].fd.type);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
       return (0);
     }
   if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
@@ -741,7 +778,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
       return (0);
     }
   
-  fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[idx].fd.type, mr_save_data->ptrs.ra[idx].fd.meta);
+  fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[idx].type, mr_save_data->ptrs.ra[idx].fdp->meta);
 
   if (NULL != fdp)
     return (mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx));
@@ -757,17 +794,25 @@ mr_save_array (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
-  mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
-  int row_count = fd_.param.array_param.row_count;
-  int count = fd_.param.array_param.count;
-  int i;
+  mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
+  int count, i;
 
+  fd_.non_persistent = true;
   fd_.unnamed = true;
+  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
+  if (fd_.size <= 0)
+    return (1);
+
   if (1 == fd_.param.array_param.row_count)
-    fd_.mr_type = fd_.mr_type_aux;
+    {
+      count = fd_.param.array_param.count;
+      fd_.mr_type = fd_.mr_type_aux;
+    }
   else
     {
-      fd_.param.array_param.count = row_count;
+      count = fd_.param.array_param.count / fd_.param.array_param.row_count;
+      fd_.size *= fd_.param.array_param.row_count;
+      fd_.param.array_param.count = fd_.param.array_param.row_count;
       fd_.param.array_param.row_count = 1;
     }
 
@@ -776,9 +821,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
       int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
       if (nodes_added <= 0)
 	return (nodes_added);
-      if (1 == row_count)
-	fd_.param.array_param.count -= nodes_added;
-      i += nodes_added * row_count;
+      i += nodes_added;
     }
   return (i);
 }
@@ -792,21 +835,20 @@ static int
 mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 {
   char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
-  int count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].fd.size;
-  mr_fd_t fd_ = mr_save_data->ptrs.ra[idx].fd;
+  int count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].size;
+  mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
   int i;
 
   fd_.mr_type = fd_.mr_type_aux;
+  fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.param.array_param.count = count;
-  fd_.param.array_param.row_count = 1;
+  fd_.size = mr_save_data->ptrs.ra[idx].size;
 
   for (i = 0; i < count; )
     {
       int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
       if (nodes_added <= 0)
 	return (nodes_added);
-      fd_.param.array_param.count -= nodes_added;
       i += nodes_added;
     }
   return (i);
@@ -873,8 +915,8 @@ mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 
   /* Try resolve void pointers that were not resolved at save time.
      Those pointers might be saved as typed entries on a later stages. */
-  if ((MR_TYPE_POINTER == ptrs->ra[idx].fd.mr_type) &&
-      ((MR_TYPE_NONE == ptrs->ra[idx].fd.mr_type_aux) || (MR_TYPE_VOID == ptrs->ra[idx].fd.mr_type_aux)) &&
+  if ((MR_TYPE_POINTER == ptrs->ra[idx].mr_type) &&
+      ((MR_TYPE_NONE == ptrs->ra[idx].mr_type_aux) || (MR_TYPE_VOID == ptrs->ra[idx].mr_type_aux)) &&
       !ptrs->ra[idx].flags.is_null)
     {
       intptr_t alloc_idx = mr_add_ptr_to_list (ptrs);
@@ -909,7 +951,7 @@ mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
   if (ptrs->ra[idx].ref_idx >= 0)
     {
       int ref_parent = ptrs->ra[ptrs->ra[idx].ref_idx].parent;
-      if ((ref_parent >= 0) && (MR_TYPE_STRING == ptrs->ra[ref_parent].fd.mr_type))
+      if ((ref_parent >= 0) && (MR_TYPE_STRING == ptrs->ra[ref_parent].mr_type))
 	{
 	  /* move ref_idx on a parent node (of type MR_TYPE_STRING) */
 	  ptrs->ra[idx].ref_idx = ref_parent;
@@ -921,7 +963,7 @@ mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
     }
 
   /* unlink string content, but keep links from content on a parent node */
-  if (MR_TYPE_STRING == ptrs->ra[idx].fd.mr_type)
+  if (MR_TYPE_STRING == ptrs->ra[idx].mr_type)
     ptrs->ra[idx].first_child = ptrs->ra[idx].last_child = -1;
 
   return (MR_SUCCESS);
@@ -938,7 +980,7 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 {
   int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
   for (i = 0; i < count; ++i)
-    if ((MR_TYPE_STRING == ptrs->ra[i].fd.mr_type) && (ptrs->ra[i].ref_idx < 0)) /* primary entry for the string */
+    if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].ref_idx < 0)) /* primary entry for the string */
       {
 	int min_idx = i;
 	/* iterate over other references on this string and find the one with minimal DFS index */
@@ -973,12 +1015,12 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 {
   int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
   for (idx = 1; idx < count; ++idx) /* skip root node */
-    if ((MR_TYPE_VOID == ptrs->ra[idx].fd.mr_type) ||
-	(MR_TYPE_STRUCT == ptrs->ra[idx].fd.mr_type) ||
-	(MR_TYPE_ARRAY == ptrs->ra[idx].fd.mr_type) ||
-	(MR_TYPE_UNION == ptrs->ra[idx].fd.mr_type) ||
-	(MR_TYPE_ANON_UNION == ptrs->ra[idx].fd.mr_type) ||
-	(MR_TYPE_NAMED_ANON_UNION == ptrs->ra[idx].fd.mr_type))
+    if ((MR_TYPE_VOID == ptrs->ra[idx].mr_type) ||
+	(MR_TYPE_STRUCT == ptrs->ra[idx].mr_type) ||
+	(MR_TYPE_ARRAY == ptrs->ra[idx].mr_type) ||
+	(MR_TYPE_UNION == ptrs->ra[idx].mr_type) ||
+	(MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
+	(MR_TYPE_NAMED_ANON_UNION == ptrs->ra[idx].mr_type))
       for (i = idx; i > 0; i = ptrs->ra[i].parent)
 	{
 	  if (ptrs->ra[i].first_child >= 0)
@@ -1028,12 +1070,15 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
     mr_save_data->ptrs.ra[idx].flags.is_null = true; /* return empty node if pointer is NULL */
   else
     {
-      mr_type_t mr_type = mr_save_data->ptrs.ra[idx].fd.mr_type_aux;
+      mr_type_t mr_type = mr_save_data->ptrs.ra[idx].mr_type_aux;
       mr_ptrdes_t src, dst;
       /* at first attempt to save pointer we need to determine size of structure */
       if ((MR_TYPE_NONE == mr_type) || (MR_TYPE_VOID == mr_type))
 	/* unserializable types will have zero size */
 	mr_save_data->ptrs.ra[idx].MR_SIZE = 0;
+
+      mr_save_data->ptrs.ra[idx].size = mr_save_data->ptrs.ra[idx].MR_SIZE =
+	mr_type_size (mr_type, mr_save_data->ptrs.ra[idx].fdp->type);
       
       /* pointers might have assosiated field with the size for resizable arrays.
 	 name of the size field is stored in 'res' of field meta-data.
@@ -1043,18 +1088,18 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       if (src.data.ptr != NULL)
 	{
 	  dst.data.ptr = &mr_save_data->ptrs.ra[idx].MR_SIZE;
-	  dst.fd.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].MR_SIZE));
+	  dst.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].MR_SIZE));
 	  mr_assign_int (&dst, &src);
 	}
-      
-      if (0 == strcmp (mr_save_data->ptrs.ra[idx].fd.name.str, MR_OPAQUE_DATA_STR))
+
+      if (0 == strcmp (mr_save_data->ptrs.ra[idx].name, MR_OPAQUE_DATA_STR))
 	{
 	  if (mr_save_data->ptrs.ra[idx].MR_SIZE <= 0)
 	    mr_save_data->ptrs.ra[idx].flags.is_null = true;
 	  else
 	    mr_save_data->ptrs.ra[idx].flags.is_opaque_data = true;
 	}
-      else if ((0 == mr_save_data->ptrs.ra[idx].fd.size) || (mr_save_data->ptrs.ra[idx].MR_SIZE < mr_save_data->ptrs.ra[idx].fd.size))
+      else if ((0 == mr_save_data->ptrs.ra[idx].size) || (mr_save_data->ptrs.ra[idx].MR_SIZE < mr_save_data->ptrs.ra[idx].size))
 	mr_save_data->ptrs.ra[idx].flags.is_null = true;
       else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
 	{
@@ -1144,6 +1189,7 @@ static mr_save_handler_t mr_save_handler[] =
     [MR_TYPE_FUNC] = mr_save_func,
     [MR_TYPE_FUNC_TYPE] = mr_save_func,
     [MR_TYPE_STRING] = mr_save_string,
+    [MR_TYPE_ENUM] = mr_save_enum,
     [MR_TYPE_STRUCT] = mr_save_struct,
     [MR_TYPE_ARRAY] = mr_save_array,
     [MR_TYPE_POINTER] = mr_save_pointer,

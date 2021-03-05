@@ -27,7 +27,7 @@ int main ()
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
-      printf("\t%d: name = %s, type = %s, size = %u bytes\n",
+      printf("\t%d: name = %s, type = %s, size = %zu bytes\n",
 	     i, fdp->name.str, fdp->type, fdp->size);
     }
 

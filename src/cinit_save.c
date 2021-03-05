@@ -100,7 +100,7 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     return (mr_ra_printf (mr_ra_str, "%s", func_str));
   else
     {
-      char * type = (MR_TYPE_FUNC == ptrdes->fd.mr_type) ? MR_VOIDP_T_STR : ptrdes->fd.type;
+      char * type = (MR_TYPE_FUNC == ptrdes->mr_type) ? MR_VOIDP_T_STR : ptrdes->type;
       return (mr_ra_printf (mr_ra_str, "(%s)%p", type, *(void**)ptrdes->data.ptr));
     }
 }
@@ -111,7 +111,7 @@ cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "(%s[]){\n", ptrdes->fd.type));
+  return (mr_ra_printf (mr_ra_str, "(%s[]){\n", ptrdes->type));
 }
 
 static int
@@ -215,15 +215,14 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
   while (idx >= 0)
     {
       int level = 0;
-      mr_fd_t * fdp = &ptrs->ra[idx].fd;
 
       /* route saving handler */
       mr_ra_printf_t save_handler = mr_ra_printf_void;
       /* route saving handler */
-      if ((fdp->mr_type < MR_TYPE_LAST) && printf_tbl[fdp->mr_type])
-	save_handler = printf_tbl[fdp->mr_type];
+      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && printf_tbl[ptrs->ra[idx].mr_type])
+	save_handler = printf_tbl[ptrs->ra[idx].mr_type];
       else
-	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
 
       level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
 
@@ -231,8 +230,8 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 	  return (NULL);
 
-      if (false == fdp->unnamed)
-	if (mr_ra_printf (&mr_ra_str, named_field_tmplt, ptrs->ra[idx].fd.name.str) < 0)
+      if (false == ptrs->ra[idx].unnamed)
+	if (mr_ra_printf (&mr_ra_str, named_field_tmplt, ptrs->ra[idx].name) < 0)
 	  return (NULL);
 
       if (ptrs->ra[idx].ref_idx >= 0)
@@ -296,8 +295,8 @@ json_save (mr_ra_ptrdes_t * ptrs)
 {
   int i;
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
-    if ((MR_TYPE_ANON_UNION == ptrs->ra[i].fd.mr_type) ||
-	(MR_TYPE_POINTER == ptrs->ra[i].fd.mr_type))
-      ptrs->ra[i].fd.unnamed = false;
+    if ((MR_TYPE_ANON_UNION == ptrs->ra[i].mr_type) ||
+	(MR_TYPE_POINTER == ptrs->ra[i].mr_type))
+      ptrs->ra[i].unnamed = false;
   return (cinit_json_save (ptrs, json_save_tbl, MR_JSON_NAMED_FIELD_TEMPLATE, MR_JSON_NULL));
 }
