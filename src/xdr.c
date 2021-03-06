@@ -307,7 +307,6 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   ptrs->ra[idx].type = fdp->type;
   ptrs->ra[idx].name = fdp->name.str;
   ptrs->ra[idx].non_persistent = fdp->non_persistent;
-  ptrs->ra[idx].size = fdp->size;
 
   mr_add_child (parent, idx, ptrs->ra);
 
@@ -543,16 +542,17 @@ XDR_COMPLEX (long_double, long double);
 static mr_status_t
 xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  uint32_t str_len, max_size = ptrs->ra[idx].size;
+  uint32_t str_len;
   int parent = ptrs->ra[idx].parent;
   bool is_a_dynamic_string = ((parent >= 0) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
 
   if (XDR_ENCODE == xdrs->x_op)
     {
       str_len = strlen (ptrs->ra[idx].data.ptr) + 1;
-      if (!is_a_dynamic_string && (str_len > max_size))
+      if (!is_a_dynamic_string && !ptrs->ra[idx].non_persistent &&
+	  (str_len > ptrs->ra[idx].fdp->size))
 	{
-	  str_len = max_size;
+	  str_len = ptrs->ra[idx].fdp->size;
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
 	}
     }
@@ -560,7 +560,7 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_uint32_t (xdrs, &str_len))
     return (MR_FAILURE);
 
-  if ((XDR_DECODE == xdrs->x_op) && (str_len > max_size) && is_a_dynamic_string)
+  if ((XDR_DECODE == xdrs->x_op) && (str_len > sizeof (char)) && is_a_dynamic_string)
     {
       void * data = MR_REALLOC (ptrs->ra[idx].data.ptr, str_len);
       if (NULL == data)
@@ -800,9 +800,22 @@ _xdr_enum (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-xdr_int_by_size (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
+mr_xdr_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  switch (ptrs->ra[idx].size)
+  switch (sizeof (void *))
+    {
+    case sizeof (uint8_t): return (_xdr_uint8_t (xdrs, idx, ptrs));
+    case sizeof (uint16_t): return (_xdr_uint16_t (xdrs, idx, ptrs));
+    case sizeof (uint32_t): return (_xdr_uint32_t (xdrs, idx, ptrs));
+    case sizeof (uint64_t): return (_xdr_uint64_t (xdrs, idx, ptrs));
+    }
+  return (MR_FAILURE);
+}
+
+static mr_status_t
+mr_xdr_bool (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
+{
+  switch (sizeof (bool))
     {
     case sizeof (uint8_t): return (_xdr_uint8_t (xdrs, idx, ptrs));
     case sizeof (uint16_t): return (_xdr_uint16_t (xdrs, idx, ptrs));
@@ -822,7 +835,7 @@ xdr_int_by_size (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
 {
-  mr_ptrdes_t ptrdes = { .type = fdp->type, .size = fdp->size, .fdp = fdp, .data.ptr = data, };
+  mr_ptrdes_t ptrdes = { .type = fdp->type, .fdp = fdp, .data.ptr = data, };
   mr_ra_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, };
   
   if (XDR_ENCODE == xdrs->x_op)
@@ -1019,7 +1032,7 @@ static xdr_handler_t xdr_save_handler[] =
     [MR_TYPE_VOID] = xdr_none,
     [MR_TYPE_ENUM] = _xdr_enum,
     [MR_TYPE_BITFIELD] = xdr_save_bitfield,
-    [MR_TYPE_BOOL] = xdr_int_by_size,
+    [MR_TYPE_BOOL] = mr_xdr_bool,
     [MR_TYPE_INT8] = _xdr_int8_t,
     [MR_TYPE_UINT8] = _xdr_uint8_t,
     [MR_TYPE_INT16] = _xdr_int16_t,
@@ -1038,8 +1051,8 @@ static xdr_handler_t xdr_save_handler[] =
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_save_string,
     [MR_TYPE_STRUCT] = xdr_none,
-    [MR_TYPE_FUNC] = xdr_int_by_size,
-    [MR_TYPE_FUNC_TYPE] = xdr_int_by_size,
+    [MR_TYPE_FUNC] = mr_xdr_pointer,
+    [MR_TYPE_FUNC_TYPE] = mr_xdr_pointer,
     [MR_TYPE_ARRAY] = xdr_none,
     [MR_TYPE_POINTER] = xdr_save_pointer,
     [MR_TYPE_UNION] = xdr_save_union,
@@ -1086,7 +1099,7 @@ static xdr_handler_t xdr_load_handler[] =
     [MR_TYPE_VOID] = xdr_none,
     [MR_TYPE_ENUM] = _xdr_enum,
     [MR_TYPE_BITFIELD] = xdr_load_bitfield,
-    [MR_TYPE_BOOL] = xdr_int_by_size,
+    [MR_TYPE_BOOL] = mr_xdr_bool,
     [MR_TYPE_INT8] = _xdr_int8_t,
     [MR_TYPE_UINT8] = _xdr_uint8_t,
     [MR_TYPE_INT16] = _xdr_int16_t,
@@ -1105,8 +1118,8 @@ static xdr_handler_t xdr_load_handler[] =
     [MR_TYPE_CHAR_ARRAY] = xdr_char_array_,
     [MR_TYPE_STRING] = xdr_load_string,
     [MR_TYPE_STRUCT] = xdr_load_struct,
-    [MR_TYPE_FUNC] = xdr_int_by_size,
-    [MR_TYPE_FUNC_TYPE] = xdr_int_by_size,
+    [MR_TYPE_FUNC] = mr_xdr_pointer,
+    [MR_TYPE_FUNC_TYPE] = mr_xdr_pointer,
     [MR_TYPE_ARRAY] = xdr_load_array,
     [MR_TYPE_POINTER] = xdr_load_pointer,
     [MR_TYPE_UNION] = xdr_load_union,

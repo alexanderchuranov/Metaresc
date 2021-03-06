@@ -399,10 +399,10 @@ ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
 }
 
 static int
-move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx)
+move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx, mr_size_t element_size)
 {
   int count, ref_idx = ra[ref_parent].first_child;
-  
+    
   ra[ref_parent].ref_idx = ref_idx;
   ra[ref_parent].first_child = -1;
   ra[ref_parent].last_child = -1;
@@ -418,9 +418,8 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx)
       ra[ref_idx].name = ra[idx].name;
       ra[ref_idx].flags.unnamed = ra[idx].flags.unnamed;
       ra[ref_idx].non_persistent = ra[idx].non_persistent;
-      ra[ref_idx].size = ra[idx].size;
 
-      ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * ra[idx].size;
+      ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
       mr_add_child (parent, ref_idx, ra);
       ref_idx = next;
     }
@@ -430,7 +429,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx)
 static int mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent);
 
 static int
-resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx)
+resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx, mr_size_t element_size)
 {
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   int ref_parent = ra[ref_idx].parent;
@@ -442,7 +441,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	  /* new resizable pointer is a part of already saved */
 	  ra[parent].ref_idx = ref_idx;
 	  ra[ref_idx].flags.is_referenced = true;
-	  return (ra[idx].MR_SIZE / ra[idx].size);
+	  return (ra[idx].MR_SIZE / element_size);
 	}
       /* otherwise we can handle only match with another resizable pointer */
       if (MR_TYPE_POINTER == ra[ref_parent].mr_type)
@@ -452,12 +451,11 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      previously saved resizable pointer was pointing to the same address, but was shorter.
 	      we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
 	    */
-	    return (move_nodes_to_parent (ra, ref_parent, parent, idx));
+	    return (move_nodes_to_parent (ra, ref_parent, parent, idx, element_size));
 	  else
 	    {
 	      ssize_t size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
-	      mr_size_t fd_size = ra[ref_idx].size;
-	      int i, count =  size_delta / fd_size;
+	      int i, count =  size_delta / element_size;
 	      char * data = ((char*)ra[ref_idx].data.ptr) + ra[ref_idx].MR_SIZE;
 	      int node;
 			  
@@ -475,7 +473,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 			  
 	      for (i = 0; i < count; )
 		{
-		  int nodes_added = mr_save_inner (data + i * fd_size, ra[ref_idx].fdp, count - i, mr_save_data, ref_parent);
+		  int nodes_added = mr_save_inner (data + i * element_size, ra[ref_idx].fdp, count - i, mr_save_data, ref_parent);
 		  if (nodes_added <= 0)
 		    break;
 		  i += nodes_added;
@@ -507,7 +505,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 		ra[i].MR_SIZE += size_delta;
 	    }
 
-	  return (move_nodes_to_parent (ra, ref_parent, parent, idx));
+	  return (move_nodes_to_parent (ra, ref_parent, parent, idx, element_size));
 	}
     }
   
@@ -523,6 +521,10 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
     .parent = parent,
   };
   int nodes_added;
+  mr_size_t element_size = mr_type_size (ra[idx].mr_type, ra[idx].type);
+
+  if (element_size == 0)
+    return (-1);
   
   for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
     {
@@ -541,7 +543,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	    return (0);
 
 	  case MR_TYPE_POINTER:
-	    nodes_added = resolve_pointer (mr_save_data, idx, parent, ref_idx);
+	    nodes_added = resolve_pointer (mr_save_data, idx, parent, ref_idx, element_size);
 	    if (nodes_added >= 0)
 	      return (nodes_added);
 	    
@@ -553,7 +555,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 			&& (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
 		&& !ref_is_parent (ra, parent, ref_idx)
 		)
-	      return (move_nodes_to_parent (ra, ref_parent, parent, idx));
+	      return (move_nodes_to_parent (ra, ref_parent, parent, idx, element_size));
 	  }
     }
   return (-1);
@@ -591,8 +593,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].name = fdp->name.str;
   ra[idx].flags.unnamed = fdp->unnamed;
   ra[idx].non_persistent = fdp->non_persistent;
-  ra[idx].size = fdp->size;
-  ra[idx].MR_SIZE = ra[idx].size * count;
+  ra[idx].MR_SIZE = fdp->size * count;
 
   ra[idx].save_params.next_typed = -1;
   ra[idx].save_params.next_untyped = -1;
@@ -800,7 +801,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
-  if (fd_.size <= 0)
+  if (fd_.size == 0)
     return (1);
 
   if (1 == fd_.param.array_param.row_count)
@@ -835,14 +836,14 @@ static int
 mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 {
   char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
-  int count = mr_save_data->ptrs.ra[idx].MR_SIZE / mr_save_data->ptrs.ra[idx].size;
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
-  int i;
+  int count, i;
 
   fd_.mr_type = fd_.mr_type_aux;
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.size = mr_save_data->ptrs.ra[idx].size;
+  fd_.size = mr_type_size (fd_.mr_type, fd_.type);
+  count = mr_save_data->ptrs.ra[idx].MR_SIZE / fd_.size;
 
   for (i = 0; i < count; )
     {
@@ -1066,16 +1067,12 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       mr_type_t mr_type = mr_save_data->ptrs.ra[idx].mr_type_aux;
       mr_ptrdes_t src, dst;
       /* at first attempt to save pointer we need to determine size of structure */
-      if ((MR_TYPE_NONE == mr_type) || (MR_TYPE_VOID == mr_type))
-	/* unserializable types will have zero size */
-	mr_save_data->ptrs.ra[idx].MR_SIZE = 0;
-
-      mr_save_data->ptrs.ra[idx].size = mr_save_data->ptrs.ra[idx].MR_SIZE =
-	mr_type_size (mr_type, mr_save_data->ptrs.ra[idx].fdp->type);
+      mr_size_t element_size = mr_type_size (mr_type, mr_save_data->ptrs.ra[idx].fdp->type);
+      mr_save_data->ptrs.ra[idx].MR_SIZE = element_size;
       
       /* pointers might have assosiated field with the size for resizable arrays.
 	 name of the size field is stored in 'res' of field meta-data.
-	 'res_type' in this case will be 'char' */
+	 'res_type' in this case will be 'string' */
       
       mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
       if (src.data.ptr != NULL)
@@ -1092,7 +1089,7 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
 	  else
 	    mr_save_data->ptrs.ra[idx].flags.is_opaque_data = true;
 	}
-      else if ((0 == mr_save_data->ptrs.ra[idx].size) || (mr_save_data->ptrs.ra[idx].MR_SIZE < mr_save_data->ptrs.ra[idx].size))
+      else if ((0 == element_size) || (mr_save_data->ptrs.ra[idx].MR_SIZE < element_size))
 	mr_save_data->ptrs.ra[idx].flags.is_null = true;
       else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
 	{

@@ -209,7 +209,7 @@ START_TEST (check_array_save) {
   ck_assert_msg (ptrs.ra != NULL, "Failed to serialize array sructure");
   ck_assert_msg (ptrs.ra[0].mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
   ck_assert_msg (ptrs.ra[0].mr_type_aux == MR_TYPE_COMPLEX_LONG_DOUBLE, "Incorrect auxiliary type of root node");
-  ck_assert_msg (ptrs.ra[0].size == sizeof (array), "Incorrect array size");
+  ck_assert_msg (ptrs.ra[0].MR_SIZE == sizeof (array), "Incorrect array size");
   if (ptrs.ra)
     MR_FREE (ptrs.ra);
 } END_TEST

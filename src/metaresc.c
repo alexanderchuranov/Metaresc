@@ -552,14 +552,20 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     {
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
-      switch (src->size)
-	{
-#define GET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): value = *(TYPE*)src_data; break;
-	  MR_FOREACH (GET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
-	}
-      break;
-      
+      {
+	mr_td_t * tdp = mr_get_td_by_name (src->type);
+	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
+	  break;
+	switch (tdp->param.enum_param.mr_type_effective)
+	  {
 #define GET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): value = *(TYPE*)src_data; break;
+	    MR_FOREACH (GET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	  default:
+	    break;
+	  }
+	break;
+      }
+      
       MR_FOREACH (GET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 
     case MR_TYPE_BITFIELD:
@@ -578,14 +584,20 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     {
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
-      switch (dst->size)
-	{
-#define SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)dst_data = value; break;
-	  MR_FOREACH (SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
-	}
-      break;
-
+      {
+	mr_td_t * tdp = mr_get_td_by_name (dst->type);
+	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
+	  break;
+	switch (tdp->param.enum_param.mr_type_effective)
+	  {
 #define SET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)dst_data = value; break;
+	    MR_FOREACH (SET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	  default:
+	    break;
+	  }
+	break;
+      }
+
       MR_FOREACH (SET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 
     case MR_TYPE_BITFIELD:
@@ -666,7 +678,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
 	  ptrdes->name = parent_fdp->name.str;
 	  ptrdes->flags.unnamed = parent_fdp->unnamed;
 	  ptrdes->non_persistent = parent_fdp->non_persistent;
-	  ptrdes->MR_SIZE = ptrdes->size = parent_fdp->size;
+	  ptrdes->MR_SIZE = parent_fdp->size;
 
 	  ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
 	}
@@ -756,7 +768,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
     return (MR_FAILURE);
 
   /* copy first level struct */
-  memcpy (dst, ptrs->ra[0].data.ptr, ptrs->ra[0].size);
+  memcpy (dst, ptrs->ra[0].data.ptr, ptrs->ra[0].MR_SIZE);
   ptrs->ra[0].res.data.ptr = dst;
 
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
@@ -966,8 +978,13 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
 	  }
 	  
 	case MR_TYPE_ENUM:
-	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, ptrdes->size); // NB! size_effective
-	  break;
+	  {
+	    mr_td_t * tdp = mr_get_td_by_name (ptrdes->type);
+	    if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
+	      break;
+	    ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, tdp->param.enum_param.size_effective);
+	    break;
+	  }
 	  
 	case MR_TYPE_BITFIELD:
 	  {
@@ -1011,7 +1028,11 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
   x->ra[0].name = y->ra[0].name;
   x->ra[0].type = y->ra[0].type;
 
-  if ((x->ra[0].mr_type == MR_TYPE_ARRAY) && (y->ra[0].mr_type == MR_TYPE_ARRAY))
+  diff = (x->ra[0].mr_type > y->ra[0].mr_type) - (x->ra[0].mr_type < y->ra[0].mr_type);
+  if (diff)
+    return (diff);
+  
+  if (x->ra[0].mr_type == MR_TYPE_ARRAY)
     {
       diff = (x->ra[0].first_child > y->ra[0].first_child) -
 	(x->ra[0].first_child < y->ra[0].first_child);
