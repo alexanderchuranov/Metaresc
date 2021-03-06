@@ -230,7 +230,7 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
 	  return (NULL);
 
-      if (false == ptrs->ra[idx].unnamed)
+      if (false == ptrs->ra[idx].flags.unnamed)
 	if (mr_ra_printf (&mr_ra_str, named_field_tmplt, ptrs->ra[idx].name) < 0)
 	  return (NULL);
 
@@ -297,6 +297,6 @@ json_save (mr_ra_ptrdes_t * ptrs)
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
     if ((MR_TYPE_ANON_UNION == ptrs->ra[i].mr_type) ||
 	(MR_TYPE_POINTER == ptrs->ra[i].mr_type))
-      ptrs->ra[i].unnamed = false;
+      ptrs->ra[i].flags.unnamed = false;
   return (cinit_json_save (ptrs, json_save_tbl, MR_JSON_NAMED_FIELD_TEMPLATE, MR_JSON_NULL));
 }

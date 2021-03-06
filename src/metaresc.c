@@ -664,7 +664,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
 	  ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
 	  ptrdes->type = parent_fdp->type;
 	  ptrdes->name = parent_fdp->name.str;
-	  ptrdes->unnamed = parent_fdp->unnamed;
+	  ptrdes->flags.unnamed = parent_fdp->unnamed;
 	  ptrdes->non_persistent = parent_fdp->non_persistent;
 	  ptrdes->MR_SIZE = ptrdes->size = parent_fdp->size;
 
@@ -1044,7 +1044,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
       if (x_i->idx < 0)
 	continue;
       
-      diff = memcmp (&x_i->mr_type, &y_i->mr_type, offsetof (mr_ptrdes_t, type_specific) - offsetof (mr_ptrdes_t, mr_type));
+      diff = memcmp (x_i, y_i, offsetof (mr_ptrdes_t, data));
       if (diff)
 	return (diff);
       

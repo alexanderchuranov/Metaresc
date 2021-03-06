@@ -587,7 +587,7 @@ xdr_save_string (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
     {
       if (!xdr_int32_t (xdrs, &ptrs->ra[ptrs->ra[idx].ref_idx].idx))
 	return (MR_FAILURE);
-      if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra[idx].flags))
+      if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
 	return (MR_FAILURE);
       return (MR_SUCCESS);
     }
@@ -623,7 +623,7 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
     return (MR_FAILURE);
   if (ptrs->ra[idx].ref_idx >= 0)
     {
-      if (!xdr_uint32_t (xdrs, (void*)&ptrs->ra[idx].flags))
+      if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
 	return (MR_FAILURE);
       return (MR_SUCCESS);
     }
@@ -915,7 +915,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_save_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  if (!xdr_int32_t (xdrs, (void*)&ptrs->ra[idx].flags))
+  if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);
 
   if (ptrs->ra[idx].ref_idx >= 0)
@@ -954,7 +954,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
   *data = NULL;
   
-  if (!xdr_int32_t (xdrs, (void*)&ptrs->ra[idx].flags))
+  if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);
 
   if (!xdr_int32_t (xdrs, &ptrs->ra[idx].ref_idx))

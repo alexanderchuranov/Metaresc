@@ -416,7 +416,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx)
       ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
       ra[ref_idx].type = ra[idx].type;
       ra[ref_idx].name = ra[idx].name;
-      ra[ref_idx].unnamed = ra[idx].unnamed;
+      ra[ref_idx].flags.unnamed = ra[idx].flags.unnamed;
       ra[ref_idx].non_persistent = ra[idx].non_persistent;
       ra[ref_idx].size = ra[idx].size;
 
@@ -589,7 +589,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].mr_type_aux = fdp->mr_type_aux;
   ra[idx].type = fdp->type;
   ra[idx].name = fdp->name.str;
-  ra[idx].unnamed = fdp->unnamed;
+  ra[idx].flags.unnamed = fdp->unnamed;
   ra[idx].non_persistent = fdp->non_persistent;
   ra[idx].size = fdp->size;
   ra[idx].MR_SIZE = ra[idx].size * count;
