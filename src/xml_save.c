@@ -250,13 +250,13 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
     .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER),
   };
   int idx = 0;
+  int level = 0;
 
   if (NULL == mr_ra_str.data.ptr)
     return (NULL);
 
   while (idx >= 0)
     {
-      int level = 0;
       bool empty_tag = true;
 
       /* route saving handler */
@@ -266,8 +266,8 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
       else
 	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
 
-      level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
-      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
+      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START,
+			MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
 	return (NULL);
       if (ptrs->ra[idx].ref_idx >= 0)
 	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT,
@@ -300,7 +300,10 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
 	}
 
       if (ptrs->ra[idx].first_child >= 0)
-	idx = ptrs->ra[idx].first_child;
+	{
+	  ++level;
+	  idx = ptrs->ra[idx].first_child;
+	}
       else
 	{
 	  if (!empty_tag)
@@ -308,9 +311,10 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
 	      return (NULL);
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
+	      --level;
 	      idx = ptrs->ra[idx].parent;
-	      level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
-	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG, level * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
+	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG,
+				MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
 		return (NULL);
 	    }
 	  idx = ptrs->ra[idx].next;

@@ -230,16 +230,17 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = { .data = { mr_strdup ("") }, .MR_SIZE = sizeof (""), .type = "string", .alloc_size = sizeof (""), };
   int idx = 0;
+  int level = 0;
 
   if (NULL == mr_ra_str.data.ptr)
     return (NULL);
 
   while (idx >= 0)
     {
-      int level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
       int named_node = MR_SCM_UNNAMED_FIELDS;
       int parent = ptrs->ra[idx].parent;
       int in_comment = false;
+      int limit_level = MR_LIMIT_LEVEL (level);
 
       if (parent >= 0)
 	named_node = scm_named_fields[ptrs->ra[parent].mr_type];
@@ -247,7 +248,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
       if (ptrs->ra[idx].ref_idx >= 0)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    level * MR_SCM_INDENT_SPACES, "",
+			    limit_level * MR_SCM_INDENT_SPACES, "",
 			    (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 			    ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
 	    return (NULL);
@@ -257,7 +258,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
       if (ptrs->ra[idx].flags.is_referenced)
 	{
 	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra[idx].idx) < 0)
+			    limit_level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra[idx].idx) < 0)
 	    return (NULL);
 
 	  in_comment = true;
@@ -274,7 +275,8 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 
 	  if (MR_SCM_NAMED_FIELDS == named_node)
 	    {
-	      if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START, level * MR_SCM_INDENT_SPACES, "") < 0)
+	      if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START,
+				limit_level * MR_SCM_INDENT_SPACES, "") < 0)
 		return (NULL);
 	      if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
 		return (NULL);
@@ -285,7 +287,8 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 	    {
 	      if (in_comment)
 		{
-		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
+		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE,
+				    limit_level * MR_SCM_INDENT_SPACES, "") < 0)
 		    return (NULL);
 		}
 	      else
@@ -300,7 +303,8 @@ scm_save (mr_ra_ptrdes_t * ptrs)
       else
 	{
 	  if ((idx != 0) || in_comment)
-	    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE, level * MR_SCM_INDENT_SPACES, "") < 0)
+	    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE,
+			      limit_level * MR_SCM_INDENT_SPACES, "") < 0)
 	      return (NULL);
 	  if (MR_SCM_NAMED_FIELDS == named_node)
 	    if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
@@ -313,11 +317,15 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 	}
 
       if (ptrs->ra[idx].first_child >= 0)
-	idx = ptrs->ra[idx].first_child;
+	{
+	  ++level;
+	  idx = ptrs->ra[idx].first_child;
+	}
       else
 	{
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
+	      --level;
 	      idx = ptrs->ra[idx].parent;
 	      named_node = MR_SCM_UNNAMED_FIELDS;
 	      parent = ptrs->ra[idx].parent;

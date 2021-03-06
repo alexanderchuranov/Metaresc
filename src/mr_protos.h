@@ -412,7 +412,6 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
 		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
 		(int, next_typed, , "linked list of nodes with same type and pointer"),
 		(int, next_untyped, , "linked list of nodes with same pointer"),
-		(int, level, , "level from the root element"),
 		)
 
 TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
@@ -441,11 +440,11 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_fd_t *, fdp, , "serializable field descriptor"),
 		VOID (mr_fd_t *, _fdp, , "field descriptor on stack"),
 		END_ANON_UNION ("non_persistent"),
-		(mr_res_t, res, , "extra pointer for user data"),
-		ANON_UNION (type_specific),
+		ANON_UNION (type_specific, __attribute__ ((packed))),
 		(mr_save_params_t, save_params, , "attributes specific for saving"),
 		(mr_load_params_t, load_params, , "attributes specific for loading"),
 		END_ANON_UNION ("ptrdes_type"),
+		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
 TYPEDEF_ENUM (mr_ptrdes_type_t,

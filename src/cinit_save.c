@@ -208,14 +208,13 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
     .alloc_size = sizeof (""),
   };
   int idx = 0;
+  int level = 0;
 
   if (NULL == mr_ra_str.data.string)
     return (NULL);
 
   while (idx >= 0)
     {
-      int level = 0;
-
       /* route saving handler */
       mr_ra_printf_t save_handler = mr_ra_printf_void;
       /* route saving handler */
@@ -224,11 +223,8 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
       else
 	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
 
-      level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
-
-      if (ptrs->ra[idx].save_params.level > 0)
-	if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES, "") < 0)
-	  return (NULL);
+      if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES, "") < 0)
+	return (NULL);
 
       if (false == ptrs->ra[idx].flags.unnamed)
 	if (mr_ra_printf (&mr_ra_str, named_field_tmplt, ptrs->ra[idx].name) < 0)
@@ -253,7 +249,10 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	return (NULL);
 
       if (ptrs->ra[idx].first_child >= 0)
-	idx = ptrs->ra[idx].first_child;
+	{
+	  ++level;
+	  idx = ptrs->ra[idx].first_child;
+	}
       else
 	{
 	  if (ptrs->ra[idx].next >= 0)
@@ -264,11 +263,11 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	  
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
+	      --level;
 	      idx = ptrs->ra[idx].parent;
 	      if (ptrs->ra[idx].res.data.string)
 		{
-		  level = MR_LIMIT_LEVEL (ptrs->ra[idx].save_params.level);
-		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, level * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
+		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
 		    return (NULL);
 		  if (ptrs->ra[idx].next >= 0)
 		    if (mr_ra_append_string (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)

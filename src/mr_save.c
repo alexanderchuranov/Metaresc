@@ -905,13 +905,6 @@ static mr_status_t
 mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
   mr_save_data_t * mr_save_data = context;
-  int parent = ptrs->ra[idx].parent;
-
-  /* set depth level on the node */
-  if (parent < 0)
-    ptrs->ra[idx].save_params.level = 0;
-  else
-    ptrs->ra[idx].save_params.level = ptrs->ra[parent].save_params.level + 1;
 
   /* Try resolve void pointers that were not resolved at save time.
      Those pointers might be saved as typed entries on a later stages. */
