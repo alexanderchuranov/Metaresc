@@ -1199,7 +1199,7 @@ extern mr_status_t cinit_load (char * str, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t scm_load (char * str, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_BISON_FLEX */
 
-extern void * mr_malloc (const char * filename, const char * function, int line, size_t size);
+extern void * mr_calloc (const char * filename, const char * function, int line, size_t count, size_t size);
 extern void * mr_realloc (const char * filename, const char * function, int line, void * ptr, size_t size);
 extern void mr_free (const char * filename, const char * function, int line, void * ptr);
 extern char * mr_strdup (const char * str);
@@ -1246,5 +1246,9 @@ extern int mr_hashed_string_cmp (const mr_hashed_string_t * x, const mr_hashed_s
 extern mr_hash_value_t mr_hashed_string_get_hash (const mr_hashed_string_t * x);
 extern mr_hash_value_t mr_enumfd_get_hash (mr_ptr_t x, const void * context);
 extern int cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context);
+extern int mr_hashed_string_cmp_ic (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern mr_hash_value_t mr_hashed_string_get_hash_ic (mr_ptr_t x, const void * context);
+extern int mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern int mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 
 #endif /* _METARESC_H_ */

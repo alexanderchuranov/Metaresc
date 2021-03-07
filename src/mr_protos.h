@@ -264,9 +264,9 @@ TYPEDEF_STRUCT (mr_res_t,
 		)
 
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
+		(mr_res_t, context),
 		(mr_ic_type_t, ic_type),
 		(unsigned int, items_count),
-		(mr_res_t, context),
 		(char *, key_type),
 		(mr_compar_fn_t, compar_fn),
 		(struct mr_ic_virt_func_t *, virt_func),
