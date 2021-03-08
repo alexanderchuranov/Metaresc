@@ -251,30 +251,9 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       break;
       
     case MR_TYPE_ARRAY:
-      diff = (x->MR_SIZE > y->MR_SIZE) - (x->MR_SIZE < y->MR_SIZE);
-      if (diff)
-	return (diff);
-      
     case MR_TYPE_POINTER:
-      diff = x->mr_type_aux - y->mr_type_aux;
-      if (diff)
-	return (diff);
-      
-      if ((MR_TYPE_STRUCT == x->mr_type_aux) ||
-	  (MR_TYPE_UNION == x->mr_type_aux) ||
-	  (MR_TYPE_ENUM == x->mr_type_aux))
-	{
-	  diff = strcmp (x->type, y->type);
-	  if (diff)
-	    return (diff);
-	}
-      break;
-      
     case MR_TYPE_BITFIELD:
-      diff = (x->fdp > y->fdp) - (x->fdp < y->fdp);
-      if (diff)
-	return (diff);
-      break;
+      return ((x > y) - (x < y));
       
     case MR_TYPE_STRUCT:
     case MR_TYPE_FUNC_TYPE:
@@ -283,10 +262,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_UNION:
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
-      diff = strcmp (x->type, y->type);
-      if (diff)
-	return (diff);
-      break;
+      return (strcmp (x->type, y->type));
       
     case MR_TYPE_END_ANON_UNION:
     case MR_TYPE_LAST:
