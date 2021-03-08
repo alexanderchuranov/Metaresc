@@ -352,8 +352,8 @@ xdr_none (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
  * @param cp pointer on char
  * @return status
  */
-static bool_t __attribute__((unused))
-xdr_char_ (XDR * xdrs, char * cp)
+static bool_t
+xdr_int8_t (XDR * xdrs, int8_t * cp)
 {
   int x = 0;
   if (XDR_ENCODE == xdrs->x_op)
@@ -363,6 +363,12 @@ xdr_char_ (XDR * xdrs, char * cp)
   if (XDR_DECODE == xdrs->x_op)
     *cp = x;
   return (true);
+}
+
+static bool_t
+xdr_uint8_t (XDR * xdrs, uint8_t * cp)
+{
+  return (xdr_int8_t (xdrs, (int8_t*)cp));
 }
 
 bool_t
@@ -407,7 +413,7 @@ xdr_uint64_t (XDR * xdrs, uint64_t * uint64)
  * @param cp pointer on ssize_t
  * @return status
  */
-static bool_t __attribute__((unused))
+static bool_t
 xdr_ssize_t (XDR * xdrs, ssize_t * cp)
 {
   int64_t x = 0;
@@ -419,14 +425,6 @@ xdr_ssize_t (XDR * xdrs, ssize_t * cp)
     *cp = x;
   return (true);
 }
-
-#ifndef HAVE_XDR_UINT8_T
-#define xdr_uint8_t xdr_char_
-#endif /* HAVE_XDR_UINT8_T */
-
-#ifndef HAVE_XDR_INT8_T
-#define xdr_int8_t xdr_char_
-#endif /* HAVE_XDR_INT8_T */
 
 #ifndef HAVE_XDR_UINT16_T
 #  ifdef HAVE_XDR_U_INT16_T
