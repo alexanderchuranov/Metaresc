@@ -408,7 +408,11 @@ xml2_save (mr_ra_ptrdes_t * ptrs)
     MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XML_SAVE_FAILED);
   else
     {
+      ptrs->ptrdes_type = MR_PD_CUSTOM;
       ptrs->res.data.ptr = doc;
+      ptrs->res.type = NULL;
+      ptrs->res.MR_SIZE = 0;
+
       mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       
       if ((ptrs->size > 0) && (NULL != ptrs->ra[0].res.data.ptr))

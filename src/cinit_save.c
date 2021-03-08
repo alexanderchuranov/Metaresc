@@ -213,6 +213,8 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
   if (NULL == mr_ra_str.data.string)
     return (NULL);
 
+  ptrs->ptrdes_type = MR_PD_CUSTOM;
+
   while (idx >= 0)
     {
       /* route saving handler */

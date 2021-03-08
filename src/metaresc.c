@@ -714,11 +714,14 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
   
   if ((NULL == ptrs) || (NULL == ptrs->ra))
     return (MR_FAILURE);
+  ptrs->ptrdes_type = MR_PD_CUSTOM;
 
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
     {
       mr_ptrdes_t * ptrdes = &ptrs->ra[i];
       ptrdes->res.data.ptr = NULL;
+      ptrdes->res.type = NULL;
+      ptrdes->res.MR_SIZE = 0;
 
       if ((ptrdes->ref_idx < 0) && (ptrdes->idx >= 0) && !ptrdes->flags.is_null &&
 	  ((MR_TYPE_POINTER == ptrdes->mr_type) || (MR_TYPE_STRING == ptrdes->mr_type)))
@@ -767,6 +770,8 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
   if ((NULL == ptrs->ra) || (NULL == dst))
     return (MR_FAILURE);
 
+  ptrs->ptrdes_type = MR_PD_CUSTOM;
+
   /* copy first level struct */
   memcpy (dst, ptrs->ra[0].data.ptr, ptrs->ra[0].MR_SIZE);
   ptrs->ra[0].res.data.ptr = dst;
@@ -775,6 +780,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
     {
       ptrs->ra[i].res.data.ptr = NULL;
       ptrs->ra[i].res.type = NULL;
+      ptrs->ra[i].res.MR_SIZE = 0;
     }
 
   /* NB index 0 is excluded */

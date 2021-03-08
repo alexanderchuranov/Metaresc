@@ -458,8 +458,10 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		)
 
 TYPEDEF_ENUM (mr_ptrdes_type_t,
+	      (MR_PD_UNINITIALIZED, = 0, "default_serialization"),
 	      (MR_PD_SAVE, , "save_params"),
 	      (MR_PD_LOAD, , "load_params"),
+	      (MR_PD_CUSTOM, , "res"),
 	      )
 
 TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
