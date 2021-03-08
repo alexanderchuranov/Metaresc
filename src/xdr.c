@@ -352,7 +352,7 @@ xdr_none (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
  * @param cp pointer on char
  * @return status
  */
-static bool_t
+bool_t
 xdr_int8_t (XDR * xdrs, int8_t * cp)
 {
   int x = 0;
@@ -365,7 +365,7 @@ xdr_int8_t (XDR * xdrs, int8_t * cp)
   return (true);
 }
 
-static bool_t
+bool_t
 xdr_uint8_t (XDR * xdrs, uint8_t * cp)
 {
   return (xdr_int8_t (xdrs, (int8_t*)cp));
