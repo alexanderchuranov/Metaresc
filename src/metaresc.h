@@ -780,7 +780,7 @@
 	  .size = sizeof (MR_TYPE_NAME),				\
 	};								\
       MR_TYPE_NAME * check_type = S_PTR;				\
-      mr_save_data_t __mr_save_data__ = { .ptrs.ptrdes_type = MR_PD_SAVE, }; \
+      mr_save_data_t __mr_save_data__;					\
       mr_detect_type (&__fd__);						\
       if (__builtin_types_compatible_p (MR_TYPE_NAME[], __typeof__ (S_PTR)) && \
 	  (sizeof (MR_TYPE_NAME) > 0) &&				\
@@ -812,7 +812,7 @@
 	  .size = 0,							\
 	};								\
       void * __ptr__ = S_PTR;						\
-      mr_save_data_t __mr_save_data__ = { .ptrs.ptrdes_type = MR_PD_SAVE, }; \
+      mr_save_data_t __mr_save_data__;					\
       mr_detect_type (&__fd__);						\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
       if (__ptr__ == NULL)						\

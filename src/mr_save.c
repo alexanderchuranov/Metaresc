@@ -1097,6 +1097,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   };
 
   memset (mr_save_data, 0, sizeof (*mr_save_data));
+  mr_save_data->ptrs.ptrdes_type = MR_PD_SAVE;
 #define MR_IC_METHOD MR_IC_HASH
   mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
   mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
