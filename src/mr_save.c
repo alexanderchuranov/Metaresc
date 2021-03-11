@@ -119,6 +119,128 @@ mr_node_get_discriminator_fd (mr_save_data_t * mr_save_data, int node, char * di
 }
 
 /**
+ * Comparator for union discriminator info structures
+ * @param x index in mr_union_discriminator_t rarray
+ * @param y index in mr_union_discriminator_t rarray
+ * @param content void pointer to context
+ */
+int
+mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_save_data_t * mr_save_data = context;
+  int diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].type,
+				   &mr_save_data->mr_ra_ud[y.intptr].type);
+  if (diff)
+    return (diff);
+  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].discriminator,
+				&mr_save_data->mr_ra_ud[y.intptr].discriminator));
+}
+
+mr_hash_value_t
+mr_ud_get_hash (mr_ptr_t x, const void * context)
+{
+  const mr_save_data_t * mr_save_data = context;
+  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
+	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator));
+}
+
+static mr_ptr_t *
+mr_ud_find (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
+{
+  if (ptrdes->ud_is_ic)
+    return (mr_ic_find (ptrdes->save_params.union_discriminator, key));
+
+  int i;
+  for (i = 0; i < ptrdes->ud_count; ++i)
+    if (0 == mr_ud_cmp (key, ptrdes->save_params.static_array[i], mr_save_data))
+      return ((mr_ptr_t*)&ptrdes->save_params.static_array[i]);
+  return (NULL);
+}
+
+static mr_ptr_t *
+mr_ud_add (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
+{
+  if (ptrdes->ud_is_ic)
+    return (mr_ic_add (ptrdes->save_params.union_discriminator, key));
+
+  mr_ptr_t * find = mr_ud_find (ptrdes, key, mr_save_data);
+  if (NULL != find)
+    return (find);
+
+  if (ptrdes->ud_count > sizeof (ptrdes->save_params.static_array) / sizeof (ptrdes->save_params.static_array[0]))
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ptrdes->ud_count);
+      ptrdes->ud_count = 0;
+    }
+
+  if (ptrdes->ud_count == sizeof (ptrdes->save_params.static_array) / sizeof (ptrdes->save_params.static_array[0]))
+    {
+      mr_ic_t * dst_ic = MR_CALLOC (1, sizeof (*dst_ic));
+      if (NULL == dst_ic)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (NULL);
+	}
+      mr_res_t context = {
+	.data = { mr_save_data },
+	.type = "mr_save_data_t",
+	.MR_SIZE = sizeof (mr_save_data_t),
+      };
+      mr_status_t status = mr_ic_hash_new (dst_ic, mr_ud_get_hash, mr_ud_cmp, "intptr", &context);
+      if (MR_SUCCESS != status)
+	{
+	  MR_FREE (dst_ic);
+	  return (NULL);
+	}
+
+      mr_ic_rarray_t rarray;
+      rarray.ra = (mr_ptr_t*)&ptrdes->save_params.static_array[0];
+      rarray.size = sizeof (ptrdes->save_params.static_array);
+      rarray.alloc_size = -1;
+
+      status = mr_ic_index (dst_ic, &rarray);
+      if (MR_SUCCESS != status)
+	{
+	  MR_FREE (dst_ic);
+	  return (NULL);
+	}
+
+      ptrdes->save_params.union_discriminator = dst_ic;
+      ptrdes->ud_is_ic = true;
+      return (mr_ic_add (dst_ic, key));
+    }
+
+  mr_ptr_t * add = (mr_ptr_t*)&ptrdes->save_params.static_array[ptrdes->ud_count++];
+  *add = key;
+  return (add);
+}
+
+static mr_status_t
+mr_ud_foreach (mr_ptrdes_t * ptrdes, mr_visit_fn_t visit_fn, const void * context)
+{
+  if (ptrdes->ud_is_ic)
+    return (mr_ic_foreach (ptrdes->save_params.union_discriminator, visit_fn, context));
+
+  int i;
+  for (i = 0; i < ptrdes->ud_count; ++i)
+    if (MR_SUCCESS != visit_fn (ptrdes->save_params.static_array[i], context))
+      return (MR_FAILURE);
+  return (MR_SUCCESS);
+}
+
+static void
+mr_ud_free (mr_ptrdes_t * ptrdes)
+{
+  if (ptrdes->ud_is_ic)
+    {
+      mr_ic_free (ptrdes->save_params.union_discriminator);
+      ptrdes->save_params.union_discriminator = NULL;
+    }
+  ptrdes->ud_is_ic = false;
+  ptrdes->ud_count = 0;
+}
+
+/**
  * Finds out union discriminator
  * @param mr_save_data save routines data and lookup structures
  */
@@ -160,7 +282,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       void * discriminator_ptr;
 
       /* checks if this parent already have union resolution info */
-      ud_find = mr_ic_find (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, ud_idx);
+      ud_find = mr_ud_find (&mr_save_data->ptrs.ra[parent], ud_idx, mr_save_data);
       /* break the traverse loop if it has */
       if (ud_find)
 	break;
@@ -192,7 +314,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       ud_find = &ud_idx;
       if (parent >= 0)
 	{
-	  mr_ptr_t * add = mr_ic_add (&mr_save_data->ptrs.ra[parent].save_params.union_discriminator, *ud_find);
+	  mr_ptr_t * add = mr_ud_add (&mr_save_data->ptrs.ra[parent], *ud_find, mr_save_data);
 	  if (NULL == add)
 	    return (NULL);
 	}
@@ -201,7 +323,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
     {
-      mr_ptr_t * add = mr_ic_add (&mr_save_data->ptrs.ra[idx].save_params.union_discriminator, *ud_find);
+      mr_ptr_t * add = mr_ud_add (&mr_save_data->ptrs.ra[idx], *ud_find, mr_save_data);
       if (NULL == add)
 	return (NULL);
     }
@@ -338,32 +460,6 @@ mr_check_ud (mr_ptr_t key, const void * context)
   fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, type, discriminator);
   
   return ((fdp == ud_fdp) ? MR_SUCCESS : MR_FAILURE);
-}
-
-/**
- * Comparator for union discriminator info structures
- * @param x index in mr_union_discriminator_t rarray
- * @param y index in mr_union_discriminator_t rarray
- * @param content void pointer to context
- */
-int
-mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
-{
-  const mr_save_data_t * mr_save_data = context;
-  int diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].type,
-				   &mr_save_data->mr_ra_ud[y.intptr].type);
-  if (diff)
-    return (diff);
-  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].discriminator,
-				&mr_save_data->mr_ra_ud[y.intptr].discriminator));
-}
-
-mr_hash_value_t __attribute__ ((unused))
-mr_ud_get_hash (mr_ptr_t x, const void * context)
-{
-  const mr_save_data_t * mr_save_data = context;
-  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
-	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator));
 }
 
 static bool
@@ -507,7 +603,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
       int ref_parent = ra[ref_idx].parent;
 
       mr_check_ud_ctx.node = ref_idx;
-      mr_status_t status = mr_ic_foreach (&ra[ref_idx].save_params.union_discriminator, mr_check_ud, &mr_check_ud_ctx);
+      mr_status_t status = mr_ud_foreach (&ra[ref_idx], mr_check_ud, &mr_check_ud_ctx);
       if (MR_SUCCESS == status)
 	switch (ra[parent].mr_type)
 	  {
@@ -610,12 +706,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 	}
     }
 
-  mr_res_t context = {
-    .data = { mr_save_data },
-    .type = "mr_save_data_t",
-    .MR_SIZE = sizeof (mr_save_data_t),
-  };
-  mr_ic_new (&ra[idx].save_params.union_discriminator, mr_ud_get_hash, mr_ud_cmp, "intptr", MR_IC_STATIC_ARRAY, &context);
+  ra[idx].ud_is_ic = false;
+  ra[idx].ud_count = 0;
 
   mr_add_child (parent, idx, ra);
   /* route saving handler */
@@ -1125,10 +1217,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     }
 
   for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
-    {
-      mr_ic_free (&mr_save_data->ptrs.ra[i].save_params.union_discriminator);
-      mr_save_data->ptrs.ra[i].save_params.union_discriminator.context.data.ptr = NULL;
-    }
+    mr_ud_free (&mr_save_data->ptrs.ra[i]);
 
   if ((nodes_added < 0) && (mr_save_data->ptrs.ra != NULL))
     {

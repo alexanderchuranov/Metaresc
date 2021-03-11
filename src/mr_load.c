@@ -141,7 +141,7 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
 
-  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params_[0].mr_value))
+  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
   switch (ptrdes->mr_type)
@@ -289,7 +289,7 @@ mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
   uint64_t value;
 
-  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params_[0].mr_value))
+  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
   value = ptrdes->load_params.mr_value.vt_int;
@@ -300,7 +300,7 @@ static mr_status_t
 mr_load_float (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
-  if (MR_SUCCESS != mr_value_cast (MR_VT_FLOAT, &ptrdes->load_params_[0].mr_value))
+  if (MR_SUCCESS != mr_value_cast (MR_VT_FLOAT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
   switch (ptrdes->mr_type)
@@ -319,7 +319,7 @@ static mr_status_t
 mr_load_complex (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
-  if (MR_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->load_params_[0].mr_value))
+  if (MR_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
   switch (ptrdes->mr_type)
@@ -370,7 +370,7 @@ mr_load_char (int idx, mr_load_data_t * mr_load_data)
       break;
       
     default:
-      if (MR_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->load_params_[0].mr_value))
+      if (MR_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
 	*(char*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
       else
 	status = MR_FAILURE;

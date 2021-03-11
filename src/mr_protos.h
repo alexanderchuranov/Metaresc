@@ -396,6 +396,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      )
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
+		(mr_value_type_t, value_type),
 		ANON_UNION (type_specific),
 		VOID (uint8_t, vt_void, , "no serialization by default"),
 		long long int vt_int,
@@ -405,11 +406,13 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		char vt_char,
 		(mr_quoted_substr_t, vt_quoted_substr),
 		END_ANON_UNION ("value_type"),
-		(mr_value_type_t, value_type),
 		)
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
-		(mr_ic_t, union_discriminator, , "index over unions discriminator"),
+		ANON_UNION (union_discriminator_implementation),
+		(intptr_t, static_array, [5], "in place list of union discriminators"),
+		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
+		END_ANON_UNION ("ud_as_ic"),
 		(int, next_typed, , "linked list of nodes with same type and pointer"),
 		(int, next_untyped, , "linked list of nodes with same pointer"),
 		)
@@ -423,8 +426,10 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(char *, name, , "name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
-		(bool, non_persistent, , "true if field descriptor is allocated on stack"),
 		(mr_ptrdes_flags_t, flags),
+		BITFIELD (bool, non_persistent, :1, "true if field descriptor is allocated on stack"),
+		BITFIELD (bool, ud_is_ic, :1, "true if union discriminator is an indexed collection"),
+		BITFIELD (unsigned, ud_count, :3, "size of union discriminator in place list"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
@@ -439,20 +444,10 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_fd_t *, fdp, , "serializable field descriptor"),
 		VOID (mr_fd_t *, fdp_, , "field descriptor on stack"),
 		END_ANON_UNION ("non_persistent"),
-		ANON_UNION (type_specific, __attribute__ ((packed))),
-		/*
-		   mr_save_params is 88 bytes, mr_load_params_t is only 48 bytes,
-		   but is has 16 bytes alignment due to long double field.
-		   Union of those two types is padded with additional 8 bytes, to mainmain alignment of member field.
-		   __attribute__ ((packed)) explicitly instruct compiler to ignore alignment of member fields,
-		   so resulting size of the union is a size of a biggest member field.
-		   The down side of this packing is that Clang complains about address getting of member fields.
-		   You can either suppress this warning with -Wno-address-of-packed-member, or have another alias field as an array os designated type.
-		*/
+		ANON_UNION (type_specific, ),
 		VOID (uint8_t, default_serialization),
 		(mr_save_params_t, save_params, , "attributes specific for saving"),
 		(mr_load_params_t, load_params, , "attributes specific for loading"),
-		(mr_load_params_t, load_params_, [1], "workaround for warnings on packed union"),
 		(mr_res_t, res, , "extra pointer for user data"),
 		END_ANON_UNION ("ptrdes_type"),
 		)
