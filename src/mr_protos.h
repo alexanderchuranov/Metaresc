@@ -479,6 +479,7 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
+		(mr_ic_t, union_discriminators, , "index over all union discriminators"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
 		(unsigned int *, mr_ra_idx, , "indexes of postponed nodes", { .offset = offsetof (mr_save_data_t, mr_ra_idx_size) }, "offset"),
 		VOID (ssize_t, mr_ra_idx_alloc_size, , "allocated size of 'mr_ra_idx'"),

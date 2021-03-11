@@ -118,6 +118,32 @@ mr_node_get_discriminator_fd (mr_save_data_t * mr_save_data, int node, char * di
   return (fdp);
 }
 
+int
+mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_save_data_t * mr_save_data = context;
+  int diff = (mr_save_data->mr_ra_ud[x.intptr].fdp > mr_save_data->mr_ra_ud[y.intptr].fdp) -
+    (mr_save_data->mr_ra_ud[x.intptr].fdp < mr_save_data->mr_ra_ud[y.intptr].fdp);
+  if (diff)
+    return (diff);
+
+  diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].type,
+				   &mr_save_data->mr_ra_ud[y.intptr].type);
+  if (diff)
+    return (diff);
+  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].discriminator,
+				&mr_save_data->mr_ra_ud[y.intptr].discriminator));
+}
+
+mr_hash_value_t
+mr_uds_get_hash (mr_ptr_t x, const void * context)
+{
+  const mr_save_data_t * mr_save_data = context;
+  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
+	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator) +
+	  (intptr_t)mr_save_data->mr_ra_ud[x.intptr].fdp);
+}
+
 /**
  * Comparator for union discriminator info structures
  * @param x index in mr_union_discriminator_t rarray
@@ -308,15 +334,22 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
     {
       if (NULL == fdp)
 	fdp = mr_union_discriminator_by_name (tdp, NULL);
-      /* union discriminator info was not found in parents so we add new record */
-      mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
+
       ud->fdp = fdp;
-      ud_find = &ud_idx;
-      if (parent >= 0)
+      ud_find = mr_ic_add (&mr_save_data->union_discriminators, ud_idx);
+      if (NULL == ud_find)
+	return (NULL);
+      if (ud_find->intptr == ud_idx.intptr)
 	{
-	  mr_ptr_t * add = mr_ud_add (&mr_save_data->ptrs.ra[parent], *ud_find, mr_save_data);
-	  if (NULL == add)
-	    return (NULL);
+	  /* union discriminator info was not found in parents so we add new record */
+	  mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
+	  ud_find = &ud_idx;
+	  if (parent >= 0)
+	    {
+	      mr_ptr_t * add = mr_ud_add (&mr_save_data->ptrs.ra[parent], *ud_find, mr_save_data);
+	      if (NULL == add)
+		return (NULL);
+	    }
 	}
     }
 
@@ -1193,6 +1226,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 #define MR_IC_METHOD MR_IC_HASH
   mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
   mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data->union_discriminators, mr_uds_get_hash, mr_uds_cmp, "intptr", MR_IC_METHOD, &context);
 
   mr_save_data->mr_ra_ud_size = 0;
   mr_save_data->mr_ra_ud = NULL;
@@ -1233,6 +1267,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     MR_FREE (mr_save_data->mr_ra_idx);
   mr_save_data->mr_ra_idx = NULL;
 
+  mr_ic_free (&mr_save_data->union_discriminators);
   mr_ic_free (&mr_save_data->typed_ptrs);
   mr_ic_free (&mr_save_data->untyped_ptrs);
 }
