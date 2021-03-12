@@ -344,12 +344,9 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 	  /* union discriminator info was not found in parents so we add new record */
 	  mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
 	  ud_find = &ud_idx;
+	  /* set 'parent' on one level up to include actual parent node into traversal below */
 	  if (parent >= 0)
-	    {
-	      mr_ptr_t * add = mr_ud_add (&mr_save_data->ptrs.ra[parent], *ud_find, mr_save_data);
-	      if (NULL == add)
-		return (NULL);
-	    }
+	    parent = mr_save_data->ptrs.ra[parent].parent;
 	}
     }
 
