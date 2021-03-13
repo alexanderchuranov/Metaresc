@@ -100,13 +100,13 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 }
 
 static mr_fd_t *
-mr_node_get_discriminator_fd (mr_save_data_t * mr_save_data, int node, char * discriminator)
+mr_type_get_discriminator_fd (char * type, char * discriminator)
 {
-  /* get type descriptor for this node */
-  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[node].type);
+  /* get type descriptor */
+  mr_td_t * tdp = mr_get_td_by_name (type);
   if (NULL == tdp)
     return (NULL);
-  /* lookup for a discriminator field in this parent */
+  /* lookup for a discriminator field */
   mr_fd_t * fdp = mr_get_fd_by_name (tdp, discriminator);
   if (NULL == fdp)
     return (NULL);
@@ -317,7 +317,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 	  || (MR_TYPE_POINTER == mr_save_data->ptrs.ra[parent].mr_type))
 	continue;
       
-      parent_fdp = mr_node_get_discriminator_fd (mr_save_data, parent, ud->discriminator.str);
+      parent_fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[parent].type, ud->discriminator.str);
       if (NULL == parent_fdp)
 	continue;
       
@@ -480,7 +480,7 @@ mr_check_ud (mr_ptr_t key, const void * context)
   char * discriminator = ud->discriminator.str;
   char * type = ud->type.str;
   mr_fd_t * ud_fdp = ud->fdp;
-  mr_fd_t * fdp = mr_node_get_discriminator_fd (mr_save_data, mr_check_ud_ctx->node, discriminator);
+  mr_fd_t * fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[mr_check_ud_ctx->node].type, discriminator);
 
   /* here we check that union discriminator was resolved at the level of saved node.
      This means that resolution is not dependant on upper tree */
