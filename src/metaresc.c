@@ -926,6 +926,8 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
   if (NULL == idx)
     return (0);
   
+  ptrs->ptrdes_type = MR_PD_CUSTOM;
+
   for (i = 0; i < count; ++i)
     {
       idx[i] = i;
@@ -958,15 +960,30 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
 	      mr_hash_block (ptrdes->data.ptr, sizeof (TYPE));		\
 	    break;
 
-	  MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-		      float, complex_float_t, double, complex_double_t);
-	  
-	case MR_TYPE_LONG_DOUBLE:
-	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
-	  break;
+#define SIZEOF_float (sizeof (float))
+#define SIZEOF_double (sizeof (double))
+#define SIZEOF_long_double_t (MR_SIZEOF_LONG_DOUBLE)
+#define SIZEOF_complex_float_t (sizeof (complex_float_t))
+#define SIZEOF_complex_double_t (sizeof (complex_double_t))
+
+#define CASE_MR_FLOAT_TYPE_HASH(TYPE)					\
+	  case MR_TYPE_DETECT (TYPE):					\
+	    ptrdes->res.data.uintptr = MR_ISNAN (*(TYPE*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
+	    break;
+
+#define CASE_MR_COMPLEX_FLOAT_TYPE_HASH(TYPE)				\
+	  case MR_TYPE_DETECT (TYPE):					\
+	    ptrdes->res.data.uintptr = (MR_ISNAN (__real__ *(TYPE*)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(TYPE*)ptrdes->data.ptr)) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
+	    break;
+
+	  MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	  MR_FOREACH (CASE_MR_FLOAT_TYPE_HASH, float, double, long_double_t);
+	  MR_FOREACH (CASE_MR_COMPLEX_FLOAT_TYPE_HASH, complex_float_t, complex_double_t);
 	  
 	case MR_TYPE_COMPLEX_LONG_DOUBLE:
-	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
+	  ptrdes->res.data.uintptr =
+	    (MR_ISNAN (__real__ *(long double *)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(long double *)ptrdes->data.ptr)) ? -1 :
+	  mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
 	    mr_hash_block (&((long double *)ptrdes->data.ptr)[1], MR_SIZEOF_LONG_DOUBLE);
 	  break;
 	  
@@ -1110,12 +1127,15 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    {								\
 	      TYPE _x = *(TYPE*)x_i->data.ptr;				\
 	      TYPE _y = *(TYPE*)y_i->data.ptr;				\
-	      if (!MR_ISNAN (_x) || !MR_ISNAN (_y))			\
+	      if (!MR_ISNAN (_x) && !MR_ISNAN (_y))			\
 		{							\
 		  diff = (_x > _y) - (_x < _y);				\
 		  if (diff)						\
 		    return (diff);					\
 		}							\
+	      diff = !MR_ISNAN (_x) - !MR_ISNAN (_y);			\
+	      if (diff)							\
+		return (diff);						\
 	    }								\
 	    break;
 
@@ -1124,18 +1144,30 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    {								\
 	      TYPE _x = *(TYPE*)x_i->data.ptr;				\
 	      TYPE _y = *(TYPE*)y_i->data.ptr;				\
-	      if (!MR_ISNAN (__real__ _x) || !MR_ISNAN (__real__ _y))	\
+	      bool rx_isnan = MR_ISNAN (__real__ _x);			\
+	      bool ix_isnan = MR_ISNAN (__imag__ _x);			\
+	      bool ry_isnan = MR_ISNAN (__real__ _y);			\
+	      bool iy_isnan = MR_ISNAN (__imag__ _y);			\
+	      if (((rx_isnan || ix_isnan)) && ((ry_isnan || iy_isnan)))	\
+		continue;						\
+	      if (!rx_isnan && !ry_isnan)				\
 		{							\
 		  diff = (__real__ _x > __real__ _y) - (__real__ _x < __real__ _y); \
 		  if (diff)						\
 		    return (diff);					\
 		}							\
-	      if (!MR_ISNAN (__imag__ _x) || !MR_ISNAN (__imag__ _y))	\
+	      diff = !rx_isnan - !ry_isnan;				\
+	      if (diff)							\
+		return (diff);						\
+	      if (!ix_isnan && !iy_isnan)				\
 		{							\
 		  diff = (__imag__ _x > __imag__ _y) - (__imag__ _x < __imag__ _y); \
 		  if (diff)						\
 		    return (diff);					\
 		}							\
+	      diff = !ix_isnan - !iy_isnan;				\
+	      if (diff)							\
+		return (diff);						\
 	    }								\
 	    break;
 

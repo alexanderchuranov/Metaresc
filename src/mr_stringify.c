@@ -21,6 +21,7 @@
 #endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
+#include <flt_values.h>
 #include <mr_stringify.h>
 #include <mr_ic.h>
 
@@ -60,12 +61,14 @@ MR_RA_PRINTF_TMPLT (uint64_t, "%" SCNu64)
     mr_ptrdes_t _ptrdes = *ptrdes;					\
     TYPE real = __real__ *(complex TYPE *)ptrdes->data.ptr;		\
     TYPE imag = __imag__ *(complex TYPE *)ptrdes->data.ptr;		\
+    if (MR_ISNAN (real) || MR_ISNAN (imag))				\
+      return (TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, "NAN"))); \
     if (real != 0)							\
       {									\
 	_ptrdes.data.ptr = &real;					\
 	count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
 	if (imag != 0)							\
-	  count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, "%s", delimiter)); \
+	  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter)); \
       }									\
     if (imag != 0)							\
       {									\

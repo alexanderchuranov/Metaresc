@@ -6,18 +6,9 @@
 #include <regression.h>
 #include <flt_values.h>
 
-#define SCALAR_FLOAT(TYPE, X, Y, ...) ({				\
-      complex long double _x = *(complex long double*)X;		\
-      complex long double _y = *(complex long double*)Y;		\
-      !(((__real__ _x == __real__ _y) &&				\
-	 (__imag__ _x == __imag__ _y)) ||				\
-	((MR_ISNAN (__real__ _x) || MR_ISNAN (__real__ _y)) &&		\
-	 (MR_ISNAN (__imag__ _x) || MR_ISNAN (__imag__ _y))));		\
-    })
-
 #define ASSERT_SAVE_LOAD_COMPLEX_LONG_DOUBLE(METHOD, VALUE) ({		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, complex long double, VALUE, SCALAR_FLOAT); \
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_complex_long_double_t, VALUE, SCALAR_FLOAT); \
+      ASSERT_SAVE_LOAD_TYPE (METHOD, complex long double, VALUE);	\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_complex_long_double_t, VALUE); \
     })
 
 
