@@ -60,12 +60,22 @@ MR_RA_PRINTF_TMPLT (uint64_t, "%" SCNu64)
     mr_ptrdes_t _ptrdes = *ptrdes;					\
     TYPE real = __real__ *(complex TYPE *)ptrdes->data.ptr;		\
     TYPE imag = __imag__ *(complex TYPE *)ptrdes->data.ptr;		\
-    _ptrdes.data.ptr = &real;						\
-    count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
-    count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, "%s", delimiter)); \
-    _ptrdes.data.ptr = &imag;						\
-    count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
-    count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, 'i'));	\
+    if (real != 0)							\
+      {									\
+	_ptrdes.data.ptr = &real;					\
+	count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
+	if (imag != 0)							\
+	  count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, "%s", delimiter)); \
+      }									\
+    if (imag != 0)							\
+      {									\
+	_ptrdes.data.ptr = &imag;					\
+	if (imag != 1)							\
+	  count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
+	count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, 'I'));	\
+      }									\
+    if ((real == 0) && (imag == 0))					\
+      count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '0'));	\
     return (count);							\
   }
 

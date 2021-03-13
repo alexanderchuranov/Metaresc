@@ -137,14 +137,51 @@ mr_load_complex_long_double (char * str, complex long double * x)
 {
   int offset;
   long double real, imag;
-  if (2 != sscanf (str, "%Lg + %Lgi%n", &real, &imag, &offset))
+
+  if (str[0] == 'I')
+    {
+      __real__ * x = 0;
+      __imag__ * x = 1;
+      return (&str[1]);
+    }
+
+  if (1 != sscanf (str, "%Lg%n", &real, &offset))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
     }
+
+  char * tail = &str[offset];
+  if (tail[0] == 'I')
+    {
+      __real__ * x = 0;
+      __imag__ * x = real;
+      return (&tail[1]);
+    }
+
+  if ((tail[0] != ' ') || (tail[1] != '+') || (tail[2] != ' '))
+    {
+      __real__ * x = real;
+      __imag__ * x = 0;
+      return (tail);
+    }
+  tail += 3;
+  if (tail[0] == 'I')
+    {
+      __real__ * x = real;
+      __imag__ * x = 1;
+      return (tail);
+    }
+
+  if (1 != sscanf (tail, "%LgI%n", &imag, &offset))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
+      return (NULL);
+    }
+
   __real__ * x = real;
   __imag__ * x = imag;
-  return (&str[offset]);
+  return (&tail[offset]);
 }
 
 static mr_status_t

@@ -50,6 +50,7 @@ ID	[_[:alpha:]][_[:alnum:]]*(:[_[:alpha:]][_[:alnum:]]*)?
   
 "</"{ID} {
   yylval->string.str = &yytext[2];
+
   yylval->string.length = strlen (&yytext[2]);
   return (TOK_XML_CLOSE_TAG);
 }
