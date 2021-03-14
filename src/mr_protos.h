@@ -59,7 +59,6 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_SAVE_ENUM, , "Can't find enum name for value %" SCNd64 " type '%s' field '%s'."),
 	      (MR_MESSAGE_SAVE_BITMASK, , "Can't decompose on bitmask %" SCNu64 "."),
 	      (MR_MESSAGE_CONFLICTED_ENUMS, , "Literal enum `%s` has a different value in types '%s' (%" SCNu64") and '%s' (%" SCNu64 ")."),
-	      (MR_MESSAGE_INT_OF_UNKNOWN_SIZE, , "Failed to stringify integer of unknown size: %" SCNd32 "."),
 	      (MR_MESSAGE_PARSE_ERROR, , "Parser error: '%s'. Position: %d:%d-%d:%d."),
 	      (MR_MESSAGE_ANON_UNION_TYPE_ERROR, , "Can't create type for anonymous union in type: '%s'."),
 	      (MR_MESSAGE_UNKNOWN_XML_ESC, , "Unknown XML escape sequence '%s'."),
@@ -82,6 +81,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) for dynamics array."),
 	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
 	      (MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, , "Unexpected number of items in static array collection %d."),
+	      (MR_MESSAGE_FIELD_NOT_FOUND, , "Field '%s' is not found in type '%s'."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -133,14 +133,14 @@ TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      )
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
-		(unsigned int, count, , "array size"),
-		(unsigned int, row_count, , "row size"),
+		(size_t, count, , "array size"),
+		(size_t, row_count, , "row size"),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
 		{ .offset = offsetof (mr_bitfield_param_t, size) }, "offset"), 
-		(unsigned int, size, , "size of bitfield array"),
+		(size_t, size, , "size of bitfield array"),
 		(uint8_t, width, , "bit-field width in bits"),
 		(uint8_t, shift, , "bit-field shift in first byte"),
 		(bool, initialized, , "flag that width and shift are initialized"),
@@ -149,16 +149,17 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
 		(struct mr_fd_t *, args, , "function arguments descriptors saved as resizable array of field descriptors",
 		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
-		(unsigned int, size, , "size of args array"),
+		(size_t, size, , "size of args array"),
 		)
 
 TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enum"),
+	       VOID (uint64_t, default_serialization),
 	       (uint64_t, _unsigned),
 	       (int64_t, _signed),
 	       )
 
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
-	       VOID (uint8_t, dummy, , "default serialization is empty"),
+	       VOID (uint8_t, default_serialization, , "default serialization is empty"),
 	       (mr_array_param_t, array_param, , "array parameters"),
 	       (mr_enum_value_t, enum_param, , "mr_type_aux"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
@@ -196,8 +197,8 @@ TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collect
 		(mr_hash_fn_t, hash_fn),
 		/* resizable array for hash table sized by field 'size' mr_ptr_t typed by 'key_type' in mr_ic_t */
 		(mr_ptr_t *, hash_table, , "key_type", { .offset = offsetof (mr_ic_hash_t, size) }, "offset"),
-		(unsigned, size, , "size of hash table"),
-		BITFIELD (unsigned, resize_count, : sizeof (unsigned) * __CHAR_BIT__ - 1, "Next resize after this amount"),
+		(unsigned int, size, , "size of hash table"),
+		BITFIELD (unsigned int, resize_count, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "Next resize after this amount"),
 		BITFIELD (bool, zero_key, : 1),
 		)
 
@@ -333,7 +334,7 @@ TYPEDEF_STRUCT (mr_struct_param_t,
 		)
 
 TYPEDEF_UNION (mr_td_param_t,
-	       VOID (uint8_t, void_param, , "default serialization"),
+	       VOID (uint8_t, default_serialization, , "default serialization"),
 	       (mr_enum_param_t, enum_param, , "parameters specific for enums"),
 	       (mr_struct_param_t, struct_param, , "parameters specific for structures"),
 	       )
@@ -361,11 +362,10 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter descriptor flag bitfield values"),
-		BITFIELD (bool, is_null, :1),
-		BITFIELD (bool, is_referenced, :1),
-		BITFIELD (bool, is_content_reference, :1),
-		BITFIELD (bool, is_opaque_data, :1),
-		BITFIELD (bool, unnamed, :1, "by default all fields are named, but anonymous union"),
+		BITFIELD (bool, is_null, :1, "is a null pointer"),
+		BITFIELD (bool, is_referenced, :1, "pointer is already serialized somewhere else"),
+		BITFIELD (bool, is_content_reference, :1, "pointers on string content may reffer only on string pointer"),
+		BITFIELD (bool, is_opaque_data, :1, "opaque serialization of resizeable pointer to XDR"),
 		)
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
@@ -375,13 +375,13 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 		)
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
-		POINTER (char, str, , { .offset = offsetof (mr_substr_t, length) }, "offset"),
-		(size_t, length),
+		POINTER (char, str, "pointer on substring", { .offset = offsetof (mr_substr_t, length) }, "offset"),
+		(size_t, length, , "length of the substring"),
 		)
 
 TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
-		(mr_substr_t, substr),
-		(void, unquote, (mr_substr_t *, char *)),
+		(mr_substr_t, substr, , "substring pointer and length"),
+		(void, unquote, (mr_substr_t *, char *), "unquote function"),
 		)
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
@@ -397,7 +397,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
 		ANON_UNION (type_specific),
-		VOID (uint8_t, vt_void, , "no serialization by default"),
+		VOID (uint8_t, default_serialization, , "no serialization by default"),
 		long long int vt_int,
 		long double vt_float,
 		complex long double vt_complex,
@@ -425,7 +425,8 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(char *, name, , "name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
-		(mr_ptrdes_flags_t, flags),
+		(mr_ptrdes_flags_t, flags, , "packed flags"),
+		BITFIELD (bool, unnamed, :1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
 		BITFIELD (bool, non_persistent, :1, "true if field descriptor is allocated on stack"),
 		BITFIELD (bool, ud_is_ic, :1, "true if union discriminator is an indexed collection"),
 		BITFIELD (unsigned, ud_count, :3, "size of union discriminator in place list"),

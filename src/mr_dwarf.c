@@ -617,7 +617,7 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
     {
       assert (mr_die->children[i].tag == _DW_TAG_subrange_type);
       count *= dimension;
-      dimension = 1;
+      dimension = 0;
       mr_dw_attribute_t * attr = die_attribute (&mr_die->children[i], _DW_AT_count);
       if (attr != NULL)
 	{
@@ -1094,7 +1094,11 @@ process_td (mr_ptr_t key, const void * context)
 	  }
 
 	if (MR_TYPE_ARRAY == fdp->mr_type)
-	  fdp->size *= fdp->param.array_param.count;
+	  {
+	    fdp->size *= fdp->param.array_param.count;
+	    if (MR_TYPE_CHAR == fdp->mr_type_aux)
+	      fdp->mr_type = MR_TYPE_CHAR_ARRAY;
+	  }
 
 	if ((fdp->name.str != NULL) &&
 	    ((MR_TYPE_UNION == fdp->mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux)))
@@ -1135,11 +1139,12 @@ free_td (mr_ptr_t key, const void * context)
 static void
 tweak_mr_conf ()
 {
-  mr_type_void_fields ("mr_td_t", "field_by_name", "attr", "meta", "res", "res_type", "mr_size", NULL);
-  mr_type_void_fields ("mr_fd_t", "self_ptr", "mr_size", NULL);
+  mr_type_void_fields ("mr_td_t", "field_by_name", "meta", "res", "res_type", "mr_size", "is_dynamically_allocated", NULL);
+  mr_type_void_fields ("mr_fd_t", "self_ptr", "mr_size", "non_persistent", NULL);
   mr_type_void_fields ("mr_struct_param_t", "field_by_offset", NULL);
   mr_type_void_fields ("mr_enum_param_t", "enum_by_value", "is_bitmask", NULL);
-  mr_type_void_fields ("mr_hashed_string_t", "hash_value", "padding", NULL);
+  mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized", NULL);
+  mr_type_void_fields ("mr_hashed_string_t", "hash_value", NULL);
 }
 
 int

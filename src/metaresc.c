@@ -676,7 +676,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
 	  ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
 	  ptrdes->type = parent_fdp->type;
 	  ptrdes->name = parent_fdp->name.str;
-	  ptrdes->flags.unnamed = parent_fdp->unnamed;
+	  ptrdes->unnamed = parent_fdp->unnamed;
 	  ptrdes->non_persistent = parent_fdp->non_persistent;
 	  ptrdes->MR_SIZE = parent_fdp->size;
 
@@ -1670,6 +1670,9 @@ mr_init_bitfield (mr_fd_t * fdp)
     return;
   
   fdp->param.bitfield_param.initialized = true;
+
+  if (NULL == fdp->param.bitfield_param.bitfield)
+    return;
   
   for (i = 0; i < fdp->param.bitfield_param.size; ++i)
     if (fdp->param.bitfield_param.bitfield[i])
@@ -1983,20 +1986,26 @@ mr_type_void_fields (char * type, char * name, ...)
   va_start (args, name);
 
   if (type == NULL)
-    return;
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return;
+    }
+  
   mr_td_t * tdp = mr_get_td_by_name (type);
   if (tdp == NULL)
-    return;
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
+      return;
+    }
 
   for ( ; name; name = va_arg (args, char *))
     {
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
+      if (NULL == fdp)
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_FIELD_NOT_FOUND, name, type);
       if ((fdp != NULL) && (fdp->mr_type != MR_TYPE_VOID))
 	{
-	  if ((fdp->mr_type != MR_TYPE_BITFIELD) &&
-	      (fdp->mr_type != MR_TYPE_ARRAY) &&
-	      (fdp->mr_type != MR_TYPE_POINTER))
-	    fdp->mr_type_aux = fdp->mr_type;
+	  fdp->mr_type_aux = fdp->mr_type;
 	  fdp->mr_type = MR_TYPE_VOID;
 	}
     }
