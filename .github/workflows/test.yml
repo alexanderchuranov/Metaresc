@@ -9,10 +9,16 @@ jobs:
       - name: install dependencies
         run: |
           sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check libdwarf-dev
+      - name: autoconf/automake
+        run: |
           ./autogen.sh
-          ./configure
+      - name: check with gcc
+        run: |
+          ./configure CC=gcc
           make check
           make distclean
+      - name: check with clang
+        run: |
           ./configure CC=clang
           make check
           make distclean
