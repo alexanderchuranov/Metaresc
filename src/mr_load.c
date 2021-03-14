@@ -1,7 +1,6 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
-#define static
 #ifdef HAVE_CONFIG_H
 #include <mr_config.h>
 #endif /* HAVE_CONFIG_H */
@@ -18,6 +17,15 @@
 #include <mr_load.h>
 #include <mr_value.h>
 #include <lexer.h>
+
+TYPEDEF_STRUCT (mr_load_node_context_t,
+		int idx,
+		(mr_ra_ptrdes_t *, ptrs)
+		)
+
+TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
+
+TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
 
 /**
  * Post load references setting. If node was marked as references
