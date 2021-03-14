@@ -30,16 +30,17 @@ endif
 endif
 
 dw_export.$(OBJEXT): dw_export.h dw_types.h
-if OSX
 dw_export.h: $(top_srcdir)/src/libmetaresc.la
+if OSX
 	dsymutil $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?`
+endif
 	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
+
+if OSX
 dw_types.h: dw_types
 	dsymutil .libs/$?
 	$(top_srcdir)/src/mr_dwarf .libs/$? > $@
 else
-dw_export.h: $(top_srcdir)/src/libmetaresc.la
-	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
 dw_types.h: dw_types.$(OBJEXT)
 	$(top_srcdir)/src/mr_dwarf $? > $@
 endif
