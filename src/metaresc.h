@@ -1145,6 +1145,27 @@
 
 #endif /* HAVE_LIBXML2 */
 
+#ifndef MR_PRINT_FD
+#define MR_PRINT_FD stdout
+#endif
+
+#define MR_PRINT_STRUCT(TYPE, PTR) ({			\
+      char * _dump_ = MR_SAVE_CINIT (TYPE, PTR);	\
+      int rv = 0;					\
+      if (_dump_)					\
+	{						\
+	  rv = fprintf (MR_PRINT_FD, "%s", _dump_);	\
+	  MR_FREE (_dump_);				\
+	}						\
+      rv;						\
+    })
+
+#define MR_PRINT_VALUE(X) mr_print_value (MR_PRINT_FD, MR_TYPE_DETECT (__typeof__ (X)), X)
+
+#define MR_PRINT_ONE_ELEMENT(X) + MR_IF_ELSE (MR_IS_IN_PAREN (X)) (MR_PRINT_STRUCT X) (MR_PRINT_VALUE (X))
+
+#define MR_PRINT(...) (0 MR_FOREACH (MR_PRINT_ONE_ELEMENT, __VA_ARGS__))
+
 typedef char * string_t;
 typedef char mr_string_t[1];
 typedef long int long_int_t;
@@ -1231,6 +1252,7 @@ extern void mr_message (const char * file_name, const char * func_name, int line
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
+extern int mr_print_value (FILE * fd, int mr_type, ...);
 
 extern char * mr_get_static_field_name (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);

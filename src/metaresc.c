@@ -469,6 +469,52 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
   return (-1);
 }
 
+int
+mr_print_value (FILE * fd, int mr_type, ...)
+{
+  static const char const * formats[] =
+    {
+      [MR_TYPE_INT8]   = "%" SCNi8,
+      [MR_TYPE_UINT8]  = "%" SCNu8,
+      [MR_TYPE_INT16]  = "%" SCNi16,
+      [MR_TYPE_UINT16] = "%" SCNu16,
+      [MR_TYPE_INT32]  = "%" SCNi32,
+      [MR_TYPE_UINT32] = "%" SCNu32,
+      [MR_TYPE_INT64]  = "%" SCNi64,
+      [MR_TYPE_UINT64] = "%" SCNu64,
+      [MR_TYPE_FLOAT]  = "%g",
+      [MR_TYPE_DOUBLE] = "%g",
+      [MR_TYPE_LONG_DOUBLE] = "%Lg",
+      [MR_TYPE_CHAR]   = "%c",
+      [MR_TYPE_CHAR_ARRAY] = "%s",
+      [MR_TYPE_STRING] = "%s",
+    };
+  int rv = 0;
+  va_list args;
+  va_start (args, mr_type);
+
+  if ((mr_type < sizeof (formats) / sizeof (formats[0])) &&
+      (formats[mr_type] != NULL))
+    rv = vprintf (formats[mr_type], args);
+  else
+    switch (mr_type)
+      {
+      case MR_TYPE_BOOL:
+	{
+	  bool value = va_arg (args, int);
+	  if (value)
+	    rv = printf ("true");
+	  else
+	    rv = printf ("false");
+	  break;
+	}
+      default:
+	break;
+      }
+  va_end (args);
+  return (rv);
+}
+
 /**
  * Allocate element for pointer descriptor in resizable array.
  * @param ptrs resizable array with pointers on already saved structures
