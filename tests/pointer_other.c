@@ -27,7 +27,7 @@ static int warnings = 0;
 static void
 msg_handler (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args)
 {
-  if ((MR_MESSAGE_SAVE_ENUM == message_id) || (MR_MESSAGE_SAVE_BITMASK == message_id))
+  if (MR_MESSAGE_SAVE_ENUM == message_id)
     ++warnings;
 }
 
