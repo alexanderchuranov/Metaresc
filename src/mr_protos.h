@@ -174,7 +174,6 @@ TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void
 TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
 		(char *, str, , "key field"),
 		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
-		VOID (uint8_t, padding, [sizeof (void*) - sizeof (mr_hash_value_t)]),
 		)
 
 TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
