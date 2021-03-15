@@ -1149,7 +1149,14 @@
 #define MR_PRINT_FD stdout
 #endif
 
-#define MR_PRINT_STRUCT(TYPE, PTR) ({			\
+#define EQ_2_2 0
+
+#define MR_PRINT_STRUCT(...)				\
+  MR_IF_ELSE (MR_PASTE2 (EQ_2_, MR_NARG (__VA_ARGS__)))	\
+    (MR_PRINT_VALUE (__VA_ARGS__))			\
+    (MR_PRINT_STRUCT_ (__VA_ARGS__))
+
+#define MR_PRINT_STRUCT_(TYPE, PTR) ({			\
       char * _dump_ = MR_SAVE_CINIT (TYPE, PTR);	\
       int rv = 0;					\
       if (_dump_)					\
