@@ -12,22 +12,18 @@ TYPEDEF_STRUCT (character_place_t,
 
 int main ()
 {
-  char * serialized = MR_SAVE_CINIT (mr_td_t, &MR_DESCRIPTOR_PREFIX (color_t));
-  if (serialized)
-    {
-      printf ("color_t enum desciptor\n%s\n", serialized);
-      MR_FREE (serialized);
-    }
-
-  printf("RED: %i\nORANGE: %i\nYELLOW: %i\nGREEN: %i\nBLUE: %i\nPURPLE: %i\nPINK: %i\nBROWN: %i\n",
-         RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, PINK, BROWN);
+  MR_PRINT ("color_t enum desciptor\n", (mr_td_t, &MR_DESCRIPTOR_PREFIX (color_t)));
+  MR_PRINT ("RED: ", RED, "\n",
+	    "ORANGE: ", ORANGE, "\n",
+	    "YELLOW: ", YELLOW, "\n",
+	    "GREEN: ", GREEN, "\n",
+	    "BLUE: ", BLUE, "\n",
+	    "PURPLE: ", PURPLE, "\n",
+	    "PINK: ", PINK, "\n",
+	    "BROWN: ", BROWN, "\n");
 
   character_place_t place = { 'A', RED, BROWN };
-  serialized = MR_SAVE_CINIT (character_place_t, &place);
-  if (serialized)
-    {
-      printf ("place = %s", serialized);
-      MR_FREE (serialized);
-    }
+  MR_PRINT ("place = ", (character_place_t, &place));
+
   return (EXIT_SUCCESS);
 }

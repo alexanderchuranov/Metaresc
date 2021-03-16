@@ -11,15 +11,6 @@ int main ()
   if (NULL == td)
     printf ("error: can't obtain type information for type '%s'\n", type);
   else
-    {
-      char * td_serialized = MR_SAVE_CINIT (mr_td_t, td);
-      if (NULL == td_serialized)
-	printf ("error: can't serialize desciptor for type '%s'\n", type);
-      else
-	{
-	  printf ("Type desciptor for type '%s' is\n%s\n", type, td_serialized);
-	  MR_FREE (td_serialized);
-	}
-    }
+    MR_PRINT ("Type desciptor for type '", type, "' is\n", (mr_td_t, td));
   return (EXIT_SUCCESS);
 }

@@ -10,13 +10,6 @@ TYPEDEF_STRUCT (with_f_pointers_t,
 
 int main ()
 {
-  char * serialized = MR_SAVE_CINIT (mr_td_t, mr_get_td_by_name ("with_f_pointers_t"));
-  if (NULL == serialized)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s\n", serialized);
-      MR_FREE (serialized);
-    }
+  MR_PRINT ("with_f_pointers_t = ", (mr_td_t, mr_get_td_by_name ("with_f_pointers_t")));
   return (EXIT_SUCCESS);
 }

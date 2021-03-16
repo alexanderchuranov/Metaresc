@@ -8,13 +8,6 @@ TYPEDEF_FUNC (ATTRIBUTES (__attribute__ ((aligned (sizeof (int64_t)))) , "functi
 
 int main ()
 {
-  char * serialized = MR_SAVE_CINIT (mr_td_t, mr_get_td_by_name ("func_t"));
-  if (NULL == serialized)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s\n", serialized);
-      MR_FREE (serialized);
-    }
+  MR_PRINT ("func_t = ", (mr_td_t, mr_get_td_by_name ("func_t")));
   return (EXIT_SUCCESS);
 }
