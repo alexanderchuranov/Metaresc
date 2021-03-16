@@ -1151,27 +1151,32 @@
 
 #define EQ_2_2 0
 
-#define MR_PRINT_STRUCT(...)				\
+#define MR_PRINT_STRUCT(FD, ...)			\
   MR_IF_ELSE (MR_PASTE2 (EQ_2_, MR_NARG (__VA_ARGS__)))	\
-    (MR_PRINT_VALUE (__VA_ARGS__))			\
-    (MR_PRINT_STRUCT_ (__VA_ARGS__))
+    (MR_PRINT_VALUE (FD, __VA_ARGS__))			\
+    (MR_PRINT_STRUCT_ (FD, __VA_ARGS__))
 
-#define MR_PRINT_STRUCT_(TYPE, PTR) ({			\
+#define MR_PRINT_STRUCT_(FD, TYPE, PTR) ({		\
       char * _dump_ = MR_SAVE_CINIT (TYPE, PTR);	\
       int rv = 0;					\
       if (_dump_)					\
 	{						\
-	  rv = fprintf (MR_PRINT_FD, "%s", _dump_);	\
+	  rv = fprintf (FD, "%s", _dump_);		\
 	  MR_FREE (_dump_);				\
 	}						\
       rv;						\
     })
 
-#define MR_PRINT_VALUE(X) mr_print_value (MR_PRINT_FD, MR_TYPE_DETECT (__typeof__ (X)), X)
+#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), X)
 
-#define MR_PRINT_ONE_ELEMENT(X) + MR_IF_ELSE (MR_IS_IN_PAREN (X)) (MR_PRINT_STRUCT X) (MR_PRINT_VALUE (X))
+#define MR_PRINT_ONE_ELEMENT(FD, X, I)		\
+  MR_IF_ELSE (MR_IS_IN_PAREN (X))		\
+    (MR_PRINT_STRUCT (FD, MR_REMOVE_PAREN (X)))	\
+    (MR_PRINT_VALUE (FD, X))
 
-#define MR_PRINT(...) (0 MR_FOREACH (MR_PRINT_ONE_ELEMENT, __VA_ARGS__))
+#define MR_ADD(NAME, I, REC, X) (REC + X)
+#define MR_PRINT(...) (void)MR_FPRINT (stdout, __VA_ARGS__)
+#define MR_FPRINT(FD, ...) (MR_FOR (FD, MR_NARG (__VA_ARGS__), MR_ADD, MR_PRINT_ONE_ELEMENT, __VA_ARGS__))
 
 typedef char * string_t;
 typedef char mr_string_t[1];
