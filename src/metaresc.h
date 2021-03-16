@@ -1174,7 +1174,7 @@
     (MR_PRINT_STRUCT (FD, MR_REMOVE_PAREN (X)))	\
     (MR_PRINT_VALUE (FD, X))
 
-#define MR_ADD(NAME, I, REC, X) (REC + X)
+#define MR_ADD(NAME, I, REC, X) REC + X
 #define MR_PRINT(...) (void)MR_FPRINT (stdout, __VA_ARGS__)
 #define MR_FPRINT(FD, ...) (MR_FOR (FD, MR_NARG (__VA_ARGS__), MR_ADD, MR_PRINT_ONE_ELEMENT, __VA_ARGS__))
 
