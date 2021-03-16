@@ -2,11 +2,6 @@
 
 int main ()
 {
-  char * str = MR_SAVE_CINIT (mr_conf_t, &mr_conf);
-  if (str)
-    {
-      printf ("mr_conf = %s\n", str);
-      MR_FREE (str);
-    }
-  return 0;
+  MR_PRINT ("mr_conf = ", (mr_conf_t, &mr_conf));
+  return (EXIT_SUCCESS);
 }

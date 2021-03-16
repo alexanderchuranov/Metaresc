@@ -495,7 +495,7 @@ mr_print_value (FILE * fd, int mr_type, ...)
 
   if ((mr_type < sizeof (formats) / sizeof (formats[0])) &&
       (formats[mr_type] != NULL))
-    rv = vprintf (formats[mr_type], args);
+    rv = vfprintf (fd, formats[mr_type], args);
   else
     switch (mr_type)
       {
@@ -503,9 +503,9 @@ mr_print_value (FILE * fd, int mr_type, ...)
 	{
 	  bool value = va_arg (args, int);
 	  if (value)
-	    rv = printf ("true");
+	    rv = fprintf (fd, "true");
 	  else
-	    rv = printf ("false");
+	    rv = fprintf (fd, "false");
 	  break;
 	}
       default:
