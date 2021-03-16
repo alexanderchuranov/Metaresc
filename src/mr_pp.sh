@@ -6,8 +6,8 @@ if [ x${PP_DEPTH} = x ]; then
     PP_DEPTH=128
 fi
 
-echo "#ifndef _RLPP_H_"
-echo "#define _RLPP_H_" 
+echo "#ifndef _MR_PP_H_"
+echo "#define _MR_PP_H_"
 echo 
 
 echo "#define MR_FOREACH0(...)" 
@@ -63,4 +63,4 @@ done
 echo "0)" 
 echo 
 
-echo "#endif /* _RLPP_H_ */" 
+echo "#endif /* _MR_PP_H_ */"
