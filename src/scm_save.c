@@ -39,7 +39,7 @@ static int scm_named_fields[MR_TYPE_LAST] = {
   static int scm_save_complex_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) \
   {									\
     int count = 0;							\
-    count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, "(+ "));		\
+    count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, "(+ "));	\
     count += TRY_CATCH_THROW (mr_ra_printf_complex_ ## TYPE (mr_ra_str, ptrdes, " ")); \
     count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, ')'));	\
     return (count);							\
@@ -53,8 +53,8 @@ static int
 scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (*(bool*)ptrdes->data.ptr ?
-	  mr_ra_printf (mr_ra_str, MR_SCM_TRUE) :
-	  mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
+	  mr_ra_append_string (mr_ra_str, MR_SCM_TRUE) :
+	  mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
 }
 
 static int
@@ -119,10 +119,10 @@ static int
 scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   if (true == ptrdes->flags.is_null)
-    return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
+    return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
   if (func_str)
-    return (mr_ra_printf (mr_ra_str, "%s", func_str));
+    return (mr_ra_append_string (mr_ra_str, (char*)func_str));
   else
     return (mr_ra_printf (mr_ra_str, "%p", *(void**)ptrdes->data.ptr));
 }
@@ -166,7 +166,7 @@ scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   char * str = *(char**)ptrdes->data.ptr;
   if ((NULL == str) || (ptrdes->ref_idx >= 0))
-    return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
+    return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
   else
     return (mr_ra_printf_quote_string (mr_ra_str, str, "\\x%02x;"));
 }
@@ -180,7 +180,7 @@ scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf (mr_ra_str, MR_SCM_FALSE));
+  return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
 }
 
 /**
@@ -307,12 +307,12 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 			      limit_level * MR_SCM_INDENT_SPACES, "") < 0)
 	      return (NULL);
 	  if (MR_SCM_NAMED_FIELDS == named_node)
-	    if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
+	    if (mr_ra_append_string (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
 	      return (NULL);
 	  if (MR_TYPE_ARRAY == ptrs->ra[idx].mr_type)
-	    if (mr_ra_printf (&mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
+	    if (mr_ra_append_string (&mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
 	      return (NULL);
-	  if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_START) < 0)
+	  if (mr_ra_append_string (&mr_ra_str, MR_SCM_COMPAUND_START) < 0)
 	    return (NULL);
 	}
 

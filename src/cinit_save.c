@@ -88,7 +88,7 @@ cinit_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "{\n"));
+  return (mr_ra_append_string (mr_ra_str, "{\n"));
 }
 
 static int
@@ -97,7 +97,7 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
 
   if (func_str) /* pointer serialized as name */
-    return (mr_ra_printf (mr_ra_str, "%s", func_str));
+    return (mr_ra_append_string (mr_ra_str, (char*)func_str));
   else
     {
       char * type = (MR_TYPE_FUNC == ptrdes->mr_type) ? MR_VOIDP_T_STR : ptrdes->type;
@@ -120,7 +120,7 @@ cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "\"\", {\n"));
+  return (mr_ra_append_string (mr_ra_str, "\"\", {\n"));
 }
 
 static mr_ra_printf_t cinit_save_tbl[] = {
@@ -162,7 +162,7 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "]";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "[\n"));
+  return (mr_ra_append_string (mr_ra_str, "[\n"));
 }
 
 static mr_ra_printf_t json_save_tbl[] = {
@@ -217,9 +217,9 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 
   while (idx >= 0)
     {
-      /* route saving handler */
+      memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
+      
       mr_ra_printf_t save_handler = mr_ra_printf_void;
-      /* route saving handler */
       if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && printf_tbl[ptrs->ra[idx].mr_type])
 	save_handler = printf_tbl[ptrs->ra[idx].mr_type];
       else
@@ -265,8 +265,6 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	  
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
-	      --level;
-	      idx = ptrs->ra[idx].parent;
 	      if (ptrs->ra[idx].res.data.string)
 		{
 		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
@@ -277,7 +275,21 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 		  if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
 		    return (NULL);
 		}
+	      --level;
+	      idx = ptrs->ra[idx].parent;
 	    }
+	  
+	  if (ptrs->ra[idx].res.data.string)
+	    {
+	      if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
+		return (NULL);
+	      if (ptrs->ra[idx].next >= 0)
+		if (mr_ra_append_string (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
+		  return (NULL);
+	      if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+		return (NULL);
+	    }
+	  
 	  idx = ptrs->ra[idx].next;
 	}
     }
