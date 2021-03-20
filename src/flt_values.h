@@ -59,6 +59,8 @@
 #define LD_LDBL_MAX ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa1 = -1, .mantissa0 = -1, .exponent = -2, .sign = PLUS, }, }, }).long_double
 #define LD_LDBL_MIN ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa1 = 0, .mantissa0 = (1 << 31), .exponent = 1, .sign = PLUS, }, }, }).long_double
 
+#define MR_SIZEOF_LONG_DOUBLE (sizeof (ieee_854_long_double_t))
+
 TYPEDEF_ENUM (sign_t, (PLUS, = 0), (MINUS, = 1))
 
 TYPEDEF_STRUCT (ieee_754_float_t,
@@ -108,21 +110,21 @@ TYPEDEF_UNION (ieee_double_t,
 	       uint64_t uint64,
 	       )
 
-TYPEDEF_STRUCT (ieee_854_long_double_t,
+TYPEDEF_STRUCT (ieee_854_long_double_t, ATTRIBUTES (__attribute__ ((packed))),
 		BITFIELD (unsigned int, mantissa1, :32),
 		BITFIELD (unsigned int, mantissa0, :32),
 		BITFIELD (unsigned int, exponent, :15),
 		BITFIELD (sign_t, sign, :1),
-		VOID (unsigned int, empty, :16))
+		)
 
-TYPEDEF_STRUCT (ieee_854_long_double_nan_t,
+TYPEDEF_STRUCT (ieee_854_long_double_nan_t, ATTRIBUTES (__attribute__ ((packed))),
 		BITFIELD (unsigned int, mantissa1, :32),
 		BITFIELD (unsigned int, mantissa0, :30),
 		BITFIELD (bool, quiet_nan, :1),
 		BITFIELD (unsigned int, one, :1),
 		BITFIELD (unsigned int, exponent, :15),
 		BITFIELD (sign_t, sign, :1),
-		VOID (unsigned int, empty, :16))
+		)
 
 TYPEDEF_ENUM (ieee_854_long_double_nan_enum_t,
 	      (IEEE_854_LONG_DOUBLE_NAN_ENUM_T, = (1 << 15) - 1, "ieee_854_long_double_nan"),
