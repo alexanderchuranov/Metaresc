@@ -161,7 +161,7 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 
 	default:
-	  memcpy (ptrdes->data.ptr, &ptrdes->load_params.mr_value.vt_int,
+	  memcpy (ptrdes->data.ptr, ptrdes->load_params.mr_value.vt_int_,
 		  MR_MIN (ptrdes->fdp->size, sizeof (ptrdes->load_params.mr_value.vt_int)));
 	  break;
 	}

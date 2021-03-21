@@ -127,11 +127,13 @@ static char *
 mr_load_long_double (char * str, mr_value_t * mr_value)
 {
   int offset;
-  if (1 != sscanf (str, "%Lg%n", &mr_value->vt_float, &offset))
+  long double value;
+  if (1 != sscanf (str, "%Lg%n", &value, &offset))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, str);
       return (NULL);
     }
+  mr_value->vt_float = value;
   return (&str[offset]);
 }
 
