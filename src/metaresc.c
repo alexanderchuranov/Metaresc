@@ -56,6 +56,7 @@ mr_conf_t mr_conf = {
   .type_by_name = {
     .ic_type = MR_IC_UNINITIALIZED,
   },
+  .enum_max_length = 0,
   .enum_by_name = {
     .ic_type = MR_IC_UNINITIALIZED,
   },
@@ -1598,6 +1599,9 @@ mr_add_enum (mr_td_t * tdp)
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_ENUMS, fdp->name.str, tdp->type.str, value, fdp->type, fdp->param.enum_param._unsigned);
 	  status = MR_FAILURE;
 	}
+      ssize_t enum_name_length = strlen (fdp->name.str);
+      if (enum_name_length > mr_conf.enum_max_length)
+	mr_conf.enum_max_length = enum_name_length;
     }
 
   return (status);

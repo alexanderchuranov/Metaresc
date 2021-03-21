@@ -22,32 +22,36 @@ static char *
 mr_get_enum (char * str, uint64_t * data)
 {
   char * name = str;
-  int size;
 
   while (isalnum (*str) || (*str == '_'))
     ++str;
-  size = str - name;
+  
+  size_t size = str - name;
 
-  {
-    char name_[size + 1];
-    memcpy (name_, name, size);
-    name_[size] = 0;
+  if (size > mr_conf.enum_max_length)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name);
+      return (NULL);
+    }
+  
+  char name_[size + 1];
+  memcpy (name_, name, size);
+  name_[size] = 0;
 
-    if (0 == strcmp ("false", name_))
-      *data = false;
-    else if (0 == strcmp ("true", name_))
-      *data = true;
-    else
-      {
-	mr_fd_t * fdp = mr_get_enum_by_name (name_);
-	if (NULL == fdp)
-	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
-	    return (NULL);
-	  }
-	*data = fdp->param.enum_param._unsigned;
-      }
-  }
+  if (0 == strcmp ("false", name_))
+    *data = false;
+  else if (0 == strcmp ("true", name_))
+    *data = true;
+  else
+    {
+      mr_fd_t * fdp = mr_get_enum_by_name (name_);
+      if (NULL == fdp)
+	{
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
+	  return (NULL);
+	}
+      *data = fdp->param.enum_param._unsigned;
+    }
   return (str);
 }
 
