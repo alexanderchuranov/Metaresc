@@ -1266,6 +1266,7 @@ extern int mr_print_value (FILE * fd, int mr_type, ...);
 
 extern char * mr_get_static_field_name (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
+extern mr_status_t mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 
 extern int64_t mr_get_enum_value (mr_td_t * tdp, void * data);

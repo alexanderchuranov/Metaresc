@@ -25,8 +25,6 @@ TYPEDEF_STRUCT (mr_load_node_context_t,
 
 TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
 
-TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
-
 /**
  * Post load references setting. If node was marked as references
  * it should be substitute with actual pointer. This substition
@@ -148,7 +146,6 @@ mr_status_t
 mr_load_integer (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
-
   if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
@@ -158,7 +155,7 @@ mr_load_integer (int idx, mr_load_data_t * mr_load_data)
       MR_FOREACH (CASE_SET_VALUE_BY_TYPE, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
       
     case MR_TYPE_ENUM:
-      switch (ptrdes->fdp->size) //NB! size_effective
+      switch (ptrdes->fdp->size)
 	{
 #define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
 	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
@@ -212,10 +209,16 @@ mr_get_func_wrapper (char * func_name, void * dst)
 #define BUF_SIZE_ON_STACK (1 << 12)
 #endif /* BUF_SIZE_ON_STACK */
 
-static mr_status_t
+mr_status_t
 mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg)
 {
-  mr_status_t status = MR_SUCCESS;
+  if (NULL == quoted_substr->substr.str)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (MR_FAILURE);
+    }
+
+  mr_status_t status;
 
   if ((NULL == quoted_substr->unquote) &&
       (0 == quoted_substr->substr.str[quoted_substr->substr.length]))
@@ -244,7 +247,6 @@ mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str
 	}
       else
 	quoted_substr->unquote (&quoted_substr->substr, dst);
-  
       status = process_quoted_str (dst, arg);
 
       if (size >= BUF_SIZE_ON_STACK)

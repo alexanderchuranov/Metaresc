@@ -375,18 +375,20 @@ TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
 		)
 
 TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
-		(mr_substr_t, substr, , "substring pointer and length"),
 		(void, unquote, (mr_substr_t *, char *), "unquote function"),
+		(mr_substr_t, substr, , "substring pointer and length"),
 		)
+
+TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      (MR_VT_VOID, = 0, "vt_void"),
+	      (MR_VT_CHAR, , "vt_char"),
 	      (MR_VT_QUOTED_SUBSTR, , "vt_quoted_substr"),
+	      (MR_VT_ID, , "vt_quoted_substr"),
 	      (MR_VT_INT, , "vt_int"),
 	      (MR_VT_FLOAT, , "vt_float"),
 	      (MR_VT_COMPLEX, , "vt_complex"),
-	      (MR_VT_CHAR, , "vt_char"),
-	      (MR_VT_ID, , "vt_quoted_substr"),
 	      )
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),

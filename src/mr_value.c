@@ -12,8 +12,6 @@
 #include <metaresc.h>
 #include <mr_value.h>
 
-#define MR_LOAD_VAR(VAR, STR) mr_load_var (MR_TYPE_DETECT (__typeof__ (*VAR)), STR, VAR)
-
 /**
  * Read enum value from string
  * @param data pointer on place to save value
@@ -101,30 +99,31 @@ mr_get_int (char * str, uint64_t * data)
 }
 
 static char * 
-mr_load_bitmask (char * str, uint64_t * data)
+mr_load_bitmask (char * str, mr_value_t * mr_value)
 {
-  *data = 0;
+  uint64_t accum = 0;
   for (;;)
     {
       uint64_t value;
       str = mr_get_int (str, &value);
       if (NULL == str)
 	return (NULL);
-      *data |= value;
+      accum |= value;
       while (isspace (*str))
 	++str;
       if (*str != '|')
 	break;
       ++str;
     }
+  mr_value->vt_int = accum;
   return (str);
 }
 
 static char *
-mr_load_long_double (char * str, long double * data)
+mr_load_long_double (char * str, mr_value_t * mr_value)
 {
   int offset;
-  if (1 != sscanf (str, "%Lg%n", data, &offset))
+  if (1 != sscanf (str, "%Lg%n", &mr_value->vt_float, &offset))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, str);
       return (NULL);
@@ -133,15 +132,15 @@ mr_load_long_double (char * str, long double * data)
 }
 
 static char *
-mr_load_complex_long_double (char * str, complex long double * x)
+mr_load_complex_long_double (char * str, mr_value_t * mr_value)
 {
   int offset;
   long double real, imag;
 
   if (str[0] == 'I')
     {
-      __real__ * x = 0;
-      __imag__ * x = 1;
+      __real__ mr_value->vt_complex = 0;
+      __imag__ mr_value->vt_complex = 1;
       return (&str[1]);
     }
 
@@ -154,22 +153,22 @@ mr_load_complex_long_double (char * str, complex long double * x)
   char * tail = &str[offset];
   if (tail[0] == 'I')
     {
-      __real__ * x = 0;
-      __imag__ * x = real;
+      __real__ mr_value->vt_complex = 0;
+      __imag__ mr_value->vt_complex = real;
       return (&tail[1]);
     }
 
   if ((tail[0] != ' ') || (tail[1] != '+') || (tail[2] != ' '))
     {
-      __real__ * x = real;
-      __imag__ * x = 0;
+      __real__ mr_value->vt_complex = real;
+      __imag__ mr_value->vt_complex = 0;
       return (tail);
     }
   tail += 3;
   if (tail[0] == 'I')
     {
-      __real__ * x = real;
-      __imag__ * x = 1;
+      __real__ mr_value->vt_complex = real;
+      __imag__ mr_value->vt_complex = 1;
       return (tail);
     }
 
@@ -179,31 +178,32 @@ mr_load_complex_long_double (char * str, complex long double * x)
       return (NULL);
     }
 
-  __real__ * x = real;
-  __imag__ * x = imag;
+  __real__ mr_value->vt_complex = real;
+  __imag__ mr_value->vt_complex = imag;
   return (&tail[offset]);
 }
 
 static mr_status_t
-mr_load_var (mr_type_t mr_type, char * str, void * var)
+mr_load_var (char * str, void * arg)
 {
-  if ((NULL == str) || (NULL == var))
+  mr_value_t * mr_value = arg;
+  
+  if ((NULL == str) || (NULL == mr_value))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (MR_FAILURE);
     }
   
-  switch (mr_type)
+  switch (mr_value->value_type)
     {
-    case MR_TYPE_INT64:
-    case MR_TYPE_UINT64:
-      str = mr_load_bitmask (str, var);
+    case MR_VT_INT:
+      str = mr_load_bitmask (str, mr_value);
       break;
-    case MR_TYPE_LONG_DOUBLE:
-      str = mr_load_long_double (str, var);
+    case MR_VT_FLOAT:
+      str = mr_load_long_double (str, mr_value);
       break;
-    case MR_TYPE_COMPLEX_LONG_DOUBLE:
-      str = mr_load_complex_long_double (str, var);
+    case MR_VT_COMPLEX:
+      str = mr_load_complex_long_double (str, mr_value);
       break;
     default:
       break;
@@ -221,126 +221,118 @@ mr_load_var (mr_type_t mr_type, char * str, void * var)
   return (MR_SUCCESS);
 }
 
-#define MR_VALUE_CAST(VT_VALUE)						\
-  switch (value->value_type)						\
-    {									\
-    case MR_VT_INT: value->VT_VALUE = value->vt_int; break;		\
-    case MR_VT_FLOAT: value->VT_VALUE = value->vt_float; break;		\
-    case MR_VT_COMPLEX: value->VT_VALUE = value->vt_complex; break;	\
-    case MR_VT_QUOTED_SUBSTR:						\
-      if (NULL == value->vt_quoted_substr.substr.str)			\
-	{								\
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
-	  status = MR_FAILURE;						\
-	}								\
-      else								\
-	{								\
-	  __typeof__ (value->VT_VALUE) vt_value = 0;			\
-	  mr_quoted_substr_t * quoted_substr = &value->vt_quoted_substr; \
-	  if ((NULL == quoted_substr->unquote) &&			\
-	      (0 == quoted_substr->substr.str[quoted_substr->substr.length])) \
-	    status = MR_LOAD_VAR (&vt_value, quoted_substr->substr.str); \
-	  else								\
-	    {								\
-	      char dst[quoted_substr->substr.length + 1];		\
-	      if (NULL == quoted_substr->unquote)			\
-		{							\
-		  memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length); \
-		  dst[quoted_substr->substr.length] = 0;		\
-		}							\
-	      else							\
-		quoted_substr->unquote (&quoted_substr->substr, dst);	\
-	      status = MR_LOAD_VAR (&vt_value, dst);			\
-	    }								\
-	  if (MR_SUCCESS == status)					\
-	    {								\
-	      value->VT_VALUE = vt_value;				\
-	      value->value_type = value_type;				\
-	    }								\
-	}								\
-      break;								\
-    default:								\
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
-      status = MR_FAILURE;						\
-      break;								\
-    }
-
-static void
-mr_value_id (mr_value_t * value)
+static mr_status_t
+mr_value_id_to_int (char * str, void * arg)
 {
-  if (MR_VT_ID != value->value_type)
-    return;
-
-  value->value_type = MR_VT_INT;
-  if (NULL == value->vt_string)
-    value->vt_int = 0;
-  else
+  mr_value_t * mr_value = arg;
+  mr_fd_t * fdp = mr_get_enum_by_name (str);
+    
+  if (NULL == fdp)
     {
-      mr_fd_t * fdp;
-      mr_quoted_substr_t * quoted_substr = &value->vt_quoted_substr;
-      if ((NULL == quoted_substr->unquote) &&
-	  (0 == quoted_substr->substr.str[quoted_substr->substr.length]))
-	fdp = mr_get_enum_by_name (quoted_substr->substr.str);
-      else
-	{
-	  char dst[quoted_substr->substr.length + 1];
-  
-	  if (NULL == quoted_substr->unquote)
-	    {
-	      memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length);
-	      dst[quoted_substr->substr.length] = 0;
-	    }
-	  else
-	    quoted_substr->unquote (&quoted_substr->substr, dst);
-  
-	  fdp = mr_get_enum_by_name (dst);
-	}
-      
-      __typeof__ (value->vt_int) vt_int = 0;
-      if (NULL == fdp)
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, value->vt_string);
-      else
-	vt_int = fdp->param.enum_param._signed;
-      value->vt_int = vt_int;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, str);
+      return (MR_FAILURE);
     }
+  
+  mr_value->value_type = MR_VT_INT;
+  mr_value->vt_int = fdp->param.enum_param._signed;
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+mr_value_id (mr_value_t * mr_value)
+{
+  if (MR_VT_ID != mr_value->value_type)
+    return (MR_SUCCESS);
+
+  return (mr_process_quoted_str (&mr_value->vt_quoted_substr, mr_value_id_to_int, mr_value));
 }
 
 mr_status_t
-mr_value_cast (mr_value_type_t value_type, mr_value_t * value)
+mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 {
   mr_status_t status = MR_SUCCESS;
-  mr_value_id (value);
-  switch (value_type)
+
+  switch (mr_value->value_type)
     {
+    case MR_VT_ID:
+      status = mr_value_id (mr_value);
+      if (MR_SUCCESS != status)
+	return (status);
+      /* proceeding as int */
+      
     case MR_VT_INT:
-      MR_VALUE_CAST (vt_int);
+      switch (value_type)
+	{
+	case MR_VT_INT: break;
+	case MR_VT_FLOAT: mr_value->vt_float = mr_value->vt_int; break;
+	case MR_VT_COMPLEX: mr_value->vt_complex = mr_value->vt_int; break;
+	default: status = MR_FAILURE; break;
+	}
       break;
       
     case MR_VT_FLOAT:
-      MR_VALUE_CAST (vt_float);
+      switch (value_type)
+	{
+	case MR_VT_INT: mr_value->vt_int = mr_value->vt_float; break;
+	case MR_VT_FLOAT: break;
+	case MR_VT_COMPLEX: mr_value->vt_complex = mr_value->vt_float; break;
+	default: status = MR_FAILURE; break;
+	}
       break;
       
     case MR_VT_COMPLEX:
-      MR_VALUE_CAST (vt_complex);
+      switch (value_type)
+	{
+	case MR_VT_INT: mr_value->vt_int = mr_value->vt_complex; break;
+	case MR_VT_FLOAT: mr_value->vt_float = mr_value->vt_complex; break;
+	case MR_VT_COMPLEX: break;
+	default: status = MR_FAILURE; break;
+	}
+      break;
+      
+    case MR_VT_QUOTED_SUBSTR:
+      {
+	mr_value_t result = { .value_type = value_type };
+	status = mr_process_quoted_str (&mr_value->vt_quoted_substr, mr_load_var, &result);
+	if (MR_SUCCESS == status)
+	  *mr_value = result;
+      }
       break;
       
     default:
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
       status = MR_FAILURE;
       break;
     }
+  
+  if (MR_SUCCESS == status)
+    mr_value->value_type = value_type;
+  else
+    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
+
   return (status);
 }
 
 mr_status_t
 mr_value_neg (mr_value_t * value)
 {
-  mr_value_id (value);
   switch (value->value_type)
     {
-    case MR_VT_INT: value->vt_int = -value->vt_int; break;
-    case MR_VT_FLOAT: value->vt_float = -value->vt_float; break;
-    case MR_VT_COMPLEX: value->vt_complex = -value->vt_complex; break;
+    case MR_VT_ID:
+      if (MR_SUCCESS != mr_value_id (value))
+	return (MR_FAILURE);
+      /* proceeding as int */
+    case MR_VT_INT:
+      value->vt_int = -value->vt_int;
+      break;
+      
+    case MR_VT_FLOAT:
+      value->vt_float = -value->vt_float;
+      break;
+      
+    case MR_VT_COMPLEX:
+      value->vt_complex = -value->vt_complex;
+      break;
+      
     default:
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
       return (MR_FAILURE);
@@ -352,6 +344,8 @@ mr_value_neg (mr_value_t * value)
   mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
     mr_value_type_t result_type = MR_MAX (left->value_type, right->value_type);	\
+    if (result_type < MR_VT_INT)					\
+      result_type = MR_VT_INT;						\
     memset (result, 0, sizeof (*result));				\
     if ((MR_SUCCESS != mr_value_cast (result_type, left)) ||		\
 	(MR_SUCCESS != mr_value_cast (result_type, right)))		\
@@ -377,8 +371,10 @@ mr_value_neg (mr_value_t * value)
   mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
     memset (result, 0, sizeof (*result));				\
-    mr_value_id (left);							\
-    mr_value_id (right);						\
+    if (MR_SUCCESS != mr_value_id (left))				\
+      return (MR_FAILURE);						\
+    if (MR_SUCCESS != mr_value_id (right))				\
+      return (MR_FAILURE);						\
     if ((left->value_type != MR_VT_INT) || (right->value_type != MR_VT_INT)) \
       {									\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
