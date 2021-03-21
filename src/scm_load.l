@@ -37,11 +37,16 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_SCM_NUMBER); }
 {IMAGENARY_NUMBER} {
   yylval->value.value_type = MR_VT_COMPLEX;
-  __real__ yylval->value.vt_complex = 0;
-  __imag__ yylval->value.vt_complex = strtold (yytext, NULL);
+  yylval->value.vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = 0 }.ieee_854_long_double;
+  yylval->value.vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = strtold (yytext, NULL) }.ieee_854_long_double;
   return (TOK_SCM_NUMBER);
 }
-[Ii] { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = I; return (TOK_SCM_NUMBER); }
+[Ii] {
+  yylval->value.value_type = MR_VT_COMPLEX;
+  yylval->value.vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = 0 }.ieee_854_long_double;
+  yylval->value.vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = 1 }.ieee_854_long_double;
+  return (TOK_SCM_NUMBER);
+}
 
 #f { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_SCM_NUMBER); }
 #t { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_SCM_NUMBER); }

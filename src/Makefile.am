@@ -41,7 +41,7 @@ if HAVE_XDR
   libmetaresc_la_SOURCES += xdr.c
 endif
 
-pkginclude_HEADERS = metaresc.h mr_protos.h mr_export.h mr_pp.h
+pkginclude_HEADERS = metaresc.h mr_protos.h flt_values.h mr_export.h mr_pp.h
 
 xml1_load.tab.c: xml1_load.y xml1_load.lex.h
 xml1_load.lex.c: xml1_load.l xml1_load.tab.h
