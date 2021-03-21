@@ -369,12 +369,12 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 		(mr_fd_t *, fdp, , "discriminated union field descriptor"),
 		)
 
-TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES ( , "substring"),
+TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES (__attribute__ ((packed)), "substring"),
 		POINTER (char, str, "pointer on substring", { .offset = offsetof (mr_substr_t, length) }, "offset"),
 		(size_t, length, , "length of the substring"),
 		)
 
-TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES ( , "quoted substring"),
+TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES (__attribute__ ((packed)), "quoted substring"),
 		(void, unquote, (mr_substr_t *, char *), "unquote function"),
 		(mr_substr_t, substr, , "substring pointer and length"),
 		)
@@ -393,7 +393,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
-		ANON_UNION (type_specific),
+		ANON_UNION (type_specific, __attribute__ ((packed))),
 		VOID (uint8_t, default_serialization, , "no serialization by default"),
 		long long int vt_int,
 		long double vt_float,
