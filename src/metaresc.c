@@ -1094,7 +1094,6 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
   if (diff)
     return (diff);
 
-  x->ra[0].data_discriminator = y->ra[0].data_discriminator;
   x->ra[0].name = y->ra[0].name;
   x->ra[0].type = y->ra[0].type;
 
@@ -1112,7 +1111,6 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
       int child;
       for (child = x->ra[0].first_child; child >= 0; child = x->ra[child].next)
 	{
-	  x->ra[child].data_discriminator = y->ra[child].data_discriminator;
 	  x->ra[child].name = y->ra[child].name;
 	  x->ra[child].type = y->ra[child].type;
 	  diff = (x->ra[child].next > y->ra[child].next) -

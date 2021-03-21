@@ -676,14 +676,6 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 static int
 mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
 {
-#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
-  static char * type_name[MR_TYPE_LAST] = {
-    [MR_TYPE_CHAR_ARRAY] = "string",
-    MR_FOREACH (MR_TYPE_NAME,
-		string_t, char, bool,
-		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
-		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
-  };
   intptr_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   if (idx < 0)
@@ -702,9 +694,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   ra[idx].save_params.next_typed = -1;
   ra[idx].save_params.next_untyped = -1;
-
-  if (fdp->mr_type < MR_TYPE_LAST)
-    ra[idx].data_discriminator = type_name[fdp->mr_type];
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
@@ -762,6 +751,7 @@ static int
 mr_save_func (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_save_data->ptrs.ra[idx].non_serializable = true;
   if (NULL == *(void**)mr_save_data->ptrs.ra[idx].data.ptr)
     mr_save_data->ptrs.ra[idx].flags.is_null = true;
   return (1);
@@ -798,7 +788,6 @@ static int
 mr_save_enum (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  mr_save_data->ptrs.ra[idx].data_discriminator = mr_save_data->ptrs.ra[idx].fdp->type;
 
   switch (mr_save_data->ptrs.ra[idx].mr_type_aux)
     {
@@ -845,7 +834,6 @@ mr_save_struct (mr_save_data_t * mr_save_data)
       return (0);
     }
 
-  mr_save_data->ptrs.ra[idx].data_discriminator = mr_save_data->ptrs.ra[idx].fdp->type;
   count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
@@ -869,6 +857,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type); /* look up for type descriptor */
   mr_fd_t * fdp;
 
+  mr_save_data->ptrs.ra[idx].non_serializable = true;
   if (NULL == tdp) /* check whether type descriptor was found */
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
@@ -899,6 +888,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
   int count, i;
 
+  mr_save_data->ptrs.ra[idx].non_serializable = true;
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
@@ -940,6 +930,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
   int count, i;
 
+  mr_save_data->ptrs.ra[idx].non_serializable = true;
   fd_.mr_type = fd_.mr_type_aux;
   fd_.non_persistent = true;
   fd_.unnamed = true;
