@@ -64,8 +64,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 "TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
 [Ii] {
   yylval->value.value_type = MR_VT_COMPLEX;
-  yylval->value.vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = 0 }.ieee_854_long_double;
-  yylval->value.vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = 1 }.ieee_854_long_double;
+  yylval->value.vt_complex = MR_CLD_PACK (I);
   return (TOK_CINIT_NUMBER);
 }
 
@@ -74,8 +73,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_CINIT_NUMBER); }
 {IMAGENARY_NUMBER} {
   yylval->value.value_type = MR_VT_COMPLEX;
-  yylval->value.vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = 0 }.ieee_854_long_double;
-  yylval->value.vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = strtold (yytext, NULL) }.ieee_854_long_double;
+  yylval->value.vt_complex = MR_CLD_PACK ( I * strtold (yytext, NULL) );
   return (TOK_CINIT_NUMBER);
 }
 

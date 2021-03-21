@@ -139,18 +139,15 @@ static char *
 mr_load_complex_long_double (char * str, mr_value_t * mr_value)
 {
   int offset;
-  ieee_long_double_t real, imag;
+  long_double_t real, imag;
 
   if (str[0] == 'I')
     {
-      real.long_double = 0;
-      imag.long_double = 1;
-      mr_value->vt_complex[MR_REAL] = real.ieee_854_long_double;
-      mr_value->vt_complex[MR_IMAG] = imag.ieee_854_long_double;
+      mr_value->vt_complex = MR_CLD_PACK (I);
       return (&str[1]);
     }
 
-  if (1 != sscanf (str, "%Lg%n", &real.long_double, &offset))
+  if (1 != sscanf (str, "%Lg%n", &real, &offset))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
@@ -159,36 +156,29 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   char * tail = &str[offset];
   if (tail[0] == 'I')
     {
-      imag.long_double = 0;
-      mr_value->vt_complex[MR_REAL] = imag.ieee_854_long_double;
-      mr_value->vt_complex[MR_IMAG] = real.ieee_854_long_double;
+      mr_value->vt_complex = MR_CLD_PACK (I * real);
       return (&tail[1]);
     }
 
   if ((tail[0] != ' ') || (tail[1] != '+') || (tail[2] != ' '))
     {
-      imag.long_double = 0;
-      mr_value->vt_complex[MR_REAL] = real.ieee_854_long_double;
-      mr_value->vt_complex[MR_IMAG] = imag.ieee_854_long_double;
+      mr_value->vt_complex = MR_CLD_PACK (real);
       return (tail);
     }
   tail += 3;
   if (tail[0] == 'I')
     {
-      imag.long_double = 1;
-      mr_value->vt_complex[MR_REAL] = real.ieee_854_long_double;
-      mr_value->vt_complex[MR_IMAG] = imag.ieee_854_long_double;
+      mr_value->vt_complex = MR_CLD_PACK (real + I);
       return (tail);
     }
 
-  if (1 != sscanf (tail, "%LgI%n", &imag.long_double, &offset))
+  if (1 != sscanf (tail, "%LgI%n", &imag, &offset))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
     }
 
-  mr_value->vt_complex[MR_REAL] = real.ieee_854_long_double;
-  mr_value->vt_complex[MR_IMAG] = imag.ieee_854_long_double;
+  mr_value->vt_complex = MR_CLD_PACK (real + I * imag);
   return (&tail[offset]);
 }
 
@@ -274,14 +264,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	{
 	case MR_VT_INT: break;
 	case MR_VT_FLOAT: mr_value->vt_float = mr_value->vt_int; break;
-	case MR_VT_COMPLEX:
-	  {
-	    complex_long_double_t vt_complex = mr_value->vt_int;
-	    mr_value->vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = __real__ vt_complex }.ieee_854_long_double;
-	    mr_value->vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = __imag__ vt_complex }.ieee_854_long_double;
-	    break;
-	  }
-	  
+	case MR_VT_COMPLEX: mr_value->vt_complex = MR_CLD_PACK (mr_value->vt_int); break;
 	default: status = MR_FAILURE; break;
 	}
       break;
@@ -291,14 +274,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	{
 	case MR_VT_INT: mr_value->vt_int = mr_value->vt_float; break;
 	case MR_VT_FLOAT: break;
-	case MR_VT_COMPLEX:
-	  {
-	    complex_long_double_t vt_complex = mr_value->vt_float;
-	    mr_value->vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = __real__ vt_complex }.ieee_854_long_double;
-	    mr_value->vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = __imag__ vt_complex }.ieee_854_long_double;
-	    break;
-	  }
-	  
+	case MR_VT_COMPLEX: mr_value->vt_complex = MR_CLD_PACK (mr_value->vt_float); break;
 	default: status = MR_FAILURE; break;
 	}
       break;
@@ -306,8 +282,8 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
     case MR_VT_COMPLEX:
       switch (value_type)
 	{
-	case MR_VT_INT: mr_value->vt_int = (ieee_long_double_t) { .ieee_854_long_double = mr_value->vt_complex[MR_REAL] }.long_double; break;
-	case MR_VT_FLOAT: mr_value->vt_float = (ieee_long_double_t) { .ieee_854_long_double = mr_value->vt_complex[MR_REAL] }.long_double; break;
+	case MR_VT_INT: mr_value->vt_int = MR_CLD_UNPACK (mr_value->vt_complex); break;
+	case MR_VT_FLOAT: mr_value->vt_float = MR_CLD_UNPACK (mr_value->vt_complex); break;
 	case MR_VT_COMPLEX: break;
 	default: status = MR_FAILURE; break;
 	}
@@ -354,12 +330,9 @@ mr_value_neg (mr_value_t * value)
       
     case MR_VT_COMPLEX:
       {
-	complex_long_double_t vt_complex;
-	__real__ vt_complex = (ieee_long_double_t) { .ieee_854_long_double = value->vt_complex[MR_REAL] }.long_double;
-	__imag__ vt_complex = (ieee_long_double_t) { .ieee_854_long_double = value->vt_complex[MR_IMAG] }.long_double;
+	complex_long_double_t vt_complex = MR_CLD_UNPACK (value->vt_complex);
 	vt_complex = -vt_complex;
-	value->vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = __real__ vt_complex }.ieee_854_long_double;
-	value->vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = __imag__ vt_complex }.ieee_854_long_double;
+	value->vt_complex = MR_CLD_PACK (vt_complex);
       }
       break;
       
@@ -392,13 +365,10 @@ mr_value_neg (mr_value_t * value)
       case MR_VT_COMPLEX:						\
 	{								\
 	  complex_long_double_t _left, _right, _result;			\
-	  __real__ _left = (ieee_long_double_t) { .ieee_854_long_double = left->vt_complex[MR_REAL] }.long_double; \
-	  __imag__ _left = (ieee_long_double_t) { .ieee_854_long_double = left->vt_complex[MR_IMAG] }.long_double; \
-	  __real__ _right = (ieee_long_double_t) { .ieee_854_long_double = right->vt_complex[MR_REAL] }.long_double; \
-	  __imag__ _right = (ieee_long_double_t) { .ieee_854_long_double = right->vt_complex[MR_IMAG] }.long_double; \
+	  _left = MR_CLD_UNPACK (left->vt_complex);			\
+	  _right = MR_CLD_UNPACK (right->vt_complex);			\
 	  _result = _left OP _right;					\
-	  result->vt_complex[MR_REAL] = (ieee_long_double_t) { .long_double = __real__ _result }.ieee_854_long_double; \
-	  result->vt_complex[MR_IMAG] = (ieee_long_double_t) { .long_double = __imag__ _result }.ieee_854_long_double; \
+	  result->vt_complex = MR_CLD_PACK (_result);			\
 	}								\
 	break;								\
       default:								\
@@ -434,8 +404,7 @@ mr_value_is_zero (mr_value_t * value)
     {
     case MR_VT_INT: return (0 == value->vt_int);
     case MR_VT_FLOAT: return (0 == value->vt_float);
-    case MR_VT_COMPLEX: return ((0 == (ieee_long_double_t) { .ieee_854_long_double = value->vt_complex[MR_REAL] }.long_double) &&
-				(0 == (ieee_long_double_t) { .ieee_854_long_double = value->vt_complex[MR_IMAG] }.long_double));
+    case MR_VT_COMPLEX: return (0 == MR_CLD_UNPACK (value->vt_complex));
     default: MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
     }
   return (false);

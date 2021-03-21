@@ -332,12 +332,7 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
   if (MR_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
-  ieee_long_double_t real, imag;
-  real.ieee_854_long_double = ptrdes->load_params.mr_value.vt_complex[MR_REAL];
-  imag.ieee_854_long_double = ptrdes->load_params.mr_value.vt_complex[MR_IMAG];
-  complex_long_double_t vt_complex;
-  __real__ vt_complex = real.long_double;
-  __imag__ vt_complex = imag.long_double;
+  complex_long_double_t vt_complex = MR_CLD_UNPACK (ptrdes->load_params.mr_value.vt_complex);
 
   switch (ptrdes->mr_type)
     {

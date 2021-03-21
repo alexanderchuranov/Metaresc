@@ -140,6 +140,34 @@ TYPEDEF_UNION (ieee_long_double_t,
 	       long double long_double,
 	       )
 
+TYPEDEF_STRUCT (mr_complex_long_double_t, ATTRIBUTES ( , "complex long double packed to 20 bytes"),
+		(ieee_854_long_double_t, real, , "__real__ complex long double"),
+		(ieee_854_long_double_t, imag, , "__imag__ complex long double"),
+		)
+
+#define MR_CLD_PACK(CLD) ({					\
+      complex_long_double_t cld = (CLD);			\
+      (mr_complex_long_double_t) {				\
+	.real = (ieee_long_double_t) {				\
+	  .long_double = __real__ cld				\
+	}.ieee_854_long_double,					\
+	    .imag = (ieee_long_double_t) {			\
+	  .long_double = __imag__ cld				\
+	}.ieee_854_long_double,					\
+	    };							\
+    })
+
+#define MR_CLD_UNPACK(MR_CLD) ({					\
+      mr_complex_long_double_t mr_cld = (MR_CLD);			\
+      ((ieee_long_double_t) {						\
+	.ieee_854_long_double = mr_cld.real				\
+	  }.long_double +						\
+	I * ((ieee_long_double_t) {					\
+	    .ieee_854_long_double = mr_cld.imag				\
+	      }.long_double));						\
+    })
+  
+  
 #define MR_ISNAN(X)							\
   __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (X), float), \
 			 ((ieee_float_t)(float)(X)).ieee_754_float_nan.exponent == IEEE_754_FLOAT_NAN_ENUM_T, \

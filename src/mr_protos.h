@@ -392,21 +392,16 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      (MR_VT_COMPLEX, , "vt_complex"),
 	      )
 
-TYPEDEF_ENUM (mr_complex_real_imag_t, ATTRIBUTES ( , "indexes of real and imaginary part of complex number"),
-	      (MR_REAL, = 0),
-	      (MR_IMAG, = 1),
-	      )
-
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
 		ANON_UNION (type_specific, __attribute__ ((packed))),
 		VOID (uint8_t, default_serialization, , "no serialization by default"),
+		(mr_complex_long_double_t, vt_complex),
+		(mr_quoted_substr_t, vt_quoted_substr),
 		long long int vt_int,
 		long double vt_float,
-		(ieee_854_long_double_t, vt_complex, [2], "complex long double vt_complex"),
 		string_t vt_string,
 		char vt_char,
-		(mr_quoted_substr_t, vt_quoted_substr),
 		END_ANON_UNION ("value_type"),
 		)
 
