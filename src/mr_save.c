@@ -262,6 +262,7 @@ mr_ud_free (mr_ptrdes_t * ptrdes)
   if (ptrdes->ud_is_ic)
     {
       mr_ic_free (ptrdes->save_params.union_discriminator);
+      MR_FREE (ptrdes->save_params.union_discriminator);
       ptrdes->save_params.union_discriminator = NULL;
     }
   ptrdes->ud_is_ic = false;

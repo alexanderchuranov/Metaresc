@@ -412,7 +412,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
 		ANON_UNION (union_discriminator_implementation),
-		(intptr_t, static_array, [5], "in place list of union discriminators"),
+		(intptr_t, static_array, [2], "in place list of union discriminators"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
 		END_ANON_UNION ("ud_as_ic"),
 		(int, next_typed, , "linked list of nodes with same type and pointer"),
