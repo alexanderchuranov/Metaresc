@@ -406,17 +406,17 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		END_ANON_UNION ("value_type"),
 		)
 
+TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
+		(mr_value_t, mr_value, , "loaded value"),
+		)
+
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
 		ANON_UNION (union_discriminator_implementation),
-		(intptr_t, static_array, [2], "in place list of union discriminators"),
+		(int, static_array, [sizeof (mr_load_params_t) / sizeof (int) - 2], "in place list of union discriminators"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
 		END_ANON_UNION ("ud_as_ic"),
 		(int, next_typed, , "linked list of nodes with same type and pointer"),
 		(int, next_untyped, , "linked list of nodes with same pointer"),
-		)
-
-TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
-		(mr_value_t, mr_value, , "loaded value"),
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
@@ -429,7 +429,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		BITFIELD (bool, non_persistent, :1, "true if field descriptor is allocated on stack"),
 		BITFIELD (bool, non_serializable, :1, "true if 'data' is not serializable"),
 		BITFIELD (bool, ud_is_ic, :1, "true if union discriminator is an indexed collection"),
-		BITFIELD (unsigned, ud_count, :2, "size of union discriminator in place list"),
+		BITFIELD (unsigned, ud_count, :3, "size of union discriminator in place list"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
