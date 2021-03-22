@@ -183,7 +183,7 @@ mr_ud_find (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
 
   int i;
   for (i = 0; i < ptrdes->ud_count; ++i)
-    if (0 == mr_ud_cmp (key, ptrdes->save_params.static_array[i], mr_save_data))
+    if (0 == mr_ud_cmp (key, (intptr_t)ptrdes->save_params.static_array[i], mr_save_data))
       return (ptrdes->save_params.static_array[i]);
   return (-1);
 }
@@ -262,7 +262,7 @@ mr_ud_foreach (mr_ptrdes_t * ptrdes, mr_visit_fn_t visit_fn, const void * contex
 
   int i;
   for (i = 0; i < ptrdes->ud_count; ++i)
-    if (MR_SUCCESS != visit_fn (ptrdes->save_params.static_array[i], context))
+    if (MR_SUCCESS != visit_fn ((intptr_t)ptrdes->save_params.static_array[i], context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -366,7 +366,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
-    if (-1 == mr_ud_add (&mr_save_data->ptrs.ra[idx], ud_find, mr_save_data))
+    if (-1 == mr_ud_add (&mr_save_data->ptrs.ra[idx], (intptr_t)ud_find, mr_save_data))
       return (NULL);
 
   return (fdp);
