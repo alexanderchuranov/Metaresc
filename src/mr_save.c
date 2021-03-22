@@ -523,6 +523,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx, mr_
       ra[ref_idx].name = ra[idx].name;
       ra[ref_idx].unnamed = ra[idx].unnamed;
       ra[ref_idx].non_persistent = ra[idx].non_persistent;
+      ra[ref_idx].non_serializable = ra[idx].non_serializable;
 
       ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
       mr_add_child (parent, ref_idx, ra);
