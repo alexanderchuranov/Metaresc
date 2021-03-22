@@ -725,7 +725,6 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
 	  ptrdes->name = parent_fdp->name.str;
 	  ptrdes->unnamed = parent_fdp->unnamed;
 	  ptrdes->non_persistent = parent_fdp->non_persistent;
-	  ptrdes->non_serializable = parent_fdp->non_serializable;
 	  ptrdes->MR_SIZE = parent_fdp->size;
 
 	  ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
