@@ -289,8 +289,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 {
   mr_fd_t * fdp = NULL; /* marker that no valid discriminator was found */
   int parent, idx;
-  mr_ptr_t ud_idx;
-  int ud_find = -1;
+  int ud_idx, ud_find = -1;
   mr_union_discriminator_t * ud;
   mr_td_t * tdp = mr_get_td_by_name (union_type); /* look up for type descriptor */
 
@@ -311,7 +310,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
   memset (ud, 0, sizeof (*ud));
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud_size -= sizeof (mr_save_data->mr_ra_ud[0]);
-  ud_idx.intptr = mr_save_data->mr_ra_ud_size / sizeof (mr_save_data->mr_ra_ud[0]); /* index of lookup record */
+  ud_idx = mr_save_data->mr_ra_ud_size / sizeof (mr_save_data->mr_ra_ud[0]); /* index of lookup record */
   ud->type.str = union_type; /* union type */
   ud->discriminator.str = discriminator; /* union discriminator */
 
@@ -322,7 +321,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       void * discriminator_ptr;
 
       /* checks if this parent already have union resolution info */
-      ud_find = mr_ud_find (&mr_save_data->ptrs.ra[parent], ud_idx, mr_save_data);
+      ud_find = mr_ud_find (&mr_save_data->ptrs.ra[parent], (intptr_t)ud_idx, mr_save_data);
       /* break the traverse loop if it has */
       if (ud_find != -1)
 	break;
@@ -350,10 +349,10 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 	fdp = mr_union_discriminator_by_name (tdp, NULL);
 
       ud->fdp = fdp;
-      mr_ptr_t * find = mr_ic_add (&mr_save_data->union_discriminators, ud_idx);
-      if (NULL == find)
+      mr_ptr_t * add = mr_ic_add (&mr_save_data->union_discriminators, (intptr_t)ud_idx);
+      if (NULL == add)
 	return (NULL);
-      if (find->intptr == ud_idx.intptr)
+      if (add->intptr == ud_idx)
 	{
 	  /* union discriminator info was not found in parents so we add new record */
 	  mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
@@ -361,7 +360,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 	  if (parent >= 0)
 	    parent = mr_save_data->ptrs.ra[parent].parent;
 	}
-      ud_find = find->intptr;
+      ud_find = add->intptr;
     }
 
   /* add union discriminator information to all parents wchich doesn't have it yet */
