@@ -363,7 +363,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
       ud_find = add->intptr;
     }
 
-  /* add union discriminator information to all parents wchich doesn't have it yet */
+  /* add union discriminator information to all parents which doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
     if (-1 == mr_ud_add (&mr_save_data->ptrs.ra[idx], (intptr_t)ud_find, mr_save_data))
       return (NULL);

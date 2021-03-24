@@ -1262,7 +1262,7 @@ extern void mr_message (const char * file_name, const char * func_name, int line
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
-extern int mr_print_value (FILE * fd, int mr_type, ...);
+extern int mr_print_value (FILE * fd, unsigned int mr_type, ...);
 
 extern char * mr_get_static_field_name (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);

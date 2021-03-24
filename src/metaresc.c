@@ -471,7 +471,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 }
 
 int
-mr_print_value (FILE * fd, int mr_type, ...)
+mr_print_value (FILE * fd, unsigned int mr_type, ...)
 {
   static const char const * formats[] =
     {
@@ -507,6 +507,24 @@ mr_print_value (FILE * fd, int mr_type, ...)
 	    rv = fprintf (fd, "true");
 	  else
 	    rv = fprintf (fd, "false");
+	  break;
+	}
+      case MR_TYPE_COMPLEX_FLOAT:
+	{
+	  complex_float_t value = va_arg (args, complex_float_t);
+	  rv = fprintf (fd, "%g%+gI", __real__ value, __imag__ value);
+	  break;
+	}
+      case MR_TYPE_COMPLEX_DOUBLE:
+	{
+	  complex_double_t value = va_arg (args, complex_double_t);
+	  rv = fprintf (fd, "%g%+gI", __real__ value, __imag__ value);
+	  break;
+	}
+      case MR_TYPE_COMPLEX_LONG_DOUBLE:
+	{
+	  complex_long_double_t value = va_arg (args, complex_long_double_t);
+	  rv = fprintf (fd, "%Lg%+LgI", __real__ value, __imag__ value);
 	  break;
 	}
       default:
@@ -2082,7 +2100,7 @@ mr_get_static_field_name (mr_substr_t * substr)
   if (0 == max_field_name_length)
     mr_ic_foreach (&mr_conf.fields_names, fields_names_visitor, &max_field_name_length);
   
-  /* protection for buffer overrun atack */
+  /* protection for buffer overrun attack */
   if (substr->length > max_field_name_length)
     return (NULL);
   
