@@ -962,20 +962,26 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
  * @param context untyped pointer on context passed through DFS traverse
  */
 mr_status_t
-mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
+mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context, bool pre_order)
 {
   int idx = 0;
   while (idx >= 0)
     {
-      if (MR_SUCCESS != processor (ptrs, idx, context))
+      if (pre_order && (MR_SUCCESS != processor (ptrs, idx, context)))
 	return (MR_FAILURE);
 
       if (ptrs->ra[idx].first_child >= 0)
 	idx = ptrs->ra[idx].first_child;
       else
 	{
+	  if (!pre_order && (MR_SUCCESS != processor (ptrs, idx, context)))
+	    return (MR_FAILURE);
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
-	    idx = ptrs->ra[idx].parent;
+	    {
+	      idx = ptrs->ra[idx].parent;
+	      if (!pre_order && (MR_SUCCESS != processor (ptrs, idx, context)))
+		return (MR_FAILURE);
+	    }
 	  idx = ptrs->ra[idx].next;
 	}
     }
@@ -1132,7 +1138,7 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 	}
   /* re-enumerate nodes after empty nodes removal */
   int idx_ = 0;
-  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
+  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_, true);
 }
 
 /**
@@ -1145,8 +1151,8 @@ static void
 mr_post_process (mr_save_data_t * mr_save_data)
 {
   int idx_ = 0;
-  mr_ptrs_dfs (&mr_save_data->ptrs, mr_post_process_node, mr_save_data);
-  mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &idx_); /* enumeration of nodes should be done only after strings processing */
+  mr_ptrs_dfs (&mr_save_data->ptrs, mr_post_process_node, mr_save_data, true);
+  mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &idx_, true); /* enumeration of nodes should be done only after strings processing */
   mr_reorder_strings (&mr_save_data->ptrs);
 }
 

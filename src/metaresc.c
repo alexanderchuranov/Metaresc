@@ -905,7 +905,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	}
 
   /* depth search thru the graph and calculate new addresses for all nodes */
-  mr_ptrs_dfs (ptrs, calc_relative_addr, NULL);
+  mr_ptrs_dfs (ptrs, calc_relative_addr, NULL, true);
 
   /* now we should update pointers in a copy */
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
@@ -948,15 +948,6 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
   return (MR_FAILURE);
 }
 
-static int
-cmp_idx (const mr_ptr_t x, const mr_ptr_t y, const void * context)
-{
-  const mr_ra_ptrdes_t * ptrs = context;
-  const unsigned * _x = x.ptr;
-  const unsigned * _y = y.ptr;
-  return ((ptrs->ra[*_x].idx < ptrs->ra[*_y].idx) - (ptrs->ra[*_x].idx > ptrs->ra[*_y].idx));
-}
-
 static mr_hash_value_t
 mr_hash_block (void * block, mr_size_t size)
 {
@@ -978,52 +969,30 @@ mr_hash_block (void * block, mr_size_t size)
   return (hash_value);
 }
 
-mr_hash_value_t
-mr_hash_struct (mr_ra_ptrdes_t * ptrs)
+static mr_status_t
+node_hash (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 {
-  mr_conf_init ();
-  
-  if ((NULL == ptrs) || (NULL == ptrs->ra) || (ptrs->size < sizeof (ptrs->ra[0])))
-    return (0);
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
 
-  unsigned i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  unsigned * idx = MR_CALLOC (count, sizeof (*idx));
-  if (NULL == idx)
-    return (0);
-  
-  ptrs->ptrdes_type = MR_PD_CUSTOM;
-
-  for (i = 0; i < count; ++i)
+  switch (ptrdes->mr_type)
     {
-      idx[i] = i;
-      ptrs->ra[i].res.data.uintptr = 0;
-      ptrs->ra[i].res.type = "uintptr";
-    }
-
-  mr_hsort (idx, count, sizeof (idx[0]), cmp_idx, ptrs);
-
-  for (i = 0; i < count; ++i)
-    {
-      mr_ptrdes_t * ptrdes = &ptrs->ra[idx[i]];
-      switch (ptrdes->mr_type)
-	{
-	case MR_TYPE_STRING:
-	  ptrdes->res.data.uintptr = mr_hash_str (*(char**)ptrdes->data.ptr);
-	  break;
+    case MR_TYPE_STRING:
+      ptrdes->res.data.uintptr = mr_hash_str (*(char**)ptrdes->data.ptr);
+      break;
 	  
-	case MR_TYPE_CHAR_ARRAY:
-	  ptrdes->res.data.uintptr = mr_hash_str ((char*)ptrdes->data.ptr);
-	  break;
+    case MR_TYPE_CHAR_ARRAY:
+      ptrdes->res.data.uintptr = mr_hash_str ((char*)ptrdes->data.ptr);
+      break;
 	  
-	case MR_TYPE_BOOL:
-	  ptrdes->res.data.uintptr = *(bool*)ptrdes->data.ptr;
-	  break;
+    case MR_TYPE_BOOL:
+      ptrdes->res.data.uintptr = *(bool*)ptrdes->data.ptr;
+      break;
 
-#define CASE_MR_TYPE_HASH(TYPE)						\
-	  case MR_TYPE_DETECT (TYPE):					\
-	    ptrdes->res.data.uintptr =					\
-	      mr_hash_block (ptrdes->data.ptr, sizeof (TYPE));		\
-	    break;
+#define CASE_MR_TYPE_HASH(TYPE)					\
+      case MR_TYPE_DETECT (TYPE):				\
+	ptrdes->res.data.uintptr =				\
+	  mr_hash_block (ptrdes->data.ptr, sizeof (TYPE));	\
+	break;
 
 #define SIZEOF_float (sizeof (float))
 #define SIZEOF_double (sizeof (double))
@@ -1032,70 +1001,91 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
 #define SIZEOF_complex_double_t (sizeof (complex_double_t))
 
 #define CASE_MR_FLOAT_TYPE_HASH(TYPE)					\
-	  case MR_TYPE_DETECT (TYPE):					\
-	    ptrdes->res.data.uintptr = MR_ISNAN (*(TYPE*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
-	    break;
+      case MR_TYPE_DETECT (TYPE):					\
+	ptrdes->res.data.uintptr = MR_ISNAN (*(TYPE*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
+	break;
 
 #define CASE_MR_COMPLEX_FLOAT_TYPE_HASH(TYPE)				\
-	  case MR_TYPE_DETECT (TYPE):					\
-	    ptrdes->res.data.uintptr = (MR_ISNAN (__real__ *(TYPE*)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(TYPE*)ptrdes->data.ptr)) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
-	    break;
-
-	  MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
-	  MR_FOREACH (CASE_MR_FLOAT_TYPE_HASH, float, double, long_double_t);
-	  MR_FOREACH (CASE_MR_COMPLEX_FLOAT_TYPE_HASH, complex_float_t, complex_double_t);
-	  
-	case MR_TYPE_COMPLEX_LONG_DOUBLE:
-	  ptrdes->res.data.uintptr =
-	    (MR_ISNAN (__real__ *(long double *)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(long double *)ptrdes->data.ptr)) ? -1 :
-	  mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
-	    mr_hash_block (&((long double *)ptrdes->data.ptr)[1], MR_SIZEOF_LONG_DOUBLE);
-	  break;
-	  
-	case MR_TYPE_STRUCT:
-	case MR_TYPE_ARRAY:
-	case MR_TYPE_POINTER:
-	case MR_TYPE_UNION:
-	  {
-	    int child;
-	    mr_hash_value_t hash_value = 0;
-	    for (child = ptrdes->first_child; child >= 0; child = ptrs->ra[child].next)
-	      hash_value = hash_value * 3 + ptrs->ra[child].res.data.uintptr;
-	    ptrdes->res.data.uintptr = hash_value;
-	    break;
-	  }
-	  
-	case MR_TYPE_ENUM:
-	  {
-	    mr_td_t * tdp = mr_get_td_by_name (ptrdes->type);
-	    if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
-	      break;
-	    ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, tdp->param.enum_param.size_effective);
-	    break;
-	  }
-	  
-	case MR_TYPE_BITFIELD:
-	  {
-	    uint64_t value;
-	    mr_save_bitfield_value (ptrdes, &value);
-	    ptrdes->res.data.uintptr = mr_hash_block (&value, sizeof (value));
-	    break;
-	  }
-	  
-	case MR_TYPE_FUNC_TYPE:
-	case MR_TYPE_FUNC:
-	  ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, sizeof (void *));
-	  break;
-
-	default:
-	  break;
-	}
-      
-      if (0 == idx[i])
+      case MR_TYPE_DETECT (TYPE):					\
+	ptrdes->res.data.uintptr = (MR_ISNAN (__real__ *(TYPE*)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(TYPE*)ptrdes->data.ptr)) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
 	break;
+
+      MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+      MR_FOREACH (CASE_MR_FLOAT_TYPE_HASH, float, double, long_double_t);
+      MR_FOREACH (CASE_MR_COMPLEX_FLOAT_TYPE_HASH, complex_float_t, complex_double_t);
+	  
+    case MR_TYPE_COMPLEX_LONG_DOUBLE:
+      ptrdes->res.data.uintptr =
+	(MR_ISNAN (__real__ *(long double *)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(long double *)ptrdes->data.ptr)) ? -1 :
+      mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
+	mr_hash_block (&((long double *)ptrdes->data.ptr)[1], MR_SIZEOF_LONG_DOUBLE);
+      break;
+	  
+    case MR_TYPE_STRUCT:
+    case MR_TYPE_ARRAY:
+    case MR_TYPE_POINTER:
+    case MR_TYPE_UNION:
+    case MR_TYPE_ANON_UNION:
+    case MR_TYPE_NAMED_ANON_UNION:
+      {
+	int child;
+	mr_hash_value_t hash_value = 0;
+	for (child = ptrdes->first_child; child >= 0; child = ptrs->ra[child].next)
+	  hash_value = hash_value * 3 + ptrs->ra[child].res.data.uintptr + 1;
+	ptrdes->res.data.uintptr = hash_value;
+	break;
+      }
+	  
+    case MR_TYPE_ENUM:
+      {
+	mr_td_t * tdp = mr_get_td_by_name (ptrdes->type);
+	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
+	  break;
+	ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, tdp->param.enum_param.size_effective);
+	break;
+      }
+	  
+    case MR_TYPE_BITFIELD:
+      {
+	uint64_t value;
+	mr_save_bitfield_value (ptrdes, &value);
+	ptrdes->res.data.uintptr = mr_hash_block (&value, sizeof (value));
+	break;
+      }
+	  
+    case MR_TYPE_FUNC_TYPE:
+    case MR_TYPE_FUNC:
+      ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, sizeof (void *));
+      break;
+
+    case MR_TYPE_NONE:
+    case MR_TYPE_VOID:
+    case MR_TYPE_END_ANON_UNION:
+    case MR_TYPE_LAST:
+      break;
+
+    }
+
+  return (MR_SUCCESS);
+}
+
+mr_hash_value_t
+mr_hash_struct (mr_ra_ptrdes_t * ptrs)
+{
+  mr_conf_init ();
+  
+  if ((NULL == ptrs) || (NULL == ptrs->ra) || (ptrs->size < sizeof (ptrs->ra[0])))
+    return (0);
+
+  int i;
+  for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
+    {
+      ptrs->ra[i].res.data.uintptr = 0;
+      ptrs->ra[i].res.type = "uintptr";
     }
   
-  MR_FREE (idx);
+  ptrs->ptrdes_type = MR_PD_CUSTOM;
+  mr_ptrs_dfs (ptrs, node_hash, NULL, false);
   return (ptrs->ra[0].res.data.uintptr);
 }
 
