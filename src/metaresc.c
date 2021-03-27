@@ -105,8 +105,6 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_ic_free (&tdp->field_by_name);
-  if (MR_TYPE_ENUM == tdp->mr_type)
-    mr_ic_free (&tdp->param.enum_param.enum_by_value);
   if (tdp->is_dynamically_allocated)
     MR_FREE (tdp);
   return (MR_SUCCESS);
@@ -1371,7 +1369,7 @@ mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 }
 
 int
-mr_fdp_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_fd_ptr_t * fields = context;
   const unsigned * x_ = x.ptr;
@@ -1560,12 +1558,21 @@ mr_enumfd_get_hash (mr_ptr_t x, const void * context)
  * @return comparation sign
  */
 int
-cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context)
+mr_fd_enum_value_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
   mr_fd_t * y_ = y.ptr;
   return ((x_->param.enum_param._unsigned > y_->param.enum_param._unsigned) -
 	  (x_->param.enum_param._unsigned < y_->param.enum_param._unsigned));
+}
+
+int
+mr_fd_enum_value_cmp_sorting (mr_ptr_t x, mr_ptr_t y, const void * context)
+{
+  mr_fd_ptr_t * x_ = x.ptr;
+  mr_fd_ptr_t * y_ = y.ptr;
+  return ((x_->fdp->param.enum_param._unsigned > y_->fdp->param.enum_param._unsigned) -
+	  (x_->fdp->param.enum_param._unsigned < y_->fdp->param.enum_param._unsigned));
 }
 
 /**
@@ -1576,7 +1583,6 @@ cmp_enums_by_value (mr_ptr_t x, mr_ptr_t y, const void * context)
 static mr_status_t
 mr_add_enum (mr_td_t * tdp)
 {
-  mr_ic_rarray_t mr_ic_rarray;
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   mr_status_t status = MR_SUCCESS;
 
@@ -1596,12 +1602,8 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_ic_new (&tdp->param.enum_param.enum_by_value, mr_enumfd_get_hash, cmp_enums_by_value, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
-  mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
-  mr_ic_rarray.size = tdp->fields_size;
-  mr_ic_rarray.alloc_size = -1;
-  status = mr_ic_index (&tdp->param.enum_param.enum_by_value, &mr_ic_rarray);
-
+  mr_hsort (tdp->fields, count, sizeof (tdp->fields[0]), mr_fd_enum_value_cmp_sorting, NULL);
+  
   tdp->param.enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
@@ -1641,9 +1643,11 @@ mr_add_enum (mr_td_t * tdp)
 mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, int64_t value)
 {
-  mr_fd_t fd = { .param = { .enum_param = { value }, }, };
-  mr_ptr_t * result = mr_ic_find (&tdp->param.enum_param.enum_by_value, &fd);
-  return (result ? result->ptr : NULL);
+  unsigned idx;
+  mr_fd_t key = { .param = { .enum_param = { value }, }, };
+  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
+  int diff = mr_ic_sorted_array_find_idx (&key, &ic_rarray, mr_fd_enum_value_cmp, NULL, &idx);
+  return (diff ? NULL : tdp->fields[idx].fdp);
 }
 
 /**
@@ -2198,7 +2202,7 @@ mr_add_type (mr_td_t * tdp)
 	  the sorting explicitly uses original indexes of the fields to order
 	  fields with the same offset.
 	*/
-	mr_hsort (idx, count, sizeof (idx[0]), mr_fdp_offset_cmp, fields);
+	mr_hsort (idx, count, sizeof (idx[0]), mr_fd_offset_cmp_sorting, fields);
       
 	for (i = 0; i < count; ++i)
 	  tdp->fields[i] = fields[idx[i]];
