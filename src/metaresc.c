@@ -105,8 +105,6 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
   mr_ic_free (&tdp->field_by_name);
-  if (MR_TYPE_STRUCT == tdp->mr_type)
-    mr_ic_free (&tdp->param.struct_param.field_by_offset);
   if (MR_TYPE_ENUM == tdp->mr_type)
     mr_ic_free (&tdp->param.enum_param.enum_by_value);
   if (tdp->is_dynamically_allocated)
@@ -693,9 +691,22 @@ mr_is_valid_field_name (char * name)
 static mr_fd_t *
 mr_get_fd_by_offset (mr_td_t * tdp, mr_offset_t offset)
 {
-  mr_fd_t fd = { .offset = offset, };
-  mr_ptr_t * result = mr_ic_find (&tdp->param.struct_param.field_by_offset, &fd);
-  return (result ? result->ptr : NULL);
+  unsigned idx;
+  mr_fd_t key = { .offset = offset, };
+  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
+  int diff = mr_ic_sorted_array_find_idx (&key, &ic_rarray, mr_fd_offset_cmp, NULL, &idx);
+  /* do binary search first */
+  if (diff)
+    return (NULL);
+  /*
+    There might be zero size fields declared before designated field with specific offset.
+    We need to skip them and find last relevant field in the ordered array.
+    Iterate to the last field with the requested offset.
+  */
+  unsigned count = tdp->fields_size / sizeof (tdp->fields[0]);
+  while ((idx + 1 < count) && (tdp->fields[idx + 1].fdp->offset == offset))
+    ++idx;
+  return (tdp->fields[idx].fdp);
 }
 
 void
@@ -1345,13 +1356,6 @@ mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (mr_hashed_string_cmp (&x_->name, &y_->name));
 }
 
-mr_hash_value_t
-mr_fd_offset_get_hash (mr_ptr_t x, const void * context)
-{
-  mr_fd_t * x_ = x.ptr;
-  return (x_->offset);
-}
-
 /**
  * Comparator for mr_fd_t by offset field
  * @param x pointer on one mr_fd_t
@@ -1363,7 +1367,21 @@ mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_fd_t * x_ = x.ptr;
   const mr_fd_t * y_ = y.ptr;
-  return (x_->offset > y_->offset) - (x_->offset < y_->offset);
+  return ((x_->offset > y_->offset) - (x_->offset < y_->offset));
+}
+
+int
+mr_fdp_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_fd_ptr_t * fields = context;
+  const unsigned * x_ = x.ptr;
+  const unsigned * y_ = y.ptr;
+  int diff = ((fields[*x_].fdp->offset > fields[*y_].fdp->offset) -
+	      (fields[*x_].fdp->offset < fields[*y_].fdp->offset));
+  if (diff)
+    return (diff);
+  
+  return ((*x_ > *y_) - (*x_ < *y_));
 }
 
 mr_hash_value_t
@@ -2113,7 +2131,7 @@ mr_add_type (mr_td_t * tdp)
 {
   mr_status_t status = MR_SUCCESS;
   mr_ic_rarray_t mr_ic_rarray;
-  int count = 0;
+  int count;
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
     mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
@@ -2156,17 +2174,47 @@ mr_add_type (mr_td_t * tdp)
   if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, &mr_ic_rarray))
     status = MR_FAILURE;
 
-  if (MR_TYPE_STRUCT == tdp->mr_type)
+  switch (tdp->mr_type)
     {
-      mr_ic_new (&tdp->param.struct_param.field_by_offset, mr_fd_offset_get_hash, mr_fd_offset_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
-      if (MR_SUCCESS != mr_ic_index (&tdp->param.struct_param.field_by_offset, &mr_ic_rarray))
-	status = MR_FAILURE;
-    }
+    case MR_TYPE_STRUCT:
+      {
+	count = tdp->fields_size / sizeof (tdp->fields[0]);
+	int i;
+	unsigned idx[count];
+	mr_fd_ptr_t fields[count];
+      
+	memcpy (fields, tdp->fields, sizeof (fields));
+      
+	for (i = 0; i < count; ++i)
+	  idx[i] = i;
 
-  if (MR_TYPE_ENUM == tdp->mr_type)
-    {
-      if (MR_SUCCESS != mr_add_enum (tdp))
-	status = MR_FAILURE;
+	/*
+	  fields descriptors might be generated in an arbitrary order
+	  if user used macro language only for meta data generation and
+	  types were defined with a standard typedefs.
+	  Here we sort structures fields by offset, but still preserve order
+	  of fields with the same offset. Zero size fields will have the same
+	  offsets with the field declared afterwards. Comparator function for
+	  the sorting explicitly uses original indexes of the fields to order
+	  fields with the same offset.
+	*/
+	mr_hsort (idx, count, sizeof (idx[0]), mr_fdp_offset_cmp, fields);
+      
+	for (i = 0; i < count; ++i)
+	  tdp->fields[i] = fields[idx[i]];
+	
+	break;
+      }
+      
+    case MR_TYPE_ENUM:
+      {
+	if (MR_SUCCESS != mr_add_enum (tdp))
+	  status = MR_FAILURE;
+	break;
+      }
+      
+    default:
+      break;
     }
 
   if (NULL == mr_ic_add (&mr_conf.type_by_name, tdp))

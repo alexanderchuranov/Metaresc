@@ -155,15 +155,15 @@ typedef struct ext_struct_t {
 
 #define MR_MODE DESC
 TYPEDEF_STRUCT (ext_struct_t,
-		x,
 		( , y),
+		x,
 		z, z_c, z_v, z_cv, c_z, v_z, cv_z,
 		self_ptr, c_self_ptr, v_self_ptr, cv_self_ptr, self_ptr_c, self_ptr_v, self_ptr_cv, c_self_ptr_c, v_self_ptr_v,
 		);
 
 #define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({	\
       mr_td_t * tdp = mr_get_td_by_name (#TYPE);			\
-      ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type struct_t."); \
+      ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type " #TYPE "."); \
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, #FIELD);			\
       ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field " #FIELD "."); \
       ck_assert_msg (fdp->mr_type == MR_TYPE, "Mismatched mr_type for field " #FIELD " (%d != %d).", \
@@ -181,6 +181,15 @@ TYPEDEF_STRUCT (ext_struct_t,
 
 START_TEST (check_ext_struct) {
   mr_detect_type (NULL);
+  
+  mr_td_t * tdp = mr_get_td_by_name ("ext_struct_t");
+  ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type ext_struct_t.");
+  int i;
+  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i > 0; --i)
+    ck_assert_msg (tdp->fields[i].fdp->offset > tdp->fields[i - 1].fdp->offset,
+		   "Fields of ext_struct_t are not sorted according to their offsets. '%s' %zd < '%s' %zd",
+		   tdp->fields[i - 1].fdp->name.str, tdp->fields[i - 1].fdp->offset,
+		   tdp->fields[i].fdp->name.str, tdp->fields[i].fdp->offset);
   
   ASSERT_EXT_STRUCT_FIELD_TYPE (x);
   ASSERT_EXT_STRUCT_FIELD_TYPE (y);

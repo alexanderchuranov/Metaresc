@@ -35,12 +35,12 @@ sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * 
 void
 mr_hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context)
 {
-  size_t i;
+  unsigned i;
 
-  if (count <= 1)
+  if (count-- <= 1)
     return;
 
-  for (i = --count >> 1; i > 0; --i)
+  for (i = count >> 1; i > 0; --i)
     sift (array, count, size, compar_fn, context, i);
 
   for ( ; count > 0; --count)

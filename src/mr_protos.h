@@ -102,7 +102,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_COMPLEX_DOUBLE,
 	      MR_TYPE_LONG_DOUBLE,
 	      MR_TYPE_COMPLEX_LONG_DOUBLE,
-	      (MR_TYPE_STRUCT, , "struct_param"),
+	      MR_TYPE_STRUCT,
 	      (MR_TYPE_ENUM, , "enum_param"),
 	      MR_TYPE_FUNC_TYPE,
 	      (MR_TYPE_FUNC, , "func_param"),
@@ -325,14 +325,9 @@ TYPEDEF_STRUCT (mr_enum_param_t,
 		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
 		)
 
-TYPEDEF_STRUCT (mr_struct_param_t,
-		(mr_ic_t, field_by_offset, , "lookup by field offset"),
-		)
-
 TYPEDEF_UNION (mr_td_param_t,
 	       VOID (uint8_t, default_serialization, , "default serialization"),
 	       (mr_enum_param_t, enum_param, , "parameters specific for enums"),
-	       (mr_struct_param_t, struct_param, , "parameters specific for structures"),
 	       )
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),

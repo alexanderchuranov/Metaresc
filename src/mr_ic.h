@@ -14,6 +14,7 @@ extern mr_status_t mr_ic_unsorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * ra
 extern void mr_ic_unsorted_array_free (mr_ic_t * ic);
 extern mr_status_t mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context);
 
+extern int mr_ic_sorted_array_find_idx (mr_ptr_t key, mr_ic_rarray_t * rarray, mr_compar_fn_t compar_fn, void * context, unsigned * idx);
 extern mr_ptr_t * mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key);
 extern mr_status_t mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key);
 extern mr_ptr_t * mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key);
