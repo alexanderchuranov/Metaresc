@@ -11,7 +11,7 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-MR_COMPILETIME_ASSERT (sizeof (mr_ptrdes_t) > 128);
+MR_COMPILETIME_ASSERT (sizeof (mr_ptrdes_t) <= 128);
 
 TYPEDEF_FUNC (int, mr_save_handler_t, (mr_save_data_t *))
 

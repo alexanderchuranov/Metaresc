@@ -36,7 +36,12 @@
 	}								\
       ck_assert_msg (union_resolved_correctly, "Union resolved incorrectly"); \
     })
-  
+
+MR_COMPILETIME_ASSERT (sizeof (enum8_discriminator_t) == sizeof (uint8_t));
+MR_COMPILETIME_ASSERT (sizeof (enum16_discriminator_t) == sizeof (uint16_t));
+MR_COMPILETIME_ASSERT (sizeof (enum32_discriminator_t) == sizeof (uint32_t));
+MR_COMPILETIME_ASSERT (sizeof (enum64_discriminator_t) == sizeof (uint64_t));
+
 START_TEST (embed_anon_union) {
   struct_embed_anon_union_t orig = { 0, { { -1 } }, };
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_embed_anon_union_t, &orig);

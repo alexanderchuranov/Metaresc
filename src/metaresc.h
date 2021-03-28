@@ -465,15 +465,15 @@
 
 #define MR_UNIQ_NAME(ID) name_ ## ID
 #define MR_COMPILETIME_ASSERT(X) MR_COMPILETIME_ASSERT_ (X, __COUNTER__)
-#define MR_COMPILETIME_ASSERT_(X, ID) typedef struct { int:-!!(X); } MR_UNIQ_NAME (ID)
+#define MR_COMPILETIME_ASSERT_(X, ID) typedef struct { int:-!(X); } MR_UNIQ_NAME (ID)
 /*
   For types defined using standard language approach you will need to create analog types with metaresc.
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
   Usage: MR_COMPARE_COMPAUND_TYPES (system_type, metaresc_type, commonly_named_field, (field_for_system_type, field_for_metaresc_type), ...)
   Macro evaluates to 0 at compile time if all fields are compatible. Otherwise it is non-zero.
 */
-#define MR_BOR(NAME, I, REC, X) ((REC) | (X))
-#define MR_COMPARE_COMPAUND_TYPES(TYPE1, TYPE2, ...) ((sizeof (TYPE1) != sizeof (TYPE2)) | MR_FOR ((TYPE1, TYPE2), MR_NARG (__VA_ARGS__), MR_BOR, P00_COMPARE_FIELDS, __VA_ARGS__))
+#define MR_LOGICAL_AND(NAME, I, REC, X) ((REC) && (X))
+#define MR_COMPARE_COMPAUND_TYPES(TYPE1, TYPE2, ...) ((sizeof (TYPE1) == sizeof (TYPE2)) && MR_FOR ((TYPE1, TYPE2), MR_NARG (__VA_ARGS__), MR_LOGICAL_AND, P00_COMPARE_FIELDS, __VA_ARGS__))
 #define P00_GET_FIRST(_1, _2) _1
 #define P00_GET_SECOND(_1, _2) _2
 #define P00_COMPARE_FIELDS(TYPE1_TYPE2, NAME, I)			\
@@ -482,14 +482,14 @@
   (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, NAME, P00_GET_SECOND TYPE1_TYPE2, NAME))
 
 #ifndef MR_COMPARE_FIELDS_EXT
-#define MR_COMPARE_FIELDS_EXT(...) 0
+#define MR_COMPARE_FIELDS_EXT(...) true
 /*
   if your types contains only builtin types then you can do more precies comparation.
   #undef MR_COMPARE_FIELDS_EXT
-  #define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) !__builtin_types_compatible_p (__typeof__ (((TYPE1*)0)->NAME1), __typeof__ (((TYPE2*)0)->NAME2))
+  #define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) __builtin_types_compatible_p (__typeof__ (((TYPE1*)0)->NAME1), __typeof__ (((TYPE2*)0)->NAME2))
 */
 #endif /* MR_COMPARE_FIELDS_EXT */
-#define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) != offsetof (TYPE2, NAME2)) | (sizeof (((TYPE1*)0)->NAME1) != sizeof (((TYPE2*)0)->NAME2)) | MR_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
+#define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) == offsetof (TYPE2, NAME2)) && (sizeof (((TYPE1*)0)->NAME1) == sizeof (((TYPE2*)0)->NAME2)) && MR_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
 
 #define MR_UNFOLD(NODE, ...) MR_PASTE3 (NODE, _, MR_MODE) (MR_TYPE_NAME, __VA_ARGS__)
 
