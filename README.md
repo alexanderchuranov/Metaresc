@@ -149,9 +149,6 @@ Create a folder at the same level as Metaresc. Start with hello world
 stub that will use `metaresc.h`.
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <metaresc.h>
   
 int main (int argc, char * argv[])
@@ -168,7 +165,7 @@ we should add `-I../Metaresc/src` as a compilation flag. Minimal
 ```make
 all: sample
 
-CFLAGS += -I../Metaresc/src
+CFLAGS += -I../Metaresc/src `xml2-config --cflags`
 ```
 
 As a next step we will add some custom structure type definition,
@@ -185,9 +182,6 @@ learning curve. In the following example it should be
 self-explanatory.
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (tree_node_t,
@@ -204,12 +198,7 @@ int main (int argc, char * argv[])
     (tree_node_t[]){ { "right" } },
   };
   
-  char * dump = MR_SAVE_CINIT (tree_node_t, &root);
-  if (dump)
-    {
-      printf ("%s", dump);
-      MR_FREE (dump);
-    }
+  MR_PRINT ("tree = ", (tree_node_t, &root));
   return (EXIT_SUCCESS);
 }
 ```
@@ -219,8 +208,8 @@ Metaresc library files. `Makefile` should be extended as follows:
 ```make
 all: sample
 
-CFLAGS += -I../Metaresc/src
-LDLIBS += ../Metaresc/src/.libs/libmetaresc.a
+CFLAGS += -I../Metaresc/src `xml2-config --cflags`
+LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
 ```
 
 Compilation with Clang will produce a warning about duplicated
@@ -232,13 +221,13 @@ as follows:
 ```make
 all: sample
 
-CFLAGS += -I../Metaresc/src -Wno-duplicate-decl-specifier
-LDLIBS += ../Metaresc/src/.libs/libmetaresc.a
+CFLAGS += -I../Metaresc/src `xml2-config --cflags` -Wno-duplicate-decl-specifier
+LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
 ```
 
 Output of this sample application is as follows:
 ```c
-{
+tree = {
   .value = "root",
   .left = (tree_node_t[]){
     {
@@ -266,9 +255,6 @@ language. In this case global preprocessor variable `MR_MODE` should
 be defined into `DESC`. Example above will look as follows:
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <metaresc.h>
 
 typedef struct tree_node_t {
@@ -292,12 +278,7 @@ int main (int argc, char * argv[])
     (tree_node_t[]){ { "right" } },
   };
   
-  char * dump = MR_SAVE_CINIT (tree_node_t, &root);
-  if (dump)
-    {
-      printf ("%s", dump);
-      MR_FREE (dump);
-    }
+  MR_PRINT ("tree = ", (tree_node_t, &root));
   return (EXIT_SUCCESS);
 }
 ```
@@ -308,9 +289,6 @@ complex, single characters, strings, pointers on all types listed
 above and even pointers on structures of base type). So example above
 could be reduced to:
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <metaresc.h>
 
 typedef struct tree_node_t {
@@ -330,12 +308,7 @@ int main (int argc, char * argv[])
     (tree_node_t[]){ { "right" } },
   };
   
-  char * dump = MR_SAVE_CINIT (tree_node_t, &root);
-  if (dump)
-    {
-      printf ("%s", dump);
-      MR_FREE (dump);
-    }
+  MR_PRINT ("tree = ", (tree_node_t, &root));
   return (EXIT_SUCCESS);
 }
 ```
@@ -347,9 +320,6 @@ complexity to a build process, but doesn't require any interaction
 with a macro language. In this case sample above will look as follows:
 
 ```c
-#include <stdio.h>
-#include <stdlib.h>
-
 #include <metaresc.h>
 
 typedef struct tree_node_t {
@@ -366,12 +336,7 @@ int main (int argc, char * argv[])
     (tree_node_t[]){ { "right" } },
   };
   
-  char * dump = MR_SAVE_CINIT (tree_node_t, &root);
-  if (dump)
-    {
-      printf ("%s", dump);
-      MR_FREE (dump);
-    }
+  MR_PRINT ("tree = ", (tree_node_t, &root));
   return (EXIT_SUCCESS);
 }
 ```
@@ -410,8 +375,8 @@ endif
 clean:
 	$(RM) *.o sample_types.h
 
-CFLAGS += -I../Metaresc/src -Wno-duplicate-decl-specifier -O2 -g -Wall
-LDLIBS += ../Metaresc/src/.libs/libmetaresc.a
+CFLAGS += -I../Metaresc/src `xml2-config --cflags` -Wno-duplicate-decl-specifier -O2 -g -Wall
+LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
 ```
 
 By default library provides serialization/deserialization to/from
