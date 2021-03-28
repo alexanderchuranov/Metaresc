@@ -643,7 +643,7 @@ mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
   
   if (rarray->size > sizeof (ic->static_array.static_array))
     {
-      mr_status_t status = mr_ic_unsorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
+      mr_status_t status = mr_ic_sorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
 	return (status);
       return (mr_ic_index (ic, rarray));
