@@ -1371,15 +1371,13 @@ mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 int
 mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_fd_ptr_t * fields = context;
-  const unsigned * x_ = x.ptr;
-  const unsigned * y_ = y.ptr;
-  int diff = ((fields[*x_].fdp->offset > fields[*y_].fdp->offset) -
-	      (fields[*x_].fdp->offset < fields[*y_].fdp->offset));
+  const mr_fd_ptr_t * x_ = x.ptr;
+  const mr_fd_ptr_t * y_ = y.ptr;
+  int diff = ((x_->fdp->offset > y_->fdp->offset) - (x_->fdp->offset < y_->fdp->offset));
   if (diff)
     return (diff);
   
-  return ((*x_ > *y_) - (*x_ < *y_));
+  return ((x_->fdp->size > y_->fdp->size) - (x_->fdp->size < y_->fdp->size));
 }
 
 mr_hash_value_t
@@ -1613,8 +1611,7 @@ mr_add_enum (mr_td_t * tdp)
 	tdp->param.enum_param.is_bitmask = false;
       
       /* adding to global lookup table by enum literal names */
-      mr_ptr_t key = { .ptr = tdp->fields[i].fdp };
-      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, key);
+      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, tdp->fields[i].fdp);
       if (NULL == result)
 	{
 	  status = MR_FAILURE;
@@ -2184,41 +2181,22 @@ mr_add_type (mr_td_t * tdp)
   switch (tdp->mr_type)
     {
     case MR_TYPE_STRUCT:
-      {
-	count = tdp->fields_size / sizeof (tdp->fields[0]);
-	int i;
-	unsigned idx[count];
-	mr_fd_ptr_t fields[count];
-      
-	memcpy (fields, tdp->fields, sizeof (fields));
-      
-	for (i = 0; i < count; ++i)
-	  idx[i] = i;
-
-	/*
-	  fields descriptors might be generated in an arbitrary order
-	  if user used macro language only for meta data generation and
-	  types were defined with a standard typedefs.
-	  Here we sort structures fields by offset, but still preserve order
-	  of fields with the same offset. Zero size fields will have the same
-	  offsets with the field declared afterwards. Comparator function for
-	  the sorting explicitly uses original indexes of the fields to order
-	  fields with the same offset.
-	*/
-	mr_hsort (idx, count, sizeof (idx[0]), mr_fd_offset_cmp_sorting, fields);
-      
-	for (i = 0; i < count; ++i)
-	  tdp->fields[i] = fields[idx[i]];
-	
-	break;
-      }
+      /*
+	fields descriptors might be generated in an arbitrary order
+	if user used macro language only for meta data generation and
+	types were defined with a standard typedefs.
+	Here we sort structures fields by offset, and field size as second dimension.
+	Zero size fields will have the same offsets with the field declared afterwards.
+      */
+      mr_hsort (tdp->fields,
+		tdp->fields_size / sizeof (tdp->fields[0]), sizeof (tdp->fields[0]),
+		mr_fd_offset_cmp_sorting, NULL);
+      break;
       
     case MR_TYPE_ENUM:
-      {
-	if (MR_SUCCESS != mr_add_enum (tdp))
-	  status = MR_FAILURE;
-	break;
-      }
+      if (MR_SUCCESS != mr_add_enum (tdp))
+	status = MR_FAILURE;
+      break;
       
     default:
       break;
