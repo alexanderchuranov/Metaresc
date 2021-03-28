@@ -1252,7 +1252,7 @@ extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
 extern mr_hash_value_t mr_hash_struct (mr_ra_ptrdes_t * ptrs);
 extern int mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
-extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, int64_t value);
+extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->param.enum_param._signed) value);
 extern mr_fd_t * mr_get_enum_by_name (char * name);
 extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
 extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
