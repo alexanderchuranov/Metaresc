@@ -1075,7 +1075,7 @@ mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
  * on this entry.
  * @param mr_ra_ptrdes_t resizable array with pointers descriptors
  */
-static void
+void
 mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 {
   int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
@@ -1153,7 +1153,6 @@ mr_post_process (mr_save_data_t * mr_save_data)
   int idx_ = 0;
   mr_ptrs_dfs (&mr_save_data->ptrs, mr_post_process_node, mr_save_data, true);
   mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &idx_, true); /* enumeration of nodes should be done only after strings processing */
-  mr_reorder_strings (&mr_save_data->ptrs);
 }
 
 /**
