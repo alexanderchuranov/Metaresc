@@ -1281,9 +1281,9 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 mr_hash_value_t
 mr_hash_str (char * str)
 {
-  mr_hash_value_t hash_value = 0;
+  mr_hash_value_t hash_value = 0xDeadBeef;
   if (NULL == str)
-    return (hash_value);
+    return (1);
   while (*str)
     hash_value = (hash_value + (unsigned char)*str++) * 0xDeadBeef;
   return (hash_value);
@@ -1319,10 +1319,16 @@ mr_hashed_string_cmp (const mr_hashed_string_t * x, const mr_hashed_string_t * y
   int diff = (x_hash_value > y_hash_value) - (x_hash_value < y_hash_value);
   if (diff)
     return (diff);
-  diff = (strcmp (x->str, y->str));
-  if (diff)
-    return (diff);
-  return (0);
+  
+  if (x->str == y->str)
+    return (0);
+  
+  if (NULL == x->str)
+    return (-1);
+  if (NULL == y->str)
+    return (1);
+  
+  return (strcmp (x->str, y->str));
 }
 
 int
