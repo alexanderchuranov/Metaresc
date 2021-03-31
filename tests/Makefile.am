@@ -63,7 +63,7 @@ mf_xml2_load_LDADD = mem_failures.$(OBJEXT)
 TESTS=$(check_PROGRAMS)
 
 valgrind:
-	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"
+	 $(MAKE) $(AM_MAKEFLAGS) check LOG_COMPILER="$(LOG_COMPILER) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=execute $(VALGRIND)"
 
 callgrind:
-	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(CALLGRIND)" CK_FORK=no
+	 $(MAKE) $(AM_MAKEFLAGS) check LOG_COMPILER="$(LOG_COMPILER) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=execute $(CALLGRIND)" CK_FORK=no
