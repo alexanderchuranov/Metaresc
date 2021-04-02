@@ -1701,7 +1701,7 @@ mr_normalize_type (mr_fd_t * fdp)
     };
   int i;
   char * ptr;
-  int prev_is_space = 0;
+  bool prev_is_space = false;
   bool modified = false;
 
   for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
@@ -1728,13 +1728,13 @@ mr_normalize_type (mr_fd_t * fdp)
       for (i = 0; isspace (fdp->type[i]); ++i);
       for (; fdp->type[i]; ++i)
 	if (isspace (fdp->type[i]))
-	  prev_is_space = !0;
+	  prev_is_space = true;
 	else
 	  {
 	    if (prev_is_space)
 	      *ptr++ = ' ';
 	    *ptr++ = fdp->type[i];
-	    prev_is_space = 0;
+	    prev_is_space = false;
 	  }
       *ptr = 0;
     }

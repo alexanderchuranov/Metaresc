@@ -25,14 +25,11 @@
 #define MR_SCM_BITMASK_OR_DELIMITER " "
 #define MR_SCM_BITMASK_PREFIX "(logior "
 
-#define MR_SCM_UNNAMED_FIELDS (0)
-#define MR_SCM_NAMED_FIELDS (!MR_SCM_UNNAMED_FIELDS)
-
-static int scm_named_fields[MR_TYPE_LAST] = {
-  [MR_TYPE_STRUCT] = MR_SCM_NAMED_FIELDS,
-  [MR_TYPE_UNION] = MR_SCM_NAMED_FIELDS,
-  [MR_TYPE_ANON_UNION] = MR_SCM_NAMED_FIELDS,
-  [MR_TYPE_NAMED_ANON_UNION] = MR_SCM_NAMED_FIELDS,
+static bool scm_named_fields[MR_TYPE_LAST] = {
+  [MR_TYPE_STRUCT] = true,
+  [MR_TYPE_UNION] = true,
+  [MR_TYPE_ANON_UNION] = true,
+  [MR_TYPE_NAMED_ANON_UNION] = true,
 };
 
 #define SCM_SAVE_COMPLEX(TYPE)						\
@@ -237,7 +234,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 
   while (idx >= 0)
     {
-      int named_node = MR_SCM_UNNAMED_FIELDS;
+      bool named_node = false;
       int parent = ptrs->ra[idx].parent;
       int in_comment = false;
       int limit_level = MR_LIMIT_LEVEL (level);
@@ -273,7 +270,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 	  else
 	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
 
-	  if (MR_SCM_NAMED_FIELDS == named_node)
+	  if (named_node)
 	    {
 	      if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START,
 				limit_level * MR_SCM_INDENT_SPACES, "") < 0)
@@ -306,7 +303,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 	    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE,
 			      limit_level * MR_SCM_INDENT_SPACES, "") < 0)
 	      return (NULL);
-	  if (MR_SCM_NAMED_FIELDS == named_node)
+	  if (named_node)
 	    if (mr_ra_append_string (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
 	      return (NULL);
 	  if (MR_TYPE_ARRAY == ptrs->ra[idx].mr_type)
@@ -327,7 +324,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 	    {
 	      --level;
 	      idx = ptrs->ra[idx].parent;
-	      named_node = MR_SCM_UNNAMED_FIELDS;
+	      named_node = false;
 	      parent = ptrs->ra[idx].parent;
 
 	      if (parent >= 0)
@@ -335,7 +332,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 
 	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)
 		return (NULL);
-	      if (MR_SCM_NAMED_FIELDS == named_node)
+	      if (named_node)
 		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra[idx].name) < 0)
 		  return (NULL);
 	    }

@@ -20,10 +20,10 @@
 }
 
 %code {
-  static inline int tail_is_not_blank (mr_substr_t * substr, int offset)
+  static inline bool tail_is_not_blank (mr_substr_t * substr, int offset)
   {
     if (offset > substr->length)
-      return (!0);
+      return (true);
     for ( ; offset < substr->length; ++offset)
       if (!isspace (substr->str[offset]))
 	break;
