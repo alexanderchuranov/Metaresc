@@ -1,8 +1,8 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ([2.63])
-AC_INIT([META data and RESource library for C language], [1.0], [hnarkaytis@gmail.com])
+AC_PREREQ([2.69])
+AC_INIT([META data and RESource library for C language],[1.0],[hnarkaytis@gmail.com])
 AM_INIT_AUTOMAKE([1.0])
 AC_CONFIG_SRCDIR([src/mr_protos.h])
 AC_CONFIG_HEADERS([src/mr_config.h src/mr_export.h])
@@ -25,7 +25,7 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AM_PROG_LIBTOOL
+LT_INIT
 test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
 AC_PROG_LEX
