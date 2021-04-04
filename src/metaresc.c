@@ -1006,8 +1006,6 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 #define SIZEOF_float (sizeof (float))
 #define SIZEOF_double (sizeof (double))
 #define SIZEOF_long_double_t (MR_SIZEOF_LONG_DOUBLE)
-#define SIZEOF_complex_float_t (sizeof (complex_float_t))
-#define SIZEOF_complex_double_t (sizeof (complex_double_t))
 
 #define CASE_MR_FLOAT_TYPE_HASH(TYPE)					\
       case MR_TYPE_DETECT (TYPE):					\
@@ -1016,7 +1014,7 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 
 #define CASE_MR_COMPLEX_FLOAT_TYPE_HASH(TYPE)				\
       case MR_TYPE_DETECT (TYPE):					\
-	ptrdes->res.data.uintptr = (MR_ISNAN (__real__ *(TYPE*)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(TYPE*)ptrdes->data.ptr)) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
+	ptrdes->res.data.uintptr = (MR_ISNAN (__real__ *(TYPE*)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(TYPE*)ptrdes->data.ptr)) ? -1 : mr_hash_block (ptrdes->data.ptr, sizeof (TYPE)); \
 	break;
 
       MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
@@ -1025,9 +1023,9 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 	  
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
       ptrdes->res.data.uintptr =
-	(MR_ISNAN (__real__ *(long double *)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(long double *)ptrdes->data.ptr)) ? -1 :
-      mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
-	mr_hash_block (&((long double *)ptrdes->data.ptr)[1], MR_SIZEOF_LONG_DOUBLE);
+	(MR_ISNAN (__real__ *(complex long double *)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(complex long double *)ptrdes->data.ptr)) ? -1 :
+      mr_hash_block (&__real__ *(complex long double *)ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
+	mr_hash_block (&__imag__ *(complex long double *)ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
       break;
 	  
     case MR_TYPE_STRUCT:
