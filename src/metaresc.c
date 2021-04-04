@@ -1279,12 +1279,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 mr_hash_value_t
 mr_hash_str (char * str)
 {
-  mr_hash_value_t hash_value = 0xDeadBeef;
-  if (NULL == str)
-    return (1);
-  while (*str)
-    hash_value = (hash_value + (unsigned char)*str++) * 0xDeadBeef;
-  return (hash_value);
+  return (str ? mr_hash_block (str, strlen (str)) : 1);
 }
 
 mr_hash_value_t
@@ -1611,7 +1606,7 @@ mr_add_enum (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       typeof (tdp->fields[i].fdp->param.enum_param._unsigned) value = tdp->fields[i].fdp->param.enum_param._unsigned;
-      if ((value != 0) && ((value & (value - 1)) != 0))
+      if ((value & (value - 1)) != 0)
 	tdp->param.enum_param.is_bitmask = false;
       
       /* adding to global lookup table by enum literal names */

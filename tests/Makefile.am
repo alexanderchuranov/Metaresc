@@ -66,7 +66,7 @@ valgrind: $(top_srcdir)/src/libmetaresc.la
 if HAVE_LIBDWARF
 	LD_LIBRARY_PATH="$(top_srcdir)/src/.libs; $(LD_LIBRARY_PATH)" $(VALGRIND) $(top_srcdir)/src/.libs/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > /dev/null
 endif
-	 $(MAKE) $(AM_MAKEFLAGS) check LOG_COMPILER="$(LOG_COMPILER) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=execute $(VALGRIND)"
+	$(MAKE) $(AM_MAKEFLAGS) check LOG_COMPILER="$(LOG_COMPILER) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=execute $(VALGRIND)"
 
 callgrind:
-	 $(MAKE) $(AM_MAKEFLAGS) check LOG_COMPILER="$(LOG_COMPILER) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=execute $(CALLGRIND)" CK_FORK=no
+	$(MAKE) $(AM_MAKEFLAGS) check LOG_COMPILER="$(LOG_COMPILER) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=execute $(CALLGRIND)" CK_FORK=no
