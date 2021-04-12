@@ -16,6 +16,7 @@
 #include <mr_ic.h>
 #include <mr_load.h>
 #include <mr_value.h>
+#include <flt_values.h>
 #include <lexer.h>
 
 TYPEDEF_STRUCT (mr_load_node_context_t,

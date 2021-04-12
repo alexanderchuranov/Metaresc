@@ -11,6 +11,7 @@
 
 #include <metaresc.h>
 #include <mr_value.h>
+#include <flt_values.h>
 
 /**
  * Read enum value from string

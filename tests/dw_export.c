@@ -184,13 +184,10 @@ check_td (mr_ptr_t key, const void * context)
 START_TEST (dw_check_all)
 {
   mr_detect_type (NULL);
+  mr_type_void_fields ("ieee_half_t", "is_nan", NULL);
   mr_type_void_fields ("ieee_float_t", "is_nan", NULL);
   mr_type_void_fields ("ieee_double_t", "is_nan", NULL);
   mr_type_void_fields ("ieee_long_double_t", "is_nan", NULL);
-  mr_type_void_fields ("ieee_754_double_t", "mantissa1", NULL);
-  mr_type_void_fields ("ieee_754_double_nan_t", "mantissa1", NULL);
-  mr_type_void_fields ("ieee_854_long_double_t", "mantissa0", "mantissa1", NULL);
-  mr_type_void_fields ("ieee_854_long_double_nan_t", "mantissa1", NULL);
   mr_ic_foreach (&mr_conf.type_by_name, check_td, NULL);
 } END_TEST
 

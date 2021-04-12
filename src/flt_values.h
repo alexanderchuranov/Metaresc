@@ -56,117 +56,34 @@
 #endif /* M_E */
 
 #define LD_NAN ((ieee_long_double_t){ { .ieee_854_long_double_nan = { .quiet_nan = !0, .one = 1, .exponent = -1, }, }, }).long_double
-#define LD_LDBL_MAX ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa1 = -1, .mantissa0 = -1, .exponent = -2, .sign = PLUS, }, }, }).long_double
-#define LD_LDBL_MIN ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa1 = 0, .mantissa0 = (1 << 31), .exponent = 1, .sign = PLUS, }, }, }).long_double
+#define LD_LDBL_MAX ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa = -1, .exponent = -2, .sign = PLUS, }, }, }).long_double
+#define LD_LDBL_MIN ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa = (1UL << (IEEE_854_LONG_DOUBLE_MANTISSA - 1)), .exponent = 1, .sign = PLUS, }, }, }).long_double
 
 #define MR_SIZEOF_LONG_DOUBLE (sizeof (ieee_854_long_double_t))
 
-TYPEDEF_ENUM (sign_t, (PLUS, = 0), (MINUS, = 1))
-
-TYPEDEF_STRUCT (ieee_754_float_t,
-		BITFIELD (unsigned int, mantissa, :23),
-		BITFIELD (unsigned int, exponent, :8),
-		BITFIELD (sign_t, sign, :1))
-
-TYPEDEF_STRUCT (ieee_754_float_nan_t,
-		BITFIELD (unsigned int, mantissa, :22),
-		BITFIELD (bool, quiet_nan, :1),
-		BITFIELD (unsigned int, exponent, :8),
-		BITFIELD (sign_t, sign, :1))
-
-TYPEDEF_ENUM (ieee_754_float_nan_enum_t, (IEEE_754_FLOAT_NAN_ENUM_T, = (1 << 8) - 1, "ieee_754_float_nan"))
-
-TYPEDEF_UNION (ieee_float_t,
-	       ANON_UNION (),
-	       (ieee_754_float_t, ieee_754_float),
-	       (ieee_754_float_nan_t, ieee_754_float_nan),
-	       END_ANON_UNION ("is_nan"),
-	       BITFIELD (ieee_754_float_nan_enum_t, is_nan, :8, , .offset = 23 / __CHAR_BIT__, .param = { .bitfield_param = { .width = 8, .shift = 23 % __CHAR_BIT__, .initialized = true, }, } ),
-	       float _float,
-	       uint32_t uint32,
-	       )
-
-TYPEDEF_STRUCT (ieee_754_double_t,
-		BITFIELD (unsigned int, mantissa1, :32),
-		BITFIELD (unsigned int, mantissa0, :20),
-		BITFIELD (unsigned int, exponent, :11),
-		BITFIELD (sign_t, sign, :1))
-
-TYPEDEF_STRUCT (ieee_754_double_nan_t,
-		BITFIELD (unsigned int, mantissa1, :32),
-		BITFIELD (unsigned int, mantissa0, :19),
-		BITFIELD (bool, quiet_nan, :1),
-		BITFIELD (unsigned int, exponent, :11),
-		BITFIELD (sign_t, sign, :1))
-
-TYPEDEF_ENUM (ieee_754_double_nan_enum_t, (IEEE_754_DOUBLE_NAN_ENUM_T, = (1 << 11) - 1, "ieee_754_double_nan"))
-TYPEDEF_UNION (ieee_double_t,
-	       ANON_UNION (),
-	       (ieee_754_double_t, ieee_754_double),
-	       (ieee_754_double_nan_t, ieee_754_double_nan),
-	       END_ANON_UNION ("is_nan"),
-	       BITFIELD (ieee_754_double_nan_enum_t, is_nan, :11, , .offset = (32 + 19) / 8, .param = { .bitfield_param = { .width = 11, .shift = (32 + 19) % 8, .initialized = true, }, } ),
-	       double _double,
-	       uint64_t uint64,
-	       )
-
-TYPEDEF_STRUCT (ieee_854_long_double_t, ATTRIBUTES (__attribute__ ((packed))),
-		BITFIELD (unsigned int, mantissa1, :32),
-		BITFIELD (unsigned int, mantissa0, :32),
-		BITFIELD (unsigned int, exponent, :15),
-		BITFIELD (sign_t, sign, :1),
-		)
-
-TYPEDEF_STRUCT (ieee_854_long_double_nan_t, ATTRIBUTES (__attribute__ ((packed))),
-		BITFIELD (unsigned int, mantissa1, :32),
-		BITFIELD (unsigned int, mantissa0, :30),
-		BITFIELD (bool, quiet_nan, :1),
-		BITFIELD (unsigned int, one, :1),
-		BITFIELD (unsigned int, exponent, :15),
-		BITFIELD (sign_t, sign, :1),
-		)
-
-TYPEDEF_ENUM (ieee_854_long_double_nan_enum_t,
-	      (IEEE_854_LONG_DOUBLE_NAN_ENUM_T, = (1 << 15) - 1, "ieee_854_long_double_nan"),
-	      (IEEE_854_LONG_DOUBLE_NAN_ZERO_ONE_ENUM_T, = ((1 << 15) - 1) ^ (1 << 1), "ieee_854_long_double_nan"),
-	      )
-
-TYPEDEF_UNION (ieee_long_double_t,
-	       ANON_UNION (),
-	       (ieee_854_long_double_t, ieee_854_long_double),
-	       (ieee_854_long_double_nan_t, ieee_854_long_double_nan),
-	       END_ANON_UNION ("is_nan"),
-	       BITFIELD (ieee_854_long_double_nan_enum_t, is_nan, :15, , .offset = (32 + 30) / 8, .param = { .bitfield_param = { .width = 15, .shift = (32 + 30) % 8, .initialized = true, }, } ),
-	       long double long_double,
-	       )
-
-TYPEDEF_STRUCT (mr_complex_long_double_t, ATTRIBUTES ( , "complex long double packed to 20 bytes"),
-		(ieee_854_long_double_t, real, , "__real__ complex long double"),
-		(ieee_854_long_double_t, imag, , "__imag__ complex long double"),
-		)
-
-#define MR_CLD_PACK(CLD) ({					\
-      complex_long_double_t cld = (CLD);			\
-      (mr_complex_long_double_t) {				\
-	.real = (ieee_long_double_t) {				\
-	  .long_double = __real__ cld				\
-	}.ieee_854_long_double,					\
-	    .imag = (ieee_long_double_t) {			\
-	  .long_double = __imag__ cld				\
-	}.ieee_854_long_double,					\
-	    };							\
+#define MR_CLD_PACK(CLD) ({				\
+      complex_long_double_t __cld__ = (CLD);		\
+      (mr_complex_long_double_t) {			\
+	.real = (ieee_long_double_t) {			\
+	  .long_double = __real__ __cld__		\
+	}.ieee_854_long_double,				\
+	    .imag = (ieee_long_double_t) {		\
+	  .long_double = __imag__ __cld__		\
+	}.ieee_854_long_double,				\
+	    };						\
     })
 
-#define MR_CLD_UNPACK(MR_CLD) ({					\
-      mr_complex_long_double_t mr_cld = (MR_CLD);			\
-      ((ieee_long_double_t) {						\
-	.ieee_854_long_double = mr_cld.real				\
-	  }.long_double +						\
-	I * ((ieee_long_double_t) {					\
-	    .ieee_854_long_double = mr_cld.imag				\
-	      }.long_double));						\
+#define MR_CLD_UNPACK(MR_CLD) ({			\
+      mr_complex_long_double_t __mr_cld = (MR_CLD);	\
+      complex_long_double_t __cld__;			\
+      __real__ __cld__ = (ieee_long_double_t) {		\
+	.ieee_854_long_double = __mr_cld.real		\
+      }.long_double;					\
+      __imag__ __cld__ = (ieee_long_double_t) {		\
+	.ieee_854_long_double = __mr_cld.imag		\
+      }.long_double;					\
+      __cld__;						\
     })
-  
   
 #define MR_ISNAN(X)							\
   __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (X), float), \
@@ -177,5 +94,4 @@ TYPEDEF_STRUCT (mr_complex_long_double_t, ATTRIBUTES ( , "complex long double pa
 								       ((((ieee_long_double_t)(long double)(X)).ieee_854_long_double_nan.exponent == IEEE_854_LONG_DOUBLE_NAN_ENUM_T) || \
 									(((ieee_long_double_t)(long double)(X)).ieee_854_long_double_nan.exponent == IEEE_854_LONG_DOUBLE_NAN_ZERO_ONE_ENUM_T)), \
 								       false)))
-
 #endif /* _FLT_VALUES_H_ */
