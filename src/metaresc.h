@@ -1143,10 +1143,6 @@
 
 #endif /* HAVE_LIBXML2 */
 
-#ifndef MR_PRINT_FD
-#define MR_PRINT_FD stdout
-#endif
-
 #define EQ_2_2 0
 
 #define MR_PRINT_STRUCT(FD, ...)			\

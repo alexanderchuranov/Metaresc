@@ -1191,14 +1191,7 @@ main (int argc, char * argv [])
       dump_cu_list (debug, &mr_die);
 
 #ifdef DEBUG
-      {
-	char * dump = MR_SAVE_CINIT (mr_die_t, &mr_die);
-	if (dump)
-	  {
-	    fprintf (stderr, "mr_die_root = %s", dump);
-	    MR_FREE (dump);
-	  }
-      }
+      (void)MR_FPRINT (stderr, "mr_die_root = ", (mr_die_t, &mr_die));
 #endif
   
       extract_type_descriptors (&td_ic, &mr_die);
