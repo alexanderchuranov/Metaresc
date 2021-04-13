@@ -1601,11 +1601,16 @@ mr_add_enum (mr_td_t * tdp)
     }
 
   mr_hsort (tdp->fields, count, sizeof (tdp->fields[0]), mr_fd_enum_value_cmp_sorting, NULL);
-  
+
+  int non_zero_cnt = 0;
   tdp->param.enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
       typeof (tdp->fields[i].fdp->param.enum_param._unsigned) value = tdp->fields[i].fdp->param.enum_param._unsigned;
+
+      if (value != 0)
+	++non_zero_cnt;
+      
       if ((value & (value - 1)) != 0)
 	tdp->param.enum_param.is_bitmask = false;
       
@@ -1626,6 +1631,9 @@ mr_add_enum (mr_td_t * tdp)
       if (enum_name_length > mr_conf.enum_max_length)
 	mr_conf.enum_max_length = enum_name_length;
     }
+
+  if (non_zero_cnt < 2)
+    tdp->param.enum_param.is_bitmask = false;
 
   return (status);
 }
