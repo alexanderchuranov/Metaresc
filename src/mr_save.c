@@ -1279,7 +1279,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 /**
  * Init IO handlers Table
  */
-static mr_save_handler_t mr_save_handler[] =
+static mr_save_handler_t mr_save_handler[MR_TYPE_LAST] =
   {
     [MR_TYPE_FUNC] = mr_save_func,
     [MR_TYPE_FUNC_TYPE] = mr_save_func,

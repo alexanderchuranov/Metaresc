@@ -123,7 +123,7 @@ cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "\"\", {\n"));
 }
 
-static mr_ra_printf_t cinit_save_tbl[] = {
+static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
   [MR_TYPE_VOID] = mr_ra_printf_void,
   [MR_TYPE_ENUM] = cinit_printf_bitmask,
@@ -165,7 +165,7 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "[\n"));
 }
 
-static mr_ra_printf_t json_save_tbl[] = {
+static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
   [MR_TYPE_VOID] = mr_ra_printf_void,
   [MR_TYPE_ENUM] = cinit_printf_bitmask,

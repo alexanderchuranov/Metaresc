@@ -726,7 +726,7 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
 /**
  * Init IO handlers Table
  */
-static mr_load_handler_t mr_load_handler[] =
+static mr_load_handler_t mr_load_handler[MR_TYPE_LAST] =
   {
     [MR_TYPE_NONE] = mr_load_none,
     [MR_TYPE_VOID] = mr_load_none,

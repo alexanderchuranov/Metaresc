@@ -201,7 +201,7 @@ xml_ra_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 /**
  * Init IO handlers Table
  */
-static mr_ra_printf_t xml_ra_printf_tbl[] =
+static mr_ra_printf_t xml_ra_printf_tbl[MR_TYPE_LAST] =
   {
     [MR_TYPE_STRING] = xml_ra_printf_string,
     [MR_TYPE_NONE] = mr_ra_printf_void,

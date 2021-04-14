@@ -183,7 +183,7 @@ scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 /**
  * Init IO handlers Table
  */
-static mr_ra_printf_t scm_save_handler[] =
+static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
   {
     [MR_TYPE_NONE] = mr_ra_printf_void,
     [MR_TYPE_VOID] = mr_ra_printf_void,
@@ -239,7 +239,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
       int in_comment = false;
       int limit_level = MR_LIMIT_LEVEL (level);
 
-      if (parent >= 0)
+      if ((parent >= 0) && (ptrs->ra[parent].mr_type < MR_TYPE_LAST))
 	named_node = scm_named_fields[ptrs->ra[parent].mr_type];
 
       if (ptrs->ra[idx].ref_idx >= 0)
@@ -327,7 +327,7 @@ scm_save (mr_ra_ptrdes_t * ptrs)
 	      named_node = false;
 	      parent = ptrs->ra[idx].parent;
 
-	      if (parent >= 0)
+	      if ((parent >= 0) && (ptrs->ra[parent].mr_type < MR_TYPE_LAST))
 		named_node = scm_named_fields[ptrs->ra[parent].mr_type];
 
 	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)

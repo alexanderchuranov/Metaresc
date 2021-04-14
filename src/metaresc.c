@@ -2268,7 +2268,7 @@ basic_types_visitor (mr_ptr_t key, const void * context)
     case MR_TYPE_VOID:
     case MR_TYPE_ARRAY:
       basic_type_td->td.mr_type = fdp->mr_type_aux;
-      basic_type_td->td.size = type_size[fdp->mr_type_aux];
+      basic_type_td->td.size = (fdp->mr_type_aux < MR_TYPE_LAST) ? type_size[fdp->mr_type_aux] : 0;
       break;
 
     case MR_TYPE_STRING:
