@@ -10,13 +10,7 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_LANG(C)
 
 AC_CANONICAL_HOST
-build_mac=no
-case "${host_os}" in
-     darwin*)
-	build_mac=yes
-	;;
-esac
-AM_CONDITIONAL([OSX], [test "${build_mac}" = "yes"])
+AM_CONDITIONAL([OSX], test ${host_os} != "${host_os/darwin/}")
 
 # Checks for programs.
 AC_PROG_CC
@@ -31,54 +25,14 @@ AC_PROG_YACC
 AC_PROG_LEX
 
 AM_CFLAGS=""
-aux_CFLAGS=-ffast-math
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
-
-aux_CFLAGS="-Wall -Werror"
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
-
-aux_CFLAGS=-O2
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
-
-aux_CFLAGS=-g
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
-
-aux_CFLAGS=-Wno-initializer-overrides
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
-
-aux_CFLAGS=-Wno-constant-conversion
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
-
-aux_CFLAGS=-Wno-duplicate-decl-specifier
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
+for aux_CFLAGS in -ffast-math -Wall -Werror -O2 -g -Wno-initializer-overrides -Wno-constant-conversion -Wno-duplicate-decl-specifier
+do
+  save_CFLAGS=${CFLAGS}
+  CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+  AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+  AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+  CFLAGS=${save_CFLAGS}
+done
 
 AM_LDFLAGS=""
 aux_CFLAGS=-rdynamic
