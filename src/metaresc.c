@@ -322,12 +322,13 @@ mr_status_t
 mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
   uint8_t * ptr = ptrdes->data.ptr;
+  uint64_t _value;
   int i;
 
-  *value = *ptr++ >> ptrdes->fdp->param.bitfield_param.shift;
+  _value = *ptr++ >> ptrdes->fdp->param.bitfield_param.shift;
   for (i = __CHAR_BIT__ - ptrdes->fdp->param.bitfield_param.shift; i < ptrdes->fdp->param.bitfield_param.width; i += __CHAR_BIT__)
-    *value |= ((uint64_t)*ptr++) << i;
-  *value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
+    _value |= ((uint64_t)*ptr++) << i;
+  _value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
   switch (ptrdes->mr_type_aux)
     {
     case MR_TYPE_INT8:
@@ -335,12 +336,13 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
     case MR_TYPE_INT32:
     case MR_TYPE_INT64:
       /* extend sign bit */
-      if (*value & (1 << (ptrdes->fdp->param.bitfield_param.width - 1)))
-	*value |= -1 - ((2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1);
+      if (_value & (1 << (ptrdes->fdp->param.bitfield_param.width - 1)))
+	_value |= -1 - ((2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1);
       break;
     default:
       break;
     }
+  *value = _value;
   return (MR_SUCCESS);
 }
 
@@ -354,21 +356,22 @@ mr_status_t
 mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
 {
   uint8_t * ptr = ptrdes->data.ptr;
+  uint64_t _value = *value;
   int i;
 
-  *value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
+  _value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
   if (ptrdes->fdp->param.bitfield_param.shift + ptrdes->fdp->param.bitfield_param.width >= __CHAR_BIT__)
     *ptr &= ((1 << ptrdes->fdp->param.bitfield_param.shift) - 1);
   else
     *ptr &= (-1 - ((1 << (ptrdes->fdp->param.bitfield_param.shift + ptrdes->fdp->param.bitfield_param.width)) - 1)) | ((1 << ptrdes->fdp->param.bitfield_param.shift) - 1);
-  *ptr++ |= *value << ptrdes->fdp->param.bitfield_param.shift;
+  *ptr++ |= _value << ptrdes->fdp->param.bitfield_param.shift;
   for (i = __CHAR_BIT__ - ptrdes->fdp->param.bitfield_param.shift; i < ptrdes->fdp->param.bitfield_param.width; i += __CHAR_BIT__)
     if (ptrdes->fdp->param.bitfield_param.width - i >= __CHAR_BIT__)
-      *ptr++ = *value >> i;
+      *ptr++ = _value >> i;
     else
       {
 	*ptr &= -1 - ((1 << (ptrdes->fdp->param.bitfield_param.width - i)) - 1);
-	*ptr++ |= *value >> i;
+	*ptr++ |= _value >> i;
       }
   return (MR_SUCCESS);
 }
