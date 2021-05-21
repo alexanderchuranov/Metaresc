@@ -1260,7 +1260,8 @@ extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t 
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
 extern int mr_print_value (FILE * fd, unsigned int mr_type, ...);
 
-extern char * mr_get_static_field_name (mr_substr_t * substr);
+extern char * mr_get_static_field_name_from_string (char * name);
+extern char * mr_get_static_field_name_from_substring (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 extern mr_status_t mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);

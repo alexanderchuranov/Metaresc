@@ -217,7 +217,7 @@ list_element: cinit
 | TOK_CINIT_FIELD_PREFIX cinit {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_load->ptrs->ra[idx].name = mr_get_static_field_name (&$1);
+  mr_load->ptrs->ra[idx].name = mr_get_static_field_name_from_substring (&$1);
 }
 
 %%

@@ -673,7 +673,7 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 }
 
 /**
- * Checks that string is a valid field name [_a-zA-A][_a-zA-Z0-9 ]*
+ * Checks that string is a valid field name
  * @param name union meta field
  */
 bool
@@ -681,12 +681,7 @@ mr_is_valid_field_name (char * name)
 {
   if (NULL == name)
     return (false);
-  if (!isalpha (*name) && ('_' != *name))
-    return (false);
-  for (++name; *name; ++name)
-    if (!isalnum (*name) && ('_' != *name) && (' ' != *name))
-      return (false);
-  return (true);
+  return (mr_get_static_field_name_from_string (name) != NULL);
 }
 
 static mr_fd_t *
@@ -2116,7 +2111,16 @@ fields_names_visitor (mr_ptr_t key, const void * context)
 }
 
 char *
-mr_get_static_field_name (mr_substr_t * substr)
+mr_get_static_field_name_from_string (char * name)
+{
+  mr_hashed_string_t hashed_string = { .str = name, .hash_value = 0, };
+  mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &hashed_string);
+  mr_hashed_string_t * field_name = find ? find->ptr : NULL;
+  return (field_name ? field_name->str : NULL);
+}
+
+char *
+mr_get_static_field_name_from_substring (mr_substr_t * substr)
 {
   static int max_field_name_length = 0;
   if (0 == max_field_name_length)
@@ -2127,12 +2131,9 @@ mr_get_static_field_name (mr_substr_t * substr)
     return (NULL);
   
   char name[substr->length + 1];
-  mr_hashed_string_t hashed_string = { .str = name, .hash_value = 0, };
   memcpy (name, substr->str, substr->length);
   name[substr->length] = 0;
-  mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &hashed_string);
-  mr_hashed_string_t * field_name = find ? find->ptr : NULL;
-  return (field_name ? field_name->str : NULL);
+  return (mr_get_static_field_name_from_string (name));
 }
 
 /**
