@@ -11,7 +11,19 @@
 
 #include <metaresc.h>
 #include <mr_value.h>
+#include <mr_ic.h>
 #include <flt_values.h>
+
+static mr_status_t
+enum_names_visitor (mr_ptr_t key, const void * context)
+{
+  mr_fd_t * enum_fdp = key.ptr;
+  int enum_name_length = strlen (enum_fdp->name.str);
+  int * enum_max_length = (int*)context;
+  if (enum_name_length > *enum_max_length)
+    *enum_max_length = enum_name_length;
+  return (MR_SUCCESS);
+}
 
 /**
  * Read enum value from string
@@ -22,6 +34,10 @@
 static char *
 mr_get_enum (char * str, uint64_t * data)
 {
+  static int enum_max_length = 0;
+  if (0 == enum_max_length)
+    mr_ic_foreach (&mr_conf.enum_by_name, enum_names_visitor, &enum_max_length);
+  
   char * name = str;
 
   while (isalnum (*str) || (*str == '_'))
@@ -29,7 +45,7 @@ mr_get_enum (char * str, uint64_t * data)
   
   size_t size = str - name;
 
-  if (size > mr_conf.enum_max_length)
+  if (size > enum_max_length)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name);
       return (NULL);
