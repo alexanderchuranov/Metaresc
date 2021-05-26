@@ -52,7 +52,7 @@ scm_load.lex.c: scm_load.l scm_load.tab.h
 $(libmetaresc_la_SOURCES) mr_dwarf.c: metaresc.h
 metaresc.h: mr_pp.h
 mr_pp.h: mr_pp.sh
-	$(srcdir)/$? $(PP_DEPTH) > $@
+	./$? $(PP_DEPTH) > $@
 
 valgrind:
 	 $(MAKE) $(AM_MAKEFLAGS) check TESTS_ENVIRONMENT="$(LIBTOOL) --mode=execute $(VALGRIND)"

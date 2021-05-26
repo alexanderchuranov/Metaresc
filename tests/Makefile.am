@@ -4,7 +4,7 @@ AUTOMAKE_OPTIONS = parallel-tests
 AM_CFLAGS = @AM_CFLAGS@ $(CHECK_CFLAGS)
 AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src
-LIBS += $(top_srcdir)/src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
+LIBS += ../src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
@@ -30,19 +30,19 @@ endif
 endif
 
 dw_export.$(OBJEXT): dw_export.h dw_types.h
-dw_export.h: $(top_srcdir)/src/libmetaresc.la
+dw_export.h: ../src/libmetaresc.la
 if OSX
-	dsymutil $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?`
+	dsymutil ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?`
 endif
-	$(top_srcdir)/src/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
+	../src/mr_dwarf ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
 
 if OSX
 dw_types.h: dw_types
 	dsymutil .libs/$?
-	$(top_srcdir)/src/mr_dwarf .libs/$? > $@
+	../src/mr_dwarf .libs/$? > $@
 else
 dw_types.h: dw_types.$(OBJEXT)
-	$(top_srcdir)/src/mr_dwarf $? > $@
+	../src/mr_dwarf $? > $@
 endif
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)
@@ -62,9 +62,9 @@ mf_xml2_load_LDADD = mem_failures.$(OBJEXT)
 
 TESTS=$(check_PROGRAMS)
 
-valgrind: $(top_srcdir)/src/libmetaresc.la
+valgrind: ../src/libmetaresc.la
 if HAVE_LIBDWARF
-	LD_LIBRARY_PATH="$(top_srcdir)/src/.libs; $(LD_LIBRARY_PATH)" $(VALGRIND) $(top_srcdir)/src/.libs/mr_dwarf $(top_srcdir)/src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > /dev/null
+	LD_LIBRARY_PATH="../src/.libs; $(LD_LIBRARY_PATH)" $(VALGRIND) ../src/.libs/mr_dwarf ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > /dev/null
 endif
 	$(MAKE) $(AM_MAKEFLAGS) check LOG_COMPILER="$(LOG_COMPILER) $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=execute $(VALGRIND)"
 
