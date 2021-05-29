@@ -342,7 +342,7 @@
 /*
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted MR_ type prefix.
   The 3rd macro unfolds to MR_{AUTO|INT32|...}_{PROTO|DESC} (P00_TYPE_NAME, ARGS...)
-  Last one detects unkown field qualifiers.
+  Last one detects unknown field qualifiers.
 */
 #define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, MR_PASTE2 (P00_COMMA_, FIELD))
 #define P00_FIELD_UNFOLD_(...) P00_FIELD_UNFOLD__ (__VA_ARGS__)
@@ -1144,29 +1144,35 @@
 #endif /* HAVE_LIBXML2 */
 
 #define EQ_2_2 0
+#define EQ_3_3 0
 
-#define MR_PRINT_STRUCT(FD, ...)			\
-  MR_IF_ELSE (MR_PASTE2 (EQ_2_, MR_NARG (__VA_ARGS__)))	\
-    (MR_PRINT_VALUE (FD, __VA_ARGS__))			\
-    (MR_PRINT_STRUCT_ (FD, __VA_ARGS__))
+#define MR_PRINT_IN_PAREN(COUNT, FD, ...)		\
+  MR_IF_ELSE (MR_PASTE2 (EQ_2_, COUNT))			\
+  (MR_PRINT_IN_PAREN_ (COUNT, FD, __VA_ARGS__))		\
+  (MR_PRINT_STRUCT (FD, __VA_ARGS__, CINIT))
 
-#define MR_PRINT_STRUCT_(FD, TYPE, PTR) ({		\
-      char * _dump_ = MR_SAVE_CINIT (TYPE, PTR);	\
-      int rv = 0;					\
-      if (_dump_)					\
-	{						\
-	  rv = fprintf (FD, "%s", _dump_);		\
-	  MR_FREE (_dump_);				\
-	}						\
-      rv;						\
-    })
+#define MR_PRINT_IN_PAREN_(COUNT, FD, ...)		\
+  MR_IF_ELSE (MR_PASTE2 (EQ_3_, COUNT))			\
+    (MR_PRINT_VALUE (FD, (__VA_ARGS__)))		\
+  (MR_PRINT_STRUCT (FD, __VA_ARGS__))
 
-#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), X)
+ #define MR_PRINT_STRUCT(FD, TYPE, PTR, METHOD) ({	\
+       char * _dump_ = MR_SAVE_ ## METHOD (TYPE, PTR);	\
+       int _rv_ = 0;					\
+       if (_dump_)					\
+	 {						\
+	   _rv_ = fprintf (FD, "%s", _dump_);		\
+	   MR_FREE (_dump_);				\
+	 }						\
+       _rv_;						\
+     })
 
-#define MR_PRINT_ONE_ELEMENT(FD, X, I)		\
-  MR_IF_ELSE (MR_IS_IN_PAREN (X))		\
-    (MR_PRINT_STRUCT (FD, MR_REMOVE_PAREN (X)))	\
-    (MR_PRINT_VALUE (FD, X))
+ #define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), X)
+
+#define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
+  MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
+  (MR_PRINT_IN_PAREN (MR_NARG X, FD, MR_REMOVE_PAREN_ X))	\
+  (MR_PRINT_VALUE (FD, X))
 
 #define MR_ADD(NAME, I, REC, X) REC + X
 #define MR_PRINT(...) (void)MR_FPRINT (stdout, __VA_ARGS__)
