@@ -153,8 +153,9 @@
    | (__builtin_types_compatible_p (complex long double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
    | (__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE) ? MR_TYPE_CHAR_ARRAY : 0) \
-   | ((__builtin_types_compatible_p (const volatile __typeof__ (char *) SUFFIX, const volatile TYPE) \
-       | __builtin_types_compatible_p (const volatile char * SUFFIX, const volatile TYPE)) ? MR_TYPE_STRING : 0)						\
+   | ((__builtin_types_compatible_p (const volatile __typeof__ (char * SUFFIX), const volatile TYPE) \
+       | __builtin_types_compatible_p (const volatile __typeof__ (char *) SUFFIX, const volatile TYPE) \
+       | __builtin_types_compatible_p (const volatile char * SUFFIX, const volatile TYPE)) ? MR_TYPE_STRING : 0) \
    )
 #define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, const *) | MR_TYPE_DETECT (TYPE, volatile *) | MR_TYPE_DETECT (TYPE, const volatile *))
 
@@ -1153,21 +1154,21 @@
 
 #define MR_PRINT_IN_PAREN_(COUNT, FD, ...)		\
   MR_IF_ELSE (MR_PASTE2 (EQ_3_, COUNT))			\
-    (MR_PRINT_VALUE (FD, (__VA_ARGS__)))		\
-  (MR_PRINT_STRUCT (FD, __VA_ARGS__))
+  (MR_PRINT_VALUE (FD, (__VA_ARGS__)))			\
+    (MR_PRINT_STRUCT (FD, __VA_ARGS__))
 
- #define MR_PRINT_STRUCT(FD, TYPE, PTR, METHOD) ({	\
-       char * _dump_ = MR_SAVE_ ## METHOD (TYPE, PTR);	\
-       int _rv_ = 0;					\
-       if (_dump_)					\
-	 {						\
-	   _rv_ = fprintf (FD, "%s", _dump_);		\
-	   MR_FREE (_dump_);				\
-	 }						\
-       _rv_;						\
-     })
+#define MR_PRINT_STRUCT(FD, TYPE, PTR, METHOD) ({	\
+      char * _dump_ = MR_SAVE_ ## METHOD (TYPE, PTR);	\
+	int _rv_ = 0;					\
+	if (_dump_)					\
+	  {						\
+	    _rv_ = fprintf (FD, "%s", _dump_);		\
+	    MR_FREE (_dump_);				\
+	  }						\
+	_rv_;						\
+    })
 
- #define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), X)
+#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)),  MR_TYPE_DETECT_PTR (__typeof__ (X)), __builtin_classify_type (X), X)
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
@@ -1264,7 +1265,7 @@ extern void mr_message (const char * file_name, const char * func_name, int line
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
-extern int mr_print_value (FILE * fd, unsigned int mr_type, ...);
+extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ...);
 
 extern char * mr_get_static_field_name_from_string (char * name);
 extern char * mr_get_static_field_name_from_substring (mr_substr_t * substr);

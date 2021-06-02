@@ -115,6 +115,27 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_LAST, /* keep it last */
 	      )
 
+TYPEDEF_ENUM (mr_type_class_t,
+	      (MR_NO_TYPE_CLASS, = -1),
+	      MR_VOID_TYPE_CLASS,
+	      MR_INTEGER_TYPE_CLASS,
+	      MR_CHAR_TYPE_CLASS,
+	      MR_ENUMERAL_TYPE_CLASS,
+	      MR_BOOLEAN_TYPE_CLASS,
+	      MR_POINTER_TYPE_CLASS,
+	      MR_REFERENCE_TYPE_CLASS,
+	      MR_OFFSET_TYPE_CLASS,
+	      MR_REAL_TYPE_CLASS,
+	      MR_COMPLEX_TYPE_CLASS,
+	      MR_FUNCTION_TYPE_CLASS,
+	      MR_METHOD_TYPE_CLASS,
+	      MR_RECORD_TYPE_CLASS,
+	      MR_UNION_TYPE_CLASS,
+	      MR_ARRAY_TYPE_CLASS,
+	      MR_STRING_TYPE_CLASS,
+	      MR_LANG_TYPE_CLASS,
+	      )
+    
 TYPEDEF_ENUM (mr_sign_t, (PLUS, = 0), (MINUS, = 1))
 
 #define IEEE_754_HALF_MANTISSA (10)

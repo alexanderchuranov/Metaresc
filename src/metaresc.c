@@ -469,7 +469,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 }
 
 int
-mr_print_value (FILE * fd, unsigned int mr_type, ...)
+mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ...)
 {
   static const char const * formats[] =
     {
@@ -490,9 +490,10 @@ mr_print_value (FILE * fd, unsigned int mr_type, ...)
     };
   int rv = 0;
   va_list args;
-  va_start (args, mr_type);
+  va_start (args, mr_type_class);
 
-  if ((mr_type < sizeof (formats) / sizeof (formats[0])) &&
+  if ((mr_type >= 0) &&
+      (mr_type < sizeof (formats) / sizeof (formats[0])) &&
       (formats[mr_type] != NULL))
     rv = vfprintf (fd, formats[mr_type], args);
   else
@@ -523,6 +524,34 @@ mr_print_value (FILE * fd, unsigned int mr_type, ...)
 	{
 	  complex_long_double_t value = va_arg (args, complex_long_double_t);
 	  rv = fprintf (fd, "%Lg%+LgI", __real__ value, __imag__ value);
+	  break;
+	}
+      case MR_TYPE_NONE:
+	{
+	  if (MR_POINTER_TYPE_CLASS == mr_type_class)
+	    {
+	      void * value = va_arg (args, void *);
+	      rv = fprintf (fd, "%p", value);
+	      if (value != NULL)
+		switch (mr_type_aux)
+		  {
+#define MR_PRINT_AUX(TYPE)						\
+		    case MR_TYPE_DETECT (TYPE):				\
+		      rv += fprintf (fd, " ((" #TYPE ")");		\
+		      rv += mr_print_value (fd, mr_type_aux, MR_TYPE_NONE, MR_NO_TYPE_CLASS, *(TYPE*)value); \
+		      rv += fprintf (fd, ")");				\
+		      break;
+		    MR_FOREACH (MR_PRINT_AUX, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, long double, complex float, complex double, complex long double, char *);
+		    
+		  default:
+		    {
+		      const char * func_name = mr_serialize_func (value);
+		      if (func_name)
+			rv += fprintf (fd, " (%s)", func_name);
+		      break;
+		    }		    
+		  }
+	    }
 	  break;
 	}
       default:
