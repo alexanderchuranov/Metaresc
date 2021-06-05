@@ -18,16 +18,7 @@ int main ()
   today.hour = break_down_time->tm_hour;
   today.minute = break_down_time->tm_min;
 
-  char * xml = MR_SAVE_XML (date_t, &today);
-
-  printf ("sizeof (date_t) = %zd\n", sizeof (date_t));
-  if (NULL == xml)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s", xml);
-      MR_FREE (xml);
-    }
+  MR_PRINT ("sizeof (date_t) = ", sizeof (date_t), "\n", (date_t, &today, JSON));
 
   return (EXIT_SUCCESS);
 }

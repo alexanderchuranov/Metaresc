@@ -20,15 +20,6 @@ int main ()
   int y = 4321;
   int_pointer_t x_ptr = { &x };
   int_dbl_pointer_t idp = { &x_ptr, &y };
-  char * xml = MR_SAVE_XML (int_dbl_pointer_t, &idp);
-
-  if (NULL == xml)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s", xml);
-      MR_FREE (xml);
-    }
-
+  MR_PRINT ((int_dbl_pointer_t, &idp, XML));
   return (EXIT_SUCCESS);
 }

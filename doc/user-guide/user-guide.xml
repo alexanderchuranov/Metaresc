@@ -1329,123 +1329,6 @@ space_t space = {
 	 xmlns:xi="http://www.w3.org/2003/XInclude"
 	 /></programlisting>
         
-	 The example above prints the following:
-	 <programlisting language="c">
-{
-  .mr_type = MR_TYPE_STRUCT,
-  .size = 8,
-  .type = "with_f_pointers_t",
-  .attr = /* ref_idx = 4 */ "",
-  .mr_type_effective = MR_TYPE_NONE,
-  .size_effective = 0,
-  .lookup_by_value = NULL,
-  .hash_value = 5242295550596278467,
-  .lookup_by_name = {
-    .data = (mr_fd_ptr_t[]){
-      {
-        .fdp = NULL,
-      },
-      {
-        .fdp = NULL,
-      },
-      {
-        .fdp = /* ref = 24 */ NULL,
-      },
-    },
-    .size = 24,
-    .alloc_size = 24,
-    .ext = {
-      NULL,
-    },
-    .ptr_type = NULL,
-  },
-  .fields = {
-    .data = (mr_fd_t[]){
-      /* ref_idx = 24 */ {
-        .type = "char *",
-        .name = "pfunc",
-        .hash_value = 10734660904406256812,
-        .offset = 0,
-        .size = 8,
-        .mr_type = MR_TYPE_FUNC,
-        .mr_type_aux = MR_TYPE_NONE,
-        .mr_type_ext = MR_TYPE_EXT_NONE,
-        .param = {
-          .func_param = {
-            .data = (mr_fd_t[]){
-              {
-                .type = "char *",
-                .name = NULL,
-                .hash_value = 0,
-                .offset = 0,
-                .size = 8,
-                .mr_type = MR_TYPE_STRING,
-                .mr_type_aux = MR_TYPE_CHAR,
-                .mr_type_ext = MR_TYPE_EXT_NONE,
-                .param = {
-                  .array_param = {
-                    .count = 0,
-                    .row_count = 0,
-                  },
-                },
-                .comment = "return value",
-                .ext = {
-                  NULL,
-                },
-                .ptr_type = NULL,
-              },
-              {
-                .type = "int",
-                .name = NULL,
-                .hash_value = 0,
-                .offset = 0,
-                .size = 4,
-                .mr_type = MR_TYPE_INT32,
-                .mr_type_aux = MR_TYPE_NONE,
-                .mr_type_ext = MR_TYPE_EXT_NONE,
-                .param = {
-                  .array_param = {
-                    .count = 0,
-                    .row_count = 0,
-                  },
-                },
-                .comment = /* ref_content = 4 */ NULL,
-                .ext = {
-                  NULL,
-                },
-                .ptr_type = NULL,
-              },
-            },
-            .size = 224,
-            .alloc_size = -1,
-            .ext = {
-              NULL,
-            },
-            .ptr_type = NULL,
-          },
-        },
-        .comment = /* ref_content = 4 */ NULL,
-        .ext = {
-          NULL,
-        },
-        .ptr_type = NULL,
-      },
-    },
-    .size = 112,
-    .alloc_size = -1,
-    .ext = {
-      NULL,
-    },
-    .ptr_type = NULL,
-  },
-  .comment = /* ref_content = 4 */ NULL,
-  .ext = {
-    NULL,
-  },
-  .ptr_type = NULL,
-}
-	 </programlisting>
-
        </para>
      </section>
 
@@ -1581,25 +1464,11 @@ space_t space = {
      </section>
     
      <section xml:id="decl-rarrays">
-       <title>Declaring RARRAYs</title>
+       <title>Declaring arrays of variable size</title>
        <para>
-	 In addition to the usual types found in C language, the
-	 library allows declaring a structure field to be of
-	 METARESC-specific RARRAY (Resizable Array) type. There is no
-	 widely-accepted idea on how to declare a resizable array in
-	 C; most applications use their own patterns and naming
-	 conventions. The RARRAY is a resizable array provided by the
-	 library. A structure field of RARRAY type may de declared as
-	 follows:
+	 In addition to the standard pointers, the
+	 library allows declaring pointers on array of variable size.
         
-	 <programlisting language="c">
-	   RARRAY ( type, name, 
-	   comment<subscript>opt</subscript>,
-	   { pointer-on-user-data }<subscript>opt</subscript>,
-	   user-data-type<subscript>opt</subscript>
-	   )
-	 </programlisting>
-
 	 Example follows:
 	 
 	 <programlisting language="c"><xi:include
@@ -1608,45 +1477,8 @@ space_t space = {
 	 xmlns:xi="http://www.w3.org/2003/XInclude"
 	 /></programlisting>
         
-	 The first declaration argument specifies the type of array
-	 items, the second — the name of the field. Those mandatory
-	 arguments might be followed by field meta data. If the first
-	 argument is <code>employee_t</code>, as shown in example,
-	 then the <code>employees</code> member of the structure is a
-	 structure itself and has at least the following fields:
-        
-	 <programlisting language="c"><![CDATA[
-	 struct __attribute__((packed)) {
-	 employee_t * data;  // pointer to array items
-	 int64_t size;       // used space in bytes
-	 int64_t alloc_size; // allocated space in bytes
-	 mr_ptr_t ext;       // per-instance user data
-	 char * ptr_type;    // the name of the pointed-to object type
-	 } employees;
-	 ]]></programlisting>
-        
-	 The <code>ext</code> field of type <code>mr_ptr_t</code> is
-	 intended for additional data you may need to attach to the
-	 instance of resizable array. Usage of <code>ext</code> and
-	 <code>ptr_type</code> fields is optional. You may safely
-	 zeroize the fields. However, to serialize the
-	 <code>ext</code> field correctly (if it is non-null), set
-	 <code>ptr_type</code> to character string, containing the
-	 name of the type of the object the <code>ext</code> field
-	 points to.
        </para>
       
-       <para>
-	 Since RARRAY keyword produces ordinary data structure, you
-	 may use its fileds as you see fit. The library, however, will
-	 always assume that the memory pointed to by the
-	 <code>data</code> field is allocated using the
-	 <code>MR_MALLOC</code> macro. When loading data from external
-	 source, you must use <code>MR_FREE</code> to free the memory,
-	 occupied by resizable array items ( which the
-	 <code>data</code> member points to ), when the array is no
-	 longer necessary.
-       </para>
      </section>
      
    </section>
@@ -2095,67 +1927,6 @@ sizeof (date_t) = 4
     </section>
       
     <section>
-      <title>Marshalling RARRAYs</title>
-      <para>
-	The resizable arrays, provided by the library, are serialized
-	as a structure presented in C: serialization starts with block
-	<code>data</code> and followed by the rest of
-	<code>rarray_t</code> fields: <code>size</code>,
-	<code>alloc_size</code>, <code>ext</code>,
-	<code>ptr_type</code>.  Block <code>data</code> contains list
-	of entities just like fixed size arrays. The traversal starts
-	form zero index. So that, having a declaration like this:
-          
-	<programlisting language="c"><xi:include
-	href="../../examples/decl_rarray.h"
-	parse="text"
-	xmlns:xi="http://www.w3.org/2003/XInclude"
-	/></programlisting>
-	
-	You may expect the following output:
-          
-	<programlisting language="xml"><![CDATA[
-<?xml version="1.0"?>
-<firm>
-  <name>Gen-sys</name>
-  <employees>
-    <data>
-      <employees>
-        <firstname>Will</firstname>
-        <lastname>Rodman</lastname>
-        <salary>200000</salary>
-      </employees>
-      <employees>
-        <firstname>Static</firstname>
-        <lastname>Jacobs</lastname>
-        <salary>250000</salary>
-      </employees>
-      <employees>
-        <firstname>Robert</firstname>
-        <lastname>Franklin</lastname>
-        <salary>170000</salary>
-      </employees>
-    </data>
-    <size>72</size>
-    <alloc_size>0</alloc_size>
-    <ext>
-      <ptr isnull="true"/>
-    </ext>
-    <ptr_type isnull="true"/>
-  </employees>
-</firm>
-]]>
-	</programlisting>
-          
-	The only trick here is to remember that the <code>size</code>
-	and <code>alloc_size</code> fields of a resizable array are in
-	bytes. To correctly serialize the variable in the example
-	above the program set the <code>size</code> member to <code>3
-	* sizeof(employee_t)</code>.
-      </para>
-    </section>
-      
-    <section>
       <title>Input-output Formats</title>
       
       <section>
@@ -2323,9 +2094,6 @@ sizeof (date_t) = 4
             </para></listitem>
             <listitem><para>
               Bit-fields are represented by JSON numbers.
-            </para></listitem>
-            <listitem><para>
-              RARRAYs are represented by JSON arrays.
             </para></listitem>
           </itemizedlist>
         </para>

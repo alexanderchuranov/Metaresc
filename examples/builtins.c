@@ -10,15 +10,6 @@ main (int argc, char * argv[])
 {
   builtins_t b;
   memset (&b, -1, sizeof (b));
-  char * xml = MR_SAVE_XML (builtins_t, &b);
-
-  if (NULL == xml)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s", xml);
-      MR_FREE (xml);
-    }
-
+  MR_PRINT ((builtins_t, &b, XML));
   return (EXIT_SUCCESS);
 }

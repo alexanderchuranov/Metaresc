@@ -13,14 +13,7 @@ int main ()
       .dc = 7.42
     }
   };
-  char * xml = MR_SAVE_XML (basics_t, &b);
 
-  if (NULL == xml)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s", xml);
-      MR_FREE (xml);
-    }
+  MR_PRINT ((basics_t, &b, XML));
   return (EXIT_SUCCESS);
 }

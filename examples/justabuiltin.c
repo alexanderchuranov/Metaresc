@@ -8,15 +8,6 @@ int
 main (int argc, char * argv[])
 {
   int x = 5;
-  char * xml = MR_SAVE_XML (int, &x);
-
-  if (NULL == xml)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s", xml);
-      MR_FREE (xml);
-    }
-
+  MR_PRINT (( , &x, XML));
   return (EXIT_SUCCESS);
 }

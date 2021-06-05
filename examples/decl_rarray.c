@@ -1,5 +1,3 @@
-
-#include <assert.h>
 #include <stdlib.h>
 
 #include "decl_rarray.h"
@@ -16,15 +14,6 @@ static organization_t firm = {
 
 int main ()
 {
-  char * xml = MR_SAVE_XML (organization_t, &firm);
-
-  if (NULL == xml)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s", xml);
-      MR_FREE (xml);
-    }
-
+  MR_PRINT ((organization_t, &firm, JSON));
   return (EXIT_SUCCESS);
 }

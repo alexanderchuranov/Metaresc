@@ -27,14 +27,6 @@ int main ()
     .fallback = &server2
   };
 
-  char * xml = MR_SAVE_XML (policy_t, &policy);
-  if (NULL == xml)
-    printf ("Serialization failed\n");
-  else
-    {
-      printf ("%s", xml);
-      MR_FREE (xml);
-    }
-
+  MR_PRINT ((policy_t, &policy, XML));
   return (EXIT_SUCCESS);
 }
