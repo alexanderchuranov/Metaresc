@@ -766,54 +766,39 @@
 
 #define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR)		\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))		\
-  (MR_SAVE_TYPED_ (__typeof__ (*(S_PTR)), S_PTR))	\
+  (MR_SAVE_DETECT_TYPE (S_PTR))				\
   (MR_SAVE_TYPED_ (MR_TYPE_NAME, S_PTR))
 
+#define MR_SAVE_DETECT_TYPE(S_PTR) MR_SAVE_STR_TYPED (NULL, S_PTR)
+
 #define MR_SAVE_TYPED_(MR_TYPE_NAME, S_PTR) ({				\
+      MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
+      MR_SAVE_STR_TYPED (MR_STRINGIFY (MR_TYPE_NAME), S_PTR);		\
+    })
+
+#define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
+      mr_save_data_t __mr_save_data__;					\
+      void * __ptr__ = S_PTR;						\
       mr_fd_t __fd__ =							\
 	{								\
 	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
-	  .type = MR_STRINGIFY (MR_TYPE_NAME),				\
+	  .type = MR_TYPE_NAME_STR,					\
 	  .non_persistent = true,					\
-	  .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-	  .size = sizeof (MR_TYPE_NAME),				\
+	  .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),		\
+	  .size = sizeof (__typeof__ (*(S_PTR))),			\
 	};								\
-      MR_TYPE_NAME * check_type = S_PTR;				\
-      mr_save_data_t __mr_save_data__;					\
       mr_detect_type (&__fd__);						\
-      if (__builtin_types_compatible_p (MR_TYPE_NAME[], __typeof__ (S_PTR)) && \
-	  (sizeof (MR_TYPE_NAME) > 0) &&				\
-	  (sizeof (S_PTR) >= sizeof (MR_TYPE_NAME)))			\
+      if ((MR_ARRAY_TYPE_CLASS == __builtin_classify_type (S_PTR)) &&	\
+	  (sizeof (__typeof__ (*(S_PTR))) > 0))				\
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
 	  __fd__.size = sizeof (S_PTR);					\
-	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (MR_TYPE_NAME); \
+	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (__typeof__ (*(S_PTR))); \
 	  __fd__.param.array_param.row_count = 1;			\
 	}								\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
-      MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-      (void)(0 / (uintptr_t)S_PTR);					\
-      if (check_type == NULL)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
-      else								\
-	mr_save (check_type, &__fd__, &__mr_save_data__);		\
-      __mr_save_data__.ptrs;						\
-    })
-
-#define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
-      mr_fd_t __fd__ =							\
-	{								\
-	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
-	  .non_persistent = true,					\
-	  .type = MR_TYPE_NAME_STR,					\
-	  .mr_type = MR_TYPE_NONE,					\
-	  .size = 0,							\
-	};								\
-      void * __ptr__ = S_PTR;						\
-      mr_save_data_t __mr_save_data__;					\
-      mr_detect_type (&__fd__);						\
-      __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
+      memset (&__mr_save_data__, 0, sizeof (__mr_save_data__));		\
       if (__ptr__ == NULL)						\
 	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
       else								\

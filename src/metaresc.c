@@ -1728,6 +1728,9 @@ mr_normalize_type (mr_fd_t * fdp)
   bool prev_is_space = false;
   bool modified = false;
 
+  if (NULL == fdp->type)
+    return;
+
   for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
     {
       int length = strlen (keywords[i]);
