@@ -5,25 +5,7 @@
 #include <regression.h>
 #include <flt_values.h>
 
-#define SCALAR_DOUBLE(TYPE, X, Y, ...) ({				\
-  int cmp = memcmp (X, Y, MR_SIZEOF_LONG_DOUBLE);			\
-  if (cmp)								\
-    {									\
-      char * _x = MR_SAVE_CINIT (ieee_long_double_t, (ieee_long_double_t*)X); \
-      char * _y = MR_SAVE_CINIT (ieee_long_double_t, (ieee_long_double_t*)Y); \
-      printf (#X " = %.20Lg " #Y " = %.20Lg\n", *(long double*)X, *(long double*)Y); \
-      if (_x)								\
-	{								\
-	  printf ("x = %s\n", _x);					\
-	  MR_FREE (_x);							\
-	}								\
-      if (_y)								\
-	{								\
-	  printf ("y = %s\n", _y);					\
-	  MR_FREE (_y);							\
-	}								\
-    }									\
-  cmp; })
+#define SCALAR_DOUBLE(TYPE, X, Y, ...) memcmp (X, Y, MR_SIZEOF_LONG_DOUBLE)
 
 #define ASSERT_SAVE_LOAD_LONG_DOUBLE(METHOD, VALUE) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, long double, VALUE, SCALAR_DOUBLE); \

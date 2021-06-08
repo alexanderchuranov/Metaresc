@@ -259,8 +259,6 @@ START_TEST (resizable_mr_ptr) {
 #undef TEST_METHODS
 #define TEST_METHODS XDR
 
-#define CMP_OPAQUE_DATA(TYPE, X, Y, ...) CMP_SERIALIAZED (resizable_array_t, ((resizable_array_t*)X), ((resizable_array_t*)Y), __VA_ARGS__)
-
 TYPEDEF_STRUCT (resizable_array_as_opaque_data_t,
 		(int8_t *, MR_OPAQUE_DATA, , , { "size" }, "string"),
 		VOID (int, size),
@@ -272,7 +270,7 @@ START_TEST (resizable_array_as_opaque_data) {
       .MR_OPAQUE_DATA = (__typeof__ (orig.MR_OPAQUE_DATA[0])[]){ -1, 1, },
       .size = 2 * sizeof (orig.MR_OPAQUE_DATA[0]),
     };
-  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_as_opaque_data_t, &orig, CMP_OPAQUE_DATA);
+  ALL_METHODS (ASSERT_SAVE_LOAD, resizable_array_as_opaque_data_t, &orig);
 } END_TEST
 #endif /* HAVE_RPC_TYPES_H */
 

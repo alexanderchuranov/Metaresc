@@ -788,13 +788,14 @@
 	  .size = sizeof (__typeof__ (*(S_PTR))),			\
 	};								\
       mr_detect_type (&__fd__);						\
-      if ((MR_ARRAY_TYPE_CLASS == __builtin_classify_type (S_PTR)) &&	\
-	  (sizeof (__typeof__ (*(S_PTR))) > 0))				\
+      if (!__builtin_types_compatible_p (__typeof__ ((void)0, (S_PTR)),	\
+					 __typeof__ (S_PTR)) &&		\
+	  (sizeof (*(S_PTR)) > 0))					\
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
 	  __fd__.size = sizeof (S_PTR);					\
-	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (__typeof__ (*(S_PTR))); \
+	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
 	  __fd__.param.array_param.row_count = 1;			\
 	}								\
       __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
