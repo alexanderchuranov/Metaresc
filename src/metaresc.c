@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <unistd.h>
+#include <setjmp.h>
 #include <ctype.h>
 #ifdef HAVE_EXECINFO_H
 # include <execinfo.h>
@@ -71,6 +72,34 @@ static mr_status_t mr_conf_init_visitor (mr_ptr_t key, const void * context);
 static mr_status_t basic_types_visitor (mr_ptr_t key, const void * context);
 
 static mr_ic_t basic_types;
+
+#define MR_STRUCT_KEYWORD "struct"
+#define MR_UNION_KEYWORD "union"
+
+__thread jmp_buf mr_get_struct_type_name_jmp_buf;
+__thread char * mr_struct_type_name = NULL;
+
+int mr_get_struct_type_name (const char * fmt, ...)
+{
+  mr_struct_type_name = NULL;
+
+  if (strncmp (fmt, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
+    fmt += sizeof (MR_STRUCT_KEYWORD);
+
+  if (strncmp (fmt, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0)
+    fmt += sizeof (MR_UNION_KEYWORD);
+
+  char * tail = strchr (fmt, ' ');
+  if (NULL == tail)
+    longjmp (mr_get_struct_type_name_jmp_buf, !0);
+
+  mr_substr_t substr;
+  substr.str = (char*)fmt;
+  substr.length = tail - fmt;
+  mr_struct_type_name = mr_get_static_field_name_from_substring (&substr);
+  longjmp (mr_get_struct_type_name_jmp_buf, !0);
+  return (0);
+}
 
 static mr_hash_value_t fd_type_hash (mr_ptr_t x, const void * context)
 {

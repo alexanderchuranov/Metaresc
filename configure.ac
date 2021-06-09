@@ -78,7 +78,7 @@ AC_CHECK_LIB(dwarf, dwarf_init, [ HAVE_LIBDWARF=yes ])
 AC_CHECK_LIB(dwarf, dwarf_init_path, [ HAVE_DWARF_INIT_PATH=yes ])
 AM_CONDITIONAL(HAVE_LIBDWARF, test x${HAVE_LIBDWARF} = xyes)
 if [[ x${HAVE_DWARF_INIT_PATH} = xyes ]]; then
-  AC_DEFINE(HAVE_DWARF_INIT_PATH, [], [define is dwarf_init_path is present])
+  AC_DEFINE(HAVE_DWARF_INIT_PATH, [], [define if dwarf_init_path is present])
 fi
 
 AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#include <rpc/types.h>
@@ -91,6 +91,13 @@ AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 
 # Checks for library functions.
 AC_CHECK_FUNCS([ backtrace xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t ])
+
+AC_MSG_CHECKING([${CC} supports __builtin_dump_struct ])
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[#include <stdio.h>]], [[ struct { int x; } x; (void)__builtin_dump_struct (&x, &printf); ]])], [ HAVE_BUILTIN_DUMP_STRUCT=yes ], [ HAVE_BUILTIN_DUMP_STRUCT=no ])
+AC_MSG_RESULT([${HAVE_BUILTIN_DUMP_STRUCT}])
+if [[ x${HAVE_BUILTIN_DUMP_STRUCT} = xyes ]]; then
+  AC_DEFINE(HAVE_BUILTIN_DUMP_STRUCT, [], [define if __builtin_dump_struct is present])
+fi
 
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=256)
 AC_MSG_CHECKING(preprocessor routines depth)

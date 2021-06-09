@@ -33,28 +33,34 @@
 #include <inttypes.h> /* for int8_t, int16_t, int32_t, int64_t, SCNxXX, etc */
 #include <sys/types.h> /* for ssize_t */
 #include <complex.h> /* for complex */
+#include <setjmp.h> /* for jmp_buf and setjmp () */
+
 #ifdef HAVE_LIBXML2
 # include <libxml/xmlmemory.h>
 # include <libxml/parser.h>
 #endif /* HAVE_LIBXML2 */
 #ifdef HAVE_RPC_TYPES_H
-#include <rpc/types.h>
-#include <rpc/xdr.h>
+# include <rpc/types.h>
+# include <rpc/xdr.h>
 #endif /* HAVE_RPC_TYPES_H */
 
+#ifdef HAVE_CONFIG_H
+# include <mr_config.h>
+#endif /* HAVE_CONFIG_H */
+
 #ifdef _GNU_SOURCE_UNDEFINED
-#undef _GNU_SOURCE_UNDEFINED
-#undef _GNU_SOURCE
+# undef _GNU_SOURCE_UNDEFINED
+# undef _GNU_SOURCE
 #endif /* _GNU_SOURCE_UNDEFINED */
 
 #ifdef __USE_GNU_UNDEFINED
-#undef __USE_GNU_UNDEFINED
-#undef __USE_GNU
+# undef __USE_GNU_UNDEFINED
+# undef __USE_GNU
 #endif /* __USE_GNU_UNDEFINED */
 
 #ifdef __USE_XOPEN2K8_UNDEFINED
-#undef __USE_XOPEN2K8_UNDEFINED
-#undef __USE_XOPEN2K8
+# undef __USE_XOPEN2K8_UNDEFINED
+# undef __USE_XOPEN2K8
 #endif /* __USE_XOPEN2K8_UNDEFINED */
 
 /* Library exports */
@@ -709,7 +715,7 @@
   #define MR_CHECK_TYPES(...)
 */
 #ifndef MR_CHECK_TYPES
-#define MR_CHECK_TYPES(MR_TYPE_NAME, ...) (void) ((MR_TYPE_NAME*)0 - (__typeof__ (__VA_ARGS__ + 0))0)
+#define MR_CHECK_TYPES(MR_TYPE_NAME, S_PTR) ((void) (1 / __builtin_types_compatible_p (MR_TYPE_NAME, __typeof__ (*(S_PTR)))));
 #endif /* MR_CHECK_TYPES */
 
 #define MR_COPY_RECURSIVELY(MR_TYPE_NAME, ...) MR_COPY_RECURSIVELY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
@@ -769,7 +775,25 @@
   (MR_SAVE_DETECT_TYPE (S_PTR))				\
   (MR_SAVE_TYPED_ (MR_TYPE_NAME, S_PTR))
 
-#define MR_SAVE_DETECT_TYPE(S_PTR) MR_SAVE_STR_TYPED (NULL, S_PTR)
+#ifdef HAVE_BUILTIN_DUMP_STRUCT
+
+# define MR_IS_STRUCT_OR_UNION(S_PTR)					\
+  __builtin_choose_expr (						\
+			 (MR_UNION_TYPE_CLASS == __builtin_classify_type (*(S_PTR))) ||	\
+			 (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(S_PTR))), \
+			 &*(S_PTR), (mr_dummy_struct_t*)0)
+
+# define MR_SAVE_DETECT_TYPE(S_PTR) ({					\
+      if (0 == setjmp (mr_get_struct_type_name_jmp_buf))		\
+	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR), &mr_get_struct_type_name); \
+      MR_SAVE_STR_TYPED (mr_struct_type_name, S_PTR);			\
+    })
+
+#else /* HAVE_BUILTIN_DUMP_STRUCT */
+
+# define MR_SAVE_DETECT_TYPE(S_PTR) MR_SAVE_STR_TYPED (NULL, S_PTR)
+
+#endif /* HAVE_BUILTIN_DUMP_STRUCT */
 
 #define MR_SAVE_TYPED_(MR_TYPE_NAME, S_PTR) ({				\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
@@ -785,12 +809,11 @@
 	  .type = MR_TYPE_NAME_STR,					\
 	  .non_persistent = true,					\
 	  .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),		\
-	  .size = sizeof (__typeof__ (*(S_PTR))),			\
+	  .size = sizeof (*(S_PTR)),					\
 	};								\
       mr_detect_type (&__fd__);						\
-      if (!__builtin_types_compatible_p (__typeof__ ((void)0, (S_PTR)),	\
-					 __typeof__ (S_PTR)) &&		\
-	  (sizeof (*(S_PTR)) > 0))					\
+      if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)),	\
+					 __typeof__ (S_PTR)))		\
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
@@ -1192,6 +1215,10 @@ typedef __typeof__ (sizeof (0)) mr_size_t;
 #endif
 
 extern mr_conf_t mr_conf;
+extern __thread jmp_buf mr_get_struct_type_name_jmp_buf;
+extern __thread char * mr_struct_type_name;
+
+extern int mr_get_struct_type_name (const char * fmt, ...);
 
 extern mr_status_t mr_add_type (mr_td_t * tdp);
 extern char * mr_read_xml_doc (FILE * fd);
