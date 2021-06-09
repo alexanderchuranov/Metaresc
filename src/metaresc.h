@@ -812,7 +812,7 @@
 	  .size = sizeof (*(S_PTR)),					\
 	};								\
       mr_detect_type (&__fd__);						\
-      if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)),	\
+      if (!__builtin_types_compatible_p (__typeof__ ((void)0, (S_PTR)),	\
 					 __typeof__ (S_PTR)))		\
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\

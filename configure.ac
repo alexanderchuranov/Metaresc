@@ -93,7 +93,7 @@ AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 AC_CHECK_FUNCS([ backtrace xdr_int8_t xdr_uint8_t xdr_uint16_t xdr_u_int16_t xdr_uint32_t xdr_u_int32_t ])
 
 AC_MSG_CHECKING([${CC} supports __builtin_dump_struct ])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[#include <stdio.h>]], [[ struct { int x; } x; (void)__builtin_dump_struct (&x, &printf); ]])], [ HAVE_BUILTIN_DUMP_STRUCT=yes ], [ HAVE_BUILTIN_DUMP_STRUCT=no ])
+AC_LINK_IFELSE( [AC_LANG_PROGRAM( [[#include <stdio.h>]], [[ struct { int x; } x; (void)__builtin_dump_struct (&x, &printf); ]])], [ HAVE_BUILTIN_DUMP_STRUCT=yes ], [ HAVE_BUILTIN_DUMP_STRUCT=no ])
 AC_MSG_RESULT([${HAVE_BUILTIN_DUMP_STRUCT}])
 if [[ x${HAVE_BUILTIN_DUMP_STRUCT} = xyes ]]; then
   AC_DEFINE(HAVE_BUILTIN_DUMP_STRUCT, [], [define if __builtin_dump_struct is present])
