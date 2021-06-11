@@ -812,7 +812,7 @@
 	  .size = sizeof (*(S_PTR)),					\
 	};								\
       mr_detect_type (&__fd__);						\
-      if (!__builtin_types_compatible_p (__typeof__ ((void)0, (S_PTR)),	\
+      if (!__builtin_types_compatible_p (__typeof__ ((S_PTR) + 0),	\
 					 __typeof__ (S_PTR)))		\
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
@@ -1177,7 +1177,17 @@
 	_rv_;						\
     })
 
-#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)),  MR_TYPE_DETECT_PTR (__typeof__ (X)), __builtin_classify_type (X), X)
+#define MR_CAST_TO_PTR(X)						\
+  __builtin_choose_expr ((MR_POINTER_TYPE_CLASS == __builtin_classify_type (X)) || \
+			 (MR_ARRAY_TYPE_CLASS == __builtin_classify_type (X)), \
+			 X, NULL)
+
+#define MR_SERIALIZE_PTR(X)						\
+  __builtin_choose_expr ((MR_POINTER_TYPE_CLASS == __builtin_classify_type (X)) || \
+			 (MR_ARRAY_TYPE_CLASS == __builtin_classify_type (X)), \
+			 MR_SAVE_CINIT ( , MR_CAST_TO_PTR (X)), NULL)
+
+#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), MR_SERIALIZE_PTR (X), X)
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
@@ -1278,7 +1288,7 @@ extern void mr_message (const char * file_name, const char * func_name, int line
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
-extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ...);
+extern int mr_print_value (FILE * fd, mr_type_t mr_type, char * serialized, ...);
 
 extern char * mr_get_static_field_name_from_string (char * name);
 extern char * mr_get_static_field_name_from_substring (mr_substr_t * substr);
