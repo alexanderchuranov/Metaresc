@@ -603,7 +603,7 @@
 	     .param = {							\
 	  .bitfield_param = {						\
 	    .size = sizeof (MR_TYPE_NAME),				\
-	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = (TYPE)-1 } }), \
+	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), \
 	  }, },								\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
