@@ -575,10 +575,8 @@
 	     .param =							\
 	     {								\
 	       .array_param = {						\
-		 .count = (sizeof (TYPE) == 0 ? 0 :			\
-			   sizeof (((MR_TYPE_NAME*)0)->NAME) / sizeof (TYPE)), \
-		 .row_count = (sizeof (TYPE) == 0 ? 1 :			\
-			       sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / sizeof (TYPE)), \
+		 .count = sizeof (((MR_TYPE_NAME*)0)->NAME) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
+		 .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
 	       },							\
 	     },								\
 	     .meta = "" __VA_ARGS__,					\
@@ -605,7 +603,7 @@
 	     .param = {							\
 	  .bitfield_param = {						\
 	    .size = sizeof (MR_TYPE_NAME),				\
-	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), \
+	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = (TYPE)-1 } }), \
 	  }, },								\
 	     .meta = "" __VA_ARGS__,					\
 		} } },
