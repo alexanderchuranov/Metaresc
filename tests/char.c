@@ -18,10 +18,10 @@ START_TEST (all_chars) {
 
 #undef SKIP_METHOD_XML2
 
+START_TEST (print_chars) {
 #ifdef HAVE_LIBXML2
 #undef TEST_METHODS
 #define TEST_METHODS XML2
-START_TEST (print_chars) {
   int i;
   for (i = 0; i < (1 << __CHAR_BIT__); ++i)
     {
@@ -32,8 +32,8 @@ START_TEST (print_chars) {
 	  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c);
 	}
     }
-} END_TEST
 #endif
+} END_TEST
 
 MAIN_TEST_SUITE ((all_chars, "run whole charset"),
 		 (print_chars, "run printable charset for libxml2")

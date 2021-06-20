@@ -158,10 +158,15 @@
    | (__builtin_types_compatible_p (long double SUFFIX, TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (complex long double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
-   | (__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE) ? MR_TYPE_CHAR_ARRAY : 0) \
+   | ((__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE)	\
+       | __builtin_types_compatible_p (__typeof__ (const char []) SUFFIX, TYPE)	\
+       | __builtin_types_compatible_p (__typeof__ (volatile char []) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (const volatile char []) SUFFIX, TYPE) \
+       ) ? MR_TYPE_CHAR_ARRAY : 0)					\
    | ((__builtin_types_compatible_p (const volatile __typeof__ (char * SUFFIX), const volatile TYPE) \
        | __builtin_types_compatible_p (const volatile __typeof__ (char *) SUFFIX, const volatile TYPE) \
-       | __builtin_types_compatible_p (const volatile char * SUFFIX, const volatile TYPE)) ? MR_TYPE_STRING : 0) \
+       | __builtin_types_compatible_p (const volatile char * SUFFIX, const volatile TYPE) \
+       ) ? MR_TYPE_STRING : 0)						\
    )
 #define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, const *) | MR_TYPE_DETECT (TYPE, volatile *) | MR_TYPE_DETECT (TYPE, const volatile *))
 
@@ -800,18 +805,17 @@
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       mr_save_data_t __mr_save_data__;					\
-      void * __ptr__ = S_PTR;						\
-      mr_fd_t __fd__ =							\
-	{								\
-	  .name = { .str = MR_STRINGIFY (S_PTR), .hash_value = 0, },	\
-	  .type = MR_TYPE_NAME_STR,					\
-	  .non_persistent = true,					\
-	  .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),		\
-	  .size = sizeof (*(S_PTR)),					\
-	};								\
+      void * __ptr__ = (void*)S_PTR;					\
+      mr_fd_t __fd__;							\
+      memset (&__fd__, 0, sizeof (__fd__));				\
+      __fd__.name.str = mr_normalize_name (MR_STRINGIFY (S_PTR));	\
+      __fd__.name.hash_value = 0;					\
+      __fd__.type = MR_TYPE_NAME_STR;					\
+      __fd__.non_persistent = true;					\
+      __fd__.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));		\
+      __fd__.size = sizeof (*(S_PTR));					\
       mr_detect_type (&__fd__);						\
-      if (!__builtin_types_compatible_p (__typeof__ ((S_PTR) + 0),	\
-					 __typeof__ (S_PTR)))		\
+      if (!__builtin_types_compatible_p (__typeof__ ((S_PTR) + 0), __typeof__ (S_PTR)))	\
 	{								\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
@@ -819,11 +823,8 @@
 	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
 	  __fd__.param.array_param.row_count = 1;			\
 	}								\
-      __fd__.name.str = mr_normalize_name (__fd__.name.str);		\
       memset (&__mr_save_data__, 0, sizeof (__mr_save_data__));		\
-      if (__ptr__ == NULL)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
-      else								\
+      if (__ptr__ != NULL)						\
 	mr_save (__ptr__, &__fd__, &__mr_save_data__);			\
       __mr_save_data__.ptrs;						\
     })
@@ -1103,6 +1104,7 @@
 #define MR_LOAD_XML1(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_CINIT(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_JSON MR_LOAD_CINIT
+#define MR_LOAD_JSONX MR_LOAD_CINIT
 #define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (scm_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_LOAD_METHOD_RA(METHOD, MR_TYPE_NAME, ...) MR_LOAD_METHOD_RA_ARGN (METHOD, MR_TYPE_NAME, __VA_ARGS__, 3, 2)
@@ -1182,8 +1184,13 @@
 			 X, NULL)
 
 #define MR_SERIALIZE_PTR(X)						\
-  __builtin_choose_expr ((MR_POINTER_TYPE_CLASS == __builtin_classify_type (X)) || \
-			 (MR_ARRAY_TYPE_CLASS == __builtin_classify_type (X)), \
+  __builtin_choose_expr (((MR_POINTER_TYPE_CLASS == __builtin_classify_type (X)) || \
+			  (MR_ARRAY_TYPE_CLASS == __builtin_classify_type (X))) && \
+			 !__builtin_types_compatible_p (const volatile __typeof__ (char *), const volatile __typeof__ (X)) && \
+			 !__builtin_types_compatible_p (char[], __typeof__ (X)) && \
+			 !__builtin_types_compatible_p (const char[], __typeof__ (X)) && \
+			 !__builtin_types_compatible_p (volatile char[], __typeof__ (X)) && \
+			 !__builtin_types_compatible_p (const volatile char[], __typeof__ (X)), \
 			 MR_SAVE_CINIT ( , MR_CAST_TO_PTR (X)), NULL)
 
 #define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), MR_SERIALIZE_PTR (X), X)
