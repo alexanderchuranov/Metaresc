@@ -30,7 +30,7 @@ bin_PROGRAMS = mr_dwarf
 mr_dwarf_LDADD = -ldwarf libmetaresc.la $(LIBXML2_LIBS)
 endif
 
-libmetaresc_la_SOURCES = metaresc.c mr_stringify.c mr_save.c mr_load.c xml_save.c cinit_save.c scm_save.c mr_ic.c mr_hsort.c mr_value.c mr_btree.c
+libmetaresc_la_SOURCES = metaresc.c mr_stringify.c mr_save.c mr_load.c xml_save.c cinit_save.c json_save.c scm_save.c mr_ic.c mr_hsort.c mr_value.c mr_btree.c
 if HAVE_BISON_FLEX
   libmetaresc_la_SOURCES += xml1_load.tab.c xml1_load.lex.c cinit_load.tab.c cinit_load.lex.c scm_load.tab.c scm_load.lex.c
 endif

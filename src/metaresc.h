@@ -869,6 +869,7 @@
 #define MR_SAVE_XML1(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (xml1_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_CINIT(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (cinit_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (json_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_JSONX(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (jsonx_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (scm_save, MR_TYPE_NAME, S_PTR)
 
 #define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
@@ -1246,6 +1247,7 @@ extern void xdrra_create (XDR * xdrs, mr_rarray_t * rarray, enum xdr_op op);
 extern char * xml1_save (mr_ra_ptrdes_t * ptrs);
 extern char * cinit_save (mr_ra_ptrdes_t * ptrs);
 extern char * json_save (mr_ra_ptrdes_t * ptrs);
+extern char * jsonx_save (mr_ra_ptrdes_t * ptrs);
 extern char * scm_save (mr_ra_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
