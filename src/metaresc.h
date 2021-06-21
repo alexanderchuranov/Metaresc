@@ -561,7 +561,7 @@
 
 #define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) { \
     (mr_fd_t[]){ {							\
-	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+	.name = { .str = #NAME, .hash_value = 0, },			\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
@@ -572,7 +572,7 @@
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	  .type = MR_STRINGIFY (TYPE),					\
+	  .type = #TYPE,						\
 	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .mr_type = MR_TYPE_ARRAY,					\
@@ -590,7 +590,7 @@
 #define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
-	  .type = MR_STRINGIFY (TYPE),					\
+	  .type = #TYPE,						\
 	     .size = sizeof (TYPE),					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	     .mr_type = MR_TYPE_VOID,					\
@@ -600,7 +600,7 @@
 
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
-	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+	.name = { .str = #NAME, .hash_value = 0, },			\
 	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     .mr_type = MR_TYPE_BITFIELD,				\
@@ -655,7 +655,7 @@
 
 #define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...) {	\
     (mr_fd_t[]){ {							\
-	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+	.name = { .str = #NAME, .hash_value = 0, },			\
 	  .type = "",							\
 	     .offset = 0,						\
 	     .unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false), \
@@ -675,8 +675,8 @@
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...) { \
     (mr_fd_t[]){ {							\
-	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
-	  .name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+	.type = #MR_TYPE_NAME,						\
+	  .name = { .str = #NAME, .hash_value = 0, },			\
 	  .mr_type = MR_TYPE_ENUM,					\
 	  .mr_type_aux = MR_TYPE_DETECT (MR_TYPE_NAME),			\
 	     .param = { .enum_param = { NAME }, },			\
@@ -800,7 +800,7 @@
 
 #define MR_SAVE_TYPED_(MR_TYPE_NAME, S_PTR) ({				\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-      MR_SAVE_STR_TYPED (MR_STRINGIFY (MR_TYPE_NAME), S_PTR);		\
+      MR_SAVE_STR_TYPED (MR_STRINGIFY_READONLY (MR_TYPE_NAME), S_PTR);	\
     })
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
@@ -809,7 +809,6 @@
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
       __fd__.name.str = mr_normalize_name (MR_STRINGIFY (S_PTR));	\
-      __fd__.name.hash_value = 0;					\
       __fd__.type = MR_TYPE_NAME_STR;					\
       __fd__.non_persistent = true;					\
       __fd__.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));		\
@@ -895,7 +894,7 @@
       else								\
 	{								\
 	  mr_fd_t __fd__ = {						\
-	    .type = MR_STRINGIFY (MR_TYPE_NAME),			\
+	    .type = MR_STRINGIFY_READONLY (MR_TYPE_NAME),		\
 	    .name = { .str = NULL, .hash_value = 0, },			\
 	    .non_persistent = true,					\
 	    .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
@@ -969,7 +968,7 @@
 	.mr_ra_idx_alloc_size = 0,					\
       };								\
       mr_fd_t __fd__ = {						\
-	.type = MR_STRINGIFY (MR_TYPE_NAME),				\
+	.type = #MR_TYPE_NAME,						\
 	.name = { .str = NULL, .hash_value = 0, },			\
 	.non_persistent = true,						\
 	.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
@@ -1073,7 +1072,7 @@
 	  if (MR_SUCCESS == _status_)					\
 	    {								\
 	      mr_fd_t _fd_ = {						\
-		.type = MR_STRINGIFY (MR_TYPE_NAME),			\
+		.type = #MR_TYPE_NAME,					\
 		.name = { .str = NULL, .hash_value = 0, },		\
 		.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),		\
 		.size = sizeof (MR_TYPE_NAME),				\
