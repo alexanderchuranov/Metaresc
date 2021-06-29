@@ -177,7 +177,7 @@ static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
 };
 
 char *
-jsonx_save (mr_ra_ptrdes_t * ptrs)
+json_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },

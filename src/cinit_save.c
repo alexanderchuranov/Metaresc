@@ -11,13 +11,11 @@
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
 #define MR_CINIT_NULL "NULL"
-#define MR_JSON_NULL "null"
 #define MR_CINIT_INDENT_SPACES (2)
 #define MR_CINIT_INDENT_TEMPLATE "%*s"
 
 #define MR_CINIT_FIELDS_DELIMITER ","
 #define MR_CINIT_NAMED_FIELD_TEMPLATE ".%s = "
-#define MR_JSON_NAMED_FIELD_TEMPLATE "\"%s\" : "
 #define MR_CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
 
 #define CINIT_QUOTE_CHAR_PATTERN "\\%03o"
@@ -156,48 +154,6 @@ static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NAMED_ANON_UNION] = cinit_printf_anon_union,
 };
 
-static int
-json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  ptrdes->res.data.string = "]";
-  ptrdes->res.type = "string";
-  ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_append_string (mr_ra_str, "[\n"));
-}
-
-static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
-  [MR_TYPE_NONE] = mr_ra_printf_void,
-  [MR_TYPE_VOID] = mr_ra_printf_void,
-  [MR_TYPE_ENUM] = cinit_printf_bitmask,
-  [MR_TYPE_BITFIELD] = mr_ra_printf_bitfield,
-  [MR_TYPE_BOOL] = mr_ra_printf_bool,
-  [MR_TYPE_INT8] = mr_ra_printf_int8_t,
-  [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,
-  [MR_TYPE_INT16] = mr_ra_printf_int16_t,
-  [MR_TYPE_UINT16] = mr_ra_printf_uint16_t,
-  [MR_TYPE_INT32] = mr_ra_printf_int32_t,
-  [MR_TYPE_UINT32] = mr_ra_printf_uint32_t,
-  [MR_TYPE_INT64] = mr_ra_printf_int64_t,
-  [MR_TYPE_UINT64] = mr_ra_printf_uint64_t,
-  [MR_TYPE_FLOAT] = mr_ra_printf_float,
-  [MR_TYPE_COMPLEX_FLOAT] = cinit_printf_complex_float,
-  [MR_TYPE_DOUBLE] = mr_ra_printf_double,
-  [MR_TYPE_COMPLEX_DOUBLE] = cinit_printf_complex_double,
-  [MR_TYPE_LONG_DOUBLE] = mr_ra_printf_long_double_t,
-  [MR_TYPE_COMPLEX_LONG_DOUBLE] = cinit_printf_complex_long_double_t,
-  [MR_TYPE_CHAR] = cinit_printf_char,
-  [MR_TYPE_CHAR_ARRAY] = cinit_printf_char_array,
-  [MR_TYPE_STRING] = cinit_printf_string,
-  [MR_TYPE_STRUCT] = cinit_printf_struct,
-  [MR_TYPE_FUNC] = cinit_printf_func,
-  [MR_TYPE_FUNC_TYPE] = cinit_printf_func,
-  [MR_TYPE_ARRAY] = json_printf_array,
-  [MR_TYPE_POINTER] = json_printf_array,
-  [MR_TYPE_UNION] = cinit_printf_struct,
-  [MR_TYPE_ANON_UNION] = cinit_printf_struct,
-  [MR_TYPE_NAMED_ANON_UNION] = cinit_printf_struct,
-};
-
 static char *
 cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * named_field_tmplt, char * null)
 {
@@ -301,15 +257,4 @@ char *
 cinit_save (mr_ra_ptrdes_t * ptrs)
 {
   return (cinit_json_save (ptrs, cinit_save_tbl, MR_CINIT_NAMED_FIELD_TEMPLATE, MR_CINIT_NULL));
-}
-
-char *
-json_save (mr_ra_ptrdes_t * ptrs)
-{
-  int i;
-  for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
-    if ((MR_TYPE_ANON_UNION == ptrs->ra[i].mr_type) ||
-	(MR_TYPE_POINTER == ptrs->ra[i].mr_type))
-      ptrs->ra[i].unnamed = false;
-  return (cinit_json_save (ptrs, json_save_tbl, MR_JSON_NAMED_FIELD_TEMPLATE, MR_JSON_NULL));
 }
