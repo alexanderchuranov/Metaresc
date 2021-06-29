@@ -10,12 +10,8 @@
 #include <mr_stringify.h>
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
-#define MR_JSON_NULL "null"
 #define MR_JSON_INDENT_SPACES (2)
 #define MR_JSON_INDENT_TEMPLATE "%*s"
-
-#define MR_JSON_FIELDS_DELIMITER ","
-#define MR_JSON_NAMED_FIELD_TEMPLATE "\"%s\" : "
 
 #define JSON_QUOTE_CHAR_PATTERN "\\u%04x"
 #define JSON_BITMASK_DELIMITER " | "
@@ -200,8 +196,14 @@ jsonx_save (mr_ra_ptrdes_t * ptrs)
       if ((false == ptrs->ra[idx].unnamed) ||
 	  (MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
 	  (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
-	if (mr_ra_printf (&mr_ra_str, MR_JSON_NAMED_FIELD_TEMPLATE, ptrs->ra[idx].name) < 0)
-	  return (NULL);
+	{
+	  if (mr_ra_append_char (&mr_ra_str, '"') < 0)
+	    return (NULL);
+	  if (mr_ra_append_string (&mr_ra_str, ptrs->ra[idx].name) < 0)
+	    return (NULL);
+	  if (mr_ra_append_string (&mr_ra_str, "\" : ") < 0)
+	    return (NULL);
+	}
 
       if (ptrs->ra[idx].ref_idx >= 0)
 	{
@@ -218,7 +220,7 @@ jsonx_save (mr_ra_ptrdes_t * ptrs)
 	}
       else if (true == ptrs->ra[idx].flags.is_null)
 	{
-	  if (mr_ra_append_string (&mr_ra_str, MR_JSON_NULL) < 0)
+	  if (mr_ra_append_string (&mr_ra_str, "null") < 0)
 	    return (NULL);
 	}
       else if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
@@ -232,9 +234,9 @@ jsonx_save (mr_ra_ptrdes_t * ptrs)
       else
 	{
 	  if (ptrs->ra[idx].next >= 0)
-	    if (mr_ra_append_string (&mr_ra_str, MR_JSON_FIELDS_DELIMITER) < 0)
+	    if (mr_ra_append_char (&mr_ra_str, ',') < 0)
 	      return (NULL);
-	  if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+	  if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
 	    return (NULL);
 	  
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
@@ -244,9 +246,9 @@ jsonx_save (mr_ra_ptrdes_t * ptrs)
 		  if (mr_ra_printf (&mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
 		    return (NULL);
 		  if (ptrs->ra[idx].next >= 0)
-		    if (mr_ra_append_string (&mr_ra_str, MR_JSON_FIELDS_DELIMITER) < 0)
+		    if (mr_ra_append_char (&mr_ra_str, ',') < 0)
 		      return (NULL);
-		  if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+		  if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
 		    return (NULL);
 		}
 	      --level;
@@ -258,9 +260,9 @@ jsonx_save (mr_ra_ptrdes_t * ptrs)
 	      if (mr_ra_printf (&mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
 		return (NULL);
 	      if (ptrs->ra[idx].next >= 0)
-		if (mr_ra_append_string (&mr_ra_str, MR_JSON_FIELDS_DELIMITER) < 0)
+		if (mr_ra_append_char (&mr_ra_str, ',') < 0)
 		  return (NULL);
-	      if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+	      if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
 		return (NULL);
 	    }
 	  
