@@ -92,7 +92,7 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
 %token <id_ivalue> TOK_CINIT_ID_IVALUE
 %token <value> TOK_CINIT_NUMBER
 %token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST TOK_CINIT_STRING TOK_CINIT_CHAR TOK_CINIT_ID
-%token TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_LBRACKET TOK_CINIT_RBRACKET TOK_CINIT_COMMA TOK_CINIT_ERROR
+%token TOK_CINIT_NULL TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_LBRACKET TOK_CINIT_RBRACKET TOK_CINIT_COMMA TOK_CINIT_ERROR
 
 %left TOK_CINIT_BIT_OR TOK_CINIT_BIT_AND TOK_CINIT_BIT_XOR
 %left TOK_CINIT_PLUS TOK_CINIT_MINUS
@@ -162,6 +162,12 @@ compaund
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length - 2 * SIZEOF_QUOTE_CHAR;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = cinit_unquote_str;
+  }
+| TOK_CINIT_NULL {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_INT;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_int = 0;
   }
 | TOK_CINIT_CHAR {
   mr_load_t * mr_load = MR_LOAD;

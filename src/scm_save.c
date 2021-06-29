@@ -59,7 +59,7 @@ scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   if (MR_TYPE_BOOL == ptrdes->mr_type_aux)
     {
-      mr_ptrdes_t _ptrdes = *ptrdes;;
+      mr_ptrdes_t _ptrdes = *ptrdes;
       uint64_t value;
 
       mr_save_bitfield_value (ptrdes, &value);

@@ -90,7 +90,7 @@
 %token <string> TOK_SCM_VALUE TOK_SCM_ID TOK_SCM_STRING
 %token <value> TOK_SCM_CHAR TOK_SCM_NUMBER
 %token <id_ivalue> TOK_SCM_ID_IVALUE
-%token TOK_SCM_WS TOK_SCM_LPARENTHESIS TOK_SCM_RPARENTHESIS TOK_SCM_DOT TOK_SCM_HASH TOK_SCM_ERROR TOK_SCM_PLUS TOK_SCM_MINUS TOK_SCM_MUL TOK_SCM_DIV TOK_SCM_MOD TOK_SCM_BIT_OR TOK_SCM_BIT_AND TOK_SCM_BIT_XOR
+%token TOK_SCM_FALSE TOK_SCM_WS TOK_SCM_LPARENTHESIS TOK_SCM_RPARENTHESIS TOK_SCM_DOT TOK_SCM_HASH TOK_SCM_ERROR TOK_SCM_PLUS TOK_SCM_MINUS TOK_SCM_MUL TOK_SCM_DIV TOK_SCM_MOD TOK_SCM_BIT_OR TOK_SCM_BIT_AND TOK_SCM_BIT_XOR
 
 %type <value> expr plus_list minus_list mul_list div_list bit_or_list bit_and_list bit_xor_list
 
@@ -143,6 +143,12 @@ compaund
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = scm_unquote_str;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
 }
+| TOK_SCM_FALSE {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_INT;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_int = false;
+  }
 
 expr:
 TOK_SCM_NUMBER { $$ = $1; }

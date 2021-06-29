@@ -427,9 +427,17 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
 	case MR_VT_QUOTED_SUBSTR:
 	  status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_str, ptrdes->data.ptr);
 	  break;
+	  
 	case MR_VT_INT:
-	  *(char**)ptrdes->data.ptr = (void*)(long)ptrdes->load_params.mr_value.vt_int;
+	  if (ptrdes->load_params.mr_value.vt_int >= 0)
+	    ptrdes->ref_idx = ptrdes->load_params.mr_value.vt_int;
+	  else
+	    {
+	      ptrdes->ref_idx = -ptrdes->load_params.mr_value.vt_int;
+	      ptrdes->flags.is_content_reference = true;
+	    }
 	  break;
+	  
 	default:
 	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
 	  status = MR_FAILURE;
@@ -686,18 +694,30 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
 {
-  void ** data = mr_load_data->ptrs.ra[idx].data.ptr;
-
-  mr_load_data->ptrs.ra[idx].non_serializable = true;
+  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  void ** data = ptrdes->data.ptr;
+  
+  ptrdes->non_serializable = true;
 
   /* default initializer */
   *data = NULL;
-  if (mr_load_data->ptrs.ra[idx].ref_idx >= 0)
+
+  if (!ptrdes->flags.is_null && (MR_VT_INT == ptrdes->load_params.mr_value.value_type))
+    {
+      if (ptrdes->load_params.mr_value.vt_int >= 0)
+	ptrdes->ref_idx = ptrdes->load_params.mr_value.vt_int;
+      else
+	{
+	  ptrdes->ref_idx = -ptrdes->load_params.mr_value.vt_int;
+	  ptrdes->flags.is_content_reference = true;
+	}
+    }
+  if (ptrdes->ref_idx >= 0)
     return (MR_SUCCESS);
-  if (mr_load_data->ptrs.ra[idx].first_child < 0)
+  if (ptrdes->first_child < 0)
     return (MR_SUCCESS);
   /* check whether pointer should have offsprings or not */
-  if ((MR_TYPE_NONE != mr_load_data->ptrs.ra[idx].mr_type) && (MR_TYPE_VOID != mr_load_data->ptrs.ra[idx].mr_type))
+  if ((MR_TYPE_NONE != ptrdes->mr_type) && (MR_TYPE_VOID != ptrdes->mr_type))
     {
       int * idx_ = mr_rarray_allocate_element ((void**)&mr_load_data->mr_ra_idx,
 					       &mr_load_data->mr_ra_idx_size, &mr_load_data->mr_ra_idx_alloc_size,
