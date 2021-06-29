@@ -10,12 +10,9 @@
 #include <mr_stringify.h>
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
-#define MR_CINIT_NULL "NULL"
 #define MR_CINIT_INDENT_SPACES (2)
 #define MR_CINIT_INDENT_TEMPLATE "%*s"
 
-#define MR_CINIT_FIELDS_DELIMITER ","
-#define MR_CINIT_NAMED_FIELD_TEMPLATE ".%s = "
 #define MR_CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
 
 #define CINIT_QUOTE_CHAR_PATTERN "\\%03o"
@@ -154,8 +151,8 @@ static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NAMED_ANON_UNION] = cinit_printf_anon_union,
 };
 
-static char *
-cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * named_field_tmplt, char * null)
+char *
+cinit_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },
@@ -176,8 +173,8 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
       memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
       
       mr_ra_printf_t save_handler = mr_ra_printf_void;
-      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && printf_tbl[ptrs->ra[idx].mr_type])
-	save_handler = printf_tbl[ptrs->ra[idx].mr_type];
+      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && cinit_save_tbl[ptrs->ra[idx].mr_type])
+	save_handler = cinit_save_tbl[ptrs->ra[idx].mr_type];
       else
 	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
 
@@ -185,8 +182,14 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	return (NULL);
 
       if (false == ptrs->ra[idx].unnamed)
-	if (mr_ra_printf (&mr_ra_str, named_field_tmplt, ptrs->ra[idx].name) < 0)
-	  return (NULL);
+	{
+	  if (mr_ra_append_char (&mr_ra_str, '.') < 0)
+	    return (NULL);
+	  if (mr_ra_append_string (&mr_ra_str, ptrs->ra[idx].name) < 0)
+	    return (NULL);
+	  if (mr_ra_append_string (&mr_ra_str, " = ") < 0)
+	    return (NULL);
+	}
 
       if (ptrs->ra[idx].ref_idx >= 0)
 	if (mr_ra_printf (&mr_ra_str, MR_CINIT_ATTR_INT,
@@ -200,7 +203,7 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 
       if ((true == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
 	{
-	  if (mr_ra_append_string (&mr_ra_str, null) < 0)
+	  if (mr_ra_append_string (&mr_ra_str, "NULL") < 0)
 	    return (NULL);
 	}
       else if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
@@ -214,9 +217,9 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
       else
 	{
 	  if (ptrs->ra[idx].next >= 0)
-	    if (mr_ra_append_string (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
+	    if (mr_ra_append_char (&mr_ra_str, ',') < 0)
 	      return (NULL);
-	  if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+	  if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
 	    return (NULL);
 	  
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
@@ -226,9 +229,9 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 		  if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
 		    return (NULL);
 		  if (ptrs->ra[idx].next >= 0)
-		    if (mr_ra_append_string (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
+		    if (mr_ra_append_char (&mr_ra_str, ',') < 0)
 		      return (NULL);
-		  if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+		  if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
 		    return (NULL);
 		}
 	      --level;
@@ -240,9 +243,9 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
 	      if (mr_ra_printf (&mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
 		return (NULL);
 	      if (ptrs->ra[idx].next >= 0)
-		if (mr_ra_append_string (&mr_ra_str, MR_CINIT_FIELDS_DELIMITER) < 0)
+		if (mr_ra_append_char (&mr_ra_str, ',') < 0)
 		  return (NULL);
-	      if (mr_ra_append_string (&mr_ra_str, "\n") < 0)
+	      if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
 		return (NULL);
 	    }
 	  
@@ -251,10 +254,4 @@ cinit_json_save (mr_ra_ptrdes_t * ptrs, mr_ra_printf_t * printf_tbl, char * name
     }
 
   return (mr_ra_str.data.string);
-}
-
-char *
-cinit_save (mr_ra_ptrdes_t * ptrs)
-{
-  return (cinit_json_save (ptrs, cinit_save_tbl, MR_CINIT_NAMED_FIELD_TEMPLATE, MR_CINIT_NULL));
 }
