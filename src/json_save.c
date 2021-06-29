@@ -3,7 +3,6 @@
 /* This file is part of Metaresc project */
 
 #include <stdio.h>
-#include <stdarg.h>
 #include <stdbool.h>
 
 #include <metaresc.h>
@@ -19,10 +18,24 @@
 static int
 json_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char string[2];
-  string[0] = *(char*)ptrdes->data.ptr;
-  string[1] = 0;
-  return (mr_ra_printf_quote_string (mr_ra_str, string, JSON_QUOTE_CHAR_PATTERN));
+  unsigned char c = *(unsigned char*)ptrdes->data.ptr;
+  char mapped = mr_esc_char_map[c];
+  int count = 0;
+
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  if (c == '"')
+    mapped = c;
+  if (mapped)
+    {
+      count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '\\'));
+      count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, mapped));
+    }
+  else if (isprint (c))
+    count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, c));
+  else
+    count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, JSON_QUOTE_CHAR_PATTERN, c));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  return (count);
 }
 
 static int
