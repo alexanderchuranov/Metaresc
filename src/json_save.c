@@ -90,6 +90,22 @@ json_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 }
 
 static int
+json_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  if (MR_TYPE_ENUM == ptrdes->mr_type_aux)
+    {
+      mr_ptrdes_t _ptrdes = *ptrdes;
+      uint64_t value;
+
+      mr_save_bitfield_value (ptrdes, &value);
+      _ptrdes.data.ptr = &value;
+      return (json_printf_bitmask (mr_ra_str, &_ptrdes));
+    }
+
+  return (mr_ra_printf_bitfield (mr_ra_str, ptrdes));
+}
+
+static int
 json_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
@@ -122,7 +138,7 @@ static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
   [MR_TYPE_VOID] = mr_ra_printf_void,
   [MR_TYPE_ENUM] = json_printf_bitmask,
-  [MR_TYPE_BITFIELD] = mr_ra_printf_bitfield,
+  [MR_TYPE_BITFIELD] = json_printf_bitfield,
   [MR_TYPE_BOOL] = mr_ra_printf_bool,
   [MR_TYPE_INT8] = mr_ra_printf_int8_t,
   [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,

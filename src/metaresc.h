@@ -884,6 +884,7 @@
 #define MR_SAVE_XML1_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_XML1, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_CINIT_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_CINIT, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_JSON, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_JSONX_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_JSONX, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_SCM, MR_TYPE_NAME, S_PTR)
 
 #define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR) ({			\
@@ -1103,7 +1104,7 @@
 #define MR_LOAD_XML1(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_CINIT(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_JSON MR_LOAD_CINIT
-#define MR_LOAD_JSONX MR_LOAD_CINIT
+#define MR_LOAD_JSONX(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (json_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (scm_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_LOAD_METHOD_RA(METHOD, MR_TYPE_NAME, ...) MR_LOAD_METHOD_RA_ARGN (METHOD, MR_TYPE_NAME, __VA_ARGS__, 3, 2)
@@ -1112,6 +1113,8 @@
 #define MR_LOAD_XML1_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_CINIT_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_JSON_RA MR_LOAD_CINIT_RA
+#define MR_LOAD_JSON_RA MR_LOAD_CINIT_RA
+#define MR_LOAD_JSONX_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (json_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_SCM_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (scm_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #else /* ! HAVE_BISON_FLEX */
@@ -1259,6 +1262,7 @@ extern char * scm_save (mr_ra_ptrdes_t * ptrs);
 #ifdef HAVE_BISON_FLEX
 extern mr_status_t xml1_load (char * str, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t cinit_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t json_load (char * str, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t scm_load (char * str, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_BISON_FLEX */
 
