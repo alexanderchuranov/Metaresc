@@ -55,22 +55,6 @@ scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 }
 
 static int
-scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  if (MR_TYPE_BOOL == ptrdes->mr_type_aux)
-    {
-      mr_ptrdes_t _ptrdes = *ptrdes;
-      uint64_t value;
-
-      mr_save_bitfield_value (ptrdes, &value);
-      _ptrdes.data.ptr = &value;
-      return (scm_printf_bool (mr_ra_str, &_ptrdes));
-    }
-
-  return (mr_ra_printf_bitfield (mr_ra_str, ptrdes));
-}  
-
-static int
 scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_td_t * tdp = mr_get_td_by_name (ptrdes->type);
@@ -105,6 +89,23 @@ scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, ')'));
   return (count);
 }
+
+static int
+scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  mr_ptrdes_t _ptrdes = *ptrdes;
+  uint64_t value;
+
+  mr_save_bitfield_value (ptrdes, &value);
+  _ptrdes.data.ptr = &value;
+  
+  switch (ptrdes->mr_type_aux)
+    {
+    case MR_TYPE_BOOL: return (scm_printf_bool (mr_ra_str, &_ptrdes));
+    case MR_TYPE_ENUM: return (scm_printf_bitmask (mr_ra_str, &_ptrdes));
+    default: return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, MR_SCM_BITMASK_OR_DELIMITER));
+    }
+}  
 
 /**
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler.

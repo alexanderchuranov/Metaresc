@@ -111,7 +111,7 @@ json_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       return (json_printf_bitmask (mr_ra_str, &_ptrdes));
     }
 
-  return (mr_ra_printf_bitfield (mr_ra_str, ptrdes));
+  return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, JSON_BITMASK_DELIMITER));
 }
 
 static int

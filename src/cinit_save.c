@@ -78,6 +78,12 @@ cinit_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 }
 
 static int
+cinit_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, CINIT_BITMASK_DELIMITER));
+}
+
+static int
 cinit_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
@@ -122,7 +128,7 @@ static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
   [MR_TYPE_VOID] = mr_ra_printf_void,
   [MR_TYPE_ENUM] = cinit_printf_bitmask,
-  [MR_TYPE_BITFIELD] = mr_ra_printf_bitfield,
+  [MR_TYPE_BITFIELD] = cinit_printf_bitfield,
   [MR_TYPE_BOOL] = mr_ra_printf_bool,
   [MR_TYPE_INT8] = mr_ra_printf_int8_t,
   [MR_TYPE_UINT8] = mr_ra_printf_uint8_t,

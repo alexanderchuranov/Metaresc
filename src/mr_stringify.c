@@ -180,7 +180,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   return (count);
 }
 
-int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
 {
   mr_ptrdes_t _ptrdes = *ptrdes;;
   uint64_t value;
@@ -199,7 +199,7 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     case MR_TYPE_UINT32: return (mr_ra_printf_uint32_t (mr_ra_str, &_ptrdes));
     case MR_TYPE_INT64: return (mr_ra_printf_int64_t (mr_ra_str, &_ptrdes));
     case MR_TYPE_UINT64: return (mr_ra_printf_uint64_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_ENUM: return (mr_ra_printf_enum (mr_ra_str, &_ptrdes));
+    case MR_TYPE_ENUM: return (mr_ra_printf_bitmask (mr_ra_str, &_ptrdes, delimiter));
     default: break;
     }
   return (-1);
