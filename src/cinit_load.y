@@ -21,8 +21,6 @@
 #define YYLTYPE MR_CINIT_LTYPE
 #include <cinit_load.lex.h>
 
-#define SIZEOF_QUOTE_CHAR (sizeof ("\"") - sizeof (""))
-  
 }
 
 %code {
@@ -92,7 +90,7 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
 %token <id_ivalue> TOK_CINIT_ID_IVALUE
 %token <value> TOK_CINIT_NUMBER
 %token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST TOK_CINIT_STRING TOK_CINIT_CHAR TOK_CINIT_ID
-%token TOK_CINIT_NULL TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_LBRACKET TOK_CINIT_RBRACKET TOK_CINIT_COMMA TOK_CINIT_ERROR
+%token TOK_CINIT_NULL TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_COMMA TOK_CINIT_ERROR
 
 %left TOK_CINIT_BIT_OR TOK_CINIT_BIT_AND TOK_CINIT_BIT_XOR
 %left TOK_CINIT_PLUS TOK_CINIT_MINUS
@@ -159,8 +157,8 @@ compaund
 | TOK_CINIT_STRING {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length - 2 * SIZEOF_QUOTE_CHAR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = cinit_unquote_str;
   }
 | TOK_CINIT_NULL {
@@ -171,14 +169,10 @@ compaund
   }
 | TOK_CINIT_CHAR {
   mr_load_t * mr_load = MR_LOAD;
-  mr_substr_t substr = {
-    .str = $1.str + SIZEOF_QUOTE_CHAR,
-    .length = $1.length - 2 * SIZEOF_QUOTE_CHAR,
-  };
-  char vt_char_str[substr.length + 1];
+  char vt_char_str[$1.length + sizeof (char)];
 
   vt_char_str[0] = 0;
-  cinit_unquote_str (&substr, vt_char_str);
+  cinit_unquote_str (&$1, vt_char_str);
 
   if (strlen (vt_char_str) > 1)
     {
@@ -211,13 +205,9 @@ expr:
   }
 | TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
 
-compaund:
-TOK_CINIT_LBRACE list TOK_CINIT_RBRACE
-| TOK_CINIT_LBRACKET list TOK_CINIT_RBRACKET
+compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE
 
-list: | nonempty_list | nonempty_list TOK_CINIT_COMMA
-
-nonempty_list: list_element | nonempty_list TOK_CINIT_COMMA list_element
+list: | list_element | list_element TOK_CINIT_COMMA list
 
 list_element: cinit
 | TOK_CINIT_FIELD_PREFIX cinit {

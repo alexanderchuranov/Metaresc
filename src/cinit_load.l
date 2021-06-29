@@ -46,19 +46,18 @@ get_type (mr_substr_t * substr, char * start)
 
 WS	[[:space:]]*
 ID	[_[:alpha:]][_[:alnum:]]*
-INT_NUMBER [[:digit:]]+
+INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER (0x|0X)[[:xdigit:]]+
 NUMBER {INT_NUMBER}|{HEX_NUMBER}
-FLOAT_NAN [Nn][Aa][Nn]
-FLOAT_INF [Ii][Nn][Ff]
-FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?
-IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
+FLOAT_NAN [+-]?[Nn][Aa][Nn]
+FLOAT_INF [+-]?[Ii][Nn][Ff]
+FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?
+IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?[Ii]
 %%
 
 {WS}  { /* eat up whitespace */ }
 
 "NULL" { return (TOK_CINIT_NULL); }
-"null" { return (TOK_CINIT_NULL); }
 "false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
 "FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
 "true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
@@ -85,20 +84,18 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 }
 
 "\""([^\"\\]|\\.)*"\"" {
-  yylval->string.str = yytext;
-  yylval->string.length = strlen (yytext);
+  yylval->string.str = &yytext[1];
+  yylval->string.length = strlen (yytext) - 2 * sizeof (yytext[0]);
   return (TOK_CINIT_STRING);
 }
 
 "\'"([^\'\\]|\\.)*"\'" {
-  yylval->string.str = yytext;
-  yylval->string.length = strlen (yytext);
+  yylval->string.str = &yytext[1];
+  yylval->string.length = strlen (yytext) - 2 * sizeof (yytext[0]);
   return (TOK_CINIT_CHAR);
 }
 
 "."{WS}{ID}{WS}"=" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
-
-"\""{ID}"\""{WS}":" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
 
 "("{WS}({ID}{WS})*{ID}{WS}\*?{WS}("["{WS}"]")?{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
@@ -125,8 +122,6 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 "}"       { return (TOK_CINIT_RBRACE); }
 "("       { return (TOK_CINIT_LPAREN); }
 ")"       { return (TOK_CINIT_RPAREN); }
-"["       { return (TOK_CINIT_LBRACKET); }
-"]"       { return (TOK_CINIT_RBRACKET); }
 ","       { return (TOK_CINIT_COMMA); }
 .         { return (TOK_CINIT_ERROR); }
 %%
