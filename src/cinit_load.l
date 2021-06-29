@@ -62,15 +62,12 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?[Ii]
 "FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
 "true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
 "TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
-[Ii] {
-  yylval->value.value_type = MR_VT_COMPLEX;
-  yylval->value.vt_complex = MR_CLD_PACK (I);
-  return (TOK_CINIT_NUMBER);
-}
-
+[Ii] { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = MR_CLD_PACK (I); return (TOK_CINIT_NUMBER); }
 
 {NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (yytext, NULL, 0); return (TOK_CINIT_NUMBER); }
+
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_CINIT_NUMBER); }
+
 {IMAGENARY_NUMBER} {
   yylval->value.value_type = MR_VT_COMPLEX;
   yylval->value.vt_complex = MR_CLD_PACK ( I * strtold (yytext, NULL) );
@@ -95,11 +92,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?[Ii]
   return (TOK_CINIT_CHAR);
 }
 
-"."{WS}{ID}{WS}"=" { mr_get_id (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_PREFIX); }
-
 "("{WS}({ID}{WS})*{ID}{WS}\*?{WS}("["{WS}"]")?{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
-
-"/*"{WS}"("{WS}({ID}{WS})*{ID}{WS}\*?{WS}"["{WS}"]"{WS}")"{WS}"*/" { get_type (&yylval->string, strchr (yytext, '(') + 1); return (TOK_CINIT_FIELD_CAST); }
 
 "/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { mr_get_id (&yylval->id_ivalue.id, &yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
 
@@ -123,6 +116,8 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?[Ii]
 "("       { return (TOK_CINIT_LPAREN); }
 ")"       { return (TOK_CINIT_RPAREN); }
 ","       { return (TOK_CINIT_COMMA); }
+"."       { return (TOK_CINIT_DOT); }
+"="       { return (TOK_CINIT_ASSIGN); }
 .         { return (TOK_CINIT_ERROR); }
 %%
 

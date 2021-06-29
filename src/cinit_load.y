@@ -90,7 +90,7 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
 %token <id_ivalue> TOK_CINIT_ID_IVALUE
 %token <value> TOK_CINIT_NUMBER
 %token <string> TOK_CINIT_FIELD_PREFIX TOK_CINIT_FIELD_CAST TOK_CINIT_STRING TOK_CINIT_CHAR TOK_CINIT_ID
-%token TOK_CINIT_NULL TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_COMMA TOK_CINIT_ERROR
+%token TOK_CINIT_NULL TOK_CINIT_DOT TOK_CINIT_ASSIGN TOK_CINIT_LBRACE TOK_CINIT_RBRACE TOK_CINIT_LPAREN TOK_CINIT_RPAREN TOK_CINIT_COMMA TOK_CINIT_ERROR
 
 %left TOK_CINIT_BIT_OR TOK_CINIT_BIT_AND TOK_CINIT_BIT_XOR
 %left TOK_CINIT_PLUS TOK_CINIT_MINUS
@@ -210,10 +210,10 @@ compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE
 list: | list_element | list_element TOK_CINIT_COMMA list
 
 list_element: cinit
-| TOK_CINIT_FIELD_PREFIX cinit {
+| TOK_CINIT_DOT TOK_CINIT_ID TOK_CINIT_ASSIGN cinit {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_load->ptrs->ra[idx].name = mr_get_static_field_name_from_substring (&$1);
+  mr_load->ptrs->ra[idx].name = mr_get_static_field_name_from_substring (&$2);
 }
 
 %%

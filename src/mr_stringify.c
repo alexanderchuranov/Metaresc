@@ -182,7 +182,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
 
 int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
 {
-  mr_ptrdes_t _ptrdes = *ptrdes;;
+  mr_ptrdes_t _ptrdes = *ptrdes;
   uint64_t value;
 
   mr_save_bitfield_value (ptrdes, &value);
