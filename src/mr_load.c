@@ -201,7 +201,7 @@ mr_get_func_wrapper (char * func_name, void * dst)
   void * func_addr = mr_get_func (func_name);
   if (NULL == func_name)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_FUNC, func_name);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_FUNC, func_name);
       return (MR_FAILURE);
     }
   *(void**)dst = func_addr;
@@ -284,7 +284,7 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
       status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_func_wrapper, ptrdes->data.ptr);
       break;
     default:
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
       status = MR_FAILURE;
       break;
     }
@@ -326,7 +326,7 @@ mr_load_float (int idx, mr_load_data_t * mr_load_data)
       MR_FOREACH (CASE_SET_FLOAT_BY_TYPE, float, double, long double);
 
     default:
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);
@@ -347,7 +347,7 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
       MR_FOREACH (CASE_SET_COMPLEX_BY_TYPE, complex float, complex double, complex long double);
 
     default:
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);
@@ -358,7 +358,7 @@ mr_get_char (char * src, void * dst)
 {
   if ((NULL == src) || (src[0] && src[1]))
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, src);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, src);
       return (MR_FAILURE);
     }
   
@@ -439,7 +439,7 @@ mr_load_string (int idx, mr_load_data_t * mr_load_data)
 	  break;
 	  
 	default:
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
 	  status = MR_FAILURE;
 	  break;
 	}
@@ -514,7 +514,7 @@ mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
       status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_char_array, &load_node_context);
       break;
     default:
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
       status = MR_FAILURE;
       break;
     }
@@ -555,7 +555,7 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
   /* get pointer on structure descriptor */
   if (NULL == tdp)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_load_data->ptrs.ra[idx].type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_load_data->ptrs.ra[idx].type);
       return (MR_FAILURE);
     }
 
@@ -569,7 +569,7 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
 
       if (NULL == fdp)
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, mr_load_data->ptrs.ra[idx].name);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, mr_load_data->ptrs.ra[idx].name);
 	  status = MR_FAILURE;
 	  continue;
 	}
@@ -625,7 +625,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
       /* check if array index is in range */
       if ((i < 0) || (i >= count))
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (MR_FAILURE);
 	}
       /* load recursively */
@@ -829,7 +829,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   if (mr_load_data->ptrs.ra[idx].name && fdp->name.str)
     if (0 != strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].name))
       {
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, mr_load_data->ptrs.ra[idx].name);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, mr_load_data->ptrs.ra[idx].name);
 	return (MR_FAILURE);
       }
 
@@ -838,7 +838,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
       if (!((0 == strcmp (MR_VOIDP_T_STR, mr_load_data->ptrs.ra[idx].type)) &&
 	    (('*' == fdp->type[strlen (fdp->type) - 1]) || (MR_TYPE_FUNC == fdp->mr_type))))
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, mr_load_data->ptrs.ra[idx].type);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, mr_load_data->ptrs.ra[idx].type);
 	  return (MR_FAILURE);
 	}
 

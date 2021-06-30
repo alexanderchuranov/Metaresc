@@ -105,7 +105,6 @@ push_node: {
   mr_load->parent = mr_parse_add_node (mr_load); 
   if (mr_load->parent < 0)
     {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       YYERROR;
     }
   mr_load->ptrs->ra[mr_load->parent].idx = mr_load->parent;

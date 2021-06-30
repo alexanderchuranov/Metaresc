@@ -203,7 +203,7 @@ mr_ud_add (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
 
   if (ptrdes->ud_count > sizeof (ptrdes->save_params.static_array) / sizeof (ptrdes->save_params.static_array[0]))
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ptrdes->ud_count);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ptrdes->ud_count);
       ptrdes->ud_count = 0;
     }
 
@@ -428,7 +428,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       
     case MR_TYPE_END_ANON_UNION:
     case MR_TYPE_LAST:
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_UNEXPECTED_MR_TYPE);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_MR_TYPE);
       break;
     }
   return (0);
@@ -832,7 +832,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
 
   if (NULL == tdp) /* check whether type descriptor was found */
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
       return (0);
     }
 
@@ -868,7 +868,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ra[idx].non_serializable = true;
   if (NULL == tdp) /* check whether type descriptor was found */
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
       return (0);
     }
   if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))

@@ -112,7 +112,6 @@ start_node: {
   mr_load->parent = mr_parse_add_node (mr_load); 
   if (mr_load->parent < 0)
     {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       YYERROR;
     }
 }
@@ -175,10 +174,7 @@ compaund
   cinit_unquote_str (&$1, vt_char_str);
 
   if (strlen (vt_char_str) > 1)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, vt_char_str);
-      YYERROR;
-    }
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, vt_char_str);
   
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_char = vt_char_str[0];
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_CHAR;

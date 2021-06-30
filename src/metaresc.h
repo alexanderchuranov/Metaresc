@@ -103,7 +103,7 @@
     mr_fd_t * __fdp__ = FDP;						\
     mr_td_t * mr_type_td = mr_get_td_by_name ("mr_type_t");		\
     mr_fd_t * mr_type_fd = mr_type_td ? mr_get_enum_by_value (mr_type_td, __fdp__->mr_type) : NULL; \
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, (mr_type_fd ? mr_type_fd->name.str : "unknown"), __fdp__->mr_type); \
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, (mr_type_fd ? mr_type_fd->name.str : "unknown"), __fdp__->mr_type); \
   })
 
 /* make a string from argument in writable memory. #STR itself is in read-only memory */
@@ -832,7 +832,7 @@
       mr_status_t __status__ = MR_FAILURE;				\
       XDR * __xdrs__ = (XDRS);						\
       if (XDR_ENCODE != __xdrs__->x_op)					\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
 	  mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
@@ -889,7 +889,7 @@
       mr_status_t __status__ = MR_FAILURE;				\
       XDR * __xdrs__ = (XDRS);						\
       if (XDR_DECODE != __xdrs__->x_op)					\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
 	  mr_fd_t __fd__ = {						\
@@ -905,7 +905,7 @@
 	  if (__check_type__ != NULL)					\
 	    __status__ = xdr_load (__check_type__, &__fd__, __xdrs__);	\
 	  else								\
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
 	}								\
       __status__;							\
     })
@@ -916,7 +916,7 @@
       memset (&__result__, 0, sizeof (__result__));			\
       _status_ = MR_LOAD_XDR_ARG3 (MR_TYPE_NAME, XDRS, &__result__);	\
       if (MR_SUCCESS != _status_)					\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_LOAD_FAILED);		\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_LOAD_FAILED);		\
       __result__;							\
     })
 
@@ -976,7 +976,7 @@
       MR_TYPE_NAME * __check_type__ = S_PTR + 0;			\
       xmlNodePtr __xml__ = (XML);					\
       if (NULL == __xml__)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
       else								\
 	{								\
 	  MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
@@ -984,7 +984,7 @@
 	  if (NULL != __check_type__) 					\
 	    __idx__ = xml2_load (__xml__, &__load_data__.ptrs);		\
 	  else								\
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
 	  if (__idx__ >= 0)						\
 	    __status__ = mr_load (__check_type__, &__fd__, __idx__, &__load_data__); \
 	  if (__load_data__.ptrs.ra)					\
@@ -999,7 +999,7 @@
       memset (&__result__, 0, sizeof (__result__));			\
       _status_ = MR_LOAD_XML2_NODE_ARG3 (MR_TYPE_NAME, XML, &__result__); \
       if (MR_SUCCESS != _status_)					\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_STRUCT_FAILED);	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_LOAD_STRUCT_FAILED);		\
       __result__;							\
     })
 
@@ -1013,9 +1013,9 @@
       char * __str__ = (STR);						\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
       if (NULL == _check_type_)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
       else if (NULL == __str__)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
       else								\
 	{								\
 	  xmlDocPtr __doc__ = xmlParseMemory (__str__, strlen (__str__)); \
@@ -1035,7 +1035,7 @@
       memset (&__result__, 0, sizeof (__result__));			\
       ___status___ = MR_LOAD_XML2_ARG3 (MR_TYPE_NAME, STR, &__result__); \
       if (MR_SUCCESS != ___status___)					\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_STRUCT_FAILED);	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_LOAD_STRUCT_FAILED);		\
       __result__;							\
     })
 
@@ -1056,9 +1056,9 @@
       char * _str_ = (STR);						\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
       if (NULL == _check_type_)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NULL_POINTER);		\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
       else if (NULL == _str_)						\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
       else								\
 	{								\
 	  mr_load_data_t _load_data_ = {				\
@@ -1091,7 +1091,7 @@
       memset (&__result__, 0, sizeof (__result__));			\
       _status_ = MR_LOAD_METHOD_ARG3 (METHOD, MR_TYPE_NAME, STR, &__result__); \
       if (MR_SUCCESS != _status_)					\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_STRUCT_FAILED);	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_LOAD_STRUCT_FAILED);		\
       __result__;							\
     })
 

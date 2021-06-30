@@ -92,7 +92,7 @@ mr_get_int (char * str, uint64_t * data)
 	{
 	  if (1 != sscanf (str, "%" SCNx64 "%n", data, &offset))
 	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_INT, str);
 	      return (NULL);
 	    }
 	}
@@ -100,7 +100,7 @@ mr_get_int (char * str, uint64_t * data)
 	{
 	  if (1 != sscanf (str, "%" SCNo64 "%n", data, &offset))
 	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_INT, str);
 	      return (NULL);
 	    }
 	}
@@ -112,7 +112,7 @@ mr_get_int (char * str, uint64_t * data)
 	str += offset;
       else
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_INT, str);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_INT, str);
 	  return (NULL);
 	}
     }
@@ -147,7 +147,7 @@ mr_load_long_double (char * str, mr_value_t * mr_value)
   long double value;
   if (1 != sscanf (str, "%Lg%n", &value, &offset))
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_LONG_DOUBLE, str);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_LONG_DOUBLE, str);
       return (NULL);
     }
   mr_value->vt_float = value;
@@ -168,7 +168,7 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
 
   if (1 != sscanf (str, "%Lg%n", &real, &offset))
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
     }
 
@@ -193,7 +193,7 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
 
   if (1 != sscanf (tail, "%LgI%n", &imag, &offset))
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
     }
 
@@ -208,7 +208,7 @@ mr_load_var (char * str, void * arg)
   
   if ((NULL == str) || (NULL == mr_value))
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (MR_FAILURE);
     }
   
@@ -233,7 +233,7 @@ mr_load_var (char * str, void * arg)
     ++str;
   if (*str != 0)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, str);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, str);
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);
@@ -325,7 +325,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
   if (MR_SUCCESS == status)
     mr_value->value_type = value_type;
   else
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);
 
   return (status);
 }
@@ -356,7 +356,7 @@ mr_value_neg (mr_value_t * value)
       break;
       
     default:
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);
@@ -372,7 +372,7 @@ mr_value_neg (mr_value_t * value)
     if ((MR_SUCCESS != mr_value_cast (result_type, left)) ||		\
 	(MR_SUCCESS != mr_value_cast (result_type, right)))		\
       {									\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);		\
 	return (MR_FAILURE);						\
       }									\
     result->value_type = result_type;					\
@@ -391,7 +391,7 @@ mr_value_neg (mr_value_t * value)
 	}								\
 	break;								\
       default:								\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);		\
 	return (MR_FAILURE);						\
       }									\
     return (MR_SUCCESS);						\
@@ -407,7 +407,7 @@ mr_value_neg (mr_value_t * value)
       return (MR_FAILURE);						\
     if ((left->value_type != MR_VT_INT) || (right->value_type != MR_VT_INT)) \
       {									\
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);		\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);		\
 	return (MR_FAILURE);						\
       }									\
     result->value_type = MR_VT_INT;					\
@@ -424,7 +424,7 @@ mr_value_is_zero (mr_value_t * value)
     case MR_VT_INT: return (0 == value->vt_int);
     case MR_VT_FLOAT: return (0 == value->vt_float);
     case MR_VT_COMPLEX: return (0 == MR_CLD_UNPACK (value->vt_complex));
-    default: MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_RESULT_TYPE);
+    default: MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);
     }
   return (false);
 }
@@ -432,8 +432,8 @@ mr_value_is_zero (mr_value_t * value)
 MR_VALUE_OP (add, +);
 MR_VALUE_OP (sub, -);
 MR_VALUE_OP (mul, *);
-MR_VALUE_OP (div, /, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
-MR_INT_VALUE_OP (mod, %, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
+MR_VALUE_OP (div, /, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
+MR_INT_VALUE_OP (mod, %, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
 MR_INT_VALUE_OP (bit_or, |);
 MR_INT_VALUE_OP (bit_and, &);
 MR_INT_VALUE_OP (bit_xor, ^);

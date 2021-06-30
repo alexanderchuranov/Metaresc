@@ -411,7 +411,7 @@ xml2_save (mr_ra_ptrdes_t * ptrs)
   xmlDocPtr doc = xmlNewDoc (BAD_CAST "1.0");
 
   if (NULL == doc)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XML_SAVE_FAILED);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XML_SAVE_FAILED);
   else
     {
       ptrs->ptrdes_type = MR_PD_CUSTOM;

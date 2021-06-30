@@ -51,7 +51,7 @@ mr_conf_t mr_conf = {
     .realloc = mr_realloc, /**< Pointer to realloc function. */
     .free = mr_free, /**< Pointer to free function. */
   },
-  .log_level = MR_LL_ALL, /**< default log level ALL */
+  .log_level = MR_LL_ERROR, /**< default log level ERROR */
   .msg_handler = NULL, /**< pointer on user defined message handler */
   .cache_func_resolve = true,
   .type_by_name = {
@@ -232,7 +232,7 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
   /* if we have user defined message handler then pass error to it */
   if (mr_conf.msg_handler)
     mr_conf.msg_handler (file_name, func_name, line, log_level, message_id, args);
-  else if (log_level > mr_conf.log_level)
+  else if (log_level >= mr_conf.log_level)
     {
       const char * log_level_str_ = "Unknown";
 #define LL_INIT(LEVEL) [MR_LL_##LEVEL] = #LEVEL,
@@ -852,7 +852,7 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
 	{
 	  if (NULL == ptrdes->data.ptr)
 	    {
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
 	      status = MR_FAILURE;
 	    }
 	  else
@@ -941,7 +941,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    
 	    if (size < 0)
 	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
+		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
 		goto failure;
 	      }
 	    
@@ -1545,10 +1545,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
 	    if (MR_SUCCESS != mr_add_type (tdp_))
-	      {
-		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_ANON_UNION_TYPE_ERROR, tdp->type.str);
-		return (MR_FAILURE);
-	      }
+	      return (MR_FAILURE);
 	  }
 	}
     }
@@ -2100,8 +2097,8 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp = tdp->fields[tdp->fields_size / sizeof (tdp->fields[0])].fdp;
   if (NULL == fdp)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (MR_SUCCESS);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (MR_FAILURE);
     }
 
   *fdp = *union_tdp->fields[0].fdp;
@@ -2122,14 +2119,14 @@ mr_type_void_fields (char * type, char * name, ...)
 
   if (type == NULL)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return;
     }
   
   mr_td_t * tdp = mr_get_td_by_name (type);
   if (tdp == NULL)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
       return;
     }
 
@@ -2219,10 +2216,7 @@ mr_add_type (mr_td_t * tdp)
     {
       mr_fd_t * fdp = tdp->fields[count].fdp;
       if (NULL == fdp)
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	  status = MR_FAILURE;
-	}
+	return (MR_FAILURE);
       if (MR_TYPE_LAST == fdp->mr_type)
 	break;
     }
@@ -2432,7 +2426,7 @@ mr_read_xml_doc (FILE * fd)
       int c = fgetc (fd);
       if ((c == EOF) || (c == 0))
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_END);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_END);
 	  MR_FREE (str);
 	  return (NULL);
 	}
@@ -2454,7 +2448,7 @@ mr_read_xml_doc (FILE * fd)
 
       if ((0 == opened_tags) && !(('<' == c) || isspace (c)))
 	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_DATA);
 	  MR_FREE (str);
 	  return (NULL);
 	}
@@ -2473,7 +2467,7 @@ mr_read_xml_doc (FILE * fd)
 	  tags_to_close = -1;
 	  if (opened_tags < 0)
 	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNBALANCED_TAGS);
+	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNBALANCED_TAGS);
 	      MR_FREE (str);
 	      return (NULL);
 	    }

@@ -65,7 +65,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $4.length)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
       YYERROR;
     }
 
@@ -92,7 +92,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
 
   if (($2.length != $6.length) || (0 != strncmp ($2.str, $6.str, $2.length)))
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TAGS_DONT_MATCH);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TAGS_DONT_MATCH);
       YYERROR;
     }
 
@@ -101,7 +101,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $7.length)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
       YYERROR;
     }
 
@@ -129,7 +129,6 @@ start_tag: {
   mr_load->parent = mr_parse_add_node (mr_load); 
   if (mr_load->parent < 0)
     {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       YYERROR;
     }
 }
@@ -165,7 +164,7 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
 
   if (error)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_CANT_READ_PROPERTY, error);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CANT_READ_PROPERTY, error);
       YYERROR;
     }
  }

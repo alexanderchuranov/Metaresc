@@ -567,7 +567,7 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
 
   if (ic->items_count > sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ic->items_count);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ic->items_count);
       ic->items_count = 0;
     }
 

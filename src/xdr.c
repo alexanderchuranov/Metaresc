@@ -253,7 +253,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
       {
 	if (ptrs->ra[i].ref_idx >= count)
 	  {
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNDEFINED_REF_IDX, "ref_idx", ptrs->ra[i].ref_idx);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, "ref_idx", ptrs->ra[i].ref_idx);
 	    status = MR_FAILURE;
 	  }
 	else
@@ -663,7 +663,7 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs, mr_td_t * tdp
 
   if (NULL == tdp)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
       return (MR_FAILURE);
     }
 
@@ -742,13 +742,13 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
   /* get pointer on structure descriptor */
   if (NULL == tdp)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
   else if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_UNION, tdp->type.str);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->type.str);
   else if (MR_SUCCESS != xdr_load_string (xdrs, 0, &ptrs_))
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else if (NULL == discriminator)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else
     {
       if (0 == tdp->fields_size) /* check for an empty union */
@@ -757,7 +757,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	{
 	  mr_fd_t * fdp = mr_get_fd_by_name (tdp, discriminator);
 	  if (NULL == fdp)
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
 	  else
 	    status = xdr_load_inner (data + fdp->offset, fdp, xdrs, ptrs, idx);
 	}
@@ -779,9 +779,9 @@ _xdr_enum (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_td_t * tdp = mr_get_td_by_name (ptrs->ra[idx].type);
   if (NULL == tdp)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
   else if (tdp->mr_type != MR_TYPE_ENUM)
-    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TYPE_NOT_ENUM, tdp->type.str);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, tdp->type.str);
   else 
     switch (tdp->param.enum_param.mr_type_effective)
       {
