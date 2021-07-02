@@ -941,7 +941,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    
 	    if (size < 0)
 	      {
-		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
+		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, size);
 		goto failure;
 	      }
 	    

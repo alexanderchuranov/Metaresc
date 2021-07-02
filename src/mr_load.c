@@ -112,7 +112,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 
 	if (NULL == mr_load_data->ptrs.ra[i].data.ptr)
 	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
 	    status = MR_FAILURE;
 	    continue;
 	  }
@@ -217,7 +217,7 @@ mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str
 {
   if (NULL == quoted_substr->substr.str)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (MR_FAILURE);
     }
 

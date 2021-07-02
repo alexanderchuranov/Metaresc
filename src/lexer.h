@@ -13,7 +13,7 @@ TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
 		)
 
 #define MR_PARSE_ERROR(LLOCP, SCANNER, ERROR_MSG)			\
-  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
+  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
 	      (LLOCP)->start.lineno, (LLOCP)->start.column, (LLOCP)->end.lineno, (LLOCP)->end.column)
 
 /**

@@ -208,7 +208,7 @@ mr_load_var (char * str, void * arg)
   
   if ((NULL == str) || (NULL == mr_value))
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (MR_FAILURE);
     }
   
