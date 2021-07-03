@@ -15,8 +15,6 @@ jobs:
         run: ./configure CC=gcc
       - name: make check
         run: make check
-      - name: check with valgrind
-        run: cd tests; make valgrind
 
   ubuntu-clang:
     runs-on: ubuntu-latest
@@ -30,6 +28,8 @@ jobs:
         run: ./configure CC=clang
       - name: make check
         run: make check
+      - name: check with valgrind
+        run: cd tests; make valgrind
 
   macos-clang:
     runs-on: macos-latest
@@ -48,6 +48,6 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison LIBS="-lz -ll" CPPFLAGS=-I/usr/local/include/libdwarf-0
+        run: ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison LIBS=-lz CPPFLAGS=-I/usr/local/include/libdwarf-0
       - name: make check
         run: make check

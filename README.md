@@ -75,7 +75,7 @@ Checkout and build Metaresc:
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
 $ cd Metaresc
 $ ./autogen.sh
-$ ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison LIBS="-lz -ll" CPPFLAGS=-I/usr/local/include/libdwarf-0
+$ ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison LIBS=-lz CPPFLAGS=-I/usr/local/include/libdwarf-0
 $ make -j 4 check
 ```
 
