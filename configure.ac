@@ -76,6 +76,9 @@ AC_SUBST(AM_LDFLAGS, ${AM_LDFLAGS})
 AC_CHECK_LIB(execinfo, backtrace, [ LIBS="${LIBS} -lexecinfo" ])
 
 AC_CHECK_LIB(dwarf, dwarf_init, [ HAVE_LIBDWARF=yes ])
+AC_CHECK_HEADER([libdwarf.h], [ HAVE_LIBDWARF_H=yes ])
+AM_CONDITIONAL(HAVE_LIBDWARF, test x${HAVE_LIBDWARF} = xyes -a x${HAVE_LIBDWARF_H} = xyes)
+
 AC_CHECK_LIB(dwarf, dwarf_init_path, [ HAVE_DWARF_INIT_PATH=yes ])
 if [[ x${HAVE_DWARF_INIT_PATH} = xyes ]]; then
   AC_DEFINE(HAVE_DWARF_INIT_PATH, [], [define if dwarf_init_path is present])
@@ -85,10 +88,7 @@ AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#
 #include <rpc/xdr.h>]])
 
 # Checks for header files.
-AC_CHECK_HEADERS([execinfo.h rpc/types.h values.h dwarf.h libdwarf.h])
-
-AC_CHECK_HEADER([libdwarf.h], [ HAVE_LIBDWARF_H=yes ])
-AM_CONDITIONAL(HAVE_LIBDWARF, test x${HAVE_LIBDWARF} = xyes -a x${HAVE_LIBDWARF_H} = xyes)
+AC_CHECK_HEADERS([execinfo.h rpc/types.h values.h])
 
 AC_CHECK_HEADER([rpc/types.h], [ HAVE_XDR=yes ])
 AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)

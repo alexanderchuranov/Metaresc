@@ -6,15 +6,10 @@
 #include <unistd.h> /* close () */
 
 #include <metaresc.h>
-#include <mr_config.h>
 #include <mr_ic.h>
 
-#ifdef HAVE_DWARF_H
 #include <dwarf.h>
-#endif /* HAVE_DWARF_H */
-#ifdef HAVE_LIBDWARF_H
 #include <libdwarf.h>
-#endif /* HAVE_LIBDWARF_H */
 
 /* awk '/#define DW_TAG_/{print "(_"$2", = "$3"),"}' < /usr/include/libdwarf/dwarf.h */
 TYPEDEF_ENUM (mr_dw_tag_t, ATTRIBUTES ( , "awk '/#define DW_TAG_/{print \"(_\"$2\", = \"$3\"),\"}' < /usr/include/libdwarf/dwarf.h"),
@@ -1109,12 +1104,7 @@ static mr_status_t
 print_td (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  char * dump = MR_SAVE_CINIT (mr_td_t, tdp);
-  if (dump)
-    {
-      printf ("%s,\n", dump);
-      MR_FREE (dump);
-    }
+  MR_PRINT ((mr_td_t, tdp), ",\n");
   return (MR_SUCCESS);
 }
 
