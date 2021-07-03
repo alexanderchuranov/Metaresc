@@ -63,7 +63,7 @@ For DWARF (debug info format) support install libdwarf:
 ```console
 $ git clone git://git.code.sf.net/p/libdwarf/code libdwarf-code
 $ cd libdwarf-code
-$ sh scripts/FIX-CONFIGURE-TIMES
+$ sh ./autogen.sh
 $ ./configure
 $ make
 # make install
