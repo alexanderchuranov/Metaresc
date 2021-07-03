@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
-        run: sudo brew install autoconf automake libtool pkg-config flex bison libxml2 check
+        run: brew install autoconf automake libtool pkg-config flex bison libxml2 check
       - name: install libdwarf
         run: |
           git clone git://git.code.sf.net/p/libdwarf/code libdwarf-code
@@ -42,7 +42,7 @@ jobs:
           sh scripts/FIX-CONFIGURE-TIMES
           ./configure
           make
-          sudo make install
+          make install
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
