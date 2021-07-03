@@ -19,6 +19,7 @@ AC_PROG_CXX
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
+AM_PROG_AR
 LT_INIT
 test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
@@ -76,7 +77,6 @@ AC_CHECK_LIB(execinfo, backtrace, [ LIBS="${LIBS} -lexecinfo" ])
 
 AC_CHECK_LIB(dwarf, dwarf_init, [ HAVE_LIBDWARF=yes ])
 AC_CHECK_LIB(dwarf, dwarf_init_path, [ HAVE_DWARF_INIT_PATH=yes ])
-AM_CONDITIONAL(HAVE_LIBDWARF, test x${HAVE_LIBDWARF} = xyes)
 if [[ x${HAVE_DWARF_INIT_PATH} = xyes ]]; then
   AC_DEFINE(HAVE_DWARF_INIT_PATH, [], [define if dwarf_init_path is present])
 fi
@@ -85,7 +85,11 @@ AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#
 #include <rpc/xdr.h>]])
 
 # Checks for header files.
-AC_CHECK_HEADERS([execinfo.h rpc/types.h values.h dwarf.h libdwarf.h libdwarf/dwarf.h libdwarf/libdwarf.h])
+AC_CHECK_HEADERS([execinfo.h rpc/types.h values.h dwarf.h libdwarf.h])
+
+AC_CHECK_HEADER([libdwarf.h], [ HAVE_LIBDWARF_H=yes ])
+AM_CONDITIONAL(HAVE_LIBDWARF, test x${HAVE_LIBDWARF} = xyes -a x${HAVE_LIBDWARF_H} = xyes)
+
 AC_CHECK_HEADER([rpc/types.h], [ HAVE_XDR=yes ])
 AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 

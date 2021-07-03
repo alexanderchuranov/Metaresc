@@ -9,21 +9,12 @@
 #include <mr_config.h>
 #include <mr_ic.h>
 
-#ifdef HAVE_LIBDWARF_DWARF_H
-#include <libdwarf/dwarf.h>
-#else /* ! HAVE_LIBDWARF_DWARF_H */
-# ifdef HAVE_DWARF_H
-# include <dwarf.h>
-# endif /* HAVE_DWARF_H */
-#endif /* HAVE_LIBDWARF_DWARF_H */
-
-#ifdef HAVE_LIBDWARF_LIBDWARF_H
-#include <libdwarf/libdwarf.h>
-#else /* ! HAVE_LIBDWARF_LIBDWARF_H */
-# ifdef HAVE_LIBDWARF_H
-# include <libdwarf.h>
-# endif /* HAVE_LIBDWARF_H */
-#endif /* HAVE_LIBDWARF_LIBDWARF_H */
+#ifdef HAVE_DWARF_H
+#include <dwarf.h>
+#endif /* HAVE_DWARF_H */
+#ifdef HAVE_LIBDWARF_H
+#include <libdwarf.h>
+#endif /* HAVE_LIBDWARF_H */
 
 /* awk '/#define DW_TAG_/{print "(_"$2", = "$3"),"}' < /usr/include/libdwarf/dwarf.h */
 TYPEDEF_ENUM (mr_dw_tag_t, ATTRIBUTES ( , "awk '/#define DW_TAG_/{print \"(_\"$2\", = \"$3\"),\"}' < /usr/include/libdwarf/dwarf.h"),
