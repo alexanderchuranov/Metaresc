@@ -109,7 +109,7 @@ MR_RA_PRINTF_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
 int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_td_t * tdp = mr_get_td_by_name (ptrdes->type); /* look up for type descriptor */
-  mr_size_t size = sizeof (uint8_t);
+  mr_type_t mr_type = MR_TYPE_UINT8;
 
   /* check whether type descriptor was found */
   if (NULL == tdp)
@@ -123,22 +123,21 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       if (fdp && fdp->name.str)
 	return (mr_ra_append_string (mr_ra_str, fdp->name.str));
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->name);
-      size = tdp->param.enum_param.size_effective;
+      mr_type = tdp->param.enum_param.mr_type_effective;
     }
   /* save as integer otherwise */
-  switch (size)
+  switch (mr_type)
     {
-    case sizeof (uint8_t):
-      return (mr_ra_printf_uint8_t (mr_ra_str, ptrdes));
-    case sizeof (uint16_t):
-      return (mr_ra_printf_uint16_t (mr_ra_str, ptrdes));
-    case sizeof (uint32_t):
-      return (mr_ra_printf_uint32_t (mr_ra_str, ptrdes));
-    case sizeof (uint64_t):
-      return (mr_ra_printf_uint64_t (mr_ra_str, ptrdes));
+    case MR_TYPE_INT8: return (mr_ra_printf_int8_t (mr_ra_str, ptrdes));
+    case MR_TYPE_UINT8: return (mr_ra_printf_uint8_t (mr_ra_str, ptrdes));
+    case MR_TYPE_INT16: return (mr_ra_printf_int16_t (mr_ra_str, ptrdes));
+    case MR_TYPE_UINT16: return (mr_ra_printf_uint16_t (mr_ra_str, ptrdes));
+    case MR_TYPE_INT32: return (mr_ra_printf_int32_t (mr_ra_str, ptrdes));
+    case MR_TYPE_UINT32: return (mr_ra_printf_uint32_t (mr_ra_str, ptrdes));
+    case MR_TYPE_INT64: return (mr_ra_printf_int64_t (mr_ra_str, ptrdes));
+    case MR_TYPE_UINT64: return (mr_ra_printf_uint64_t (mr_ra_str, ptrdes));
+    default: return (-1);
     }
-  
-  return (-1);
 }
 
 int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
