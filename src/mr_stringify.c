@@ -174,7 +174,17 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->name);
       if (!first)
 	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
-      count += TRY_CATCH_THROW (mr_ra_printf_uint64_t (mr_ra_str, &_ptrdes));
+      
+#define CASE_PRINT_BY_TYPE(TYPE)					\
+    case MR_TYPE_DETECT (TYPE):						\
+      count += TRY_CATCH_THROW (mr_ra_printf_ ## TYPE (mr_ra_str, &_ptrdes)); \
+      break;
+      
+      switch (tdp->param.enum_param.mr_type_effective)
+	{
+	  MR_FOREACH (CASE_PRINT_BY_TYPE, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+	default: break;
+	}
     }
   return (count);
 }
@@ -182,6 +192,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
 int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
 {
   mr_ptrdes_t _ptrdes = *ptrdes;
+  int count = 0;
   uint64_t value;
 
   mr_save_bitfield_value (ptrdes, &value);
@@ -189,19 +200,16 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char *
 
   switch (ptrdes->mr_type_aux)
     {
-    case MR_TYPE_BOOL: return (mr_ra_printf_bool (mr_ra_str, &_ptrdes));
-    case MR_TYPE_INT8: return (mr_ra_printf_int8_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_UINT8: return (mr_ra_printf_uint8_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_INT16: return (mr_ra_printf_int16_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_UINT16: return (mr_ra_printf_uint16_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_INT32: return (mr_ra_printf_int32_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_UINT32: return (mr_ra_printf_uint32_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_INT64: return (mr_ra_printf_int64_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_UINT64: return (mr_ra_printf_uint64_t (mr_ra_str, &_ptrdes));
-    case MR_TYPE_ENUM: return (mr_ra_printf_bitmask (mr_ra_str, &_ptrdes, delimiter));
+      MR_FOREACH (CASE_PRINT_BY_TYPE, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+    case MR_TYPE_BOOL:
+      count += mr_ra_printf_bool (mr_ra_str, &_ptrdes);
+      break;
+    case MR_TYPE_ENUM:
+      count += mr_ra_printf_bitmask (mr_ra_str, &_ptrdes, delimiter);
+      break;
     default: break;
     }
-  return (-1);
+  return (count);
 }  
 
 TYPEDEF_STRUCT (mr_func_name_t,
