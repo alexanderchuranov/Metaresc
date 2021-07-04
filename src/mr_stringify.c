@@ -33,8 +33,8 @@ int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (*(bool*)ptrdes->data.ptr ?
-	  mr_ra_printf (mr_ra_str, "true") :
-	  mr_ra_printf (mr_ra_str, "false"));
+	  mr_ra_append_string (mr_ra_str, "true") :
+	  mr_ra_append_string (mr_ra_str, "false"));
 }
 
 #define MR_RA_PRINTF_TMPLT(TYPE, TMPLT)					\
@@ -121,7 +121,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       int64_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
       if (fdp && fdp->name.str)
-	return (mr_ra_printf (mr_ra_str, "%s", fdp->name.str));
+	return (mr_ra_append_string (mr_ra_str, fdp->name.str));
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->name);
       size = tdp->param.enum_param.size_effective;
     }
