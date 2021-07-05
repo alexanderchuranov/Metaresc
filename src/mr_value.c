@@ -160,7 +160,10 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   int offset;
   long_double_t real, imag;
 
-  if (str[0] == 'I')
+  while (isspace (*str))
+    ++str;
+  
+  if (*str == 'I')
     {
       mr_value->vt_complex = MR_CLD_PACK (I);
       return (&str[1]);
@@ -172,33 +175,40 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
       return (NULL);
     }
 
-  char * tail = &str[offset];
-  if (tail[0] == 'I')
+  str += offset;
+  if (*str == 'I')
     {
       mr_value->vt_complex = MR_CLD_PACK (I * real);
-      return (&tail[1]);
+      return (str + 1);
     }
 
-  if ((tail[0] != ' ') || (tail[1] != '+') || (tail[2] != ' '))
+  while (isspace (*str))
+    ++str;
+  
+  if (*str != '+')
     {
       mr_value->vt_complex = MR_CLD_PACK (real);
-      return (tail);
-    }
-  tail += 3;
-  if (tail[0] == 'I')
-    {
-      mr_value->vt_complex = MR_CLD_PACK (real + I);
-      return (tail);
+      return (str);
     }
 
-  if (1 != sscanf (tail, "%LgI%n", &imag, &offset))
+  ++str;
+  while (isspace (*str))
+    ++str;
+  
+  if (*str == 'I')
+    {
+      mr_value->vt_complex = MR_CLD_PACK (real + I);
+      return (str + 1);
+    }
+
+  if (1 != sscanf (str, "%LgI%n", &imag, &offset))
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
     }
 
   mr_value->vt_complex = MR_CLD_PACK (real + I * imag);
-  return (&tail[offset]);
+  return (str + offset);
 }
 
 static mr_status_t

@@ -25,6 +25,7 @@ START_TEST (flt_epsilon_float) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_FLOAT, FL
 START_TEST (pi_float_complex) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_FLOAT, M_PI + M_E * I); } END_TEST 
 START_TEST (one1_float_complex) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_FLOAT, 1); } END_TEST
 START_TEST (one2_float_complex) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_FLOAT, I); } END_TEST
+START_TEST (two_float_complex) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_FLOAT, 2I); } END_TEST
 													
 MAIN_TEST_SUITE ((zero_float, "zero float"),
 		 (nan1_float, "NAN float"),
@@ -37,5 +38,6 @@ MAIN_TEST_SUITE ((zero_float, "zero float"),
 		 (flt_epsilon_float, "FLT_EPSILON float"),
 		 (pi_float_complex, "pi + e*i"),
 		 (one1_float_complex, "1"),
-		 (one2_float_complex, "I")
+		 (one2_float_complex, "I"),
+		 (two_float_complex, "2I")
 		 );

@@ -26,6 +26,7 @@ START_TEST (ldbl_epsilon_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_LO
 START_TEST (pi_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_LONG_DOUBLE, M_PI + M_E * I); } END_TEST
 START_TEST (one1_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_LONG_DOUBLE, 1); } END_TEST
 START_TEST (one2_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_LONG_DOUBLE, I); } END_TEST
+START_TEST (two_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_LONG_DOUBLE, 2I); } END_TEST
 
 MAIN_TEST_SUITE ((zero_long_double, "zero long_double"),
 		 (nan1_long_double, "NAN long_double"),
@@ -38,5 +39,6 @@ MAIN_TEST_SUITE ((zero_long_double, "zero long_double"),
 		 (ldbl_epsilon_long_double, "LDBL_EPSILON long_double"),
 		 (pi_long_double, "pi + e*i long_double"),
 		 (one1_long_double, "1"),
-		 (one2_long_double, "I")
+		 (one2_long_double, "I"),
+		 (two_long_double, "2I")
 		 );
