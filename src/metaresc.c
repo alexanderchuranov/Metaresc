@@ -1632,9 +1632,16 @@ mr_add_enum (mr_td_t * tdp)
   mr_status_t status = MR_SUCCESS;
 
   /*
-    Enums with __attribute__((packed, aligned (XXX))) GCC generates size according alignment, but not real size which is 1 byte due to packing.
+    Old versions of GCC (e.g. 4.x) might have mismatched sizeof and effectivily used size for enums.
+    Enums with __attribute__((packed, aligned (XXX))) have sizeof according to alignment, but compiler uses only bytes required for maximal enum value.
+    E.g.
+    typedef enum _enum_t __attribute__ ((packed, aligned (sizeof (short)))) {
+    ZERO,
+    MAX_VAL = 255,
+    };
+    Variable of this type will have sizeof == sizeof (short), but compiler will use only 1 byte, and second byte will be uninitialized.
+    
     Here we determine effective type size.
-    Clang calculates size and effective size according alignment.
   */
   switch (tdp->param.enum_param.mr_type_effective)
     {
@@ -1654,6 +1661,7 @@ mr_add_enum (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       typeof (tdp->fields[i].fdp->param.enum_param._unsigned) value = tdp->fields[i].fdp->param.enum_param._unsigned;
+      value &= (1 << tdp->param.enum_param.size_effective * __CHAR_BIT__) - 1;
 
       if (value != 0)
 	++non_zero_cnt;
