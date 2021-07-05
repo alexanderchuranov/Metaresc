@@ -36,7 +36,7 @@ MR_FOREACH (MR_TYPEDEF_DESC_BI,
 	    char, signed, unsigned, int, short, long, float, double,
 	    bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
 	    mr_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
-	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, long_double_t,
+	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, mr_enum_value_type_t, long_double_t,
 	    complex_float_t, complex_double_t, complex_long_double_t);
 
 void * mr_calloc (const char * filename, const char * function, int line, size_t count, size_t size) { return (calloc (count, size)); }
@@ -1557,10 +1557,10 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @param ptrdes descriptor of the saved field
  * @return enum value
  */
-__typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned)
+mr_enum_value_type_t
 mr_get_enum_value (mr_td_t * tdp, void * data)
 {
-  __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) enum_value = 0;
+  mr_enum_value_type_t enum_value = 0;
   /*
     GCC caluculates sizeof for the type according alignment, but initialize only effective bytes
     i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
@@ -1698,7 +1698,7 @@ mr_add_enum (mr_td_t * tdp)
  * @return pointer on enum value descriptor (mr_fd_t*) or NULL is value was not found
  */
 mr_fd_t *
-mr_get_enum_by_value (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) value)
+mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value)
 {
   unsigned idx;
   void * key = (char*)&value - offsetof (mr_fd_t, param.enum_param._unsigned); /* (mr_fd_t[]){{ .param = { .enum_param = { value }, }, }}; */

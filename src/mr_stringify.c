@@ -118,8 +118,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->type);
   else
     {
-      __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) value =
-	mr_get_enum_value (tdp, ptrdes->data.ptr);
+      mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
       if (fdp && fdp->name.str)
 	return (mr_ra_append_string (mr_ra_str, fdp->name.str));
@@ -151,8 +150,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   bool first = true;
   int count = 0;
   int i, fields_count = tdp->fields_size / sizeof (tdp->fields[0]);
-  __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) value =
-    mr_get_enum_value (tdp, ptrdes->data.ptr);
+  mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       
   if (0 == value)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));

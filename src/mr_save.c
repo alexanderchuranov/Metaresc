@@ -89,8 +89,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	  mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
 	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
 	    {
-	      __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) value =
-		mr_get_enum_value (enum_tdp, discriminator);
+	      mr_enum_value_type_t value = mr_get_enum_value (enum_tdp, discriminator);
 	      mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
 	      return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
 	    }
