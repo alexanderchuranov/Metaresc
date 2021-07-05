@@ -1557,10 +1557,10 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @param ptrdes descriptor of the saved field
  * @return enum value
  */
-int64_t
+__typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned)
 mr_get_enum_value (mr_td_t * tdp, void * data)
 {
-  int64_t enum_value = 0;
+  __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) enum_value = 0;
   /*
     GCC caluculates sizeof for the type according alignment, but initialize only effective bytes
     i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
@@ -1691,17 +1691,17 @@ mr_add_enum (mr_td_t * tdp)
 }
 
 /**
- * Get enum by value. Enums type descriptors contains red-black tree with all enums forted by value.
+ * Get enum by value.
  *
  * @param tdp pointer on a type descriptor
  * @param value enums value
  * @return pointer on enum value descriptor (mr_fd_t*) or NULL is value was not found
  */
 mr_fd_t *
-mr_get_enum_by_value (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->param.enum_param._signed) value)
+mr_get_enum_by_value (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) value)
 {
   unsigned idx;
-  void * key = (char*)&value - offsetof (mr_fd_t, param.enum_param._signed); /* (mr_fd_t[]){{ .param = { .enum_param = { value }, }, }}; */
+  void * key = (char*)&value - offsetof (mr_fd_t, param.enum_param._unsigned); /* (mr_fd_t[]){{ .param = { .enum_param = { value }, }, }}; */
   mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
   int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_fd_enum_value_cmp, NULL, &idx);
   return (diff ? NULL : tdp->fields[idx].fdp);
