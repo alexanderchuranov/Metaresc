@@ -6,8 +6,38 @@ METARESC is a software library written in the C programming language. It
 allows declaring types using a special METARESC grammar. The variables
 of types declared that way may be subsequently serialized into various
 formats and deserialized later. To achieve this the library adds
-metadata annotations to types. These annotations may be used for may
+metadata annotations to types. These annotations may be used for many
 purposes far beyond just achieving the persistence.
+
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+**Table of Contents**
+
+- [METARESC: META data and RESource library for C language](#metaresc-meta-data-and-resource-library-for-c-language)
+    - [How to build:](#how-to-build)
+        - [Ubuntu](#ubuntu)
+        - [MacOs](#macos)
+        - [FreeBSD](#freebsd)
+        - [Windows](#windows)
+    - [How to build a sample app](#how-to-build-a-sample-app)
+    - [Types declaration macro language](#types-declaration-macro-language)
+        - [Structure type declaration](#structure-type-declaration)
+            - [Fields of a basic types](#fields-of-a-basic-types)
+            - [Extended semantics for fields declaration](#extended-semantics-for-fields-declaration)
+            - [Non-serializable fields](#non-serializable-fields)
+            - [Field declaration](#field-declaration)
+            - [Pointer declaration](#pointer-declaration)
+            - [Array declaration](#array-declaration)
+            - [Function pointer declaration](#function-pointer-declaration)
+            - [Bitfields declaration](#bitfields-declaration)
+            - [Union declaration](#union-declaration)
+            - [Text metadata and resource information](#text-metadata-and-resource-information)
+            - [NULL-terminated strings vs character arrays](#null-terminated-strings-vs-character-arrays)
+        - [Union type declaration](#union-type-declaration)
+        - [Enumeration type declaration](#enumeration-type-declaration)
+        - [Function pointer type declaration](#function-pointer-type-declaration)
+        - [Metadata and resources definition for types](#metadata-and-resources-definition-for-types)
+
+<!-- markdown-toc end -->
 
 ## How to build:
 
