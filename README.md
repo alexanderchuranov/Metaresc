@@ -13,12 +13,14 @@ purposes far beyond just achieving the persistence.
 **Table of Contents**
 
 - [METARESC: META data and RESource library for C language](#metaresc-meta-data-and-resource-library-for-c-language)
-    - [How to build:](#how-to-build)
+    - [How to build library:](#how-to-build-library)
         - [Ubuntu](#ubuntu)
         - [MacOs](#macos)
         - [FreeBSD](#freebsd)
         - [Windows](#windows)
     - [How to build a sample app](#how-to-build-a-sample-app)
+    - [Serialization/deserialization interface](#serializationdeserialization-interface)
+        - [Serialization](#serialization)
     - [Types declaration macro language](#types-declaration-macro-language)
         - [Structure type declaration](#structure-type-declaration)
             - [Fields of a basic types](#fields-of-a-basic-types)
@@ -39,7 +41,7 @@ purposes far beyond just achieving the persistence.
 
 <!-- markdown-toc end -->
 
-## How to build:
+## How to build library:
 
 Install external dependencies `autoconf`, `automake`, `libtool`, `pkg-config`, `flex`, `bison`, `libxml2-dev`, `check`, `libdwarf-dev`.
 Clone Metaresc from the Github, configure and build according to the standard autoconf/automake process.
@@ -419,6 +421,89 @@ corresponding types
 * SCM - Lisp-like notation
 * XDR - binary format for [External Data Representation
 Standard](https://tools.ietf.org/html/rfc4506)
+
+## Serialization/deserialization interface
+
+### Serialization
+
+`MR_SAVE_*` macroses do a serialization. 
+`MR_SAVE_CINIT`/`MR_SAVE_JSON`/`MR_SAVE_XML1`/`MR_SAVE_XML2`/`MR_SAVE_SCM`
+are string based serialization and require only two arguments: type of
+the pointer and pointer on data. Type of the pointer by default should
+be specified as C language talken. Save macro do verification that
+data pointer matches specified type and after that convert type to a
+string. The rest of serialization process require type only as a
+string. It might happen that user serialization function gets data
+pointer as `void*` and type as a string. In this case you need to skip
+type verification step and access searilization with stringified
+type. Unfortunatelly library can't automatically detect in which form
+type is provided, so you need to make some macro tricks for switching
+between those two modes. All serialization macroses internally uses
+macro `MR_SAVE (type, pointer)`. This macro serialize data into
+graph-like internal representation, which later on gets converted to
+specific formats. By default `MR_SAVE` is defined to `MR_SAVE_TYPED`
+which expects `type` to be a C token. There is another underlaying
+macro `MR_SAVE_STR_TYPED` which takes `type` as a string. User could
+redefine `MR_SAVE` to `MR_SAVE_STR_TYPED` as needed.
+There is also an option to skip `type` for `MR_SAVE_TYPED` macro and
+provide only second parameter (data pointer). With Clang library will
+detect type of the data pointer and will convert it to a string. On
+GCC this feature is not supported and empty type will work only for
+pointers on basic types (int, float, complex) which doesn't really
+make much sense in real life use cases.
+
+Data pointer might be a pointer on a local array. In this cases
+library will serialize whole array. Example below demostrates
+serialization of an array with auto detection of pointer type (works
+both with GCC and Clang).
+```
+  int array[] = {1, 2, 3};
+  char * dump = MR_SAVE_CINIT ( , array);
+  if (dump)
+    {
+      printf ("array = %s", dump);
+      MR_FREE (dump);
+    }
+```
+This will output:
+```
+array = {
+  1,
+  2,
+  3
+}
+```
+
+In case of failure serialization macro will return `NULL`. More
+details on error handling could be found in section [Error
+handling](#error_handling).
+Memory allocated by serialization macroses must be deallocated by
+`MR_FREE` function. More details on memory allocation could be found
+in section [Memory allocation](#memory_allocation)
+
+`MR_SAVE_XDR (type, pointer, xdrs)` is a little bit different from the
+rest. It requires 3 parameters. First two parameters are passed
+directly to `MR_SAVE` and described above. The third parameted is an
+XDR stream descriptor. This macro returns status of the operation as
+an enum of type `mr_status_t`. Possible values of this enum are
+`MR_SUCCESS` and `MR_FAILURE`.
+Stream descriptor is a structure of type `XDR` that must be
+initialized with designated constructor. LibC provides constructor
+(`xdr_create`) for stream that will redirect serialized data to file
+descriptor. Metaresc also provide constructor (`xdrra_create`) that
+will store serialized data into memory. 
+For convenience purposes library also provides wrapper macro
+(`MR_SAVE_XDR_RA (type, pointer)`) that have all boiler plate 
+code for serialization into memory and returns result in a form of
+*resizable array* (`mr_rarray_t`). Declaration of type could be found
+in mr_proto.h Other serialization methods also have corresponding
+`MR_SAVE_*_RA` equivivalents for serialization to *resizable array*.
+
+For serialization to XML user could either use specific method
+(XML2 for libxml2 and XML1 for custom serialization) or just use
+`MR_SAVE_XML`/`MR_SAVE_XML_RA` that will redirect to a first available
+option (XML2 by default). XML1 custom serialization implemented to
+fully match output of `xmlDocDumpFormatMemory ()` from libxml2.
 
 ## Types declaration macro language
 
