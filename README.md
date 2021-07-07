@@ -21,6 +21,8 @@ purposes far beyond just achieving the persistence.
     - [How to build a sample app](#how-to-build-a-sample-app)
     - [Serialization/deserialization interface](#serializationdeserialization-interface)
         - [Serialization](#serialization)
+        - [Deserialization](#deserialization)
+        - [MR_PRINT helper macro](#mrprint-helper-macro)
     - [Types declaration macro language](#types-declaration-macro-language)
         - [Structure type declaration](#structure-type-declaration)
             - [Fields of a basic types](#fields-of-a-basic-types)
@@ -604,6 +606,28 @@ status = MR_SUCCESS
 ll1_self_referenced = true
 ll2_self_referenced = false
 ```
+
+### MR_PRINT helper macro
+For logging and debugging purposes its useful to have a wrapper layer
+that will incorporate standard routine for output of serialized objects:
+serialization to string, `NULL` checking, output to file and memory
+deallocation. Metaresc provides `MR_PRINT` and `MR_FPRINT` macroses
+that hides all the boiler plate code and simulate Python-like
+semantics. Those variadic macroses automatically detects type of
+arguments and output them with proper formatting. 
+Supported types are: strings, charecters, booleans,
+integers, float, complex, pointers. Pointers on basic types also
+output content of referenced memory. With Clang pointers on structures
+and unions are also augmented with serialized content of referenced
+memory (CINIT format). Arguments in parentheses are passed to
+serialization engine. There should be 2 or 3 arguments in parentheses
+to trigger serialization routine. 2 arguments case is `(type,
+pointer)` that are passed to `MR_SAVE_CINIT` macro. 3 arguments case
+is `(type, pointer, format)` allows to serialize with any other
+supported format.
+
+`MR_PRINT` output to `stdout` and `MR_FPRINT` use a first argument as
+file descriptor. Both macroses returns number of outputed bytes.
 
 ## Types declaration macro language
 
