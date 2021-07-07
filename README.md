@@ -505,6 +505,106 @@ For serialization to XML user could either use specific method
 option (XML2 by default). XML1 custom serialization implemented to
 fully match output of `xmlDocDumpFormatMemory ()` from libxml2.
 
+### Deserialization
+`MR_LOAD_*` macro family do deserialization. There are two options how
+those macro could be used:
+* with 3 arguments `(type, src, dst)` those macro will return status
+  of the operation. In this case `type` is a C language token that
+  define type of loading structure, `src` is either a string in
+  designated format or an XDR stream handler, `dst` is a pointer of
+  `type*` where data should be loaded. With Clang first parameter is
+  optional because could be derived from the pointer type of `dst`.
+
+* the same macro with 2 arguments `(type, src)` will return a
+  structure of designated type. Error handling in this case could be
+  intercepted via logging callback described in [Error
+  handing]{#error_handling} section.
+
+Example below demonstrates the concept:
+```
+#include <metaresc.h>
+
+TYPEDEF_STRUCT (mr_div_t,
+                int quot,
+                int rem,
+                );
+
+int main ()
+{
+  mr_div_t div = MR_LOAD_CINIT (mr_div_t, "{1, 2}");
+  MR_PRINT ("div = ", (mr_div_t, &div, JSON));
+  mr_status_t status = MR_LOAD_CINIT (mr_div_t, "{3, 4}", &div);
+  MR_PRINT ("status = ", (mr_status_t, &status), "div = ", (mr_div_t, &div, JSON));
+  return (EXIT_SUCCESS);
+}
+```
+The output of this program is:
+```
+div = {
+  "quot" : 1,
+  "rem" : 2
+}
+status = MR_SUCCESS
+div = {
+  "quot" : 3,
+  "rem" : 4
+}
+```
+
+For unification purposes all formats also support loading from
+*resizable arrays*. Macroses
+`MR_LOAD_*_RA (type, resizable_array, dst)` takes a pointer on a
+`resizable_array_t` as a second arguments. Those macroses also could
+be used with 2 arguments assuming the same semantics as primary versions
+of load macroses.
+
+Note that Metaresc serialization/deserialization supports cross
+referencing of pointers on the same object. Object will be serialized
+only once and other references on this object will be annotated
+accordingly, so deserialization process will be able to restore
+pointers correctly. This also impose a limitation on deserialization
+with simplified semantics (2 arguments). It should not be used in case
+if serialization tree may contain a pointer on a root object. A
+simpliest example of this case is a linked list element referring to
+its root element.
+
+```
+#include <metaresc.h>
+
+TYPEDEF_STRUCT (linked_list_t,
+		(linked_list_t *, next),
+		);
+
+int main ()
+{
+  linked_list_t linked_list;
+  linked_list.next = &linked_list;
+  char * dump = MR_SAVE_CINIT (linked_list_t, &linked_list);
+  if (dump)
+    {
+      linked_list_t ll1, ll2 = MR_LOAD_CINIT (linked_list_t, dump);
+      mr_status_t status = MR_LOAD_CINIT (linked_list_t, dump, &ll1);
+      bool ll1_self_referenced = &ll1 == ll1.next;
+      bool ll2_self_referenced = &ll2 == ll2.next;
+      MR_PRINT ("dump = ", dump, "status = ", (mr_status_t, &status),
+		"ll1_self_referenced = ", ll1_self_referenced, "\n",
+		"ll2_self_referenced = ", ll2_self_referenced, "\n"
+		);
+      MR_FREE (dump);
+    }
+  return (EXIT_SUCCESS);
+}
+```
+The output is:
+```
+dump = /* ref_idx = 0 */ {
+  .next = /* ref = 0 */ NULL
+}
+status = MR_SUCCESS
+ll1_self_referenced = true
+ll2_self_referenced = false
+```
+
 ## Types declaration macro language
 
 Metaresc provides 4 top level macro definitions.
