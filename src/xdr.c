@@ -322,6 +322,12 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
 mr_status_t
 xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
 {
+  if (NULL == data)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);
+      return (MR_FAILURE);
+    }
+
   mr_ra_ptrdes_t ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, };
   mr_status_t status = xdr_load_inner (data, fdp, xdrs, &ptrs, -1);
   mr_status_t crossref_status = mr_set_crossrefs (&ptrs);

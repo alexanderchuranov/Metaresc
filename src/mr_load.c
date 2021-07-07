@@ -812,6 +812,12 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 {
   mr_status_t status = MR_FAILURE;
 
+  if (NULL == data)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);
+      return (MR_FAILURE);
+    }
+
   if (0 == idx)
     {
       mr_load_data->mr_ra_idx = NULL;

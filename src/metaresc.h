@@ -771,13 +771,6 @@
       _cmp_;							\
     })
     
-#define MR_SAVE MR_SAVE_TYPED
-
-#define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR)		\
-  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))		\
-  (MR_SAVE_DETECT_TYPE (S_PTR))				\
-  (MR_SAVE_TYPED_ (MR_TYPE_NAME, S_PTR))
-
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
 
 # define MR_IS_STRUCT_OR_UNION(S_PTR)					\
@@ -786,22 +779,25 @@
 			 (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(S_PTR))), \
 			 &*(S_PTR), (mr_dummy_struct_t*)0)
 
-# define MR_SAVE_DETECT_TYPE(S_PTR) ({					\
+# define MR_PTR_DETECT_TYPE(S_PTR) ({					\
       if (0 == setjmp (mr_get_struct_type_name_jmp_buf))		\
 	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR), &mr_get_struct_type_name); \
-      MR_SAVE_STR_TYPED (mr_struct_type_name, S_PTR);			\
+      mr_struct_type_name;						\
     })
 
 #else /* HAVE_BUILTIN_DUMP_STRUCT */
 
-# define MR_SAVE_DETECT_TYPE(S_PTR) MR_SAVE_STR_TYPED (NULL, S_PTR)
+# define MR_PTR_DETECT_TYPE(S_PTR) NULL
 
 #endif /* HAVE_BUILTIN_DUMP_STRUCT */
 
-#define MR_SAVE_TYPED_(MR_TYPE_NAME, S_PTR) ({				\
-      MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-      MR_SAVE_STR_TYPED (MR_STRINGIFY_READONLY (MR_TYPE_NAME), S_PTR);	\
-    })
+#define MR_SAVE MR_SAVE_TYPED
+
+#define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR)			\
+  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))			\
+    (MR_SAVE_STR_TYPED (MR_PTR_DETECT_TYPE (S_PTR), S_PTR))	\
+    (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);			\
+	MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       mr_save_data_t __mr_save_data__;					\
@@ -885,27 +881,29 @@
 #define MR_SAVE_JSON_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_JSON, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_SCM, MR_TYPE_NAME, S_PTR)
 
-#define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR) ({			\
+#define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR)			\
+  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
+    (MR_LOAD_XDR_ARG3_ (MR_PTR_DETECT_TYPE (S_PTR), XDRS, S_PTR))	\
+    (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
+	MR_LOAD_XDR_ARG3_ (#MR_TYPE_NAME, XDRS, S_PTR); }))
+
+#define MR_LOAD_XDR_ARG3_(MR_TYPE_NAME, XDRS, S_PTR) ({			\
       mr_status_t __status__ = MR_FAILURE;				\
       XDR * __xdrs__ = (XDRS);						\
       if (XDR_DECODE != __xdrs__->x_op)					\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
-	  mr_fd_t __fd__ = {						\
-	    .type = MR_STRINGIFY_READONLY (MR_TYPE_NAME),		\
-	    .name = { .str = NULL, .hash_value = 0, },			\
-	    .non_persistent = true,					\
-	    .mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-	    .size = sizeof (MR_TYPE_NAME),				\
-	  };								\
-	  MR_TYPE_NAME * __check_type__ = S_PTR + 0;			\
+	  mr_fd_t __fd__ =						\
+	    {								\
+	     .type = MR_TYPE_NAME,					\
+	     .name = { .str = NULL, .hash_value = 0, },			\
+	     .non_persistent = true,					\
+	     .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),		\
+	     .size = sizeof (*(S_PTR)),					\
+	    };								\
 	  mr_detect_type (&__fd__);					\
-	  MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-	  if (__check_type__ != NULL)					\
-	    __status__ = xdr_load (__check_type__, &__fd__, __xdrs__);	\
-	  else								\
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
+	  __status__ = xdr_load ((S_PTR), &__fd__, __xdrs__);		\
 	}								\
       __status__;							\
     })
@@ -957,36 +955,38 @@
       __str__;								\
     })
 
-#define MR_LOAD_XML2_NODE_ARG3(MR_TYPE_NAME, XML, S_PTR) ({		\
+#define MR_LOAD_XML2_NODE_ARG3(MR_TYPE_NAME, XML, S_PTR)		\
+    MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
+      (MR_LOAD_XML2_NODE_ARG3_ (MR_PTR_DETECT_TYPE (S_PTR), XML, S_PTR)) \
+      (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
+	  MR_LOAD_XML2_NODE_ARG3_ (#MR_TYPE_NAME, XML, S_PTR); }))
+
+#define MR_LOAD_XML2_NODE_ARG3_(MR_TYPE_NAME, XML, S_PTR) ({		\
       mr_status_t __status__ = MR_FAILURE;				\
-      int __idx__ = -1;							\
-      mr_load_data_t __load_data__ = {					\
-	.ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
-	.mr_ra_idx = NULL,						\
-	.mr_ra_idx_size = 0,						\
-	.mr_ra_idx_alloc_size = 0,					\
-      };								\
-      mr_fd_t __fd__ = {						\
-	.type = #MR_TYPE_NAME,						\
-	.name = { .str = NULL, .hash_value = 0, },			\
-	.non_persistent = true,						\
-	.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),			\
-	.size = sizeof (MR_TYPE_NAME),					\
-      };								\
-      MR_TYPE_NAME * __check_type__ = S_PTR + 0;			\
+      mr_load_data_t __load_data__ =					\
+	{								\
+	 .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
+	 .mr_ra_idx = NULL,						\
+	 .mr_ra_idx_size = 0,						\
+	 .mr_ra_idx_alloc_size = 0,					\
+	};								\
+      mr_fd_t __fd__ =							\
+	{								\
+	 .type = MR_TYPE_NAME,						\
+	 .name = { .str = NULL, .hash_value = 0, },			\
+	 .non_persistent = true,					\
+	 .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),		\
+	 .size = sizeof (*(S_PTR)),					\
+	};								\
       xmlNodePtr __xml__ = (XML);					\
       if (NULL == __xml__)						\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
       else								\
 	{								\
-	  MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
 	  mr_detect_type (&__fd__);					\
-	  if (NULL != __check_type__) 					\
-	    __idx__ = xml2_load (__xml__, &__load_data__.ptrs);		\
-	  else								\
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
+	  int __idx__ = xml2_load (__xml__, &__load_data__.ptrs);	\
 	  if (__idx__ >= 0)						\
-	    __status__ = mr_load (__check_type__, &__fd__, __idx__, &__load_data__); \
+	    __status__ = mr_load ((S_PTR), &__fd__, __idx__, &__load_data__); \
 	  if (__load_data__.ptrs.ra)					\
 	    MR_FREE (__load_data__.ptrs.ra);				\
 	}								\
@@ -1009,12 +1009,8 @@
 
 #define MR_LOAD_XML2_ARG3(MR_TYPE_NAME, STR, S_PTR) ({			\
       mr_status_t _status_ = MR_FAILURE;				\
-      MR_TYPE_NAME * _check_type_ = S_PTR + 0;				\
       char * __str__ = (STR);						\
-      MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-      if (NULL == _check_type_)						\
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
-      else if (NULL == __str__)						\
+      if (NULL == __str__)						\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
       else								\
 	{								\
@@ -1022,7 +1018,7 @@
 	  if (__doc__)							\
 	    {								\
 	      xmlNodePtr __node__ = xmlDocGetRootElement (__doc__);	\
-	      _status_ = MR_LOAD_XML2_NODE_ARG3 (MR_TYPE_NAME, __node__, _check_type_); \
+	      _status_ = MR_LOAD_XML2_NODE_ARG3 (MR_TYPE_NAME, __node__, (S_PTR)); \
 	      xmlFreeDoc (__doc__);					\
 	    }								\
 	}								\
@@ -1050,40 +1046,37 @@
 
 #ifdef HAVE_BISON_FLEX
 
-#define MR_LOAD_METHOD_ARG3(METHOD, MR_TYPE_NAME, STR, S_PTR) ({	\
-      mr_status_t _status_ = MR_FAILURE;				\
-      MR_TYPE_NAME * _check_type_ = S_PTR + 0;				\
-      char * _str_ = (STR);						\
-      MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-      if (NULL == _check_type_)						\
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
-      else if (NULL == _str_)						\
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
-      else								\
-	{								\
-	  mr_load_data_t _load_data_ = {				\
-	    .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
-	    .mr_ra_idx = NULL,						\
-	    .mr_ra_idx_size = 0,					\
-	    .mr_ra_idx_alloc_size = 0,					\
+#define MR_LOAD_METHOD_ARG3(METHOD, MR_TYPE_NAME, STR, S_PTR)		\
+    MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
+      (MR_LOAD_METHOD_ARG3_ (METHOD, MR_PTR_DETECT_TYPE (S_PTR), STR, S_PTR)) \
+      (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
+	  MR_LOAD_METHOD_ARG3_ (METHOD, #MR_TYPE_NAME, STR, S_PTR); }))
+
+#define MR_LOAD_METHOD_ARG3_(METHOD, MR_TYPE_NAME, STR, S_PTR) ({	\
+	mr_load_data_t _load_data_ =					\
+	  {								\
+	   .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
+	   .mr_ra_idx = NULL,						\
+	   .mr_ra_idx_size = 0,						\
+	   .mr_ra_idx_alloc_size = 0,					\
 	  };								\
-	  _status_ = METHOD (_str_, &_load_data_.ptrs);			\
-	  if (MR_SUCCESS == _status_)					\
-	    {								\
-	      mr_fd_t _fd_ = {						\
-		.type = #MR_TYPE_NAME,					\
-		.name = { .str = NULL, .hash_value = 0, },		\
-		.mr_type = MR_TYPE_DETECT (MR_TYPE_NAME),		\
-		.size = sizeof (MR_TYPE_NAME),				\
+	mr_status_t _status_ = METHOD ((STR), &_load_data_.ptrs);	\
+	if (MR_SUCCESS == _status_)					\
+	  {								\
+	    mr_fd_t _fd_ =						\
+	      {								\
+	       .type = MR_TYPE_NAME,					\
+	       .name = { .str = NULL, .hash_value = 0, },		\
+	       .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),	\
+	       .size = sizeof (*(S_PTR)),				\
 	      };							\
-	      mr_detect_type (&_fd_);					\
-	      _status_ = mr_load (_check_type_, &_fd_, 0, &_load_data_); \
-	    }								\
-	  if (_load_data_.ptrs.ra)					\
-	    MR_FREE (_load_data_.ptrs.ra);				\
-	}								\
-      _status_;								\
-    })
+	    mr_detect_type (&_fd_);					\
+	    _status_ = mr_load ((S_PTR), &_fd_, 0, &_load_data_);	\
+	  }								\
+	if (_load_data_.ptrs.ra)					\
+	  MR_FREE (_load_data_.ptrs.ra);				\
+	_status_;							\
+      })
 
 #define MR_LOAD_METHOD_ARG2_(METHOD, MR_TYPE_NAME, STR) ({		\
       mr_status_t _status_ = MR_FAILURE;				\
