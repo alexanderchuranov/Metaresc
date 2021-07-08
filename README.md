@@ -458,7 +458,7 @@ Data pointer might be a pointer on a local array. In this cases
 library will serialize whole array. Example below demostrates
 serialization of an array with auto detection of pointer type (works
 both with GCC and Clang).
-```
+```c
   int array[] = {1, 2, 3};
   char * dump = MR_SAVE_CINIT ( , array);
   if (dump)
@@ -468,7 +468,7 @@ both with GCC and Clang).
     }
 ```
 This will output:
-```
+```c
 array = {
   1,
   2,
@@ -520,10 +520,10 @@ those macro could be used:
 * the same macro with 2 arguments `(type, src)` will return a
   structure of designated type. Error handling in this case could be
   intercepted via logging callback described in [Error
-  handing]{#error_handling} section.
+  handling](#error_handling) section.
 
 Example below demonstrates the concept:
-```
+```c
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (mr_div_t,
@@ -533,21 +533,23 @@ TYPEDEF_STRUCT (mr_div_t,
 
 int main ()
 {
-  mr_div_t div = MR_LOAD_CINIT (mr_div_t, "{1, 2}");
-  MR_PRINT ("div = ", (mr_div_t, &div, JSON));
-  mr_status_t status = MR_LOAD_CINIT (mr_div_t, "{3, 4}", &div);
-  MR_PRINT ("status = ", (mr_status_t, &status), "div = ", (mr_div_t, &div, JSON));
+  mr_div_t div3, div2 = MR_LOAD_CINIT (mr_div_t, "{1, 2}");
+  mr_status_t status = MR_LOAD_CINIT (mr_div_t, "{3, 4}", &div3);
+  MR_PRINT ("div2 = ", (mr_div_t, &div2, JSON),
+	    "status = ", (mr_status_t, &status),
+	    "div3 = ", (mr_div_t, &div3, JSON)
+	    );
   return (EXIT_SUCCESS);
 }
 ```
 The output of this program is:
-```
-div = {
+```c
+div2 = {
   "quot" : 1,
   "rem" : 2
 }
 status = MR_SUCCESS
-div = {
+div3 = {
   "quot" : 3,
   "rem" : 4
 }
@@ -570,7 +572,7 @@ if serialization tree may contain a pointer on a root object. A
 simpliest example of this case is a linked list element referring to
 its root element.
 
-```
+```c
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (linked_list_t,
@@ -584,13 +586,13 @@ int main ()
   char * dump = MR_SAVE_CINIT (linked_list_t, &linked_list);
   if (dump)
     {
-      linked_list_t ll1, ll2 = MR_LOAD_CINIT (linked_list_t, dump);
-      mr_status_t status = MR_LOAD_CINIT (linked_list_t, dump, &ll1);
-      bool ll1_self_referenced = &ll1 == ll1.next;
+      linked_list_t ll3, ll2 = MR_LOAD_CINIT (linked_list_t, dump);
+      mr_status_t status = MR_LOAD_CINIT (linked_list_t, dump, &ll3);
       bool ll2_self_referenced = &ll2 == ll2.next;
+      bool ll3_self_referenced = &ll3 == ll3.next;
       MR_PRINT ("dump = ", dump, "status = ", (mr_status_t, &status),
-		"ll1_self_referenced = ", ll1_self_referenced, "\n",
-		"ll2_self_referenced = ", ll2_self_referenced, "\n"
+		"ll2_self_referenced = ", ll2_self_referenced, "\n",
+		"ll3_self_referenced = ", ll3_self_referenced, "\n"
 		);
       MR_FREE (dump);
     }
@@ -598,13 +600,13 @@ int main ()
 }
 ```
 The output is:
-```
+```c
 dump = /* ref_idx = 0 */ {
   .next = /* ref = 0 */ NULL
 }
 status = MR_SUCCESS
-ll1_self_referenced = true
 ll2_self_referenced = false
+ll3_self_referenced = true
 ```
 
 ### MR_PRINT helper macro
@@ -623,7 +625,7 @@ memory (CINIT format). Arguments in parentheses are passed to
 serialization engine. There should be 2 or 3 arguments in parentheses
 to trigger serialization routine. 2 arguments case is `(type,
 pointer)` that are passed to `MR_SAVE_CINIT` macro. 3 arguments case
-is `(type, pointer, format)` allows to serialize with any other
+is `(type, pointer, format)` that allows to serialize into any other
 supported format.
 
 `MR_PRINT` output to `stdout` and `MR_FPRINT` use a first argument as
