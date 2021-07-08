@@ -40,6 +40,21 @@ purposes far beyond just achieving the persistence.
         - [Enumeration type declaration](#enumeration-type-declaration)
         - [Function pointer type declaration](#function-pointer-type-declaration)
         - [Metadata and resources definition for types](#metadata-and-resources-definition-for-types)
+    - [Extra features](#extra-features)
+        - [Recursive memory deallocation](#recursive-memory-deallocation)
+        - [Deep copy](#deep-copy)
+        - [Objects hashing](#objects-hashing)
+        - [Comparation of structures](#comparation-of-structures)
+        - [Structure of serialization graph](#structure-of-serialization-graph)
+        - [Access and structure of type descriptor](#access-and-structure-of-type-descriptor)
+        - [Access and structure of field descriptor](#access-and-structure-of-field-descriptor)
+        - [Enumerations metadata](#enumerations-metadata)
+    - [Internals](#internals)
+        - [Error handling](#error-handling)
+        - [Memory allocation](#memory-allocation)
+        - [How to make certain field in type non-serializable](#how-to-make-certain-field-in-type-non-serializable)
+        - [Formatted output to a resizable array](#formatted-output-to-a-resizable-array)
+        - [Indexing framework](#indexing-framework)
 
 <!-- markdown-toc end -->
 
@@ -628,7 +643,7 @@ pointer)` that are passed to `MR_SAVE_CINIT` macro. 3 arguments case
 is `(type, pointer, format)` that allows to serialize into any other
 supported format.
 
-`MR_PRINT` output to `stdout` and `MR_FPRINT` use a first argument as
+`MR_PRINT` output to `stdout` and `MR_FPRINT` use the first argument as
 file descriptor. Both macroses returns number of outputed bytes.
 
 ## Types declaration macro language
@@ -1112,12 +1127,64 @@ example of the usage:
 TYPEDEF_FUNC (int, compar_fn_t, (const void * /* x */, const void * /* y */));
 ```
 
+Declaration of function type in C language optionally accepts names of
+the argument. Unfortunatelly with Metaresc types only must be
+used. Types of return value and all arguments are stored in type
+descriptor and are available for introspection at run time.
+
 ### Metadata and resources definition for types
 All type declaration macroses accepts keyword `ATTRIBUTES` as an
-argument at any position.
+argument at any position. This keyword must be followed with a list of
+parameters in parentheses.
 
 ```c
 ATTRIBUTES (attributes, text_metadata, { pointer_on_resources_array }, resource_type, resource_array_size)
 ```
 
-All arguments for `ATTRIBUTES` are optional. 
+`attributes` is a token that will be used at type declaration. As an
+example this might be `__attribute__ ((packed, aligned (64)))`. The
+rest is a metadata that is stored in type desriptor and is accessible
+for introspection at run time. The structure of this metadata is
+identical to metadata of struct/union fields.
+
+All arguments for `ATTRIBUTES` are positional and optional.
+
+## Extra features
+
+### Recursive memory deallocation
+`MR_FREE_RECURSIVELY`
+
+### Deep copy
+`MR_COPY_RECURSIVELY`
+
+### Objects hashing
+`MR_HASH_STRUCT`
+
+### Comparation of structures
+`MR_CMP_STRUCTS`
+
+### Structure of serialization graph
+`MR_SAVE`
+
+### Access and structure of type descriptor
+`mr_get_td_by_name`
+
+### Access and structure of field descriptor
+`mr_get_fd_by_name`
+
+### Enumerations metadata
+`mr_get_enum_by_value` `mr_get_enum_by_name`
+
+## Internals
+
+### Error handling
+
+### Memory allocation
+
+### How to make certain field in type non-serializable
+`mr_type_void_fields`
+
+### Formatted output to a resizable array
+`mr_ra_printf`
+
+### Indexing framework
