@@ -868,8 +868,11 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-calc_relative_addr (mr_ra_ptrdes_t * ptrs, int idx, void * context)
+calc_relative_addr (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
+
   /* is new address is not set yet, then it could be calculated as relative address from the parent node */
   if (NULL == ptrs->ra[idx].res.data.ptr)
     {
@@ -964,7 +967,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	}
 
   /* depth search thru the graph and calculate new addresses for all nodes */
-  mr_ptrs_dfs (ptrs, calc_relative_addr, NULL, true);
+  mr_ptrs_dfs (ptrs, calc_relative_addr, NULL);
 
   /* now we should update pointers in a copy */
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
@@ -1029,8 +1032,11 @@ mr_hash_block (void * block, mr_size_t size)
 }
 
 static mr_status_t
-node_hash (mr_ra_ptrdes_t * ptrs, int idx, void * context)
+node_hash (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
+  if (MR_DFS_POST_ORDER != order)
+    return (MR_SUCCESS);
+
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
 
   switch (ptrdes->mr_type)
@@ -1142,7 +1148,7 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
     }
   
   ptrs->ptrdes_type = MR_PD_CUSTOM;
-  mr_ptrs_dfs (ptrs, node_hash, NULL, false);
+  mr_ptrs_dfs (ptrs, node_hash, NULL);
   return (ptrs->ra[0].res.data.uintptr);
 }
 

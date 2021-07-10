@@ -962,24 +962,29 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
  * @param context untyped pointer on context passed through DFS traverse
  */
 mr_status_t
-mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context, bool pre_order)
+mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
 {
+  int level = 0;
   int idx = 0;
   while (idx >= 0)
     {
-      if (pre_order && (MR_SUCCESS != processor (ptrs, idx, context)))
+      if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_PRE_ORDER, context))
 	return (MR_FAILURE);
 
       if (ptrs->ra[idx].first_child >= 0)
-	idx = ptrs->ra[idx].first_child;
+	{
+	  idx = ptrs->ra[idx].first_child;
+	  ++level;
+	}
       else
 	{
-	  if (!pre_order && (MR_SUCCESS != processor (ptrs, idx, context)))
+	  if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
 	    return (MR_FAILURE);
 	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
 	    {
 	      idx = ptrs->ra[idx].parent;
-	      if (!pre_order && (MR_SUCCESS != processor (ptrs, idx, context)))
+	      --level;
+	      if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
 		return (MR_FAILURE);
 	    }
 	  idx = ptrs->ra[idx].next;
@@ -995,8 +1000,10 @@ mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * cont
  * @param context untyped pointer on context passed through DFS traverse
  */
 mr_status_t
-mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
+mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
   int * idx_ = context;
   ptrs->ra[idx].idx = (*idx_)++;
   return (MR_SUCCESS);
@@ -1009,8 +1016,11 @@ mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
  * @param context untyped pointer on context passed through DFS traverse
  */
 static mr_status_t
-mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
+mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
+
   mr_save_data_t * mr_save_data = context;
 
   /* Try resolve void pointers that were not resolved at save time.
@@ -1138,7 +1148,7 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 	}
   /* re-enumerate nodes after empty nodes removal */
   int idx_ = 0;
-  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_, true);
+  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
 }
 
 /**
@@ -1151,8 +1161,8 @@ static void
 mr_post_process (mr_save_data_t * mr_save_data)
 {
   int idx_ = 0;
-  mr_ptrs_dfs (&mr_save_data->ptrs, mr_post_process_node, mr_save_data, true);
-  mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &idx_, true); /* enumeration of nodes should be done only after strings processing */
+  mr_ptrs_dfs (&mr_save_data->ptrs, mr_post_process_node, mr_save_data);
+  mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &idx_); /* enumeration of nodes should be done only after strings processing */
 }
 
 /**

@@ -1066,8 +1066,11 @@ static xdr_handler_t xdr_save_handler[MR_TYPE_LAST] =
   };
 
 static mr_status_t
-xdr_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
+xdr_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
+
   XDR * xdrs = context;
   
   if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xdr_save_handler[ptrs->ra[idx].mr_type])
@@ -1092,7 +1095,7 @@ xdr_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
 mr_status_t
 xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs)
 {
-  return (mr_ptrs_dfs (ptrs, xdr_save_node, xdrs, true));
+  return (mr_ptrs_dfs (ptrs, xdr_save_node, xdrs));
 }
 
 /**

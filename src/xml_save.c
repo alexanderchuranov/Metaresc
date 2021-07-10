@@ -334,8 +334,11 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
 #ifdef HAVE_LIBXML2
 
 static mr_status_t
-xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, void * context)
+xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
+
   mr_rarray_t * mr_ra_str = context;
   int parent = ptrs->ra[idx].parent;
   char number[MR_INT_TO_STRING_BUF_SIZE];
@@ -419,7 +422,7 @@ xml2_save (mr_ra_ptrdes_t * ptrs)
       ptrs->res.type = NULL;
       ptrs->res.MR_SIZE = 0;
 
-      mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str, true);
+      mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       
       if ((ptrs->size > 0) && (NULL != ptrs->ra[0].res.data.ptr))
 	xmlDocSetRootElement (doc, ptrs->ra[0].res.data.ptr);
