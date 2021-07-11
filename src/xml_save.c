@@ -241,6 +241,92 @@ static mr_ra_printf_t xml_ra_printf_tbl[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = mr_ra_printf_void,
   };
 
+static mr_status_t
+xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+{
+  bool empty_tag = true;
+
+  /* route saving handler */
+  mr_ra_printf_t save_handler = mr_ra_printf_void;
+  if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[ptrs->ra[idx].mr_type])
+    save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
+  else
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+
+  memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
+  
+  if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START,
+		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
+    return (MR_FAILURE);
+  if (ptrs->ra[idx].ref_idx >= 0)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT,
+		      (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+		      ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+      return (MR_FAILURE);
+  if (ptrs->ra[idx].flags.is_referenced)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
+      return (MR_FAILURE);
+  if (true == ptrs->ra[idx].flags.is_null)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
+      return (MR_FAILURE);
+
+  if ((true == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
+    empty_tag = true;
+  else
+    {
+      if (mr_ra_append_char (mr_ra_str, '>') < 0)
+	return (MR_FAILURE);
+      int count = save_handler (mr_ra_str, &ptrs->ra[idx]);
+      empty_tag = (ptrs->ra[idx].first_child < 0) && (0 == count);
+      if (empty_tag)
+	mr_ra_str->data.string[--mr_ra_str->MR_SIZE] = 0;
+    }
+      
+  if (empty_tag)
+    {
+      if (mr_ra_append_string (mr_ra_str, MR_XML1_OPEN_EMPTY_TAG_END) < 0)
+	return (MR_FAILURE);
+    }
+  else
+    {
+      ptrs->ra[idx].res.data.string = ptrs->ra[idx].name;
+      ptrs->ra[idx].res.type = "string";
+      ptrs->ra[idx].res.MR_SIZE = 0;
+    }
+
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+xml1_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+{
+  if (ptrs->ra[idx].first_child >= 0)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "") < 0)
+      return (MR_FAILURE);
+
+  if (ptrs->ra[idx].res.data.string)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_CLOSE_TAG, ptrs->ra[idx].res.data.string) < 0)
+      return (MR_FAILURE);
+
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+xml1_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+{
+  mr_rarray_t * mr_ra_str = context;
+
+  switch (order)
+    {
+    case MR_DFS_PRE_ORDER:
+      return (xml1_pre_print_node (ptrs, idx, level, mr_ra_str));
+    case MR_DFS_POST_ORDER:
+      return (xml1_post_print_node (ptrs, idx, level, mr_ra_str));
+    default:
+      return (MR_FAILURE);
+    }
+}
+
 /**
  * Public function. Save scheduler. Save any object as a string.
  * @param ptrs resizeable array with pointers descriptors
@@ -255,79 +341,15 @@ xml1_save (mr_ra_ptrdes_t * ptrs)
     .type = "string",
     .alloc_size = sizeof (MR_XML1_DOCUMENT_HEADER),
   };
-  int idx = 0;
-  int level = 0;
 
   if (NULL == mr_ra_str.data.ptr)
     return (NULL);
 
-  while (idx >= 0)
-    {
-      bool empty_tag = true;
+  mr_ptrs_dfs (ptrs, xml1_print_node, &mr_ra_str);
 
-      /* route saving handler */
-      mr_ra_printf_t save_handler = mr_ra_printf_void;
-      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[ptrs->ra[idx].mr_type])
-	save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
-      else
-	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
-
-      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START,
-			MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
-	return (NULL);
-      if (ptrs->ra[idx].ref_idx >= 0)
-	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT,
-			  (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-			  ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-	  return (NULL);
-      if (ptrs->ra[idx].flags.is_referenced)
-	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
-	  return (NULL);
-      if (true == ptrs->ra[idx].flags.is_null)
-	if (mr_ra_printf (&mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
-	  return (NULL);
-
-      if ((true == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
-	empty_tag = true;
-      else
-	{
-	  if (mr_ra_append_char (&mr_ra_str, '>') < 0)
-	    return (NULL);
-	  int count = save_handler (&mr_ra_str, &ptrs->ra[idx]);
-	  empty_tag = (ptrs->ra[idx].first_child < 0) && (0 == count);
-	  if (empty_tag)
-	    mr_ra_str.data.string[--mr_ra_str.MR_SIZE] = 0;
-	}
-      
-      if (empty_tag)
-	{
-	  if (mr_ra_append_string (&mr_ra_str, MR_XML1_OPEN_EMPTY_TAG_END) < 0)
-	    return (NULL);
-	}
-
-      if (ptrs->ra[idx].first_child >= 0)
-	{
-	  ++level;
-	  idx = ptrs->ra[idx].first_child;
-	}
-      else
-	{
-	  if (!empty_tag)
-	    if (mr_ra_printf (&mr_ra_str, MR_XML1_CLOSE_TAG, ptrs->ra[idx].name) < 0)
-	      return (NULL);
-	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
-	    {
-	      --level;
-	      idx = ptrs->ra[idx].parent;
-	      if (mr_ra_printf (&mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_CLOSE_TAG,
-				MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
-		return (NULL);
-	    }
-	  idx = ptrs->ra[idx].next;
-	}
-    }
   if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
     return (NULL);
+
   return (mr_ra_str.data.ptr);
 }
 
