@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include <metaresc.h>
+#include <mr_save.h>
 #include <mr_stringify.h>
 
 #define MR_SCM_FALSE "#f"
@@ -218,6 +219,132 @@ static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = mr_ra_printf_void,
   };
 
+static mr_status_t
+scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+{
+  bool named_node = false;
+  int parent = ptrs->ra[idx].parent;
+  int in_comment = false;
+  int limit_level = MR_LIMIT_LEVEL (level);
+
+  if ((parent >= 0) && (ptrs->ra[parent].mr_type < MR_TYPE_LAST))
+    named_node = scm_named_fields[ptrs->ra[parent].mr_type];
+
+  memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
+  
+  if (ptrs->ra[idx].ref_idx >= 0)
+    {
+      if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
+			limit_level * MR_SCM_INDENT_SPACES, "",
+			(ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+			ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+	return (MR_FAILURE);
+
+      in_comment = true;
+    }
+  if (ptrs->ra[idx].flags.is_referenced)
+    {
+      if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
+			limit_level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra[idx].idx) < 0)
+	return (MR_FAILURE);
+
+      in_comment = true;
+    }
+
+  if (ptrs->ra[idx].first_child < 0)
+    {
+      mr_ra_printf_t save_handler = mr_ra_printf_void;
+      /* route saving handler */
+      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && scm_save_handler[ptrs->ra[idx].mr_type])
+	save_handler = scm_save_handler[ptrs->ra[idx].mr_type];
+      else
+	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+
+      if (named_node)
+	{
+	  if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START,
+			    limit_level * MR_SCM_INDENT_SPACES, "") < 0)
+	    return (MR_FAILURE);
+	  if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
+	    return (MR_FAILURE);
+	  if (mr_ra_printf (mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra[idx].name) < 0)
+	    return (MR_FAILURE);
+	}
+      else
+	{
+	  if (in_comment)
+	    {
+	      if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE,
+				limit_level * MR_SCM_INDENT_SPACES, "") < 0)
+		return (MR_FAILURE);
+	    }
+	  else
+	    {
+	      if (mr_ra_append_char (mr_ra_str, ' ') < 0)
+		return (MR_FAILURE);
+	    }
+	  if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
+	    return (MR_FAILURE);
+	}
+    }
+  else
+    {
+      if ((idx != 0) || in_comment)
+	if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE,
+			  limit_level * MR_SCM_INDENT_SPACES, "") < 0)
+	  return (MR_FAILURE);
+
+      if (named_node)
+	{
+	  ptrs->ra[idx].res.data.string = ptrs->ra[idx].name;
+	  ptrs->ra[idx].res.type = "string";
+	  ptrs->ra[idx].res.MR_SIZE = 0;
+	  
+	  if (mr_ra_append_string (mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
+	    return (MR_FAILURE);
+	}
+
+      if (MR_TYPE_ARRAY == ptrs->ra[idx].mr_type)
+	if (mr_ra_append_string (mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
+	  return (MR_FAILURE);
+
+      if (mr_ra_append_string (mr_ra_str, MR_SCM_COMPAUND_START) < 0)
+	return (MR_FAILURE);
+    }
+
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+scm_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+{
+  if (ptrs->ra[idx].first_child >= 0)
+    if (mr_ra_printf (mr_ra_str, MR_SCM_COMPAUND_END) < 0)
+      return (MR_FAILURE);
+  
+  if (ptrs->ra[idx].res.data.string)
+    if (mr_ra_printf (mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra[idx].res.data.string) < 0)
+      return (MR_FAILURE);
+
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+scm_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+{
+  mr_rarray_t * mr_ra_str = context;
+
+  switch (order)
+    {
+    case MR_DFS_PRE_ORDER:
+      return (scm_pre_print_node (ptrs, idx, level, mr_ra_str));
+    case MR_DFS_POST_ORDER:
+      return (scm_post_print_node (ptrs, idx, level, mr_ra_str));
+    default:
+      return (MR_FAILURE);
+    }
+}
+
 /**
  * Public function. Save scheduler. Save any object as a string.
  * @param ptrs resizeable array with pointers descriptors
@@ -226,120 +353,17 @@ static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
 char *
 scm_save (mr_ra_ptrdes_t * ptrs)
 {
-  mr_rarray_t mr_ra_str = { .data = { mr_strdup ("") }, .MR_SIZE = sizeof (""), .type = "string", .alloc_size = sizeof (""), };
-  int idx = 0;
-  int level = 0;
+  mr_rarray_t mr_ra_str = {
+    .data = { mr_strdup ("") },
+    .MR_SIZE = sizeof (""),
+    .type = "string",
+    .alloc_size = sizeof (""),
+  };
 
   if (NULL == mr_ra_str.data.ptr)
     return (NULL);
 
-  while (idx >= 0)
-    {
-      bool named_node = false;
-      int parent = ptrs->ra[idx].parent;
-      int in_comment = false;
-      int limit_level = MR_LIMIT_LEVEL (level);
-
-      if ((parent >= 0) && (ptrs->ra[parent].mr_type < MR_TYPE_LAST))
-	named_node = scm_named_fields[ptrs->ra[parent].mr_type];
-
-      if (ptrs->ra[idx].ref_idx >= 0)
-	{
-	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    limit_level * MR_SCM_INDENT_SPACES, "",
-			    (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-			    ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-	    return (NULL);
-
-	  in_comment = true;
-	}
-      if (ptrs->ra[idx].flags.is_referenced)
-	{
-	  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    limit_level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra[idx].idx) < 0)
-	    return (NULL);
-
-	  in_comment = true;
-	}
-
-      if (ptrs->ra[idx].first_child < 0)
-	{
-	  mr_ra_printf_t save_handler = mr_ra_printf_void;
-	  /* route saving handler */
-	  if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && scm_save_handler[ptrs->ra[idx].mr_type])
-	    save_handler = scm_save_handler[ptrs->ra[idx].mr_type];
-	  else
-	    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
-
-	  if (named_node)
-	    {
-	      if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START,
-				limit_level * MR_SCM_INDENT_SPACES, "") < 0)
-		return (NULL);
-	      if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
-		return (NULL);
-	      if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra[idx].name) < 0)
-		return (NULL);
-	    }
-	  else
-	    {
-	      if (in_comment)
-		{
-		  if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE,
-				    limit_level * MR_SCM_INDENT_SPACES, "") < 0)
-		    return (NULL);
-		}
-	      else
-		{
-		  if (mr_ra_append_char (&mr_ra_str, ' ') < 0)
-		    return (NULL);
-		}
-	      if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
-		return (NULL);
-	    }
-	}
-      else
-	{
-	  if ((idx != 0) || in_comment)
-	    if (mr_ra_printf (&mr_ra_str, MR_SCM_INDENT_TEMPLATE,
-			      limit_level * MR_SCM_INDENT_SPACES, "") < 0)
-	      return (NULL);
-	  if (named_node)
-	    if (mr_ra_append_string (&mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
-	      return (NULL);
-	  if (MR_TYPE_ARRAY == ptrs->ra[idx].mr_type)
-	    if (mr_ra_append_string (&mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
-	      return (NULL);
-	  if (mr_ra_append_string (&mr_ra_str, MR_SCM_COMPAUND_START) < 0)
-	    return (NULL);
-	}
-
-      if (ptrs->ra[idx].first_child >= 0)
-	{
-	  ++level;
-	  idx = ptrs->ra[idx].first_child;
-	}
-      else
-	{
-	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
-	    {
-	      --level;
-	      idx = ptrs->ra[idx].parent;
-	      named_node = false;
-	      parent = ptrs->ra[idx].parent;
-
-	      if ((parent >= 0) && (ptrs->ra[parent].mr_type < MR_TYPE_LAST))
-		named_node = scm_named_fields[ptrs->ra[parent].mr_type];
-
-	      if (mr_ra_printf (&mr_ra_str, MR_SCM_COMPAUND_END) < 0)
-		return (NULL);
-	      if (named_node)
-		if (mr_ra_printf (&mr_ra_str, MR_SCM_NAMED_FIELD_END, ptrs->ra[idx].name) < 0)
-		  return (NULL);
-	    }
-	  idx = ptrs->ra[idx].next;
-	}
-    }
+  mr_ptrs_dfs (ptrs, scm_print_node, &mr_ra_str);
 
   return (mr_ra_str.data.ptr);
 }
