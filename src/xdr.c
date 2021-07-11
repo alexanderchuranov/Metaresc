@@ -314,7 +314,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   if ((fdp->mr_type < MR_TYPE_LAST) && xdr_load_handler[fdp->mr_type])
     status = xdr_load_handler[fdp->mr_type] (xdrs, idx, ptrs);
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->mr_type);
 
   return (status);
 }
@@ -1080,7 +1080,7 @@ xdr_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, 
     }
   else
     {
-      MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);

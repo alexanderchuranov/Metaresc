@@ -249,7 +249,7 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
   if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[ptrs->ra[idx].mr_type])
     save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
   
@@ -371,7 +371,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
   if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xml_ra_printf_tbl[ptrs->ra[idx].mr_type])
     save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
 
   mr_ra_str->MR_SIZE = sizeof ("");
   mr_ra_str->data.string[0] = 0;

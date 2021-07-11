@@ -166,7 +166,7 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
   if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && cinit_save_tbl[ptrs->ra[idx].mr_type])
     save_handler = cinit_save_tbl[ptrs->ra[idx].mr_type];
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
 

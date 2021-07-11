@@ -866,7 +866,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   if ((fdp->mr_type < MR_TYPE_LAST) && mr_load_handler[fdp->mr_type])
     status = mr_load_handler[fdp->mr_type] (idx, mr_load_data);
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (fdp);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->mr_type);
 
   /* set cross references at the upper level */
   if (0 == idx)

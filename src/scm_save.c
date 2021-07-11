@@ -245,7 +245,7 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_
       if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && scm_save_handler[ptrs->ra[idx].mr_type])
 	save_handler = scm_save_handler[ptrs->ra[idx].mr_type];
       else
-	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
 
       if (!ptrs->ra[idx].unnamed || (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
 	{

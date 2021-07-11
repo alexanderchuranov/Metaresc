@@ -98,13 +98,6 @@
 #define MR_BITMASK_OR_DELIMITER " | "
 
 #define MR_MESSAGE(LOG_LEVEL, /* MSG_ID */ ...) mr_message (__FILE__, __FUNCTION__, __LINE__, LOG_LEVEL, __VA_ARGS__)
-#define MR_MESSAGE_UNSUPPORTED_NODE_TYPE_(FDP)				\
-  ({									\
-    mr_fd_t * __fdp__ = FDP;						\
-    mr_td_t * mr_type_td = mr_get_td_by_name ("mr_type_t");		\
-    mr_fd_t * mr_type_fd = mr_type_td ? mr_get_enum_by_value (mr_type_td, __fdp__->mr_type) : NULL; \
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, (mr_type_fd ? mr_type_fd->name.str : "unknown"), __fdp__->mr_type); \
-  })
 
 /* make a string from argument in writable memory. #STR itself is in read-only memory */
 #define MR_STRINGIFY(STR) (char []) { #STR }

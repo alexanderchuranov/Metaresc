@@ -184,7 +184,7 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
   if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && json_save_tbl[ptrs->ra[idx].mr_type])
     save_handler = json_save_tbl[ptrs->ra[idx].mr_type];
   else
-    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
 
