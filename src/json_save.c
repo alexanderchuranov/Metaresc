@@ -6,6 +6,7 @@
 #include <stdbool.h>
 
 #include <metaresc.h>
+#include <mr_save.h>
 #include <mr_stringify.h>
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
@@ -176,6 +177,84 @@ static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NAMED_ANON_UNION] = json_printf_struct,
 };
 
+static mr_status_t
+json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+{
+  mr_ra_printf_t save_handler = mr_ra_printf_void;
+  if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && json_save_tbl[ptrs->ra[idx].mr_type])
+    save_handler = json_save_tbl[ptrs->ra[idx].mr_type];
+  else
+    MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
+
+  memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
+
+  if (mr_ra_printf (mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES, "") < 0)
+    return (MR_FAILURE);
+
+  if (!ptrs->ra[idx].unnamed ||
+      (MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
+      (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
+    {
+      if (mr_ra_append_char (mr_ra_str, '"') < 0)
+	return (MR_FAILURE);
+      if (mr_ra_append_string (mr_ra_str, ptrs->ra[idx].name) < 0)
+	return (MR_FAILURE);
+      if (mr_ra_append_string (mr_ra_str, "\" : ") < 0)
+	return (MR_FAILURE);
+    }
+
+  if (ptrs->ra[idx].ref_idx >= 0)
+    {
+      if (ptrs->ra[idx].flags.is_content_reference)
+	if (mr_ra_append_char (mr_ra_str, '-') < 0)
+	  return (MR_FAILURE);
+      if (mr_ra_printf (mr_ra_str, "%" SCNu32, ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+	return (MR_FAILURE);
+    }
+  else if (ptrs->ra[idx].flags.is_null)
+    {
+      if (mr_ra_append_string (mr_ra_str, "null") < 0)
+	return (MR_FAILURE);
+    }
+  else if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
+    return (MR_FAILURE);
+  
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+json_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+{
+  if (ptrs->ra[idx].res.data.string)
+    if (mr_ra_printf (mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
+      return (MR_FAILURE);
+
+  if (ptrs->ra[idx].next >= 0)
+    if (mr_ra_append_char (mr_ra_str, ',') < 0)
+      return (MR_FAILURE);
+
+  if (mr_ra_append_char (mr_ra_str, '\n') < 0)
+    return (MR_FAILURE);
+
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+json_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+{
+  mr_rarray_t * mr_ra_str = context;
+
+  switch (order)
+    {
+    case MR_DFS_PRE_ORDER:
+      return (json_pre_print_node (ptrs, idx, level, mr_ra_str));
+    case MR_DFS_POST_ORDER:
+      return (json_post_print_node (ptrs, idx, level, mr_ra_str));
+    default:
+      return (MR_FAILURE);
+    }
+}
+
 char *
 json_save (mr_ra_ptrdes_t * ptrs)
 {
@@ -185,103 +264,13 @@ json_save (mr_ra_ptrdes_t * ptrs)
     .type = "string",
     .alloc_size = sizeof (""),
   };
-  int idx = 0;
-  int level = 0;
 
   if (NULL == mr_ra_str.data.string)
     return (NULL);
 
   ptrs->ptrdes_type = MR_PD_CUSTOM;
 
-  while (idx >= 0)
-    {
-      memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
-      
-      mr_ra_printf_t save_handler = mr_ra_printf_void;
-      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && json_save_tbl[ptrs->ra[idx].mr_type])
-	save_handler = json_save_tbl[ptrs->ra[idx].mr_type];
-      else
-	MR_MESSAGE_UNSUPPORTED_NODE_TYPE_ (ptrs->ra[idx].fdp);
-
-      if (mr_ra_printf (&mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES, "") < 0)
-	return (NULL);
-
-      if ((false == ptrs->ra[idx].unnamed) ||
-	  (MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
-	  (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
-	{
-	  if (mr_ra_append_char (&mr_ra_str, '"') < 0)
-	    return (NULL);
-	  if (mr_ra_append_string (&mr_ra_str, ptrs->ra[idx].name) < 0)
-	    return (NULL);
-	  if (mr_ra_append_string (&mr_ra_str, "\" : ") < 0)
-	    return (NULL);
-	}
-
-      if (ptrs->ra[idx].ref_idx >= 0)
-	{
-	  if (ptrs->ra[idx].flags.is_content_reference)
-	    {
-	      if (mr_ra_printf (&mr_ra_str, "-%" SCNd32, ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-		return (NULL);
-	    }
-	  else
-	    {
-	      if (mr_ra_printf (&mr_ra_str, "%" SCNd32, ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-		return (NULL);
-	    }
-	}
-      else if (true == ptrs->ra[idx].flags.is_null)
-	{
-	  if (mr_ra_append_string (&mr_ra_str, "null") < 0)
-	    return (NULL);
-	}
-      else if (save_handler (&mr_ra_str, &ptrs->ra[idx]) < 0)
-	return (NULL);
-
-      if (ptrs->ra[idx].first_child >= 0)
-	{
-	  ++level;
-	  idx = ptrs->ra[idx].first_child;
-	}
-      else
-	{
-	  if (ptrs->ra[idx].next >= 0)
-	    if (mr_ra_append_char (&mr_ra_str, ',') < 0)
-	      return (NULL);
-	  if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
-	    return (NULL);
-	  
-	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
-	    {
-	      if (ptrs->ra[idx].res.data.string)
-		{
-		  if (mr_ra_printf (&mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
-		    return (NULL);
-		  if (ptrs->ra[idx].next >= 0)
-		    if (mr_ra_append_char (&mr_ra_str, ',') < 0)
-		      return (NULL);
-		  if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
-		    return (NULL);
-		}
-	      --level;
-	      idx = ptrs->ra[idx].parent;
-	    }
-	  
-	  if (ptrs->ra[idx].res.data.string)
-	    {
-	      if (mr_ra_printf (&mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
-		return (NULL);
-	      if (ptrs->ra[idx].next >= 0)
-		if (mr_ra_append_char (&mr_ra_str, ',') < 0)
-		  return (NULL);
-	      if (mr_ra_append_char (&mr_ra_str, '\n') < 0)
-		return (NULL);
-	    }
-	  
-	  idx = ptrs->ra[idx].next;
-	}
-    }
+  mr_ptrs_dfs (ptrs, json_print_node, &mr_ra_str);
 
   return (mr_ra_str.data.string);
 }
