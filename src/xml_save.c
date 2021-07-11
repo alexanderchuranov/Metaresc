@@ -22,9 +22,7 @@
 #define MR_XML1_ATTR_INT " %s=\"%" SCNd32 "\""
 
 #define MR_XML1_OPEN_TAG_START "<%s"
-#define MR_XML1_OPEN_TAG_END ">%s"
 #define MR_XML1_OPEN_EMPTY_TAG_END "/>"
-#define MR_XML1_CLOSE_TAG "</%s>"
 
 #define XML_QUOTE_CHAR_PATTERN "&#x%02X;"
 #define ESC_SIZE (sizeof (XML_QUOTE_CHAR_PATTERN))
@@ -266,11 +264,11 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
   if (ptrs->ra[idx].flags.is_referenced)
     if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
       return (MR_FAILURE);
-  if (true == ptrs->ra[idx].flags.is_null)
+  if (ptrs->ra[idx].flags.is_null)
     if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
       return (MR_FAILURE);
 
-  if ((true == ptrs->ra[idx].flags.is_null) || (ptrs->ra[idx].ref_idx >= 0))
+  if (ptrs->ra[idx].flags.is_null || (ptrs->ra[idx].ref_idx >= 0))
     empty_tag = true;
   else
     {
@@ -287,12 +285,9 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
       if (mr_ra_append_string (mr_ra_str, MR_XML1_OPEN_EMPTY_TAG_END) < 0)
 	return (MR_FAILURE);
     }
-  else
-    {
-      ptrs->ra[idx].res.data.string = ptrs->ra[idx].name;
-      ptrs->ra[idx].res.type = "string";
-      ptrs->ra[idx].res.MR_SIZE = 0;
-    }
+
+  ptrs->ra[idx].res.data.intptr = empty_tag;
+  ptrs->ra[idx].res.type = "intptr";
 
   return (MR_SUCCESS);
 }
@@ -304,9 +299,15 @@ xml1_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
     if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "") < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].res.data.string)
-    if (mr_ra_printf (mr_ra_str, MR_XML1_CLOSE_TAG, ptrs->ra[idx].res.data.string) < 0)
-      return (MR_FAILURE);
+  if (!ptrs->ra[idx].res.data.intptr)
+    {
+      if (mr_ra_append_string (mr_ra_str, "</") < 0)
+	return (MR_FAILURE);
+      if (mr_ra_append_string (mr_ra_str, ptrs->ra[idx].name) < 0)
+	return (MR_FAILURE);
+      if (mr_ra_append_char (mr_ra_str, '>') < 0)
+	return (MR_FAILURE);
+    }
 
   return (MR_SUCCESS);
 }
