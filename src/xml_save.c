@@ -359,12 +359,15 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
   
   xmlNodePtr node = xmlNewNode (NULL, BAD_CAST ptrs->ra[idx].name);
 
-  ptrs->ra[idx].res.data.ptr = node;
   if (NULL == node)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
+
+  ptrs->ra[idx].res.data.ptr = node;
+  ptrs->ra[idx].res.type = "xmlNode";
+  ptrs->ra[idx].res.MR_SIZE = sizeof (xmlNode);
   node->_private = (void*)(long)idx;
 
   if (mr_ra_str->data.string[0])
