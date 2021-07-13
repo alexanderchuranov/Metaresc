@@ -1116,6 +1116,49 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
       }
 }
 
+static mr_status_t
+mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+{
+  static bool remove_if_empty[] =
+    {
+      [0 ... MR_TYPE_LAST - 1] = false,
+      [MR_TYPE_VOID] = true,
+      [MR_TYPE_STRUCT] = true,
+      [MR_TYPE_ARRAY] = true,
+      [MR_TYPE_UNION] = true,
+      [MR_TYPE_ANON_UNION] = true,
+      [MR_TYPE_NAMED_ANON_UNION] = true,
+    };
+
+  if (MR_DFS_POST_ORDER != order)
+    return (MR_SUCCESS);
+
+  if (0 == level)
+    return (MR_SUCCESS);
+
+  if ((ptrs->ra[idx].first_child < 0) && (ptrs->ra[idx].ref_idx < 0)
+      && !ptrs->ra[idx].flags.is_null && !ptrs->ra[idx].flags.is_referenced
+      && (ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST)
+      && remove_if_empty[ptrs->ra[idx].mr_type])
+    {
+      bool * need_reindex = context;
+
+      *need_reindex = true;
+      /* empty node found - unchain it from parent node */
+      if (ptrs->ra[idx].prev < 0) /* node was a first child at parent node */
+	ptrs->ra[ptrs->ra[idx].parent].first_child = ptrs->ra[idx].next;
+      else
+	ptrs->ra[ptrs->ra[idx].prev].next = ptrs->ra[idx].next;
+
+      if (ptrs->ra[idx].next < 0) /* node was a last child at parent node */
+	ptrs->ra[ptrs->ra[idx].parent].last_child = ptrs->ra[idx].prev;
+      else
+	ptrs->ra[ptrs->ra[idx].next].prev = ptrs->ra[idx].prev;
+    }
+
+  return (MR_SUCCESS);
+}
+
 /**
  * There is no need to save empty nodes and possibly their parent structures 
  * @param mr_ra_ptrdes_t resizable array with pointers descriptors
@@ -1123,32 +1166,14 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 void
 mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 {
-  int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  for (idx = 1; idx < count; ++idx) /* skip root node */
-    if ((MR_TYPE_VOID == ptrs->ra[idx].mr_type) ||
-	(MR_TYPE_STRUCT == ptrs->ra[idx].mr_type) ||
-	(MR_TYPE_ARRAY == ptrs->ra[idx].mr_type) ||
-	(MR_TYPE_UNION == ptrs->ra[idx].mr_type) ||
-	(MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
-	(MR_TYPE_NAMED_ANON_UNION == ptrs->ra[idx].mr_type))
-      for (i = idx; i > 0; i = ptrs->ra[i].parent)
-	{
-	  if (ptrs->ra[i].first_child >= 0)
-	    break;
-	  /* empty node found - unchain it from parent node */
-	  if (ptrs->ra[i].prev < 0) /* node was a first child at parent node */
-	    ptrs->ra[ptrs->ra[i].parent].first_child = ptrs->ra[i].next;
-	  else
-	    ptrs->ra[ptrs->ra[i].prev].next = ptrs->ra[i].next;
-	  
-	  if (ptrs->ra[i].next < 0) /* node was a last child at parent node */
-	    ptrs->ra[ptrs->ra[i].parent].last_child = ptrs->ra[i].prev;
-	  else
-	    ptrs->ra[ptrs->ra[i].next].prev = ptrs->ra[i].prev;
-	}
+  bool need_reindex = false;
+  mr_ptrs_dfs (ptrs, mr_remove_empty_node, &need_reindex);
   /* re-enumerate nodes after empty nodes removal */
-  int idx_ = 0;
-  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
+  if (need_reindex)
+    {
+      int idx_ = 0;
+      mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
+    }
 }
 
 /**

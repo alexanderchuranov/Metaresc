@@ -174,13 +174,19 @@ scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
 }
 
+static int
+scm_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
+}
+
 /**
  * Init IO handlers Table
  */
 static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
   {
     [MR_TYPE_NONE] = mr_ra_printf_void,
-    [MR_TYPE_VOID] = mr_ra_printf_void,
+    [MR_TYPE_VOID] = scm_printf_void,
     [MR_TYPE_ENUM] = scm_printf_bitmask,
     [MR_TYPE_BITFIELD] = scm_printf_bitfield,
     [MR_TYPE_BOOL] = scm_printf_bool,

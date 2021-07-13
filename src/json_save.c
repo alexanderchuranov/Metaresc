@@ -10,8 +10,9 @@
 #include <mr_stringify.h>
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
-#define MR_JSON_INDENT_SPACES (2)
-#define MR_JSON_INDENT_TEMPLATE "%*s"
+#define JSON_INDENT_SPACES (2)
+#define JSON_INDENT_TEMPLATE "%*s"
+#define JSON_NULL "null"
 
 #define JSON_QUOTE_CHAR_PATTERN "\\u%04x"
 #define JSON_BITMASK_DELIMITER " | "
@@ -144,9 +145,28 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "[\n"));
 }
 
+static int
+json_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  if (ptrdes->non_persistent)
+    return (mr_ra_append_string (mr_ra_str, JSON_NULL));
+
+  switch (ptrdes->fdp->mr_type_class)
+    {
+    case MR_RECORD_TYPE_CLASS:
+    case MR_UNION_TYPE_CLASS:
+    case MR_ARRAY_TYPE_CLASS:
+      return (mr_ra_append_string (mr_ra_str, "{}"));
+    case MR_POINTER_TYPE_CLASS:
+      return (mr_ra_append_string (mr_ra_str, JSON_NULL));
+    default:
+      return (mr_ra_append_char (mr_ra_str, '0'));
+    }
+}
+
 static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
-  [MR_TYPE_VOID] = mr_ra_printf_void,
+  [MR_TYPE_VOID] = json_printf_void,
   [MR_TYPE_ENUM] = json_printf_bitmask,
   [MR_TYPE_BITFIELD] = json_printf_bitfield,
   [MR_TYPE_BOOL] = mr_ra_printf_bool,
@@ -188,7 +208,7 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
 
-  if (mr_ra_printf (mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES, "") < 0)
+  if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
 
   if (!ptrs->ra[idx].unnamed ||
@@ -213,7 +233,7 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
     }
   else if (ptrs->ra[idx].flags.is_null)
     {
-      if (mr_ra_append_string (mr_ra_str, "null") < 0)
+      if (mr_ra_append_string (mr_ra_str, JSON_NULL) < 0)
 	return (MR_FAILURE);
     }
   else if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
@@ -226,7 +246,7 @@ static mr_status_t
 json_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
   if (ptrs->ra[idx].res.data.string)
-    if (mr_ra_printf (mr_ra_str, MR_JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
+    if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
       return (MR_FAILURE);
 
   if (ptrs->ra[idx].next >= 0)

@@ -114,7 +114,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_LAST, /* keep it last */
 	      )
 
-TYPEDEF_ENUM (mr_type_class_t,
+TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classification provided by __builtin_classify_type"),
 	      (MR_NO_TYPE_CLASS, = -1),
 	      MR_VOID_TYPE_CLASS,
 	      MR_INTEGER_TYPE_CLASS,
@@ -440,6 +440,7 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
+		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
 		(bool, self_ptr, , "true if field is a pointer on a base type"),
 		(bool, non_persistent, , "true if field descriptor is allocated on stack"),
 		(bool, unnamed, , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),

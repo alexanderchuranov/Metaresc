@@ -559,17 +559,19 @@
 	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .mr_type = MR_TYPE,					\
+	     .mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	  .type = #TYPE,						\
+	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	     .mr_type = MR_TYPE_ARRAY,					\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
+	     .mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	     .param =							\
 	     {								\
 	       .array_param = {						\
@@ -583,11 +585,14 @@
 #define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
-	  .type = #TYPE,						\
+	  .type = MR_STRINGIFY (TYPE),					\
 	     .size = sizeof (TYPE),					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	     .mr_type = MR_TYPE_VOID,					\
 	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
+	     MR_IF_ELSE (MR_IS_IN_PAREN (NAME))				\
+	     (.mr_type_class = MR_FUNCTION_TYPE_CLASS,) \
+	     (.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
 	     .meta = "" __VA_ARGS__,					\
 	     } } },
 
@@ -598,6 +603,7 @@
 	     .size = sizeof (TYPE),					\
 	     .mr_type = MR_TYPE_BITFIELD,				\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
+	     .mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	     .param = {							\
 	  .bitfield_param = {						\
 	    .size = sizeof (MR_TYPE_NAME),				\

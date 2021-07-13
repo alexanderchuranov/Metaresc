@@ -11,13 +11,14 @@
 #include <mr_stringify.h>
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
-#define MR_CINIT_INDENT_SPACES (2)
-#define MR_CINIT_INDENT_TEMPLATE "%*s"
+#define CINIT_INDENT_SPACES (2)
+#define CINIT_INDENT_TEMPLATE "%*s"
 
-#define MR_CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
+#define CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
 
 #define CINIT_QUOTE_CHAR_PATTERN "\\%03o"
 #define CINIT_BITMASK_DELIMITER " | "
+#define CINIT_NULL "NULL"
 
 static int
 cinit_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
@@ -125,9 +126,28 @@ cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "\"\", {\n"));
 }
 
+static int
+cinit_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  if (ptrdes->non_persistent)
+    return (mr_ra_append_string (mr_ra_str, "{}"));
+
+  switch (ptrdes->fdp->mr_type_class)
+    {
+    case MR_RECORD_TYPE_CLASS:
+    case MR_UNION_TYPE_CLASS:
+    case MR_ARRAY_TYPE_CLASS:
+      return (mr_ra_append_string (mr_ra_str, "{}"));
+    case MR_POINTER_TYPE_CLASS:
+      return (mr_ra_append_string (mr_ra_str, CINIT_NULL));
+    default:
+      return (mr_ra_append_char (mr_ra_str, '0'));
+    }
+}
+
 static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NONE] = mr_ra_printf_void,
-  [MR_TYPE_VOID] = mr_ra_printf_void,
+  [MR_TYPE_VOID] = cinit_printf_void,
   [MR_TYPE_ENUM] = cinit_printf_bitmask,
   [MR_TYPE_BITFIELD] = cinit_printf_bitfield,
   [MR_TYPE_BOOL] = mr_ra_printf_bool,
@@ -170,7 +190,7 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
 
-  if (mr_ra_printf (mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES, "") < 0)
+  if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
 
   if (!ptrs->ra[idx].unnamed)
@@ -184,18 +204,18 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
     }
 
   if (ptrs->ra[idx].ref_idx >= 0)
-    if (mr_ra_printf (mr_ra_str, MR_CINIT_ATTR_INT,
+    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT,
 		      (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
 		      ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
       return (MR_FAILURE);
 
   if (ptrs->ra[idx].flags.is_referenced)
-    if (mr_ra_printf (mr_ra_str, MR_CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
+    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
       return (MR_FAILURE);
 
   if (ptrs->ra[idx].flags.is_null || (ptrs->ra[idx].ref_idx >= 0))
     {
-      if (mr_ra_append_string (mr_ra_str, "NULL") < 0)
+      if (mr_ra_append_string (mr_ra_str, CINIT_NULL) < 0)
 	return (MR_FAILURE);
     }
   else if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
@@ -208,7 +228,7 @@ static mr_status_t
 cinit_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
   if (ptrs->ra[idx].res.data.string)
-    if (mr_ra_printf (mr_ra_str, MR_CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
+    if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
       return (MR_FAILURE);
 
   if (ptrs->ra[idx].next >= 0)
