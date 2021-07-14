@@ -751,6 +751,14 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   return (1);
 }
 
+static int
+mr_save_char_array (mr_save_data_t * mr_save_data)
+{
+  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_save_data->ptrs.ra[idx].non_serializable = true;
+  return (1);
+}
+
 /**
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler. Detects NULL pointers.
  * @param mr_save_data save routines data and lookup structures
@@ -1316,6 +1324,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
  */
 static mr_save_handler_t mr_save_handler[MR_TYPE_LAST] =
   {
+    [MR_TYPE_CHAR_ARRAY] = mr_save_char_array,
     [MR_TYPE_FUNC] = mr_save_func,
     [MR_TYPE_FUNC_TYPE] = mr_save_func,
     [MR_TYPE_STRING] = mr_save_string,
