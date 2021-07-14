@@ -362,7 +362,6 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
   mr_conf.cache_func_resolve = false;
   
   mr_mem = mr_conf.mr_mem;
-  _mr_mem.mem_alloc_strategy = mr_mem.mem_alloc_strategy;
   _mr_mem.calloc = _calloc;
   _mr_mem.realloc = _realloc;
   _mr_mem.free = _free;

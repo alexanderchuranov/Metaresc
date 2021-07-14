@@ -46,7 +46,6 @@ void mr_free (const char * filename, const char * function, int line, void * ptr
 /** Metaresc configuration structure */
 mr_conf_t mr_conf = {
   .mr_mem = { /**< all memory functions may be replaced on user defined */
-    .mem_alloc_strategy = 2, /**< Memory allocation strategy. Default is to double buffer every time. */
     .calloc = mr_calloc, /**< Pointer to malloc function. */
     .realloc = mr_realloc, /**< Pointer to realloc function. */
     .free = mr_free, /**< Pointer to free function. */
@@ -117,15 +116,16 @@ static int fd_type_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 static inline void
 mr_conf_init ()
 {
-  static bool initialized = false;
-  if (!initialized)
+  static volatile enum { NON_INITIALIZED, IN_INITIALIZATION, INITIALIZED } initialized = NON_INITIALIZED;
+  if (__sync_bool_compare_and_swap (&initialized, NON_INITIALIZED, IN_INITIALIZATION))
     {
       mr_ic_new (&basic_types, fd_type_hash, fd_type_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
       mr_ic_foreach (&mr_conf.type_by_name, mr_conf_init_visitor, NULL);
       mr_ic_foreach (&basic_types, basic_types_visitor, NULL);
       mr_ic_free (&basic_types);
-      initialized = true;
+      initialized = INITIALIZED;
     }
+  while (initialized != INITIALIZED);
 }
 
 static mr_status_t
@@ -209,7 +209,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
   if ((message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
     format = messages[message_id];
 
-  int __attribute__ ((unused)) unused = mr_vasprintf (&message, format, args);
+  (void)mr_vasprintf (&message, format, args);
 
   return (message);
 }
@@ -422,13 +422,7 @@ mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, 
   ssize_t new_size = _size + element_size;
   if (new_size > *alloc_size)
     {
-      float mas = mr_conf.mr_mem.mem_alloc_strategy;
-      ssize_t realloc_size;
-      if (mas < 1)
-	mas = 1;
-      if (mas > 2)
-	mas = 2;
-      realloc_size = (((int)((new_size + 1) * mas) + element_size - 1) / element_size) * element_size;
+      ssize_t realloc_size = ((((new_size + 1) << 1) + element_size - 1) / element_size) * element_size;
       if (realloc_size < new_size)
 	realloc_size = new_size;
       _data = MR_REALLOC (_data, realloc_size);
