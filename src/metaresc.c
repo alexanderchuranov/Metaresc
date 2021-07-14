@@ -1269,18 +1269,24 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 		  if (diff)						\
 		    return (diff);					\
 		}							\
-	      diff = !rx_isnan - !ry_isnan;				\
-	      if (diff)							\
-		return (diff);						\
+	      else							\
+		{							\
+		  diff = !rx_isnan - !ry_isnan;				\
+		  if (diff)						\
+		    return (diff);					\
+		}							\
 	      if (!ix_isnan && !iy_isnan)				\
 		{							\
 		  diff = (__imag__ _x > __imag__ _y) - (__imag__ _x < __imag__ _y); \
 		  if (diff)						\
 		    return (diff);					\
 		}							\
-	      diff = !ix_isnan - !iy_isnan;				\
-	      if (diff)							\
-		return (diff);						\
+	      else							\
+		{							\
+		  diff = !ix_isnan - !iy_isnan;				\
+		  if (diff)						\
+		    return (diff);					\
+		}							\
 	    }								\
 	    break;
 
