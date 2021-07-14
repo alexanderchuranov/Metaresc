@@ -447,7 +447,7 @@ Standard](https://tools.ietf.org/html/rfc4506)
 `MR_SAVE_CINIT`/`MR_SAVE_JSON`/`MR_SAVE_XML1`/`MR_SAVE_XML2`/`MR_SAVE_SCM`
 are string based serialization and require only two arguments: type of
 the pointer and pointer on data. Type of the pointer by default should
-be specified as C language talken. Save macro do verification that
+be specified as C language token. Save macro do verification that
 data pointer matches specified type and after that convert type to a
 string. The rest of serialization process require type only as a
 string. It might happen that user serialization function gets data
@@ -520,7 +520,9 @@ For serialization to XML user could either use specific method
 (XML2 for libxml2 and XML1 for custom serialization) or just use
 `MR_SAVE_XML`/`MR_SAVE_XML_RA` that will redirect to a first available
 option (XML2 by default). XML1 custom serialization implemented to
-fully match output of `xmlDocDumpFormatMemory ()` from libxml2.
+fully match output of `xmlDocDumpFormatMemory ()` from libxml2. The
+benefit of XML1 vs XML2 is a 40% reduction of the memory footprint and
+comparable improvement in performance.
 
 ### Deserialization
 `MR_LOAD_*` macro family do deserialization. There are two options how
