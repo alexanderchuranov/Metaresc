@@ -148,6 +148,9 @@ mr_cleanup (void)
   mr_ic_free (&mr_conf.enum_by_name);
   mr_ic_free (&mr_conf.type_by_name);
   mr_ic_free (&mr_conf.fields_names);
+#ifdef HAVE_LIBXML2
+  xmlCleanupParser ();
+#endif /* HAVE_LIBXML2 */
 }
 
 static int
