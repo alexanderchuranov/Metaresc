@@ -752,7 +752,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 }
 
 static int
-mr_save_char_array (mr_save_data_t * mr_save_data)
+mr_save_non_serializable (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   mr_save_data->ptrs.ra[idx].non_serializable = true;
@@ -946,7 +946,6 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
   int count, i;
 
-  mr_save_data->ptrs.ra[idx].non_serializable = true;
   fd_.mr_type = fd_.mr_type_aux;
   fd_.non_persistent = true;
   fd_.unnamed = true;
@@ -1208,6 +1207,8 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   void ** data = mr_save_data->ptrs.ra[idx].data.ptr;
 
+  mr_save_data->ptrs.ra[idx].non_serializable = true;
+
   if (NULL == *data)
     mr_save_data->ptrs.ra[idx].flags.is_null = true; /* return empty node if pointer is NULL */
   else
@@ -1324,7 +1325,8 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
  */
 static mr_save_handler_t mr_save_handler[MR_TYPE_LAST] =
   {
-    [MR_TYPE_CHAR_ARRAY] = mr_save_char_array,
+    [MR_TYPE_VOID] = mr_save_non_serializable,
+    [MR_TYPE_CHAR_ARRAY] = mr_save_non_serializable,
     [MR_TYPE_FUNC] = mr_save_func,
     [MR_TYPE_FUNC_TYPE] = mr_save_func,
     [MR_TYPE_STRING] = mr_save_string,
