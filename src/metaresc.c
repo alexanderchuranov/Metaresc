@@ -495,7 +495,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 }
 
 int
-mr_print_value (FILE * fd, mr_type_t mr_type, char * serialized, ...)
+mr_print_value (FILE * fd, mr_type_t mr_type, char * type, mr_size_t size, ...)
 {
   static const char const * formats[] =
     {
@@ -516,7 +516,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, char * serialized, ...)
     };
   int rv = 0;
   va_list args;
-  va_start (args, serialized);
+  va_start (args, size);
 
   if ((mr_type >= 0) &&
       (mr_type < sizeof (formats) / sizeof (formats[0])) &&
@@ -554,24 +554,43 @@ mr_print_value (FILE * fd, mr_type_t mr_type, char * serialized, ...)
 	}
       case MR_TYPE_NONE:
 	{
-	  if (serialized != NULL)
+	  if (type != NULL)
 	    {
-	      int length = strlen (serialized);
 	      void * value = va_arg (args, void *);
-	      char * serialized_ = serialized;
+#undef MR_SAVE
+#define MR_SAVE MR_SAVE_VOID_PTR
+#define MR_SAVE_VOID_PTR(MR_TYPE_NAME_STR, S_PTR) ({			\
+      mr_save_data_t __mr_save_data__;					\
+      void * __ptr__ = S_PTR;						\
+      mr_fd_t __fd__;							\
+      memset (&__fd__, 0, sizeof (__fd__));				\
+      __fd__.name.str = mr_normalize_name (MR_STRINGIFY (S_PTR));	\
+      __fd__.type = MR_TYPE_NAME_STR;					\
+      __fd__.non_persistent = true;					\
+      mr_detect_type (&__fd__);						\
+      if (size > 0)							\
+	{								\
+	  __fd__.mr_type_aux = __fd__.mr_type;				\
+	  __fd__.mr_type = MR_TYPE_ARRAY;				\
+	  __fd__.param.array_param.count = size / __fd__.size;		\
+	  __fd__.param.array_param.row_count = 1;			\
+	  __fd__.size = size;						\
+	}								\
+      memset (&__mr_save_data__, 0, sizeof (__mr_save_data__));		\
+      if (__ptr__ != NULL)						\
+	mr_save (__ptr__, &__fd__, &__mr_save_data__);			\
+      __mr_save_data__.ptrs;						\
+    })
 
-	      if (length > 0)
-		serialized[length - 1] = 0;
-
-	      if (serialized[0] == 0)
-		serialized_ = (char*)mr_serialize_func (value);
-
-	      if (serialized_)
-		rv = fprintf (fd, "%p (%s)", value, serialized_);
-	      else
+	      char * serialized = MR_SAVE_CINIT (type, value);
+	      if (NULL == serialized)
 		rv = fprintf (fd, "%p", value);
-
-	      MR_FREE (serialized);
+	      else
+		{
+		  serialized[strlen (serialized) - 1] = 0;
+		  rv = fprintf (fd, "%p (%s)", value, serialized);
+		  MR_FREE (serialized);
+		}
 	    }
 	  break;
 	}
@@ -2401,6 +2420,7 @@ mr_detect_type (mr_fd_t * fdp)
     case MR_TYPE_UINT64:
     case MR_TYPE_INT64:
     case MR_TYPE_NONE:
+    case MR_TYPE_VOID:
       /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
       tdp = mr_get_td_by_name (fdp->type);
       if (tdp)

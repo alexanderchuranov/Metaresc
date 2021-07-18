@@ -1327,6 +1327,7 @@ static mr_save_handler_t mr_save_handler[MR_TYPE_LAST] =
   {
     [MR_TYPE_VOID] = mr_save_non_serializable,
     [MR_TYPE_CHAR_ARRAY] = mr_save_non_serializable,
+    [MR_TYPE_BITFIELD] = mr_save_non_serializable,
     [MR_TYPE_FUNC] = mr_save_func,
     [MR_TYPE_FUNC_TYPE] = mr_save_func,
     [MR_TYPE_STRING] = mr_save_string,
