@@ -12,7 +12,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CC=gcc
+        run: ./configure CC=gcc CPPFLAGS=-I/usr/local/include/libdwarf
       - name: make check
         run: make check
 
