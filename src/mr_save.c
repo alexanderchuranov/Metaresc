@@ -17,6 +17,20 @@ TYPEDEF_FUNC (int, mr_save_handler_t, (mr_save_data_t *))
 
 static mr_save_handler_t mr_save_handler[];
 
+bool mr_non_serializable[MR_TYPE_LAST] = {
+  [0 ... MR_TYPE_LAST - 1] = false,
+  [MR_TYPE_VOID] = true,
+  [MR_TYPE_CHAR_ARRAY] = true,
+  [MR_TYPE_BITFIELD] = true,
+  [MR_TYPE_FUNC] = true,
+  [MR_TYPE_FUNC_TYPE] = true,
+  [MR_TYPE_ARRAY] = true,
+  [MR_TYPE_POINTER] = true,
+  [MR_TYPE_UNION] = true,
+  [MR_TYPE_ANON_UNION] = true,
+  [MR_TYPE_NAMED_ANON_UNION] = true,
+};
+
 static mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
@@ -703,6 +717,9 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].save_params.next_typed = -1;
   ra[idx].save_params.next_untyped = -1;
 
+  if (fdp->mr_type < MR_TYPE_LAST)
+    ra[idx].non_serializable = mr_non_serializable[fdp->mr_type];
+
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
   if (NULL == search_result)
@@ -751,14 +768,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   return (1);
 }
 
-static int
-mr_save_non_serializable (mr_save_data_t * mr_save_data)
-{
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  mr_save_data->ptrs.ra[idx].non_serializable = true;
-  return (1);
-}
-
 /**
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler. Detects NULL pointers.
  * @param mr_save_data save routines data and lookup structures
@@ -767,7 +776,6 @@ static int
 mr_save_func (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  mr_save_data->ptrs.ra[idx].non_serializable = true;
   if (NULL == *(void**)mr_save_data->ptrs.ra[idx].data.ptr)
     mr_save_data->ptrs.ra[idx].flags.is_null = true;
   return (1);
@@ -873,7 +881,6 @@ mr_save_union (mr_save_data_t * mr_save_data)
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type); /* look up for type descriptor */
   mr_fd_t * fdp;
 
-  mr_save_data->ptrs.ra[idx].non_serializable = true;
   if (NULL == tdp) /* check whether type descriptor was found */
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
@@ -904,7 +911,6 @@ mr_save_array (mr_save_data_t * mr_save_data)
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
   int count, i;
 
-  mr_save_data->ptrs.ra[idx].non_serializable = true;
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
@@ -1207,8 +1213,6 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   void ** data = mr_save_data->ptrs.ra[idx].data.ptr;
 
-  mr_save_data->ptrs.ra[idx].non_serializable = true;
-
   if (NULL == *data)
     mr_save_data->ptrs.ra[idx].flags.is_null = true; /* return empty node if pointer is NULL */
   else
@@ -1325,9 +1329,6 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
  */
 static mr_save_handler_t mr_save_handler[MR_TYPE_LAST] =
   {
-    [MR_TYPE_VOID] = mr_save_non_serializable,
-    [MR_TYPE_CHAR_ARRAY] = mr_save_non_serializable,
-    [MR_TYPE_BITFIELD] = mr_save_non_serializable,
     [MR_TYPE_FUNC] = mr_save_func,
     [MR_TYPE_FUNC_TYPE] = mr_save_func,
     [MR_TYPE_STRING] = mr_save_string,

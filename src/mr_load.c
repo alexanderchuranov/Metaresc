@@ -14,6 +14,7 @@
 #include <metaresc.h>
 #include <mr_stringify.h>
 #include <mr_ic.h>
+#include <mr_save.h>
 #include <mr_load.h>
 #include <mr_value.h>
 #include <flt_values.h>
@@ -271,8 +272,6 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
   mr_status_t status = MR_SUCCESS;
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
 
-  mr_load_data->ptrs.ra[idx].non_serializable = true;
-  
   *(void**)ptrdes->data.ptr = NULL;
   switch (ptrdes->load_params.mr_value.value_type)
     {
@@ -303,8 +302,6 @@ mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
   uint64_t value;
-
-  mr_load_data->ptrs.ra[idx].non_serializable = true;
 
   if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
@@ -582,13 +579,6 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
   return (status);
 }
 
-static mr_status_t
-mr_load_union (int idx, mr_load_data_t * mr_load_data)
-{
-  mr_load_data->ptrs.ra[idx].non_serializable = true;
-  return (mr_load_struct (idx, mr_load_data));
-}
-
 /**
  * MR_ARRAY load handler.
  * Save content of subnodes to array elements.
@@ -605,8 +595,6 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   int count = fd_.param.array_param.count;
   int i = 0;
   mr_status_t status = MR_SUCCESS;
-
-  mr_load_data->ptrs.ra[idx].non_serializable = true;
 
   fd_.non_persistent = true;
   fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
@@ -697,8 +685,6 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
   void ** data = ptrdes->data.ptr;
   
-  ptrdes->non_serializable = true;
-
   /* default initializer */
   *data = NULL;
 
@@ -741,8 +727,6 @@ static mr_status_t
 mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
 {
   mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
-
-  mr_load_data->ptrs.ra[idx].non_serializable = true;
 
   /*
     Anonimous unions in C init style saved as named field folowed by union itself. Named field has type of zero length static string and must be inited by empty string. Here is an example.
@@ -794,8 +778,8 @@ static mr_load_handler_t mr_load_handler[MR_TYPE_LAST] =
     [MR_TYPE_FUNC_TYPE] = mr_load_func,
     [MR_TYPE_ARRAY] = mr_load_array,
     [MR_TYPE_POINTER] = mr_load_pointer,
-    [MR_TYPE_UNION] = mr_load_union,
-    [MR_TYPE_ANON_UNION] = mr_load_union,
+    [MR_TYPE_UNION] = mr_load_struct,
+    [MR_TYPE_ANON_UNION] = mr_load_struct,
     [MR_TYPE_NAMED_ANON_UNION] = mr_load_anon_union,
   };
 
@@ -861,6 +845,9 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra[idx].mr_type_aux = fdp->mr_type_aux;
   mr_load_data->ptrs.ra[idx].type = fdp->type;
   mr_load_data->ptrs.ra[idx].name = fdp->name.str;
+
+  if (fdp->mr_type < MR_TYPE_LAST)
+    mr_load_data->ptrs.ra[idx].non_serializable = mr_non_serializable[fdp->mr_type];
 
   /* route loading */
   if ((fdp->mr_type < MR_TYPE_LAST) && mr_load_handler[fdp->mr_type])
