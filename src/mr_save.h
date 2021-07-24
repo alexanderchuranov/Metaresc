@@ -3,16 +3,21 @@
 
 #include <metaresc.h>
 
-TYPEDEF_ENUM (mr_dfs_order_t,
-	      MR_DFS_PRE_ORDER,
-	      MR_DFS_POST_ORDER,
-	      );
+#define MR_ONE_SHIFT(SHIFT) | (1UL << (SHIFT))
 
-TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, int /* idx */, int /* level */, mr_dfs_order_t /* order */, void * /* context */))
+#define MR_NON_SERIALIZABLE			\
+  (0 MR_FOREACH (MR_ONE_SHIFT,			\
+		 MR_TYPE_VOID,			\
+		 MR_TYPE_CHAR_ARRAY,		\
+		 MR_TYPE_BITFIELD,		\
+		 MR_TYPE_FUNC,			\
+		 MR_TYPE_FUNC_TYPE,		\
+		 MR_TYPE_ARRAY,			\
+		 MR_TYPE_POINTER,		\
+		 MR_TYPE_UNION,			\
+		 MR_TYPE_ANON_UNION,		\
+		 MR_TYPE_NAMED_ANON_UNION))
 
-extern bool mr_non_serializable[MR_TYPE_LAST];
-
-extern mr_status_t mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context);
 extern mr_status_t mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context);
 extern void mr_pointer_get_size (ssize_t * size, char * name, int idx, mr_ra_ptrdes_t * ptrs);
 

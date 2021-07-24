@@ -847,7 +847,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra[idx].name = fdp->name.str;
 
   if (fdp->mr_type < MR_TYPE_LAST)
-    mr_load_data->ptrs.ra[idx].non_serializable = mr_non_serializable[fdp->mr_type];
+    mr_load_data->ptrs.ra[idx].non_serializable = (MR_NON_SERIALIZABLE >> fdp->mr_type) & 1;
 
   /* route loading */
   if ((fdp->mr_type < MR_TYPE_LAST) && mr_load_handler[fdp->mr_type])

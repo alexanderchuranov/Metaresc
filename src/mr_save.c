@@ -17,20 +17,6 @@ TYPEDEF_FUNC (int, mr_save_handler_t, (mr_save_data_t *))
 
 static mr_save_handler_t mr_save_handler[];
 
-bool mr_non_serializable[MR_TYPE_LAST] = {
-  [0 ... MR_TYPE_LAST - 1] = false,
-  [MR_TYPE_VOID] = true,
-  [MR_TYPE_CHAR_ARRAY] = true,
-  [MR_TYPE_BITFIELD] = true,
-  [MR_TYPE_FUNC] = true,
-  [MR_TYPE_FUNC_TYPE] = true,
-  [MR_TYPE_ARRAY] = true,
-  [MR_TYPE_POINTER] = true,
-  [MR_TYPE_UNION] = true,
-  [MR_TYPE_ANON_UNION] = true,
-  [MR_TYPE_NAMED_ANON_UNION] = true,
-};
-
 static mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
@@ -718,7 +704,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].save_params.next_untyped = -1;
 
   if (fdp->mr_type < MR_TYPE_LAST)
-    ra[idx].non_serializable = mr_non_serializable[fdp->mr_type];
+    ra[idx].non_serializable = (MR_NON_SERIALIZABLE >> fdp->mr_type) & 1;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);

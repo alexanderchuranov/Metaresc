@@ -621,6 +621,13 @@ TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(mr_res_t, res, , "extra pointer for user data"),
 		)
 
+TYPEDEF_ENUM (mr_dfs_order_t,
+	      MR_DFS_PRE_ORDER,
+	      MR_DFS_POST_ORDER,
+	      );
+
+TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, int /* idx */, int /* level */, mr_dfs_order_t /* order */, void * /* context */))
+
 TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
 		(ssize_t, mr_ra_idx_size, , "size of 'mr_ra_idx'"),
