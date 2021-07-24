@@ -7,6 +7,7 @@
 
 #define MR_NON_SERIALIZABLE			\
   (0 MR_FOREACH (MR_ONE_SHIFT,			\
+		 MR_TYPE_NONE,			\
 		 MR_TYPE_VOID,			\
 		 MR_TYPE_CHAR_ARRAY,		\
 		 MR_TYPE_BITFIELD,		\

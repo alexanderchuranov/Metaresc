@@ -703,8 +703,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].save_params.next_typed = -1;
   ra[idx].save_params.next_untyped = -1;
 
-  if (fdp->mr_type < MR_TYPE_LAST)
-    ra[idx].non_serializable = (MR_NON_SERIALIZABLE >> fdp->mr_type) & 1;
+  ra[idx].non_serializable = (MR_NON_SERIALIZABLE >> fdp->mr_type) & 1;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
@@ -738,9 +737,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 	  ra[search_result->intptr].save_params.next_untyped = idx;
 	}
     }
-
-  ra[idx].ud_is_ic = false;
-  ra[idx].ud_count = 0;
 
   mr_add_child (parent, idx, ra);
   /* route saving handler */
