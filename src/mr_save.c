@@ -453,7 +453,7 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
   const mr_ptrdes_t * ptrdes = &ra_ptrdes->ra[x.intptr];
-  return (ptrdes->data.uintptr + ptrdes->mr_type * 5);
+  return (ptrdes->data.uintptr + ptrdes->mr_type * 3);
 }
 
 int
