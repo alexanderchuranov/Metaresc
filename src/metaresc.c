@@ -495,7 +495,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 }
 
 int
-mr_print_value (FILE * fd, mr_type_t mr_type, char * type, mr_size_t size, ...)
+mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, mr_size_t size, ...)
 {
   static const char const * formats[] =
     {
@@ -554,9 +554,33 @@ mr_print_value (FILE * fd, mr_type_t mr_type, char * type, mr_size_t size, ...)
 	}
       case MR_TYPE_NONE:
 	{
-	  if (type != NULL)
+	  void * value = va_arg (args, void *);
+	  if (mr_type_aux != MR_TYPE_NONE)
 	    {
-	      void * value = va_arg (args, void *);
+	      rv = fprintf (fd, "%p (", value);
+	      
+#define MR_REDIRECT_TYPE(TYPE)						\
+	      case MR_TYPE_DETECT (TYPE):				\
+		rv += fprintf (fd, "(" #TYPE ")") +			\
+		  mr_print_value (fd, mr_type_aux, MR_TYPE_NONE, NULL, 0, *(TYPE*)value); \
+		break;
+	      
+	      switch (mr_type_aux)
+		{
+		  MR_FOREACH (MR_REDIRECT_TYPE,
+			      string_t, char, bool,
+			      int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+			      float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t);
+		default:
+		  rv += fprintf (fd, "unknown");
+		  break;
+		}
+	      rv += fprintf (fd, ")");
+	    }
+	  else if (NULL == type)
+	    rv = fprintf (fd, "%p", value);
+	  else
+	    {
 #undef MR_SAVE
 #define MR_SAVE MR_SAVE_VOID_PTR
 #define MR_SAVE_VOID_PTR(MR_TYPE_NAME_STR, S_PTR) ({			\
@@ -588,7 +612,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, char * type, mr_size_t size, ...)
 	      else
 		{
 		  serialized[strlen (serialized) - 1] = 0;
-		  rv = fprintf (fd, "%p (%s)", value, serialized);
+		  rv = fprintf (fd, "%p ((%s)%s)", value, type, serialized);
 		  MR_FREE (serialized);
 		}
 	    }

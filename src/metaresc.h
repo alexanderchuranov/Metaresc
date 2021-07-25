@@ -1171,7 +1171,7 @@
 
 #define MR_ARRAY_SIZE(X) __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + (X)), __typeof__ (X)), 0, sizeof (X))
 
-#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), MR_PTR_DETECT_TYPE (MR_CAST_TO_PTR (X)), MR_ARRAY_SIZE (X), X)
+#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), MR_TYPE_DETECT (__typeof__ (*MR_CAST_TO_PTR (X))), MR_PTR_DETECT_TYPE (MR_CAST_TO_PTR (X)), MR_ARRAY_SIZE (X), X)
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
@@ -1276,7 +1276,7 @@ extern void mr_message (const char * file_name, const char * func_name, int line
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
-extern int mr_print_value (FILE * fd, mr_type_t mr_type, char * type, mr_size_t size, ...);
+extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, mr_size_t size, ...);
 
 extern char * mr_get_static_field_name_from_string (char * name);
 extern char * mr_get_static_field_name_from_substring (mr_substr_t * substr);
