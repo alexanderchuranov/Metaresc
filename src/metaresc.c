@@ -1711,6 +1711,8 @@ mr_add_enum (mr_td_t * tdp)
 	  MR_FOREACH (CASE_SET_TYPE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 	default:
 	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT8;
+	  tdp->param.enum_param.size_effective = sizeof (uint8_t);
+	  tdp->size = sizeof (uint8_t);
 	  break;
 	}
       break;
@@ -2368,14 +2370,6 @@ TYPEDEF_STRUCT (mr_basic_type_td_t,
 static mr_status_t
 basic_types_visitor (mr_ptr_t key, const void * context)
 {
-#define MR_TYPE_SIZE(TYPE) [MR_TYPE_DETECT (TYPE)] = sizeof (TYPE),
-  static int type_size[MR_TYPE_LAST] = {
-    MR_FOREACH (MR_TYPE_SIZE,
-		string_t, char, bool,
-		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
-		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
-  };
-
   mr_fd_t * fdp = key.ptr;
   mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td));
   if (NULL == basic_type_td)
@@ -2390,7 +2384,7 @@ basic_types_visitor (mr_ptr_t key, const void * context)
     case MR_TYPE_VOID:
     case MR_TYPE_ARRAY:
       basic_type_td->td.mr_type = fdp->mr_type_aux;
-      basic_type_td->td.size = (fdp->mr_type_aux < MR_TYPE_LAST) ? type_size[fdp->mr_type_aux] : 0;
+      basic_type_td->td.size = mr_type_size (fdp->mr_type_aux, "");
       break;
 
     case MR_TYPE_STRING:
