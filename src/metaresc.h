@@ -130,51 +130,6 @@
   Compaund types are detected in runtime.
 */
 
-#define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr (MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ), (OBJ), NULL)
-
-#ifdef HAVE_GENERIC
-
-#define MR_SKIP_FUNCTIONS(OBJ) __builtin_choose_expr (MR_FUNCTION_TYPE_CLASS == __builtin_classify_type (OBJ), NULL, (OBJ))
-
-#define MR_TYPE_DETECT_PTR(TYPE)					\
-  _Generic ((*(const volatile TYPE *)0),				\
-	    const volatile void *: MR_TYPE_VOID,			\
-	    const volatile void * const: MR_TYPE_VOID,			\
-	    const volatile void * volatile : MR_TYPE_VOID,		\
-	    const volatile void * const volatile : MR_TYPE_VOID,	\
-  default: MR_TYPE_DETECT (__typeof__ (MR_SKIP_FUNCTIONS (* MR_CAST_TO_PTR (*(TYPE*)0)))))
-
-#define MR_TYPE_DETECT_CHAR_PTR(TYPE, TYPE_CLASS, MR_TYPE)		\
-  (__builtin_types_compatible_p						\
-   (__typeof__ (*__builtin_choose_expr (TYPE_CLASS == __builtin_classify_type (*(TYPE*)0), *(TYPE*)0, NULL)), \
-    char) ? MR_TYPE : MR_TYPE_NONE)
-
-#define MR_TYPE_DETECT(TYPE)						\
-  _Generic (*(const volatile TYPE*)0,					\
-	    const volatile bool: MR_TYPE_BOOL,				\
-	    const volatile int8_t: MR_TYPE_INT8,			\
-	    const volatile uint8_t: MR_TYPE_UINT8,			\
-	    const volatile int16_t: MR_TYPE_INT16,			\
-	    const volatile uint16_t: MR_TYPE_UINT16,			\
-	    const volatile int32_t: MR_TYPE_INT32,			\
-	    const volatile uint32_t: MR_TYPE_UINT32,			\
-	    const volatile int64_t: MR_TYPE_INT64,			\
-	    const volatile uint64_t: MR_TYPE_UINT64,			\
-	    const volatile MR_UNCOVERED_TYPE: MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_UNCOVERED_TYPE), \
-	    const volatile unsigned MR_UNCOVERED_TYPE: MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_UNCOVERED_TYPE), \
-	    const volatile float: MR_TYPE_FLOAT,			\
-	    const volatile complex float: MR_TYPE_COMPLEX_FLOAT,	\
-	    const volatile double: MR_TYPE_DOUBLE,			\
-	    const volatile complex double: MR_TYPE_COMPLEX_DOUBLE,	\
-	    const volatile long double: MR_TYPE_LONG_DOUBLE,		\
-	    const volatile complex long double: MR_TYPE_COMPLEX_LONG_DOUBLE, \
-	    const volatile char: MR_TYPE_CHAR,				\
-  default: MR_TYPE_DETECT_CHAR_PTR (TYPE, MR_ARRAY_TYPE_CLASS, MR_TYPE_CHAR_ARRAY) | \
-	    MR_TYPE_DETECT_CHAR_PTR (TYPE, MR_POINTER_TYPE_CLASS, MR_TYPE_STRING) \
-	    )
-
-#else /* ! HAVE_GENERIC */
-
 #define MR_TYPE_DETECT(TYPE, ...) MR_TYPE_DETECT_ (TYPE, __VA_ARGS__)
 #define MR_TYPE_DETECT_(TYPE, SUFFIX)					\
   (0 /* MR_TYPE_NONE */							\
@@ -209,22 +164,6 @@
    )
 
 #define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, const *) | MR_TYPE_DETECT (TYPE, volatile *) | MR_TYPE_DETECT (TYPE, const volatile *))
-
-#endif /* HAVE_GENERIC */
-
-#define MR_ENUM_TYPE_DETECT(TYPE)					\
-  (0 /* MR_TYPE_NONE */							\
-   | (__builtin_types_compatible_p (int8_t, TYPE) ? MR_TYPE_INT8 : 0)	\
-   | (__builtin_types_compatible_p (uint8_t, TYPE) ? MR_TYPE_UINT8 : 0)	\
-   | (__builtin_types_compatible_p (int16_t, TYPE) ? MR_TYPE_INT16 : 0)	\
-   | (__builtin_types_compatible_p (uint16_t, TYPE) ? MR_TYPE_UINT16 : 0) \
-   | (__builtin_types_compatible_p (int32_t, TYPE) ? MR_TYPE_INT32 : 0)	\
-   | (__builtin_types_compatible_p (uint32_t, TYPE) ? MR_TYPE_UINT32 : 0) \
-   | (__builtin_types_compatible_p (int64_t, TYPE) ? MR_TYPE_INT64 : 0)	\
-   | (__builtin_types_compatible_p (uint64_t, TYPE) ? MR_TYPE_UINT64 : 0) \
-   | (__builtin_types_compatible_p (MR_UNCOVERED_TYPE, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
-   | (__builtin_types_compatible_p (unsigned MR_UNCOVERED_TYPE, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
-   )
 
 /* internal macros for arguments evaluation and concatination */
 #define MR_PASTE2(...) MR_PASTE2_ (__VA_ARGS__)
@@ -761,7 +700,7 @@
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (MR_TYPE_NAME) = {	\
     .type = { .str = #MR_TYPE_NAME, .hash_value = 0, },			\
     .mr_type = MR_TYPE,							\
-    .param = { .enum_param = { .mr_type_effective = MR_ENUM_TYPE_DETECT (MR_TYPE_NAME), }, }, \
+    .param = { .enum_param = { .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME), }, }, \
     .size = sizeof (MR_TYPE_NAME),					\
     .fields_size = 0,							\
     .fields = (mr_fd_ptr_t[]){
@@ -1230,6 +1169,8 @@
     })
 
 #define MR_ARRAY_SIZE(X) __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + (X)), __typeof__ (X)), 0, sizeof (X))
+
+#define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr (MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ), (OBJ), NULL)
 
 #define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), MR_TYPE_DETECT_PTR (__typeof__ (X)), MR_PTR_DETECT_TYPE (MR_CAST_TO_PTR (X)), MR_ARRAY_SIZE (X), X)
 

@@ -103,13 +103,6 @@ if [[ x${HAVE_BUILTIN_DUMP_STRUCT} = xyes ]]; then
   AC_DEFINE(HAVE_BUILTIN_DUMP_STRUCT, [], [define if __builtin_dump_struct is present])
 fi
 
-AC_MSG_CHECKING([${CC} supports _Generic ])
-AC_LINK_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (void)_Generic (0, default: 0); ]])], [ HAVE_GENERIC=yes ], [ HAVE_GENERIC=no ])
-AC_MSG_RESULT([${HAVE_GENERIC}])
-if [[ x${HAVE_GENERIC} = xyes ]]; then
-  AC_DEFINE(HAVE_GENERIC, [], [define if _Generic is present])
-fi
-
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=256)
 AC_MSG_CHECKING(preprocessor routines depth)
 AC_MSG_RESULT(${PP_DEPTH})
