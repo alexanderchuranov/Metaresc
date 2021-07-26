@@ -1703,6 +1703,16 @@ mr_add_enum (mr_td_t * tdp)
 
     default:
       tdp->param.enum_param.size_effective = tdp->size;
+
+      switch (tdp->size)
+	{
+#define CASE_SET_TYPE_BY_SIZE(TYPE) case sizeof (TYPE): tdp->param.enum_param.mr_type_effective = MR_TYPE_DETECT (TYPE); break;
+
+	  MR_FOREACH (CASE_SET_TYPE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
+	default:
+	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT8;
+	  break;
+	}
       break;
     }
 
@@ -1712,7 +1722,9 @@ mr_add_enum (mr_td_t * tdp)
   tdp->param.enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
-      typeof (tdp->fields[i].fdp->param.enum_param._unsigned) value = tdp->fields[i].fdp->param.enum_param._unsigned;
+      mr_enum_value_type_t value = tdp->fields[i].fdp->param.enum_param._unsigned;
+
+      tdp->fields[i].fdp->mr_type_aux = tdp->param.enum_param.mr_type_effective;
       value &= (1 << tdp->param.enum_param.size_effective * __CHAR_BIT__) - 1;
 
       if (value != 0)
