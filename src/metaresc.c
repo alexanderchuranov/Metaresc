@@ -568,7 +568,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	      switch (mr_type_aux)
 		{
 		  MR_FOREACH (MR_REDIRECT_TYPE,
-			      string_t, char, bool,
+			      string_t, mr_string_t, char, bool,
 			      int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
 			      float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t);
 		default:
