@@ -116,16 +116,17 @@ static int fd_type_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 static inline void
 mr_conf_init ()
 {
-  static volatile enum { NON_INITIALIZED, IN_INITIALIZATION, INITIALIZED } initialized = NON_INITIALIZED;
-  if (__sync_bool_compare_and_swap (&initialized, NON_INITIALIZED, IN_INITIALIZATION))
+  static volatile bool initialized = false;
+  static volatile bool init_in_progress = false;
+  if (!__atomic_test_and_set (&init_in_progress, __ATOMIC_RELAXED))
     {
       mr_ic_new (&basic_types, fd_type_hash, fd_type_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
       mr_ic_foreach (&mr_conf.type_by_name, mr_conf_init_visitor, NULL);
       mr_ic_foreach (&basic_types, basic_types_visitor, NULL);
       mr_ic_free (&basic_types);
-      initialized = INITIALIZED;
+      initialized = true;
     }
-  while (initialized != INITIALIZED);
+  while (!initialized);
 }
 
 static mr_status_t
