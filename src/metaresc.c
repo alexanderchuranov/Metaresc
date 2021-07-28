@@ -118,6 +118,10 @@ mr_conf_init ()
 {
   static volatile bool initialized = false;
   static volatile bool init_in_progress = false;
+
+  if (initialized)
+    return;
+  
   if (!__atomic_test_and_set (&init_in_progress, __ATOMIC_RELAXED))
     {
       mr_ic_new (&basic_types, fd_type_hash, fd_type_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
