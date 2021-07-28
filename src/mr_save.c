@@ -1114,16 +1114,7 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
-  static bool remove_if_empty[] =
-    {
-      [0 ... MR_TYPE_LAST - 1] = false,
-      [MR_TYPE_VOID] = true,
-      [MR_TYPE_STRUCT] = true,
-      [MR_TYPE_ARRAY] = true,
-      [MR_TYPE_UNION] = true,
-      [MR_TYPE_ANON_UNION] = true,
-      [MR_TYPE_NAMED_ANON_UNION] = true,
-    };
+#define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
 
   if (MR_DFS_POST_ORDER != order)
     return (MR_SUCCESS);
@@ -1133,8 +1124,7 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
 
   if ((ptrs->ra[idx].first_child < 0) && (ptrs->ra[idx].ref_idx < 0)
       && !ptrs->ra[idx].flags.is_null && !ptrs->ra[idx].flags.is_referenced
-      && (ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST)
-      && remove_if_empty[ptrs->ra[idx].mr_type])
+      && ((REMOVE_IF_EMPTY >> ptrs->ra[idx].mr_type) & 1))
     {
       bool * need_reindex = context;
 
