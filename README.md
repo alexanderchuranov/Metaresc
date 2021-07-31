@@ -22,7 +22,7 @@ purposes far beyond just achieving the persistence.
     - [Serialization/deserialization interface](#serializationdeserialization-interface)
         - [Serialization](#serialization)
         - [Deserialization](#deserialization)
-        - [MR_PRINT helper macro](#mrprint-helper-macro)
+        - [MR_PRINT helper macro](#mr_print-helper-macro)
     - [Types declaration macro language](#types-declaration-macro-language)
         - [Structure type declaration](#structure-type-declaration)
             - [Fields of a basic types](#fields-of-a-basic-types)
@@ -41,8 +41,8 @@ purposes far beyond just achieving the persistence.
         - [Function pointer type declaration](#function-pointer-type-declaration)
         - [Metadata and resources definition for types](#metadata-and-resources-definition-for-types)
     - [Extra features](#extra-features)
-        - [Recursive memory deallocation](#recursive-memory-deallocation)
         - [Deep copy](#deep-copy)
+        - [Recursive memory deallocation](#recursive-memory-deallocation)
         - [Objects hashing](#objects-hashing)
         - [Comparation of structures](#comparation-of-structures)
         - [Structure of serialization graph](#structure-of-serialization-graph)
@@ -86,7 +86,7 @@ $ ./autogen.sh
 Configure project for target system
 
 ```console
-$ ./configure
+$ ./configure CPPFLAGS=-I/usr/include/libdwarf
 ```
 
 Build and check library
@@ -1153,11 +1153,108 @@ All arguments for `ATTRIBUTES` are positional and optional.
 
 ## Extra features
 
-### Recursive memory deallocation
-`MR_FREE_RECURSIVELY`
+Introspection of data structures allows to reconstruct a graph of
+individual objects and references between them. Graph
+representation enables a set of extra features, such as: 
+- [Deep copy](#deep-copy)
+- [Recursive memory deallocation](#recursive-memory-deallocation)
+- [Objects hashing](#objects-hashing)
+- [Comparation of structures](#comparation-of-structures)
 
 ### Deep copy
-`MR_COPY_RECURSIVELY`
+`MR_COPY_RECURSIVELY` is similar to `MR_LOAD_*` macroses. It may take
+2 or 3 arguemnts and semantics of those arguments is the same as for
+`MR_LOAD_*` macroses. The source (`src`) in this case is a pointer on
+original structure. Example below demostrates a deep copy of a binary
+tree.
+```c
+#include <metaresc.h>
+
+TYPEDEF_STRUCT (tree_node_t,
+		(char *, value),
+		(tree_node_t *, left),
+		(tree_node_t *, right),
+		);
+  
+int main (int argc, char * argv[])
+{
+  tree_node_t root = {
+    "root",
+    (tree_node_t[]){ { "left" } },
+    (tree_node_t[]){ { "right" } },
+  };
+  
+  tree_node_t copy3, copy2 = MR_COPY_RECURSIVELY (tree_node_t, &root);
+  mr_status_t status = MR_COPY_RECURSIVELY (tree_node_t, &root, &copy3);
+  MR_PRINT ("copy2 = ", (tree_node_t, &copy2),
+  	    "status = ", (mr_status_t, &status),
+	    "copy3 = ", (tree_node_t, &copy3));
+  MR_FREE_RECURSIVELY (tree_node_t, &copy2);
+  MR_FREE_RECURSIVELY (tree_node_t, &copy3);
+  return (EXIT_SUCCESS);
+}
+```
+
+### Recursive memory deallocation
+Macro `MR_FREE_RECURSIVELY` requires two arguments `(type,
+pointer)`. Underlying function call traverse through the graph and
+frees all non-NULL pointers and strings. Deallocation of the top level
+object is a duty of a calling function. Example above demostrates the
+usage of this macro. As a result of execution of this code all memory
+blocks allocated by MR_COPY_RECURSIVELY are freed by
+MR_FREE_RECURSIVELY. Valgrind memory check as follows:
+
+```console
+==9190== Memcheck, a memory error detector
+==9190== Copyright (C) 2002-2012, and GNU GPL'd, by Julian Seward et al.
+==9190== Using Valgrind-3.8.1 and LibVEX; rerun with -h for copyright info
+==9190== Command: ./examples/.libs/type_prefixes
+==9190== 
+copy2 = {
+  .value = "root",
+  .left = (tree_node_t[]){
+    {
+      .value = "left",
+      .left = NULL,
+      .right = NULL
+    }
+  },
+  .right = (tree_node_t[]){
+    {
+      .value = "right",
+      .left = NULL,
+      .right = NULL
+    }
+  }
+}
+status = MR_SUCCESS
+copy3 = {
+  .value = "root",
+  .left = (tree_node_t[]){
+    {
+      .value = "left",
+      .left = NULL,
+      .right = NULL
+    }
+  },
+  .right = (tree_node_t[]){
+    {
+      .value = "right",
+      .left = NULL,
+      .right = NULL
+    }
+  }
+}
+==9190== 
+==9190== HEAP SUMMARY:
+==9190==     in use at exit: 0 bytes in 0 blocks
+==9190==   total heap usage: 167 allocs, 167 frees, 67,699 bytes allocated
+==9190== 
+==9190== All heap blocks were freed -- no leaks are possible
+==9190== 
+==9190== For counts of detected and suppressed errors, rerun with: -v
+==9190== ERROR SUMMARY: 0 errors from 0 contexts (suppressed: 2 from 2)
+```
 
 ### Objects hashing
 `MR_HASH_STRUCT`
@@ -1166,7 +1263,7 @@ All arguments for `ATTRIBUTES` are positional and optional.
 `MR_CMP_STRUCTS`
 
 ### Structure of serialization graph
-`MR_SAVE`
+`MR_SAVE` mr_ptrs_dfs
 
 ### Access and structure of type descriptor
 `mr_get_td_by_name`
