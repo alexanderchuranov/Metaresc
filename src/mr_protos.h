@@ -426,7 +426,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(struct mr_ic_virt_func_t *, virt_func),
 		
 		ANON_UNION (type_specific),
-		(void *, void_ptr, , "default serialization"),
+		VOID (void *, void_ptr, , "default serialization"),
 		(mr_ic_rarray_t, rarray),
 		(mr_ic_hash_t, hash),
 		(mr_ic_static_array_t, static_array),
