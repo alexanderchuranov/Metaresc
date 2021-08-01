@@ -1479,23 +1479,26 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
 {
   const mr_fd_ptr_t * x_ = x.ptr;
   const mr_fd_ptr_t * y_ = y.ptr;
-  int diff = ((x_->fdp->offset > y_->fdp->offset) - (x_->fdp->offset < y_->fdp->offset));
+  const mr_fd_t * x_fdp = x_->fdp;
+  const mr_fd_t * y_fdp = y_->fdp;
+  
+  int diff = ((x_fdp->offset > y_fdp->offset) - (x_fdp->offset < y_fdp->offset));
   if (diff)
     return (diff);
 
-  diff = ((x_->fdp->size > y_->fdp->size) - (x_->fdp->size < y_->fdp->size));
+  diff = ((x_fdp->size > y_fdp->size) - (x_fdp->size < y_fdp->size));
   if (diff)
     return (diff);
 
-  if ((x_->fdp->mr_type == MR_TYPE_BITFIELD) && (y_->fdp->mr_type == MR_TYPE_BITFIELD))
+  if ((x_fdp->mr_type == MR_TYPE_BITFIELD) && (y_fdp->mr_type == MR_TYPE_BITFIELD))
     {
-      diff = ((x_->fdp->param.bitfield_param.shift > y_->fdp->param.bitfield_param.shift) -
-	      (x_->fdp->param.bitfield_param.shift < y_->fdp->param.bitfield_param.shift));
+      diff = ((x_fdp->param.bitfield_param.shift > y_fdp->param.bitfield_param.shift) -
+	      (x_fdp->param.bitfield_param.shift < y_fdp->param.bitfield_param.shift));
       if (diff)
 	return (diff);
 
-      diff = ((x_->fdp->param.bitfield_param.width > y_->fdp->param.bitfield_param.width) -
-	      (x_->fdp->param.bitfield_param.width < y_->fdp->param.bitfield_param.width));
+      diff = ((x_fdp->param.bitfield_param.width > y_fdp->param.bitfield_param.width) -
+	      (x_fdp->param.bitfield_param.width < y_fdp->param.bitfield_param.width));
       if (diff)
 	return (diff);
     }
@@ -1749,7 +1752,12 @@ mr_add_enum (mr_td_t * tdp)
       mr_enum_value_type_t value = tdp->fields[i].fdp->param.enum_param._unsigned;
 
       tdp->fields[i].fdp->mr_type_aux = tdp->param.enum_param.mr_type_effective;
-      value &= (1 << tdp->param.enum_param.size_effective * __CHAR_BIT__) - 1;
+      /*
+	there is a corner case when enum has a single negative value which is a highest sign bit
+	Compiler will extend sign bit to higher positoins and this value will not be classified
+	as a power of two. That's why we need to truncate value to expected bit width before checking.
+       */
+      value &= (2LL << (tdp->param.enum_param.size_effective * __CHAR_BIT__ - 1)) - 1;
 
       if (value != 0)
 	++non_zero_cnt;
