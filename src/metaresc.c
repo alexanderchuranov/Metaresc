@@ -1482,8 +1482,25 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
   int diff = ((x_->fdp->offset > y_->fdp->offset) - (x_->fdp->offset < y_->fdp->offset));
   if (diff)
     return (diff);
-  
-  return ((x_->fdp->size > y_->fdp->size) - (x_->fdp->size < y_->fdp->size));
+
+  diff = ((x_->fdp->size > y_->fdp->size) - (x_->fdp->size < y_->fdp->size));
+  if (diff)
+    return (diff);
+
+  if ((x_->fdp->mr_type == MR_TYPE_BITFIELD) && (y_->fdp->mr_type == MR_TYPE_BITFIELD))
+    {
+      diff = ((x_->fdp->param.bitfield_param.shift > y_->fdp->param.bitfield_param.shift) -
+	      (x_->fdp->param.bitfield_param.shift < y_->fdp->param.bitfield_param.shift));
+      if (diff)
+	return (diff);
+
+      diff = ((x_->fdp->param.bitfield_param.width > y_->fdp->param.bitfield_param.width) -
+	      (x_->fdp->param.bitfield_param.width < y_->fdp->param.bitfield_param.width));
+      if (diff)
+	return (diff);
+    }
+
+  return (0);
 }
 
 mr_hash_value_t

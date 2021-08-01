@@ -143,13 +143,13 @@ TYPEDEF_ENUM (mr_sign_t, (PLUS, = 0), (MINUS, = 1))
 TYPEDEF_STRUCT (ieee_754_half_t, ATTRIBUTES (__attribute__ ((packed))),
 		BITFIELD (uint32_t, mantissa, : IEEE_754_HALF_MANTISSA),
 		BITFIELD (uint32_t, exponent, : IEEE_754_HALF_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1))
+		BITFIELD (mr_sign_t, sign, : 1))
 
 TYPEDEF_STRUCT (ieee_754_half_nan_t, ATTRIBUTES (__attribute__ ((packed))),
 		BITFIELD (uint32_t, mantissa, : IEEE_754_HALF_MANTISSA - 1),
-		BITFIELD (bool, quiet_nan, :1),
+		BITFIELD (bool, quiet_nan, : 1),
 		BITFIELD (uint32_t, exponent, : IEEE_754_HALF_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1))
+		BITFIELD (mr_sign_t, sign, : 1))
 
 TYPEDEF_ENUM (ieee_754_half_nan_enum_t, (IEEE_754_HALF_NAN_ENUM_T, = (1 << IEEE_754_HALF_EXPONENT) - 1, "ieee_754_half_nan"))
 
@@ -174,13 +174,13 @@ TYPEDEF_UNION (ieee_half_t, ATTRIBUTES (__attribute__ ((packed))),
 TYPEDEF_STRUCT (ieee_754_float_t,
 		BITFIELD (uint32_t, mantissa, : IEEE_754_FLOAT_MANTISSA),
 		BITFIELD (uint32_t, exponent, : IEEE_754_FLOAT_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1))
+		BITFIELD (mr_sign_t, sign, : 1))
 
 TYPEDEF_STRUCT (ieee_754_float_nan_t,
 		BITFIELD (uint32_t, mantissa, : IEEE_754_FLOAT_MANTISSA - 1),
-		BITFIELD (bool, quiet_nan, :1),
+		BITFIELD (bool, quiet_nan, : 1),
 		BITFIELD (uint32_t, exponent, : IEEE_754_FLOAT_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1))
+		BITFIELD (mr_sign_t, sign, : 1))
 
 TYPEDEF_ENUM (ieee_754_float_nan_enum_t, (IEEE_754_FLOAT_NAN_ENUM_T, = (1 << IEEE_754_FLOAT_EXPONENT) - 1, "ieee_754_float_nan"))
 
@@ -206,15 +206,15 @@ TYPEDEF_UNION (ieee_float_t,
 TYPEDEF_STRUCT (ieee_754_double_t,
 		BITFIELD (uint64_t, mantissa, : IEEE_754_DOUBLE_MANTISSA),
 		BITFIELD (uint32_t, exponent, : IEEE_754_DOUBLE_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1))
+		BITFIELD (mr_sign_t, sign, : 1))
 
 TYPEDEF_STRUCT (ieee_754_double_nan_t,
 		BITFIELD (uint64_t, mantissa, : IEEE_754_DOUBLE_MANTISSA - 1),
-		BITFIELD (bool, quiet_nan, :1),
+		BITFIELD (bool, quiet_nan, : 1),
 		BITFIELD (uint32_t, exponent, : IEEE_754_DOUBLE_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1))
+		BITFIELD (mr_sign_t, sign, : 1))
 
-TYPEDEF_ENUM (ieee_754_double_nan_enum_t, (IEEE_754_DOUBLE_NAN_ENUM_T, = (1 << IEEE_754_DOUBLE_EXPONENT) - 1, "ieee_754_double_nan"))
+  TYPEDEF_ENUM (ieee_754_double_nan_enum_t, (IEEE_754_DOUBLE_NAN_ENUM_T, = (1 << IEEE_754_DOUBLE_EXPONENT) - 1, "ieee_754_double_nan"))
 
 TYPEDEF_UNION (ieee_double_t,
 	       ANON_UNION (),
@@ -238,15 +238,15 @@ TYPEDEF_UNION (ieee_double_t,
 TYPEDEF_STRUCT (ieee_854_long_double_t, ATTRIBUTES (__attribute__ ((packed))),
 		(uint64_t, mantissa),
 		BITFIELD (uint32_t, exponent, : IEEE_854_LONG_DOUBLE_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1),
+		BITFIELD (mr_sign_t, sign, : 1),
 		)
 
 TYPEDEF_STRUCT (ieee_854_long_double_nan_t, ATTRIBUTES (__attribute__ ((packed))),
 		BITFIELD (uint64_t, mantissa, : IEEE_854_LONG_DOUBLE_MANTISSA - 2),
-		BITFIELD (bool, quiet_nan, :1),
-		BITFIELD (unsigned int, one, :1),
+		BITFIELD (bool, quiet_nan, : 1),
+		BITFIELD (unsigned int, one, : 1),
 		BITFIELD (uint32_t, exponent, : IEEE_854_LONG_DOUBLE_EXPONENT),
-		BITFIELD (mr_sign_t, sign, :1),
+		BITFIELD (mr_sign_t, sign, : 1),
 		)
 
 TYPEDEF_ENUM (ieee_854_long_double_nan_enum_t,
@@ -326,7 +326,7 @@ TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * 
 
 TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
-TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES ( , "basic type for hash lookup over field 'name'"),
+TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES (__attribute__ ((packed)) , "hashed string"),
 		(char *, str, , "key field"),
 		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
 		)
@@ -446,13 +446,13 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 		)
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
+		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
-		(bool, self_ptr, , "true if field is a pointer on a base type"),
-		(bool, non_persistent, , "true if field descriptor is allocated on stack"),
-		(bool, unnamed, , "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
-		(mr_hashed_string_t, name, , "hashed name of the field"),
+		BITFIELD (bool, self_ptr, : 1, "true if field is a pointer on a base type"),
+		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
+		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		(char *, type, , "stringified type name"),
 		(mr_offset_t, offset, , "offset in structure"),
 		(mr_size_t, size, , "size of field"),
@@ -479,8 +479,8 @@ TYPEDEF_STRUCT (mr_fd_ptr_t, ATTRIBUTES ( , "wrapper for mr_fd_t*"),
 
 TYPEDEF_STRUCT (mr_enum_param_t,
 		(uint8_t, size_effective, , "effective size"),
-		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
-		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
+		BITFIELD (mr_type_t, mr_type_effective, : __CHAR_BIT__ - 1, "automatic type detection is required for enums size adjustment"),
+		BITFIELD (bool, is_bitmask, : 1, "set to true if all enum values are power of 2"),
 		)
 
 TYPEDEF_UNION (mr_td_param_t,
@@ -489,10 +489,10 @@ TYPEDEF_UNION (mr_td_param_t,
 	       )
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
+		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
 		(bool, is_dynamically_allocated, , "mark types that require free at exit"),
 		(mr_td_param_t, param, , "mr_type"),
-		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_size_t, size, , "size of type"),
 		(mr_ic_t, field_by_name, , "lookup by field names"),
 		(mr_fd_ptr_t *, fields, , "fields or enums descriptors", { .offset = offsetof (mr_td_t, fields_size) }, "offset"),
@@ -510,10 +510,10 @@ TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		)
 
 TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter descriptor flag bitfield values"),
-		BITFIELD (bool, is_null, :1, "is a null pointer"),
-		BITFIELD (bool, is_referenced, :1, "pointer is already serialized somewhere else"),
-		BITFIELD (bool, is_content_reference, :1, "pointers on string content may reffer only on string pointer"),
-		BITFIELD (bool, is_opaque_data, :1, "opaque serialization of resizeable pointer to XDR"),
+		BITFIELD (bool, is_null, : 1, "is a null pointer"),
+		BITFIELD (bool, is_referenced, : 1, "pointer is already serialized somewhere else"),
+		BITFIELD (bool, is_content_reference, : 1, "pointers on string content may reffer only on string pointer"),
+		BITFIELD (bool, is_opaque_data, : 1, "opaque serialization of resizeable pointer to XDR"),
 		)
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
@@ -576,11 +576,11 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
-		BITFIELD (bool, unnamed, :1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
-		BITFIELD (bool, non_persistent, :1, "true if field descriptor is allocated on stack"),
-		BITFIELD (bool, non_serializable, :1, "true if 'data' is not serializable"),
-		BITFIELD (bool, ud_is_ic, :1, "true if union discriminator is an indexed collection"),
-		BITFIELD (unsigned, ud_count, :3, "size of union discriminator in place list"),
+		BITFIELD (bool, unnamed, : 1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
+		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
+		BITFIELD (bool, non_serializable, : 1, "true if 'data' is not serializable"),
+		BITFIELD (bool, ud_is_ic, : 1, "true if union discriminator is an indexed collection"),
+		BITFIELD (unsigned, ud_count, : 3, "size of union discriminator in place list"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
@@ -677,3 +677,4 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_ic_t, type_by_name, , "index over types descriptors"),
 		(mr_ra_printf_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)
+
