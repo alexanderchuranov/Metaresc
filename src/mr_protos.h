@@ -312,14 +312,6 @@ TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enu
 	       (int64_t, _signed),
 	       )
 
-TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
-	       VOID (uint8_t, default_serialization, , "default serialization is empty"),
-	       (mr_array_param_t, array_param, , "array parameters"),
-	       (mr_enum_value_t, enum_param, , "mr_type_aux"),
-	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
-	       (mr_func_param_t, func_param, , "types of function arguments"),
-	       )
-
 TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
 
 TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
@@ -445,6 +437,15 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 		(void, free, (mr_ic_t * /* ic */)),
 		)
 
+TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
+	       VOID (uint8_t, default_serialization, , "default serialization is empty"),
+	       (mr_array_param_t, array_param, , "array parameters"),
+	       (mr_enum_value_t, enum_param, , "mr_type_aux"),
+	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
+	       (mr_func_param_t, func_param, , "types of function arguments"),
+	       (mr_ic_t, union_param, , "indexed collection with union descriminators overrides"),
+	       )
+
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
@@ -517,6 +518,8 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter
 		)
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
+		(mr_hash_value_t, hash_value, , "hash value for all fields of this structure, helps to deduplicated entries"),
+		(mr_hash_value_t, key_hash_value, , "hash over 'key' properties (all without fdp), helps to do a lookup over key"),
 		(mr_hashed_string_t, type, , "union type name"),
 		(mr_hashed_string_t, discriminator, , "union discriminator"),
 		(mr_fd_t *, fdp, , "discriminated union field descriptor"),

@@ -124,26 +124,35 @@ int
 mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  int diff = (mr_save_data->mr_ra_ud[x.intptr].fdp > mr_save_data->mr_ra_ud[y.intptr].fdp) -
-    (mr_save_data->mr_ra_ud[x.intptr].fdp < mr_save_data->mr_ra_ud[y.intptr].fdp);
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
+  const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.intptr];
+  
+  int diff = (x_ud->hash_value > y_ud->hash_value) - (x_ud->hash_value < y_ud->hash_value);
   if (diff)
     return (diff);
 
-  diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].type,
-				   &mr_save_data->mr_ra_ud[y.intptr].type);
+  diff = (x_ud->fdp > y_ud->fdp) - (x_ud->fdp < y_ud->fdp);
   if (diff)
     return (diff);
-  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].discriminator,
-				&mr_save_data->mr_ra_ud[y.intptr].discriminator));
+
+  diff = mr_hashed_string_cmp (&x_ud->type, &y_ud->type);
+  if (diff)
+    return (diff);
+  
+  return (mr_hashed_string_cmp (&x_ud->discriminator, &y_ud->discriminator));
 }
 
 mr_hash_value_t
 mr_uds_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
-	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator) +
-	  (intptr_t)mr_save_data->mr_ra_ud[x.intptr].fdp);
+  mr_hash_value_t hash_value = mr_save_data->mr_ra_ud[x.intptr].hash_value;
+  if (0 == hash_value)
+    mr_save_data->mr_ra_ud[x.intptr].hash_value = hash_value =
+      (mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
+      mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator) +
+      (intptr_t)mr_save_data->mr_ra_ud[x.intptr].fdp;
+  return (hash_value);
 }
 
 /**
@@ -156,20 +165,31 @@ int
 mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  int diff = mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].type,
-				   &mr_save_data->mr_ra_ud[y.intptr].type);
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
+  const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.intptr];
+  
+  int diff = (x_ud->key_hash_value > y_ud->key_hash_value) -
+    (x_ud->key_hash_value < y_ud->key_hash_value);
   if (diff)
     return (diff);
-  return (mr_hashed_string_cmp (&mr_save_data->mr_ra_ud[x.intptr].discriminator,
-				&mr_save_data->mr_ra_ud[y.intptr].discriminator));
+  
+  diff = mr_hashed_string_cmp (&x_ud->type, &y_ud->type);
+  if (diff)
+    return (diff);
+  
+  return (mr_hashed_string_cmp (&x_ud->discriminator, &y_ud->discriminator));
 }
 
 mr_hash_value_t
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  return ((mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
-	  mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator));
+  mr_hash_value_t hash_value = mr_save_data->mr_ra_ud[x.intptr].key_hash_value;
+  if (0 == hash_value)
+    mr_save_data->mr_ra_ud[x.intptr].key_hash_value = hash_value =
+      (mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
+      mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator);
+  return (hash_value);
 }
 
 static int
