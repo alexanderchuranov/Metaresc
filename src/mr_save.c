@@ -126,33 +126,19 @@ mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   const mr_save_data_t * mr_save_data = context;
   const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
   const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.intptr];
-  
-  int diff = (x_ud->hash_value > y_ud->hash_value) - (x_ud->hash_value < y_ud->hash_value);
+  int diff = (x_ud->union_fdp > y_ud->union_fdp) - (x_ud->union_fdp < y_ud->union_fdp);
   if (diff)
     return (diff);
-
-  diff = (x_ud->fdp > y_ud->fdp) - (x_ud->fdp < y_ud->fdp);
-  if (diff)
-    return (diff);
-
-  diff = mr_hashed_string_cmp (&x_ud->type, &y_ud->type);
-  if (diff)
-    return (diff);
-  
-  return (mr_hashed_string_cmp (&x_ud->discriminator, &y_ud->discriminator));
+  return ((x_ud->discriminated_fdp > y_ud->discriminated_fdp) -
+	  (x_ud->discriminated_fdp < y_ud->discriminated_fdp));
 }
 
 mr_hash_value_t
 mr_uds_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  mr_hash_value_t hash_value = mr_save_data->mr_ra_ud[x.intptr].hash_value;
-  if (0 == hash_value)
-    mr_save_data->mr_ra_ud[x.intptr].hash_value = hash_value =
-      (mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
-      mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator) +
-      (intptr_t)mr_save_data->mr_ra_ud[x.intptr].fdp;
-  return (hash_value);
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
+  return ((uintptr_t)x_ud->union_fdp + (uintptr_t)x_ud->discriminated_fdp);
 }
 
 /**
@@ -167,29 +153,15 @@ mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   const mr_save_data_t * mr_save_data = context;
   const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
   const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.intptr];
-  
-  int diff = (x_ud->key_hash_value > y_ud->key_hash_value) -
-    (x_ud->key_hash_value < y_ud->key_hash_value);
-  if (diff)
-    return (diff);
-  
-  diff = mr_hashed_string_cmp (&x_ud->type, &y_ud->type);
-  if (diff)
-    return (diff);
-  
-  return (mr_hashed_string_cmp (&x_ud->discriminator, &y_ud->discriminator));
+  return ((x_ud->union_fdp > y_ud->union_fdp) - (x_ud->union_fdp < y_ud->union_fdp));
 }
 
 mr_hash_value_t
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  mr_hash_value_t hash_value = mr_save_data->mr_ra_ud[x.intptr].key_hash_value;
-  if (0 == hash_value)
-    mr_save_data->mr_ra_ud[x.intptr].key_hash_value = hash_value =
-      (mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].type) << 1) +
-      mr_hashed_string_get_hash (&mr_save_data->mr_ra_ud[x.intptr].discriminator);
-  return (hash_value);
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
+  return ((uintptr_t)x_ud->union_fdp);
 }
 
 static int
@@ -305,13 +277,14 @@ mr_ud_free (mr_ptrdes_t * ptrdes)
  * @param mr_save_data save routines data and lookup structures
  */
 static mr_fd_t *
-mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_type, char * discriminator)
+mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union_fdp)
 {
   mr_fd_t * fdp = NULL; /* marker that no valid discriminator was found */
   int parent, idx;
   int ud_idx, ud_find = -1;
   mr_union_discriminator_t * ud;
-  mr_td_t * tdp = mr_get_td_by_name (union_type); /* look up for type descriptor */
+  char * discriminator = union_fdp->meta;
+  mr_td_t * tdp = mr_get_td_by_name (union_fdp->type); /* look up for type descriptor */
 
   if (NULL == tdp)
     return (NULL);
@@ -331,8 +304,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud_size -= sizeof (mr_save_data->mr_ra_ud[0]);
   ud_idx = mr_save_data->mr_ra_ud_size / sizeof (mr_save_data->mr_ra_ud[0]); /* index of lookup record */
-  ud->type.str = union_type; /* union type */
-  ud->discriminator.str = discriminator; /* union discriminator */
+  ud->union_fdp = union_fdp; /* union type */
 
   /* traverse through parents up to root node */
   for (parent = node; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
@@ -350,7 +322,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
 	  || (MR_TYPE_POINTER == mr_save_data->ptrs.ra[parent].mr_type))
 	continue;
       
-      parent_fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[parent].type, ud->discriminator.str);
+      parent_fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[parent].type, discriminator);
       if (NULL == parent_fdp)
 	continue;
       
@@ -362,13 +334,13 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, char * union_ty
     }
 
   if (-1 != ud_find)
-    fdp = mr_save_data->mr_ra_ud[ud_find].fdp; /* union discriminator info was found in some of the parents */
+    fdp = mr_save_data->mr_ra_ud[ud_find].discriminated_fdp; /* union discriminator info was found in some of the parents */
   else
     {
       if (NULL == fdp)
 	fdp = mr_union_discriminator_by_name (tdp, NULL);
 
-      ud->fdp = fdp;
+      ud->discriminated_fdp = fdp;
       mr_ptr_t * add = mr_ic_add (&mr_save_data->union_discriminators, (intptr_t)ud_idx);
       if (NULL == add)
 	return (NULL);
@@ -507,9 +479,7 @@ mr_check_ud (mr_ptr_t key, const void * context)
   mr_save_data_t * mr_save_data = mr_check_ud_ctx->mr_save_data;
   mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr];
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
-  char * discriminator = ud->discriminator.str;
-  char * type = ud->type.str;
-  mr_fd_t * ud_fdp = ud->fdp;
+  char * discriminator = ud->union_fdp->meta;
   mr_fd_t * fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[mr_check_ud_ctx->node].type, discriminator);
 
   /* here we check that union discriminator was resolved at the level of saved node.
@@ -517,9 +487,9 @@ mr_check_ud (mr_ptr_t key, const void * context)
   if (NULL != fdp)
     return (MR_SUCCESS);
   /* otherwise we need to find union resolution in the context of new parent */
-  fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, type, discriminator);
+  fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, ud->union_fdp);
   
-  return ((fdp == ud_fdp) ? MR_SUCCESS : MR_FAILURE);
+  return ((fdp == ud->discriminated_fdp) ? MR_SUCCESS : MR_FAILURE);
 }
 
 static bool
@@ -881,7 +851,6 @@ mr_save_union (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type); /* look up for type descriptor */
-  mr_fd_t * fdp;
 
   if (NULL == tdp) /* check whether type descriptor was found */
     {
@@ -894,10 +863,18 @@ mr_save_union (mr_save_data_t * mr_save_data)
       return (0);
     }
   
-  fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[idx].type, mr_save_data->ptrs.ra[idx].fdp->meta);
+  int parent;
+  for (parent = idx; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
+    if (!mr_save_data->ptrs.ra[parent].non_persistent)
+      break;
+      
+  if (parent < 0)
+    return (0);
+      
+  mr_fd_t * discriminated_fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[parent].fdp);
 
-  if (NULL != fdp)
-    return (mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx));
+  if (NULL != discriminated_fdp)
+    return (mr_save_inner (&data[discriminated_fdp->offset], discriminated_fdp, 1, mr_save_data, idx));
   return (0);
 }
 

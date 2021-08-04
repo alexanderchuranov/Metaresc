@@ -518,11 +518,8 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter
 		)
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
-		(mr_hash_value_t, hash_value, , "hash value for all fields of this structure, helps to deduplicated entries"),
-		(mr_hash_value_t, key_hash_value, , "hash over 'key' properties (all without fdp), helps to do a lookup over key"),
-		(mr_hashed_string_t, type, , "union type name"),
-		(mr_hashed_string_t, discriminator, , "union discriminator"),
-		(mr_fd_t *, fdp, , "discriminated union field descriptor"),
+		(mr_fd_t *, union_fdp, , "union field descriptor"),
+		(mr_fd_t *, discriminated_fdp, , "discriminated union field descriptor"),
 		)
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES (__attribute__ ((packed)), "substring"),
