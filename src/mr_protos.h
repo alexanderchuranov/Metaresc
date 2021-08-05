@@ -58,6 +58,8 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_READ_REF, , "Can't read '%s' as index."),
 	      (MR_MESSAGE_SAVE_ENUM, , "Can't find enum name for value %" SCNu64 " type '%s' field '%s'."),
 	      (MR_MESSAGE_CONFLICTED_ENUMS, , "Literal enum `%s` has a different value in types '%s' (%" SCNu64") and '%s' (%" SCNu64 ")."),
+	      (MR_MESSAGE_CONFLICTED_OVERRIDES, , "Overrides for value %" SCNu64 " has two different discriminators '%s' and '%s'."),
+	      (MR_MESSAGE_INVALID_OVERRIDE, , "Override for value %" SCNu64 " has invalid discriminator '%s'."),
 	      (MR_MESSAGE_PARSE_ERROR, , "Parser error: '%s'. Position: %d:%d-%d:%d."),
 	      (MR_MESSAGE_UNKNOWN_XML_ESC, , "Unknown XML escape sequence '%s'."),
 	      (MR_MESSAGE_WRONG_XML_ESC, , "Wrong XML escape sequence '%s'."),
@@ -106,10 +108,10 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      (MR_TYPE_FUNC, , "func_param"),
 	      (MR_TYPE_BITFIELD, , "bitfield_param"),
 	      (MR_TYPE_ARRAY, , "array_param"),
-	      MR_TYPE_POINTER,
-	      MR_TYPE_UNION,
-	      MR_TYPE_ANON_UNION,
-	      MR_TYPE_NAMED_ANON_UNION,
+	      (MR_TYPE_POINTER, , "union_param"),
+	      (MR_TYPE_UNION, , "union_param"),
+	      (MR_TYPE_ANON_UNION, , "union_param"),
+	      (MR_TYPE_NAMED_ANON_UNION, , "union_param"),
 	      MR_TYPE_END_ANON_UNION,
 	      MR_TYPE_LAST, /* keep it last */
 	      )
@@ -286,9 +288,19 @@ TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      MR_FAILURE,
 	      )
 
+TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discriminator override"),
+		(uint64_t, value, , "discriminator value that has a custom override"),
+		(char *, discriminator, , "name of union branch for this value"),
+		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
+		)
+
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
-		(size_t, count, , "array size"),
-		(size_t, row_count, , "row size"),
+		ANON_UNION (),
+		VOID (void *, default_serialization),
+		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
+		END_ANON_UNION ("mr_type_aux"),
+		(unsigned int, count, , "array size"),
+		(unsigned int, row_count, , "row size"),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
@@ -443,7 +455,7 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 	       (mr_enum_value_t, enum_param, , "mr_type_aux"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
-	       (mr_ic_t, union_param, , "indexed collection with union descriminators overrides"),
+	       (mr_ic_t *, union_param, , "indexed collection with union descriminators overrides"),
 	       )
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),

@@ -1299,5 +1299,7 @@ extern int mr_hashed_string_cmp_ic (const mr_ptr_t x, const mr_ptr_t y, const vo
 extern mr_hash_value_t mr_hashed_string_get_hash_ic (mr_ptr_t x, const void * context);
 extern int mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern int mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern mr_hash_value_t mr_ud_override_hash (mr_ptr_t x, const void * context);
+extern int mr_ud_override_cmp (mr_ptr_t x, mr_ptr_t y, const void * context);
 
 #endif /* _METARESC_H_ */
