@@ -86,11 +86,11 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
 	{
 	  ck_assert_msg (mr_fdp->param.array_param.count == dw_fdp->param.array_param.count,
-			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' count %zd != %zd",
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' count %d != %d",
 			 mr_td->type.str, mr_fdp->name.str,
 			 mr_fdp->param.array_param.count, dw_fdp->param.array_param.count);
 	  ck_assert_msg (mr_fdp->param.array_param.row_count == dw_fdp->param.array_param.row_count,
-			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' row count %zd != %zd",
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' row count %d != %d",
 			 mr_td->type.str, mr_fdp->name.str,
 			 mr_fdp->param.array_param.row_count, dw_fdp->param.array_param.row_count);
 	}
