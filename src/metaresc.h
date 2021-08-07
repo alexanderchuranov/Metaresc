@@ -579,6 +579,7 @@
 	       .array_param = {						\
 		 .count = sizeof (((MR_TYPE_NAME*)0)->NAME) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
 		 .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
+		 .pointer_fdp = (mr_fd_t[]){{}},			\
 	       },							\
 	     },								\
 	     .meta = "" __VA_ARGS__,					\

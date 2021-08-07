@@ -916,6 +916,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
+  mr_fd_t * fdp = &fd_;
   int count, i;
 
   fd_.non_persistent = true;
@@ -928,6 +929,8 @@ mr_save_array (mr_save_data_t * mr_save_data)
     {
       count = fd_.param.array_param.count;
       fd_.mr_type = fd_.mr_type_aux;
+      if (MR_TYPE_POINTER == fd_.mr_type)
+	fdp = fd_.param.array_param.pointer_fdp;
     }
   else
     {
@@ -939,7 +942,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
 
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
+      int nodes_added = mr_save_inner (data + i * fdp->size, fdp, count - i, mr_save_data, idx);
       if (nodes_added <= 0)
 	return (nodes_added);
       i += nodes_added;
@@ -1217,7 +1220,7 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       mr_type_t mr_type = mr_save_data->ptrs.ra[idx].mr_type_aux;
       mr_ptrdes_t src, dst;
       /* at first attempt to save pointer we need to determine size of structure */
-      mr_size_t element_size = mr_type_size (mr_type, mr_save_data->ptrs.ra[idx].fdp->type);
+      mr_size_t element_size = mr_type_size (mr_type, mr_save_data->ptrs.ra[idx].type);
       mr_save_data->ptrs.ra[idx].MR_SIZE = element_size;
       
       /* pointers might have assosiated field with the size for resizable arrays.

@@ -68,6 +68,7 @@ mr_conf_t mr_conf = {
 MR_MEM_INIT ( , __attribute__((constructor,weak)));
 
 static mr_status_t mr_conf_init_visitor (mr_ptr_t key, const void * context);
+static mr_status_t mr_conf_post_init_visitor (mr_ptr_t key, const void * context);
 static mr_status_t basic_types_visitor (mr_ptr_t key, const void * context);
 
 static mr_ic_t basic_types;
@@ -127,6 +128,7 @@ mr_conf_init ()
       mr_ic_new (&basic_types, fd_type_hash, fd_type_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
       mr_ic_foreach (&mr_conf.type_by_name, mr_conf_init_visitor, NULL);
       mr_ic_foreach (&basic_types, basic_types_visitor, NULL);
+      mr_ic_foreach (&mr_conf.type_by_name, mr_conf_post_init_visitor, NULL);
       mr_ic_free (&basic_types);
       initialized = true;
     }
@@ -145,10 +147,20 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
       mr_fd_t * fdp = tdp->fields[i].fdp;
       switch (fdp->mr_type)
 	{
+	case MR_TYPE_ARRAY:
+	  {
+	    mr_ic_t ** icpp = &fdp->param.array_param.pointer_fdp->param.union_param;
+	    if (*icpp)
+	      {
+		mr_ic_free (*icpp);
+		MR_FREE (*icpp);
+		*icpp = NULL;
+	      }
+	  }
+	  
 	case MR_TYPE_UNION:
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
-	case MR_TYPE_ARRAY:
 	case MR_TYPE_POINTER:
 	  if (fdp->param.union_param)
 	    {
@@ -2024,6 +2036,22 @@ mr_type_size (mr_type_t mr_type, char * type)
   return (size);
 }
 
+static bool
+mr_type_is_a_pointer (char * type)
+{
+  /* auto detect pointers */
+  char * end = &type[strlen (type) - 1];
+  if ('*' == *end)
+    {
+      /* remove whitespaces before * */
+      while (isspace (end[-1]))
+	--end;
+      *end = 0; /* trancate type name */
+      return (true);
+    }
+  return (false);
+}
+
 /**
  * Initialize AUTO fields. Detect mr_type and pointers.
  * @param fdp pointer on a field descriptor
@@ -2040,16 +2068,8 @@ mr_auto_field_detect (mr_fd_t * fdp)
       /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
       if (fdp->mr_type_aux != MR_TYPE_NONE)
 	fdp->mr_type = MR_TYPE_POINTER;
-      /* auto detect pointers */
-      char * end = &fdp->type[strlen (fdp->type) - 1];
-      if ('*' == *end)
-	{
-	  /* remove whitespaces before * */
-	  while (isspace (end[-1]))
-	    --end;
-	  *end = 0; /* trancate type name */
-	  fdp->mr_type = MR_TYPE_POINTER;
-	}
+      if (mr_type_is_a_pointer (fdp->type))
+	fdp->mr_type = MR_TYPE_POINTER;
     }
 }
 
@@ -2504,6 +2524,42 @@ mr_conf_init_visitor (mr_ptr_t key, const void * context)
   mr_td_detect_res_size (tdp);
 
   return (mr_register_type_pointer (tdp));
+}
+
+static mr_status_t
+mr_conf_post_init_visitor (mr_ptr_t key, const void * context)
+{
+  mr_td_t * tdp = key.ptr;
+  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_fd_t * fdp = tdp->fields[i].fdp;
+      if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_NONE == fdp->mr_type_aux))
+	{
+	  if (mr_type_is_a_pointer (fdp->type))
+	    {
+	      mr_td_t * tdp = mr_get_td_by_name (fdp->type);
+	      if (tdp)
+		{
+		  mr_fd_t * pointer_fdp = fdp->param.array_param.pointer_fdp;
+		  *pointer_fdp = *fdp;
+		  pointer_fdp->mr_type = MR_TYPE_POINTER;
+		  pointer_fdp->mr_type_aux = tdp->mr_type;
+		  pointer_fdp->size = sizeof (void*);
+		  pointer_fdp->unnamed = true;
+		  mr_fd_init_ud_overrides (pointer_fdp);
+
+		  fdp->mr_type_aux = MR_TYPE_POINTER;
+		}
+	      else
+		fdp->mr_type = MR_TYPE_VOID;
+	    }
+	  else
+	    fdp->mr_type = MR_TYPE_VOID;
+	}
+    }
+  
+  return (MR_SUCCESS);
 }
 
 TYPEDEF_STRUCT (mr_basic_type_td_t,

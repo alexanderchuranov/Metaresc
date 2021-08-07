@@ -108,7 +108,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      (MR_TYPE_FUNC, , "func_param"),
 	      (MR_TYPE_BITFIELD, , "bitfield_param"),
 	      (MR_TYPE_ARRAY, , "array_param"),
-	      (MR_TYPE_POINTER, , "union_param"),
+	      (MR_TYPE_POINTER, , "pointer_param"),
 	      (MR_TYPE_UNION, , "union_param"),
 	      (MR_TYPE_ANON_UNION, , "union_param"),
 	      (MR_TYPE_NAMED_ANON_UNION, , "union_param"),
@@ -294,6 +294,11 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
 		)
 
+TYPEDEF_UNION (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
+		VOID (void *, default_serialization),
+		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
+		)
+
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		ANON_UNION (),
 		VOID (void *, default_serialization),
@@ -301,6 +306,7 @@ TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		END_ANON_UNION ("mr_type_aux"),
 		(unsigned int, count, , "array size"),
 		(unsigned int, row_count, , "row size"),
+		(struct mr_fd_t *, pointer_fdp),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
@@ -455,6 +461,7 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 	       (mr_enum_value_t, enum_param, , "mr_type_aux"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
+	       (mr_pointer_param_t, pointer_param, , "mr_type_aux"),
 	       (mr_ic_t *, union_param, , "indexed collection with union descriminators overrides"),
 	       )
 
