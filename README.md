@@ -861,17 +861,21 @@ TYPEDEF_STRUCT (array_t,
 		VOID (int, empty_size_array, []));
 ```
 
-Metaresc doesn't support arrays of pointers. You need to use
-intermediate wrapper structure for this. I.e. `int *
-pointers_array[2]` should be declared as:
+Arrays of pointers are also supported, but array's base type should be
+known to Metaresc. Example below demonstrates the limitation.
 
 ```c
-TYPEDEF_STRUCT (int_ptr_t,
-		(int *, ptr));
+typedef int int_t;
 
 TYPEDEF_STRUCT (sample_t,
-		(int_ptr_t, pointers_array, [2]));
+		(int *, pointers_array, [2])
+		(int_t *, non_serializable_pointers_array, [2])
+		);
 ```
+
+Both fields are arrays of pointers on integer, but second uses an
+alias which is not known to Metaresc. In this structure only
+`pointers_array` is serializable.
 
 #### Function pointer declaration
 If `suffix` is an expression in parentheses, then this field is
@@ -941,6 +945,7 @@ Example below demonstrates the concept:
 
 ```c
 TYPEDEF_UNION (union_t,
+	       VOID (intptr_t, non_serializable),
 	       (intptr_t, int_value),
 	       (double, dbl_value),
 	       (char *, str_value),
@@ -990,6 +995,47 @@ TYPEDEF_STRUCT (tree_node_t,
 		(struct tree_node_t *, right),
 		);
 ```
+
+Metaresc also allows to make discriminator's resolution overrides for
+individual declarations of union fields. For above example you may
+want to have alternative type in which values discriminated with
+`UD_STR` must not be serialized. This could be achieved in the
+following way:
+
+```c
+TYPEDEF_STRUCT (single_linked_list_node_t,
+		(union_t, value, , "discriminator",
+		{ (mr_ud_override_t[]){ { UD_STR, "non_serializable"} } }, "mr_ud_override_t"),
+		(struct tree_node_t *, next),
+		);
+```
+Union field declaration should be augmented with an array of type
+`mr_ud_override_t`. This type represents a tuple of integer value and
+a string. First is a value of discriminator that require override and
+second is name of the branch in union. In case of multiple overrides
+you should also provide a size of this array. Example below
+demonstrates a recommended approach:
+
+```c
+#define OVERRIDES				\
+  (mr_ud_override_t[]){				\
+    { UD_STR, "non_serializable"},		\
+    { UD_PTR, "non_serializable"},		\
+  }
+
+TYPEDEF_STRUCT (double_linked_list_node_t,
+		(union_t, value, , "discriminator",
+		{ OVERRIDES }, "mr_ud_override_t", sizeof (OVERRIDES)),
+		(struct tree_node_t *, prev),
+		(struct tree_node_t *, next),
+		);
+```
+
+Those overrides affects discriminators of integer types, booleans and
+enums. Overrides also could be specified for pointers on unions and
+arrays of unions. Unfortunatelly you can't declare overrides for
+pointers on dynamic arrays, because both declarations uses structured
+resources of the field.
 
 Descriptors for union fields that are generated from DWARF debug
 info have **text\_metadata** set to the name of the field with
@@ -1165,8 +1211,12 @@ representation enables a set of extra features, such as:
 `MR_COPY_RECURSIVELY` is similar to `MR_LOAD_*` macroses. It may take
 2 or 3 arguemnts and semantics of those arguments is the same as for
 `MR_LOAD_*` macroses. The source (`src`) in this case is a pointer on
-original structure. Example below demostrates a deep copy of a binary
-tree.
+original structure. All non-void pointers and strings will be
+allocated with `MR_CALLOC` and copied from the original source. Cross
+references will be restored identically to origin.
+
+Example below demostrates a deep copy of a binary tree.
+
 ```c
 #include <metaresc.h>
 
@@ -1201,8 +1251,8 @@ pointer)`. Underlying function call traverse through the graph and
 frees all non-NULL pointers and strings. Deallocation of the top level
 object is a duty of a calling function. Example above demostrates the
 usage of this macro. As a result of execution of this code all memory
-blocks allocated by MR_COPY_RECURSIVELY are freed by
-MR_FREE_RECURSIVELY. Valgrind memory check as follows:
+blocks allocated by `MR_COPY_RECURSIVELY` are freed by
+`MR_FREE_RECURSIVELY`. Valgrind memory check as follows:
 
 ```console
 ==9190== Memcheck, a memory error detector
@@ -1257,7 +1307,9 @@ copy3 = {
 ```
 
 ### Objects hashing
-`MR_HASH_STRUCT`
+`MR_HASH_STRUCT` takes two arguments `(type, pointer)` and returns
+unsigned integer value of type `mr_hash_value_t`. Non-serializable
+fields (declared as `VOID ()`) are not used for hashing.
 
 ### Comparation of structures
 `MR_CMP_STRUCTS`
