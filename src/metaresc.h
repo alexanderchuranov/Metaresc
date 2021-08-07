@@ -1262,6 +1262,7 @@ extern void mr_detect_fields_types (mr_td_t * tdp);
 extern void __attribute__ ((sentinel(0))) mr_type_void_fields (char * type, char * name, ...);
 extern mr_size_t mr_type_size (mr_type_t mr_type, char * type);
 extern char * mr_normalize_name (char * name);
+extern void mr_conf_init ();
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
 extern mr_hash_value_t mr_hash_struct (mr_ra_ptrdes_t * ptrs);
@@ -1287,6 +1288,7 @@ extern mr_status_t mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr
 extern mr_status_t mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 
+extern mr_hash_value_t mr_hash_block (void * block, mr_size_t size);
 extern mr_hash_value_t mr_hash_str (char * str);
 extern int mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_hash_value_t mr_fd_name_get_hash (const mr_ptr_t x, const void * context);
