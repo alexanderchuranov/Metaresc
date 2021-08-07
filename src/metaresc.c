@@ -148,16 +148,19 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
       switch (fdp->mr_type)
 	{
 	case MR_TYPE_ARRAY:
-	  {
-	    mr_ic_t ** icpp = &fdp->param.array_param.pointer_fdp->param.union_param;
-	    if (*icpp)
-	      {
-		mr_ic_free (*icpp);
-		MR_FREE (*icpp);
-		*icpp = NULL;
-	      }
-	  }
-	  
+	  if (MR_TYPE_POINTER == fdp->mr_type_aux)
+	    {
+	      mr_ic_t ** icpp = &fdp->param.array_param.pointer_param->param.union_param;
+	      if (*icpp)
+		{
+		  mr_ic_free (*icpp);
+		  MR_FREE (*icpp);
+		  *icpp = NULL;
+		}
+	    }
+	  if (MR_TYPE_UNION != fdp->mr_type_aux)
+	    continue;
+
 	case MR_TYPE_UNION:
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
@@ -2219,6 +2222,8 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
       return (MR_SUCCESS);
     }
 
+  fdp->param.union_param = NULL;
+  
   if ((NULL == fdp->res.ptr) || (NULL == fdp->res_type) || (0 == fdp->MR_SIZE))
     return (MR_SUCCESS);
 
@@ -2541,13 +2546,14 @@ mr_conf_post_init_visitor (mr_ptr_t key, const void * context)
 	      mr_td_t * tdp = mr_get_td_by_name (fdp->type);
 	      if (tdp)
 		{
-		  mr_fd_t * pointer_fdp = fdp->param.array_param.pointer_fdp;
-		  *pointer_fdp = *fdp;
-		  pointer_fdp->mr_type = MR_TYPE_POINTER;
-		  pointer_fdp->mr_type_aux = tdp->mr_type;
-		  pointer_fdp->size = sizeof (void*);
-		  pointer_fdp->unnamed = true;
-		  mr_fd_init_ud_overrides (pointer_fdp);
+		  mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
+		  *pointer_param = *fdp;
+		  pointer_param->mr_type = MR_TYPE_POINTER;
+		  pointer_param->mr_type_aux = tdp->mr_type;
+		  pointer_param->size = sizeof (void*);
+		  pointer_param->unnamed = true;
+		  pointer_param->param.array_param.pointer_param = NULL;
+		  mr_fd_init_ud_overrides (pointer_param);
 
 		  fdp->mr_type_aux = MR_TYPE_POINTER;
 		}

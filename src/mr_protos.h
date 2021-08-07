@@ -302,11 +302,11 @@ TYPEDEF_UNION (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		ANON_UNION (),
 		VOID (void *, default_serialization),
+		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
 		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
 		END_ANON_UNION ("mr_type_aux"),
 		(unsigned int, count, , "array size"),
 		(unsigned int, row_count, , "row size"),
-		(struct mr_fd_t *, pointer_fdp),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),

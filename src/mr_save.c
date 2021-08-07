@@ -930,7 +930,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
       count = fd_.param.array_param.count;
       fd_.mr_type = fd_.mr_type_aux;
       if (MR_TYPE_POINTER == fd_.mr_type)
-	fdp = fd_.param.array_param.pointer_fdp;
+	fdp = fd_.param.array_param.pointer_param;
     }
   else
     {
