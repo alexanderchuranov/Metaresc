@@ -548,7 +548,6 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx, mr_
       ra[ref_idx].name = ra[idx].name;
       ra[ref_idx].unnamed = ra[idx].unnamed;
       ra[ref_idx].non_persistent = ra[idx].non_persistent;
-      ra[ref_idx].non_serializable = ra[idx].non_serializable;
 
       ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
       mr_add_child (parent, ref_idx, ra);
@@ -720,8 +719,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 
   ra[idx].save_params.next_typed = -1;
   ra[idx].save_params.next_untyped = -1;
-
-  ra[idx].non_serializable = (MR_NON_SERIALIZABLE >> fdp->mr_type) & 1;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
@@ -1142,6 +1139,8 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
+
+#define MR_ONE_SHIFT(SHIFT) | (1UL << (SHIFT))
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
 
   if (MR_DFS_POST_ORDER != order)

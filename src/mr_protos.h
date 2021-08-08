@@ -592,6 +592,29 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
 		(int, next_untyped, , "linked list of nodes with same pointer"),
 		)
 
+#define MR_DATA_UDO						\
+  (mr_ud_override_t[]) {					\
+    { MR_TYPE_STRING, "data" },					\
+    { MR_TYPE_CHAR, "data" },					\
+    { MR_TYPE_BOOL, "data" },					\
+    { MR_TYPE_INT8, "data" },					\
+    { MR_TYPE_UINT8, "data" },					\
+    { MR_TYPE_INT16, "data" },					\
+    { MR_TYPE_UINT16, "data" },					\
+    { MR_TYPE_INT32, "data" },					\
+    { MR_TYPE_UINT32, "data" },					\
+    { MR_TYPE_INT64, "data" },					\
+    { MR_TYPE_UINT64, "data" },					\
+    { MR_TYPE_FLOAT, "data" },					\
+    { MR_TYPE_COMPLEX_FLOAT, "data" },				\
+    { MR_TYPE_DOUBLE, "data" },					\
+    { MR_TYPE_COMPLEX_DOUBLE, "data" },				\
+    { MR_TYPE_LONG_DOUBLE, "data" },				\
+    { MR_TYPE_COMPLEX_LONG_DOUBLE, "data" },			\
+    { MR_TYPE_STRUCT, "data" },					\
+    { MR_TYPE_ENUM, "data" },					\
+  }
+
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(char *, type, , "stringified type of the pointer"),
 		(char *, name, , "name of the field"),
@@ -600,7 +623,6 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
 		BITFIELD (bool, unnamed, : 1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
 		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
-		BITFIELD (bool, non_serializable, : 1, "true if 'data' is not serializable"),
 		BITFIELD (bool, ud_is_ic, : 1, "true if union discriminator is an indexed collection"),
 		BITFIELD (unsigned, ud_count, : 3, "size of union discriminator in place list"),
 		(int32_t, idx, , "public index"),
@@ -612,9 +634,9 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, next, , "next sibling index"),
 		(ssize_t, MR_SIZE, , "size of 'data' resizable array"),
 		ANON_UNION (),
-		(mr_ptr_t, data, , "type"),
 		VOID (mr_ptr_t, data_),
-		END_ANON_UNION ("non_serializable"),
+		(mr_ptr_t, data, , "type"),
+		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
 		ANON_UNION (),
 		(mr_fd_t *, fdp, , "serializable field descriptor"),
 		VOID (mr_fd_t *, fdp_, , "field descriptor on stack"),
