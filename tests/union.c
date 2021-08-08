@@ -173,6 +173,30 @@ START_TEST (union_ca_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_ca_ptr_t, (ca2_t[]){ "y" }, STRUCT_XY_X_CMP);
 } END_TEST
 
+START_TEST (union_enum_overrided) {
+  ASSERT_UNION_RESOLUTION (struct_union_enum_overtided_t, UD_FLOAT);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_INT32, STRUCT_XY_X_CMP);
+} END_TEST
+
+START_TEST (union_int_overrided) {
+  ASSERT_UNION_RESOLUTION (struct_union_int_overtided_t, 0);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_INT32, STRUCT_XY_X_CMP);
+} END_TEST
+
+START_TEST (union_bool_overrided) {
+  ASSERT_UNION_RESOLUTION (struct_union_bool_overtided_t, 0);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_INT32, STRUCT_XY_X_CMP);
+} END_TEST
+
+START_TEST (union_bitfield_overrided) {
+  ASSERT_UNION_RESOLUTION (struct_union_bitfield_overtided_t, 0);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_FLOAT, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_INT32, STRUCT_XY_X_CMP);
+} END_TEST
+
 MAIN_TEST_SUITE ((embed_anon_union, "embeded anonymous union"),
 		 (anon_union, "anonymous union"),
 		 (named_anon_union, "named anonymous union"),
@@ -194,5 +218,9 @@ MAIN_TEST_SUITE ((embed_anon_union, "embeded anonymous union"),
 		 (union_str, "union discriminated by string"),
 		 (union_ca, "union discriminated by char array"),
 		 (union_str_ptr, "union discriminated by pointer on string"),
-		 (union_ca_ptr, "union discriminated by pointer on char array")
+		 (union_ca_ptr, "union discriminated by pointer on char array"),
+		 (union_enum_overrided, "union discriminated by enum, but resolution is swapped by override"),
+		 (union_int_overrided, "union discriminated by int, but resolution is swapped by override"),
+		 (union_bool_overrided, "union discriminated by bool, but resolution is swapped by override"),
+		 (union_bitfield_overrided, "union discriminated by bitfield, but resolution is swapped by override")
 		 );

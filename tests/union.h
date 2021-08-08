@@ -225,3 +225,48 @@ TYPEDEF_STRUCT (struct_mr_ptr_t,
 		(mr_ptr_t, ptr, , "discriminator"),
 		string_t discriminator,
 		)
+
+#define ENUM_OVERRIDE				\
+  (mr_ud_override_t[]) {			\
+    {UD_FLOAT, "y"},				\
+      {UD_INT32, "x"},				\
+	}
+
+TYPEDEF_STRUCT (struct_union_enum_overtided_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator", { ENUM_OVERRIDE }, "mr_ud_override_t", sizeof (ENUM_OVERRIDE)),
+		(enum_discriminator_t, discriminator),
+		)
+
+#define IDX_OVERRIDE				\
+  (mr_ud_override_t[]) {			\
+    {0, "y"},					\
+      {1, "x"},					\
+	}
+
+TYPEDEF_STRUCT (struct_union_int_overtided_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator", { IDX_OVERRIDE }, "mr_ud_override_t", sizeof (IDX_OVERRIDE)),
+		(int, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_bool_overtided_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator", { IDX_OVERRIDE }, "mr_ud_override_t", sizeof (IDX_OVERRIDE)),
+		(bool, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_bitfield_overtided_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator", { IDX_OVERRIDE }, "mr_ud_override_t", sizeof (IDX_OVERRIDE)),
+		BITFIELD (int, discriminator, : 1),
+		)
+

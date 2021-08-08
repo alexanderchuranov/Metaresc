@@ -17,6 +17,32 @@ TYPEDEF_STRUCT (packed_enum_array2d_t, (packed_enum_t, x, [2][2]))
 TYPEDEF_STRUCT (string_array2d_t, (string_t, x, [2][2]))
 TYPEDEF_STRUCT (int_array2d_t, (int, x, [2][2]))
 
+TYPEDEF_STRUCT (int_ptr_array_t, (int *, x, [2]))
+TYPEDEF_STRUCT (enum_ptr_array_t, (packed_enum_t *, x, [2]))
+
+TYPEDEF_UNION (union_int32_float_t, float _float, int32_t _int32)
+
+TYPEDEF_ENUM (discriminator_t,
+	      (UD_FLOAT, , "_float"),
+	      (UD_INT32, , "_int32"),
+	      )
+
+TYPEDEF_STRUCT (union_ptr_array_t,
+		(union_int32_float_t *, x, [2], "discriminator"),
+		(discriminator_t, discriminator)
+		)
+
+#define OVERRIDE				\
+  (mr_ud_override_t[]){				\
+    {UD_FLOAT, "_int32"},			\
+      {UD_INT32, "_float"},			\
+	}
+
+TYPEDEF_STRUCT (ud_overrided_ptr_array_t,
+		(union_int32_float_t *, x, [2], "discriminator", { OVERRIDE }, "mr_ud_override_t", sizeof (OVERRIDE)),
+		(discriminator_t, discriminator)
+		)
+
 #define ASSERT_SAVE_LOAD_ARRAY(METHOD, TYPE, ...) ({	\
       TYPE x = { { 1, 2 } };				\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);	\
@@ -65,6 +91,259 @@ START_TEST (two_dimensional_array_int) {
   ALL_METHODS (ASSERT_SAVE_LOAD, int_array2d_t, &int_array2d);
 } END_TEST
 
+static void
+mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_size)
+{
+  ck_assert_msg (ptrs->size == expected_size, "size mismatch %zd != %zd", ptrs->size, expected_size);
+  int i, count = expected_size / sizeof (*expected);
+  for (i = 0; i < count; ++i)
+    {
+      ck_assert_msg (strcmp (ptrs->ra[i].type, expected[i].type) == 0,
+		     "[%d] type %s != %s", i, ptrs->ra[i].type, expected[i].type);
+      ck_assert_msg (strcmp (ptrs->ra[i].name, expected[i].name) == 0,
+		     "[%d] type %s != %s", i, ptrs->ra[i].name, expected[i].name);
+      ck_assert_msg (ptrs->ra[i].mr_type == expected[i].mr_type,
+		     "[%d] type %d != %d", i, ptrs->ra[i].mr_type, expected[i].mr_type);
+      ck_assert_msg (ptrs->ra[i].first_child == expected[i].first_child,
+		     "[%d] type %d != %d", i, ptrs->ra[i].first_child, expected[i].first_child);
+      ck_assert_msg (ptrs->ra[i].next == expected[i].next,
+		     "[%d] type %d != %d", i, ptrs->ra[i].next, expected[i].next);
+    }
+}
+
+#define ASSERT_MR_SAVE(TYPE, S_PTR, EXPECTED) ({			\
+      mr_ra_ptrdes_t ptrs = MR_SAVE (TYPE, S_PTR);			\
+      ck_assert_msg (ptrs.ra != NULL, "Failed to MR_SAVE");		\
+      mr_ra_ptrdes_eq (&ptrs, EXPECTED, sizeof (EXPECTED));		\
+      MR_FREE (ptrs.ra);						\
+    })
+
+START_TEST (int_ptr_array)
+{
+  int_ptr_array_t orig = { { (int[]){ 0x12345678 }, NULL } };
+  mr_ptrdes_t expected[] =
+    {
+      {
+	.type = "int_ptr_array_t",
+	.name = "orig",
+	.mr_type = MR_TYPE_STRUCT,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "int",
+	.name = "x",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = 2,
+	.next = -1
+      }
+      ,
+      {
+	.type = "int",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = 4,
+	.next = 3
+      }
+      ,
+      {
+	.type = "int",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "int",
+	.name = "x",
+	.mr_type = MR_TYPE_INT32,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };
+  ASSERT_MR_SAVE (int_ptr_array_t, &orig, expected);
+} END_TEST
+
+START_TEST (enum_ptr_array)
+{
+  enum_ptr_array_t orig = { { (packed_enum_t[]){ TWO }, NULL } };
+  mr_ptrdes_t expected[] =
+    {
+      {
+	.type = "enum_ptr_array_t",
+	.name = "orig",
+	.mr_type = MR_TYPE_STRUCT,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "packed_enum_t",
+	.name = "x",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = 2,
+	.next = -1
+      }
+      ,
+      {
+	.type = "packed_enum_t",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = 4,
+	.next = 3
+      }
+      ,
+      {
+	.type = "packed_enum_t",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "packed_enum_t",
+	.name = "x",
+	.mr_type = MR_TYPE_ENUM,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };
+  ASSERT_MR_SAVE (enum_ptr_array_t, &orig, expected);
+} END_TEST
+
+START_TEST (union_ptr_array) {
+  union_ptr_array_t orig = { { (union_int32_float_t[]){ { ._float = 1.2345678 } }, NULL }, UD_FLOAT };
+  mr_ptrdes_t expected[] =
+    {
+      {
+	.type = "union_ptr_array_t",
+	.name = "orig",
+	.mr_type = MR_TYPE_STRUCT,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = 2,
+	.next = 4
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = 5,
+	.next = 3
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "discriminator_t",
+	.name = "discriminator",
+	.mr_type = MR_TYPE_ENUM,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_UNION,
+	.first_child = 6,
+	.next = -1
+      }
+      ,
+      {
+	.type = "float",
+	.name = "_float",
+	.mr_type = MR_TYPE_FLOAT,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };      
+  ASSERT_MR_SAVE (union_ptr_array_t, &orig, expected);
+} END_TEST
+
+START_TEST (ud_overrided_ptr_array) {
+  ud_overrided_ptr_array_t orig = { { (union_int32_float_t[]){ { ._float = 1.2345678 } }, NULL }, UD_INT32 };
+  mr_ptrdes_t expected[] =
+    {
+      {
+	.type = "ud_overrided_ptr_array_t",
+	.name = "orig",
+	.mr_type = MR_TYPE_STRUCT,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = 2,
+	.next = 4
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = 5,
+	.next = 3
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "discriminator_t",
+	.name = "discriminator",
+	.mr_type = MR_TYPE_ENUM,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.type = "union_int32_float_t",
+	.name = "x",
+	.mr_type = MR_TYPE_UNION,
+	.first_child = 6,
+	.next = -1
+      }
+      ,
+      {
+	.type = "float",
+	.name = "_float",
+	.mr_type = MR_TYPE_FLOAT,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };      
+  ASSERT_MR_SAVE (ud_overrided_ptr_array_t, &orig, expected);
+} END_TEST
+
 MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
 		 (numeric_array_int16, "array of numerics"),
 		 (numeric_array_int32, "array of numerics"),
@@ -78,5 +357,9 @@ MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
 		 (two_dimensional_array_enum, "array2d"),
 		 (two_dimensional_array_string, "array2d"),
 		 (two_dimensional_array_duplicated_strings, "array2d"),
-		 (two_dimensional_array_int, "array2d")
+		 (two_dimensional_array_int, "array2d"),
+		 (int_ptr_array, "array of int pointers"),
+		 (enum_ptr_array, "array of pointers on enums"),
+		 (union_ptr_array, "array of union pointers"),
+		 (ud_overrided_ptr_array, "array of union pointers with overrides")
 		 );
