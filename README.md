@@ -865,11 +865,11 @@ Arrays of pointers are also supported, but array's base type should be
 known to Metaresc. Example below demonstrates the limitation.
 
 ```c
-typedef int int_t;
+typedef int * int_ptr_t;
 
 TYPEDEF_STRUCT (sample_t,
 		(int *, pointers_array, [2])
-		(int_t *, non_serializable_pointers_array, [2])
+		(int_ptr_t, non_serializable_pointers_array, [2])
 		);
 ```
 

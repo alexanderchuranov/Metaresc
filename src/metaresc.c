@@ -64,7 +64,6 @@ mr_conf_t mr_conf = {
 MR_MEM_INIT ( , __attribute__((constructor,weak)));
 
 static mr_status_t mr_conf_init_visitor (mr_ptr_t key, const void * context);
-static mr_status_t mr_conf_post_init_visitor (mr_ptr_t key, const void * context);
 static mr_status_t basic_types_visitor (mr_ptr_t key, const void * context);
 
 static mr_ic_t basic_types;
@@ -127,7 +126,6 @@ mr_conf_init ()
       mr_ic_new (&basic_types, fd_type_hash, fd_type_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
       mr_ic_foreach (&mr_conf.type_by_name, mr_conf_init_visitor, NULL);
       mr_ic_foreach (&basic_types, basic_types_visitor, NULL);
-      mr_ic_foreach (&mr_conf.type_by_name, mr_conf_post_init_visitor, NULL);
       mr_ic_free (&basic_types);
       initialized = true;
     }
@@ -1317,7 +1315,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       case MR_TYPE_COMPLEX_DOUBLE:
       case MR_TYPE_LONG_DOUBLE:
       case MR_TYPE_COMPLEX_LONG_DOUBLE:
-	  mr_ic_add (&basic_types, fdp);
+	mr_ic_add (&basic_types, fdp);
 	break;
 
       default:
@@ -1454,6 +1452,45 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   return (status);
 }
 
+static void
+mr_fd_init_array_params (mr_fd_t * fdp)
+{
+  if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_NONE == fdp->mr_type_aux))
+    {
+      if (mr_type_is_a_pointer (fdp->type))
+	{
+	  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
+	  if (tdp != NULL)
+	    {
+	      fdp->mr_type_aux = MR_TYPE_POINTER;
+	      fdp->mr_type_ptr = tdp->mr_type;
+	    }
+	  else if (fdp->mr_type_ptr != MR_TYPE_NONE)
+	    {
+	      fdp->mr_type_aux = MR_TYPE_POINTER;
+	      mr_ic_add (&basic_types, fdp);
+	    }
+	  else
+	    fdp->mr_type = MR_TYPE_VOID;
+
+	  if (MR_TYPE_POINTER == fdp->mr_type_aux)
+	    {
+	      mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
+	      *pointer_param = *fdp;
+	      pointer_param->mr_type = MR_TYPE_POINTER;
+	      pointer_param->mr_type_aux = fdp->mr_type_ptr;
+	      pointer_param->mr_type_class = MR_POINTER_TYPE_CLASS;
+	      pointer_param->size = sizeof (void*);
+	      pointer_param->unnamed = true;
+	      pointer_param->param.array_param.pointer_param = NULL;
+	      mr_fd_init_ud_overrides (pointer_param);
+	    }
+	}
+      else
+	fdp->mr_type = MR_TYPE_VOID;
+    }
+}
+
 /**
  * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
  * @param tdp pointer on a type descriptor
@@ -1476,6 +1513,7 @@ mr_detect_fields_types (mr_td_t * tdp)
       mr_fd_detect_field_type (tdp->fields[i].fdp);
       mr_fd_detect_res_size (tdp->fields[i].fdp);
       mr_fd_init_ud_overrides (tdp->fields[i].fdp);
+      mr_fd_init_array_params (tdp->fields[i].fdp);
     }
 }
 
@@ -1705,43 +1743,6 @@ mr_conf_init_visitor (mr_ptr_t key, const void * context)
   return (mr_register_type_pointer (tdp));
 }
 
-static mr_status_t
-mr_conf_post_init_visitor (mr_ptr_t key, const void * context)
-{
-  mr_td_t * tdp = key.ptr;
-  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
-  for (i = 0; i < count; ++i)
-    {
-      mr_fd_t * fdp = tdp->fields[i].fdp;
-      if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_NONE == fdp->mr_type_aux))
-	{
-	  if (mr_type_is_a_pointer (fdp->type))
-	    {
-	      mr_td_t * tdp = mr_get_td_by_name (fdp->type);
-	      if (tdp)
-		{
-		  mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
-		  *pointer_param = *fdp;
-		  pointer_param->mr_type = MR_TYPE_POINTER;
-		  pointer_param->mr_type_aux = tdp->mr_type;
-		  pointer_param->size = sizeof (void*);
-		  pointer_param->unnamed = true;
-		  pointer_param->param.array_param.pointer_param = NULL;
-		  mr_fd_init_ud_overrides (pointer_param);
-
-		  fdp->mr_type_aux = MR_TYPE_POINTER;
-		}
-	      else
-		fdp->mr_type = MR_TYPE_VOID;
-	    }
-	  else
-	    fdp->mr_type = MR_TYPE_VOID;
-	}
-    }
-  
-  return (MR_SUCCESS);
-}
-
 TYPEDEF_STRUCT (mr_basic_type_td_t,
 		(mr_td_t, td),
 		(mr_fd_ptr_t, fd_ptr),
@@ -1752,20 +1753,18 @@ static mr_status_t
 basic_types_visitor (mr_ptr_t key, const void * context)
 {
   mr_fd_t * fdp = key.ptr;
-  mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td));
-  if (NULL == basic_type_td)
-    return (MR_FAILURE);
+  mr_type_t mr_type = MR_TYPE_VOID;
 
-  basic_type_td->td.is_dynamically_allocated = true;
-  basic_type_td->td.type.str = fdp->type;
   switch (fdp->mr_type)
     {
+    case MR_TYPE_ARRAY:
+      mr_type = (fdp->mr_type_aux != MR_TYPE_POINTER) ? fdp->mr_type_aux : fdp->mr_type_ptr;
+      break;
+      
     case MR_TYPE_BITFIELD:
     case MR_TYPE_POINTER:
     case MR_TYPE_VOID:
-    case MR_TYPE_ARRAY:
-      basic_type_td->td.mr_type = fdp->mr_type_aux;
-      basic_type_td->td.size = mr_type_size (fdp->mr_type_aux, "");
+      mr_type = fdp->mr_type_aux;
       break;
 
     case MR_TYPE_STRING:
@@ -1786,14 +1785,21 @@ basic_types_visitor (mr_ptr_t key, const void * context)
     case MR_TYPE_COMPLEX_DOUBLE:
     case MR_TYPE_LONG_DOUBLE:
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
-      basic_type_td->td.mr_type = fdp->mr_type;
-      basic_type_td->td.size = fdp->size;
+      mr_type = fdp->mr_type;
       break;
 
     default:
       break;
     }
-
+  
+  mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td));
+  if (NULL == basic_type_td)
+    return (MR_FAILURE);
+  
+  basic_type_td->td.is_dynamically_allocated = true;
+  basic_type_td->td.type.str = fdp->type;
+  basic_type_td->td.mr_type = mr_type;
+  basic_type_td->td.size = mr_type_size (mr_type, fdp->type);
   basic_type_td->td.fields = &basic_type_td->fd_ptr;
   basic_type_td->fd_ptr.fdp = &basic_type_td->fd;
 
