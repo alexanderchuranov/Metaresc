@@ -1111,7 +1111,7 @@ mr_normalize_type (char * type)
  * @return status
  */
 static void
-mr_init_bitfield (mr_fd_t * fdp)
+mr_fd_init_bitfield_params (mr_fd_t * fdp)
 {
   int i, j;
   if (fdp->param.bitfield_param.initialized)
@@ -1173,10 +1173,6 @@ mr_check_fields (mr_td_t * tdp)
 	    *name = 0; /* truncate on first invalid charecter */
 	  mr_ic_add (&mr_conf.fields_names, &fdp->name);
 	}
-      if (fdp->type)
-	mr_normalize_type (fdp->type);
-      if (MR_TYPE_BITFIELD == fdp->mr_type)
-	mr_init_bitfield (fdp);
     }
   
   mr_ic_add (&mr_conf.fields_names, &tdp->type);
@@ -1239,16 +1235,15 @@ mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
   for (i = 0; fdp->param.func_param.args[i].mr_type != MR_TYPE_LAST; ++i)
-    {
-      mr_normalize_type (fdp->param.func_param.args[i].type);
-      mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
-    }
+    mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
 }
 
 static void
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
+  mr_normalize_type (fdp->type);
+
   mr_td_t * tdp = mr_get_td_by_name (fdp->type);
   bool type_is_a_pointer = false;
   
@@ -1449,45 +1444,42 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
 static void
 mr_fd_init_array_params (mr_fd_t * fdp)
 {
-  if (MR_TYPE_ARRAY == fdp->mr_type)
-    {
-      bool add_basic_type = false;
+  bool add_basic_type = false;
       
-      if (MR_TYPE_NONE == fdp->mr_type_aux)
-	{
-	  if (fdp->mr_type_ptr != MR_TYPE_NONE)
-	    fdp->mr_type_aux = MR_TYPE_POINTER;
+  if (MR_TYPE_NONE == fdp->mr_type_aux)
+    {
+      if (fdp->mr_type_ptr != MR_TYPE_NONE)
+	fdp->mr_type_aux = MR_TYPE_POINTER;
 	  
-	  if (mr_type_is_a_pointer (fdp->type))
+      if (mr_type_is_a_pointer (fdp->type))
+	{
+	  add_basic_type = true;
+	  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
+	  if (tdp != NULL)
 	    {
-	      add_basic_type = true;
-	      mr_td_t * tdp = mr_get_td_by_name (fdp->type);
-	      if (tdp != NULL)
-		{
-		  add_basic_type = false;
-		  fdp->mr_type_aux = MR_TYPE_POINTER;
-		  fdp->mr_type_ptr = tdp->mr_type;
-		}
+	      add_basic_type = false;
+	      fdp->mr_type_aux = MR_TYPE_POINTER;
+	      fdp->mr_type_ptr = tdp->mr_type;
 	    }
 	}
+    }
 
-      if (MR_TYPE_NONE == fdp->mr_type_aux)
-	fdp->mr_type = MR_TYPE_VOID;
-      else if (MR_TYPE_POINTER == fdp->mr_type_aux)
-	{
-	  mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
-	  *pointer_param = *fdp;
-	  pointer_param->mr_type = MR_TYPE_POINTER;
-	  pointer_param->mr_type_aux = fdp->mr_type_ptr;
-	  pointer_param->mr_type_class = MR_POINTER_TYPE_CLASS;
-	  pointer_param->size = sizeof (void*);
-	  pointer_param->unnamed = true;
-	  pointer_param->param.array_param.pointer_param = NULL;
+  if (MR_TYPE_NONE == fdp->mr_type_aux)
+    fdp->mr_type = MR_TYPE_VOID;
+  else if (MR_TYPE_POINTER == fdp->mr_type_aux)
+    {
+      mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
+      *pointer_param = *fdp;
+      pointer_param->mr_type = MR_TYPE_POINTER;
+      pointer_param->mr_type_aux = fdp->mr_type_ptr;
+      pointer_param->mr_type_class = MR_POINTER_TYPE_CLASS;
+      pointer_param->size = sizeof (void*);
+      pointer_param->unnamed = true;
+      pointer_param->param.array_param.pointer_param = NULL;
 
-	  if (add_basic_type)
-	    mr_ic_add (&basic_types, pointer_param);
-	  mr_fd_init_ud_overrides (pointer_param);
-	}
+      if (add_basic_type)
+	mr_ic_add (&basic_types, pointer_param);
+      mr_fd_init_ud_overrides (pointer_param);
     }
 }
 
@@ -1513,7 +1505,18 @@ mr_detect_fields_types (mr_td_t * tdp)
       mr_fd_detect_field_type (tdp->fields[i].fdp);
       mr_fd_detect_res_size (tdp->fields[i].fdp);
       mr_fd_init_ud_overrides (tdp->fields[i].fdp);
-      mr_fd_init_array_params (tdp->fields[i].fdp);
+      
+      switch (tdp->fields[i].fdp->mr_type)
+	{
+	case MR_TYPE_ARRAY:
+	  mr_fd_init_array_params (tdp->fields[i].fdp);
+	  break;
+	case MR_TYPE_BITFIELD:
+	  mr_fd_init_bitfield_params (tdp->fields[i].fdp);
+	  break;
+	default:
+	  break;
+	}
     }
 }
 
