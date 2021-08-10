@@ -1227,27 +1227,6 @@ mr_type_is_a_pointer (char * type)
   return (false);
 }
 
-/**
- * Initialize AUTO fields. Detect mr_type and pointers.
- * @param fdp pointer on a field descriptor
- */
-static void
-mr_auto_field_detect (mr_fd_t * fdp)
-{
-  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
-  /* check if type is in registery */
-  if (tdp)
-    fdp->mr_type = tdp->mr_type;
-  else
-    {
-      /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
-      if (fdp->mr_type_aux != MR_TYPE_NONE)
-	fdp->mr_type = MR_TYPE_POINTER;
-      if (mr_type_is_a_pointer (fdp->type))
-	fdp->mr_type = MR_TYPE_POINTER;
-    }
-}
-
 static void mr_fd_detect_field_type (mr_fd_t * fdp);
 
 /**
@@ -1270,10 +1249,21 @@ mr_func_field_detect (mr_fd_t * fdp)
 static void
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
+  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
+  bool type_is_a_pointer = false;
+  
   switch (fdp->mr_type)
     {
     case MR_TYPE_NONE: /* MR_AUTO type resolution */
-      mr_auto_field_detect (fdp);
+      /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
+      if (fdp->mr_type_aux != MR_TYPE_NONE)
+	fdp->mr_type = MR_TYPE_POINTER;
+      if (mr_type_is_a_pointer (fdp->type))
+	{
+	  fdp->mr_type = MR_TYPE_POINTER;
+	  type_is_a_pointer = true;
+	  tdp = mr_get_td_by_name (fdp->type);
+	}
       break;
       
     case MR_TYPE_FUNC:
@@ -1284,13 +1274,14 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       break;
     }
 
-  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
-  
   if (NULL == tdp)
     switch (fdp->mr_type)
       {
-      case MR_TYPE_BITFIELD:
       case MR_TYPE_POINTER:
+	if (!type_is_a_pointer)
+	  break;
+	
+      case MR_TYPE_BITFIELD:
       case MR_TYPE_VOID:
       case MR_TYPE_ARRAY:
 	if ((fdp->mr_type_aux != MR_TYPE_NONE) && (fdp->mr_type_aux != MR_TYPE_VOID))
@@ -1324,6 +1315,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   else
     switch (fdp->mr_type)
       {
+      case MR_TYPE_NONE:
 	/* Enum detection */
       case MR_TYPE_INT8:
       case MR_TYPE_UINT8:

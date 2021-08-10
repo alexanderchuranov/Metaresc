@@ -862,12 +862,12 @@ TYPEDEF_STRUCT (array_t,
 ```
 
 Base type of array's declaration might be:
-* C basic type (char, char*, bool, int, float, complex)
+* C basic type (character, string, boolean, integer, float, complex)
 * any other type declared within Metaresc (struct, enum, union,
 function, char array)
 * pointer on types listed above
 
-'meta' and 'res' fields will be dereived for serialization of
+`meta` and `res` fields will be derived for serialization of
 individual array's elements. This allows extended semantics for
 serialization of unions and pointers:
 * define discriminators for unions
