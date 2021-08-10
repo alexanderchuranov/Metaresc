@@ -653,7 +653,9 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  continue;
 	
 	case _DW_TAG_pointer_type:
-	  if (fdp->mr_type != MR_TYPE_NONE)
+	  if (fdp->mr_type == MR_TYPE_ARRAY)
+	    fdp->mr_type_ptr = MR_TYPE_ARRAY;
+	  else if (fdp->mr_type != MR_TYPE_NONE)
 	    break;
 	  fdp->mr_type = MR_TYPE_POINTER;
 	  continue;
@@ -1052,6 +1054,12 @@ process_td (mr_ptr_t key, const void * context)
 	    break;
 
 	  case MR_TYPE_FUNC_TYPE:
+	    if (fdp->mr_type_ptr == MR_TYPE_ARRAY)
+	      {
+		fdp->mr_type = MR_TYPE_ARRAY;
+		fdp->mr_type_aux = MR_TYPE_FUNC_TYPE;
+		fdp->mr_type_ptr = MR_TYPE_NONE;
+	      }
 	    fdp->size = sizeof (void *);
 	    break;
 
@@ -1060,9 +1068,24 @@ process_td (mr_ptr_t key, const void * context)
 	    if (fdp->mr_type_aux == MR_TYPE_NONE)
 	      fdp->mr_type_aux = MR_TYPE_VOID;
 	    else if (fdp->mr_type_aux == MR_TYPE_CHAR)
-	      fdp->mr_type = MR_TYPE_STRING;
+	      {
+		fdp->mr_type = MR_TYPE_STRING;
+		assert (fdp->type != NULL);
+		int length = strlen (fdp->type);
+		fdp->type = MR_REALLOC (fdp->type, length + 2 * sizeof (char));
+		assert (fdp->type != NULL);
+		fdp->type[length] = '*';
+		fdp->type[length + 1] = 0;
+	      }
 	    else
 	      {
+		if (fdp->mr_type_ptr == MR_TYPE_ARRAY)
+		  {
+		    fdp->mr_type_ptr = fdp->mr_type_aux;
+		    fdp->mr_type_aux = MR_TYPE_POINTER;
+		    fdp->mr_type = MR_TYPE_ARRAY;
+		    fdp->param.array_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.array_param.pointer_param));
+		  }
 #define POINTER_SIZE_SUFFIX "_size"
 		assert (fdp->name.str != NULL);
 		char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));

@@ -861,21 +861,18 @@ TYPEDEF_STRUCT (array_t,
 		VOID (int, empty_size_array, []));
 ```
 
-Arrays of pointers are also supported, but array's base type should be
-known to Metaresc. Example below demonstrates the limitation.
+Base type of array's declaration might be:
+* C basic type (char, char*, bool, int, float, complex)
+* any other type declared within Metaresc (struct, enum, union,
+function, char array)
+* pointer on types listed above
 
-```c
-typedef int * int_ptr_t;
-
-TYPEDEF_STRUCT (sample_t,
-		(int *, pointers_array, [2])
-		(int_ptr_t, non_serializable_pointers_array, [2])
-		);
-```
-
-Both fields are arrays of pointers on integer, but second uses an
-alias which is not known to Metaresc. In this structure only
-`pointers_array` is serializable.
+'meta' and 'res' fields will be dereived for serialization of
+individual array's elements. This allows extended semantics for
+serialization of unions and pointers:
+* define discriminators for unions
+* define overrides for union discriminators
+* define size specification for pointers
 
 #### Function pointer declaration
 If `suffix` is an expression in parentheses, then this field is

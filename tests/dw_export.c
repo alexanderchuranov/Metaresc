@@ -85,6 +85,14 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
 	{
+	  if (mr_fdp->mr_type == MR_TYPE_POINTER)
+	    {
+	      ck_assert_msg (mr_fdp->mr_type_ptr == dw_fdp->mr_type_ptr,
+			     "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_ptr %d != %d",
+			     mr_td->type.str, mr_fdp->name.str,
+			     mr_fdp->mr_type_ptr, dw_fdp->mr_type_ptr);
+	    }
+	  
 	  ck_assert_msg (mr_fdp->param.array_param.count == dw_fdp->param.array_param.count,
 			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' count %d != %d",
 			 mr_td->type.str, mr_fdp->name.str,

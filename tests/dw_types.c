@@ -1,6 +1,8 @@
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (mr_array_t,
+		(signed int *, int_ptr_array, [2]),
+		(mr_type_t *, enum_ptr_array, [2]),
 		(int, array1d, [2]),
 		(int, array2d, [2][3]),
 		(int, array3d, [2][3][4]),

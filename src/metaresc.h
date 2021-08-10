@@ -574,6 +574,7 @@
 	     .mr_type = MR_TYPE_ARRAY,					\
 	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	     .mr_type_ptr = MR_TYPE_DETECT_PTR (TYPE),			\
+	     .mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	     .param =							\
 	     {								\
 	       .array_param = {						\
