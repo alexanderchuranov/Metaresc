@@ -1153,7 +1153,7 @@ mr_fd_init_bitfield_params (mr_fd_t * fdp)
  * @param tdp pointer on a type descriptor
  */
 static void
-mr_check_fields (mr_td_t * tdp)
+mr_normalize_fields_names (mr_td_t * tdp)
 {
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
@@ -1684,7 +1684,7 @@ mr_add_type (mr_td_t * tdp)
   if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
     status = MR_FAILURE;
 
-  mr_check_fields (tdp);
+  mr_normalize_fields_names (tdp);
   
   mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
   mr_ic_rarray.size = tdp->fields_size;
