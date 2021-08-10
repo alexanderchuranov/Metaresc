@@ -1037,7 +1037,7 @@ mr_get_enum_by_name (char * name)
  * @return status
  */
 static void
-mr_normalize_type (mr_fd_t * fdp)
+mr_normalize_type (char * type)
 {
   static char * keywords[] =
     {
@@ -1066,19 +1066,19 @@ mr_normalize_type (mr_fd_t * fdp)
   bool prev_is_space = false;
   bool modified = false;
 
-  if (NULL == fdp->type)
+  if (NULL == type)
     return;
 
   for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
     {
       int length = strlen (keywords[i]);
-      ptr = fdp->type;
+      ptr = type;
       for (;;)
 	{
 	  char * found = strstr (ptr, keywords[i]);
 	  if (!found)
 	    break;
-	  if (isdelimiter[(uint8_t)found[length]] && ((found == fdp->type) || isdelimiter[(uint8_t)found[-1]]))
+	  if (isdelimiter[(uint8_t)found[length]] && ((found == type) || isdelimiter[(uint8_t)found[-1]]))
 	    {
 	      memset (found, ' ', length); /* replaced all keywords on spaces */
 	      modified = true;
@@ -1089,16 +1089,16 @@ mr_normalize_type (mr_fd_t * fdp)
   if (modified)
     {
       /* we need to drop all space characters */
-      ptr = fdp->type;
-      for (i = 0; isspace (fdp->type[i]); ++i);
-      for (; fdp->type[i]; ++i)
-	if (isspace (fdp->type[i]))
+      ptr = type;
+      for (i = 0; isspace (type[i]); ++i);
+      for (; type[i]; ++i)
+	if (isspace (type[i]))
 	  prev_is_space = true;
 	else
 	  {
 	    if (prev_is_space)
 	      *ptr++ = ' ';
-	    *ptr++ = fdp->type[i];
+	    *ptr++ = type[i];
 	    prev_is_space = false;
 	  }
       *ptr = 0;
@@ -1174,7 +1174,7 @@ mr_check_fields (mr_td_t * tdp)
 	  mr_ic_add (&mr_conf.fields_names, &fdp->name);
 	}
       if (fdp->type)
-	mr_normalize_type (fdp);
+	mr_normalize_type (fdp->type);
       if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_init_bitfield (fdp);
     }
@@ -1240,7 +1240,7 @@ mr_func_field_detect (mr_fd_t * fdp)
   int i;
   for (i = 0; fdp->param.func_param.args[i].mr_type != MR_TYPE_LAST; ++i)
     {
-      mr_normalize_type (&fdp->param.func_param.args[i]);
+      mr_normalize_type (fdp->param.func_param.args[i].type);
       mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
     }
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
@@ -1821,7 +1821,7 @@ mr_detect_type (mr_fd_t * fdp)
   if (NULL == fdp)
     return;
   
-  mr_normalize_type (fdp);
+  mr_normalize_type (fdp->type);
 
   switch (fdp->mr_type)
     {
