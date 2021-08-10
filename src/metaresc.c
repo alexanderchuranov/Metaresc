@@ -1172,6 +1172,9 @@ mr_normalize_fields_names (mr_td_t * tdp)
 	  if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
 	    *name = 0; /* truncate on first invalid charecter */
 	  mr_ic_add (&mr_conf.fields_names, &fdp->name);
+	  
+	  if (MR_TYPE_BITFIELD == fdp->mr_type)
+	    mr_fd_init_bitfield_params (fdp);
 	}
     }
   
@@ -1495,28 +1498,20 @@ mr_detect_fields_types (mr_td_t * tdp)
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      if (tdp->fields[i].fdp->self_ptr)
+      mr_fd_t * fdp = tdp->fields[i].fdp;
+      if (fdp->self_ptr)
 	{
-	  tdp->fields[i].fdp->type = tdp->type.str;
-	  tdp->fields[i].fdp->mr_type = MR_TYPE_POINTER;
-	  tdp->fields[i].fdp->mr_type_aux = tdp->mr_type;
+	  fdp->type = tdp->type.str;
+	  fdp->mr_type = MR_TYPE_POINTER;
+	  fdp->mr_type_aux = tdp->mr_type;
 	}
 
-      mr_fd_detect_field_type (tdp->fields[i].fdp);
-      mr_fd_detect_res_size (tdp->fields[i].fdp);
-      mr_fd_init_ud_overrides (tdp->fields[i].fdp);
+      mr_fd_detect_field_type (fdp);
+      mr_fd_detect_res_size (fdp);
+      mr_fd_init_ud_overrides (fdp);
       
-      switch (tdp->fields[i].fdp->mr_type)
-	{
-	case MR_TYPE_ARRAY:
-	  mr_fd_init_array_params (tdp->fields[i].fdp);
-	  break;
-	case MR_TYPE_BITFIELD:
-	  mr_fd_init_bitfield_params (tdp->fields[i].fdp);
-	  break;
-	default:
-	  break;
-	}
+      if (MR_TYPE_ARRAY == fdp->mr_type)
+	mr_fd_init_array_params (fdp);
     }
 }
 
