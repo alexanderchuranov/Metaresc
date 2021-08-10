@@ -134,7 +134,7 @@ TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classific
 	      MR_UNION_TYPE_CLASS,
 	      MR_ARRAY_TYPE_CLASS,
 	      MR_STRING_TYPE_CLASS,
-	      MR_LANG_TYPE_CLASS,
+	      /* MR_LANG_TYPE_CLASS, */
 	      )
     
 TYPEDEF_ENUM (mr_sign_t, (PLUS, = 0), (MINUS, = 1))
