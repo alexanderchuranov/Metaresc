@@ -666,7 +666,7 @@ TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 TYPEDEF_ENUM (mr_dfs_order_t,
 	      MR_DFS_PRE_ORDER,
 	      MR_DFS_POST_ORDER,
-	      );
+	      )
 
 TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, int /* idx */, int /* level */, mr_dfs_order_t /* order */, void * /* context */))
 

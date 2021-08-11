@@ -915,9 +915,9 @@ TYPEDEF_STRUCT (bitfields_t,
 
 #### Union declaration
 Union field declaration works as declaration of any other type. The
-tricky part is how to differentiate which field of the union to
+tricky part is how to differentiate which branch of the union to
 serialize at run-time. **_text\_metadata_** of the union field works
-for identification of discriminators. Discriminator is a field in
+for identification of discriminator. Discriminator is a field in
 serialization hierarchy that in run-time identifies active branch of
 the union. The reason why this field might not be in parent structure
 is because for structures like linked lists or trees it make sense to
@@ -982,7 +982,7 @@ example with anonymous union will look as follows:
 
 ```c
 TYPEDEF_STRUCT (tree_node_t,
-		ANON_UNION (value, __attribute__ ((transparent_union))),
+		ANON_UNION (value, __attribute__ ((packed))),
 		(intptr_t, int_value),
 		(double, dbl_value),
 		(char *, str_value),
@@ -1042,13 +1042,14 @@ based on DWARF internal indexing schema.
 #### Text metadata and resource information
 Text metadata is a user defined string that could be retrieved at
 run-time through reflection API. This property is also used for union
-fields discrimination (a way to identify at run-time which union field
+fields discrimination (a way to identify at run-time which union branch
 to use).
 
 Resource information (_text\_metadata_, _{
 pointer\_on\_resources\_array }_, _resource\_type_,
 _resources\_array\_size_) is also available at run-time through
-reflection API and is used for dynamic arrays size specification.
+reflection API and is used for dynamic arrays size specification and
+union discriminator overrides.
 
 #### NULL-terminated strings vs character arrays
 There are multiple notions for `char *` fields.
@@ -1304,12 +1305,19 @@ copy3 = {
 ```
 
 ### Objects hashing
-`MR_HASH_STRUCT` takes two arguments `(type, pointer)` and returns
-unsigned integer value of type `mr_hash_value_t`. Non-serializable
-fields (declared as `VOID ()`) are not used for hashing.
+Macro `MR_HASH_STRUCT` takes two arguments `(type, pointer)` and
+returns unsigned integer value of type
+`mr_hash_value_t`. Non-serializable fields (declared as `VOID ()` or
+of types not known to Metadata) are not used for hashing. Typed
+pointers and strings are hashed based on content value, but not a
+pointer value. Copies derived by `MR_COPY_RECURSIVELY` have identical
+hash values as an original object.
 
 ### Comparation of structures
-`MR_CMP_STRUCTS`
+`MR_CMP_STRUCTS` is a macro that has 3 arguments: `(type, pointer1,
+pointer2)`. It takes two pointers of the same type and returns
+integrer value that represents result of structures
+comparation. Non-serializable fields are not used for comparation.
 
 ### Structure of serialization graph
 `MR_SAVE` mr_ptrs_dfs
