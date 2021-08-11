@@ -1072,7 +1072,7 @@ process_td (mr_ptr_t key, const void * context)
 		fdp->mr_type = MR_TYPE_STRING;
 		assert (fdp->type != NULL);
 		int length = strlen (fdp->type);
-		fdp->type = MR_REALLOC (fdp->type, length + 2 * sizeof (char));
+		fdp->type = MR_REALLOC (fdp->type, length + 2 * sizeof (fdp->type[0]));
 		assert (fdp->type != NULL);
 		fdp->type[length] = '*';
 		fdp->type[length + 1] = 0;
@@ -1085,6 +1085,7 @@ process_td (mr_ptr_t key, const void * context)
 		    fdp->mr_type_aux = MR_TYPE_POINTER;
 		    fdp->mr_type = MR_TYPE_ARRAY;
 		    fdp->param.array_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.array_param.pointer_param));
+		    assert (fdp->param.array_param.pointer_param != NULL);
 		  }
 #define POINTER_SIZE_SUFFIX "_size"
 		assert (fdp->name.str != NULL);
