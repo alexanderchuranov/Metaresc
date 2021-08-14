@@ -88,7 +88,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	{
 	  uint64_t value = 0;
 	  mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
-	  mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
+	  mr_td_t * enum_tdp = parent_fdp->tdp;
 
 	  mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
 
@@ -111,7 +111,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
       case MR_TYPE_ENUM:
 	{
-	  mr_td_t * enum_tdp = mr_get_td_by_name (parent_fdp->type);
+	  mr_td_t * enum_tdp = parent_fdp->tdp;
 	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
 	    {
 	      mr_enum_value_type_t value = mr_get_enum_value (enum_tdp, discriminator);
@@ -312,7 +312,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
   int ud_idx, ud_find = -1;
   mr_union_discriminator_t * ud;
   char * discriminator = union_fdp->meta;
-  mr_td_t * tdp = mr_get_td_by_name (union_fdp->type); /* look up for type descriptor */
+  mr_td_t * tdp = union_fdp->tdp;
 
   if (NULL == tdp)
     return (NULL);
@@ -823,7 +823,7 @@ mr_save_enum (mr_save_data_t * mr_save_data)
       break;
     default:
       {
-	mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type);
+	mr_td_t * tdp = mr_save_data->ptrs.ra[idx].fdp->tdp;
 	mr_save_data->ptrs.ra[idx].mr_type_aux = tdp ? tdp->param.enum_param.mr_type_effective : MR_TYPE_UINT8;
 	break;
       }
@@ -839,23 +839,9 @@ static int
 mr_save_struct (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type);
+  mr_td_t * tdp = mr_save_data->ptrs.ra[idx].fdp->tdp;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
-  int i, count;
-
-  if (NULL == tdp) /* check whether type descriptor was found */
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
-      return (0);
-    }
-
-  if (tdp->mr_type != MR_TYPE_STRUCT)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type.str);
-      return (0);
-    }
-
-  count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
@@ -875,19 +861,6 @@ mr_save_union (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
-  mr_td_t * tdp = mr_get_td_by_name (mr_save_data->ptrs.ra[idx].type); /* look up for type descriptor */
-
-  if (NULL == tdp) /* check whether type descriptor was found */
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_save_data->ptrs.ra[idx].type);
-      return (0);
-    }
-  if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->type.str);
-      return (0);
-    }
-  
   int parent;
   for (parent = idx; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
     if (!mr_save_data->ptrs.ra[parent].non_persistent)
@@ -1136,13 +1109,11 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
       }
 }
 
+#define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
+
 static mr_status_t
 mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
 {
-
-#define MR_ONE_SHIFT(SHIFT) | (1UL << (SHIFT))
-#define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
-
   if (MR_DFS_POST_ORDER != order)
     return (MR_SUCCESS);
 
