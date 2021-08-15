@@ -108,15 +108,11 @@ MR_RA_PRINTF_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
 
 int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  mr_td_t * tdp = mr_get_td_by_name (ptrdes->type); /* look up for type descriptor */
+  mr_td_t * tdp = ptrdes->tdp;
   mr_type_t mr_type = MR_TYPE_UINT8;
 
   /* check whether type descriptor was found */
-  if (NULL == tdp)
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrdes->type);
-  else if (MR_TYPE_ENUM != tdp->mr_type)
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, ptrdes->type);
-  else
+  if (tdp)
     {
       mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
@@ -142,7 +138,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
 int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
 {
-  mr_td_t * tdp = mr_get_td_by_name (ptrdes->type); /* look up for type descriptor */
+  mr_td_t * tdp = ptrdes->tdp;
   /* check whether type descriptor was found */
   if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));

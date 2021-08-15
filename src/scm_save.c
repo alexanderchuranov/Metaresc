@@ -50,7 +50,7 @@ scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  mr_td_t * tdp = mr_get_td_by_name (ptrdes->type);
+  mr_td_t * tdp = ptrdes->tdp;
   if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 

@@ -130,10 +130,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 }
 
 static mr_fd_t *
-mr_type_get_discriminator_fd (char * type, char * discriminator)
+mr_type_get_discriminator_fd (mr_td_t * tdp, char * discriminator)
 {
-  /* get type descriptor */
-  mr_td_t * tdp = mr_get_td_by_name (type);
   if (NULL == tdp)
     return (NULL);
   /* lookup for a discriminator field */
@@ -350,7 +348,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
 	  || (MR_TYPE_POINTER == mr_save_data->ptrs.ra[parent].mr_type))
 	continue;
       
-      parent_fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[parent].type, discriminator);
+      parent_fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[parent].tdp, discriminator);
       if (NULL == parent_fdp)
 	continue;
       
@@ -444,7 +442,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_UNION:
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
-      return (strcmp (x->type, y->type));
+      return ((x->tdp > y->tdp) - (x->tdp < y->tdp));
       
     case MR_TYPE_END_ANON_UNION:
     case MR_TYPE_LAST:
@@ -508,7 +506,7 @@ mr_check_ud (mr_ptr_t key, const void * context)
   mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr];
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
   char * discriminator = ud->union_fdp->meta;
-  mr_fd_t * fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[mr_check_ud_ctx->node].type, discriminator);
+  mr_fd_t * fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[mr_check_ud_ctx->node].tdp, discriminator);
 
   /* here we check that union discriminator was resolved at the level of saved node.
      This means that resolution is not dependant on upper tree */
@@ -544,7 +542,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx, mr_
       ra[ref_idx].fdp = ra[idx].fdp;
       ra[ref_idx].mr_type = ra[idx].mr_type;
       ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
-      ra[ref_idx].type = ra[idx].type;
+      ra[ref_idx].tdp = ra[idx].tdp;
       ra[ref_idx].name = ra[idx].name;
       ra[ref_idx].unnamed = ra[idx].unnamed;
       ra[ref_idx].non_persistent = ra[idx].non_persistent;
@@ -651,7 +649,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
     .parent = parent,
   };
   int nodes_added;
-  mr_size_t element_size = mr_type_size (ra[idx].mr_type, ra[idx].type);
+  mr_size_t element_size = mr_type_size (ra[idx].mr_type, ra[idx].tdp);
 
   if (element_size == 0)
     return (-1);
@@ -711,7 +709,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].fdp = fdp;
   ra[idx].mr_type = fdp->mr_type;
   ra[idx].mr_type_aux = fdp->mr_type_aux;
-  ra[idx].type = fdp->type;
+  ra[idx].tdp = fdp->tdp;
   ra[idx].name = fdp->name.str;
   ra[idx].unnamed = fdp->unnamed;
   ra[idx].non_persistent = fdp->non_persistent;
@@ -891,7 +889,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
+  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
   if (fd_.size == 0)
     return (1);
 
@@ -935,7 +933,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.mr_type = fd_.mr_type_aux;
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.size = mr_type_size (fd_.mr_type, fd_.type);
+  fd_.size = mr_type_size (fd_.mr_type, fd_.tdp);
   count = mr_save_data->ptrs.ra[idx].MR_SIZE / fd_.size;
 
   for (i = 0; i < count; )
@@ -1187,11 +1185,11 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
     mr_save_data->ptrs.ra[idx].flags.is_null = true; /* return empty node if pointer is NULL */
   else
     {
-      mr_type_t mr_type = mr_save_data->ptrs.ra[idx].mr_type_aux;
       mr_ptrdes_t src, dst;
+      mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
       /* at first attempt to save pointer we need to determine size of structure */
-      mr_size_t element_size = mr_type_size (mr_type, mr_save_data->ptrs.ra[idx].type);
-      mr_save_data->ptrs.ra[idx].MR_SIZE = element_size;
+      mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux, ptrdes->tdp);
+      ptrdes->MR_SIZE = element_size;
       
       /* pointers might have assosiated field with the size for resizable arrays.
 	 name of the size field is stored in 'res' of field meta-data.
@@ -1200,21 +1198,21 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
       if (src.data.ptr != NULL)
 	{
-	  dst.data.ptr = &mr_save_data->ptrs.ra[idx].MR_SIZE;
-	  dst.mr_type = MR_TYPE_DETECT (__typeof__ (mr_save_data->ptrs.ra[idx].MR_SIZE));
+	  dst.data.ptr = &ptrdes->MR_SIZE;
+	  dst.mr_type = MR_TYPE_DETECT (__typeof__ (ptrdes->MR_SIZE));
 	  mr_assign_int (&dst, &src);
 	}
 
-      if (0 == strcmp (mr_save_data->ptrs.ra[idx].name, MR_OPAQUE_DATA_STR))
+      if (0 == strcmp (ptrdes->name, MR_OPAQUE_DATA_STR))
 	{
-	  if (mr_save_data->ptrs.ra[idx].MR_SIZE <= 0)
-	    mr_save_data->ptrs.ra[idx].flags.is_null = true;
+	  if (ptrdes->MR_SIZE <= 0)
+	    ptrdes->flags.is_null = true;
 	  else
-	    mr_save_data->ptrs.ra[idx].flags.is_opaque_data = true;
+	    ptrdes->flags.is_opaque_data = true;
 	}
-      else if ((0 == element_size) || (mr_save_data->ptrs.ra[idx].MR_SIZE < element_size))
-	mr_save_data->ptrs.ra[idx].flags.is_null = true;
-      else if ((mr_type != MR_TYPE_NONE) && (mr_type != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
+      else if ((0 == element_size) || (ptrdes->MR_SIZE < element_size))
+	ptrdes->flags.is_null = true;
+      else if ((ptrdes->mr_type_aux != MR_TYPE_NONE) && (ptrdes->mr_type_aux != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
 	{
 	  int * idx_ = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_idx,
 						   &mr_save_data->mr_ra_idx_size, &mr_save_data->mr_ra_idx_alloc_size, 

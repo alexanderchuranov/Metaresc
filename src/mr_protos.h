@@ -616,7 +616,7 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
   }
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
-		(char *, type, , "stringified type of the pointer"),
+		(mr_td_t *, tdp, , "type descriptor"),
 		(char *, name, , "name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),

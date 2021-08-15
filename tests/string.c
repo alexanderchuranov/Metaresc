@@ -77,18 +77,16 @@ START_TEST (pointer_match_content_unknown) {
 
 START_TEST (pointer_match_another_pointer) {
   struct_str_str_t orig = { .x = "string_t", };
+  mr_td_t * string_tdp = mr_get_td_by_name ("string_t");
   orig.y = orig.x;
   mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_str_t, &orig);
   if (ptrs.ra != NULL)
     {
       int i, count = 0;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  if ((ptrs.ra[i].type != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].type, "string_t")) &&
-	      (ptrs.ra[i].ref_idx >= 0))
-	    ++count;
-	}
+	if ((ptrs.ra[i].tdp == string_tdp) && (ptrs.ra[i].ref_idx >= 0))
+	  ++count;
+      
       MR_FREE (ptrs.ra);
       ck_assert_msg (1 == count, "pointer on existing string was not detected properly");
     }

@@ -98,8 +98,8 @@ mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_
   int i, count = expected_size / sizeof (*expected);
   for (i = 0; i < count; ++i)
     {
-      ck_assert_msg (strcmp (ptrs->ra[i].type, expected[i].type) == 0,
-		     "[%d] type %s != %s", i, ptrs->ra[i].type, expected[i].type);
+      ck_assert_msg (strcmp (ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str) == 0,
+		     "[%d] type %s != %s", i, ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str);
       ck_assert_msg (strcmp (ptrs->ra[i].name, expected[i].name) == 0,
 		     "[%d] type %s != %s", i, ptrs->ra[i].name, expected[i].name);
       ck_assert_msg (ptrs->ra[i].mr_type == expected[i].mr_type,
@@ -124,7 +124,7 @@ START_TEST (int_ptr_array)
   mr_ptrdes_t expected[] =
     {
       {
-	.type = "int_ptr_array_t",
+	.tdp = (mr_td_t[]){{ .type = { "int_ptr_array_t" }}},
 	.name = "orig",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -132,7 +132,7 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.type = "int",
+	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -140,7 +140,7 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.type = "int",
+	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 4,
@@ -148,7 +148,7 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.type = "int",
+	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -156,7 +156,7 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.type = "int",
+	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_INT32,
 	.first_child = -1,
@@ -173,7 +173,7 @@ START_TEST (enum_ptr_array)
   mr_ptrdes_t expected[] =
     {
       {
-	.type = "enum_ptr_array_t",
+	.tdp = (mr_td_t[]){{ .type = { "enum_ptr_array_t" }}},
 	.name = "orig",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -181,7 +181,7 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.type = "packed_enum_t",
+	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -189,7 +189,7 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.type = "packed_enum_t",
+	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 4,
@@ -197,7 +197,7 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.type = "packed_enum_t",
+	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -205,7 +205,7 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.type = "packed_enum_t",
+	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ENUM,
 	.first_child = -1,
@@ -221,7 +221,7 @@ START_TEST (union_ptr_array) {
   mr_ptrdes_t expected[] =
     {
       {
-	.type = "union_ptr_array_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_ptr_array_t" }}},
 	.name = "orig",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -229,7 +229,7 @@ START_TEST (union_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -237,7 +237,7 @@ START_TEST (union_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 5,
@@ -245,7 +245,7 @@ START_TEST (union_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -253,7 +253,7 @@ START_TEST (union_ptr_array) {
       }
       ,
       {
-	.type = "discriminator_t",
+	.tdp = (mr_td_t[]){{ .type = { "discriminator_t" }}},
 	.name = "discriminator",
 	.mr_type = MR_TYPE_ENUM,
 	.first_child = -1,
@@ -261,7 +261,7 @@ START_TEST (union_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_UNION,
 	.first_child = 6,
@@ -269,7 +269,7 @@ START_TEST (union_ptr_array) {
       }
       ,
       {
-	.type = "float",
+	.tdp = (mr_td_t[]){{ .type = { "float" }}},
 	.name = "_float",
 	.mr_type = MR_TYPE_FLOAT,
 	.first_child = -1,
@@ -285,7 +285,7 @@ START_TEST (ud_overrided_ptr_array) {
   mr_ptrdes_t expected[] =
     {
       {
-	.type = "ud_overrided_ptr_array_t",
+	.tdp = (mr_td_t[]){{ .type = { "ud_overrided_ptr_array_t" }}},
 	.name = "orig",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -293,7 +293,7 @@ START_TEST (ud_overrided_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -301,7 +301,7 @@ START_TEST (ud_overrided_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 5,
@@ -309,7 +309,7 @@ START_TEST (ud_overrided_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -317,7 +317,7 @@ START_TEST (ud_overrided_ptr_array) {
       }
       ,
       {
-	.type = "discriminator_t",
+	.tdp = (mr_td_t[]){{ .type = { "discriminator_t" }}},
 	.name = "discriminator",
 	.mr_type = MR_TYPE_ENUM,
 	.first_child = -1,
@@ -325,7 +325,7 @@ START_TEST (ud_overrided_ptr_array) {
       }
       ,
       {
-	.type = "union_int32_float_t",
+	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_UNION,
 	.first_child = 6,
@@ -333,7 +333,7 @@ START_TEST (ud_overrided_ptr_array) {
       }
       ,
       {
-	.type = "float",
+	.tdp = (mr_td_t[]){{ .type = { "float" }}},
 	.name = "_float",
 	.mr_type = MR_TYPE_FLOAT,
 	.first_child = -1,

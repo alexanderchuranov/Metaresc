@@ -546,13 +546,13 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
   mr_fd_t * fdp = NULL;
   char * data = mr_load_data->ptrs.ra[idx].data.ptr;
   int first_child = mr_load_data->ptrs.ra[idx].first_child;
-  mr_td_t * tdp = mr_get_td_by_name (mr_load_data->ptrs.ra[idx].type);
+  mr_td_t * tdp = mr_load_data->ptrs.ra[idx].tdp;
   mr_status_t status = MR_SUCCESS;
 
   /* get pointer on structure descriptor */
   if (NULL == tdp)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, mr_load_data->ptrs.ra[idx].type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, "unknown");
       return (MR_FAILURE);
     }
 
@@ -597,7 +597,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   mr_status_t status = MR_SUCCESS;
 
   fd_.non_persistent = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
+  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
 
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
@@ -647,7 +647,7 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
     return (MR_SUCCESS);
 
   fd_.non_persistent = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
+  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
   fd_.mr_type = fd_.mr_type_aux;
   
   /* allocate memory */
@@ -823,27 +823,25 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	return (MR_FAILURE);
       }
 
-  if (mr_load_data->ptrs.ra[idx].type && fdp->type)
-    if (strcmp (fdp->type, mr_load_data->ptrs.ra[idx].type))
-      if (!((0 == strcmp (MR_VOIDP_T_STR, mr_load_data->ptrs.ra[idx].type)) &&
-	    (('*' == fdp->type[strlen (fdp->type) - 1]) || (MR_TYPE_FUNC == fdp->mr_type))))
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, mr_load_data->ptrs.ra[idx].type);
-	  return (MR_FAILURE);
-	}
+  if (mr_load_data->ptrs.ra[idx].tdp && fdp->type)
+    if (strcmp (fdp->type, mr_load_data->ptrs.ra[idx].tdp->type.str))
+      {
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, mr_load_data->ptrs.ra[idx].tdp->type.str);
+	return (MR_FAILURE);
+      }
 
   if ((NULL == mr_load_data->ptrs.ra[idx].name) && (fdp->name.str))
     mr_load_data->ptrs.ra[idx].name = fdp->name.str;
   
-  if ((NULL == mr_load_data->ptrs.ra[idx].type) && (fdp->type))
-    mr_load_data->ptrs.ra[idx].type = fdp->type;
+  if ((NULL == mr_load_data->ptrs.ra[idx].tdp) && (fdp->tdp != NULL))
+    mr_load_data->ptrs.ra[idx].tdp = fdp->tdp;
 
   mr_load_data->ptrs.ra[idx].fdp = fdp;
   mr_load_data->ptrs.ra[idx].non_persistent = fdp->non_persistent;
   mr_load_data->ptrs.ra[idx].mr_size = fdp->size;
   mr_load_data->ptrs.ra[idx].mr_type = fdp->mr_type;
   mr_load_data->ptrs.ra[idx].mr_type_aux = fdp->mr_type_aux;
-  mr_load_data->ptrs.ra[idx].type = fdp->type;
+  mr_load_data->ptrs.ra[idx].tdp = fdp->tdp;
   mr_load_data->ptrs.ra[idx].name = fdp->name.str;
 
   /* route loading */

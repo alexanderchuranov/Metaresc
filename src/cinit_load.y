@@ -144,7 +144,7 @@ value
   mr_td_t * tdp = mr_get_td_by_name (type);
   if (tdp != NULL)
     {
-      mr_load->ptrs->ra[mr_load->parent].type = tdp->type.str;
+      mr_load->ptrs->ra[mr_load->parent].tdp = tdp;
       /* for mr_ptr_t union we get name of union member from type cast */
       mr_load->ptrs->ra[mr_load->parent].name = tdp->type.str;
     }

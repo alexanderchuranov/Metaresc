@@ -66,7 +66,8 @@ mr_message_format (mr_message_id_t message_id, va_list args)
   if ((message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
     format = messages[message_id];
 
-  (void)mr_vasprintf (&message, format, args);
+  if (format)
+    (void)mr_vasprintf (&message, format, args);
 
   return (message);
 }

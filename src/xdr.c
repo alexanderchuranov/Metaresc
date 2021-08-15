@@ -305,7 +305,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   ptrs->ra[idx].fdp = fdp;
   ptrs->ra[idx].mr_type = fdp->mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->mr_type_aux;
-  ptrs->ra[idx].type = fdp->type;
+  ptrs->ra[idx].tdp = fdp->tdp;
   ptrs->ra[idx].name = fdp->name.str;
   ptrs->ra[idx].non_persistent = fdp->non_persistent;
 
@@ -658,28 +658,18 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
  * @param xdrs XDR stream descriptor
  * @param idx index of node in ptrs
  * @param ptrs array with descriptor of loaded data
- * @param tdp type descriptor
  * @return status
  */
 static mr_status_t
-xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs, mr_td_t * tdp)
+xdr_load_struct (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
+  mr_td_t * tdp = ptrs->ra[idx].tdp;
   char * data = ptrs->ra[idx].data.ptr;
-  int i, count;
 
   if (NULL == tdp)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
-      return (MR_FAILURE);
-    }
+    return (MR_FAILURE);
 
-  if (tdp->mr_type != MR_TYPE_STRUCT)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_STRUCT, tdp->type.str);
-      return (MR_FAILURE);
-    }
-
-  count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->fields[i].fdp;
@@ -687,19 +677,6 @@ xdr_load_struct_inner (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs, mr_td_t * tdp
 	return (MR_FAILURE);
     }
   return (MR_SUCCESS);
-}
-
-/**
- * Load handler for structures.
- * @param xdrs XDR stream descriptor
- * @param idx index of node in ptrs
- * @param ptrs array with descriptor of loaded data
- * @return status
- */
-static mr_status_t
-xdr_load_struct (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
-{
-  return (xdr_load_struct_inner (xdrs, idx, ptrs, mr_get_td_by_name (ptrs->ra[idx].type)));
 }
 
 /*
@@ -739,19 +716,17 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_td_t * tdp = mr_get_td_by_name (ptrs->ra[idx].type); /* look up for type descriptor */
+  mr_td_t * tdp = ptrs->ra[idx].tdp; /* look up for type descriptor */
   char * data = ptrs->ra[idx].data.ptr;
   char * discriminator = NULL;
   mr_status_t status = MR_FAILURE;
   mr_ptrdes_t ptrdes = { .data.ptr = &discriminator, }; /* temporary pointer descriptor for union discriminator string */
   mr_ra_ptrdes_t ptrs_ = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }; /* temporary resizeable array */
 
-  /* get pointer on structure descriptor */
   if (NULL == tdp)
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
-  else if ((tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION) && (tdp->mr_type != MR_TYPE_NAMED_ANON_UNION))
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_UNION, tdp->type.str);
-  else if (MR_SUCCESS != xdr_load_string (xdrs, 0, &ptrs_))
+    return (MR_FAILURE);
+
+  if (MR_SUCCESS != xdr_load_string (xdrs, 0, &ptrs_))
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else if (NULL == discriminator)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
@@ -783,24 +758,23 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 _xdr_enum (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_td_t * tdp = mr_get_td_by_name (ptrs->ra[idx].type);
+  mr_td_t * tdp = ptrs->ra[idx].tdp;
+
   if (NULL == tdp)
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, ptrs->ra[idx].type);
-  else if (tdp->mr_type != MR_TYPE_ENUM)
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_ENUM, tdp->type.str);
-  else 
-    switch (tdp->param.enum_param.mr_type_effective)
-      {
-      case MR_TYPE_UINT8: return (_xdr_uint8_t (xdrs, idx, ptrs));
-      case MR_TYPE_INT8: return (_xdr_int8_t (xdrs, idx, ptrs));
-      case MR_TYPE_UINT16: return (_xdr_uint16_t (xdrs, idx, ptrs));
-      case MR_TYPE_INT16: return (_xdr_int16_t (xdrs, idx, ptrs));
-      case MR_TYPE_UINT32: return (_xdr_uint32_t (xdrs, idx, ptrs));
-      case MR_TYPE_INT32: return (_xdr_int32_t (xdrs, idx, ptrs));
-      case MR_TYPE_UINT64: return (_xdr_uint64_t (xdrs, idx, ptrs));
-      case MR_TYPE_INT64: return (_xdr_int64_t (xdrs, idx, ptrs));
-      default: return (MR_FAILURE);
-      }
+    return (MR_FAILURE);
+  
+  switch (tdp->param.enum_param.mr_type_effective)
+    {
+    case MR_TYPE_UINT8: return (_xdr_uint8_t (xdrs, idx, ptrs));
+    case MR_TYPE_INT8: return (_xdr_int8_t (xdrs, idx, ptrs));
+    case MR_TYPE_UINT16: return (_xdr_uint16_t (xdrs, idx, ptrs));
+    case MR_TYPE_INT16: return (_xdr_int16_t (xdrs, idx, ptrs));
+    case MR_TYPE_UINT32: return (_xdr_uint32_t (xdrs, idx, ptrs));
+    case MR_TYPE_INT32: return (_xdr_int32_t (xdrs, idx, ptrs));
+    case MR_TYPE_UINT64: return (_xdr_uint64_t (xdrs, idx, ptrs));
+    case MR_TYPE_INT64: return (_xdr_int64_t (xdrs, idx, ptrs));
+    default: return (MR_FAILURE);
+    }
   return (MR_FAILURE);
 }
 
@@ -840,7 +814,7 @@ mr_xdr_bool (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
 {
-  mr_ptrdes_t ptrdes = { .type = fdp->type, .fdp = fdp, .data.ptr = data, };
+  mr_ptrdes_t ptrdes = { .tdp = fdp->tdp, .fdp = fdp, .data.ptr = data, };
   mr_ra_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, };
   
   if (XDR_ENCODE == xdrs->x_op)
@@ -899,7 +873,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int count;
 
   fd_.non_persistent = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
+  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
   if (fd_.size <= 0)
     return (MR_SUCCESS);
 
@@ -969,7 +943,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
   fd_.non_persistent = true;
   fd_.mr_type = fd_.mr_type_aux;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.type);
+  fd_.size = mr_type_size (fd_.mr_type, fd_.tdp);
   *data = NULL;
   
   if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))

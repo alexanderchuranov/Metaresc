@@ -116,7 +116,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    if (ptrs->ra[i].first_child < 0)
 	      {
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			    ptrs->ra[i].type, ptrs->ra[i].name);
+			    ptrs->ra[i].tdp ? ptrs->ra[i].tdp->type.str : "unknown", ptrs->ra[i].name);
 		goto failure;
 	      }
 	    
@@ -290,7 +290,7 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void
 	  
     case MR_TYPE_ENUM:
       {
-	mr_td_t * tdp = mr_get_td_by_name (ptrdes->type);
+	mr_td_t * tdp = ptrdes->tdp;
 	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
 	  break;
 	ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, tdp->param.enum_param.size_effective);
@@ -355,7 +355,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
     return (diff);
 
   x->ra[0].name = y->ra[0].name;
-  x->ra[0].type = y->ra[0].type;
+  x->ra[0].tdp = y->ra[0].tdp;
 
   diff = (x->ra[0].mr_type > y->ra[0].mr_type) - (x->ra[0].mr_type < y->ra[0].mr_type);
   if (diff)
@@ -372,7 +372,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
       for (child = x->ra[0].first_child; child >= 0; child = x->ra[child].next)
 	{
 	  x->ra[child].name = y->ra[child].name;
-	  x->ra[child].type = y->ra[child].type;
+	  x->ra[child].tdp = y->ra[child].tdp;
 	  diff = (x->ra[child].next > y->ra[child].next) -
 	    (x->ra[child].next < y->ra[child].next);
 	  if (diff)

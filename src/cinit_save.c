@@ -103,7 +103,9 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     return (mr_ra_append_string (mr_ra_str, (char*)func_str));
   else
     {
-      char * type = (MR_TYPE_FUNC == ptrdes->mr_type) ? MR_VOIDP_T_STR : ptrdes->type;
+      char * type = MR_VOIDP_T_STR;
+      if ((MR_TYPE_FUNC != ptrdes->mr_type) && (ptrdes->tdp != NULL))
+	type = ptrdes->tdp->type.str;
       return (mr_ra_printf (mr_ra_str, "(%s)%p", type, *(void**)ptrdes->data.ptr));
     }
 }
@@ -114,7 +116,7 @@ cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "(%s[]){\n", ptrdes->type));
+  return (mr_ra_printf (mr_ra_str, "(%s[]){\n", ptrdes->tdp ? ptrdes->tdp->type.str : MR_VOIDP_T_STR));
 }
 
 static int

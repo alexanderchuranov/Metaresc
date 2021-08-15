@@ -449,7 +449,7 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
       {
-	mr_td_t * tdp = mr_get_td_by_name (src->type);
+	mr_td_t * tdp = src->tdp;
 	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
 	  break;
 	switch (tdp->param.enum_param.mr_type_effective)
@@ -481,7 +481,7 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
       {
-	mr_td_t * tdp = mr_get_td_by_name (dst->type);
+	mr_td_t * tdp = dst->tdp;
 	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
 	  break;
 	switch (tdp->param.enum_param.mr_type_effective)
@@ -561,7 +561,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
       if (parent >= 0)
 	{
 	  mr_fd_t * parent_fdp;
-	  mr_td_t * parent_tdp = mr_get_td_by_name (ptrs->ra[parent].type);
+	  mr_td_t * parent_tdp = ptrs->ra[parent].tdp;
   
 	  if (NULL == parent_tdp)
 	    return;
@@ -578,7 +578,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
 	  ptrdes->fdp = parent_fdp;
 	  ptrdes->mr_type = parent_fdp->mr_type;
 	  ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
-	  ptrdes->type = parent_fdp->type;
+	  ptrdes->tdp = parent_fdp->tdp;
 	  ptrdes->name = parent_fdp->name.str;
 	  ptrdes->unnamed = parent_fdp->unnamed;
 	  ptrdes->non_persistent = parent_fdp->non_persistent;
@@ -1185,7 +1185,7 @@ mr_normalize_fields_names (mr_td_t * tdp)
 }
 
 mr_size_t
-mr_type_size (mr_type_t mr_type, char * type)
+mr_type_size (mr_type_t mr_type, mr_td_t * tdp)
 {
 #define MR_TYPE_SIZE(TYPE) [MR_TYPE_DETECT (TYPE)] = sizeof (TYPE),
   static size_t types_sizes[MR_TYPE_LAST] =
@@ -1204,12 +1204,9 @@ mr_type_size (mr_type_t mr_type, char * type)
   if (mr_type < MR_TYPE_LAST)
     size = types_sizes[mr_type];
   
-  if (0 == size)
-    {
-      mr_td_t * tdp = mr_get_td_by_name (type);
-      if (tdp)
-	size = tdp->size;
-    }
+  if ((0 == size) && (tdp != NULL))
+    size = tdp->size;
+  
   return (size);
 }
 
@@ -1399,8 +1396,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   if (strcmp (fdp->res_type, "mr_ud_override_t") != 0)
     return (MR_SUCCESS);
 
-  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
-  if (NULL == tdp)
+  if (NULL == fdp->tdp)
     return (MR_FAILURE);
   
   fdp->param.union_param = MR_CALLOC (1, sizeof (mr_ic_t));
@@ -1418,7 +1414,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   mr_ud_override_t * ud_overrides = fdp->res.ptr;
   for (i = 0; i < count; ++i)
     {
-      ud_overrides[i].fdp = mr_get_fd_by_name (tdp, ud_overrides[i].discriminator);
+      ud_overrides[i].fdp = mr_get_fd_by_name (fdp->tdp, ud_overrides[i].discriminator);
       if (NULL == ud_overrides[i].fdp)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_INVALID_OVERRIDE, ud_overrides[i].value, ud_overrides[i].discriminator);
@@ -1544,17 +1540,20 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
 static mr_status_t
 mr_register_type_pointer (mr_td_t * tdp)
 {
-  mr_fd_t * fdp;
-  mr_td_t * union_tdp = mr_get_td_by_name ("mr_ptr_t");
+  static mr_td_t * union_tdp = NULL;
   /* check that mr_ptr_t have already a registered */
   if (NULL == union_tdp)
-    return (MR_SUCCESS);
+    {
+      union_tdp = mr_get_td_by_name ("mr_ptr_t");
+      if (NULL == union_tdp)
+	return (MR_SUCCESS);
+    }
   /* check that requested type is already registered */
   if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
     return (MR_SUCCESS);
 
   /* statically allocated trailing record is used for field descriptor */
-  fdp = tdp->fields[tdp->fields_size / sizeof (tdp->fields[0])].fdp;
+  mr_fd_t * fdp = tdp->fields[tdp->fields_size / sizeof (tdp->fields[0])].fdp;
   if (NULL == fdp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
@@ -1903,7 +1902,7 @@ basic_types_visitor (mr_ptr_t key, const void * context)
   basic_type_td->td.is_dynamically_allocated = true;
   basic_type_td->td.type.str = fdp->type;
   basic_type_td->td.mr_type = mr_type;
-  basic_type_td->td.size = mr_type_size (mr_type, fdp->type);
+  basic_type_td->td.size = mr_type_size (mr_type, fdp->tdp);
   basic_type_td->td.fields = &basic_type_td->fd_ptr;
   basic_type_td->fd_ptr.fdp = &basic_type_td->fd;
 
