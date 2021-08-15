@@ -597,7 +597,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   mr_status_t status = MR_SUCCESS;
 
   fd_.non_persistent = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
+  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
 
   if (1 == fd_.param.array_param.row_count)
     fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
@@ -647,7 +647,7 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
     return (MR_SUCCESS);
 
   fd_.non_persistent = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
+  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
   fd_.mr_type = fd_.mr_type_aux;
   
   /* allocate memory */

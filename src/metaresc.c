@@ -1185,7 +1185,7 @@ mr_normalize_fields_names (mr_td_t * tdp)
 }
 
 mr_size_t
-mr_type_size (mr_type_t mr_type, mr_td_t * tdp)
+mr_type_size (mr_type_t mr_type)
 {
 #define MR_TYPE_SIZE(TYPE) [MR_TYPE_DETECT (TYPE)] = sizeof (TYPE),
   static size_t types_sizes[MR_TYPE_LAST] =
@@ -1199,15 +1199,10 @@ mr_type_size (mr_type_t mr_type, mr_td_t * tdp)
 		  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
 		  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };
-  mr_size_t size = 0;
 
   if (mr_type < MR_TYPE_LAST)
-    size = types_sizes[mr_type];
-  
-  if ((0 == size) && (tdp != NULL))
-    size = tdp->size;
-  
-  return (size);
+    return (types_sizes[mr_type]);
+  return (0);
 }
 
 static bool
@@ -1902,7 +1897,7 @@ basic_types_visitor (mr_ptr_t key, const void * context)
   basic_type_td->td.is_dynamically_allocated = true;
   basic_type_td->td.type.str = fdp->type;
   basic_type_td->td.mr_type = mr_type;
-  basic_type_td->td.size = mr_type_size (mr_type, fdp->tdp);
+  basic_type_td->td.size = mr_type_size (mr_type);
   basic_type_td->td.fields = &basic_type_td->fd_ptr;
   basic_type_td->fd_ptr.fdp = &basic_type_td->fd;
 

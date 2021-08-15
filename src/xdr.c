@@ -873,7 +873,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int count;
 
   fd_.non_persistent = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
+  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
   if (fd_.size <= 0)
     return (MR_SUCCESS);
 
@@ -943,7 +943,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
   fd_.non_persistent = true;
   fd_.mr_type = fd_.mr_type_aux;
-  fd_.size = mr_type_size (fd_.mr_type, fd_.tdp);
+  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type);
   *data = NULL;
   
   if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))

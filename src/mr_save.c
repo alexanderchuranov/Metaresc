@@ -649,7 +649,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
     .parent = parent,
   };
   int nodes_added;
-  mr_size_t element_size = mr_type_size (ra[idx].mr_type, ra[idx].tdp);
+  mr_size_t element_size = ra[idx].tdp ? ra[idx].tdp->size : mr_type_size (ra[idx].mr_type);
 
   if (element_size == 0)
     return (-1);
@@ -889,7 +889,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux, fd_.tdp);
+  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
   if (fd_.size == 0)
     return (1);
 
@@ -933,7 +933,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.mr_type = fd_.mr_type_aux;
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.size = mr_type_size (fd_.mr_type, fd_.tdp);
+  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type);
   count = mr_save_data->ptrs.ra[idx].MR_SIZE / fd_.size;
 
   for (i = 0; i < count; )
@@ -1188,7 +1188,7 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       mr_ptrdes_t src, dst;
       mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
       /* at first attempt to save pointer we need to determine size of structure */
-      mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux, ptrdes->tdp);
+      mr_size_t element_size = ptrdes->tdp ? ptrdes->tdp->size : mr_type_size (ptrdes->mr_type_aux);
       ptrdes->MR_SIZE = element_size;
       
       /* pointers might have assosiated field with the size for resizable arrays.
