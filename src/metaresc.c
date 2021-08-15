@@ -1723,7 +1723,7 @@ mr_add_type (mr_td_t * tdp)
 static void
 mr_td_detect_res_size (mr_td_t * tdp)
 {
-  if ((0 == tdp->MR_SIZE) && (tdp->res_type != NULL))
+  if ((0 == tdp->MR_SIZE) && (tdp->res_type != NULL) && (tdp->res.ptr != NULL))
     {
       mr_td_t * res_tdp = mr_get_td_by_name (tdp->res_type);
       if (res_tdp != NULL)

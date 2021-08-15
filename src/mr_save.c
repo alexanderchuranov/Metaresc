@@ -123,6 +123,16 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    }
 	  break;
 	}
+      case MR_TYPE_STRUCT:
+      case MR_TYPE_UNION:
+      case MR_TYPE_ANON_UNION:
+      case MR_TYPE_NAMED_ANON_UNION:
+	if (parent_fdp->tdp)
+	  if (parent_fdp->tdp->fields_size > sizeof (parent_fdp->tdp->fields[0]))
+	    return (mr_union_discriminator_by_type (tdp, parent_fdp->tdp->fields[0].fdp,
+						    (char*)discriminator + parent_fdp->tdp->fields[0].fdp->offset,
+						    ud_overrides));
+	break;
       default:
 	break;
       }
