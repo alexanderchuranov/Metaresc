@@ -59,61 +59,62 @@ mr_ud_override_value (mr_ic_t * ud_overrides, uint64_t value)
 static mr_fd_t *
 mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * discriminator, mr_ic_t * ud_overrides)
 {
-  mr_type_t mr_type = parent_fdp->mr_type;
-  /* if discriminator is a pointer then we need address of the content */
-  if (MR_TYPE_POINTER == parent_fdp->mr_type)
+  for (;;)
     {
-      discriminator = *(void**)discriminator;
-      mr_type = parent_fdp->mr_type_aux;
-    }
-  if (MR_TYPE_VOID == parent_fdp->mr_type)
-    mr_type = parent_fdp->mr_type_aux;
-
-  /* switch over basic types */
-  if (discriminator)
-    switch (mr_type)
-      {
-#define CASE_RETURN_BY_TYPE(TYPE)					\
-	case MR_TYPE_DETECT (TYPE):					\
-	  {								\
-	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, *(TYPE*)discriminator);	\
-	    if (fdp)							\
-	      return (fdp);						\
-	    return (mr_union_discriminator_by_idx (tdp, *(TYPE*)discriminator)); \
-	  }
-
-	MR_FOREACH (CASE_RETURN_BY_TYPE, bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
-
-      case MR_TYPE_BITFIELD:
+      mr_type_t mr_type = parent_fdp->mr_type;
+      /* if discriminator is a pointer then we need address of the content */
+      if (MR_TYPE_POINTER == parent_fdp->mr_type)
 	{
-	  uint64_t value = 0;
-	  mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
-	  mr_td_t * enum_tdp = parent_fdp->tdp;
-
-	  mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
-
-	  mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
-	  if (fdp)
-	    return (fdp);
-	  
-	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
-	    {
-	      /* if bitfield is a enumeration then get named discriminator from enum value meta field */
-	      mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
-	      return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
-	    }
-	  else
-	    return (mr_union_discriminator_by_idx (tdp, value));
+	  discriminator = *(void**)discriminator;
+	  mr_type = parent_fdp->mr_type_aux;
 	}
-      case MR_TYPE_CHAR_ARRAY:
-	return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
-      case MR_TYPE_STRING:
-	return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
-      case MR_TYPE_ENUM:
-	{
-	  mr_td_t * enum_tdp = parent_fdp->tdp;
-	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
+      if (MR_TYPE_VOID == parent_fdp->mr_type)
+	mr_type = parent_fdp->mr_type_aux;
+
+      if (NULL == discriminator)
+	return (mr_union_discriminator_by_name (tdp, NULL));
+      else
+	switch (mr_type) /* switch over basic types */
+	  {
+#define CASE_RETURN_BY_TYPE(TYPE)					\
+	    case MR_TYPE_DETECT (TYPE):					\
+	      {								\
+		mr_fd_t * fdp = mr_ud_override_value (ud_overrides, *(TYPE*)discriminator); \
+		if (fdp)						\
+		  return (fdp);						\
+		return (mr_union_discriminator_by_idx (tdp, *(TYPE*)discriminator)); \
+	      }
+
+	    MR_FOREACH (CASE_RETURN_BY_TYPE, bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
+	  case MR_TYPE_BITFIELD:
 	    {
+	      uint64_t value = 0;
+	      mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
+	      mr_td_t * enum_tdp = parent_fdp->tdp;
+
+	      mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
+
+	      mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
+	      if (fdp)
+		return (fdp);
+	  
+	      if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
+		{
+		  /* if bitfield is a enumeration then get named discriminator from enum value meta field */
+		  mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
+		  return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
+		}
+	      else
+		return (mr_union_discriminator_by_idx (tdp, value));
+	    }
+	  case MR_TYPE_CHAR_ARRAY:
+	    return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
+	  case MR_TYPE_STRING:
+	    return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
+	  case MR_TYPE_ENUM:
+	    {
+	      mr_td_t * enum_tdp = parent_fdp->tdp;
 	      mr_enum_value_type_t value = mr_get_enum_value (enum_tdp, discriminator);
 	      mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
 	      if (fdp)
@@ -121,22 +122,24 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	      mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
 	      return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
 	    }
-	  break;
-	}
-      case MR_TYPE_STRUCT:
-      case MR_TYPE_UNION:
-      case MR_TYPE_ANON_UNION:
-      case MR_TYPE_NAMED_ANON_UNION:
-	if (parent_fdp->tdp)
-	  if (parent_fdp->tdp->fields_size > sizeof (parent_fdp->tdp->fields[0]))
-	    return (mr_union_discriminator_by_type (tdp, parent_fdp->tdp->fields[0].fdp,
-						    (char*)discriminator + parent_fdp->tdp->fields[0].fdp->offset,
-						    ud_overrides));
-	break;
-      default:
-	break;
-      }
-  return (mr_union_discriminator_by_name (tdp, NULL));
+	    
+	  case MR_TYPE_STRUCT:
+	  case MR_TYPE_UNION:
+	  case MR_TYPE_ANON_UNION:
+	  case MR_TYPE_NAMED_ANON_UNION:
+	    if (parent_fdp->tdp)
+	      if (parent_fdp->tdp->fields_size > sizeof (parent_fdp->tdp->fields[0]))
+		{
+		  discriminator = (char*)discriminator + parent_fdp->tdp->fields[0].fdp->offset;
+		  parent_fdp = parent_fdp->tdp->fields[0].fdp;
+		  break;
+		}
+	    
+	  default:
+	    return (mr_union_discriminator_by_name (tdp, NULL));
+	  }
+    }
+  return (NULL);
 }
 
 static mr_fd_t *
