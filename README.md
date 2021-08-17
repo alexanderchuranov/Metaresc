@@ -934,9 +934,15 @@ of the active branch is based on the type of the discriminator field:
   a name of the active branch.
 
 * `enums` resolves to a name of active branch based on
-  **_text\_metadata_** of `enam` value.
+  **_text\_metadata_** of `enum` value.
 
-* Bitfields resolve based on their base type.
+* Bitfields resolves based on their base type.
+
+* Structures and unions resolves as a first field recursively down to
+  basic type field listed above.
+
+* Pointers resolves based on pointer non-NULL value according rules
+  listed above.
 
 Example below demonstrates the concept:
 

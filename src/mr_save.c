@@ -142,7 +142,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
   return (NULL);
 }
 
-static mr_fd_t *
+static inline mr_fd_t *
 mr_type_get_discriminator_fd (mr_td_t * tdp, char * discriminator)
 {
   if (NULL == tdp)
