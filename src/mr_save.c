@@ -59,9 +59,9 @@ mr_ud_override_value (mr_ic_t * ud_overrides, uint64_t value)
 static mr_fd_t *
 mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * discriminator, mr_ic_t * ud_overrides)
 {
+  mr_type_t mr_type = parent_fdp->mr_type;
   for (;;)
     {
-      mr_type_t mr_type = parent_fdp->mr_type;
       /* if discriminator is a pointer then we need address of the content */
       if (MR_TYPE_POINTER == parent_fdp->mr_type)
 	{
@@ -123,6 +123,13 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	      return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
 	    }
 	    
+	  case MR_TYPE_ARRAY:
+	    if (parent_fdp->mr_type_aux == MR_TYPE_POINTER)
+	      parent_fdp = parent_fdp->param.array_param.pointer_param;
+	    else
+	      mr_type = parent_fdp->mr_type_aux;
+	    break;
+	    
 	  case MR_TYPE_STRUCT:
 	  case MR_TYPE_UNION:
 	  case MR_TYPE_ANON_UNION:
@@ -132,6 +139,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 		{
 		  discriminator = (char*)discriminator + parent_fdp->tdp->fields[0].fdp->offset;
 		  parent_fdp = parent_fdp->tdp->fields[0].fdp;
+		  mr_type = parent_fdp->mr_type;
 		  break;
 		}
 	    
@@ -145,18 +153,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 static inline mr_fd_t *
 mr_type_get_discriminator_fd (mr_td_t * tdp, char * discriminator)
 {
-  if (NULL == tdp)
-    return (NULL);
   /* lookup for a discriminator field */
-  mr_fd_t * fdp = mr_get_fd_by_name (tdp, discriminator);
-  if (NULL == fdp)
-    return (NULL);
-
-  /* check that this field is of valid type - structure, union or a pointer to something */
-  if (MR_TYPE_ARRAY == fdp->mr_type)
-    return (NULL);
-
-  return (fdp);
+  return (tdp ? mr_get_fd_by_name (tdp, discriminator) : NULL);
 }
 
 int

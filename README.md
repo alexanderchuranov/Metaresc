@@ -941,7 +941,10 @@ of the active branch is based on the type of the discriminator field:
 * Structures and unions resolves as a first field recursively down to
   basic type field listed above.
 
-* Pointers resolves based on pointer non-NULL value according rules
+* Array resolves as a first element, even though array might be of a
+  zero size.
+
+* Pointers resolves based on non-NULL pointer value according rules
   listed above.
 
 Example below demonstrates the concept:
