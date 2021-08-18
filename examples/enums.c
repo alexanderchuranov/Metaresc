@@ -12,7 +12,8 @@ TYPEDEF_STRUCT (character_place_t,
 
 int main ()
 {
-  MR_PRINT ("color_t enum desciptor\n", (mr_td_t, &MR_DESCRIPTOR_PREFIX (color_t)));
+  mr_td_t * tdp = mr_get_td_by_name ("color_t");
+  MR_PRINT ("color_t enum desciptor\n", (mr_td_t, tdp));
   MR_PRINT ("RED: ", RED, "\n",
 	    "ORANGE: ", ORANGE, "\n",
 	    "YELLOW: ", YELLOW, "\n",
