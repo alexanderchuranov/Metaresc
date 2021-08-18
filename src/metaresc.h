@@ -112,13 +112,13 @@
   you can redefine this prefixes from outside before first include of metaresc.h
 */
 #ifndef MR_DESCRIPTOR_PREFIX
-#define MR_DESCRIPTOR_PREFIX(ID, MR_TYPE_NAME) mr_td_ ## ID
+#define MR_DESCRIPTOR_PREFIX(ID, MR_TYPE_NAME) mr_td_ ## MR_TYPE_NAME
 #endif /* MR_DESCRIPTOR_PREFIX */
 #ifndef MR_TYPEDEF_PREFIX
 #define MR_TYPEDEF_PREFIX(MR_TYPE_NAME) MR_TYPE_NAME
 #endif /* MR_TYPEDEF_PREFIX */
 #ifndef MR_CONSTRUCTOR_PREFIX
-#define MR_CONSTRUCTOR_PREFIX(ID, MR_TYPE_NAME) mr_init_ ## ID
+#define MR_CONSTRUCTOR_PREFIX(ID, MR_TYPE_NAME) mr_init_ ## MR_TYPE_NAME
 #endif /* MR_CONSTRUCTOR_PREFIX */
 /* this attribute can be redefined from outside */
 #ifndef MR_DESCRIPTOR_ATTR

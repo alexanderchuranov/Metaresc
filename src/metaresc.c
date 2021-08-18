@@ -28,6 +28,11 @@
 #include <mr_protos.h>
 #undef MR_MODE
 
+#undef MR_DESCRIPTOR_PREFIX
+#define MR_DESCRIPTOR_PREFIX(ID, MR_TYPE_NAME) mr_td_ ## ID
+#undef MR_CONSTRUCTOR_PREFIX
+#define MR_CONSTRUCTOR_PREFIX(ID, MR_TYPE_NAME) mr_init_ ## ID
+
 MR_FOREACH (MR_TYPEDEF_DESC_BI,
 	    signed, unsigned, char *,
 	    char, signed char, unsigned char,
