@@ -61,100 +61,96 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 {
   mr_type_t mr_type = parent_fdp->mr_type;
   for (;;)
-    {
-      /* if discriminator is a pointer then we need address of the content */
-      if (MR_TYPE_POINTER == parent_fdp->mr_type)
-	{
-	  discriminator = *(void**)discriminator;
-	  mr_type = parent_fdp->mr_type_aux;
-	}
-      if (MR_TYPE_VOID == parent_fdp->mr_type)
-	mr_type = parent_fdp->mr_type_aux;
-
-      if (NULL == discriminator)
-	return (mr_union_discriminator_by_name (tdp, NULL));
-      else
-	switch (mr_type) /* switch over basic types */
-	  {
+    switch (mr_type) /* switch over basic types */
+      {
 #define CASE_RETURN_BY_TYPE(TYPE)					\
-	    case MR_TYPE_DETECT (TYPE):					\
-	      {								\
-		mr_fd_t * fdp = mr_ud_override_value (ud_overrides, *(TYPE*)discriminator); \
-		if (fdp)						\
-		  return (fdp);						\
-		return (mr_union_discriminator_by_idx (tdp, *(TYPE*)discriminator)); \
-	      }
+	case MR_TYPE_DETECT (TYPE):					\
+	  {								\
+	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, *(TYPE*)discriminator); \
+	    if (fdp)							\
+	      return (fdp);						\
+	    return (mr_union_discriminator_by_idx (tdp, *(TYPE*)discriminator)); \
+	  }
 
-	    MR_FOREACH (CASE_RETURN_BY_TYPE, bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	MR_FOREACH (CASE_RETURN_BY_TYPE, bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 
-	  case MR_TYPE_BITFIELD:
-	    {
-	      uint64_t value = 0;
-	      mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
-	      mr_td_t * enum_tdp = parent_fdp->tdp;
+      case MR_TYPE_BITFIELD:
+	{
+	  uint64_t value = 0;
+	  mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
+	  mr_td_t * enum_tdp = parent_fdp->tdp;
 
-	      mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
+	  mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
 
-	      mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
-	      if (fdp)
-		return (fdp);
+	  mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
+	  if (fdp)
+	    return (fdp);
 	  
-	      if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
-		{
-		  /* if bitfield is a enumeration then get named discriminator from enum value meta field */
-		  mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
-		  return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
-		}
-	      else
-		return (mr_union_discriminator_by_idx (tdp, value));
-	    }
-	  case MR_TYPE_CHAR_ARRAY:
-	    return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
-	  case MR_TYPE_STRING:
-	    return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
-	  case MR_TYPE_ENUM:
+	  if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
 	    {
-	      mr_td_t * enum_tdp = parent_fdp->tdp;
-	      mr_enum_value_type_t value = mr_get_enum_value (enum_tdp, discriminator);
-	      mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
-	      if (fdp)
-		return (fdp);
-	      mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
+	      /* if bitfield is a enumeration then get named discriminator from enum value meta field */
+	      mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
 	      return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
 	    }
+	  else
+	    return (mr_union_discriminator_by_idx (tdp, value));
+	}
+	
+      case MR_TYPE_CHAR_ARRAY:
+	return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
+	
+      case MR_TYPE_STRING:
+	return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
+	
+      case MR_TYPE_ENUM:
+	{
+	  mr_td_t * enum_tdp = parent_fdp->tdp;
+	  mr_enum_value_type_t value = mr_get_enum_value (enum_tdp, discriminator);
+	  mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
+	  if (fdp)
+	    return (fdp);
+	  mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
+	  return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
+	}
 	    
-	  case MR_TYPE_ARRAY:
-	    if (parent_fdp->mr_type_aux == MR_TYPE_POINTER)
-	      parent_fdp = parent_fdp->param.array_param.pointer_param;
-	    else
-	      mr_type = parent_fdp->mr_type_aux;
+      case MR_TYPE_ARRAY:
+	if (parent_fdp->mr_type_aux != MR_TYPE_POINTER)
+	  {
+	    mr_type = parent_fdp->mr_type_aux;
 	    break;
-	    
-	  case MR_TYPE_STRUCT:
-	  case MR_TYPE_UNION:
-	  case MR_TYPE_ANON_UNION:
-	  case MR_TYPE_NAMED_ANON_UNION:
-	    if (parent_fdp->tdp)
-	      if (parent_fdp->tdp->fields_size > sizeof (parent_fdp->tdp->fields[0]))
-		{
-		  discriminator = (char*)discriminator + parent_fdp->tdp->fields[0].fdp->offset;
-		  parent_fdp = parent_fdp->tdp->fields[0].fdp;
-		  mr_type = parent_fdp->mr_type;
-		  break;
-		}
-	    
-	  default:
-	    return (mr_union_discriminator_by_name (tdp, NULL));
 	  }
-    }
-  return (NULL);
-}
+	    
+	parent_fdp = parent_fdp->param.array_param.pointer_param;
+	/* NB! proceed to pointer branch */
+      case MR_TYPE_POINTER:
+	/* if discriminator is a pointer then we need address of the content */
+	discriminator = *(void**)discriminator;
+	if (NULL == discriminator)
+	  return (mr_union_discriminator_by_name (tdp, NULL));
+	mr_type = parent_fdp->mr_type_aux;
+	break;
+	    
+      case MR_TYPE_VOID:
+	mr_type = parent_fdp->mr_type_aux;
+	break;
 
-static inline mr_fd_t *
-mr_type_get_discriminator_fd (mr_td_t * tdp, char * discriminator)
-{
-  /* lookup for a discriminator field */
-  return (tdp ? mr_get_fd_by_name (tdp, discriminator) : NULL);
+      case MR_TYPE_STRUCT:
+      case MR_TYPE_UNION:
+      case MR_TYPE_ANON_UNION:
+      case MR_TYPE_NAMED_ANON_UNION:
+	if (parent_fdp->tdp)
+	  if (parent_fdp->tdp->fields_size > sizeof (parent_fdp->tdp->fields[0]))
+	    {
+	      discriminator = (char*)discriminator + parent_fdp->tdp->fields[0].fdp->offset;
+	      parent_fdp = parent_fdp->tdp->fields[0].fdp;
+	      mr_type = parent_fdp->mr_type;
+	      break;
+	    }
+	/* NB! proceed to default branch */
+      default:
+	return (mr_union_discriminator_by_name (tdp, NULL));
+      }
+  return (NULL);
 }
 
 int
@@ -346,26 +342,24 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
   /* traverse through parents up to root node */
   for (parent = node; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
     {
-      mr_fd_t * parent_fdp;
-      void * discriminator_ptr;
-
+      mr_ptrdes_t * parent_ptrdes = &mr_save_data->ptrs.ra[parent];
       /* checks if this parent already have union resolution info */
-      ud_find = mr_ud_find (&mr_save_data->ptrs.ra[parent], (intptr_t)ud_idx, mr_save_data);
+      ud_find = mr_ud_find (parent_ptrdes, (intptr_t)ud_idx, mr_save_data);
       /* break the traverse loop if it has */
       if (ud_find != -1)
 	break;
 
-      if ((MR_TYPE_ARRAY == mr_save_data->ptrs.ra[parent].mr_type)
-	  || (MR_TYPE_POINTER == mr_save_data->ptrs.ra[parent].mr_type))
+      if ((MR_TYPE_ARRAY == parent_ptrdes->mr_type) || (MR_TYPE_POINTER == parent_ptrdes->mr_type))
 	continue;
       
-      parent_fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[parent].tdp, discriminator);
+      if (NULL == parent_ptrdes->tdp)
+	continue;
+      mr_fd_t * parent_fdp = mr_get_fd_by_name (parent_ptrdes->tdp, discriminator);
       if (NULL == parent_fdp)
 	continue;
       
       /* get an address of discriminator field */
-      discriminator_ptr = (char*)mr_save_data->ptrs.ra[parent].data.ptr + parent_fdp->offset;
-
+      void * discriminator_ptr = (char*)parent_ptrdes->data.ptr + parent_fdp->offset;
       fdp = mr_union_discriminator_by_type (tdp, parent_fdp, discriminator_ptr, union_fdp->param.union_param);
       break;
     }
@@ -517,7 +511,8 @@ mr_check_ud (mr_ptr_t key, const void * context)
   mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr];
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
   char * discriminator = ud->union_fdp->meta;
-  mr_fd_t * fdp = mr_type_get_discriminator_fd (mr_save_data->ptrs.ra[mr_check_ud_ctx->node].tdp, discriminator);
+  mr_td_t * tdp = mr_save_data->ptrs.ra[mr_check_ud_ctx->node].tdp;
+  mr_fd_t * fdp = (tdp != NULL) ? mr_get_fd_by_name (tdp, discriminator) : NULL;
 
   /* here we check that union discriminator was resolved at the level of saved node.
      This means that resolution is not dependant on upper tree */
