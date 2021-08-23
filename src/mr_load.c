@@ -591,19 +591,27 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
 {
   char * data = mr_load_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = *mr_load_data->ptrs.ra[idx].fdp;
-  int row_count = fd_.param.array_param.row_count;
-  int count = fd_.param.array_param.count;
-  int i = 0;
+  mr_fd_t * fdp = &fd_;
+  int count, i = 0;
   mr_status_t status = MR_SUCCESS;
 
   fd_.non_persistent = true;
   fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
+  if (fd_.size == 0)
+    return (MR_FAILURE);
 
   if (1 == fd_.param.array_param.row_count)
-    fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
+    {
+      count = fd_.param.array_param.count;
+      fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
+      if (MR_TYPE_POINTER == fd_.mr_type)
+	fdp = fd_.param.array_param.pointer_param;
+    }
   else
     {
-      fd_.param.array_param.count = row_count;
+      count = fd_.param.array_param.count / fd_.param.array_param.row_count;
+      fd_.size *= fd_.param.array_param.row_count;
+      fd_.param.array_param.count = fd_.param.array_param.row_count;
       fd_.param.array_param.row_count = 1;
     }
 
@@ -613,14 +621,14 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
       /* check if array index is in range */
       if ((i < 0) || (i >= count))
 	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fdp->name.str);
 	  return (MR_FAILURE);
 	}
       /* load recursively */
-      mr_status_t subnode_status = mr_load (&data[i * fd_.size], &fd_, idx, mr_load_data);
+      mr_status_t subnode_status = mr_load (&data[i * fdp->size], fdp, idx, mr_load_data);
       if (MR_SUCCESS != subnode_status)
 	status = subnode_status;
-      i += row_count;
+      ++i;
     }
   return (status);
 }
@@ -816,7 +824,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
     }
 
   mr_load_data->ptrs.ra[idx].data.ptr = data;
-  if (mr_load_data->ptrs.ra[idx].name && fdp->name.str)
+  if (mr_load_data->ptrs.ra[idx].name && fdp->name.str && !fdp->unnamed)
     if (0 != strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].name))
       {
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, mr_load_data->ptrs.ra[idx].name);

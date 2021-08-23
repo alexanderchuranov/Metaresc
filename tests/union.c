@@ -11,13 +11,13 @@
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
-#define ASSERT_SAVE_LOAD_UNION(METHOD, TYPE, VALUE, ...) ({	\
-      TYPE x = { .dummy = 0, { M_PI }, VALUE };			\
-      ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);		\
+#define ASSERT_SAVE_LOAD_UNION(METHOD, TYPE, VALUE, ...) ({		\
+      TYPE x = { .dummy = 0, { M_PI }, MR_REMOVE_PAREN (VALUE) };	\
+      ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
-#define ASSERT_UNION_RESOLUTION(TYPE, VALUE) ({				\
-      TYPE orig = { .dummy = 0, { M_PI }, VALUE };			\
+#define ASSERT_UNION_RESOLUTION(TYPE, ...) ({				\
+      TYPE orig = { .dummy = 0, { M_PI }, __VA_ARGS__ };		\
       mr_ra_ptrdes_t ptrs = MR_SAVE (TYPE, &orig);			\
       bool union_resolved_correctly = false;				\
       if (ptrs.ra != NULL)						\
@@ -97,8 +97,8 @@ START_TEST (union_bitfield) {
 
 START_TEST (union_enum_ptr) {
   ASSERT_UNION_RESOLUTION (struct_union_enum_ptr_t, (enum_discriminator_t[]){ UD_INT32 });
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_ptr_t, (enum_discriminator_t[]){ UD_FLOAT }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_ptr_t, (enum_discriminator_t[]){ UD_INT32 }, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_ptr_t, ((enum_discriminator_t[]){ UD_FLOAT }), STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_ptr_t, ((enum_discriminator_t[]){ UD_INT32 }), STRUCT_XY_X_CMP);
 } END_TEST
 
 START_TEST (union_int8) {
@@ -163,14 +163,38 @@ START_TEST (union_ca) {
 
 START_TEST (union_str_ptr) {
   ASSERT_UNION_RESOLUTION (struct_union_string_ptr_t, (string_t[]) { "y" });
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_ptr_t, (string_t[]) { "x" }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_ptr_t, (string_t[]) { "y" }, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_ptr_t, ((string_t[]) { "x" }), STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_ptr_t, ((string_t[]) { "y" }), STRUCT_XY_X_CMP);
+} END_TEST
+
+START_TEST (union_str_struct_ptr) {
+  ASSERT_UNION_RESOLUTION (struct_union_string_struct_ptr_t, (string_struct_t[]) {{ "y" }});
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_struct_ptr_t, ((string_struct_t[]) {{ "x" }}), STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_struct_ptr_t, ((string_struct_t[]) {{ "y" }}), STRUCT_XY_X_CMP);
+} END_TEST
+
+START_TEST (union_str_struct_ptr_array) {
+  ASSERT_UNION_RESOLUTION (struct_union_string_struct_ptr_array_t, { (string_struct_t[]) {{ "y" }} });
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_struct_ptr_array_t, { (string_struct_t[]) {{ "x" }} }, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_struct_ptr_array_t, { (string_struct_t[]) {{ "y" }} }, STRUCT_XY_X_CMP);
+} END_TEST
+
+START_TEST (union_str_array) {
+  ASSERT_UNION_RESOLUTION (struct_union_string_array_t, { "y" });
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_array_t, { "x" }, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_array_t, { "y" }, STRUCT_XY_X_CMP);
+} END_TEST
+
+START_TEST (union_str_zero_array) {
+  ASSERT_UNION_RESOLUTION (struct_union_string_zero_array_t, { "", "y" });
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_zero_array_t, ({ "", "x" }), STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_string_zero_array_t, ({ "", "y" }), STRUCT_XY_X_CMP);
 } END_TEST
 
 START_TEST (union_ca_ptr) {
   ASSERT_UNION_RESOLUTION (struct_union_ca_ptr_t, (ca2_t[]){ "y" });
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_ca_ptr_t, (ca2_t[]){ "x" }, STRUCT_XY_X_CMP);
-  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_ca_ptr_t, (ca2_t[]){ "y" }, STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_ca_ptr_t, ((ca2_t[]){ "x" }), STRUCT_XY_X_CMP);
+  ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_ca_ptr_t, ((ca2_t[]){ "y" }), STRUCT_XY_X_CMP);
 } END_TEST
 
 START_TEST (union_enum_overrided) {
@@ -218,6 +242,10 @@ MAIN_TEST_SUITE ((embed_anon_union, "embeded anonymous union"),
 		 (union_str, "union discriminated by string"),
 		 (union_ca, "union discriminated by char array"),
 		 (union_str_ptr, "union discriminated by pointer on string"),
+		 (union_str_struct_ptr, "union discriminated by pointer on string contained in struct"),
+		 (union_str_struct_ptr_array, "union discriminated by pointer on string contained in struct within an array"),
+		 (union_str_array, "union discriminated by array of strings"),
+		 (union_str_zero_array, "union discriminated by zero size array with tweaked offset"),
 		 (union_ca_ptr, "union discriminated by pointer on char array"),
 		 (union_enum_overrided, "union discriminated by enum, but resolution is swapped by override"),
 		 (union_int_overrided, "union discriminated by int, but resolution is swapped by override"),

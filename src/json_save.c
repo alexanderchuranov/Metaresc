@@ -210,10 +210,15 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
 
   if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
-
-  if (!ptrs->ra[idx].unnamed ||
-      (MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
-      (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
+  
+  bool unnamed = ptrs->ra[idx].unnamed;
+  int parent = ptrs->ra[idx].parent;
+  if (((MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
+       (MR_TYPE_POINTER == ptrs->ra[idx].mr_type)) &&
+      (parent >= 0) && (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type))
+    unnamed = false;
+  
+  if (!unnamed)
     {
       if (mr_ra_append_char (mr_ra_str, '"') < 0)
 	return (MR_FAILURE);

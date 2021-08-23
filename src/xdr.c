@@ -867,20 +867,22 @@ xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  int i;
+  int i, count;
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
-  int count;
+  mr_fd_t * fdp = &fd_;
 
   fd_.non_persistent = true;
   fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
   if (fd_.size <= 0)
-    return (MR_SUCCESS);
+    return (MR_FAILURE);
 
   if (1 == fd_.param.array_param.row_count)
     {
       count = fd_.param.array_param.count;
       fd_.mr_type = fd_.mr_type_aux;
+      if (MR_TYPE_POINTER == fd_.mr_type)
+	fdp = fd_.param.array_param.pointer_param;
     }
   else
     {
@@ -891,7 +893,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
     }
 
   for (i = 0; i < count; ++i)
-    if (MR_SUCCESS != xdr_load_inner (&data[i * fd_.size], &fd_, xdrs, ptrs, idx))
+    if (MR_SUCCESS != xdr_load_inner (&data[i * fdp->size], fdp, xdrs, ptrs, idx))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -941,10 +943,13 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   char ** data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
 
+  *data = NULL;
+  
   fd_.non_persistent = true;
   fd_.mr_type = fd_.mr_type_aux;
   fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type);
-  *data = NULL;
+  if (fd_.size <= 0)
+    return (MR_FAILURE);
   
   if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);

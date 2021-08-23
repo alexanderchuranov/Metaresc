@@ -200,6 +200,45 @@ TYPEDEF_STRUCT (struct_union_string_ptr_t,
 		(string_t *, discriminator),
 		)
 
+TYPEDEF_STRUCT (string_struct_t,
+		string_t discriminator1,
+		string_t discriminator2,
+		)
+
+TYPEDEF_STRUCT (struct_union_string_struct_ptr_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator"),
+		(string_struct_t *, discriminator),
+		)
+
+TYPEDEF_STRUCT (struct_union_string_array_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator"),
+		(string_t, discriminator, [1]),
+		)
+
+TYPEDEF_STRUCT (struct_union_string_zero_array_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator"),
+		(string_struct_t, real_discriminator),
+		(string_t, discriminator, [0], ,
+		 .offset = (mr_offset_t)&(((struct_union_string_zero_array_t*)0)->real_discriminator.discriminator2)),
+		)
+
+TYPEDEF_STRUCT (struct_union_string_struct_ptr_array_t,
+		(empty_union_t, empty_union),
+		(empty_struct_t, empty_struct),
+		int dummy,
+		(union_int32_float_t, xy, , "discriminator"),
+		(string_struct_t *, discriminator, [1]),
+		)
+
 TYPEDEF_CHAR_ARRAY (ca2_t, 2)
 
 TYPEDEF_STRUCT (struct_union_ca_t,
