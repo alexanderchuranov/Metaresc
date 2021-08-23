@@ -165,6 +165,7 @@ START_TEST (int_ptr_array)
       ,
     };
   ASSERT_MR_SAVE (int_ptr_array_t, &orig, expected);
+  ALL_METHODS (ASSERT_SAVE_LOAD, int_ptr_array_t, &orig);
 } END_TEST
 
 START_TEST (enum_ptr_array)
@@ -214,9 +215,11 @@ START_TEST (enum_ptr_array)
       ,
     };
   ASSERT_MR_SAVE (enum_ptr_array_t, &orig, expected);
+  ALL_METHODS (ASSERT_SAVE_LOAD, enum_ptr_array_t, &orig);
 } END_TEST
 
-START_TEST (union_ptr_array) {
+START_TEST (union_ptr_array)
+{
   union_ptr_array_t orig = { { (union_int32_float_t[]){ { ._float = 1.2345678 } }, NULL }, UD_FLOAT };
   mr_ptrdes_t expected[] =
     {
@@ -278,9 +281,11 @@ START_TEST (union_ptr_array) {
       ,
     };      
   ASSERT_MR_SAVE (union_ptr_array_t, &orig, expected);
+  ALL_METHODS (ASSERT_SAVE_LOAD, union_ptr_array_t, &orig);
 } END_TEST
 
-START_TEST (ud_overrided_ptr_array) {
+START_TEST (ud_overrided_ptr_array)
+{
   ud_overrided_ptr_array_t orig = { { (union_int32_float_t[]){ { ._float = 1.2345678 } }, NULL }, UD_INT32 };
   mr_ptrdes_t expected[] =
     {
@@ -342,6 +347,7 @@ START_TEST (ud_overrided_ptr_array) {
       ,
     };      
   ASSERT_MR_SAVE (ud_overrided_ptr_array_t, &orig, expected);
+  ALL_METHODS (ASSERT_SAVE_LOAD, ud_overrided_ptr_array_t, &orig);
 } END_TEST
 
 MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
