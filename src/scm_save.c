@@ -217,6 +217,16 @@ static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = mr_ra_printf_void,
   };
 
+static inline bool
+scm_is_unnamed (mr_ra_ptrdes_t * ptrs, int idx)
+{
+  int parent = ptrs->ra[idx].parent;
+  if ((MR_TYPE_POINTER == ptrs->ra[idx].mr_type) &&
+      (parent >= 0) && (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type))
+    return (false);
+  return (ptrs->ra[idx].unnamed);
+}
+
 static mr_status_t
 scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -253,7 +263,7 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_
       else
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
 
-      if (!ptrs->ra[idx].unnamed || (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
+      if (!scm_is_unnamed (ptrs, idx))
 	{
 	  if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START,
 			    limit_level * MR_SCM_INDENT_SPACES, "") < 0)
@@ -291,7 +301,7 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_
 			  limit_level * MR_SCM_INDENT_SPACES, "") < 0)
 	  return (MR_FAILURE);
 
-      if (!ptrs->ra[idx].unnamed || (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
+      if (!scm_is_unnamed (ptrs, idx))
 	if (mr_ra_append_string (mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
 	  return (MR_FAILURE);
 
@@ -313,8 +323,7 @@ scm_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
     if (mr_ra_append_string (mr_ra_str, MR_SCM_COMPAUND_END) < 0)
       return (MR_FAILURE);
   
-  if ((!ptrs->ra[idx].unnamed || (MR_TYPE_POINTER == ptrs->ra[idx].mr_type)) &&
-      (ptrs->ra[idx].first_child >= 0))
+  if (!scm_is_unnamed (ptrs, idx) && (ptrs->ra[idx].first_child >= 0))
     {
       if (mr_ra_append_string (mr_ra_str, " . ") < 0)
 	return (MR_FAILURE);
