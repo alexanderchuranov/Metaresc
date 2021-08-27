@@ -967,10 +967,10 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
  * @param context untyped pointer on context passed through DFS traverse
  */
 mr_status_t
-mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context)
+mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start)
 {
   int level = 0;
-  int idx = 0;
+  int idx = start;
   while (idx >= 0)
     {
       if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_PRE_ORDER, context))
@@ -991,6 +991,8 @@ mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * cont
 	      --level;
 	      if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
 		return (MR_FAILURE);
+	      if (idx == start)
+		return (MR_SUCCESS);
 	    }
 	  idx = ptrs->ra[idx].next;
 	}

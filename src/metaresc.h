@@ -1287,7 +1287,8 @@ extern char * mr_get_static_field_name_from_string (char * name);
 extern char * mr_get_static_field_name_from_substring (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 extern mr_status_t mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg);
-extern mr_status_t mr_ptrs_dfs (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, void * context);
+#define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (0) (__VA_ARGS__))
+extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 
 extern mr_hash_value_t mr_hash_block (void * block, mr_size_t size);

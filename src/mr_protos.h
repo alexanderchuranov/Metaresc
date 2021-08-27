@@ -670,7 +670,7 @@ TYPEDEF_ENUM (mr_dfs_order_t,
 	      MR_DFS_POST_ORDER,
 	      )
 
-TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, int /* idx */, int /* level */, mr_dfs_order_t /* order */, void * /* context */))
+TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, int /* idx */, int /* level */, mr_dfs_order_t /* order */, mr_ptr_t /* context */))
 
 TYPEDEF_STRUCT (mr_load_data_t, ATTRIBUTES ( , "state for objects loading"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a loaded tree"),
