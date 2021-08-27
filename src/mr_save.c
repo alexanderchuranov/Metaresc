@@ -1154,6 +1154,60 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
   return (MR_SUCCESS);
 }
 
+static bool
+mr_optimize_graph_depth (mr_ra_ptrdes_t * ptrs)
+{
+  bool need_reindex = false;
+  int i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_ptrdes_t * ra = ptrs->ra;
+  
+  ptrs->ptrdes_type = MR_PD_CUSTOM;
+  for (i = 0; i < count; ++i)
+    {
+      ra[i].res.data.uintptr = 0;
+      ra[i].res.type = "uintptr";
+      ra[i].res.MR_SIZE = 0;
+    }
+
+  int head, tail;
+  head = tail = 0;
+  ra[tail++].res.data.uintptr = 0;
+  while (head != tail)
+    {
+      int idx = ra[head++].res.data.uintptr;
+      /* inspect pointers that are references on other nodes */
+      if ((MR_TYPE_POINTER == ra[idx].mr_type) && (ra[idx].ref_idx >= 0))
+	{
+	  int ref_idx = ra[idx].ref_idx;
+	  int ref_parent = ra[ref_idx].parent;
+	  /*
+	    if a referenced node is a first child of another pointer that is not yet visited
+	    we need to move all pointer content to lower level pointer and make a reference at higher level
+	  */
+	  if (ref_parent >= 0)
+	    if ((ra[ref_idx].prev < 0) && /* is a first node */
+		(MR_TYPE_POINTER == ra[ref_parent].mr_type) && /* parent node is a pointer */
+		(0 == ra[ref_parent].res.MR_SIZE)) /* that is not yet visited */
+	      {
+		need_reindex = true;
+		ra[idx].MR_SIZE = ra[ref_parent].MR_SIZE;
+		mr_size_t element_size = ra[idx].tdp ? ra[idx].tdp->size : mr_type_size (ra[idx].mr_type);
+		move_nodes_to_parent (ra, ref_parent, idx, ref_idx, element_size);
+		for (i = ra[idx].first_child; i >= 0; i = ra[i].next)
+		  ra[i].name = ra[idx].name;
+		ra[idx].ref_idx = -1;
+	      }
+	}
+      
+      for (i = ra[idx].first_child; i >= 0; i = ra[i].next)
+	{
+	  ra[i].res.MR_SIZE = !0;
+	  ra[tail++].res.data.uintptr = i;
+	}
+    }
+  return (need_reindex);
+}
+
 /**
  * There is no need to save empty nodes and possibly their parent structures 
  * @param mr_ra_ptrdes_t resizable array with pointers descriptors
@@ -1163,8 +1217,9 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 {
   bool need_reindex = false;
   mr_ptrs_dfs (ptrs, mr_remove_empty_node, &need_reindex);
+  bool need_reindex_levels = mr_optimize_graph_depth (ptrs);
   /* re-enumerate nodes after empty nodes removal */
-  if (need_reindex)
+  if (need_reindex || need_reindex_levels)
     {
       int idx_ = 0;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
