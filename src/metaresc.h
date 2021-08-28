@@ -1261,7 +1261,10 @@ extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern void mr_detect_fields_types (mr_td_t * tdp);
-#define mr_type_void_fields(type, ...) mr_type_void_fields_impl (type, __VA_ARGS__, NULL)
+#define MR_IS_STRING(X) __builtin_types_compatible_p (char, __typeof__ (*__builtin_choose_expr ((__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS) || (__builtin_classify_type (X) == MR_ARRAY_TYPE_CLASS), X, NULL)))
+#define MR_AND_IS_STRING(X) && MR_IS_STRING (X)
+#define MR_VALIDATE_ALL_ARGS_ARE_STRINGS(...) (void*) (0 / (true MR_FOREACH (MR_AND_IS_STRING, __VA_ARGS__)))
+#define mr_type_void_fields(type, ...) mr_type_void_fields_impl (type, __VA_ARGS__, MR_VALIDATE_ALL_ARGS_ARE_STRINGS (__VA_ARGS__))
 extern void __attribute__ ((sentinel(0))) mr_type_void_fields_impl (char * type, char * name, ...);
 extern mr_size_t mr_type_size (mr_type_t mr_type);
 extern char * mr_normalize_name (char * name);
