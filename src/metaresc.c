@@ -1581,7 +1581,7 @@ mr_register_type_pointer (mr_td_t * tdp)
 }
 
 void __attribute__ ((sentinel(0)))
-mr_type_void_fields (char * type, char * name, ...)
+mr_type_void_fields_impl (char * type, char * name, ...)
 {
   va_list args;
   va_start (args, name);

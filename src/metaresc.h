@@ -1261,7 +1261,8 @@ extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern void mr_detect_fields_types (mr_td_t * tdp);
-extern void __attribute__ ((sentinel(0))) mr_type_void_fields (char * type, char * name, ...);
+#define mr_type_void_fields(type, ...) mr_type_void_fields_impl (type, __VA_ARGS__, NULL)
+extern void __attribute__ ((sentinel(0))) mr_type_void_fields_impl (char * type, char * name, ...);
 extern mr_size_t mr_type_size (mr_type_t mr_type);
 extern char * mr_normalize_name (char * name);
 extern void mr_conf_init ();
@@ -1287,7 +1288,7 @@ extern char * mr_get_static_field_name_from_string (char * name);
 extern char * mr_get_static_field_name_from_substring (mr_substr_t * substr);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 extern mr_status_t mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg);
-#define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (0) (__VA_ARGS__))
+#define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, __VA_ARGS__ - 0)
 extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 
