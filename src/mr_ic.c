@@ -240,9 +240,9 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
 	if (ic->compar_fn (ic->rarray.ra[src], ic->rarray.ra[src - 1], ic->context.data.ptr) != 0)
 	  ic->rarray.ra[dst++] = ic->rarray.ra[src];
       
-      ic->items_count = dst;
-      ic->rarray.size = ic->items_count * sizeof (ic->rarray.ra[0]);
-      ic->rarray.alloc_size = items_count * sizeof (ic->rarray.ra[0]);
+      ic->rarray.alloc_size = items_count * sizeof (ic->rarray.ra[0]); /* allocated array size */
+      ic->items_count = dst; /* after deduplication actual number of elements might be lower */
+      ic->rarray.size = ic->items_count * sizeof (ic->rarray.ra[0]); /* used array size */
     }
   return (MR_SUCCESS);
 }
@@ -310,7 +310,6 @@ mr_ic_hash_free (mr_ic_t * ic)
     MR_FREE (ic->hash.hash_table);
   ic->hash.hash_table = NULL;
   ic->hash.size = 0;
-  ic->hash.resize_count = 0;
   ic->hash.zero_key = false;
   ic->items_count = 0;
 }
@@ -375,7 +374,6 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       return (MR_FAILURE);
     }
-  dst_ic->hash.resize_count = count >> 1;
   dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
 }
@@ -404,8 +402,8 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key)
   mr_ptr_t * find = mr_ic_find (ic, key);
   if (find != NULL)
     return (find);
-
-  if (ic->items_count >= ic->hash.resize_count)
+  
+  if (ic->items_count >= ic->hash.size / sizeof (ic->hash.hash_table[0]) / 2)
     {
       mr_ic_t dst_ic;
       if (MR_SUCCESS != mr_ic_hash_new (&dst_ic, ic->hash.hash_fn, ic->compar_fn, ic->key_type, &ic->context))
