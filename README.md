@@ -411,7 +411,7 @@ endif
 clean:
 	$(RM) *.o sample_types.h
 
-CFLAGS += -I../Metaresc/src `xml2-config --cflags` -Wno-duplicate-decl-specifier -O2 -g -Wall
+CFLAGS += -I../Metaresc/src `xml2-config --cflags` -O2 -g -Wall
 LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
 ```
 
