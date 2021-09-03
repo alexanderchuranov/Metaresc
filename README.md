@@ -261,19 +261,6 @@ CFLAGS += -I../Metaresc/src `xml2-config --cflags`
 LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
 ```
 
-Compilation with Clang will produce a warning about duplicated
-'const' specifier: `sample.c:6:1: warning: duplicate 'const'
-declaration specifier [-Wduplicate-decl-specifier]` You may suppress
-it with the `-Wno-duplicate-decl-specifier` flag. I.e. final `Makefile` is
-as follows:
-
-```make
-all: sample
-
-CFLAGS += -I../Metaresc/src `xml2-config --cflags` -Wno-duplicate-decl-specifier
-LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
-```
-
 Output of this sample application is as follows:
 ```c
 tree = {

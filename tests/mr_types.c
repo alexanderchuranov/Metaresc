@@ -65,10 +65,10 @@ TYPEDEF_STRUCT (struct_t,
 		(volatile const void *, volatile_const_void_ptr_),
 		
 		(float *, float_ptr_),
-		(const float *, const_float_ptr_),
-		(volatile float *, volatile_float_ptr_),
-		(const volatile float *, const_volatile_float_ptr_),
-		(volatile const float *, volatile_const_float_ptr_),
+		(const float * const, const_float_ptr_),
+		(volatile float * volatile, volatile_float_ptr_),
+		(const volatile float * const volatile, const_volatile_float_ptr_),
+		(volatile const float * volatile const, volatile_const_float_ptr_),
 		
 		(char_array_t *, char_array_ptr_),
 		(const char_array_t *, const_char_array_ptr_),
@@ -136,9 +136,9 @@ typedef struct ext_struct_t {
   int16_t x;
   int32_t y;
   uint8_t * z;
-  complex float const * z_c;
-  complex double volatile * z_v;
-  complex long double const volatile * z_cv;
+  complex float const * const z_c;
+  complex double volatile * volatile z_v;
+  complex long double const volatile * const volatile z_cv;
   const float * c_z;
   volatile double * v_z;
   const volatile long double * cv_z;
@@ -146,11 +146,11 @@ typedef struct ext_struct_t {
   const struct ext_struct_t * c_self_ptr;
   volatile struct ext_struct_t * v_self_ptr;
   const volatile struct ext_struct_t * cv_self_ptr;
-  struct ext_struct_t const * self_ptr_c;
-  struct ext_struct_t volatile * self_ptr_v;
-  struct ext_struct_t const volatile * self_ptr_cv;
-  const struct ext_struct_t const * c_self_ptr_c;
-  volatile struct ext_struct_t volatile * v_self_ptr_v;
+  struct ext_struct_t * const self_ptr_c;
+  struct ext_struct_t * volatile self_ptr_v;
+  struct ext_struct_t * const volatile self_ptr_cv;
+  struct ext_struct_t const * const c_self_ptr_c;
+  struct ext_struct_t volatile * volatile v_self_ptr_v;
 } ext_struct_t;
 
 #define MR_MODE DESC

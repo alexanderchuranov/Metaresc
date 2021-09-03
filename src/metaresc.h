@@ -157,13 +157,31 @@
        | __builtin_types_compatible_p (__typeof__ (volatile char []) SUFFIX, TYPE) \
        | __builtin_types_compatible_p (__typeof__ (const volatile char []) SUFFIX, TYPE) \
        ) ? MR_TYPE_CHAR_ARRAY : 0)					\
-   | ((__builtin_types_compatible_p (const volatile __typeof__ (char * SUFFIX), const volatile TYPE) \
-       | __builtin_types_compatible_p (const volatile __typeof__ (char *) SUFFIX, const volatile TYPE) \
-       | __builtin_types_compatible_p (const volatile char * SUFFIX, const volatile TYPE) \
+   | ((__builtin_types_compatible_p (__typeof__ (char *) SUFFIX, TYPE)	\
+       | __builtin_types_compatible_p (__typeof__ (const char *) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (volatile char *) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (const volatile char *) SUFFIX, TYPE) \
        ) ? MR_TYPE_STRING : 0)						\
    )
 
-#define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, const *) | MR_TYPE_DETECT (TYPE, volatile *) | MR_TYPE_DETECT (TYPE, const volatile *))
+#define MR_TYPE_DETECT_PTR(TYPE)				\
+  (MR_TYPE_DETECT (TYPE, *) |					\
+   MR_TYPE_DETECT (TYPE, * const) |				\
+   MR_TYPE_DETECT (TYPE, * volatile) |				\
+   MR_TYPE_DETECT (TYPE, * const volatile) |			\
+   MR_TYPE_DETECT (TYPE, const *) |				\
+   MR_TYPE_DETECT (TYPE, const * const) |			\
+   MR_TYPE_DETECT (TYPE, const * volatile) |			\
+   MR_TYPE_DETECT (TYPE, const * const volatile) |		\
+   MR_TYPE_DETECT (TYPE, volatile *) |				\
+   MR_TYPE_DETECT (TYPE, volatile * const) |			\
+   MR_TYPE_DETECT (TYPE, volatile * volatile) |			\
+   MR_TYPE_DETECT (TYPE, volatile * const volatile) |		\
+   MR_TYPE_DETECT (TYPE, const volatile *) |			\
+   MR_TYPE_DETECT (TYPE, const volatile * const) |		\
+   MR_TYPE_DETECT (TYPE, const volatile * volatile) |		\
+   MR_TYPE_DETECT (TYPE, const volatile * const volatile) 	\
+   )
 
 /* internal macros for arguments evaluation and concatination */
 #define MR_PASTE2(...) MR_PASTE2_ (__VA_ARGS__)
@@ -617,13 +635,27 @@
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
+#define MR_IS_SELF_PTR(MR_TYPE_NAME, NAME, PREFIX, SUFFIX) __builtin_types_compatible_p (MR_TYPE_NAME PREFIX * SUFFIX, __typeof__ (((MR_TYPE_NAME*)0)->NAME))
+
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX,			\
 		 MR_TYPE_DETECT (TYPE), __VA_ARGS__,			\
-		 .self_ptr = __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)) | \
-		 __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME const *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)) | \
-		 __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME volatile *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)) | \
-		 __builtin_types_compatible_p (const volatile __typeof__ (MR_TYPE_NAME const volatile *), const volatile __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
+		 .self_ptr = MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , ) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, ) |		\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, ) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, ) | \
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , const) |		\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, const) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, const) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, const) | \
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , volatile) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, volatile) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, volatile) | \
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, volatile) | \
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , const volatile) | \
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, const volatile) | \
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, const volatile) | \
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, const volatile), \
 		 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE)		\
 		 + 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)))
 /* Generate division by zero error if type of the field mismatches

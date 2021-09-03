@@ -3,7 +3,7 @@
 int
 mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, mr_size_t size, ...)
 {
-  static const char const * formats[] =
+  static const char * const formats[] =
     {
       [MR_TYPE_INT8]   = "%" SCNi8,
       [MR_TYPE_UINT8]  = "%" SCNu8,
