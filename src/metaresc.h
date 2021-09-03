@@ -164,24 +164,7 @@
        ) ? MR_TYPE_STRING : 0)						\
    )
 
-#define MR_TYPE_DETECT_PTR(TYPE)				\
-  (MR_TYPE_DETECT (TYPE, *) |					\
-   MR_TYPE_DETECT (TYPE, * const) |				\
-   MR_TYPE_DETECT (TYPE, * volatile) |				\
-   MR_TYPE_DETECT (TYPE, * const volatile) |			\
-   MR_TYPE_DETECT (TYPE, const *) |				\
-   MR_TYPE_DETECT (TYPE, const * const) |			\
-   MR_TYPE_DETECT (TYPE, const * volatile) |			\
-   MR_TYPE_DETECT (TYPE, const * const volatile) |		\
-   MR_TYPE_DETECT (TYPE, volatile *) |				\
-   MR_TYPE_DETECT (TYPE, volatile * const) |			\
-   MR_TYPE_DETECT (TYPE, volatile * volatile) |			\
-   MR_TYPE_DETECT (TYPE, volatile * const volatile) |		\
-   MR_TYPE_DETECT (TYPE, const volatile *) |			\
-   MR_TYPE_DETECT (TYPE, const volatile * const) |		\
-   MR_TYPE_DETECT (TYPE, const volatile * volatile) |		\
-   MR_TYPE_DETECT (TYPE, const volatile * const volatile) 	\
-   )
+#define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, const *) | MR_TYPE_DETECT (TYPE, volatile *) | MR_TYPE_DETECT (TYPE, const volatile *))
 
 /* internal macros for arguments evaluation and concatination */
 #define MR_PASTE2(...) MR_PASTE2_ (__VA_ARGS__)
@@ -635,27 +618,15 @@
 	     .meta = "" __VA_ARGS__,					\
 		} } },
 
-#define MR_IS_SELF_PTR(MR_TYPE_NAME, NAME, PREFIX, SUFFIX) __builtin_types_compatible_p (MR_TYPE_NAME PREFIX * SUFFIX, __typeof__ (((MR_TYPE_NAME*)0)->NAME))
+#define MR_IS_SELF_PTR(MR_TYPE_NAME, NAME, SUFFIX) __builtin_types_compatible_p (MR_TYPE_NAME SUFFIX, __typeof__ (((MR_TYPE_NAME*)0)->NAME))
 
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX,			\
 		 MR_TYPE_DETECT (TYPE), __VA_ARGS__,			\
-		 .self_ptr = MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , ) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, ) |		\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, ) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, ) | \
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , const) |		\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, const) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, const) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, const) | \
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , volatile) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, volatile) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, volatile) | \
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, volatile) | \
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, , const volatile) | \
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const, const volatile) | \
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile, const volatile) | \
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile, const volatile), \
+		 .self_ptr = MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, *) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const * ) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile * ) |	\
+		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile *), \
 		 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE)		\
 		 + 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)))
 /* Generate division by zero error if type of the field mismatches
