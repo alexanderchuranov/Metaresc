@@ -195,7 +195,7 @@ mr_hash_block (void * block, mr_size_t size)
   mr_hash_value_t hash_value = 0;
   while (size > sizeof (hash_value))
     {
-      hash_value += hash_value + *_block++;
+      hash_value ^= (hash_value << 1) + *_block++;
       size -= sizeof (hash_value);
     }
   
@@ -203,7 +203,7 @@ mr_hash_block (void * block, mr_size_t size)
     {
       mr_hash_value_t last = 0;
       memcpy (&last, _block, size);
-      hash_value += hash_value + last;
+      hash_value ^= (hash_value << 1) + last;
     }
   
   return (hash_value);
