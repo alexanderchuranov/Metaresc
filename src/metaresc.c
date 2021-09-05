@@ -464,8 +464,11 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_ENUM:
       {
 	mr_td_t * tdp = src->tdp;
-	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
+	if (NULL == tdp)
 	  break;
+	if (tdp->mr_type != MR_TYPE_ENUM)
+	  break;
+	
 	switch (tdp->param.enum_param.mr_type_effective)
 	  {
 #define GET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): value = *(TYPE*)src_data; break;
@@ -496,8 +499,11 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_ENUM:
       {
 	mr_td_t * tdp = dst->tdp;
-	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
+	if (NULL == tdp)
 	  break;
+	if (tdp->mr_type != MR_TYPE_ENUM)
+	  break;
+	
 	switch (tdp->param.enum_param.mr_type_effective)
 	  {
 #define SET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)dst_data = value; break;
@@ -855,9 +861,13 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    count -= fields_count;
 	    fdp->type = tdp_->type.str;
 	    fdp->size = tdp_->size;
+	    
 	    /* set name of anonymous union to temporary type name */
-	    if ((NULL == fdp->name.str) || (0 == fdp->name.str[0]))
+	    if (NULL == fdp->name.str)
 	      fdp->name.str = fdp->type;
+	    else if (0 == fdp->name.str[0])
+	      fdp->name.str = fdp->type;
+	      
 	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
 	    if (MR_SUCCESS != mr_add_type (tdp_))
@@ -1223,7 +1233,7 @@ mr_type_size (mr_type_t mr_type)
 		  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };
 
-  if (mr_type < MR_TYPE_LAST)
+  if ((mr_type >= 0) && (mr_type < MR_TYPE_LAST))
     return (types_sizes[mr_type]);
   return (0);
 }
@@ -1613,7 +1623,7 @@ mr_type_void_fields_impl (char * type, char * name, ...)
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
       if (NULL == fdp)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_FIELD_NOT_FOUND, name, type);
-      if ((fdp != NULL) && (fdp->mr_type != MR_TYPE_VOID))
+      else if (fdp->mr_type != MR_TYPE_VOID)
 	{
 	  if ((fdp->mr_type != MR_TYPE_BITFIELD) &&
 	      (fdp->mr_type != MR_TYPE_ARRAY) &&

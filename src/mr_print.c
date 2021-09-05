@@ -20,14 +20,17 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
       [MR_TYPE_CHAR_ARRAY] = "%s",
       [MR_TYPE_STRING] = "%s",
     };
+  const char * format = NULL;
   int rv = 0;
   va_list args;
   va_start (args, size);
 
   if ((mr_type >= 0) &&
-      (mr_type < sizeof (formats) / sizeof (formats[0])) &&
-      (formats[mr_type] != NULL))
-    rv = vfprintf (fd, formats[mr_type], args);
+      (mr_type < sizeof (formats) / sizeof (formats[0])))
+    format = formats[mr_type];
+  
+  if (format != NULL)
+    rv = vfprintf (fd, format, args);
   else
     switch (mr_type)
       {

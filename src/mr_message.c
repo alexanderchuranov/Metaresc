@@ -98,9 +98,9 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
 	{ MR_FOREACH (LL_INIT, ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF) };
 
       if (((int)log_level >= 0)
-	  && ((int)log_level <= sizeof (log_level_str) / sizeof (log_level_str[0]))
-	  && log_level_str[log_level])
-	log_level_str_ = log_level_str[log_level];
+	  && ((int)log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])))
+	if (log_level_str[log_level])
+	  log_level_str_ = log_level_str[log_level];
 
 #ifdef HAVE_EXECINFO_H
       if (log_level <= MR_LL_DEBUG)

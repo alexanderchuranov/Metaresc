@@ -353,11 +353,16 @@ mr_load_complex (int idx, mr_load_data_t * mr_load_data)
 static mr_status_t
 mr_get_char (char * src, void * dst)
 {
-  if ((NULL == src) || (src[0] && src[1]))
+  if (NULL == src)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, src);
       return (MR_FAILURE);
     }
+  if (src[0] && src[1])
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, src);
+      return (MR_FAILURE);
+    }    
   
   *(char*)dst = *src;
   return (MR_SUCCESS);
@@ -456,27 +461,26 @@ mr_get_char_array (char * str, void * dst)
     return (MR_FAILURE);
   
   int str_len = strlen (str) + 1;
+  if ((str_len > max_size) && (ptrdes->parent >= 0))
+    if (MR_TYPE_POINTER == load_node_context->ptrs->ra[ptrdes->parent].mr_type)
+      {
+	void * data = MR_REALLOC (ptrdes->data.ptr, str_len);
+	if (NULL == data)
+	  {
+	    if (ptrdes->data.ptr != NULL)
+	      MR_FREE (ptrdes->data.ptr);
+	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	    status = MR_FAILURE;
+	  }
+		  
+	*(void**)load_node_context->ptrs->ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
+	max_size = str_len;
+      }
+
   if (str_len > max_size)
     {
-      if ((ptrdes->parent >= 0) &&
-	  (MR_TYPE_POINTER == load_node_context->ptrs->ra[ptrdes->parent].mr_type))
-	{
-	  void * data = MR_REALLOC (ptrdes->data.ptr, str_len);
-	  if (NULL == data)
-	    {
-	      if (ptrdes->data.ptr != NULL)
-		MR_FREE (ptrdes->data.ptr);
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      status = MR_FAILURE;
-	    }
-		  
-	  *(void**)load_node_context->ptrs->ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
-	}
-      else
-	{
-	  str_len = max_size;
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
-	}
+      str_len = max_size;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
     }
 		  
   if (ptrdes->data.ptr != NULL)
@@ -746,11 +750,12 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
       (MR_VT_QUOTED_SUBSTR == ptrdes->load_params.mr_value.value_type)
       && (0 == ptrdes->load_params.mr_value.vt_quoted_substr.substr.length) && /* content must be an empty string */
       (mr_load_data->ptrs.ra[idx].name != NULL) && /* node must have a name */
-      (ptrdes->next >= 0) && (NULL == mr_load_data->ptrs.ra[ptrdes->next].name)) /* there should be a next node without name */
-    {
-      mr_load_data->ptrs.ra[ptrdes->next].name = mr_load_data->ptrs.ra[idx].name;
-      return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
-    }
+      (ptrdes->next >= 0))
+    if (NULL == mr_load_data->ptrs.ra[ptrdes->next].name) /* there should be a next node without name */
+      {
+	mr_load_data->ptrs.ra[ptrdes->next].name = mr_load_data->ptrs.ra[idx].name;
+	return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
+      }
   return (mr_load_struct (idx, mr_load_data));
 }
 
@@ -853,8 +858,12 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
   mr_load_data->ptrs.ra[idx].name = fdp->name.str;
 
   /* route loading */
-  if ((fdp->mr_type < MR_TYPE_LAST) && mr_load_handler[fdp->mr_type])
-    status = mr_load_handler[fdp->mr_type] (idx, mr_load_data);
+  mr_load_handler_t load_handler = NULL;
+  if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST))
+    load_handler = mr_load_handler[fdp->mr_type];
+
+  if (load_handler != NULL)
+    status = load_handler (idx, mr_load_data);
   else
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->mr_type);
 

@@ -51,7 +51,9 @@ static int
 scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_td_t * tdp = ptrdes->tdp;
-  if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
+  if (NULL == tdp)
+    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+  if ((MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
   int tokens = 0;
@@ -221,9 +223,9 @@ static inline bool
 scm_is_unnamed (mr_ra_ptrdes_t * ptrs, int idx)
 {
   int parent = ptrs->ra[idx].parent;
-  if ((MR_TYPE_POINTER == ptrs->ra[idx].mr_type) &&
-      (parent >= 0) && (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type))
-    return (false);
+  if ((MR_TYPE_POINTER == ptrs->ra[idx].mr_type) && (parent >= 0))
+    if (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type)
+      return (false);
   return (ptrs->ra[idx].unnamed);
 }
 
@@ -256,12 +258,16 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_
 
   if (ptrs->ra[idx].first_child < 0)
     {
-      mr_ra_printf_t save_handler = mr_ra_printf_void;
+      mr_ra_printf_t save_handler = NULL;
       /* route saving handler */
-      if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && scm_save_handler[ptrs->ra[idx].mr_type])
+      if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
 	save_handler = scm_save_handler[ptrs->ra[idx].mr_type];
-      else
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+      
+      if (NULL == save_handler)
+	{
+	  save_handler = mr_ra_printf_void;
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+	}
 
       if (!scm_is_unnamed (ptrs, idx))
 	{

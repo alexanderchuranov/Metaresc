@@ -116,8 +116,9 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     {
       mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_fd_t * fdp = mr_get_enum_by_value (tdp, value);
-      if (fdp && fdp->name.str)
-	return (mr_ra_append_string (mr_ra_str, fdp->name.str));
+      if (fdp)
+	if (fdp->name.str)
+	  return (mr_ra_append_string (mr_ra_str, fdp->name.str));
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->name);
       mr_type = tdp->param.enum_param.mr_type_effective;
     }
@@ -140,7 +141,9 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
 {
   mr_td_t * tdp = ptrdes->tdp;
   /* check whether type descriptor was found */
-  if ((NULL == tdp) || (MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
+  if (NULL == tdp)
+    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
+  if ((MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
   bool first = true;
@@ -272,11 +275,12 @@ const char * mr_serialize_func (void * func)
 	      mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "intptr", MR_IC_HASH, &context);
 	    }
 	  mr_ptr_t * add = mr_ic_add (&cache, idx);
-	  if ((add != NULL) && (add->intptr != idx))
-	    {
-	      ra_fn.size -= sizeof (ra_fn.ra[0]);
-	      return (ra_fn.ra[add->intptr].name);
-	    }
+	  if (add != NULL)
+	    if (add->intptr != idx)
+	      {
+		ra_fn.size -= sizeof (ra_fn.ra[0]);
+		return (ra_fn.ra[add->intptr].name);
+	      }
 	}
     }
   

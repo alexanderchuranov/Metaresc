@@ -14,8 +14,11 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
 
   mr_conf_init ();
   
-  if ((NULL == ptrs) || (NULL == ptrs->ra))
+  if (NULL == ptrs)
     return (MR_FAILURE);
+  if (NULL == ptrs->ra)
+    return (MR_FAILURE);
+
   ptrs->ptrdes_type = MR_PD_CUSTOM;
 
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
@@ -72,7 +75,9 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 
   mr_conf_init ();
 
-  if ((NULL == ptrs->ra) || (NULL == dst))
+  if ((NULL == ptrs) || (NULL == dst))
+    return (MR_FAILURE);
+  if (NULL == ptrs->ra)
     return (MR_FAILURE);
 
   ptrs->ptrdes_type = MR_PD_CUSTOM;
@@ -181,9 +186,9 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
     if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].res.type != NULL))
       MR_FREE (ptrs->ra[i].res.type);
     else if ((MR_TYPE_POINTER == ptrs->ra[i].mr_type) &&
-	     (ptrs->ra[i].first_child >= 0) &&
-	     (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr != NULL))
-      MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
+	     (ptrs->ra[i].first_child >= 0))
+      if (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr != NULL)
+	MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
 
   return (MR_FAILURE);
 }
@@ -291,7 +296,9 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void
     case MR_TYPE_ENUM:
       {
 	mr_td_t * tdp = ptrdes->tdp;
-	if ((NULL == tdp) || (tdp->mr_type != MR_TYPE_ENUM))
+	if (NULL == tdp)
+	  break;
+	if (tdp->mr_type != MR_TYPE_ENUM)
 	  break;
 	ptrdes->res.data.uintptr = mr_hash_block (ptrdes->data.ptr, tdp->param.enum_param.size_effective);
 	break;
@@ -326,7 +333,9 @@ mr_hash_struct (mr_ra_ptrdes_t * ptrs)
 {
   mr_conf_init ();
   
-  if ((NULL == ptrs) || (NULL == ptrs->ra) || (ptrs->size < sizeof (ptrs->ra[0])))
+  if (NULL == ptrs)
+    return (0);
+  if ((NULL == ptrs->ra) || (ptrs->size < sizeof (ptrs->ra[0])))
     return (0);
 
   int i;
@@ -346,8 +355,10 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 {
   mr_conf_init ();
   
-  if ((NULL == x) || (NULL == x->ra) || (x->size < sizeof (x->ra[0])) ||
-      (NULL == y) || (NULL == y->ra) || (y->size < sizeof (y->ra[0])))
+  if ((NULL == x) || (NULL == y))
+    return (0);
+  if ((NULL == x->ra) || (x->size < sizeof (x->ra[0])) ||
+      (NULL == y->ra) || (y->size < sizeof (y->ra[0])))
     return (0);
 
   int diff = (x->size > y->size) - (x->size < y->size);

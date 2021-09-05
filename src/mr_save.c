@@ -32,12 +32,14 @@ mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 static inline mr_fd_t *
 mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
 {
-  if (name && name[0])
-    {
-      mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
-      if (NULL != fdp)
-	return (fdp);
-    }
+  if (name != NULL)
+    if (name[0])
+      {
+	mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
+	if (NULL != fdp)
+	  return (fdp);
+      }
+  
   if (tdp->fields_size > 0) /* check for an empty union */
     return (tdp->fields[0].fdp);
   else
@@ -87,14 +89,15 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    if (fdp)
 	      return (fdp);
 	  
-	    if (enum_tdp && (MR_TYPE_ENUM == enum_tdp->mr_type))
-	      {
-		/* if bitfield is a enumeration then get named discriminator from enum value meta field */
-		mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
-		return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
-	      }
-	    else
-	      return (mr_union_discriminator_by_idx (tdp, value));
+	    if (enum_tdp)
+	      if (MR_TYPE_ENUM == enum_tdp->mr_type)
+		{
+		  /* if bitfield is a enumeration then get named discriminator from enum value meta field */
+		  mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
+		  return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
+		}
+	    
+	    return (mr_union_discriminator_by_idx (tdp, value));
 	  }
 	
 	case MR_TYPE_CHAR_ARRAY:
@@ -769,10 +772,15 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     }
 
   mr_add_child (parent, idx, ra);
+
   /* route saving handler */
-  if ((fdp->mr_type < MR_TYPE_LAST) && mr_save_handler[fdp->mr_type])
+  mr_save_handler_t save_handler = NULL;
+  if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST))
+    save_handler = mr_save_handler[fdp->mr_type];
+  
+  if (save_handler)
     {
-      int nodes_added = mr_save_handler[fdp->mr_type] (mr_save_data);
+      int nodes_added = save_handler (mr_save_data);
       if (nodes_added < 0)
 	return (nodes_added);
     }

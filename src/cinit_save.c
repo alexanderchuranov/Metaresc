@@ -183,12 +183,16 @@ static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
 static mr_status_t
 cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
-  mr_ra_printf_t save_handler = mr_ra_printf_void;
+  mr_ra_printf_t save_handler = NULL;
 
-  if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && cinit_save_tbl[ptrs->ra[idx].mr_type])
+  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
     save_handler = cinit_save_tbl[ptrs->ra[idx].mr_type];
-  else
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+  
+  if (NULL == save_handler)
+    {
+      save_handler = mr_ra_printf_void;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+    }
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
 

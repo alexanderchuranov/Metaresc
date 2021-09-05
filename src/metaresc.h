@@ -724,7 +724,7 @@
   #define MR_CHECK_TYPES(...)
 */
 #ifndef MR_CHECK_TYPES
-#define MR_CHECK_TYPES(MR_TYPE_NAME, S_PTR) ((void) (1 / __builtin_types_compatible_p (MR_TYPE_NAME, __typeof__ (*(S_PTR)))));
+#define MR_CHECK_TYPES(MR_TYPE_NAME, S_PTR) ((void) (1 / __builtin_types_compatible_p (MR_TYPE_NAME, __typeof__ (*(S_PTR)))))
 #endif /* MR_CHECK_TYPES */
 
 #define MR_COPY_RECURSIVELY(MR_TYPE_NAME, ...) MR_COPY_RECURSIVELY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)

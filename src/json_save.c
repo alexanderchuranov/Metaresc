@@ -200,11 +200,16 @@ static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
 static mr_status_t
 json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
-  mr_ra_printf_t save_handler = mr_ra_printf_void;
-  if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && json_save_tbl[ptrs->ra[idx].mr_type])
+  mr_ra_printf_t save_handler = NULL;
+  
+  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
     save_handler = json_save_tbl[ptrs->ra[idx].mr_type];
-  else
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+
+  if (NULL == save_handler)
+    {
+      save_handler = mr_ra_printf_void;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+    }
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
 
@@ -213,10 +218,13 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
   
   bool unnamed = ptrs->ra[idx].unnamed;
   int parent = ptrs->ra[idx].parent;
-  if (((MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) ||
-       (MR_TYPE_POINTER == ptrs->ra[idx].mr_type)) &&
-      (parent >= 0) && (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type))
-    unnamed = false;
+  if ((MR_TYPE_ANON_UNION == ptrs->ra[idx].mr_type) || (MR_TYPE_POINTER == ptrs->ra[idx].mr_type))
+    {
+      if (parent < 0)
+	unnamed = false;
+      else if (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type)
+	unnamed = false;
+    }
   
   if (!unnamed)
     {

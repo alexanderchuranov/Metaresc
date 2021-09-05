@@ -311,8 +311,12 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
 
   mr_add_child (parent, idx, ptrs->ra);
 
-  if ((fdp->mr_type < MR_TYPE_LAST) && xdr_load_handler[fdp->mr_type])
-    status = xdr_load_handler[fdp->mr_type] (xdrs, idx, ptrs);
+  xdr_handler_t load_handler = NULL;
+  if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST))
+    load_handler = xdr_load_handler[fdp->mr_type];
+  
+  if (load_handler)
+    status = load_handler (xdrs, idx, ptrs);
   else
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->mr_type);
 
@@ -1051,18 +1055,16 @@ xdr_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, 
     return (MR_SUCCESS);
 
   XDR * xdrs = context;
+
+  xdr_handler_t save_handler = NULL;
+  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
+    save_handler = xdr_save_handler[ptrs->ra[idx].mr_type];
   
-  if ((ptrs->ra[idx].mr_type < MR_TYPE_LAST) && xdr_save_handler[ptrs->ra[idx].mr_type])
-    {
-      if (MR_SUCCESS != xdr_save_handler[ptrs->ra[idx].mr_type] (xdrs, idx, ptrs))
-	return (MR_FAILURE);
-    }
-  else
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
-      return (MR_FAILURE);
-    }
-  return (MR_SUCCESS);
+  if (save_handler)
+    return (save_handler (xdrs, idx, ptrs));
+
+  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+  return (MR_FAILURE);
 }
 
 /**
