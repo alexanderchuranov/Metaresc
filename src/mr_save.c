@@ -345,7 +345,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud_size -= sizeof (mr_save_data->mr_ra_ud[0]);
   ud_idx = mr_save_data->mr_ra_ud_size / sizeof (mr_save_data->mr_ra_ud[0]); /* index of lookup record */
-  ud->union_fdp = union_fdp; /* union type */
+  ud->union_fdp = union_fdp; /* union field descriptor */
 
   /* traverse through parents up to root node */
   for (parent = node; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
@@ -359,9 +359,11 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
 
       if ((MR_TYPE_ARRAY == parent_ptrdes->mr_type) || (MR_TYPE_POINTER == parent_ptrdes->mr_type))
 	continue;
-      
+
+      /* check if for some reason parent node doesn't have cached type descriptor */
       if (NULL == parent_ptrdes->tdp)
 	continue;
+      /* lookup for discriminator in this parent */
       mr_fd_t * parent_fdp = mr_get_fd_by_name (parent_ptrdes->tdp, discriminator);
       if (NULL == parent_fdp)
 	continue;
@@ -376,9 +378,11 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
     fdp = mr_save_data->mr_ra_ud[ud_find].discriminated_fdp; /* union discriminator info was found in some of the parents */
   else
     {
+      /* if union is still not resolved, set it to default branch */
       if (NULL == fdp)
 	fdp = mr_union_discriminator_by_name (tdp, NULL);
 
+      /* form union discriminator resolution entity and deduplicate it with existing */
       ud->discriminated_fdp = fdp;
       mr_ptr_t * add = mr_ic_add (&mr_save_data->union_discriminators, (intptr_t)ud_idx);
       if (NULL == add)
@@ -690,13 +694,12 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      return (nodes_added);
 	    
 	  default:
-	    if ((ref_parent >= 0)
-		&& ((MR_TYPE_STRING == ra[ref_parent].mr_type)
-		    || ((MR_TYPE_POINTER == ra[ref_parent].mr_type)
-			&& (ra[ref_idx].prev < 0)
-			&& (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
-		&& !ref_is_parent (ra, parent, ref_idx)
-		)
+	    if (ref_parent >= 0)
+	      if (((MR_TYPE_STRING == ra[ref_parent].mr_type)
+		   || ((MR_TYPE_POINTER == ra[ref_parent].mr_type)
+		       && (ra[ref_idx].prev < 0)
+		       && (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
+		  && !ref_is_parent (ra, parent, ref_idx))
 	      return (move_nodes_to_parent (ra, ref_parent, parent, idx, element_size));
 	  }
     }
@@ -821,8 +824,9 @@ static int
 mr_save_enum (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
 
-  switch (mr_save_data->ptrs.ra[idx].mr_type_aux)
+  switch (ptrdes->mr_type_aux)
     {
     case MR_TYPE_UINT8:
     case MR_TYPE_INT8:
@@ -835,8 +839,8 @@ mr_save_enum (mr_save_data_t * mr_save_data)
       break;
     default:
       {
-	mr_td_t * tdp = mr_save_data->ptrs.ra[idx].fdp->tdp;
-	mr_save_data->ptrs.ra[idx].mr_type_aux = tdp ? tdp->param.enum_param.mr_type_effective : MR_TYPE_UINT8;
+	mr_td_t * tdp = ptrdes->fdp->tdp;
+	ptrdes->mr_type_aux = tdp ? tdp->param.enum_param.mr_type_effective : MR_TYPE_UINT8;
 	break;
       }
     }
@@ -1065,18 +1069,20 @@ mr_post_process_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
      Those additional entries are not required for serialization process and we remove them here, but
      before that we need to update all references on string content.
    */
-  if (ptrs->ra[idx].ref_idx >= 0)
+  int ref_idx = ptrs->ra[idx].ref_idx;
+  if (ref_idx >= 0)
     {
-      int ref_parent = ptrs->ra[ptrs->ra[idx].ref_idx].parent;
-      if ((ref_parent >= 0) && (MR_TYPE_STRING == ptrs->ra[ref_parent].mr_type))
-	{
-	  /* move ref_idx on a parent node (of type MR_TYPE_STRING) */
-	  ptrs->ra[idx].ref_idx = ref_parent;
-	  /* mark that this is a reference on content, but not on an entry itself */
-	  ptrs->ra[idx].flags.is_content_reference = true;
-	  /* mark parent entry as referenced */
-	  ptrs->ra[ref_parent].flags.is_referenced = true;
-	}
+      int ref_parent = ptrs->ra[ref_idx].parent;
+      if (ref_parent >= 0)
+	if (MR_TYPE_STRING == ptrs->ra[ref_parent].mr_type)
+	  {
+	    /* move ref_idx on a parent node (of type MR_TYPE_STRING) */
+	    ptrs->ra[idx].ref_idx = ref_parent;
+	    /* mark that this is a reference on content, but not on an entry itself */
+	    ptrs->ra[idx].flags.is_content_reference = true;
+	    /* mark parent entry as referenced */
+	    ptrs->ra[ref_parent].flags.is_referenced = true;
+	  }
     }
 
   /* unlink string content, but keep links from content on a parent node */
@@ -1200,7 +1206,7 @@ mr_optimize_graph_depth (mr_ra_ptrdes_t * ptrs)
 		ra[idx].ref_idx = -1;
 	      }
 	}
-      
+      /* add child nodes to DFS queue and mark them as visited */
       for (i = ra[idx].first_child; i >= 0; i = ra[i].next)
 	{
 	  ra[i].res.MR_SIZE = !0;
@@ -1217,11 +1223,11 @@ mr_optimize_graph_depth (mr_ra_ptrdes_t * ptrs)
 void
 mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 {
-  bool need_reindex = false;
-  mr_ptrs_dfs (ptrs, mr_remove_empty_node, &need_reindex);
+  bool need_reindex_empty = false;
+  mr_ptrs_dfs (ptrs, mr_remove_empty_node, &need_reindex_empty);
   bool need_reindex_levels = mr_optimize_graph_depth (ptrs);
   /* re-enumerate nodes after empty nodes removal */
-  if (need_reindex || need_reindex_levels)
+  if (need_reindex_empty || need_reindex_levels)
     {
       int idx_ = 0;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);

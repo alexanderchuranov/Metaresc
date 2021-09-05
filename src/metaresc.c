@@ -556,51 +556,60 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
 {
   char * name = NULL;
   memset (ptrdes, 0, sizeof (*ptrdes));
-  
-  if ((NULL != ptrs->ra[idx].fdp->res_type) && (0 == strcmp ("string", ptrs->ra[idx].fdp->res_type)) &&
-      mr_is_valid_field_name (ptrs->ra[idx].fdp->res.ptr))
-    name = ptrs->ra[idx].fdp->res.ptr;
 
-  if ((NULL != ptrs->ra[idx].fdp->res_type) && (0 == strcmp ("offset", ptrs->ra[idx].fdp->res_type)))
-    name = "";
-  
-  if (name != NULL)
+  /* if field descriptor is not statically allocated, we can't do much */
+  if (ptrs->ra[idx].non_persistent)
+    return;
+
+  mr_fd_t * fdp = ptrs->ra[idx].fdp;
+  if (NULL != fdp->res_type)
     {
-      int parent;
-      /* traverse through parents up to first structure */
-      for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
-	if (MR_TYPE_STRUCT == ptrs->ra[parent].mr_type)
-	  break;
-      
-      if (parent >= 0)
-	{
-	  mr_fd_t * parent_fdp;
-	  mr_td_t * parent_tdp = ptrs->ra[parent].tdp;
-  
-	  if (NULL == parent_tdp)
-	    return;
-
-	  /* lookup for a size field in this parent */
-	  if (0 == name[0])
-	    parent_fdp = mr_get_fd_by_offset (parent_tdp, ptrs->ra[idx].fdp->res.offset);
-	  else
-	    parent_fdp = mr_get_fd_by_name (parent_tdp, name);
-	      
-	  if (NULL == parent_fdp)
-	    return;
-
-	  ptrdes->fdp = parent_fdp;
-	  ptrdes->mr_type = parent_fdp->mr_type;
-	  ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
-	  ptrdes->tdp = parent_fdp->tdp;
-	  ptrdes->name = parent_fdp->name.str;
-	  ptrdes->unnamed = parent_fdp->unnamed;
-	  ptrdes->non_persistent = parent_fdp->non_persistent;
-	  ptrdes->MR_SIZE = parent_fdp->size;
-
-	  ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
-	}
+      if (0 == strcmp ("offset", fdp->res_type))
+	name = ""; /* detect case if size field defined by offset */
+      else if (0 == strcmp ("string", fdp->res_type))
+	if (mr_is_valid_field_name (fdp->res.ptr))
+	  name = fdp->res.ptr; /* detect case if size field defined by name */
     }
+  
+  /* quit if size field is not defined */  
+  if (name == NULL)
+    return;
+
+  int parent;
+  /* traverse through parents up to first structure */
+  for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
+    if (MR_TYPE_STRUCT == ptrs->ra[parent].mr_type)
+      break;
+  
+  /* quit if parent structure was not found */    
+  if (parent < 0)
+    return;
+
+  mr_fd_t * parent_fdp;
+  mr_td_t * parent_tdp = ptrs->ra[parent].tdp;
+  /* quit if structure type descriptor is missing */
+  if (NULL == parent_tdp)
+    return;
+
+  /* lookup for a size field in this parent */
+  if (0 == name[0])
+    parent_fdp = mr_get_fd_by_offset (parent_tdp, ptrs->ra[idx].fdp->res.offset);
+  else
+    parent_fdp = mr_get_fd_by_name (parent_tdp, name);
+  /* quit if size field was not found in parent structure */
+  if (NULL == parent_fdp)
+    return;
+
+  ptrdes->fdp = parent_fdp;
+  ptrdes->mr_type = parent_fdp->mr_type;
+  ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
+  ptrdes->tdp = parent_fdp->tdp;
+  ptrdes->name = parent_fdp->name.str;
+  ptrdes->unnamed = parent_fdp->unnamed;
+  ptrdes->non_persistent = parent_fdp->non_persistent;
+  ptrdes->MR_SIZE = parent_fdp->size;
+  
+  ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
 }
 
 void

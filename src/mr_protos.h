@@ -404,7 +404,7 @@ TYPEDEF_STRUCT (mr_tree_node_t, ATTRIBUTES ( , "node of the red/black or avl tre
 		END_ANON_UNION ("ic_type"),
 		)
 
-TYPEDEF_STRUCT (mr_tree_t, ATTRIBUTES ( , "indexed collection for red/black tree"),
+TYPEDEF_STRUCT (mr_tree_t, ATTRIBUTES ( , "indexed collection for binary tree"),
 		(mr_tree_node_t *, pool, , "mr_tree_node_t allocation pool", { .offset = offsetof (mr_tree_t, size) }, "offset"),
 		(ssize_t, size),
 		VOID (ssize_t, alloc_size),
@@ -633,7 +633,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(int, next, , "next sibling index"),
 		(ssize_t, MR_SIZE, , "size of 'data' resizable array"),
 		ANON_UNION (),
-		(void *, _data_, , "be default try to resolve pointer as void *"),
+		(void *, _data_, , "by default try to resolve pointer as void *"),
 		(mr_ptr_t, data, , "tdp"), /* serialize for subset of mr_type */
 		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
 		ANON_UNION (),
