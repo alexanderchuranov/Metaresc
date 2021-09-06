@@ -322,9 +322,18 @@ START_TEST (mr_hash_cmp_great_or_less) {
   ck_assert_msg (MR_CMP_STRUCTS (div_t, &x, &y) < 0, "compare check for non-identical structs");
 } END_TEST
 
+START_TEST (mr_cmp_arrays) {
+  div_t x[] = {{1, 2}, {3, 4}};
+  div_t y[] = {{1, 2}, {3, 4}};
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, x, y) == 0, "compare check for identical arrays");
+  memset (y, 0, sizeof (y));
+  ck_assert_msg (MR_CMP_STRUCTS (div_t, x, y) != 0, "compare check for non-identical arrays");
+} END_TEST
+
 MAIN_TEST_SUITE ((mr_hash_cmp_equal, "check two identical arrays of strings"),
 		 (mr_hash_cmp_non_equal, "check two identical arrays of strings"),
 		 (mr_hash_cmp_all_types, "check hash and compare for struct with all elementary types"),
 		 (mr_hash_cmp_mr_conf, "Check hash and generic compare function on MR_COPY_RECURSIVELY"),
-		 (mr_hash_cmp_great_or_less, "Check that compare works correctly")
+		 (mr_hash_cmp_great_or_less, "Check that compare works correctly"),
+		 (mr_cmp_arrays, "Check that compare works correctly for arrays")
 		 );
