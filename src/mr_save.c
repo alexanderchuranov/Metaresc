@@ -527,14 +527,15 @@ mr_check_ud (mr_ptr_t key, const void * context)
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
   char * discriminator = ud->union_fdp->meta;
   mr_td_t * tdp = mr_save_data->ptrs.ra[mr_check_ud_ctx->node].tdp;
-  mr_fd_t * fdp = (tdp != NULL) ? mr_get_fd_by_name (tdp, discriminator) : NULL;
 
   /* here we check that union discriminator was resolved at the level of saved node.
      This means that resolution is not dependant on upper tree */
-  if (NULL != fdp)
-    return (MR_SUCCESS);
+  if (NULL != tdp)
+    if (NULL != mr_get_fd_by_name (tdp, discriminator))
+      return (MR_SUCCESS);
+  
   /* otherwise we need to find union resolution in the context of new parent */
-  fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, ud->union_fdp);
+  mr_fd_t * fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, ud->union_fdp);
   
   return ((fdp == ud->discriminated_fdp) ? MR_SUCCESS : MR_FAILURE);
 }
