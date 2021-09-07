@@ -334,7 +334,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
     return (NULL);
 
   /* if union meta field is a valid field name, then traverse thruogh parents and look for union discriminator */
-  if (!mr_is_valid_field_name (discriminator))
+  if (mr_get_static_field_name_from_string (discriminator) == NULL)
     return (mr_union_discriminator_by_name (tdp, NULL));
 
   ud = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_ud,
@@ -709,6 +709,179 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
     }
   return (-1);
 }  
+
+void
+mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
+{
+  uint64_t value = 0;
+  mr_type_t mr_type;
+  void * src_data = src->data.ptr;
+  void * dst_data = dst->data.ptr;
+
+  if (MR_TYPE_POINTER == src->mr_type)
+    src_data = *(void**)src_data;
+
+  if (NULL == src_data)
+    return;
+  
+  if (MR_TYPE_POINTER == dst->mr_type)
+    dst_data = *(void**)dst_data;
+
+  if (NULL == dst_data)
+    return;
+  
+  if ((MR_TYPE_VOID == src->mr_type) || (MR_TYPE_POINTER == src->mr_type))
+    mr_type = src->mr_type_aux;
+  else
+    mr_type = src->mr_type;
+
+  switch (mr_type)
+    {
+    case MR_TYPE_VOID:
+    case MR_TYPE_ENUM:
+      {
+	mr_td_t * tdp = src->tdp;
+	if (NULL == tdp)
+	  break;
+	if (tdp->mr_type != MR_TYPE_ENUM)
+	  break;
+	
+	switch (tdp->param.enum_param.mr_type_effective)
+	  {
+#define GET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): value = *(TYPE*)src_data; break;
+	    MR_FOREACH (GET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	  default:
+	    break;
+	  }
+	break;
+      }
+      
+      MR_FOREACH (GET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
+    case MR_TYPE_BITFIELD:
+      mr_save_bitfield_value (src, &value); /* get value of the bitfield */
+      break;
+    default:
+      break;
+    }
+
+  if ((MR_TYPE_VOID == dst->mr_type) || (MR_TYPE_POINTER == dst->mr_type))
+    mr_type = dst->mr_type_aux;
+  else
+    mr_type = dst->mr_type;
+
+  switch (mr_type)
+    {
+    case MR_TYPE_VOID:
+    case MR_TYPE_ENUM:
+      {
+	mr_td_t * tdp = dst->tdp;
+	if (NULL == tdp)
+	  break;
+	if (tdp->mr_type != MR_TYPE_ENUM)
+	  break;
+	
+	switch (tdp->param.enum_param.mr_type_effective)
+	  {
+#define SET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)dst_data = value; break;
+	    MR_FOREACH (SET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	  default:
+	    break;
+	  }
+	break;
+      }
+
+      MR_FOREACH (SET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+
+    case MR_TYPE_BITFIELD:
+      mr_load_bitfield_value (dst, &value); /* set value of the bitfield */
+      break;
+    default:
+      break;
+    }
+}
+
+static mr_fd_t *
+mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->offset) offset)
+{
+  unsigned idx;
+  uintptr_t key = (uintptr_t)&offset - offsetof (mr_fd_t, offset); /* (mr_fd_t[]){{ .offset = offset }}; */
+  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
+  int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_fd_offset_cmp, NULL, &idx);
+  /* do binary search first */
+  if (diff)
+    return (NULL);
+  /*
+    There might be zero size fields declared before designated field with specific offset.
+    We need to skip them and find last relevant field in the ordered array.
+    Iterate to the last field with the requested offset.
+  */
+  unsigned count = tdp->fields_size / sizeof (tdp->fields[0]);
+  while ((idx + 1 < count) && (tdp->fields[idx + 1].fdp->offset == offset))
+    ++idx;
+  return (tdp->fields[idx].fdp);
+}
+
+void
+mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs)
+{
+  char * name = NULL;
+  memset (ptrdes, 0, sizeof (*ptrdes));
+
+  /* if field descriptor is not statically allocated, we can't do much */
+  if (ptrs->ra[idx].non_persistent)
+    return;
+
+  mr_fd_t * fdp = ptrs->ra[idx].fdp;
+  if (NULL != fdp->res_type)
+    {
+      if (0 == strcmp ("offset", fdp->res_type))
+	name = ""; /* detect case if size field defined by offset */
+      else if (0 == strcmp ("string", fdp->res_type))
+	if (mr_get_static_field_name_from_string (fdp->res.ptr) != NULL)
+	  name = fdp->res.ptr; /* detect case if size field defined by name */
+    }
+  
+  /* quit if size field is not defined */  
+  if (name == NULL)
+    return;
+
+  int parent;
+  /* traverse through parents up to first structure */
+  for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
+    if (MR_TYPE_STRUCT == ptrs->ra[parent].mr_type)
+      break;
+  
+  /* quit if parent structure was not found */    
+  if (parent < 0)
+    return;
+
+  mr_fd_t * parent_fdp;
+  mr_td_t * parent_tdp = ptrs->ra[parent].tdp;
+  /* quit if structure type descriptor is missing */
+  if (NULL == parent_tdp)
+    return;
+
+  /* lookup for a size field in this parent */
+  if (0 == name[0])
+    parent_fdp = mr_get_fd_by_offset (parent_tdp, ptrs->ra[idx].fdp->res.offset);
+  else
+    parent_fdp = mr_get_fd_by_name (parent_tdp, name);
+  /* quit if size field was not found in parent structure */
+  if (NULL == parent_fdp)
+    return;
+
+  ptrdes->fdp = parent_fdp;
+  ptrdes->mr_type = parent_fdp->mr_type;
+  ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
+  ptrdes->tdp = parent_fdp->tdp;
+  ptrdes->name = parent_fdp->name.str;
+  ptrdes->unnamed = parent_fdp->unnamed;
+  ptrdes->non_persistent = parent_fdp->non_persistent;
+  ptrdes->MR_SIZE = parent_fdp->size;
+  
+  ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
+}
 
 /**
  * Save scheduler. Save any object into internal representation.

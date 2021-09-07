@@ -637,6 +637,20 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
   return (status);
 }
 
+void
+mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
+{
+  mr_ptrdes_t src, dst;
+  mr_pointer_get_size_ptrdes (&dst, idx, ptrs);
+      
+  if (dst.data.ptr != NULL)
+    {
+      src.data.ptr = &ptrs->ra[idx].MR_SIZE;
+      src.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].MR_SIZE));
+      mr_assign_int (&dst, &src);
+    }
+}
+
 /**
  * MR_TYPE_EXT_POINTER load handler. Initiated as postponed call thru mr_load_pointer via stack.
  * Loads element into newly allocate memory.

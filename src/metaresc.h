@@ -1256,10 +1256,6 @@ extern void mr_free (const char * filename, const char * function, int line, voi
 extern char * mr_strdup (const char * str);
 extern char * mr_strndup (const char * str, size_t size);
 
-extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
-extern bool mr_is_valid_field_name (char * name);
-extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs);
-extern void mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs);
 extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
