@@ -25,6 +25,7 @@ endif
 
 if HAVE_LIBDWARF
   check_PROGRAMS += dw_export
+  dw_export_LDADD = dw_types.$(OBJEXT)
 endif
 
 endif

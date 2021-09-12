@@ -10,6 +10,13 @@ TYPEDEF_STRUCT (mr_array_t,
 
 mr_array_t mr_array;
 
+TYPEDEF_STRUCT (mr_void_fields_t,
+		VOID (mr_ptr_t, void_union),
+		VOID (mr_array_t, void_struct),
+		)
+
+mr_void_fields_t mr_void_fields;
+
 TYPEDEF_STRUCT (mr_bitfields_t,
 		BITFIELD (int, _8bits, : __CHAR_BIT__),
 		BITFIELD (int, _7bits, : __CHAR_BIT__ - 1),
