@@ -1366,7 +1366,7 @@ mr_optimize_graph_depth (mr_ra_ptrdes_t * ptrs)
     {
       int idx = ra[head++].res.data.uintptr;
       /* inspect pointers that are references on other nodes */
-      if ((MR_TYPE_POINTER == ra[idx].mr_type) && (ra[idx].ref_idx >= 0))
+      if ((MR_TYPE_POINTER == ra[idx].mr_type) && (MR_TYPE_VOID != ra[idx].mr_type_aux) && (ra[idx].ref_idx >= 0))
 	{
 	  int ref_idx = ra[idx].ref_idx;
 	  int ref_parent = ra[ref_idx].parent;
