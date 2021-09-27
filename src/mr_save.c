@@ -1344,60 +1344,6 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
   return (MR_SUCCESS);
 }
 
-static bool
-mr_optimize_graph_depth (mr_ra_ptrdes_t * ptrs)
-{
-  bool need_reindex = false;
-  int i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  mr_ptrdes_t * ra = ptrs->ra;
-  
-  ptrs->ptrdes_type = MR_PD_CUSTOM;
-  for (i = 0; i < count; ++i)
-    {
-      ra[i].res.data.uintptr = 0;
-      ra[i].res.type = "uintptr";
-      ra[i].res.MR_SIZE = 0;
-    }
-
-  int head, tail;
-  head = tail = 0;
-  ra[tail++].res.data.uintptr = 0;
-  while (head != tail)
-    {
-      int idx = ra[head++].res.data.uintptr;
-      /* inspect pointers that are references on other nodes */
-      if ((MR_TYPE_POINTER == ra[idx].mr_type) && (MR_TYPE_VOID != ra[idx].mr_type_aux) && (ra[idx].ref_idx >= 0))
-	{
-	  int ref_idx = ra[idx].ref_idx;
-	  int ref_parent = ra[ref_idx].parent;
-	  /*
-	    if a referenced node is a first child of another pointer that is not yet visited
-	    we need to move all pointer content to lower level pointer and make a reference at higher level
-	  */
-	  if (ref_parent >= 0)
-	    if ((ra[ref_idx].prev < 0) && /* is a first node */
-		(MR_TYPE_POINTER == ra[ref_parent].mr_type) && /* parent node is a pointer */
-		(0 == ra[ref_parent].res.MR_SIZE)) /* that is not yet visited */
-	      {
-		need_reindex = true;
-		ra[idx].MR_SIZE = ra[ref_parent].MR_SIZE;
-		mr_size_t element_size = ra[idx].tdp ? ra[idx].tdp->size : mr_type_size (ra[idx].mr_type);
-		move_nodes_to_parent (ra, ref_parent, idx, ref_idx, element_size);
-		for (i = ra[idx].first_child; i >= 0; i = ra[i].next)
-		  ra[i].name = ra[idx].name;
-		ra[idx].ref_idx = -1;
-	      }
-	}
-      /* add child nodes to DFS queue and mark them as visited */
-      for (i = ra[idx].first_child; i >= 0; i = ra[i].next)
-	{
-	  ra[i].res.MR_SIZE = !0;
-	  ra[tail++].res.data.uintptr = i;
-	}
-    }
-  return (need_reindex);
-}
-
 /**
  * There is no need to save empty nodes and possibly their parent structures 
  * @param mr_ra_ptrdes_t resizable array with pointers descriptors
@@ -1407,9 +1353,8 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
 {
   bool need_reindex_empty = false;
   mr_ptrs_dfs (ptrs, mr_remove_empty_node, &need_reindex_empty);
-  bool need_reindex_levels = mr_optimize_graph_depth (ptrs);
   /* re-enumerate nodes after empty nodes removal */
-  if (need_reindex_empty || need_reindex_levels)
+  if (need_reindex_empty)
     {
       int idx_ = 0;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
@@ -1471,15 +1416,6 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
 	}
       else if ((0 == element_size) || (ptrdes->MR_SIZE < element_size))
 	ptrdes->flags.is_null = true;
-      else if ((ptrdes->mr_type_aux != MR_TYPE_NONE) && (ptrdes->mr_type_aux != MR_TYPE_VOID)) /* look ahead optimization for void pointers */
-	{
-	  int * idx_ = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_idx,
-						   &mr_save_data->mr_ra_idx_size, &mr_save_data->mr_ra_idx_alloc_size, 
-						   sizeof (mr_save_data->mr_ra_idx[0]));
-	  if (NULL == idx_)
-	    return (-1);
-	  *idx_ = idx;
-	}
     }
   return (1);
 }  
@@ -1509,8 +1445,6 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 
   mr_save_data->mr_ra_ud_size = 0;
   mr_save_data->mr_ra_ud = NULL;
-  mr_save_data->mr_ra_idx_size = 0;
-  mr_save_data->mr_ra_idx = NULL;
   mr_save_data->ptrs.size = 0;
   mr_save_data->ptrs.ra = NULL;
 
@@ -1518,13 +1452,16 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   int nodes_added = mr_save_inner (data, fdp, 1, mr_save_data, -1);
   if (nodes_added > 0)
     {
-      while (mr_save_data->mr_ra_idx_size > 0)
-	{
-	  mr_save_data->mr_ra_idx_size -= sizeof (mr_save_data->mr_ra_idx[0]);
-	  nodes_added = mr_save_pointer_content (mr_save_data->mr_ra_idx[mr_save_data->mr_ra_idx_size / sizeof (mr_save_data->mr_ra_idx[0])], mr_save_data);
-	  if (nodes_added < 0)
-	    break;
-	}
+      for (i = 0; i < mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]); ++i)
+	if ((MR_TYPE_POINTER == mr_save_data->ptrs.ra[i].mr_type) &&
+	    (MR_TYPE_VOID != mr_save_data->ptrs.ra[i].mr_type_aux) &&
+	    (MR_TYPE_NONE != mr_save_data->ptrs.ra[i].mr_type_aux) &&
+	    !mr_save_data->ptrs.ra[i].flags.is_null)
+	  {
+	    nodes_added = mr_save_pointer_content (i, mr_save_data);
+	    if (nodes_added < 0)
+	      break;
+	  }
       if (nodes_added >= 0)
 	mr_post_process (mr_save_data);
     }
@@ -1542,10 +1479,6 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
     MR_FREE (mr_save_data->mr_ra_ud);
   mr_save_data->mr_ra_ud = NULL;
   
-  if (mr_save_data->mr_ra_idx != NULL)
-    MR_FREE (mr_save_data->mr_ra_idx);
-  mr_save_data->mr_ra_idx = NULL;
-
   mr_ic_free (&mr_save_data->union_discriminators);
   mr_ic_free (&mr_save_data->typed_ptrs);
   mr_ic_free (&mr_save_data->untyped_ptrs);
