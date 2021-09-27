@@ -112,12 +112,12 @@ TYPEDEF_STRUCT (rtfr_struct_t,
 		int y);
 
 TYPEDEF_STRUCT (resolve_typed_forward_ref_t,
+		(int *, y),
 		(rtfr_struct_t *, x),
-		(int *, y) /* pointers are loaded via stack, so one level ponters will be loaded in a reverse order */
 		);
 
 START_TEST (resolve_typed_forward_ref) {
-  resolve_typed_forward_ref_t x = { (rtfr_struct_t[]){ {0, 1} } };
+  resolve_typed_forward_ref_t x = { .x = (rtfr_struct_t[]){ {0, 1} } };
   x.y = &x.x->y;
   ALL_METHODS (ASSERT_SAVE_LOAD, resolve_typed_forward_ref_t, &x);
 } END_TEST
