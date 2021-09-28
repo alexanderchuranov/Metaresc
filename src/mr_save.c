@@ -1456,6 +1456,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
 	if ((MR_TYPE_POINTER == mr_save_data->ptrs.ra[i].mr_type) &&
 	    (MR_TYPE_VOID != mr_save_data->ptrs.ra[i].mr_type_aux) &&
 	    (MR_TYPE_NONE != mr_save_data->ptrs.ra[i].mr_type_aux) &&
+	    !mr_save_data->ptrs.ra[i].flags.is_opaque_data &&
 	    !mr_save_data->ptrs.ra[i].flags.is_null)
 	  {
 	    nodes_added = mr_save_pointer_content (i, mr_save_data);
