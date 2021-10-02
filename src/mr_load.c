@@ -842,7 +842,6 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
       return (MR_FAILURE);
     }
 
-  mr_load_data->ptrs.ra[idx].data.ptr = data;
   if (mr_load_data->ptrs.ra[idx].name && fdp->name.str && !fdp->unnamed)
     if (0 != strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].name))
       {
@@ -850,19 +849,14 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
 	return (MR_FAILURE);
       }
 
-  if (mr_load_data->ptrs.ra[idx].tdp && fdp->type)
-    if (strcmp (fdp->type, mr_load_data->ptrs.ra[idx].tdp->type.str))
+  if (mr_load_data->ptrs.ra[idx].tdp && fdp->tdp)
+    if (mr_load_data->ptrs.ra[idx].tdp != fdp->tdp)
       {
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, mr_load_data->ptrs.ra[idx].tdp->type.str);
 	return (MR_FAILURE);
       }
 
-  if ((NULL == mr_load_data->ptrs.ra[idx].name) && (fdp->name.str))
-    mr_load_data->ptrs.ra[idx].name = fdp->name.str;
-  
-  if ((NULL == mr_load_data->ptrs.ra[idx].tdp) && (fdp->tdp != NULL))
-    mr_load_data->ptrs.ra[idx].tdp = fdp->tdp;
-
+  mr_load_data->ptrs.ra[idx].data.ptr = data;
   mr_load_data->ptrs.ra[idx].fdp = fdp;
   mr_load_data->ptrs.ra[idx].non_persistent = fdp->non_persistent;
   mr_load_data->ptrs.ra[idx].mr_size = fdp->size;
