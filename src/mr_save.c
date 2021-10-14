@@ -1060,7 +1060,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   int parent;
-  for (parent = idx; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
+  for (parent = idx; parent > 0; parent = mr_save_data->ptrs.ra[parent].parent)
     if (!mr_save_data->ptrs.ra[parent].non_persistent)
       break;
       
