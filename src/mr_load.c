@@ -23,9 +23,9 @@
 TYPEDEF_STRUCT (mr_load_node_context_t,
 		int idx,
 		(mr_ra_ptrdes_t *, ptrs)
-		)
+		);
 
-TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /* mr_load_data */))
+TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_ra_ptrdes_t * /* ptrs */));
 
 /**
  * Post load references setting. If node was marked as references
@@ -35,17 +35,17 @@ TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_load_data_t * /
  * @return Status.
  */
 static mr_status_t
-mr_set_crossrefs (mr_load_data_t * mr_load_data)
+mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 {
   int i;
-  int count = mr_load_data->ptrs.size / sizeof (mr_load_data->ptrs.ra[0]);
+  int count = ptrs->size / sizeof (ptrs->ra[0]);
   int max_idx = -1;
   int * table;
   mr_status_t status = MR_SUCCESS;
 
   for (i = 0; i < count; ++i)
-    if (mr_load_data->ptrs.ra[i].idx > max_idx)
-      max_idx = mr_load_data->ptrs.ra[i].idx;
+    if (ptrs->ra[i].idx > max_idx)
+      max_idx = ptrs->ra[i].idx;
 
   if (max_idx < 0)
     return (MR_SUCCESS);
@@ -60,47 +60,47 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
   for (i = 0; i <= max_idx; ++i)
     table[i] = -1;
   for (i = 0; i < count; ++i)
-    if (mr_load_data->ptrs.ra[i].idx >= 0)
+    if (ptrs->ra[i].idx >= 0)
       {
 	/* checking indexes collision */
-	if (table[mr_load_data->ptrs.ra[i].idx] >= 0)
+	if (table[ptrs->ra[i].idx] >= 0)
 	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, mr_load_data->ptrs.ra[i].idx);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, ptrs->ra[i].idx);
 	    status = MR_FAILURE;
 	  }
-	table[mr_load_data->ptrs.ra[i].idx] = i;
+	table[ptrs->ra[i].idx] = i;
       }
 
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
-    if (mr_load_data->ptrs.ra[i].ref_idx >= 0)
+    if (ptrs->ra[i].ref_idx >= 0)
       {
-	if (mr_load_data->ptrs.ra[i].ref_idx > max_idx)
+	if (ptrs->ra[i].ref_idx > max_idx)
 	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, mr_load_data->ptrs.ra[i].ref_idx);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].ref_idx);
 	    status = MR_FAILURE;
 	    continue;
 	  }
 	
-	int idx = table[mr_load_data->ptrs.ra[i].ref_idx];
+	int idx = table[ptrs->ra[i].ref_idx];
 	if (idx < 0)
 	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, mr_load_data->ptrs.ra[i].ref_idx);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].ref_idx);
 	    status = MR_FAILURE;
 	    continue;
 	  }
 
-	void * data = mr_load_data->ptrs.ra[idx].data.ptr;
+	void * data = ptrs->ra[idx].data.ptr;
 
-	if ((MR_TYPE_POINTER != mr_load_data->ptrs.ra[i].mr_type) &&
-	    (MR_TYPE_STRING != mr_load_data->ptrs.ra[i].mr_type))
+	if ((MR_TYPE_POINTER != ptrs->ra[i].mr_type) &&
+	    (MR_TYPE_STRING != ptrs->ra[i].mr_type))
 	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, mr_load_data->ptrs.ra[i].mr_type);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrs->ra[i].mr_type);
 	    status = MR_FAILURE;
 	    continue;
 	  }
 
-	if (mr_load_data->ptrs.ra[i].flags.is_content_reference)
+	if (ptrs->ra[i].flags.is_content_reference)
 	  {
 	    if (NULL == data)
 	      {
@@ -111,14 +111,14 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
 	      data = *(void**)data;
 	  }
 
-	if (NULL == mr_load_data->ptrs.ra[i].data.ptr)
+	if (NULL == ptrs->ra[i].data.ptr)
 	  {
 	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
 	    status = MR_FAILURE;
 	    continue;
 	  }
 
-	*(void**)mr_load_data->ptrs.ra[i].data.ptr = data;
+	*(void**)ptrs->ra[i].data.ptr = data;
       }
   
   MR_FREE (table);
@@ -133,7 +133,7 @@ mr_set_crossrefs (mr_load_data_t * mr_load_data)
  * @return Status of read
  */
 static mr_status_t
-mr_load_none (int idx, mr_load_data_t * mr_load_data)
+mr_load_none (int idx, mr_ra_ptrdes_t * ptrs)
 {
   return (MR_SUCCESS);
 }
@@ -145,9 +145,9 @@ mr_load_none (int idx, mr_load_data_t * mr_load_data)
  * @return Status of read (0 - failure, !0 - success)
  */
 mr_status_t
-mr_load_integer (int idx, mr_load_data_t * mr_load_data)
+mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
@@ -267,10 +267,10 @@ mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str
  * @return Status of read (0 - failure, !0 - success)
  */
 mr_status_t
-mr_load_func (int idx, mr_load_data_t * mr_load_data)
+mr_load_func (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
 
   *(void**)ptrdes->data.ptr = NULL;
   switch (ptrdes->load_params.mr_value.value_type)
@@ -298,9 +298,9 @@ mr_load_func (int idx, mr_load_data_t * mr_load_data)
  * @return Status of read
  */
 static mr_status_t
-mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
+mr_load_bitfield (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   uint64_t value;
 
   if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
@@ -311,9 +311,9 @@ mr_load_bitfield (int idx, mr_load_data_t * mr_load_data)
 }
 
 static mr_status_t
-mr_load_float (int idx, mr_load_data_t * mr_load_data)
+mr_load_float (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   if (MR_SUCCESS != mr_value_cast (MR_VT_FLOAT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
@@ -330,9 +330,9 @@ mr_load_float (int idx, mr_load_data_t * mr_load_data)
 }
 
 static mr_status_t
-mr_load_complex (int idx, mr_load_data_t * mr_load_data)
+mr_load_complex (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   if (MR_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
@@ -375,10 +375,10 @@ mr_get_char (char * src, void * dst)
  * @return Status of read
  */
 static mr_status_t
-mr_load_char (int idx, mr_load_data_t * mr_load_data)
+mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
   switch (ptrdes->load_params.mr_value.value_type)
     {
@@ -415,10 +415,10 @@ mr_get_str (char * src, void * dst)
  * @return Status of read
  */
 static mr_status_t
-mr_load_string (int idx, mr_load_data_t * mr_load_data)
+mr_load_string (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
   if ((true == ptrdes->flags.is_null) || (ptrdes->ref_idx >= 0))
     *(char**)ptrdes->data.ptr = NULL;
@@ -497,13 +497,13 @@ mr_get_char_array (char * str, void * dst)
  * @return Status of read
  */
 static mr_status_t
-mr_load_char_array (int idx, mr_load_data_t * mr_load_data)
+mr_load_char_array (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_load_node_context_t load_node_context = {
     .idx = idx,
-    .ptrs = &mr_load_data->ptrs,
+    .ptrs = ptrs,
   };
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_status_t status = MR_SUCCESS;
 
   if (ptrdes->fdp->size > 0)
@@ -545,12 +545,12 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
  * @return Status of read
  */
 static mr_status_t
-mr_load_struct (int idx, mr_load_data_t * mr_load_data)
+mr_load_struct (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_fd_t * fdp = NULL;
-  char * data = mr_load_data->ptrs.ra[idx].data.ptr;
-  int first_child = mr_load_data->ptrs.ra[idx].first_child;
-  mr_td_t * tdp = mr_load_data->ptrs.ra[idx].tdp;
+  char * data = ptrs->ra[idx].data.ptr;
+  int first_child = ptrs->ra[idx].first_child;
+  mr_td_t * tdp = ptrs->ra[idx].tdp;
   mr_status_t status = MR_SUCCESS;
 
   /* get pointer on structure descriptor */
@@ -561,22 +561,22 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
     }
 
   /* loop on all subnodes */
-  for (idx = first_child; idx >= 0; idx = mr_load_data->ptrs.ra[idx].next)
+  for (idx = first_child; idx >= 0; idx = ptrs->ra[idx].next)
     {
-      if (NULL == mr_load_data->ptrs.ra[idx].name)
+      if (NULL == ptrs->ra[idx].name)
 	fdp = mr_load_struct_next_field (tdp, fdp);
       else
-	fdp = mr_get_fd_by_name (tdp, mr_load_data->ptrs.ra[idx].name);
+	fdp = mr_get_fd_by_name (tdp, ptrs->ra[idx].name);
 
       if (NULL == fdp)
 	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, mr_load_data->ptrs.ra[idx].name);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, ptrs->ra[idx].name);
 	  status = MR_FAILURE;
 	  continue;
 	}
 
       /* recursively load subnode */
-      mr_status_t subnode_status = mr_load (&data[fdp->offset], fdp, idx, mr_load_data);
+      mr_status_t subnode_status = mr_load (&data[fdp->offset], fdp, idx, ptrs);
       if (MR_SUCCESS != subnode_status)
 	status = subnode_status;
     }
@@ -591,10 +591,10 @@ mr_load_struct (int idx, mr_load_data_t * mr_load_data)
  * @return Status of read
  */
 static mr_status_t
-mr_load_array (int idx, mr_load_data_t * mr_load_data)
+mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  char * data = mr_load_data->ptrs.ra[idx].data.ptr;
-  mr_fd_t fd_ = *mr_load_data->ptrs.ra[idx].fdp;
+  char * data = ptrs->ra[idx].data.ptr;
+  mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   mr_fd_t * fdp = &fd_;
   int count, i = 0;
   mr_status_t status = MR_SUCCESS;
@@ -620,7 +620,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
     }
 
   /* loop on subnodes */
-  for (idx = mr_load_data->ptrs.ra[idx].first_child; idx >= 0; idx = mr_load_data->ptrs.ra[idx].next)
+  for (idx = ptrs->ra[idx].first_child; idx >= 0; idx = ptrs->ra[idx].next)
     {
       /* check if array index is in range */
       if ((i < 0) || (i >= count))
@@ -629,7 +629,7 @@ mr_load_array (int idx, mr_load_data_t * mr_load_data)
 	  return (MR_FAILURE);
 	}
       /* load recursively */
-      mr_status_t subnode_status = mr_load (&data[i * fdp->size], fdp, idx, mr_load_data);
+      mr_status_t subnode_status = mr_load (&data[i * fdp->size], fdp, idx, ptrs);
       if (MR_SUCCESS != subnode_status)
 	status = subnode_status;
       ++i;
@@ -652,22 +652,24 @@ mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 /**
- * MR_TYPE_EXT_POINTER load handler. Initiated as postponed call thru mr_load_pointer via stack.
  * Loads element into newly allocate memory.
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
  * @return Status of read (0 - failure, !0 - success)
  */
 static mr_status_t
-mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
+mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
-  char ** data = mr_load_data->ptrs.ra[idx].data.ptr;
-  mr_fd_t fd_ = *mr_load_data->ptrs.ra[idx].fdp;
+  char ** data = ptrs->ra[idx].data.ptr;
+  mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   int count = 0;
   int node;
 
-  for (node = mr_load_data->ptrs.ra[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra[node].next)
+  if (NULL == data)
+    return (MR_FAILURE);
+
+  for (node = ptrs->ra[idx].first_child; node >= 0; node = ptrs->ra[node].next)
     ++count;
   if (0 == count)
     return (MR_SUCCESS);
@@ -686,29 +688,29 @@ mr_load_pointer_postponed (int idx, mr_load_data_t * mr_load_data)
   
   /* load recursively */
   count = 0;
-  for (node = mr_load_data->ptrs.ra[idx].first_child; node >= 0; node = mr_load_data->ptrs.ra[node].next)
+  for (node = ptrs->ra[idx].first_child; node >= 0; node = ptrs->ra[node].next)
     {
-      mr_status_t subnode_status = mr_load (*data + count++ * fd_.size, &fd_, node, mr_load_data);
+      mr_status_t subnode_status = mr_load (*data + count++ * fd_.size, &fd_, node, ptrs);
       if (MR_SUCCESS != subnode_status)
 	status = subnode_status;
     }
 
-  mr_load_data->ptrs.ra[idx].MR_SIZE = count * fd_.size;
-  mr_pointer_set_size (idx, &mr_load_data->ptrs);
+  ptrs->ra[idx].MR_SIZE = count * fd_.size;
+  mr_pointer_set_size (idx, ptrs);
   
   return (status);
 }
 
 /**
- * MR_TYPE_EXT_POINTER load handler. Schedule element postponed loading via stack.
+ * MR_TYPE_POINTER load handler. At this point handle only NULL pointers and refernces on other objects.
  * @param idx node index
  * @param mr_load_data structures that holds context of loading
  * @return Status of read
  */
 static mr_status_t
-mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
+mr_load_pointer (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   void ** data = ptrdes->data.ptr;
   
   /* default initializer */
@@ -724,21 +726,6 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
 	  ptrdes->flags.is_content_reference = true;
 	}
     }
-  if (ptrdes->ref_idx >= 0)
-    return (MR_SUCCESS);
-  if (ptrdes->first_child < 0)
-    return (MR_SUCCESS);
-  /* check whether pointer should have offsprings or not */
-  if ((MR_TYPE_NONE != ptrdes->mr_type) && (MR_TYPE_VOID != ptrdes->mr_type))
-    {
-      int * idx_ = mr_rarray_allocate_element ((void**)&mr_load_data->mr_ra_idx,
-					       &mr_load_data->mr_ra_idx_size, &mr_load_data->mr_ra_idx_alloc_size,
-					       sizeof (mr_load_data->mr_ra_idx[0]));
-      if (NULL == idx_)
-	return (MR_FAILURE);
-      *idx_ = idx;
-    }
-
   return (MR_SUCCESS);
 }
 
@@ -750,9 +737,9 @@ mr_load_pointer (int idx, mr_load_data_t * mr_load_data)
  * @return Status of read
  */
 static mr_status_t
-mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
+mr_load_anon_union (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_ptrdes_t * ptrdes = &mr_load_data->ptrs.ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
 
   /*
     Anonimous unions in C init style saved as named field folowed by union itself. Named field has type of zero length static string and must be inited by empty string. Here is an example.
@@ -763,14 +750,14 @@ mr_load_anon_union (int idx, mr_load_data_t * mr_load_data)
   if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
       (MR_VT_QUOTED_SUBSTR == ptrdes->load_params.mr_value.value_type)
       && (0 == ptrdes->load_params.mr_value.vt_quoted_substr.substr.length) && /* content must be an empty string */
-      (mr_load_data->ptrs.ra[idx].name != NULL) && /* node must have a name */
+      (ptrdes->name != NULL) && /* node must have a name */
       (ptrdes->next >= 0))
-    if (NULL == mr_load_data->ptrs.ra[ptrdes->next].name) /* there should be a next node without name */
+    if (NULL == ptrs->ra[ptrdes->next].name) /* there should be a next node without name */
       {
-	mr_load_data->ptrs.ra[ptrdes->next].name = mr_load_data->ptrs.ra[idx].name;
+	ptrs->ra[ptrdes->next].name = ptrdes->name;
 	return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
       }
-  return (mr_load_struct (idx, mr_load_data));
+  return (mr_load_struct (idx, ptrs));
 }
 
 /**
@@ -819,7 +806,7 @@ static mr_load_handler_t mr_load_handler[MR_TYPE_LAST] =
  * @return Status of read
  */
 mr_status_t
-mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
+mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_FAILURE;
 
@@ -829,41 +816,34 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
       return (MR_FAILURE);
     }
 
-  if (0 == idx)
-    {
-      mr_load_data->mr_ra_idx = NULL;
-      mr_load_data->mr_ra_idx_size = 0;
-      mr_load_data->mr_ra_idx_alloc_size = 0;
-    }
-
-  if ((idx < 0) || (idx >= mr_load_data->ptrs.size / sizeof (mr_load_data->ptrs.ra[0])))
+  if ((idx < 0) || (idx >= ptrs->size / sizeof (ptrs->ra[0])))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SAVE_IDX_RANGE_CHECK);
       return (MR_FAILURE);
     }
 
-  if (mr_load_data->ptrs.ra[idx].name && fdp->name.str && !fdp->unnamed)
-    if (0 != strcmp (fdp->name.str, mr_load_data->ptrs.ra[idx].name))
+  if (ptrs->ra[idx].name && fdp->name.str && !fdp->unnamed)
+    if (0 != strcmp (fdp->name.str, ptrs->ra[idx].name))
       {
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, mr_load_data->ptrs.ra[idx].name);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, ptrs->ra[idx].name);
 	return (MR_FAILURE);
       }
 
-  if (mr_load_data->ptrs.ra[idx].tdp && fdp->tdp)
-    if (mr_load_data->ptrs.ra[idx].tdp != fdp->tdp)
+  if (ptrs->ra[idx].tdp && fdp->tdp)
+    if (ptrs->ra[idx].tdp != fdp->tdp)
       {
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, mr_load_data->ptrs.ra[idx].tdp->type.str);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, ptrs->ra[idx].tdp->type.str);
 	return (MR_FAILURE);
       }
 
-  mr_load_data->ptrs.ra[idx].data.ptr = data;
-  mr_load_data->ptrs.ra[idx].fdp = fdp;
-  mr_load_data->ptrs.ra[idx].non_persistent = fdp->non_persistent;
-  mr_load_data->ptrs.ra[idx].mr_size = fdp->size;
-  mr_load_data->ptrs.ra[idx].mr_type = fdp->mr_type;
-  mr_load_data->ptrs.ra[idx].mr_type_aux = fdp->mr_type_aux;
-  mr_load_data->ptrs.ra[idx].tdp = fdp->tdp;
-  mr_load_data->ptrs.ra[idx].name = fdp->name.str;
+  ptrs->ra[idx].data.ptr = data;
+  ptrs->ra[idx].fdp = fdp;
+  ptrs->ra[idx].non_persistent = fdp->non_persistent;
+  ptrs->ra[idx].mr_size = fdp->size;
+  ptrs->ra[idx].mr_type = fdp->mr_type;
+  ptrs->ra[idx].mr_type_aux = fdp->mr_type_aux;
+  ptrs->ra[idx].tdp = fdp->tdp;
+  ptrs->ra[idx].name = fdp->name.str;
 
   /* route loading */
   mr_load_handler_t load_handler = NULL;
@@ -871,7 +851,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
     load_handler = mr_load_handler[fdp->mr_type];
 
   if (load_handler != NULL)
-    status = load_handler (idx, mr_load_data);
+    status = load_handler (idx, ptrs);
   else
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->mr_type);
 
@@ -880,28 +860,19 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data)
     {
       if (MR_SUCCESS == status)
 	{
-	  while (mr_load_data->mr_ra_idx_size > 0)
-	    {
-	      mr_load_data->mr_ra_idx_size -= sizeof (mr_load_data->mr_ra_idx[0]);
-	      mr_status_t subnode_status = mr_load_pointer_postponed
-		(mr_load_data->mr_ra_idx[mr_load_data->mr_ra_idx_size / sizeof (mr_load_data->mr_ra_idx[0])],
-		 mr_load_data);
-	      if (MR_SUCCESS != subnode_status)
-		status = subnode_status;
-	    }
+	  int i, count = ptrs->size / sizeof (ptrs->ra[0]);
+	  for (i = 0; i < count; ++i)
+	    if (MR_TYPE_POINTER == ptrs->ra[i].mr_type)
+	      {
+		mr_status_t subnode_status = mr_load_pointer_postponed (i, ptrs);
+		if (MR_SUCCESS != subnode_status)
+		  status = subnode_status;
+	      }
 	}
       
-      mr_status_t crossref_status = mr_set_crossrefs (mr_load_data);
+      mr_status_t crossref_status = mr_set_crossrefs (ptrs);
       if (MR_SUCCESS == status)
 	status = crossref_status;
-      
-      if (mr_load_data->mr_ra_idx != NULL)
-	{
-	  MR_FREE (mr_load_data->mr_ra_idx);
-	  mr_load_data->mr_ra_idx = NULL;
-	  mr_load_data->mr_ra_idx_size = 0;
-	  mr_load_data->mr_ra_idx_alloc_size = 0;
-	}
     }
 
   return (status);

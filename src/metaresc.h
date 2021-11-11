@@ -969,12 +969,12 @@
 
 #define MR_LOAD_XML2_NODE_ARG3_(MR_TYPE_NAME, XML, S_PTR) ({		\
       mr_status_t __status__ = MR_FAILURE;				\
-      mr_load_data_t __load_data__ =					\
+      mr_ra_ptrdes_t __ptrs__ =						\
 	{								\
-	 .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
-	 .mr_ra_idx = NULL,						\
-	 .mr_ra_idx_size = 0,						\
-	 .mr_ra_idx_alloc_size = 0,					\
+	  .ra = NULL,							\
+	  .size = 0,							\
+	  .alloc_size = 0,						\
+	  .ptrdes_type = MR_PD_LOAD,					\
 	};								\
       mr_fd_t __fd__ =							\
 	{								\
@@ -990,11 +990,11 @@
       else								\
 	{								\
 	  mr_detect_type (&__fd__);					\
-	  int __idx__ = xml2_load (__xml__, &__load_data__.ptrs);	\
+	  int __idx__ = xml2_load (__xml__, &__ptrs__);			\
 	  if (__idx__ >= 0)						\
-	    __status__ = mr_load ((S_PTR), &__fd__, __idx__, &__load_data__); \
-	  if (__load_data__.ptrs.ra)					\
-	    MR_FREE (__load_data__.ptrs.ra);				\
+	    __status__ = mr_load ((S_PTR), &__fd__, __idx__, &__ptrs__); \
+	  if (__ptrs__.ra)						\
+	    MR_FREE (__ptrs__.ra);					\
 	}								\
       __status__;							\
     })
@@ -1059,30 +1059,25 @@
 	  MR_LOAD_METHOD_ARG3_ (METHOD, #MR_TYPE_NAME, STR, S_PTR); }))
 
 #define MR_LOAD_METHOD_ARG3_(METHOD, MR_TYPE_NAME, STR, S_PTR) ({	\
-	mr_load_data_t _load_data_ =					\
-	  {								\
-	   .ptrs = { .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }, \
-	   .mr_ra_idx = NULL,						\
-	   .mr_ra_idx_size = 0,						\
-	   .mr_ra_idx_alloc_size = 0,					\
-	  };								\
-	mr_status_t _status_ = METHOD ((STR), &_load_data_.ptrs);	\
-	if (MR_SUCCESS == _status_)					\
-	  {								\
-	    mr_fd_t _fd_ =						\
-	      {								\
-	       .type = MR_TYPE_NAME,					\
-	       .name = { .str = NULL, .hash_value = 0, },		\
-	       .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),	\
-	       .size = sizeof (*(S_PTR)),				\
-	      };							\
-	    mr_detect_type (&_fd_);					\
-	    _status_ = mr_load ((S_PTR), &_fd_, 0, &_load_data_);	\
-	  }								\
-	if (_load_data_.ptrs.ra)					\
-	  MR_FREE (_load_data_.ptrs.ra);				\
-	_status_;							\
-      })
+      mr_ra_ptrdes_t _ptrs_ =						\
+	{ .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }; \
+      mr_status_t _status_ = METHOD ((STR), &_ptrs_);			\
+      if (MR_SUCCESS == _status_)					\
+	{								\
+	  mr_fd_t _fd_ =						\
+	    {								\
+	      .type = MR_TYPE_NAME,					\
+	      .name = { .str = NULL, .hash_value = 0, },		\
+	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),	\
+	      .size = sizeof (*(S_PTR)),				\
+	    };								\
+	  mr_detect_type (&_fd_);					\
+	  _status_ = mr_load ((S_PTR), &_fd_, 0, &_ptrs_);		\
+	}								\
+      if (_ptrs_.ra)							\
+	MR_FREE (_ptrs_.ra);						\
+      _status_;								\
+    })
 
 #define MR_LOAD_METHOD_ARG2_(METHOD, MR_TYPE_NAME, STR) ({		\
       mr_status_t _status_ = MR_FAILURE;				\
@@ -1227,7 +1222,7 @@ extern mr_status_t mr_add_type (mr_td_t * tdp);
 extern char * mr_read_xml_doc (FILE * fd);
 
 extern void mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data);
-extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_load_data_t * mr_load_data);
+extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs);
 #ifdef HAVE_LIBXML2
 extern xmlDocPtr xml2_save (mr_ra_ptrdes_t * ptrs);
 extern int xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
