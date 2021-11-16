@@ -661,11 +661,28 @@ static mr_status_t
 mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   char ** data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   int count = 0;
   int node;
 
+  *data = NULL; /* default initializer */
+  if (ptrdes->flags.is_null)
+    return (MR_SUCCESS);
+  
+  if (MR_VT_INT == ptrdes->load_params.mr_value.value_type)
+    {
+      if (ptrdes->load_params.mr_value.vt_int >= 0)
+	ptrdes->ref_idx = ptrdes->load_params.mr_value.vt_int;
+      else
+	{
+	  ptrdes->ref_idx = -ptrdes->load_params.mr_value.vt_int;
+	  ptrdes->flags.is_content_reference = true;
+	}
+      return (MR_SUCCESS);
+    }
+  
   if (NULL == data)
     return (MR_FAILURE);
 
@@ -699,34 +716,6 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   mr_pointer_set_size (idx, ptrs);
   
   return (status);
-}
-
-/**
- * MR_TYPE_POINTER load handler. At this point handle only NULL pointers and refernces on other objects.
- * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
- */
-static mr_status_t
-mr_load_pointer (int idx, mr_ra_ptrdes_t * ptrs)
-{
-  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  void ** data = ptrdes->data.ptr;
-  
-  /* default initializer */
-  *data = NULL;
-
-  if (!ptrdes->flags.is_null && (MR_VT_INT == ptrdes->load_params.mr_value.value_type))
-    {
-      if (ptrdes->load_params.mr_value.vt_int >= 0)
-	ptrdes->ref_idx = ptrdes->load_params.mr_value.vt_int;
-      else
-	{
-	  ptrdes->ref_idx = -ptrdes->load_params.mr_value.vt_int;
-	  ptrdes->flags.is_content_reference = true;
-	}
-    }
-  return (MR_SUCCESS);
 }
 
 /**
@@ -791,7 +780,7 @@ static mr_load_handler_t mr_load_handler[MR_TYPE_LAST] =
     [MR_TYPE_FUNC] = mr_load_func,
     [MR_TYPE_FUNC_TYPE] = mr_load_func,
     [MR_TYPE_ARRAY] = mr_load_array,
-    [MR_TYPE_POINTER] = mr_load_pointer,
+    [MR_TYPE_POINTER] = mr_load_none,
     [MR_TYPE_UNION] = mr_load_struct,
     [MR_TYPE_ANON_UNION] = mr_load_struct,
     [MR_TYPE_NAMED_ANON_UNION] = mr_load_anon_union,
