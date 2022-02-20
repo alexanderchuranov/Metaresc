@@ -130,5 +130,7 @@ AC_MSG_RESULT(${SIZEOF_UNCOVERED_TYPE})
 AC_DEFINE_UNQUOTED(MR_UNCOVERED_TYPE, ${UNCOVERED_TYPE}, [int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 AC_DEFINE_UNQUOTED(MR_SIZEOF_UNCOVERED_TYPE, ${SIZEOF_UNCOVERED_TYPE}, [sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (int)sizeof (struct { int:-!!(sizeof (long double) != sizeof (double)); }); ]])], [ AC_DEFINE(MR_LONG_DOUBLE_IS_DOUBLE, [], [define if long double is double]) ])
+
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile examples/Makefile])
 AC_OUTPUT
