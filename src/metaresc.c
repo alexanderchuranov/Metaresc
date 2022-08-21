@@ -94,6 +94,13 @@ int
 mr_get_struct_type_name (const char * fmt, ...)
 {
   mr_struct_type_name = NULL;
+  if (0 == strcmp (fmt, "%s"))
+    {
+      va_list args;
+      va_start (args, fmt);
+      fmt = va_arg (args, char *);
+      va_end (args);
+    }
 
   if (strncmp (fmt, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
     fmt += sizeof (MR_STRUCT_KEYWORD);
@@ -103,7 +110,7 @@ mr_get_struct_type_name (const char * fmt, ...)
 
   char * tail = strchr (fmt, ' ');
   if (NULL == tail)
-    longjmp (mr_get_struct_type_name_jmp_buf, !0);
+    tail = strchr (fmt, 0);
 
   mr_substr_t substr;
   substr.str = (char*)fmt;
