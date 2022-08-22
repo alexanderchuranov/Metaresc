@@ -68,13 +68,14 @@ Clone Metaresc from the Github, configure and build according to the standard au
 On Ubuntu, run the following command:
 
 ```console
-# apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev check libdwarf-dev
+# apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev check
 ```
 
 Checkout Metaresc from github
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
+$ git submodule update --init --recursive --remote
 ```
 
 Run autoconf/automake generators:
@@ -86,7 +87,7 @@ $ ./autogen.sh
 Configure project for target system
 
 ```console
-$ ./configure CPPFLAGS=-I/usr/include/libdwarf
+$ ./configure
 ```
 
 Build and check library
@@ -107,24 +108,14 @@ Install external dependencies:
 # brew install autoconf automake libtool pkg-config flex bison libxml2 check
 ```
 
-For DWARF (debug info format) support install libdwarf:
-
-```console
-$ git clone git://git.code.sf.net/p/libdwarf/code libdwarf-code
-$ cd libdwarf-code
-$ sh ./autogen.sh
-$ ./configure
-$ make
-# make install
-```
-
 Checkout and build Metaresc:
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
+$ git submodule update --init --recursive --remote
 $ cd Metaresc
 $ ./autogen.sh
-$ ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison LIBS=-lz CPPFLAGS=-I/usr/local/include/libdwarf-0
+$ ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison
 $ make -j 4 check
 ```
 
@@ -140,6 +131,7 @@ Checkout and build Metaresc:
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
+$ git submodule update --init --recursive --remote
 $ cd Metaresc
 $ ./autogen.sh
 $ ./configure
@@ -169,6 +161,7 @@ Checkout Metaresc from github
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
+$ git submodule update --init --recursive --remote
 ```
 
 Run autoconf/automake generators:
@@ -186,7 +179,7 @@ $ ./configure CFLAGS=-D__USE_MINGW_ANSI_STDIO HAVE_BISON=yes HAVE_FLEX=yes YACC=
 Build and check library
 
 ```console
-$ make check
+$ make -j 4 check
 ```
 
 ## How to build a sample app
