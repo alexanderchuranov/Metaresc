@@ -466,7 +466,7 @@ dump_die_tree (Dwarf_Debug debug, Dwarf_Die die, mr_die_t * mr_parent_die)
       {
 	Dwarf_Die sibling_die;
 	dump_die_tree (debug, child_die, mr_die);
-	rv = dwarf_siblingof (debug, child_die, &sibling_die, NULL);
+	rv = dwarf_siblingof_b (debug, child_die, TRUE, &sibling_die, NULL);
 	assert (rv != DW_DLV_ERROR);
 	if (rv == DW_DLV_NO_ENTRY)
 	  break;
@@ -484,12 +484,12 @@ dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
 
   for (;;)
     {
-      rv = dwarf_next_cu_header_c (debug, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &next_cu_header, NULL);
+      rv = dwarf_next_cu_header_d (debug, TRUE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &next_cu_header, NULL, NULL);
       if (rv == DW_DLV_NO_ENTRY)
 	break;
       assert (rv == DW_DLV_OK);
 
-      rv = dwarf_siblingof (debug, 0, &die, NULL);
+      rv = dwarf_siblingof_b (debug, 0, TRUE, &die, NULL);
       assert (rv != DW_DLV_ERROR);
       rv = dwarf_tag (die, &tagval, NULL);
       assert (rv == DW_DLV_OK);
@@ -1175,16 +1175,8 @@ main (int argc, char * argv [])
     {
       Dwarf_Debug debug;
       Dwarf_Error error;
-  
-#ifdef HAVE_DWARF_INIT_PATH
       char path[1 << 13];
-      int rv = dwarf_init_path (argv[i], path, sizeof (path), DW_DLC_READ, DW_GROUPNUMBER_ANY, NULL, NULL, &debug, NULL, 0, NULL, &error);
-#else /* ! HAVE_DWARF_INIT_PATH */
-      int fd = open (argv[i], O_RDONLY);
-      assert (fd > 0);
-      int rv = dwarf_init (fd, DW_DLC_READ, NULL, NULL, &debug, &error);
-#endif /* HAVE_DWARF_INIT_PATH */
-  
+      int rv = dwarf_init_path_dl (argv[i], path, sizeof (path), DW_GROUPNUMBER_ANY, NULL, NULL, &debug, NULL, 0, NULL, &error);
       if (rv != DW_DLV_OK)
 	{
 	  fprintf (stderr, "libdwarf error (%d): failed to open file '%s'\n", rv, argv[i]);
@@ -1203,13 +1195,8 @@ main (int argc, char * argv [])
 
       MR_FREE_RECURSIVELY (mr_die_t, &mr_die);
 
-      rv = dwarf_finish (debug, NULL);
+      rv = dwarf_finish (debug);
       assert (rv == DW_DLV_OK);
-  
-#ifndef HAVE_DWARF_INIT_PATH
-      rv = close (fd);
-      assert (rv == 0);
-#endif /* HAVE_DWARF_INIT_PATH */
     }
 
   tweak_mr_conf ();

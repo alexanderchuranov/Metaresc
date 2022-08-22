@@ -25,9 +25,10 @@ pkgincludedir = $(includedir)
 lib_LTLIBRARIES = libmetaresc.la 
 
 if HAVE_LIBDWARF
+SUBDIRS = ../libdwarf-code/
 bin_PROGRAMS = mr_dwarf
-
-mr_dwarf_LDADD = -ldwarf libmetaresc.la $(LIBXML2_LIBS)
+mr_dwarf_CPPFLAGS = -I$(top_srcdir)/libdwarf-code/src/lib/libdwarf/
+mr_dwarf_LDADD = libmetaresc.la $(LIBXML2_LIBS) ../libdwarf-code/src/lib/libdwarf/.libs/libdwarf.la
 endif
 
 libmetaresc_la_SOURCES = metaresc.c mr_message.c mr_extra.c mr_print.c mr_stringify.c mr_save.c mr_load.c xml_save.c cinit_save.c json_save.c scm_save.c mr_ic.c mr_hsort.c mr_value.c mr_btree.c

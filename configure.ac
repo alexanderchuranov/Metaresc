@@ -3,6 +3,7 @@
 
 AC_PREREQ([2.69])
 AC_INIT([META data and RESource library for C language],[1.0],[hnarkaytis@gmail.com])
+AC_CONFIG_AUX_DIR([.])
 AM_INIT_AUTOMAKE([1.0])
 AC_CONFIG_SRCDIR([src/mr_protos.h])
 AC_CONFIG_HEADERS([src/mr_config.h src/mr_export.h])
@@ -58,9 +59,9 @@ PKG_CHECK_MODULES([CHECK], [check >= 0.9.5], [ HAVE_CHECK=yes ], [] )
 AM_CONDITIONAL(HAVE_CHECK, test x${HAVE_CHECK} = xyes)
 
 # Checks for libraries.
-AC_ARG_WITH([libxml2], AS_HELP_STRING([--with-libxml2], [Build with the ibxml2]))
+AC_ARG_WITH([libxml2], AS_HELP_STRING([--without-libxml2], [Build without libxml2]))
 
-if test "x$with_libxml2" != "xno"; then
+if test "x${with_libxml2}" != "xno"; then
   PKG_CHECK_MODULES([LIBXML2], [libxml-2.0 >= 2.0], [ HAVE_LIBXML2=yes ], [] )
 fi
 
@@ -75,14 +76,11 @@ AC_SUBST(AM_LDFLAGS, ${AM_LDFLAGS})
 
 AC_CHECK_LIB(execinfo, backtrace, [ LIBS="${LIBS} -lexecinfo" ])
 
-AC_CHECK_LIB(dwarf, dwarf_init, [ HAVE_LIBDWARF=yes ])
-AC_CHECK_HEADER([libdwarf.h], [ HAVE_LIBDWARF_H=yes ])
-AM_CONDITIONAL(HAVE_LIBDWARF, test x${HAVE_LIBDWARF} = xyes -a x${HAVE_LIBDWARF_H} = xyes)
-
-AC_CHECK_LIB(dwarf, dwarf_init_path, [ HAVE_DWARF_INIT_PATH=yes ])
-if [[ x${HAVE_DWARF_INIT_PATH} = xyes ]]; then
-  AC_DEFINE(HAVE_DWARF_INIT_PATH, [], [define if dwarf_init_path is present])
+AC_ARG_WITH([libdwarf], AS_HELP_STRING([--without-libdwarf], [Build without libdwarf]))
+if [[ x${with_libdwarf} != xno ]]; then
+  AC_CONFIG_SUBDIRS([libdwarf-code])
 fi
+AM_CONDITIONAL(HAVE_LIBDWARF, test x${with_libdwarf} != xno)
 
 AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#include <rpc/types.h>
 #include <rpc/xdr.h>]])
