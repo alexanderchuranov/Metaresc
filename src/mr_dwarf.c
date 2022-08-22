@@ -953,14 +953,43 @@ static mr_type_sign_t * mr_type_sign[] =
   MR_BI_SIGN (complex long double, "complex")
   MR_FOREACH (MR_BI_SIGN,
 	      signed, unsigned, bool,
-	      char, signed char, unsigned char,
-	      short, signed short, unsigned short,
-	      short int, signed short int, unsigned short int,
-	      int, signed int, unsigned int,
-	      long, signed long, unsigned long,
-	      long int, signed long int, unsigned long int,
-	      long long, signed long long, unsigned long long,
-	      long long int, signed long long int, unsigned long long int,
+	      
+	      char,
+	      signed char, char signed,
+	      unsigned char, char unsigned,
+	      
+	      short,
+	      signed short, short signed,
+	      unsigned short, short unsigned,
+	      
+	      short int,
+	      signed short int, signed int short, short signed int, short int signed, int signed short, int short signed,
+	      unsigned short int, unsigned int short, short unsigned int, short int unsigned, int unsigned short, int short unsigned,
+	      
+	      int,
+	      signed int, int signed,
+	      unsigned int, unsigned int,
+	      
+	      long,
+	      signed long, long signed,
+	      unsigned long, long unsigned,
+	      
+	      long int,
+	      signed long int, signed int long, long signed int, long int signed, int signed long, int long signed,
+	      unsigned long int, unsigned int long, long unsigned int, long int unsigned, int unsigned long, int long unsigned,
+	      
+	      long long,
+	      signed long long, long signed long, long long signed,
+	      unsigned long long, long unsigned long, long long unsigned,
+	      
+	      long long int,
+	      signed long long int, signed long int long, signed int long long,
+	      long signed long int, long signed int long, long long signed int, long long int signed, long int signed long, long int long signed,
+	      int signed long long, int long signed long, int long long signed,
+	      unsigned long long int, unsigned long int long, unsigned int long long,
+	      long unsigned long int, long unsigned int long, long long unsigned int, long long int unsigned, long int unsigned long, long int long unsigned,
+	      int unsigned long long, int long unsigned long, int long long unsigned,
+	      
 	      float, double, long double,
 	      complex float, complex double, complex long double)
 };
