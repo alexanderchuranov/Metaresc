@@ -358,7 +358,10 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
       rv = dwarf_formstring (dw_attribute, &mr_attr->dw_str, NULL);
       assert (rv == DW_DLV_OK);
       if (mr_attr->dw_str)
-	mr_attr->dw_str = mr_strdup (mr_attr->dw_str);
+	{
+	  mr_attr->dw_str = mr_strdup (mr_attr->dw_str);
+	  assert (mr_attr->dw_str != NULL);
+	}
       break;
 	
     case _DW_FORM_flag:
@@ -557,11 +560,13 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  mr_die->attributes[idx].code = _DW_AT_name;
 	  mr_die->attributes[idx].form = _DW_FORM_strp;
 	  mr_die->attributes[idx].dw_str = mr_strdup (type_name);
+	  assert (mr_die->attributes[idx].dw_str != NULL);
 	  attr = &mr_die->attributes[idx];
 	}
       assert (_DW_FORM_strp == attr->form);
       assert (attr->dw_str != NULL);
       fdp->type = mr_strdup (attr->dw_str);
+      assert (fdp->type != NULL);
     }
 }
 
@@ -582,6 +587,8 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   mr_type_sign.type.str = attr->dw_str;
 
   mr_ptr_t * find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
+  if (NULL == find)
+    fprintf (stderr, "Type descriptor for '%s' is not found\n", mr_type_sign.type.str);
   assert (find != NULL);
 
   mr_type_sign_t * found_sign = find->ptr;
@@ -589,6 +596,7 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   fdp->size = mr_type_sign.size;
   if (fdp->type == NULL)
     fdp->type = mr_strdup (mr_type_sign.type.str);
+  assert (fdp->type != NULL);
 }
 
 static void
@@ -701,6 +709,7 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
   assert (attr->dw_str != NULL);
   fdp->name.str = mr_strdup (attr->dw_str);
+  assert (fdp->name.str != NULL);
 
   attr = die_attribute (mr_die, _DW_AT_const_value);
   assert (attr != NULL);
@@ -731,6 +740,7 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
       assert (attr->dw_str != NULL);
       fdp->name.str = mr_strdup (attr->dw_str);
+      assert (fdp->name.str != NULL);
     }
   if (fdp->name.str == NULL)
     fdp->unnamed = true;
@@ -862,6 +872,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   memset (tdp, 0, sizeof (*tdp));
   tdp->mr_type = mr_type;
   tdp->type.str = mr_strdup (attr->dw_str);
+  assert (tdp->type.str != NULL);
   if ((MR_TYPE_STRING == mr_type) || (MR_TYPE_FUNC_TYPE == mr_type))
     tdp->size = sizeof (void *);
 
@@ -931,35 +942,27 @@ mr_type_sign_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (mr_hashed_string_cmp (&x_->type, &y_->type));
 }
 
-#define MR_BI_SIGN_(TYPE, TYPE_STR) (mr_type_sign_t[]){{ .type = { .str = TYPE_STR, .hash_value = 0, }, .size = sizeof (TYPE), .mr_type = MR_TYPE_DETECT (TYPE), }}
+#define MR_BI_SIGN_(TYPE, TYPE_STR) (mr_type_sign_t[]){{ .type = { .str = TYPE_STR, .hash_value = 0, }, .size = sizeof (TYPE), .mr_type = MR_TYPE_DETECT (TYPE), }},
 #define MR_BI_SIGN(TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_SIGN_ (TYPE, #TYPE)) (MR_BI_SIGN_ (TYPE, __VA_ARGS__)) 
 
 static mr_type_sign_t * mr_type_sign[] =
 {
-  MR_BI_SIGN (_Bool),
-  MR_BI_SIGN (typeof (sizeof (0)), "__ARRAY_SIZE_TYPE__"),
-  MR_BI_SIGN (char),
-  MR_BI_SIGN (complex float, "complex"),
-  MR_BI_SIGN (complex double, "complex"),
-  MR_BI_SIGN (complex long double, "complex"),
-  MR_BI_SIGN (complex float),
-  MR_BI_SIGN (complex double),
-  MR_BI_SIGN (complex long double),
-  MR_BI_SIGN (double),
-  MR_BI_SIGN (float),
-  MR_BI_SIGN (int),
-  MR_BI_SIGN (long double),
-  MR_BI_SIGN (long int),
-  MR_BI_SIGN (long long int),
-  MR_BI_SIGN (long long unsigned int),
-  MR_BI_SIGN (long unsigned int),
-  MR_BI_SIGN (short),
-  MR_BI_SIGN (short int),
-  MR_BI_SIGN (short unsigned int),
-  MR_BI_SIGN (signed char),
-  MR_BI_SIGN (unsigned char),
-  MR_BI_SIGN (unsigned int),
-  MR_BI_SIGN (unsigned short),
+  MR_BI_SIGN (typeof (sizeof (0)), "__ARRAY_SIZE_TYPE__")
+  MR_BI_SIGN (complex float, "complex")
+  MR_BI_SIGN (complex double, "complex")
+  MR_BI_SIGN (complex long double, "complex")
+  MR_FOREACH (MR_BI_SIGN,
+	      signed, unsigned, bool,
+	      char, signed char, unsigned char,
+	      short, signed short, unsigned short,
+	      short int, signed short int, unsigned short int,
+	      int, signed int, unsigned int,
+	      long, signed long, unsigned long,
+	      long int, signed long int, unsigned long int,
+	      long long, signed long long, unsigned long long,
+	      long long int, signed long long int, unsigned long long int,
+	      float, double, long double,
+	      complex float, complex double, complex long double)
 };
 
 static void
