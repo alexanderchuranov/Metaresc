@@ -77,6 +77,49 @@
 #define MR_MAX(X,Y) ({ __typeof__ (X) _x_ = (X); __typeof__ (Y) _y_ = (Y); (_x_ > _y_) ? _x_ : _y_; })
 #define MR_LIMIT_LEVEL(LEVEL) MR_MIN (LEVEL, MR_MAX_INDENT_LEVEL)
 
+#define MR_BUILTIN_TYPES						\
+  signed, unsigned, bool,						\
+    char,								\
+    signed char, char signed,						\
+    unsigned char, char unsigned,					\
+    short,								\
+    signed short, short signed,						\
+    unsigned short, short unsigned,					\
+    short int, int short,						\
+    signed short int, signed int short,					\
+    short signed int, int signed short,					\
+    short int signed, int short signed,					\
+    unsigned short int, unsigned int short,				\
+    short unsigned int, int unsigned short,				\
+    short int unsigned, int short unsigned,				\
+    int,								\
+    signed int, int signed,						\
+    unsigned int, int unsigned,						\
+    long,								\
+    signed long, long signed,						\
+    unsigned long, long unsigned,					\
+    long int, int long,							\
+    signed long int, signed int long,					\
+    long signed int, int signed long,					\
+    long int signed, int long signed,					\
+    unsigned long int, unsigned int long,				\
+    long unsigned int, int unsigned long,				\
+    long int unsigned, int long unsigned,				\
+    long long,								\
+    signed long long, long signed long, long long signed,		\
+    unsigned long long, long unsigned long, long long unsigned,		\
+    long long int, long int long, int long long,			\
+    signed long long int, signed long int long, signed int long long,	\
+    long signed long int, long signed int long, int signed long long,	\
+    long long signed int, long int signed long, int long signed long,	\
+    long long int signed, long int long signed, int long long signed,	\
+    unsigned long long int, unsigned long int long, unsigned int long long, \
+    long unsigned long int, long unsigned int long, int unsigned long long, \
+    long long unsigned int, long int unsigned long, int long unsigned long, \
+    long long int unsigned, long int long unsigned, int long long unsigned, \
+    float, double, long double,						\
+    complex float, complex double, complex long double
+
 /* each refereed structure will have REF_IDX property */
 #define MR_REF_IDX "ref_idx"
 /* references on already saved structures will be replaced with nodes that have only REF index property */
