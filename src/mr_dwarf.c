@@ -1246,6 +1246,33 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");
 }
 
+static void
+free_die (mr_die_t * mr_die)
+{
+  int i;
+
+  for (i = 0; i < mr_die->attributes_size / sizeof (mr_die->attributes[0]); ++i)
+    switch (mr_die->attributes[i].form)
+      {
+      case _DW_FORM_string:
+      case _DW_FORM_strp:
+	if (mr_die->attributes[i].dw_str)
+	  MR_FREE (mr_die->attributes[i].dw_str);
+	break;
+      default:
+	break;
+      }
+  
+  if (mr_die->attributes)
+    MR_FREE (mr_die->attributes);
+
+  for (i = 0; i < mr_die->children_size / sizeof (mr_die->children[0]); ++i)
+    free_die (&mr_die->children[i]);
+  
+  if (mr_die->children)
+    MR_FREE (mr_die->children);
+}
+
 int
 main (int argc, char * argv [])
 {
@@ -1288,7 +1315,7 @@ main (int argc, char * argv [])
   
       extract_type_descriptors (&td_ic, &mr_die);
 
-      MR_FREE_RECURSIVELY (mr_die_t, &mr_die);
+      free_die (&mr_die);
 
       rv = dwarf_finish (debug);
       assert (rv == DW_DLV_OK);
