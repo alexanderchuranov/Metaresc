@@ -101,6 +101,13 @@ if [[ x${HAVE_BUILTIN_DUMP_STRUCT} = xyes ]]; then
   AC_DEFINE(HAVE_BUILTIN_DUMP_STRUCT, [], [define if __builtin_dump_struct is present])
 fi
 
+AC_MSG_CHECKING([${CC} supports __builtin_dump_struct extra args ])
+AC_LINK_IFELSE( [AC_LANG_PROGRAM( [[#include <stdio.h>]], [[ struct { int x; } x; (void)__builtin_dump_struct (&x, &printf, 0); ]])], [ HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS=yes ], [ HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS=no ])
+AC_MSG_RESULT([${HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS}])
+if [[ x${HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS} = xyes ]]; then
+  AC_DEFINE(HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS, [], [define if __builtin_dump_struct supports extra args])
+fi
+
 AC_ARG_ENABLE(pp-depth,	[  --enable-pp-depth		set depth for preprocessor routines], PP_DEPTH=$enableval, PP_DEPTH=256)
 AC_MSG_CHECKING(preprocessor routines depth)
 AC_MSG_RESULT(${PP_DEPTH})

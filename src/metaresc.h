@@ -828,11 +828,25 @@
 			 (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(S_PTR))), \
 			 &*(S_PTR), (mr_dummy_struct_t*)0)
 
-# define MR_PTR_DETECT_TYPE(S_PTR) ({					\
-      if (0 == setjmp (mr_get_struct_type_name_jmp_buf))		\
-	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR), &mr_get_struct_type_name); \
-      mr_struct_type_name;						\
+# ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+#  define MR_PTR_DETECT_TYPE(S_PTR) ({					\
+      mr_get_struct_type_name_t ctx;					\
+      ctx.type_name = NULL;						\
+      if (0 == setjmp (ctx._jmp_buf))					\
+	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR),		\
+			       &mr_get_struct_type_name_extra,		\
+			       &ctx					\
+			       );					\
+      ctx.type_name;							\
     })
+# else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+#  define MR_PTR_DETECT_TYPE(S_PTR) ({					\
+      if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
+	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR),		\
+			       &mr_get_struct_type_name);		\
+      mr_get_struct_type_name_ctx.type_name;				\
+    })
+# endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
 #else /* HAVE_BUILTIN_DUMP_STRUCT */
 
@@ -1256,10 +1270,13 @@ typedef __typeof__ (sizeof (0)) mr_size_t;
 typedef __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) mr_enum_value_type_t;
 
 extern mr_conf_t mr_conf;
-extern __thread jmp_buf mr_get_struct_type_name_jmp_buf;
-extern __thread char * mr_struct_type_name;
 
+#ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+extern __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
 extern int mr_get_struct_type_name (const char * fmt, ...);
+#endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+
+extern int mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...);
 
 extern mr_status_t mr_add_type (mr_td_t * tdp);
 extern char * mr_read_xml_doc (FILE * fd);

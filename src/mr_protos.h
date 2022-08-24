@@ -700,6 +700,11 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 
+TYPEDEF_STRUCT (mr_get_struct_type_name_t, ATTRIBUTES ( , "long jump buffer and type name"),
+		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
+		(char *, type_name, , "type name"),
+		)
+
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),

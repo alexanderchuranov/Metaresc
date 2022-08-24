@@ -75,16 +75,30 @@ static mr_status_t basic_types_visitor (mr_ptr_t key, const void * context);
 
 static mr_ic_t basic_types;
 
-#define MR_STRUCT_KEYWORD "struct"
-#define MR_UNION_KEYWORD "union"
-
-__thread jmp_buf mr_get_struct_type_name_jmp_buf;
-__thread char * mr_struct_type_name = NULL;
+#ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+__thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
 
 int
 mr_get_struct_type_name (const char * fmt, ...)
 {
-  mr_struct_type_name = NULL;
+  return (mr_get_struct_type_name_extra (&mr_get_struct_type_name_ctx, fmt));
+}
+#else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+int
+mr_get_struct_type_name (const char * fmt, char * value)
+{
+  return (0);
+}
+#endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+
+#define MR_STRUCT_KEYWORD "struct"
+#define MR_UNION_KEYWORD "union"
+
+int
+mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...)
+{
+  ctx->type_name = NULL;
+  
   if (0 == strcmp (fmt, "%s"))
     {
       va_list args;
@@ -106,8 +120,8 @@ mr_get_struct_type_name (const char * fmt, ...)
   mr_substr_t substr;
   substr.str = (char*)fmt;
   substr.length = tail - fmt;
-  mr_struct_type_name = mr_get_static_field_name_from_substring (&substr);
-  longjmp (mr_get_struct_type_name_jmp_buf, !0);
+  ctx->type_name = mr_get_static_field_name_from_substring (&substr);
+  longjmp (ctx->_jmp_buf, !0);
   return (0);
 }
 
