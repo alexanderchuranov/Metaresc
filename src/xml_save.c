@@ -405,7 +405,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
   ptrs->ra[idx].res.data.ptr = node;
   ptrs->ra[idx].res.type = "xmlNode";
   ptrs->ra[idx].res.MR_SIZE = sizeof (xmlNode);
-  node->_private = (void*)(long)idx;
+  node->_private = (void*)(intptr_t)idx;
 
   if (mr_ra_str->data.string[0])
     xmlNodeSetContent (node, BAD_CAST mr_ra_str->data.string);
