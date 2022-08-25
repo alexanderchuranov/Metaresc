@@ -19,7 +19,7 @@ jobs:
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: |
-          sed -ie "s/[test \"x$\{have_win32}\" = \"xno\"]/[false]/" configure.ac
+	  sed -ie "s/HAVE_DEBUGLINK*/HAVE_DEBUGLINK], [false]) #/" configure.ac
           ./autogen.sh
       - name: configure
         run: ./configure --disable-static --enable-shared CFLAGS=-Wno-array-bounds CC=clang
