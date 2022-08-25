@@ -63,7 +63,7 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison libxml2 check
+          install: base-devel git autoconf automake libtool pkg-config flex bison libxml2 mingw-w64-x86_64-check
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
@@ -71,4 +71,4 @@ jobs:
       - name: configure --disable-static --enable-shared
         run: ./configure
       - name: make check
-        run: make check -j
+        run: make check -j 2
