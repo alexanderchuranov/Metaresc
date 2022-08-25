@@ -16,9 +16,9 @@ jobs:
       - name: configure
         run: ./configure CC=gcc
       - name: make check
-        run: make check
+        run: make check -j
       - name: check with valgrind
-        run: cd tests; make valgrind
+        run: cd tests; make valgrind -j
 
   ubuntu-clang:
     runs-on: ubuntu-latest
@@ -33,9 +33,9 @@ jobs:
       - name: configure
         run: ./configure CC=clang
       - name: make check
-        run: make check
+        run: make check -j
       - name: check with valgrind
-        run: cd tests; make valgrind
+        run: cd tests; make valgrind -j
 
   macos-clang:
     runs-on: macos-latest
@@ -50,4 +50,25 @@ jobs:
       - name: configure
         run: ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison
       - name: make check
-        run: make check
+        run: make check -j
+
+  msys2-cc:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: base-devel git autoconf automake libtool mingw-w64-pkg-config flex bison libxml2 mingw-w64-check
+      - name: submodule update
+        run: git submodule update --init --recursive --remote
+      - name: autoconf/automake
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure
+      - name: make check
+        run: make check -j
