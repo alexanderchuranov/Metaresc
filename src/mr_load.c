@@ -276,7 +276,7 @@ mr_load_func (int idx, mr_ra_ptrdes_t * ptrs)
   switch (ptrdes->load_params.mr_value.value_type)
     {
     case MR_VT_INT:
-      *(void**)ptrdes->data.ptr = (void*)(long)ptrdes->load_params.mr_value.vt_int;
+      *(void**)ptrdes->data.ptr = (void*)(uintptr_t)ptrdes->load_params.mr_value.vt_int;
       break;
     case MR_VT_ID:
     case MR_VT_QUOTED_SUBSTR:
