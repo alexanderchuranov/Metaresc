@@ -63,12 +63,12 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-libxml2 mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
+          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-libxml2 mingw-w64-x86_64-check mingw-w64-x86_64-clang
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --disable-static --enable-shared CFLAGS=-Wno-array-bounds
+        run: ./configure --disable-static --enable-shared CFLAGS=-Wno-array-bounds CC=clang
       - name: make check
         run: make check -j 2
