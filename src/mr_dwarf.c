@@ -572,7 +572,7 @@ dump_die_tree (Dwarf_Debug debug, Dwarf_Die die, mr_die_t * mr_parent_die)
       {
 	Dwarf_Die sibling_die;
 	dump_die_tree (debug, child_die, mr_die);
-	rv = dwarf_siblingof_b (debug, child_die, TRUE, &sibling_die, NULL);
+	rv = dwarf_siblingof_b (debug, child_die, !0, &sibling_die, NULL);
 	assert (rv != DW_DLV_ERROR);
 	if (rv == DW_DLV_NO_ENTRY)
 	  break;
@@ -590,12 +590,12 @@ dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
 
   for (;;)
     {
-      rv = dwarf_next_cu_header_d (debug, TRUE, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &next_cu_header, NULL, NULL);
+      rv = dwarf_next_cu_header_d (debug, !0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, &next_cu_header, NULL, NULL);
       if (rv == DW_DLV_NO_ENTRY)
 	break;
       assert (rv == DW_DLV_OK);
 
-      rv = dwarf_siblingof_b (debug, 0, TRUE, &die, NULL);
+      rv = dwarf_siblingof_b (debug, 0, !0, &die, NULL);
       assert (rv != DW_DLV_ERROR);
       rv = dwarf_tag (die, &tagval, NULL);
       assert (rv == DW_DLV_OK);
@@ -1312,7 +1312,7 @@ main (int argc, char * argv [])
 #ifdef DEBUG
       (void)MR_FPRINT (stderr, "mr_die_root = ", (mr_die_t, &mr_die));
 #endif
-  
+
       extract_type_descriptors (&td_ic, &mr_die);
 
       free_die (&mr_die);

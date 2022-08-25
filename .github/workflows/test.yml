@@ -69,6 +69,6 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --disable-static --enable-shared
+        run: ./configure --disable-static --enable-shared CFLAGS=-Wno-array-bounds
       - name: make check
         run: make check -j 2
