@@ -19,8 +19,8 @@ jobs:
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: |
-	  sed -ie "s/mingw\*/*-mingw*/" configure.ac
-	  ./autogen.sh
+          sed -ie "s/mingw\*/*-mingw*/" configure.ac
+          ./autogen.sh
       - name: configure
         run: ./configure --disable-static --enable-shared CFLAGS=-Wno-array-bounds CC=clang
       - name: make check
