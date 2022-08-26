@@ -14,7 +14,7 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-libxml2 mingw-w64-x86_64-check mingw-w64-ucrt-x86_64-clang
+          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-libxml2 mingw-w64-x86_64-check mingw-w64-clang-x86_64-clang
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
