@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <metaresc.h>
 
 typedef struct tree_node_t {
