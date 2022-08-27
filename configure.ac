@@ -23,7 +23,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_AR
-LT_INIT([win32-dll disable-shared static])
+LT_INIT([win32-dll])
 test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
 AC_PROG_LEX
