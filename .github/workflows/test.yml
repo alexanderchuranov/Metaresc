@@ -19,6 +19,8 @@ jobs:
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: ./autogen.sh
+      - name: patch libtool
+        sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: configure
         run: ./configure --disable-static --enable-shared CFLAGS="-Wno-array-bounds -fvisibility=hidden -fno-omit-frame-pointer" CPPFLAGS="-D __SCNLg=\\\".17g\\\" -D __SCNi8=SCNi16 -D __SCNu8=SCNu16" LDFLAGS="-Wl,-no-undefined"
       - name: make check
