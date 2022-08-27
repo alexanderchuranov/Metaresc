@@ -90,6 +90,9 @@ AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#
 # Checks for header files.
 AC_CHECK_HEADERS([execinfo.h rpc/types.h values.h])
 
+AC_CHECK_HEADER([execinfo.h], [ HAVE_EXECINFO=yes ])
+AM_CONDITIONAL(HAVE_EXECINFO, test x${HAVE_EXECINFO} = xyes)
+
 AC_CHECK_HEADER([rpc/types.h], [ HAVE_XDR=yes ])
 AM_CONDITIONAL(HAVE_XDR, test x${HAVE_XDR} = xyes)
 
