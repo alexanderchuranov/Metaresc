@@ -51,7 +51,7 @@ endif
 	../src/mr_dwarf ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
 
 if OSX
-dw_types.h: dw_types
+dw_types.h: dw_types$(EXEEXT)
 	dsymutil .libs/$?
 	../src/mr_dwarf .libs/$? > $@
 else

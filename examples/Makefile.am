@@ -20,7 +20,7 @@ dwarf_SOURCES = dwarf.c dwarf_types.c
 dwarf_no_types_SOURCES = dwarf.c
 dwarf_types.c: dwarf_types.h
 
-dwarf_types.h: dwarf_no_types
+dwarf_types.h: dwarf_no_types$(EXEEXT)
 if OSX
 	dsymutil .libs/$?
 endif
