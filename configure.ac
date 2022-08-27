@@ -11,6 +11,8 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_LANG(C)
 
 AC_CANONICAL_HOST
+
+AS_IF([ test ${host_os} != "${host_os/mingw/}" ], [lt_cv_deplibs_check_method=pass_all])
 AM_CONDITIONAL([OSX], test ${host_os} != "${host_os/darwin/}")
 
 # Checks for programs.
@@ -21,7 +23,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_AR
-LT_INIT
+LT_INIT([win32-dll disable-shared static])
 test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
 AC_PROG_LEX
