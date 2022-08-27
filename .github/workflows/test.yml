@@ -14,13 +14,13 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-libxml2 mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
+          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --disable-static --enable-shared CFLAGS="-Wno-array-bounds -fvisibility=hidden -fno-omit-frame-pointer" CPPFLAGS="-D __SCNLg=\\\".17g\\\" -D __SCNi8=SCNi16 -D __SCNu8=SCNu16"
+        run: ./configure --without-libxml2 --disable-static --enable-shared CFLAGS=-Wno-array-bounds CPPFLAGS="-D __SCNLg=\\\".17g\\\" -D __SCNi8=SCNi16 -D __SCNu8=SCNu16"
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
