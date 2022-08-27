@@ -20,11 +20,9 @@ dwarf_SOURCES = dwarf.c dwarf_types.c
 dwarf_no_types_SOURCES = dwarf.c
 dwarf_types.c: dwarf_types.h
 
-if OSX
 dwarf_types.h: dwarf_no_types
+if OSX
 	dsymutil .libs/$?
-	../src/mr_dwarf .libs/$? > $@
-else
-dwarf_types.h: dwarf.$(OBJEXT)
-	../src/mr_dwarf $? > $@
 endif
+	../src/mr_dwarf .libs/$? > $@
+
