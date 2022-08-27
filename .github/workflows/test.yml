@@ -20,6 +20,6 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --disable-static --enable-shared CFLAGS=-Wno-array-bounds CPPFLAGS="-D __SCNLg=%.17f -D __SCNi8=SCNi16 -D __SCNu8=SCNu16"
+        run: ./configure --disable-static --enable-shared CFLAGS=-Wno-array-bounds CPPFLAGS="-D __SCNLg=\".17g\" -D __SCNi8=SCNi16 -D __SCNu8=SCNu16"
       - name: make check
         run: make check -j 2

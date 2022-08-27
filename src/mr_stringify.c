@@ -52,12 +52,12 @@ int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 #endif /* __SCNu8 */
   
 #ifndef __SCNLg
-#define __SCNLg "%.20Lg"
+#define __SCNLg ".20Lg"
 #endif /* __SCNLg */
   
 MR_RA_PRINTF_TMPLT (float, "%.8g")
 MR_RA_PRINTF_TMPLT (double, "%.17g")
-MR_RA_PRINTF_TMPLT (long_double_t, __SCNLg)
+MR_RA_PRINTF_TMPLT (long_double_t, "%" __SCNLg)
 
 MR_RA_PRINTF_TMPLT (int8_t, "%" SCNi8)
 MR_RA_PRINTF_TMPLT (uint8_t, "%" SCNu8)
