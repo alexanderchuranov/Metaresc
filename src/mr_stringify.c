@@ -41,14 +41,12 @@ int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   int mr_ra_printf_ ## TYPE ## _default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)	\
   { return (mr_ra_printf (mr_ra_str, TMPLT, *(TYPE *)ptrdes->data.ptr)); }
   
-#ifdef __SCNi8
-#undef SCNi8
-#define SCNi8 __SCNi8
+#ifndef __SCNi8
+#define __SCNi8 SCNi8
 #endif /* __SCNi8 */
 
-#ifdef __SCNu8
-#undef SCNu8
-#define SCNu8 __SCNu8
+#ifndef __SCNu8
+#define __SCNu8 SCNu8
 #endif /* __SCNu8 */
   
 #ifndef __SCNLg
@@ -59,8 +57,8 @@ MR_RA_PRINTF_TMPLT (float, "%.8g")
 MR_RA_PRINTF_TMPLT (double, "%.17g")
 MR_RA_PRINTF_TMPLT (long_double_t, "%" __SCNLg)
 
-MR_RA_PRINTF_TMPLT (int8_t, "%" SCNi8)
-MR_RA_PRINTF_TMPLT (uint8_t, "%" SCNu8)
+MR_RA_PRINTF_TMPLT (int8_t, "%" __SCNi8)
+MR_RA_PRINTF_TMPLT (uint8_t, "%" __SCNu8)
 MR_RA_PRINTF_TMPLT (int16_t, "%" SCNi16)
 MR_RA_PRINTF_TMPLT (uint16_t, "%" SCNu16)
 MR_RA_PRINTF_TMPLT (int32_t, "%" SCNi32)
