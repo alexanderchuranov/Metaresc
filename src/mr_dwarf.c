@@ -666,7 +666,7 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  assert (mr_die->attributes[idx].dw_str != NULL);
 	  attr = &mr_die->attributes[idx];
 	}
-      assert (_DW_FORM_strp == attr->form);
+      assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
       assert (attr->dw_str != NULL);
       fdp->type = mr_strdup (attr->dw_str);
       assert (fdp->type != NULL);
@@ -985,7 +985,9 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) || (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form));
+      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
+	      (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
+	      (_DW_FORM_implicit_const == attr->form));
       tdp->size = attr->dw_unsigned;
     }
 
