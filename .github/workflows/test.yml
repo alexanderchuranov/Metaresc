@@ -25,3 +25,27 @@ jobs:
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make
         run: make -j 2
+
+  msys2-clang:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
+      - name: submodule update
+        run: git submodule update --init --recursive --remote
+      - name: autoconf/automake
+        run: ./autogen.sh
+      - name: patch Makefile.am
+        run: sed -i.bak e "s/test_dwarfdumpPE.sh test_dwarfdumpMacos.sh//" libdwarf-code/test/Makefile.am
+      - name: configure
+        run: ./configure --without-libxml2 --disable-static --enable-shared CC=clang
+      - name: make
+        run: make -j 2
+
