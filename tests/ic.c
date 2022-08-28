@@ -220,7 +220,7 @@ START_TEST (ic_rbtree) {
   int i;
   for (i = 1; i < (1 << 10); ++i)
     {
-      mr_ptr_t value = { .uintptr = random () };
+      mr_ptr_t value = { .uintptr = i };
       mr_ptr_t * rv1 = mr_rbtree_add (value, &rbtree, uintptr_t_cmp, NULL);
       ck_assert_msg (NULL != rv1, "Failed to add value to rbtree");
       ck_assert_msg (rv1->uintptr == value.uintptr, "Mismatched key");
@@ -229,7 +229,7 @@ START_TEST (ic_rbtree) {
 
   for (i = rbtree.size / sizeof (rbtree.pool[0]) - 1; i > 0; --i)
     {
-      mr_ptr_t value = rbtree.pool[1 + random () % (rbtree.size / sizeof (rbtree.pool[0]) - 1)].key;
+      mr_ptr_t value = rbtree.pool[1].key;
       mr_status_t status = mr_rbtree_del (value, &rbtree, uintptr_t_cmp, NULL);
       ck_assert_msg (MR_SUCCESS == status, "Deletion rerurned failed status");
       ck_assert_msg (i == rbtree.size / sizeof (rbtree.pool[0]), "Failed to del value from rbtree");
@@ -260,7 +260,7 @@ START_TEST (ic_avltree) {
   int i;
   for (i = 1; i < 1 << 10; ++i)
     {
-      mr_ptr_t value = { .uintptr = random () };
+      mr_ptr_t value = { .uintptr = i };
       mr_ptr_t * rv1 = mr_avltree_add (value, &tree, uintptr_t_cmp, NULL);
       ck_assert_msg (NULL != rv1, "Failed to add value to rbtree");
       ck_assert_msg (rv1->uintptr == value.uintptr, "Mismatched key");
@@ -269,7 +269,7 @@ START_TEST (ic_avltree) {
 
   for (i = tree.size / sizeof (tree.pool[0]) - 1; i > 0; --i)
     {
-      mr_ptr_t value = tree.pool[1 + random () % (tree.size / sizeof (tree.pool[0]) - 1)].key;
+      mr_ptr_t value = tree.pool[1].key;
       mr_status_t status = mr_avltree_del (value, &tree, uintptr_t_cmp, NULL);
       ck_assert_msg (MR_SUCCESS == status, "Deletion rerurned failed status");
       ck_assert_msg (i == tree.size / sizeof (tree.pool[0]), "Failed to del value from rbtree");

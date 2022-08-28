@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include <metaresc.h>
+#include <dw_mr_types.h>
 #include <mr_ic.h>
 #include <regression.h>
 
@@ -77,13 +78,13 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       
       if (mr_fdp->mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->size == dw_fdp->size,
-		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %zd != %zd",
-		       mr_td->type.str, mr_fdp->name.str, mr_fdp->size, dw_fdp->size);
+		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %d != %d",
+		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->size, (int)dw_fdp->size);
 
       if (mr_fdp->mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->offset == dw_fdp->offset,
-		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' offset %zd != %zd",
-		       mr_td->type.str, mr_fdp->name.str, mr_fdp->offset, dw_fdp->offset);
+		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' offset %d != %d",
+		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->offset, (int)dw_fdp->offset);
       
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
 	{
@@ -127,8 +128,8 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
     }
 
   ck_assert_msg (dw_td->fields_size == mr_td->fields_size + named_anon_union_count * sizeof (mr_td->fields[0]),
-		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %zd != %zd",
-		 mr_td->type.str, dw_td->fields_size, mr_td->fields_size);
+		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
+		 mr_td->type.str, (int)dw_td->fields_size, (int)mr_td->fields_size);
 }
 
 static void
@@ -155,8 +156,8 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
     }
 
   ck_assert_msg (dw_td->fields_size == mr_td->fields_size,
-		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %zd != %zd",
-		 mr_td->type.str, dw_td->fields_size, mr_td->fields_size);
+		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
+		 mr_td->type.str, (int)dw_td->fields_size, (int)mr_td->fields_size);
 }
 
 static mr_status_t

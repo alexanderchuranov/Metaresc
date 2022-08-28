@@ -94,7 +94,7 @@ START_TEST (two_dimensional_array_int) {
 static void
 mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_size)
 {
-  ck_assert_msg (ptrs->size == expected_size, "size mismatch %zd != %zd", ptrs->size, expected_size);
+  ck_assert_msg (ptrs->size == expected_size, "size mismatch %d != %d", (int)ptrs->size, (int)expected_size);
   int i, count = expected_size / sizeof (*expected);
   for (i = 0; i < count; ++i)
     {

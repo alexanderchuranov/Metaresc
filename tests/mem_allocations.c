@@ -97,9 +97,9 @@ START_TEST (mem_allocation_complexity_mr_save) {
 
   ALL_METHODS (CHECK_MEM_OPS_COMPLEXITY);
 
-#define MEM_OPS_COMPLEXITY(METHOD)					\
-  (mem_allocation_complexity_ ## METHOD,				\
-   "test number of memory allocations for " #METHOD),
+#define MEM_OPS_COMPLEXITY(METHOD) MR_IF_ELSE (MR_IS_EMPTY (METHOD)) ()	\
+    ((mem_allocation_complexity_ ## METHOD,				\
+      "test number of memory allocations for " #METHOD),)
 
 MAIN_TEST_SUITE (
 		 MR_FOREACH (MEM_OPS_COMPLEXITY, TEST_METHODS)

@@ -9,6 +9,7 @@ VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
+
   check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic mr_types mem_allocations mr_copy mr_hash_cmp dw_types
 
 if HAVE_EXECINFO
@@ -38,7 +39,6 @@ endif
 
 if HAVE_LIBDWARF
   check_PROGRAMS += dw_export
-  dw_export_LDADD = dw_types.$(OBJEXT)
 endif
 
 endif
@@ -50,14 +50,11 @@ if OSX
 endif
 	../src/mr_dwarf ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
 
-if OSX
 dw_types.h: dw_types$(EXEEXT)
+if OSX
 	dsymutil .libs/$?
-	../src/mr_dwarf .libs/$? > $@
-else
-dw_types.h: dw_types.$(OBJEXT)
-	../src/mr_dwarf $? > $@
 endif
+	../src/mr_dwarf .libs/$? > $@
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)
 mf_mr_copy_LDADD = mem_failures.$(OBJEXT)

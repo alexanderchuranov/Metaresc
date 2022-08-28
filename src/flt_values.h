@@ -87,7 +87,7 @@
 
 #define LD_NAN ((ieee_long_double_t){ { .ieee_854_long_double_nan = { .quiet_nan = !0, .one = 1, .exponent = -1, }, }, }).long_double
 #define LD_LDBL_MAX ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa = -1, .exponent = -2, .sign = PLUS, }, }, }).long_double
-#define LD_LDBL_MIN ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa = (1UL << (IEEE_854_LONG_DOUBLE_MANTISSA - 1)), .exponent = 1, .sign = PLUS, }, }, }).long_double
+#define LD_LDBL_MIN ((ieee_long_double_t){ { .ieee_854_long_double = { .mantissa = (1ULL << (IEEE_854_LONG_DOUBLE_MANTISSA - 1)), .exponent = 1, .sign = PLUS, }, }, }).long_double
 
 #define MR_SIZEOF_LONG_DOUBLE sizeof (ieee_854_long_double_t)
 

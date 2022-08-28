@@ -187,9 +187,9 @@ START_TEST (check_ext_struct) {
   int i;
   for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i > 0; --i)
     ck_assert_msg (tdp->fields[i].fdp->offset > tdp->fields[i - 1].fdp->offset,
-		   "Fields of ext_struct_t are not sorted according to their offsets. '%s' %zd < '%s' %zd",
-		   tdp->fields[i - 1].fdp->name.str, tdp->fields[i - 1].fdp->offset,
-		   tdp->fields[i].fdp->name.str, tdp->fields[i].fdp->offset);
+		   "Fields of ext_struct_t are not sorted according to their offsets. '%s' %d < '%s' %d",
+		   tdp->fields[i - 1].fdp->name.str, (int)tdp->fields[i - 1].fdp->offset,
+		   tdp->fields[i].fdp->name.str, (int)tdp->fields[i].fdp->offset);
   
   ASSERT_EXT_STRUCT_FIELD_TYPE (x);
   ASSERT_EXT_STRUCT_FIELD_TYPE (y);

@@ -291,6 +291,8 @@ MAIN_TEST_SUITE (
 		 (resizable_array_without_size_casted_by_offset, "test pointer as a resizable array with non-serializable size casted by offset of the size field"),
 		 (resizable_array_casted_by_string, "test pointer as a resizable array casted by name of the size field as string"),
 		 (resizable_array_without_size_casted_by_string, "test pointer as a resizable array with non-serializable size casted by name of the size field as string"),
-		 (resizable_mr_ptr, "test mr_ptr_t as a resizable array"),
-		 (resizable_array_as_opaque_data, "test pointer as a resizable array as opaque data")
+		 (resizable_mr_ptr, "test mr_ptr_t as a resizable array")
+#ifdef HAVE_RPC_TYPES_H
+		 , (resizable_array_as_opaque_data, "test pointer as a resizable array as opaque data")
+#endif /* HAVE_RPC_TYPES_H */
 		 );
