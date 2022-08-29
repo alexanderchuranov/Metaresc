@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include <metaresc.h>
 #include <mr_value.h>
@@ -143,51 +144,56 @@ mr_load_bitmask (char * str, mr_value_t * mr_value)
 static char *
 mr_load_long_double (char * str, mr_value_t * mr_value)
 {
-  int offset;
-  long double value;
-  if (1 != sscanf (str, "%Lg%n", &value, &offset))
+  char * next = NULL;
+  mr_value->vt_float = strtold (str, &next);
+  if (NULL == next)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_LONG_DOUBLE, str);
       return (NULL);
     }
-  mr_value->vt_float = value;
-  return (&str[offset]);
+  return (next);
 }
 
 static char *
 mr_load_complex_long_double (char * str, mr_value_t * mr_value)
 {
-  int offset;
+  complex_long_double_t cld = 0;
   long_double_t real, imag;
+  char * next = NULL;
 
   while (isspace (*str))
     ++str;
   
   if (*str == 'I')
     {
-      mr_value->vt_complex = MR_CLD_PACK (I);
-      return (&str[1]);
+      __imag__ cld = 1;
+      mr_value->vt_complex = MR_CLD_PACK (cld);
+      return (str + 1);
     }
 
-  if (1 != sscanf (str, "%Lg%n", &real, &offset))
+  real = strtold (str, &next);
+  if (NULL == next)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
     }
+  str = next;
 
-  str += offset;
   if (*str == 'I')
     {
-      mr_value->vt_complex = MR_CLD_PACK (I * real);
+      __imag__ cld = real;
+      mr_value->vt_complex = MR_CLD_PACK (cld);
       return (str + 1);
     }
+
+  __real__ cld = real;
 
   while (isspace (*str))
     ++str;
   
   if (*str != '+')
     {
-      mr_value->vt_complex = MR_CLD_PACK (real);
+      mr_value->vt_complex = MR_CLD_PACK (cld);
       return (str);
     }
 
@@ -197,18 +203,29 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   
   if (*str == 'I')
     {
-      mr_value->vt_complex = MR_CLD_PACK (real + I);
+      __imag__ cld = 1;
+      mr_value->vt_complex = MR_CLD_PACK (cld);
       return (str + 1);
     }
 
-  if (1 != sscanf (str, "%LgI%n", &imag, &offset))
+  imag = strtold (str, &next);
+  if (NULL == next)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
       return (NULL);
     }
+  str = next;
+  __imag__ cld = imag;
+  mr_value->vt_complex = MR_CLD_PACK (cld);
+  
+  while (isspace (*str))
+    ++str;
+  
+  if (*str == 'I')
+    return (str + 1);
 
-  mr_value->vt_complex = MR_CLD_PACK (real + I * imag);
-  return (str + offset);
+  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, str);
+  return (NULL);
 }
 
 static mr_status_t
