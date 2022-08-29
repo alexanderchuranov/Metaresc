@@ -66,9 +66,9 @@ jobs:
           git clone https://github.com/alexanderchuranov/Metaresc.git
           cd Metaresc
           git submodule update --init --recursive --remote
-	  ./autogen.sh
-	  ./configure
-	  make -j 4 check
+          ./autogen.sh
+          ./configure
+          make -j 4 check
 
   msys2-gcc:
     runs-on: windows-latest
