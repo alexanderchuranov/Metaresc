@@ -8,38 +8,16 @@ jobs:
     runs-on: macos-12
     name: FreeBSD VM in Macos
     steps:
-    - uses: actions/checkout@v2
-    - name: FreeBSD with gcc
-      uses: vmactions/freebsd-vm@v0
-      with:
-        usesh: true
-        prepare: pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 check
-        run: |
-          git config --global --add safe.directory `pwd`
-          git submodule update --init --recursive --remote
-          ./autogen.sh
-          ./configure
-          make -j 4 check
-
-  msys2-gcc:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
       - uses: actions/checkout@v2
-      - uses: msys2/setup-msys2@v2
+      - name: FreeBSD with gcc
+        uses: vmactions/freebsd-vm@v0
         with:
-          msystem: MINGW64
-          update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
-      - name: submodule update
-        run: git submodule update --init --recursive --remote
-      - name: autoconf/automake
-        run: ./autogen.sh
-      - name: configure
-        run: ./configure --without-libxml2 --disable-static --enable-shared
-      - name: patch libtool
-        run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
-      - name: make check
-        run: make -j 2 check
+          usesh: true
+          prepare: pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 check
+          run: |
+            git config --global --add safe.directory `pwd`
+            git submodule update --init --recursive --remote
+            sed -i.bak -e "s/test_dwarfdumpPE.sh test_dwarfdumpMacos.sh//" libdwarf-code/test/Makefile.am
+            ./autogen.sh
+            ./configure
+            make -j 4 check
