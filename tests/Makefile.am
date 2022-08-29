@@ -45,13 +45,13 @@ endif
 
 dw_export.$(OBJEXT): dw_export.h dw_types.h
 dw_export.h: ../src/libmetaresc.la
-if OSX
+if HAVE_DSYMUTIL
 	dsymutil ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?`
 endif
 	../src/mr_dwarf ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
 
 dw_types.h: dw_types$(EXEEXT)
-if OSX
+if HAVE_DSYMUTIL
 	dsymutil .libs/$?
 endif
 	../src/mr_dwarf .libs/$? > $@

@@ -9,11 +9,7 @@ AC_CONFIG_SRCDIR([src/mr_protos.h])
 AC_CONFIG_HEADERS([src/mr_config.h src/mr_export.h])
 AC_CONFIG_MACRO_DIR([m4])
 AC_LANG(C)
-
 AC_CANONICAL_HOST
-
-AS_IF([ test ${host_os} != "${host_os/mingw/}" ], [lt_cv_deplibs_check_method=pass_all])
-AM_CONDITIONAL([OSX], test ${host_os} != "${host_os/darwin/}")
 
 # Checks for programs.
 AC_PROG_CC
@@ -28,6 +24,9 @@ test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
 AC_PROG_LEX
 
+AC_PATH_PROG(DSYMUTIL_PATH, [dsymutil], [not found])
+AM_CONDITIONAL([HAVE_DSYMUTIL], test "$DSYMUTIL_PATH" = "not found")
+o
 AM_CFLAGS=""
 for aux_CFLAGS in -ffast-math -Wall -Werror -O2 -g -Wno-initializer-overrides -Wno-bitfield-constant-conversion
 do
