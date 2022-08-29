@@ -3,6 +3,55 @@ name: ci
 on: [ push, pull_request ]
 
 jobs:
+  ubuntu-gcc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind
+      - name: submodule update
+        run: git submodule update --init --recursive --remote
+      - name: autoconf/automake
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure CC=gcc
+      - name: make check
+        run: make check -j 2
+      - name: check with valgrind
+        run: cd tests; make valgrind -j 2
+
+  ubuntu-clang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind
+      - name: submodule update
+        run: git submodule update --init --recursive --remote
+      - name: autoconf/automake
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure CC=clang
+      - name: make check
+        run: make check -j 2
+      - name: check with valgrind
+        run: cd tests; make valgrind -j 2
+
+  macos-clang:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: install dependencies
+        run: brew install autoconf automake libtool pkg-config flex bison libxml2 check
+      - name: submodule update
+        run: git submodule update --init --recursive --remote
+      - name: autoconf/automake
+        run: ./autogen.sh
+      - name: configure
+        run: ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison
+      - name: make check
+        run: make check -j 2
+
   msys2-gcc:
     runs-on: windows-latest
     defaults:
@@ -23,6 +72,6 @@ jobs:
         run: ./configure --without-libxml2 --disable-static --enable-shared CFLAGS="-Werror=format=0 -Wno-array-bounds -mno-ms-bitfields" CPPFLAGS="-D__SCNi8=SCNi16 -D__SCNu8=SCNu16"
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
-      - name: make
+      - name: make check
         run: make -j 2 check
 
