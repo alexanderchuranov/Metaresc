@@ -155,7 +155,7 @@ $ git clone https://github.com/alexanderchuranov/Metaresc.git
 $ cd Metaresc
 $ git submodule update --init --recursive --remote
 $ ./autogen.sh
-$ ./configure --without-libxml2 --disable-static --enable-shared CFLAGS="-Werror=format=0 -Wno-array-bounds -mno-ms-bitfields" CPPFLAGS="-D__SCNi8=SCNi16 -D__SCNu8=SCNu16"
+$ ./configure --without-libxml2 --disable-static --enable-shared
 $ sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
 $ make -j 4 check
 ```

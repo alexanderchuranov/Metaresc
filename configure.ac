@@ -11,6 +11,14 @@ AC_CONFIG_MACRO_DIR([m4])
 AC_LANG(C)
 AC_CANONICAL_HOST
 
+case $host_os in
+mingw*)
+  lt_cv_deplibs_check_method=pass_all
+  CFLAGS="${CFLAGS} -Werror=format=0 -Wno-array-bounds -mno-ms-bitfields"
+  CPPLAGS="${CPPFLAGS} -D__SCNi8=SCNi16 -D__SCNu8=SCNu16"
+  ;;
+esac
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
@@ -26,7 +34,7 @@ AC_PROG_LEX
 
 AC_PATH_PROG(DSYMUTIL_PATH, [dsymutil], [not found])
 AM_CONDITIONAL([HAVE_DSYMUTIL], test "$DSYMUTIL_PATH" = "not found")
-o
+
 AM_CFLAGS=""
 for aux_CFLAGS in -ffast-math -Wall -Werror -O2 -g -Wno-initializer-overrides -Wno-bitfield-constant-conversion
 do

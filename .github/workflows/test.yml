@@ -15,6 +15,7 @@ jobs:
         usesh: true
         prepare: pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 check
         run: |
+          git config --global --add 'pwd'
           git submodule update --init --recursive --remote
           ./autogen.sh
           ./configure
@@ -37,7 +38,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --without-libxml2 --disable-static --enable-shared CFLAGS="-Werror=format=0 -Wno-array-bounds -mno-ms-bitfields" CPPFLAGS="-D__SCNi8=SCNi16 -D__SCNu8=SCNu16"
+        run: ./configure --without-libxml2 --disable-static --enable-shared
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
