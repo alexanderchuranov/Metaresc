@@ -15,7 +15,7 @@ jobs:
         usesh: true
         prepare: pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 check
         run: |
-          git config --global --add 'pwd'
+          git config --global --add `pwd`
           git submodule update --init --recursive --remote
           ./autogen.sh
           ./configure
