@@ -52,6 +52,24 @@ jobs:
       - name: make check
         run: make check -j 2
 
+  freebsd-gcc:
+    runs-on: macos-12
+    name: FreeBSD VM in Macos
+    steps:
+    - uses: actions/checkout@v2
+    - name: FreeBSD with gcc
+      uses: vmactions/freebsd-vm@v0
+      with:
+        usesh: true
+        prepare: pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 check
+        run: |
+          git clone https://github.com/alexanderchuranov/Metaresc.git
+          cd Metaresc
+          git submodule update --init --recursive --remote
+	  ./autogen.sh
+	  ./configure
+	  make -j 4 check
+
   msys2-gcc:
     runs-on: windows-latest
     defaults:

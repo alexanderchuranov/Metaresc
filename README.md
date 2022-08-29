@@ -75,6 +75,7 @@ Checkout Metaresc from github
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
+$ cd Metaresc
 $ git submodule update --init --recursive --remote
 ```
 
@@ -112,8 +113,8 @@ Checkout and build Metaresc:
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
-$ git submodule update --init --recursive --remote
 $ cd Metaresc
+$ git submodule update --init --recursive --remote
 $ ./autogen.sh
 $ ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison
 $ make -j 4 check
@@ -121,8 +122,7 @@ $ make -j 4 check
 
 ### FreeBSD
 
-On FreeBSD 12.1 install external dependencies (libdwarf is available
-by default):
+On FreeBSD 12.1 install external dependencies:
 ```console
 # pkg install git autoconf automake libtool pkgconf flex bison libxml2 check
 ```
@@ -131,8 +131,8 @@ Checkout and build Metaresc:
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
-$ git submodule update --init --recursive --remote
 $ cd Metaresc
+$ git submodule update --init --recursive --remote
 $ ./autogen.sh
 $ ./configure
 $ make -j 4 check
@@ -140,45 +140,23 @@ $ make -j 4 check
 
 ### Windows
 
-On Windows one can use MinGW
+Download and install msys2 from https://www.msys2.org/
 
-* Download MinGW installer from here: https://sourceforge.net/projects/mingw/files/latest/download
-* Choose Basic Setup > mingw-developer-toolkit && mingw32-base
+Install external dependencies:
 
-Also:
+```console
+# pacman --noconfirm -S --needed --overwrite "*" base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
+```
 
-* You will need Bison v 3+ and `pkg-config`.
-* Download Bison and Flex from here: https://sourceforge.net/projects/winflexbison/files/latest/download
-* Extract archive to user home dir in MSYS: `c:\MinGW\msys\1.0\home\UserName\`
-* Download `pkg-config` from here: https://sourceforge.net/projects/pkgconfiglite/files/latest/download
-* Extract archive to `c:\MinGW`
-
-Optionally you could install `libxml2-dev` and `check`. It should be a similar process with prebuilt binaries.
-
-Having this minimal configuration you could build the library using standard autoconf/automake toolchain. 
-
-Checkout Metaresc from github
+Checkout and build Metaresc:
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
+$ cd Metaresc
 $ git submodule update --init --recursive --remote
-```
-
-Run autoconf/automake generators:
-
-```console
 $ ./autogen.sh
-```
-
-Configure project for target system
-
-```console
-$ ./configure CFLAGS=-D__USE_MINGW_ANSI_STDIO HAVE_BISON=yes HAVE_FLEX=yes YACC=~/win_flex_bison3-latest/win_bison.exe LEX=~/win_flex_bison3-latest/win_flex.exe
-```
-
-Build and check library
-
-```console
+$ ./configure --without-libxml2 --disable-static --enable-shared CFLAGS="-Werror=format=0 -Wno-array-bounds -mno-ms-bitfields" CPPFLAGS="-D__SCNi8=SCNi16 -D__SCNu8=SCNu16"
+$ sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
 $ make -j 4 check
 ```
 
