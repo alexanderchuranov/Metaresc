@@ -5,7 +5,16 @@
 #include <regression.h>
 #include <flt_values.h>
 
-#define SCALAR_DOUBLE(TYPE, X, Y, ...) memcmp (X, Y, MR_SIZEOF_LONG_DOUBLE)
+#define SCALAR_DOUBLE(TYPE, X, Y, ...) ({	\
+      long_double_t _x = *(long_double_t*)(X);	\
+      long_double_t _y = *(long_double_t*)(Y);	\
+      bool x_non_nan = !MR_ISNAN (_x);		\
+      bool y_non_nan = !MR_ISNAN (_y);		\
+      bool cmp = (x_non_nan != y_non_nan);	\
+      if (x_non_nan && y_non_nan)		\
+	cmp = (_x != _y);			\
+      cmp;					\
+    })
 
 #define ASSERT_SAVE_LOAD_LONG_DOUBLE(METHOD, VALUE) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, long double, VALUE, SCALAR_DOUBLE); \
