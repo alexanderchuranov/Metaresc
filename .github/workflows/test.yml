@@ -56,7 +56,7 @@ jobs:
         run: make check -j 2
 
   freebsd-clang:
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     name: FreeBSD with clang
     steps:
       - uses: actions/checkout@v2
