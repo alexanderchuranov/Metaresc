@@ -64,7 +64,9 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
       case MR_TYPE_NONE:
 	{
 	  void * value = va_arg (args, void *);
-	  if (mr_type_aux != MR_TYPE_NONE)
+	  if (NULL == value)
+	    rv = fprintf (fd, "%s", (char*)NULL);
+	  else if (mr_type_aux != MR_TYPE_NONE)
 	    {
 	      rv = fprintf (fd, "%p (", value);
 	      
