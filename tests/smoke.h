@@ -16,7 +16,7 @@
   6. restore mr_conf from saved copy
   7. free up all allocated memory
 
-  One more test checks that complexity of save/load is not O(n * n). It should be O(n * log (n))
+  One more test checks that complexity of save/load is not O(n * n). It should be O(n).
   Methods that have limitation of structure depth due to recursive implementation should define
   SKIP_PERFORMANCE_TEST_{METHOD} to 0
 */
@@ -98,11 +98,11 @@
   }									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
-      int x1, size = 256;						\
+      int x1, size = 1 << 8;						\
     do {								\
       size += size >> 1;						\
       x1 = test_min_time (size);					\
-    } while (x1 < CLOCKS_PER_SEC / 16);					\
+    } while (x1 < CLOCKS_PER_SEC / 32);					\
     int x2 = test_min_time (size * 4);					\
     ck_assert_msg (x2 < 5 * x1, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\

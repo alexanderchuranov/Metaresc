@@ -367,7 +367,7 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
   if (0 == src_ic->items_count)
     return (MR_SUCCESS);
 
-  unsigned count = src_ic->items_count << 2;
+  unsigned count = (src_ic->items_count << 2) + 6;
   dst_ic->hash.hash_table = MR_CALLOC (count, sizeof (dst_ic->hash.hash_table[0]));
   if (NULL == dst_ic->hash.hash_table)
     {

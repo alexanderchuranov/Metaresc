@@ -446,6 +446,8 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_COMPLEX_DOUBLE:
     case MR_TYPE_LONG_DOUBLE:
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
+    case MR_TYPE_FUNC_TYPE:
+    case MR_TYPE_FUNC:
       break;
       
     case MR_TYPE_ARRAY:
@@ -454,8 +456,6 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       return ((x > y) - (x < y));
       
     case MR_TYPE_STRUCT:
-    case MR_TYPE_FUNC_TYPE:
-    case MR_TYPE_FUNC:
     case MR_TYPE_ENUM:
     case MR_TYPE_UNION:
     case MR_TYPE_ANON_UNION:
@@ -475,7 +475,19 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
   const mr_ptrdes_t * ptrdes = &ra_ptrdes->ra[x.intptr];
-  return (ptrdes->data.uintptr + ptrdes->mr_type * 3);
+  mr_hash_value_t hash_value = ptrdes->data.uintptr * (ptrdes->mr_type + 1);
+  switch (ptrdes->mr_type)
+    {
+    case MR_TYPE_STRUCT:
+    case MR_TYPE_ENUM:
+    case MR_TYPE_UNION:
+    case MR_TYPE_ANON_UNION:
+    case MR_TYPE_NAMED_ANON_UNION:
+      hash_value ^= (uintptr_t)ptrdes->tdp;
+    default:
+      break;
+    }
+  return (hash_value);
 }
 
 int
