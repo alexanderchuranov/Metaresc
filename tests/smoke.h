@@ -84,26 +84,22 @@
 	MR_FREE (array.ra);						\
 	return (clock () - start);					\
   }									\
-  int test_min_time (int count)						\
+  int test_avg_time (int count)						\
   {									\
     int i;								\
-    int min_time = test_run (count);					\
+    int avg_time = 0;							\
     for (i = 0; i < (1 << 2); ++i)					\
-      {									\
-	int time = test_run (count);					\
-	if (time < min_time)						\
-	  min_time = time;						\
-      }									\
-    return (min_time);							\
+      avg_time += test_run (count);					\
+    return (avg_time);							\
   }									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
       int x1, size = 1 << 8;						\
     do {								\
       size += size >> 1;						\
-      x1 = test_min_time (size);					\
-    } while (x1 < CLOCKS_PER_SEC / 100);				\
-    int x2 = test_min_time (size * 4);					\
+      x1 = test_avg_time (size);					\
+    } while (x1 < CLOCKS_PER_SEC / 10);					\
+    int x2 = test_avg_time (size * 4);					\
     fprintf (stderr, "size %d base %d scale %d ratio %g\n", size, x1, x2, (double)x2 / x1); \
     ck_assert_msg (x2 < 5 * x1, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\

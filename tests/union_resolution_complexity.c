@@ -41,18 +41,13 @@ measure_time_for_n_elements (int n)
   rarray.mr_size = n * sizeof (*array);
   rarray.type = "a_t";
   
-#define TIMES_TO_MEASURE (1 << 2)
-  clock_t min_time = measure_time_for_serialization (&rarray);
+  clock_t avg_time = 0;
   int i;
-  for (i = 0; i < TIMES_TO_MEASURE; ++i)
-    {
-      clock_t _time = measure_time_for_serialization (&rarray);
-      if (_time < min_time)
-	min_time = _time;
-    }
+  for (i = 0; i < 1 << 2; ++i)
+    avg_time += measure_time_for_serialization (&rarray);
 
   MR_FREE (array);
-  return (min_time);
+  return (avg_time);
 }
 
 START_TEST (mr_save_discriminated_union_complexity) {
@@ -61,7 +56,7 @@ START_TEST (mr_save_discriminated_union_complexity) {
   do {
     size += size >> 1;
     base_time = measure_time_for_n_elements (size);
-  } while (base_time < CLOCKS_PER_SEC / 100);
+  } while (base_time < CLOCKS_PER_SEC / 50);
 
   clock_t scale_time = measure_time_for_n_elements (size * 4);
 
