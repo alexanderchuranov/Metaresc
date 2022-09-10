@@ -102,8 +102,9 @@
     do {								\
       size += size >> 1;						\
       x1 = test_min_time (size);					\
-    } while (x1 < CLOCKS_PER_SEC / 32);					\
+    } while (x1 < CLOCKS_PER_SEC / 100);				\
     int x2 = test_min_time (size * 4);					\
+    fprintf (stderr, "size %d base %d scale %d ratio %g\n", size, x1, x2, (double)x2 / x1); \
     ck_assert_msg (x2 < 5 * x1, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
