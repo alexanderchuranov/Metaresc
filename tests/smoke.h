@@ -88,7 +88,7 @@
   {									\
     int i;								\
     int min_time = test_run (count);					\
-    for (i = 0; i < (1 << 3); ++i)					\
+    for (i = 0; i < (1 << 2); ++i)					\
       {									\
 	int time = test_run (count);					\
 	if (time < min_time)						\
@@ -102,9 +102,9 @@
     do {								\
       size += size >> 1;						\
       x1 = test_min_time (size);					\
-    } while (x1 < CLOCKS_PER_SEC / 8);					\
+    } while (x1 < CLOCKS_PER_SEC / 16);					\
     int x2 = test_min_time (size * 4);					\
-    ck_assert_msg (x2 / x1 < 5, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
+    ck_assert_msg (x2 < 5 * x1, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
   {									\
