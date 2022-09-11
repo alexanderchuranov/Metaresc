@@ -89,7 +89,7 @@
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
       int x1, size = 1 << 8;						\
     do {								\
-      size += size >> 1;						\
+      size <<= 1;							\
       x1 = test_run (size);						\
     } while (x1 < CLOCKS_PER_SEC / 2);					\
     int x2 = test_run (size * 2);					\
