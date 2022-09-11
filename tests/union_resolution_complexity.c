@@ -8,9 +8,7 @@
 
 TYPEDEF_STRUCT (c_t,
 		ANON_UNION (),
-		ANON_UNION (),
 		(uint8_t, x),
-		END_ANON_UNION (),
 		END_ANON_UNION (),
 		);
 
@@ -45,7 +43,7 @@ START_TEST (mr_save_discriminated_union_complexity) {
   do {
     size <<= 1;
     base_time = measure_time_for_n_elements (size);
-    fprintf (stderr, "size %d time %d\n", size, (int)base_time);
+    fprintf (stderr, "size %d time %d/%d\n", size, (int)base_time, (int)CLOCKS_PER_SEC);
   } while (base_time < CLOCKS_PER_SEC / 2);
 
   clock_t scale_time = measure_time_for_n_elements (size * 2);
