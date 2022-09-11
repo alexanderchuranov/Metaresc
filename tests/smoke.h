@@ -87,13 +87,14 @@
 									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
-      int x1, size = 1 << 8;						\
+      int size = 1 << 8;						\
+    int base_time, double_time = test_run (size);			\
     do {								\
       size <<= 1;							\
-      x1 = test_run (size);						\
-    } while (x1 < CLOCKS_PER_SEC / 2);					\
-    int x2 = test_run (size * 2);					\
-    ck_assert_msg (x2 < (5 * x1) / 2, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
+      base_time = double_time;						\
+      double_time = test_run (size);					\
+    } while (base_time < CLOCKS_PER_SEC / 8);				\
+    ck_assert_msg (double_time < (5 * base_time) / 2, "performance issue for method " #METHOD " %d / %d = %.02g", double_time, base_time, (double)double_time / base_time); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
   {									\

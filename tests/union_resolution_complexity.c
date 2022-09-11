@@ -46,10 +46,9 @@ START_TEST (mr_save_discriminated_union_complexity) {
     size <<= 1;
     base_time = scale_time;
     scale_time = measure_time_for_n_elements (size);
-    fprintf (stderr, "size %d time (%d %d)/%d\n", size, (int)base_time, (int)scale_time, (int)CLOCKS_PER_SEC);
   } while (base_time < CLOCKS_PER_SEC / 8);
 
-  ck_assert_msg (scale_time < (base_time * 4) / 2, "Union resolution is not in constant time (%d vs %d)", (int)scale_time, (int)base_time);
+  ck_assert_msg (scale_time < (base_time * 5) / 2, "Union resolution is not in constant time (%d vs %d)", (int)scale_time, (int)base_time);
 } END_TEST
 
 MAIN_TEST_SUITE ((mr_save_discriminated_union_complexity, "validate that complexity of saving discriminated unions is not dependent on collisions in hash table"));
