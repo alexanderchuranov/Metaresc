@@ -45,6 +45,7 @@ START_TEST (mr_save_discriminated_union_complexity) {
   do {
     size <<= 1;
     base_time = measure_time_for_n_elements (size);
+    fprintf (stderr, "size %d time %d\n", size, (int)base_time);
   } while (base_time < CLOCKS_PER_SEC / 2);
 
   clock_t scale_time = measure_time_for_n_elements (size * 2);
