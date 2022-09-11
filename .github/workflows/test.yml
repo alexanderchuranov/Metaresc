@@ -73,6 +73,7 @@ jobs:
             ./autogen.sh
             ./configure
             make check
+            cat test-suite.log
 
   windows-gcc:
     runs-on: windows-latest
