@@ -1496,7 +1496,6 @@ mr_status_t
 mr_add_type (mr_td_t * tdp)
 {
   mr_status_t status = MR_SUCCESS;
-  mr_ic_rarray_t mr_ic_rarray;
   int count;
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
@@ -1529,12 +1528,8 @@ mr_add_type (mr_td_t * tdp)
 
   mr_normalize_fields_names (tdp);
   
-  mr_ic_rarray.ra = (mr_ptr_t*)tdp->fields;
-  mr_ic_rarray.size = tdp->fields_size;
-  mr_ic_rarray.alloc_size = -1;
-  
   mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
-  if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, &mr_ic_rarray))
+  if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, (mr_ptr_t*)tdp->fields, tdp->fields_size))
     status = MR_FAILURE;
 
   switch (tdp->mr_type)

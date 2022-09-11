@@ -1086,7 +1086,7 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 
   status = mr_ic_new (&die_off_ic, die_off_hash, die_off_cmp, "mr_die_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
-  status = mr_ic_index (&die_off_ic, &ra_die_ptr);
+  status = mr_ic_index (&die_off_ic, ra_die_ptr.ra, ra_die_ptr.size);
   assert (status == MR_SUCCESS);
   
   int i, j;
@@ -1299,10 +1299,9 @@ main (int argc, char * argv [])
       return (EXIT_FAILURE);
     }
   
-  mr_ic_rarray_t ic_rarray = { .ra = (void*)mr_type_sign, .size = sizeof (mr_type_sign), };
   mr_status_t status = mr_ic_new (&mr_type_sign_ic, mr_type_sign_hash, mr_type_sign_cmp, "mr_type_sign_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
-  status = mr_ic_index (&mr_type_sign_ic, &ic_rarray);
+  status = mr_ic_index (&mr_type_sign_ic, (mr_ptr_t*)mr_type_sign, sizeof (mr_type_sign));
   assert (status == MR_SUCCESS);
 
   mr_ic_t td_ic;
@@ -1325,13 +1324,7 @@ main (int argc, char * argv [])
       mr_die_t mr_die;
       memset (&mr_die, 0, sizeof (mr_die));
       dump_cu_list (debug, &mr_die);
-
-#ifdef DEBUG
-      (void)MR_FPRINT (stderr, "mr_die_root = ", (mr_die_t, &mr_die));
-#endif
-
       extract_type_descriptors (&td_ic, &mr_die);
-
       free_die (&mr_die);
 
       rv = dwarf_finish (debug);

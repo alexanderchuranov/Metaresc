@@ -262,16 +262,12 @@ mr_ud_add (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
 	}
 
       int i;
-      mr_ic_rarray_t rarray;
       mr_ptr_t static_array[sizeof (ptrdes->save_params.static_array) / sizeof (ptrdes->save_params.static_array[0])];
 
       for (i = 0; i < sizeof (static_array) / sizeof (static_array[0]); ++i)
 	static_array[i].intptr = ptrdes->save_params.static_array[i];
-      rarray.ra = static_array;
-      rarray.size = sizeof (static_array);
-      rarray.alloc_size = -1;
 
-      status = mr_ic_index (dst_ic, &rarray);
+      status = mr_ic_index (dst_ic, static_array, sizeof (static_array));
       if (MR_SUCCESS != status)
 	{
 	  MR_FREE (dst_ic);

@@ -40,7 +40,7 @@ mr_ic_unsorted_array_add (mr_ic_t * ic, mr_ptr_t key)
   if (MR_SUCCESS != status)
     return (NULL);
       
-  status = mr_ic_index (&dst_ic, &ic->rarray);
+  status = mr_ic_index (&dst_ic, ic->rarray.ra, ic->rarray.size);
   if (MR_SUCCESS != status)
     return (NULL);
       
@@ -60,7 +60,7 @@ mr_ic_unsorted_array_del (mr_ic_t * ic, mr_ptr_t key)
   if (MR_SUCCESS != status)
     return (status);
       
-  status = mr_ic_index (&dst_ic, &ic->rarray);
+  status = mr_ic_index (&dst_ic, ic->rarray.ra, ic->rarray.size);
   if (MR_SUCCESS != status)
     return (status);
       
@@ -89,10 +89,12 @@ mr_ic_unsorted_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void *
 }
 
 mr_status_t
-mr_ic_unsorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+mr_ic_unsorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
-  ic->rarray = *rarray;
-  ic->items_count = rarray->size / sizeof (rarray->ra[0]);
+  ic->items_count = size / sizeof (rarray[0]);
+  ic->rarray.ra = rarray;
+  ic->rarray.size = ic->items_count * sizeof (ic->rarray.ra[0]);
+  ic->rarray.alloc_size = -1;
   return (MR_SUCCESS);
 }
 
@@ -219,19 +221,19 @@ mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 }
 
 mr_status_t
-mr_ic_sorted_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
-  unsigned items_count = rarray->size / sizeof (rarray->ra[0]);
+  unsigned items_count = size / sizeof (rarray[0]);
   if (items_count > 0)
     {
-      ic->rarray.ra = MR_CALLOC (items_count, sizeof (rarray->ra[0]));
+      ic->rarray.ra = MR_CALLOC (items_count, sizeof (rarray[0]));
       if (NULL == ic->rarray.ra)
 	{
 	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
 	  return (MR_FAILURE);
 	}
 
-      memcpy (ic->rarray.ra, rarray->ra, items_count * sizeof (rarray->ra[0]));
+      memcpy (ic->rarray.ra, rarray, items_count * sizeof (rarray[0]));
       mr_hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
       
       unsigned src, dst = 0;
@@ -379,14 +381,14 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
 }
 
 mr_status_t
-mr_ic_hash_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+mr_ic_hash_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
   mr_ic_t ic_unsorted_array;
   mr_status_t status = mr_ic_unsorted_array_new (&ic_unsorted_array, ic->compar_fn, ic->key_type, &ic->context);
   if (MR_SUCCESS != status)
     return (status);
   
-  status = mr_ic_index (&ic_unsorted_array, rarray);
+  status = mr_ic_index (&ic_unsorted_array, rarray, size);
   if (MR_SUCCESS != status)
     return (status);
   
@@ -581,7 +583,7 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
       rarray.size = sizeof (ic->static_array.static_array);
       rarray.alloc_size = -1;
 
-      status = mr_ic_index (&dst_ic, &rarray);
+      status = mr_ic_index (&dst_ic, ic->static_array.static_array, sizeof (ic->static_array.static_array));
       if (MR_SUCCESS != status)
 	return (NULL);
 
@@ -635,20 +637,20 @@ mr_ic_static_array_free (mr_ic_t * ic)
   memset (&ic->static_array.static_array, 0, sizeof (ic->static_array.static_array));
 }
 
-mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
   int i;
   
-  if (rarray->size > sizeof (ic->static_array.static_array))
+  if (size > sizeof (ic->static_array.static_array))
     {
       mr_status_t status = mr_ic_sorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
 	return (status);
-      return (mr_ic_index (ic, rarray));
+      return (mr_ic_index (ic, rarray, size));
     }
   
-  for (i = rarray->size / sizeof (rarray->ra[0]) - 1; i >= 0; --i)
-    mr_ic_add (ic, rarray->ra[i]);
+  for (i = size / sizeof (rarray[0]) - 1; i >= 0; --i)
+    mr_ic_add (ic, rarray[i]);
 
   return (MR_SUCCESS);
 }
@@ -746,11 +748,11 @@ mr_ic_tree_free (mr_ic_t * ic)
   mr_tree_free (&ic->tree);
 }
 
-mr_status_t mr_ic_tree_index (mr_ic_t * ic, mr_ic_rarray_t * rarray)
+mr_status_t mr_ic_tree_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
   int i;
-  for (i = rarray->size / sizeof (rarray->ra[0]) - 1; i >= 0; --i)
-    if (NULL == mr_ic_add (ic, rarray->ra[i]))
+  for (i = size / sizeof (rarray[0]) - 1; i >= 0; --i)
+    if (NULL == mr_ic_add (ic, rarray[i]))
       return (MR_FAILURE);
 
   return (MR_SUCCESS);
