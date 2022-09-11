@@ -45,11 +45,11 @@ START_TEST (mr_save_discriminated_union_complexity) {
   do {
     size += size >> 1;
     base_time = measure_time_for_n_elements (size);
-  } while (base_time < CLOCKS_PER_SEC / 5);
+  } while (base_time < CLOCKS_PER_SEC / 2);
 
-  clock_t scale_time = measure_time_for_n_elements (size * 3);
+  clock_t scale_time = measure_time_for_n_elements (size * 2);
 
-  ck_assert_msg (scale_time < base_time * 4, "Union resolution is not in constant time (%d vs %d)", (int)scale_time, (int)base_time);
+  ck_assert_msg (scale_time < (base_time * 5) / 2, "Union resolution is not in constant time (%d vs %d)", (int)scale_time, (int)base_time);
 } END_TEST
 
 MAIN_TEST_SUITE ((mr_save_discriminated_union_complexity, "validate that complexity of saving discriminated unions is not dependent on number of union cases"));

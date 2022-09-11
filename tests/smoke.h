@@ -91,9 +91,9 @@
     do {								\
       size += size >> 1;						\
       x1 = test_run (size);						\
-    } while (x1 < CLOCKS_PER_SEC / 5);					\
-    int x2 = test_run (size * 4);					\
-    ck_assert_msg (x2 < 5 * x1, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
+    } while (x1 < CLOCKS_PER_SEC / 2);					\
+    int x2 = test_run (size * 2);					\
+    ck_assert_msg (x2 < (5 * x1) / 2, "performance issue for method " #METHOD " %d / %d = %.02g", x2, x1, (double)x2 / x1); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
   {									\
