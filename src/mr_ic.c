@@ -578,11 +578,6 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
       if (MR_SUCCESS != status)
 	return (NULL);
 
-      mr_ic_rarray_t rarray;
-      rarray.ra = &ic->static_array.static_array[0];
-      rarray.size = sizeof (ic->static_array.static_array);
-      rarray.alloc_size = -1;
-
       status = mr_ic_index (&dst_ic, ic->static_array.static_array, sizeof (ic->static_array.static_array));
       if (MR_SUCCESS != status)
 	return (NULL);
