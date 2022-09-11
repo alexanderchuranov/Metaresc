@@ -41,16 +41,15 @@ measure_time_for_n_elements (int n)
 
 START_TEST (mr_save_discriminated_union_complexity) {
   int size = 1 << 8;
-  clock_t base_time;  
+  clock_t base_time, scale_time = measure_time_for_n_elements (size);
   do {
     size <<= 1;
-    base_time = measure_time_for_n_elements (size);
+    base_time = scale_time;
+    scale_time = measure_time_for_n_elements (size);
     fprintf (stderr, "size %d time %d/%d\n", size, (int)base_time, (int)CLOCKS_PER_SEC);
-  } while (base_time < CLOCKS_PER_SEC / 4);
+  } while (base_time < CLOCKS_PER_SEC / 2);
 
-  clock_t scale_time = measure_time_for_n_elements (size * 2);
-
-  ck_assert_msg (scale_time < (base_time * 5) / 2, "Union resolution is not in constant time (%d vs %d)", (int)scale_time, (int)base_time);
+  ck_assert_msg (scale_time < (base_time * 4) / 2, "Union resolution is not in constant time (%d vs %d)", (int)scale_time, (int)base_time);
 } END_TEST
 
 MAIN_TEST_SUITE ((mr_save_discriminated_union_complexity, "validate that complexity of saving discriminated unions is not dependent on collisions in hash table"));
