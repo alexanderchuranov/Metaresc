@@ -860,7 +860,7 @@
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))			\
     (MR_SAVE_STR_TYPED (MR_PTR_DETECT_TYPE (S_PTR), S_PTR))	\
     (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);			\
-	MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
+	MR_SAVE_STR_TYPED (MR_STRINGIFY (MR_TYPE_NAME), S_PTR); }))
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       mr_save_data_t __mr_save_data__;					\
