@@ -479,7 +479,7 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
     case MR_TYPE_UNION:
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
-      hash_value ^= (uintptr_t)ptrdes->tdp;
+      hash_value += (uintptr_t)ptrdes->tdp;
     default:
       break;
     }
