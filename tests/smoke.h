@@ -51,7 +51,6 @@
     array_t array, array_;						\
     mr_rarray_t ra;							\
     typed_list_t list_, typed_list = { .ptr_type = "string", };		\
-    clock_t start = clock ();						\
     memset (&array, 0, sizeof (array));					\
     array.size = count * sizeof (array.ra[0]);				\
     array.ptr_type = "string";						\
@@ -65,6 +64,7 @@
     array.ra[count - 1].next = &array.ra[0];				\
     array.ra[count - 1].mr_ptr.ptr = "string";				\
     typed_list.root = &array.ra[0];					\
+    clock_t _time = clock ();						\
     ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);		\
       ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\
 		     "Serialization for method " #METHOD " failed.");	\
@@ -82,18 +82,19 @@
 	MR_FREE_RECURSIVELY (array_t, &array_);				\
 	MR_FREE (ra.data.ptr);						\
 	MR_FREE (array.ra);						\
-	return (clock () - start);					\
+	return (clock () - _time);					\
   }									\
 									\
   START_TEST (test_performance) {					\
     MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
       int size = 1 << 8;						\
+    mr_detect_type (NULL);						\
     int base_time, double_time = test_run (size);			\
     do {								\
       size <<= 1;							\
       base_time = double_time;						\
       double_time = test_run (size);					\
-    } while (base_time < CLOCKS_PER_SEC / 8);				\
+    } while (double_time < CLOCKS_PER_SEC / 8);				\
     ck_assert_msg (double_time < (5 * base_time) / 2, "performance issue for method " #METHOD " %d / %d = %.02g", double_time, base_time, (double)double_time / base_time); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
