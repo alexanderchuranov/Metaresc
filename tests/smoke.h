@@ -94,7 +94,7 @@
       size <<= 1;							\
       base_time = double_time;						\
       double_time = test_run (size);					\
-    } while (double_time < CLOCKS_PER_SEC / 16);			\
+    } while (double_time < CLOCKS_PER_SEC / 8);				\
     ck_assert_msg (double_time < (5 * base_time) / 2, "performance issue for method " #METHOD " %d / %d = %.02g", double_time, base_time, (double)double_time / base_time); \
   } END_TEST								\
   int main (int argc, char * argv[])					\
