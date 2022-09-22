@@ -32,7 +32,7 @@
 		     "load for method " #METHOD " failed");		\
       mr_conf = mr_conf_loaded;						\
       mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-      if (mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE)	\
+      if (mr_conf_serialized.MR_SIZE != mr_conf_serialized_.MR_SIZE)	\
 	fprintf (stderr, "orig = %s\nrestored = %s\n", mr_conf_serialized.data.string, mr_conf_serialized_.data.string); \
       ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
 		     (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
