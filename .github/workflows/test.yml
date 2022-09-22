@@ -72,7 +72,7 @@ jobs:
             git submodule update --init --recursive --remote
             ./autogen.sh
             ./configure
-            make check CPPFLAGS="-D SKIP_PERFORMANCE_TEST_XML1=0 -D SKIP_PERFORMANCE_TEST_SCM=0 -D SKIP_PERFORMANCE_TEST_CINIT=0 -D SKIP_PERFORMANCE_TEST_JSON=0"
+            make check -j 2 CPPFLAGS="-D SKIP_PERFORMANCE_TEST_XML1=0 -D SKIP_PERFORMANCE_TEST_SCM=0 -D SKIP_PERFORMANCE_TEST_CINIT=0 -D SKIP_PERFORMANCE_TEST_JSON=0"
 
   windows-gcc:
     runs-on: windows-latest
@@ -96,5 +96,5 @@ jobs:
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
-        run: make -j 2 check
+        run: make -j 2 check ; cat tests/test-suite.log
 
