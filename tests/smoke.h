@@ -32,13 +32,15 @@
 		     "load for method " #METHOD " failed");		\
       mr_conf = mr_conf_loaded;						\
       mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-	ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
-		       (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
-		       "restored mr_conf mismatched original dump for method " #METHOD); \
-	MR_FREE (mr_conf_serialized_.data.ptr);				\
-	MR_FREE (mr_conf_serialized.data.ptr);				\
-	mr_conf = mr_conf_saved;					\
-	MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);		\
+      if (mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE)	\
+	fprintf (stderr, "orig = %s\nrestored = %s\n", mr_conf_serialized.data.string, mr_conf_serialized_.data.string); \
+      ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
+		     (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
+		     "restored mr_conf mismatched original dump for method " #METHOD); \
+      MR_FREE (mr_conf_serialized_.data.ptr);				\
+      MR_FREE (mr_conf_serialized.data.ptr);				\
+      mr_conf = mr_conf_saved;						\
+      MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);			\
   } END_TEST								\
 									\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
