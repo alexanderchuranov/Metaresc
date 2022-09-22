@@ -99,4 +99,5 @@ jobs:
         run: |
           make -j 2 check
           cat tests/test-suite.log
+          cat tests/smoke_xml1.log
 
