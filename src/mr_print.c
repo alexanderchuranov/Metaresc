@@ -99,7 +99,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
       void * __ptr__ = S_PTR;						\
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
-      __fd__.name.str = mr_normalize_name (MR_STRINGIFY (S_PTR));	\
+      __fd__.name.str = MR_TYPE_NAME_STR;				\
       __fd__.type = MR_TYPE_NAME_STR;					\
       __fd__.non_persistent = true;					\
       mr_detect_type (&__fd__);						\

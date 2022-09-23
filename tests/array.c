@@ -125,7 +125,7 @@ START_TEST (int_ptr_array)
     {
       {
 	.tdp = (mr_td_t[]){{ .type = { "int_ptr_array_t" }}},
-	.name = "orig",
+	.name = "int_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
 	.next = -1
@@ -175,7 +175,7 @@ START_TEST (enum_ptr_array)
     {
       {
 	.tdp = (mr_td_t[]){{ .type = { "enum_ptr_array_t" }}},
-	.name = "orig",
+	.name = "enum_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
 	.next = -1
@@ -225,7 +225,7 @@ START_TEST (union_ptr_array)
     {
       {
 	.tdp = (mr_td_t[]){{ .type = { "union_ptr_array_t" }}},
-	.name = "orig",
+	.name = "union_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
 	.next = -1
@@ -291,7 +291,7 @@ START_TEST (ud_overrided_ptr_array)
     {
       {
 	.tdp = (mr_td_t[]){{ .type = { "ud_overrided_ptr_array_t" }}},
-	.name = "orig",
+	.name = "ud_overrided_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
 	.next = -1

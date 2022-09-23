@@ -225,31 +225,6 @@ mr_cleanup (void)
 }
 
 /**
- * Helper function for serialization macroses. Extracts variable name that was passed for serialization.
- * Possible variants are: var_name, &var_name, &var_name[idx], &((type*)var_name)[idx], etc
- *
- * @param name string with var_name
- * @return variable name var_name
- */
-char *
-mr_normalize_name (char * name)
-{
-  char * ptr;
-  ptr = strchr (name, '['); /* lookup for a bracket */
-  if (NULL == ptr)          /* if bracket was not found */
-    ptr = strchr (name, 0); /* use end of the string */
-  --ptr;
-  /* skip all invalid characters */
-  while ((ptr >= name) && !(isalnum (*ptr) || ('_' == *ptr)))
-    --ptr;
-  *(ptr + 1) = 0; /* put end-of-string marker */
-  /* all valid characters to the left forms the var_name */
-  while ((ptr >= name) && (isalnum (*ptr) || ('_' == *ptr)))
-    --ptr;
-  return (++ptr);
-}
-
-/**
  * Allocate new string and copy first 'size' chars from str.
  * For compilers without GNU extension
  *
@@ -1758,6 +1733,14 @@ void
 mr_detect_type (mr_fd_t * fdp)
 {
   mr_td_t * tdp;
+#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
+  static char * type_name[MR_TYPE_LAST] = {
+    [0 ... MR_TYPE_LAST - 1] = NULL,
+    MR_FOREACH (MR_TYPE_NAME,
+		string_t, char, bool,
+		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
+  };
 
   mr_conf_init ();
 
@@ -1765,6 +1748,8 @@ mr_detect_type (mr_fd_t * fdp)
     return;
   
   mr_normalize_type (fdp->type);
+  fdp->name.str = fdp->type;
+  fdp->name.hash_value = 0;
 
   switch (fdp->mr_type)
     {
@@ -1785,11 +1770,18 @@ mr_detect_type (mr_fd_t * fdp)
 	  fdp->mr_type = tdp->mr_type;
 	  fdp->size = tdp->size;
 	  fdp->tdp = tdp;
+	  if (type_name[tdp->mr_type])
+	    fdp->type = fdp->name.str = type_name[tdp->mr_type];
+	  else
+	    fdp->type = fdp->name.str = tdp->type.str;
 	}
       break;
     default:
       break;
     }
+  if (NULL == fdp->tdp)
+    if (type_name[fdp->mr_type])
+      fdp->type = fdp->name.str = type_name[fdp->mr_type];
 }
 
 /**

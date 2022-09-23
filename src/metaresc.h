@@ -867,7 +867,6 @@
       void * __ptr__ = (void*)S_PTR;					\
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
-      __fd__.name.str = mr_normalize_name (MR_STRINGIFY (S_PTR));	\
       __fd__.type = MR_TYPE_NAME_STR;					\
       __fd__.non_persistent = true;					\
       __fd__.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));		\
@@ -1321,7 +1320,6 @@ extern void mr_detect_fields_types (mr_td_t * tdp);
 #define mr_type_void_fields(type, ...) mr_type_void_fields_impl (type, __VA_ARGS__, MR_VALIDATE_ALL_ARGS_ARE_STRINGS (__VA_ARGS__))
 extern void __attribute__ ((sentinel(0))) mr_type_void_fields_impl (char * type, char * name, ...);
 extern mr_size_t mr_type_size (mr_type_t mr_type);
-extern char * mr_normalize_name (char * name);
 extern void mr_conf_init ();
 extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
