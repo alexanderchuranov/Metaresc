@@ -1734,8 +1734,7 @@ mr_detect_type (mr_fd_t * fdp)
 {
   mr_td_t * tdp;
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
-  static char * type_name[MR_TYPE_LAST] = {
-    [0 ... MR_TYPE_LAST - 1] = NULL,
+  static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
 		string_t, char, bool,
 		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
@@ -1770,7 +1769,12 @@ mr_detect_type (mr_fd_t * fdp)
 	  fdp->mr_type = tdp->mr_type;
 	  fdp->size = tdp->size;
 	  fdp->tdp = tdp;
-	  if (type_name[tdp->mr_type])
+
+	  char * type_name_ = NULL;
+	  if ((tdp->mr_type > 0) && (tdp->mr_type < sizeof (type_name) / sizeof (type_name[0])))
+	    type_name_ = type_name[tdp->mr_type];
+	  
+	  if (type_name_)
 	    fdp->type = fdp->name.str = type_name[tdp->mr_type];
 	  else
 	    fdp->type = fdp->name.str = tdp->type.str;
@@ -1779,7 +1783,9 @@ mr_detect_type (mr_fd_t * fdp)
     default:
       break;
     }
-  if (NULL == fdp->tdp)
+  
+  if ((NULL == fdp->tdp) &&
+      (fdp->mr_type > 0) && (fdp->mr_type < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[fdp->mr_type])
       fdp->type = fdp->name.str = type_name[fdp->mr_type];
 }

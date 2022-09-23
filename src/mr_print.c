@@ -1,7 +1,63 @@
 #include <metaresc.h>
 
+static int
+mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, void * value)
+{
+#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
+  static char * type_name[] = {
+    MR_FOREACH (MR_TYPE_NAME,
+		string_t, char, bool,
+		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
+  };
+  
+  if (NULL == value)
+    return (fprintf (fd, "(null)"));
+  
+  if ((mr_type_aux > 0) && (mr_type_aux < sizeof (type_name) / sizeof (type_name[0])))
+    if (type_name[mr_type_aux])
+      type = type_name[mr_type_aux];
+  
+  if (NULL == type)
+    return (fprintf (fd, "%p", value));
+
+#undef MR_SAVE
+#define MR_SAVE MR_SAVE_VOID_PTR
+#define MR_SAVE_VOID_PTR(MR_TYPE_NAME_STR, S_PTR) ({		\
+      mr_save_data_t __mr_save_data__;				\
+      void * __ptr__ = S_PTR;					\
+      mr_fd_t __fd__;						\
+      memset (&__fd__, 0, sizeof (__fd__));			\
+      __fd__.name.str = MR_TYPE_NAME_STR;			\
+      __fd__.type = MR_TYPE_NAME_STR;				\
+      __fd__.non_persistent = true;				\
+      mr_detect_type (&__fd__);					\
+      if (size >= 0)						\
+	{							\
+	  __fd__.mr_type_aux = __fd__.mr_type;			\
+	  __fd__.mr_type = MR_TYPE_ARRAY;			\
+	  __fd__.param.array_param.count = size / __fd__.size;	\
+	  __fd__.param.array_param.row_count = 1;		\
+	  __fd__.size = size;					\
+	}							\
+      memset (&__mr_save_data__, 0, sizeof (__mr_save_data__));	\
+      if (__ptr__ != NULL)					\
+	mr_save (__ptr__, &__fd__, &__mr_save_data__);		\
+      __mr_save_data__.ptrs;					\
+    })
+
+  char * serialized = MR_SAVE_CINIT (type, value);
+  if (NULL == serialized)
+    return (fprintf (fd, "%p", value));
+
+  serialized[strlen (serialized) - 1] = 0;
+  int rv = fprintf (fd, "%p ((%s)%s)", value, type, serialized);
+  MR_FREE (serialized);
+  return (rv);
+}
+
 int
-mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, mr_size_t size, ...)
+mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, ssize_t size, ...)
 {
   static const char * const formats[] =
     {
@@ -62,73 +118,9 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	  break;
 	}
       case MR_TYPE_NONE:
-	{
-	  void * value = va_arg (args, void *);
-	  if (NULL == value)
-	    rv = fprintf (fd, "(null)");
-	  else if (mr_type_aux != MR_TYPE_NONE)
-	    {
-	      rv = fprintf (fd, "%p (", value);
-	      
-#define MR_REDIRECT_TYPE(TYPE)						\
-	      case MR_TYPE_DETECT (TYPE):				\
-		rv += fprintf (fd, "(" #TYPE ")") +			\
-		  mr_print_value (fd, mr_type_aux, MR_TYPE_NONE, NULL, 0, *(TYPE*)value); \
-		break;
-	      
-	      switch (mr_type_aux)
-		{
-		  MR_FOREACH (MR_REDIRECT_TYPE,
-			      string_t, mr_string_t, char, bool,
-			      int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
-			      float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t);
-		default:
-		  rv += fprintf (fd, "unknown");
-		  break;
-		}
-	      rv += fprintf (fd, ")");
-	    }
-	  else if (NULL == type)
-	    rv = fprintf (fd, "%p", value);
-	  else
-	    {
-#undef MR_SAVE
-#define MR_SAVE MR_SAVE_VOID_PTR
-#define MR_SAVE_VOID_PTR(MR_TYPE_NAME_STR, S_PTR) ({			\
-      mr_save_data_t __mr_save_data__;					\
-      void * __ptr__ = S_PTR;						\
-      mr_fd_t __fd__;							\
-      memset (&__fd__, 0, sizeof (__fd__));				\
-      __fd__.name.str = MR_TYPE_NAME_STR;				\
-      __fd__.type = MR_TYPE_NAME_STR;					\
-      __fd__.non_persistent = true;					\
-      mr_detect_type (&__fd__);						\
-      if (size > 0)							\
-	{								\
-	  __fd__.mr_type_aux = __fd__.mr_type;				\
-	  __fd__.mr_type = MR_TYPE_ARRAY;				\
-	  __fd__.param.array_param.count = size / __fd__.size;		\
-	  __fd__.param.array_param.row_count = 1;			\
-	  __fd__.size = size;						\
-	}								\
-      memset (&__mr_save_data__, 0, sizeof (__mr_save_data__));		\
-      if (__ptr__ != NULL)						\
-	mr_save (__ptr__, &__fd__, &__mr_save_data__);			\
-      __mr_save_data__.ptrs;						\
-    })
-
-	      char * serialized = MR_SAVE_CINIT (type, value);
-	      if (NULL == serialized)
-		rv = fprintf (fd, "%p", value);
-	      else
-		{
-		  serialized[strlen (serialized) - 1] = 0;
-		  rv = fprintf (fd, "%p ((%s)%s)", value, type, serialized);
-		  MR_FREE (serialized);
-		}
-	    }
-	  break;
-	}
+	rv = mr_print_pointer (fd, mr_type_aux, type, size, va_arg (args, void *));
+	break;
+	
       default:
 	break;
       }
