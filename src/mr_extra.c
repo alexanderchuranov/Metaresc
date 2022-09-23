@@ -365,32 +365,6 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
   if (diff)
     return (diff);
 
-  x->ra[0].name = y->ra[0].name;
-  x->ra[0].tdp = y->ra[0].tdp;
-
-  diff = (x->ra[0].mr_type > y->ra[0].mr_type) - (x->ra[0].mr_type < y->ra[0].mr_type);
-  if (diff)
-    return (diff);
-  
-  if (x->ra[0].mr_type == MR_TYPE_ARRAY)
-    {
-      diff = (x->ra[0].first_child > y->ra[0].first_child) -
-	(x->ra[0].first_child < y->ra[0].first_child);
-      if (diff)
-	return (diff);
-      
-      int child;
-      for (child = x->ra[0].first_child; child >= 0; child = x->ra[child].next)
-	{
-	  x->ra[child].name = y->ra[child].name;
-	  x->ra[child].tdp = y->ra[child].tdp;
-	  diff = (x->ra[child].next > y->ra[child].next) -
-	    (x->ra[child].next < y->ra[child].next);
-	  if (diff)
-	    return (diff);
-	}
-    }
-  
   unsigned i, count = x->size / sizeof (x->ra[0]);
   for (i = 0; i < count; ++i)
     {
