@@ -1204,16 +1204,17 @@
 #define EQ_2_2 0
 #define EQ_3_3 0
 
-#define MR_PRINT_IN_PAREN(COUNT, FD, ...)		\
+#define MR_PRINT_IN_PAREN(COUNT, FD, VALUE)		\
   MR_IF_ELSE (MR_PASTE2 (EQ_2_, COUNT))			\
-  (MR_PRINT_IN_PAREN_ (COUNT, FD, __VA_ARGS__))		\
-  (MR_PRINT_STRUCT (FD, __VA_ARGS__, CINIT))
+       (MR_PRINT_IN_PAREN_ (COUNT, FD, VALUE))		\
+       (MR_PRINT_STRUCT_ (FD, MR_REMOVE_PAREN_ VALUE, CINIT))
 
-#define MR_PRINT_IN_PAREN_(COUNT, FD, ...)		\
+#define MR_PRINT_IN_PAREN_(COUNT, FD, VALUE)		\
   MR_IF_ELSE (MR_PASTE2 (EQ_3_, COUNT))			\
-  (MR_PRINT_VALUE (FD, (__VA_ARGS__)))			\
-    (MR_PRINT_STRUCT (FD, __VA_ARGS__))
+       (MR_PRINT_VALUE (FD, VALUE))			\
+       (MR_PRINT_STRUCT_ (FD, MR_REMOVE_PAREN_ VALUE))
 
+#define MR_PRINT_STRUCT_(FD, ...) MR_PRINT_STRUCT (FD, __VA_ARGS__)
 #define MR_PRINT_STRUCT(FD, TYPE, PTR, METHOD) ({	\
       char * _dump_ = MR_SAVE_ ## METHOD (TYPE, PTR);	\
 	int _rv_ = 0;					\
@@ -1233,8 +1234,8 @@
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
-  (MR_PRINT_IN_PAREN (MR_NARG X, FD, MR_REMOVE_PAREN_ X))	\
-  (MR_PRINT_VALUE (FD, X))
+       (MR_PRINT_IN_PAREN (MR_NARG X, FD, X))			\
+       (MR_PRINT_VALUE (FD, X))
 
 #define MR_ADD(NAME, I, REC, X) REC + X
 #define MR_PRINT(...) (void)MR_FPRINT (stdout, __VA_ARGS__)
