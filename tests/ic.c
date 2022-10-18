@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <time.h>
 
 #include <check.h>
 #include <metaresc.h>
@@ -216,8 +215,6 @@ START_TEST (ic_rbtree) {
   ck_assert_msg (rv == rv0, "Wrong key found");
   ck_assert_msg (mr_rbtree_is_valid (&rbtree, uintptr_t_cmp, NULL), "Invalid tree");
 
-  srand (0xDeadBeef);
-
   int i;
   for (i = 1; i < (1 << 10); ++i)
     {
@@ -255,8 +252,6 @@ START_TEST (ic_avltree) {
   ck_assert_msg (rv->uintptr == x.uintptr, "Mismatched key");
   ck_assert_msg (rv == rv0, "Wrong key found");
   ck_assert_msg (mr_avltree_is_valid (&tree, uintptr_t_cmp, NULL), "Invalid tree");
-
-  srand (0xDeadBeef);
 
   int i;
   for (i = 1; i < 1 << 10; ++i)
