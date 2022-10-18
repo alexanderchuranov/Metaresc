@@ -41,6 +41,7 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
     MR_IC_INIT (HASH),
     MR_IC_INIT (STATIC_ARRAY),
     MR_IC_INIT (RBTREE),
+    MR_IC_INIT (AVLTREE),
   };
 
   for (i = 0; i < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++i)
@@ -205,12 +206,12 @@ START_TEST (ic_rbtree) {
 
   mr_ptr_t x = { .uintptr = 0 };
   mr_ptr_t * rv0 = mr_rbtree_add (x, &rbtree, uintptr_t_cmp, NULL);
-  ck_assert_msg (NULL != rv0, "Failed to add value to rbtree");
+  ck_assert_msg (NULL != rv0, "Failed to add value to binary tree");
   ck_assert_msg (rv0->uintptr == x.uintptr, "Mismatched key");
   ck_assert_msg (mr_rbtree_is_valid (&rbtree, uintptr_t_cmp, NULL), "Invalid tree");
 
   mr_ptr_t * rv = mr_rbtree_add (x, &rbtree, uintptr_t_cmp, NULL);
-  ck_assert_msg (NULL != rv, "Failed to add value to rbtree");
+  ck_assert_msg (NULL != rv, "Failed to add value to binary tree");
   ck_assert_msg (rv->uintptr == x.uintptr, "Mismatched key");
   ck_assert_msg (rv == rv0, "Wrong key found");
   ck_assert_msg (mr_rbtree_is_valid (&rbtree, uintptr_t_cmp, NULL), "Invalid tree");
@@ -222,7 +223,7 @@ START_TEST (ic_rbtree) {
     {
       mr_ptr_t value = { .uintptr = i };
       mr_ptr_t * rv1 = mr_rbtree_add (value, &rbtree, uintptr_t_cmp, NULL);
-      ck_assert_msg (NULL != rv1, "Failed to add value to rbtree");
+      ck_assert_msg (NULL != rv1, "Failed to add value to binary tree");
       ck_assert_msg (rv1->uintptr == value.uintptr, "Mismatched key");
       ck_assert_msg (mr_rbtree_is_valid (&rbtree, uintptr_t_cmp, NULL), "Invalid tree");
     }
@@ -232,7 +233,7 @@ START_TEST (ic_rbtree) {
       mr_ptr_t value = rbtree.pool[1].key;
       mr_status_t status = mr_rbtree_del (value, &rbtree, uintptr_t_cmp, NULL);
       ck_assert_msg (MR_SUCCESS == status, "Deletion rerurned failed status");
-      ck_assert_msg (i == rbtree.size / sizeof (rbtree.pool[0]), "Failed to del value from rbtree");
+      ck_assert_msg (i == rbtree.size / sizeof (rbtree.pool[0]), "Failed to del value from binary tree");
       ck_assert_msg (mr_rbtree_is_valid (&rbtree, uintptr_t_cmp, NULL), "Invalid tree");
     }
 
@@ -245,12 +246,12 @@ START_TEST (ic_avltree) {
 
   mr_ptr_t x = { .uintptr = 0 };
   mr_ptr_t * rv0 = mr_avltree_add (x, &tree, uintptr_t_cmp, NULL);
-  ck_assert_msg (NULL != rv0, "Failed to add value to rbtree");
+  ck_assert_msg (NULL != rv0, "Failed to add value to binary tree");
   ck_assert_msg (rv0->uintptr == x.uintptr, "Mismatched key");
   ck_assert_msg (mr_avltree_is_valid (&tree, uintptr_t_cmp, NULL), "Invalid tree");
 
   mr_ptr_t * rv = mr_avltree_add (x, &tree, uintptr_t_cmp, NULL);
-  ck_assert_msg (NULL != rv, "Failed to add value to rbtree");
+  ck_assert_msg (NULL != rv, "Failed to add value to binary tree");
   ck_assert_msg (rv->uintptr == x.uintptr, "Mismatched key");
   ck_assert_msg (rv == rv0, "Wrong key found");
   ck_assert_msg (mr_avltree_is_valid (&tree, uintptr_t_cmp, NULL), "Invalid tree");
@@ -262,7 +263,7 @@ START_TEST (ic_avltree) {
     {
       mr_ptr_t value = { .uintptr = i };
       mr_ptr_t * rv1 = mr_avltree_add (value, &tree, uintptr_t_cmp, NULL);
-      ck_assert_msg (NULL != rv1, "Failed to add value to rbtree");
+      ck_assert_msg (NULL != rv1, "Failed to add value to binary tree");
       ck_assert_msg (rv1->uintptr == value.uintptr, "Mismatched key");
       ck_assert_msg (mr_avltree_is_valid (&tree, uintptr_t_cmp, NULL), "Invalid tree");
     }
@@ -272,7 +273,7 @@ START_TEST (ic_avltree) {
       mr_ptr_t value = tree.pool[1].key;
       mr_status_t status = mr_avltree_del (value, &tree, uintptr_t_cmp, NULL);
       ck_assert_msg (MR_SUCCESS == status, "Deletion rerurned failed status");
-      ck_assert_msg (i == tree.size / sizeof (tree.pool[0]), "Failed to del value from rbtree");
+      ck_assert_msg (i == tree.size / sizeof (tree.pool[0]), "Failed to del value from binary tree");
       ck_assert_msg (mr_avltree_is_valid (&tree, uintptr_t_cmp, NULL), "Invalid tree");
     }
   
