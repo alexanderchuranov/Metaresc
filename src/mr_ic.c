@@ -117,19 +117,20 @@ mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_typ
     .index = mr_ic_unsorted_array_index,
     .free = mr_ic_unsorted_array_free,
   };
+  mr_res_t generic_context = {
+    .data = { key_type },
+    .type = "string",
+    .mr_size = sizeof (key_type),
+  };
   
   if (NULL == ic)
     return (MR_FAILURE);
 
-  memset (ic, 0, sizeof (*ic));
-
-  if ((compar_fn == NULL) && (mr_get_td_by_name (key_type) != NULL))
+  if ((compar_fn == NULL) && (context == NULL) &&
+      (mr_get_td_by_name (key_type) != NULL))
     {
       compar_fn = mr_generic_cmp;
-      context = NULL;
-      ic->context.data.ptr = key_type;
-      ic->context.type = "string";
-      ic->context.mr_size = sizeof (key_type);
+      context = &generic_context;
     }
 
   if (NULL == compar_fn)
@@ -137,6 +138,8 @@ mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_typ
   
   if (context)
     ic->context = *context;
+  else
+    memset (&ic->context, 0, sizeof (ic->context));
   
   ic->ic_type = MR_IC_UNSORTED_ARRAY;
   ic->key_type = key_type;
@@ -235,7 +238,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 
       memcpy (ic->rarray.ra, rarray, items_count * sizeof (rarray[0]));
       mr_hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
-      
+
       unsigned src, dst = 0;
       ic->rarray.ra[dst++] = ic->rarray.ra[0];
       for (src = 1; src < items_count; ++src)
@@ -270,19 +273,20 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
     .index = mr_ic_sorted_array_index,
     .free = mr_ic_sorted_array_free,
   };
+  mr_res_t generic_context = {
+    .data = { key_type },
+    .type = "string",
+    .mr_size = sizeof (key_type),
+  };
   
   if (NULL == ic)
     return (MR_FAILURE);
 
-  memset (ic, 0, sizeof (*ic));
-
-  if ((compar_fn == NULL) && (mr_get_td_by_name (key_type) != NULL))
+  if ((compar_fn == NULL) && (context == NULL) &&
+      (mr_get_td_by_name (key_type) != NULL))
     {
       compar_fn = mr_generic_cmp;
-      context = NULL;
-      ic->context.data.ptr = key_type;
-      ic->context.type = "string";
-      ic->context.mr_size = sizeof (key_type);
+      context = &generic_context;
     }
   
   if (NULL == compar_fn)
@@ -290,6 +294,8 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
 
   if (context)
     ic->context = *context;
+  else
+    memset (&ic->context, 0, sizeof (ic->context));
 
   ic->ic_type = MR_IC_SORTED_ARRAY;
   ic->key_type = key_type;
@@ -522,14 +528,14 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
     .index = mr_ic_hash_index,
     .free = mr_ic_hash_free,
   };
-  
   mr_res_t generic_context = {
     .data = { key_type },
     .type = "string",
     .mr_size = sizeof (key_type),
   };
 
-  if ((NULL == compar_fn) && (NULL == hash_fn) && (mr_get_td_by_name (key_type) != NULL))
+  if ((NULL == compar_fn) && (context == NULL) &&
+      (NULL == hash_fn) && (mr_get_td_by_name (key_type) != NULL))
     {
       hash_fn = mr_generic_hash;
       compar_fn = mr_generic_cmp;
@@ -539,12 +545,12 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
   if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
     return (MR_FAILURE);
 
-  ic->ic_type = MR_IC_HASH;
   if (context)
     ic->context = *context;
   else
     memset (&ic->context, 0, sizeof (ic->context));
 
+  ic->ic_type = MR_IC_HASH;
   ic->key_type = key_type;
   ic->compar_fn = compar_fn;
   ic->virt_func = &virt_func;
@@ -661,19 +667,20 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
     .index = mr_ic_static_array_index,
     .free = mr_ic_static_array_free,
   };
+  mr_res_t generic_context = {
+    .data = { key_type },
+    .type = "string",
+    .mr_size = sizeof (key_type),
+  };
 
   if (NULL == ic)
     return (MR_FAILURE);
 
-  memset (ic, 0, sizeof (*ic));
-
-  if ((compar_fn == NULL) && (mr_get_td_by_name (key_type) != NULL))
+  if ((compar_fn == NULL) && (context == NULL) &&
+      (mr_get_td_by_name (key_type) != NULL))
     {
       compar_fn = mr_generic_cmp;
-      context = NULL;
-      ic->context.data.ptr = key_type;
-      ic->context.type = "string";
-      ic->context.mr_size = sizeof (key_type);
+      context = &generic_context;
     }
   
   if (NULL == compar_fn)
@@ -681,6 +688,8 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
 
   if (context)
     ic->context = *context;
+  else
+    memset (&ic->context, 0, sizeof (ic->context));
 
   ic->ic_type = MR_IC_STATIC_ARRAY;
   ic->key_type = key_type;
@@ -764,19 +773,20 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
     .index = mr_ic_tree_index,
     .free = mr_ic_tree_free,
   };
+  mr_res_t generic_context = {
+    .data = { key_type },
+    .type = "string",
+    .mr_size = sizeof (key_type),
+  };
   
   if (NULL == ic)
     return (MR_FAILURE);
 
-  memset (ic, 0, sizeof (*ic));
-
-  if ((compar_fn == NULL) && (mr_get_td_by_name (key_type) != NULL))
+  if ((compar_fn == NULL) && (context == NULL) &&
+      (mr_get_td_by_name (key_type) != NULL))
     {
       compar_fn = mr_generic_cmp;
-      context = NULL;
-      ic->context.data.ptr = key_type;
-      ic->context.type = "string";
-      ic->context.mr_size = sizeof (key_type);
+      context = &generic_context;
     }
   
   if (NULL == compar_fn)
@@ -784,6 +794,8 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
 
   if (context)
     ic->context = *context;
+  else
+    memset (&ic->context, 0, sizeof (ic->context));
 
   ic->ic_type = MR_IC_RBTREE;
   ic->key_type = key_type;
@@ -825,19 +837,20 @@ mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_r
     .index = mr_ic_tree_index,
     .free = mr_ic_tree_free,
   };
+  mr_res_t generic_context = {
+    .data = { key_type },
+    .type = "string",
+    .mr_size = sizeof (key_type),
+  };
   
   if (NULL == ic)
     return (MR_FAILURE);
 
-  memset (ic, 0, sizeof (*ic));
-
-  if ((compar_fn == NULL) && (mr_get_td_by_name (key_type) != NULL))
+  if ((compar_fn == NULL) && (context == NULL) &&
+      (mr_get_td_by_name (key_type) != NULL))
     {
       compar_fn = mr_generic_cmp;
-      context = NULL;
-      ic->context.data.ptr = key_type;
-      ic->context.type = "string";
-      ic->context.mr_size = sizeof (key_type);
+      context = &generic_context;
     }
   
   if (NULL == compar_fn)
@@ -845,6 +858,8 @@ mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_r
 
   if (context)
     ic->context = *context;
+  else
+    memset (&ic->context, 0, sizeof (ic->context));
 
   ic->ic_type = MR_IC_AVLTREE;
   ic->key_type = key_type;
