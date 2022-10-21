@@ -110,6 +110,25 @@ START_TEST (generic_ic) {
 	  }
 } END_TEST
 
+static int
+struct_2fields_cmp (struct_2fields_t * x, struct_2fields_t * y)
+{
+  int cmp = (x->x > y->x) - (x->x < y->x);
+  if (cmp)
+    return (cmp);
+  return ((x->y > y->y) - (x->y < y->y));
+}
+
+START_TEST (generic_sort) {
+  int i;
+  struct_2fields_t array[] = { {1, 1}, {0, 1}, {1, 0}, {0, 0} };
+  ck_assert_msg (MR_SUCCESS == mr_generic_sort (array, sizeof (array) / sizeof (array[0]), "struct_2fields_t"),
+		  "mr_generic_sort failed");
+  for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
+    ck_assert_msg (struct_2fields_cmp (&array[i - 1], &array[i]) <= 0, "Elements are not sorted");
+} END_TEST
+
 MAIN_TEST_SUITE (
-		 (generic_ic, "Check generic IC implementation")
+		 (generic_ic, "Check generic IC implementation"),
+		 (generic_sort, "Check generic sort implementation")
 		 );

@@ -40,7 +40,19 @@ mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   mr_td_t * tdp = (mr_td_t*)context;
   return (MR_CMP_STRUCTS (tdp, x.ptr, y.ptr));
 }
- 
+
+mr_status_t
+mr_generic_sort (void * data, size_t count, char * key_type)
+{
+  mr_td_t * tdp = mr_get_td_by_name (key_type);
+  
+  if ((NULL == tdp) || (0 == tdp->size))
+    return (MR_FAILURE);
+  
+  mr_hsort (data, count, tdp->size, mr_generic_cmp, tdp);
+  return (MR_SUCCESS);
+}
+
 /* ----------------------- MR_IC_UNSORTED_ARRAY ----------------------- */
 
 mr_ptr_t *

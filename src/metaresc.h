@@ -1347,6 +1347,9 @@ extern mr_status_t mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr
 #define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, __VA_ARGS__ - 0)
 extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_generic_sort (void * data, size_t count, char * key_type);
+extern mr_hash_value_t mr_generic_hash (const mr_ptr_t x, const void * context);
+extern int mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 
 extern mr_hash_value_t mr_hash_block (void * block, mr_size_t size);
 extern mr_hash_value_t mr_hash_str (char * str);
