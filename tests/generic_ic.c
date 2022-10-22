@@ -44,7 +44,7 @@ static type_samples_t type_samples[] = {
   [MR_TYPE_ENUM] = MR_TYPE_SAMPLES_VALUES_INIT (mr_enum_t, ZERO, ONE, TWO)
   [MR_TYPE_FUNC_TYPE] = MR_TYPE_SAMPLES_VALUES_INIT (void_func_t, func_zero, func_one, func_two)
   [MR_TYPE_BITFIELD] = MR_TYPE_SAMPLES_VALUES_INIT (struct_bit_field_t, {0}, {1}, {2})
-  [MR_TYPE_ARRAY] = MR_TYPE_SAMPLES_VALUES_INIT (struct_array_t, {0}, {1}, {2})
+  [MR_TYPE_ARRAY] = MR_TYPE_SAMPLES_VALUES_INIT (struct_array_t, {{0}}, {{1}}, {{2}})
   [MR_TYPE_LAST] = {},
   MR_TYPE_SAMPLES_VALUES_INIT (struct_2fields_t, ({0, 0}), ({0, 1}), ({1, 0}), ({1, 1}))
 };
@@ -119,7 +119,7 @@ struct_2fields_cmp (struct_2fields_t * x, struct_2fields_t * y)
   return ((x->y > y->y) - (x->y < y->y));
 }
 
-START_TEST (generic_sort) {
+START_TEST (generic_sort_struct) {
   int i;
   struct_2fields_t array[] = { {1, 1}, {0, 1}, {1, 0}, {0, 0} };
   ck_assert_msg (MR_SUCCESS == mr_generic_sort (array, sizeof (array) / sizeof (array[0]), "struct_2fields_t"),
@@ -128,7 +128,26 @@ START_TEST (generic_sort) {
     ck_assert_msg (struct_2fields_cmp (&array[i - 1], &array[i]) <= 0, "Elements are not sorted");
 } END_TEST
 
-MAIN_TEST_SUITE (
-		 (generic_ic, "Check generic IC implementation"),
-		 (generic_sort, "Check generic sort implementation")
+START_TEST (generic_sort_string) {
+  int i;
+  string_t array[] = { "a", "b", "aa", "ab", "abc" };
+  ck_assert_msg (MR_SUCCESS == mr_generic_sort (array, sizeof (array) / sizeof (array[0]), "string_t"),
+		  "mr_generic_sort failed");
+  for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
+    ck_assert_msg (strcmp (array[i - 1], array[i]) <= 0, "Elements are not sorted");
+} END_TEST
+
+START_TEST (generic_sort_int) {
+  int i;
+  int array[] = { 2, 3, 1, 0 };
+  ck_assert_msg (MR_SUCCESS == mr_generic_sort (array, sizeof (array) / sizeof (array[0]), "int"),
+		  "mr_generic_sort failed");
+  for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
+    ck_assert_msg (array[i - 1] <= array[i], "Elements are not sorted");
+} END_TEST
+
+MAIN_TEST_SUITE ((generic_ic, "Check generic IC implementation"),
+		 (generic_sort_struct, "Check generic sort implementation on structures"),
+		 (generic_sort_string, "Check generic sort implementation on strings"),
+		 (generic_sort_int, "Check generic sort implementation on integers")
 		 );
