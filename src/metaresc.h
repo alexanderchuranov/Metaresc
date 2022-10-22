@@ -1228,7 +1228,7 @@
 
 #define MR_ARRAY_SIZE(X) __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + (X)), __typeof__ (X)), -1, sizeof (X))
 
-#define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr (MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ), (OBJ), NULL)
+#define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr (MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ), (OBJ), "")
 
 #define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), MR_TYPE_DETECT (__typeof__ (*MR_CAST_TO_PTR (X))), MR_PTR_DETECT_TYPE (MR_CAST_TO_PTR (X)), MR_ARRAY_SIZE (X), X)
 
