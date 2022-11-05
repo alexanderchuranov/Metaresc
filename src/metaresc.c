@@ -1394,6 +1394,8 @@ mr_type_void_fields_impl (char * type, char * name, ...)
   va_list args;
   va_start (args, name);
 
+  mr_conf_init ();
+
   if (type == NULL)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);

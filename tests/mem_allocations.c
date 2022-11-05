@@ -56,7 +56,7 @@ get_number_of_memory_ops (int n, void callback (mr_res_t * res))
 static void
 check_mem_ops_complexity (void callback (mr_res_t * res), char * method)
 { 
-  mr_detect_type (NULL);
+  mr_detect_type (NULL); /* explicitly init library */
   mr_mem = mr_conf.mr_mem;
   mr_conf.mr_mem.calloc = _calloc;
   mr_conf.mr_mem.realloc = _realloc;

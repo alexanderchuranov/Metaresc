@@ -124,7 +124,7 @@ TYPEDEF_STRUCT (void_function_field_t,
 		VOID (void, (*func), (void)));
 
 START_TEST (check_void_function_field) {
-  mr_detect_type (NULL);
+  mr_detect_type (NULL); /* explicitly init library */
 
   mr_td_t * tdp = mr_get_td_by_name ("void_function_field_t");
   ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type void_function_field_t.");
@@ -180,7 +180,7 @@ TYPEDEF_STRUCT (ext_struct_t,
 #define ASSERT_EXT_STRUCT_FIELD_TYPE_PTR(FIELD) ASSERT_FIELD_TYPE (ext_struct_t, FIELD, MR_TYPE_POINTER, MR_TYPE_DETECT_PTR (__typeof__ (((ext_struct_t*)0)->FIELD)))
 
 START_TEST (check_ext_struct) {
-  mr_detect_type (NULL);
+  mr_detect_type (NULL); /* explicitly init library */
   
   mr_td_t * tdp = mr_get_td_by_name ("ext_struct_t");
   ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type ext_struct_t.");
@@ -255,7 +255,7 @@ START_TEST (check_basic_type_array_autodetect) {
 } END_TEST
 
 START_TEST (check_types_detection) {
-  mr_detect_type (NULL);
+  mr_detect_type (NULL); /* explicitly init library */
 
   ASSERT_STRUCT_FIELD_TYPE (bool_, MR_TYPE_BOOL);
   ASSERT_STRUCT_FIELD_TYPE (int8_, MR_TYPE_INT8);
