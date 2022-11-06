@@ -480,13 +480,6 @@ mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (mr_cmp_ptrdes (&ra_ptrdes->ra[x.intptr], &ra_ptrdes->ra[y.intptr]));
 }
 
-mr_hash_value_t
-mr_untyped_ptrdes_get_hash (const mr_ptr_t x, const void * context)
-{
-  const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (ra_ptrdes->ra[x.intptr].data.uintptr);
-}
-
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -1437,7 +1430,7 @@ mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
   mr_save_data->ptrs.ptrdes_type = MR_PD_SAVE;
 #define MR_IC_METHOD MR_IC_HASH
   mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
-  mr_ic_new (&mr_save_data->untyped_ptrs, mr_untyped_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data->untyped_ptrs, mr_typed_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
   mr_ic_new (&mr_save_data->union_discriminators, mr_uds_get_hash, mr_uds_cmp, "intptr", MR_IC_METHOD, &context);
 
   mr_save_data->mr_ra_ud_size = 0;
