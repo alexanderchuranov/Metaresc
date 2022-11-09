@@ -32,9 +32,6 @@ test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
 AC_PROG_LEX
 
-AC_PATH_PROG(DSYMUTIL_PATH, [dsymutil], [not found])
-AM_CONDITIONAL([HAVE_DSYMUTIL], test "$DSYMUTIL_PATH" != "not found")
-
 AM_CFLAGS=""
 for aux_CFLAGS in -ffast-math -Wall -Werror -O2 -g -Wno-initializer-overrides -Wno-bitfield-constant-conversion
 do

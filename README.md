@@ -374,9 +374,7 @@ sample_no_types: sample.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 sample_types.o: sample_types.c sample_types.h
 sample_types.h: sample_no_types
-ifeq ($(shell uname), Darwin)
-	dsymutil $?
-endif
+	type dsymutil && dsymutil $?
 	../Metaresc/src/mr_dwarf $? > $@
 
 clean:

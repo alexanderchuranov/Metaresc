@@ -45,15 +45,11 @@ endif
 
 dw_export.$(OBJEXT): dw_export.h dw_types.h
 dw_export.h: ../src/libmetaresc.la
-if HAVE_DSYMUTIL
-	dsymutil ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?`
-endif
+	type dsymutil && dsymutil ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?`
 	../src/mr_dwarf ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
 
 dw_types.h: dw_types$(EXEEXT)
-if HAVE_DSYMUTIL
-	dsymutil .libs/$?
-endif
+	type dsymutil && dsymutil .libs/$?
 	../src/mr_dwarf .libs/$? > $@
 
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)

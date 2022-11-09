@@ -21,8 +21,6 @@ dwarf_no_types_SOURCES = dwarf.c
 dwarf_types.c: dwarf_types.h
 
 dwarf_types.h: dwarf_no_types$(EXEEXT)
-if HAVE_DSYMUTIL
-	dsymutil .libs/$?
-endif
+	type dsymutil && dsymutil .libs/$?
 	../src/mr_dwarf .libs/$? > $@
 
