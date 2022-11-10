@@ -374,7 +374,7 @@ sample_no_types: sample.o
 	$(LINK.c) $^ $(LOADLIBES) $(LDLIBS) -o $@
 sample_types.o: sample_types.c sample_types.h
 sample_types.h: sample_no_types
-	type dsymutil && dsymutil $? || echo "dsymutil no found"
+	type dsymutil && dsymutil $? || echo "dsymutil not found"
 	../Metaresc/src/mr_dwarf $? > $@
 
 clean:
