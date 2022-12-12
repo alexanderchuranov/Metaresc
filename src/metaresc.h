@@ -117,8 +117,11 @@
     long unsigned long int, long unsigned int long, int unsigned long long, \
     long long unsigned int, long int unsigned long, int long unsigned long, \
     long long int unsigned, long int long unsigned, int long long unsigned, \
-    float, double, long double,						\
-    complex float, complex double, complex long double
+    float, double, long double, double long,				\
+    complex float, complex double, complex long double, complex double long, \
+    float complex, double complex,					\
+    long complex double, double complex long,				\
+    long double complex, double long complex
 
 /* each refereed structure will have REF_IDX property */
 #define MR_REF_IDX "ref_idx"
