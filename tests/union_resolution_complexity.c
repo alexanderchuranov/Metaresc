@@ -67,7 +67,7 @@ START_TEST (mr_save_discriminated_union_complexity) {
     size <<= 1;
     base_time = double_time;
     double_time = measure_time_for_n_elements (size);
-  } while (double_time < CLOCKS_PER_SEC / 16);
+  } while (double_time < CLOCKS_PER_SEC / 4);
 
   ck_assert_msg (double_time < (base_time * 5) / 2, "Union resolution is not in constant time (%d vs %d)", double_time, base_time);
 } END_TEST

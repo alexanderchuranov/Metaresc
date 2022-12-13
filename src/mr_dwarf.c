@@ -923,7 +923,9 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   attr = die_attribute (mr_die, _DW_AT_name);
   if (attr == NULL)
     return;
-  
+
+  if (!((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form)))
+    (void)MR_FPRINT (stderr, "Form = ", (mr_dw_form_t, &attr->form), "\n");
   assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
   assert (attr->dw_str != NULL);
 

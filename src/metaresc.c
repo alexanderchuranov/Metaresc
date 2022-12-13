@@ -835,7 +835,7 @@ mr_fd_t *
 mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value)
 {
   unsigned idx;
-  void * key = (char*)&value - offsetof (mr_fd_t, param.enum_param._unsigned); /* (mr_fd_t[]){{ .param = { .enum_param = { value }, }, }}; */
+  void * key = (void*)((uintptr_t)&value - offsetof (mr_fd_t, param.enum_param._unsigned)); /* (mr_fd_t[]){{ .param = { .enum_param = { value }, }, }}; */
   mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
   int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_fd_enum_value_cmp, NULL, &idx);
   return (diff ? NULL : tdp->fields[idx].fdp);
@@ -851,7 +851,7 @@ mr_fd_t *
 mr_get_enum_by_name (char * name)
 {
   mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), }; 
-  void * key = (char*)&hashed_name - offsetof (mr_fd_t, name);
+  void * key = (void*)((uintptr_t)&hashed_name - offsetof (mr_fd_t, name));
   mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, key);
   return (result ? result->ptr : NULL);
 }
@@ -1344,7 +1344,7 @@ mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
   mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), };
-  void * key = (char*)&hashed_name - offsetof (mr_fd_t, name);
+  void * key = (void*)((uintptr_t)&hashed_name - offsetof (mr_fd_t, name));
   mr_ptr_t * result = mr_ic_find (&tdp->field_by_name, key);
   return (result ? result->ptr : NULL);
 }
