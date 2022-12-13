@@ -33,7 +33,7 @@ AC_PROG_YACC
 AC_PROG_LEX
 
 AM_CFLAGS=""
-for aux_CFLAGS in -ffast-math -Wall -Werror -O2 -g -Wno-initializer-overrides -Wno-bitfield-constant-conversion
+for aux_CFLAGS in -ffast-math -Wall -Werror -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion
 do
   save_CFLAGS=${CFLAGS}
   CFLAGS="${CFLAGS} ${aux_CFLAGS}"

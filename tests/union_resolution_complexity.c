@@ -11,27 +11,7 @@ TYPEDEF_STRUCT (a_t,
 		ANON_UNION (),
 		ANON_UNION (),
 		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
-		ANON_UNION (),
 		(uint8_t, x),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
-		END_ANON_UNION (),
 		END_ANON_UNION (),
 		END_ANON_UNION (),
 		END_ANON_UNION (),
@@ -67,7 +47,7 @@ START_TEST (mr_save_discriminated_union_complexity) {
     size <<= 1;
     base_time = double_time;
     double_time = measure_time_for_n_elements (size);
-  } while (double_time < CLOCKS_PER_SEC / 2);
+  } while (double_time < CLOCKS_PER_SEC / 8);
 
   ck_assert_msg (double_time < (base_time * 5) / 2, "Union resolution is not in constant time (%d vs %d)", double_time, base_time);
 } END_TEST
