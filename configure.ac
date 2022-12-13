@@ -88,6 +88,9 @@ if [[ x${with_libdwarf} != xno ]]; then
 fi
 AM_CONDITIONAL(HAVE_LIBDWARF, test x${with_libdwarf} != xno)
 
+AC_ARG_WITH([perftest], AS_HELP_STRING([--without-perftest], [Build without performance tests]))
+AM_CONDITIONAL(HAVE_PERFTEST, test x${with_perftest} != xno)
+
 AC_CHECK_MEMBERS([struct xdr_ops.x_putint32, struct xdr_ops.x_getint32], , , [[#include <rpc/types.h>
 #include <rpc/xdr.h>]])
 

@@ -10,7 +10,11 @@ CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
 
-  check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic btree generic_ic mr_types mem_allocations mr_copy mr_hash_cmp dw_types union_resolution_complexity
+  check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic btree generic_ic mr_types mem_allocations mr_copy mr_hash_cmp dw_types
+
+if HAVE_PERFTEST
+  check_PROGRAMS += union_resolution_complexity
+endif
 
 if HAVE_EXECINFO
   check_PROGRAMS += mf_mr_save mf_mr_copy
@@ -18,6 +22,9 @@ endif
 
 if HAVE_XDR
   check_PROGRAMS += smoke_xdr
+if HAVE_PERFTEST
+  check_PROGRAMS += perf_xdr
+endif
 if HAVE_EXECINFO
   check_PROGRAMS += mf_xdr_save mf_xdr_load
 endif
@@ -25,6 +32,9 @@ endif
 
 if HAVE_BISON_FLEX
   check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr
+if HAVE_PERFTEST
+  check_PROGRAMS += perf_cinit perf_json perf_scm perf_xml1
+endif
 if HAVE_EXECINFO
   check_PROGRAMS += mf_cinit_save mf_cinit_load mf_json_save mf_json_load mf_scm_save mf_scm_load mf_xml1_save mf_xml1_load
 endif
@@ -32,6 +42,9 @@ endif
 
 if HAVE_LIBXML2
   check_PROGRAMS += smoke_xml2
+if HAVE_PERFTEST
+  check_PROGRAMS += perf_xml2
+endif
 if HAVE_EXECINFO
   check_PROGRAMS += mf_xml2_save mf_xml2_load
 endif

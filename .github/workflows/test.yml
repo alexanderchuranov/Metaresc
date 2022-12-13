@@ -51,9 +51,9 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison
+        run: ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison --without-perftest
       - name: make check
-        run: make check -j 2 CPPFLAGS="-D SKIP_PERFORMANCE_TEST_XML1=0 -D SKIP_PERFORMANCE_TEST_SCM=0 -D SKIP_PERFORMANCE_TEST_CINIT=0 -D SKIP_PERFORMANCE_TEST_JSON=0"
+        run: make check -j 2
 
   freebsd-clang:
     runs-on: macos-12
@@ -71,8 +71,8 @@ jobs:
             git config --global --add safe.directory `pwd`
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure
-            make check CPPFLAGS="-D SKIP_PERFORMANCE_TEST_XML1=0 -D SKIP_PERFORMANCE_TEST_SCM=0 -D SKIP_PERFORMANCE_TEST_CINIT=0 -D SKIP_PERFORMANCE_TEST_JSON=0"
+            ./configure --without-perftest
+            make check -j 2
 
   windows-gcc:
     runs-on: windows-latest
@@ -92,9 +92,9 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --without-libxml2 --disable-static --enable-shared CPPFLAGS="-D SKIP_PERFORMANCE_TEST_XML1=0 -D SKIP_PERFORMANCE_TEST_SCM=0 -D SKIP_PERFORMANCE_TEST_CINIT=0 -D SKIP_PERFORMANCE_TEST_JSON=0"
+        run: ./configure --without-libxml2 --disable-static --enable-shared --without-perftest
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
-        run: make -j 2 check
+        run: make check -j 2
 
