@@ -7,6 +7,7 @@
 
 #include <metaresc.h>
 #include <mr_ic.h>
+#include <mr_save.h> /* MR_ONE_SHIFT */
 
 #include <dwarf.h>
 #include <libdwarf.h>
@@ -385,10 +386,10 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_sec_offset, = DW_FORM_sec_offset, "dw_off"),
 	      (_DW_FORM_exprloc, = DW_FORM_exprloc),
 	      (_DW_FORM_flag_present, = DW_FORM_flag_present, "dw_flag"),
-	      (_DW_FORM_strx, = DW_FORM_strx),
+	      (_DW_FORM_strx, = DW_FORM_strx, "dw_str"),
 	      (_DW_FORM_addrx, = DW_FORM_addrx),
 	      (_DW_FORM_ref_sup4, = DW_FORM_ref_sup4),
-	      (_DW_FORM_strp_sup, = DW_FORM_strp_sup),
+	      (_DW_FORM_strp_sup, = DW_FORM_strp_sup, "dw_str"),
 	      (_DW_FORM_data16, = DW_FORM_data16),
 	      (_DW_FORM_line_strp, = DW_FORM_line_strp),
 	      (_DW_FORM_ref_sig8, = DW_FORM_ref_sig8, "dw_off"),
@@ -396,10 +397,10 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_loclistx, = DW_FORM_loclistx),
 	      (_DW_FORM_rnglistx, = DW_FORM_rnglistx),
 	      (_DW_FORM_ref_sup8, = DW_FORM_ref_sup8),
-	      (_DW_FORM_strx1, = DW_FORM_strx1),
-	      (_DW_FORM_strx2, = DW_FORM_strx2),
-	      (_DW_FORM_strx3, = DW_FORM_strx3),
-	      (_DW_FORM_strx4, = DW_FORM_strx4),
+	      (_DW_FORM_strx1, = DW_FORM_strx1, "dw_str"),
+	      (_DW_FORM_strx2, = DW_FORM_strx2, "dw_str"),
+	      (_DW_FORM_strx3, = DW_FORM_strx3, "dw_str"),
+	      (_DW_FORM_strx4, = DW_FORM_strx4, "dw_str"),
 	      (_DW_FORM_addrx1, = DW_FORM_addrx1),
 	      (_DW_FORM_addrx2, = DW_FORM_addrx2),
 	      (_DW_FORM_addrx3, = DW_FORM_addrx3),
@@ -409,6 +410,9 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_GNU_ref_alt, = DW_FORM_GNU_ref_alt),
 	      (_DW_FORM_GNU_strp_alt, = DW_FORM_GNU_strp_alt),
 	      )
+
+#define DW_FORM_STRING (0 MR_FOREACH (MR_ONE_SHIFT, _DW_FORM_string, _DW_FORM_strp, _DW_FORM_strx, _DW_FORM_strp_sup, _DW_FORM_strx1, _DW_FORM_strx2, _DW_FORM_strx3, _DW_FORM_strx4))
+#define DW_FORM_UNSIGNED (0 MR_FOREACH (MR_ONE_SHIFT, _DW_FORM_data1, _DW_FORM_data2, _DW_FORM_data4, _DW_FORM_data8, _DW_FORM_udata, _DW_FORM_implicit_const))
 
 TYPEDEF_STRUCT (mr_dw_attribute_t,
 		(mr_dw_attribute_code_t, code),
@@ -458,6 +462,12 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
     {
     case _DW_FORM_string:
     case _DW_FORM_strp:
+    case _DW_FORM_strp_sup:
+    case _DW_FORM_strx:
+    case _DW_FORM_strx1:
+    case _DW_FORM_strx2:
+    case _DW_FORM_strx3:
+    case _DW_FORM_strx4:
       rv = dwarf_formstring (dw_attribute, &mr_attr->dw_str, NULL);
       assert (rv == DW_DLV_OK);
       if (mr_attr->dw_str)
@@ -667,7 +677,7 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  assert (mr_die->attributes[idx].dw_str != NULL);
 	  attr = &mr_die->attributes[idx];
 	}
-      assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
+      assert ((DW_FORM_STRING >> attr->form) & 1);
       assert (attr->dw_str != NULL);
       fdp->type = mr_strdup (attr->dw_str);
       assert (fdp->type != NULL);
@@ -682,14 +692,12 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_byte_size);
   assert (attr != NULL);
-  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-	  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-	  (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
   mr_type_sign.size = attr->dw_unsigned;
 	
   attr = die_attribute (mr_die, _DW_AT_name);
   assert (attr != NULL);
-  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
+  assert ((DW_FORM_STRING >> attr->form) & 1);
   mr_type_sign.type.str = attr->dw_str;
 
   mr_ptr_t * find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
@@ -721,18 +729,14 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
       mr_dw_attribute_t * attr = die_attribute (&mr_die->children[i], _DW_AT_count);
       if (attr != NULL)
 	{
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-		  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-		  (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
 	  dimension = attr->dw_unsigned;
 	}
 
       attr = die_attribute (&mr_die->children[i], _DW_AT_upper_bound);
       if (attr != NULL)
 	{
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-		  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-		  (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
 	  dimension = attr->dw_unsigned + 1;
 	}
     }
@@ -816,17 +820,14 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   assert (attr != NULL);
-  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
+  assert ((DW_FORM_STRING >> attr->form) & 1);
   assert (attr->dw_str != NULL);
   fdp->name.str = mr_strdup (attr->dw_str);
   assert (fdp->name.str != NULL);
 
   attr = die_attribute (mr_die, _DW_AT_const_value);
   assert (attr != NULL);
-  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-	  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-	  (_DW_FORM_udata == attr->form) || (_DW_FORM_sdata == attr->form) ||
-	  (_DW_FORM_implicit_const == attr->form));
+  assert (((DW_FORM_UNSIGNED >> attr->form) & 1) || (_DW_FORM_sdata == attr->form));
 
   if (_DW_FORM_sdata == attr->form)
     {
@@ -848,7 +849,7 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   if (attr != NULL)
     {
-      assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
+      assert ((DW_FORM_STRING >> attr->form) & 1);
       assert (attr->dw_str != NULL);
       fdp->name.str = mr_strdup (attr->dw_str);
       assert (fdp->name.str != NULL);
@@ -859,37 +860,28 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-	      (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-	      (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
       fdp->size = attr->dw_unsigned;
     }
   
   attr = die_attribute (mr_die, _DW_AT_data_member_location);
   if (attr != NULL)
     {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-	      (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-	      (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form) ||
-	      (_DW_FORM_block1 == attr->form));
+      assert (((DW_FORM_UNSIGNED >> attr->form) & 1) || (_DW_FORM_block1 == attr->form));
       fdp->offset = attr->dw_unsigned;
     }
 
   attr = die_attribute (mr_die, _DW_AT_bit_size);
   if (attr != NULL)
     {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-	      (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-	      (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
       fdp->mr_type = MR_TYPE_BITFIELD;
       fdp->param.bitfield_param.width = attr->dw_unsigned;
 
       attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
       if (attr != NULL)
 	{
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-		  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-		  (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
 	  fdp->param.bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
 	  fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
 	}
@@ -897,9 +889,7 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       attr = die_attribute (mr_die, _DW_AT_bit_offset);
       if (attr != NULL)
 	{
-	  assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-		  (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-		  (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);	  
 	  fdp->param.bitfield_param.shift = fdp->size * __CHAR_BIT__ - fdp->param.bitfield_param.width - attr->dw_unsigned;
 	  fdp->offset += fdp->param.bitfield_param.shift / __CHAR_BIT__;
 	  fdp->param.bitfield_param.shift %= __CHAR_BIT__;
@@ -924,9 +914,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (attr == NULL)
     return;
 
-  if (!((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form)))
-    (void)MR_FPRINT (stderr, "Form = ", (mr_dw_form_t, &attr->form), "\n");
-  assert ((_DW_FORM_strp == attr->form) || (_DW_FORM_string == attr->form));
+  assert ((DW_FORM_STRING >> attr->form) & 1);
   assert (attr->dw_str != NULL);
 
   /* skip types that are already extracted */
@@ -1002,9 +990,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
-      assert ((_DW_FORM_data1 == attr->form) || (_DW_FORM_data2 == attr->form) ||
-	      (_DW_FORM_data4 == attr->form) || (_DW_FORM_data8 == attr->form) ||
-	      (_DW_FORM_udata == attr->form) || (_DW_FORM_implicit_const == attr->form));
+      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);	  
       tdp->size = attr->dw_unsigned;
     }
 
@@ -1271,15 +1257,10 @@ free_die (mr_die_t * mr_die)
   int i;
 
   for (i = 0; i < mr_die->attributes_size / sizeof (mr_die->attributes[0]); ++i)
-    switch (mr_die->attributes[i].form)
+    if ((DW_FORM_STRING >> mr_die->attributes[i].form) & 1)
       {
-      case _DW_FORM_string:
-      case _DW_FORM_strp:
 	if (mr_die->attributes[i].dw_str)
 	  MR_FREE (mr_die->attributes[i].dw_str);
-	break;
-      default:
-	break;
       }
   
   if (mr_die->attributes)
