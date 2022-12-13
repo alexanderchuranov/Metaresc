@@ -33,7 +33,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CC=clang
+        run: ./configure CC=clang CFLAGS=-gdwarf-4
       - name: make check
         run: make check -j 2
       - name: check with valgrind
