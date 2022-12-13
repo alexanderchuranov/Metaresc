@@ -52,9 +52,8 @@
   }									\
 									\
   START_TEST (test_performance) {					\
-    MR_IF_ELSE (MR_PASTE2 (SKIP_PERFORMANCE_TEST_, METHOD)) ()(return;)	\
-      int size = 1 << 8;						\
     mr_detect_type (NULL);						\
+    int size = 1 << 8;							\
     int base_time, double_time = test_run (size);			\
     do {								\
       size <<= 1;							\
@@ -72,7 +71,7 @@
     SRunner * srunner = srunner_create (suite);				\
     if (NULL == srunner)						\
       return (EXIT_FAILURE);						\
-    TCase * tcase = tcase_create ("mr_conf save/load");			\
+    TCase * tcase = tcase_create ("performance test");			\
     if (NULL == tcase)							\
       return (EXIT_FAILURE);						\
     tcase_set_timeout (tcase, 0);					\

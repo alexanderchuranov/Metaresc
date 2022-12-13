@@ -1,5 +1,0 @@
-#include <perf.h>
-
-#define SKIP_PERFORMANCE_TEST_XDR 0
-
-TEST_PERFORMANCE (XDR)

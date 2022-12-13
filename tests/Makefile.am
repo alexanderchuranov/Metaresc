@@ -22,9 +22,6 @@ endif
 
 if HAVE_XDR
   check_PROGRAMS += smoke_xdr
-if HAVE_PERFTEST
-  check_PROGRAMS += perf_xdr
-endif
 if HAVE_EXECINFO
   check_PROGRAMS += mf_xdr_save mf_xdr_load
 endif
@@ -42,9 +39,6 @@ endif
 
 if HAVE_LIBXML2
   check_PROGRAMS += smoke_xml2
-if HAVE_PERFTEST
-  check_PROGRAMS += perf_xml2
-endif
 if HAVE_EXECINFO
   check_PROGRAMS += mf_xml2_save mf_xml2_load
 endif
