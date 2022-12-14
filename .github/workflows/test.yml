@@ -9,13 +9,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
-        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3 libtirpc-dev
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CC=gcc
+        run: ./configure CC=gcc CPPFLAGS=-Itirpc
       - name: make check
         run: make check -j 2
       - name: check with valgrind
@@ -27,13 +27,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
-        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3 libtirpc-dev
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CC=clang CFLAGS=""
+        run: ./configure CC=clang CPPFLAGS=-Itirpc CFLAGS=""
       - name: make check
         run: make check -j 2
       - name: check with valgrind
