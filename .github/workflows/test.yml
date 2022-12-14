@@ -15,7 +15,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CC=gcc CFLAGS=-I/usr/include/tirpc
+        run: ./configure CC=gcc CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc
       - name: make check
         run: make check -j 2
       - name: check with valgrind
@@ -33,7 +33,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CC=clang CFLAGS=-I/usr/include/tirpc
+        run: ./configure CC=clang CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc
       - name: make check
         run: make check -j 2
       - name: check with valgrind
