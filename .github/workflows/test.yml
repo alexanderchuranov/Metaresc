@@ -9,7 +9,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
-        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3 portablexdr-dev
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: install dependencies
-        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3 portablexdr-dev
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
@@ -86,7 +86,7 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-check mingw-w64-x86_64-toolchain python3 libxml2-devel
+          install: base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-check mingw-w64-x86_64-toolchain python3
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
