@@ -45,6 +45,7 @@ purposes far beyond just achieving the persistence.
         - [Recursive memory deallocation](#recursive-memory-deallocation)
         - [Objects hashing](#objects-hashing)
         - [Comparation of structures](#comparation-of-structures)
+        - [Generic sorting](#generic-sorting)
         - [Structure of serialization graph](#structure-of-serialization-graph)
         - [Access and structure of type descriptor](#access-and-structure-of-type-descriptor)
         - [Access and structure of field descriptor](#access-and-structure-of-field-descriptor)
@@ -1169,6 +1170,7 @@ representation enables a set of extra features, such as:
 - [Recursive memory deallocation](#recursive-memory-deallocation)
 - [Objects hashing](#objects-hashing)
 - [Comparation of structures](#comparation-of-structures)
+- [Generic sorting](#generic-sorting)
 
 ### Deep copy
 `MR_COPY_RECURSIVELY` is similar to `MR_LOAD_*` macroses. It may take
@@ -1273,7 +1275,7 @@ copy3 = {
 Macro `MR_HASH_STRUCT` takes two arguments `(type, pointer)` and
 returns unsigned integer value of type
 `mr_hash_value_t`. Non-serializable fields (declared as `VOID ()` or
-of types not known to Metadata) are not used for hashing. Typed
+of types not known to Metaresc) are not used for hashing. Typed
 pointers and strings are hashed based on content value, but not a
 pointer value. Copies derived by `MR_COPY_RECURSIVELY` have identical
 hash values as an original object.
@@ -1283,6 +1285,8 @@ hash values as an original object.
 pointer2)`. It takes two pointers of the same type and returns
 integrer value that represents result of structures
 comparation. Non-serializable fields are not used for comparation.
+
+### Generic sorting
 
 ### Structure of serialization graph
 `MR_SAVE` mr_ptrs_dfs

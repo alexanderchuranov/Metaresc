@@ -1,12 +1,18 @@
 
-/* Define to 1 if you have the <rpc/types.h> header file. */
-#undef HAVE_RPC_TYPES_H 
-
 /* Bison & Flex found */
 #undef HAVE_BISON_FLEX
 
+/* define if __builtin_dump_struct is present */
+#undef HAVE_BUILTIN_DUMP_STRUCT
+
+/* define if __builtin_dump_struct supports extra args */
+#undef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+
 /* Libxml2 found */
 #undef HAVE_LIBXML2
+
+/* Define to 1 if you have the <rpc/types.h> header file. */
+#undef HAVE_RPC_TYPES_H
 
 /* Preprocessor routines depth */
 #undef MR_PP_DEPTH

@@ -44,10 +44,6 @@
 # include <rpc/xdr.h>
 #endif /* HAVE_RPC_TYPES_H */
 
-#ifdef HAVE_CONFIG_H
-# include <mr_config.h>
-#endif /* HAVE_CONFIG_H */
-
 #ifdef _GNU_SOURCE_UNDEFINED
 # undef _GNU_SOURCE_UNDEFINED
 # undef _GNU_SOURCE

@@ -7,10 +7,6 @@
 %option extra-type="mr_load_t*"
 %option prefix="mr_json_"
 %{
-#ifdef HAVE_CONFIG_H
-# include <mr_config.h>
-#endif /* HAVE_CONFIG_H */
-
 #include <string.h>
 #include <complex.h>
 #include <math.h>

@@ -2,10 +2,6 @@
 /* I hate this bloody country. Smash. */
 /* This file is part of Metaresc project */
 
-#ifdef HAVE_CONFIG_H
-# include <mr_config.h>
-#endif /* HAVE_CONFIG_H */
-
 #define __USE_GNU
 #define _GNU_SOURCE
 #include <stdio.h>
