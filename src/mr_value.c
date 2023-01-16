@@ -78,41 +78,12 @@ mr_get_enum (char * str, uint64_t * data)
 static char *
 mr_get_int (char * str, uint64_t * data)
 {
-  int offset;
   while (isspace (*str))
     ++str;
   if (isalpha (*str))
     str = mr_get_enum (str, data);
-  else if ('0' == *str)
-    {
-      if ('x' == str[1])
-	{
-	  if (1 != sscanf (str, "%" SCNx64 "%n", data, &offset))
-	    {
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_INT, str);
-	      return (NULL);
-	    }
-	}
-      else
-	{
-	  if (1 != sscanf (str, "%" SCNo64 "%n", data, &offset))
-	    {
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_INT, str);
-	      return (NULL);
-	    }
-	}
-      str += offset;
-    }
   else
-    {
-      if ((1 == sscanf (str, "%" SCNu64 "%n", data, &offset)) || (1 == sscanf (str, "%" SCNd64 "%n", data, &offset)))
-	str += offset;
-      else
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_INT, str);
-	  return (NULL);
-	}
-    }
+    *data = strtoull (str, &str, 0);
   return (str);
 }
 

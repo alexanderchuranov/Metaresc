@@ -106,7 +106,7 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       char * type = MR_VOIDP_T_STR;
       if ((MR_TYPE_FUNC != ptrdes->mr_type) && (ptrdes->tdp != NULL))
 	type = ptrdes->tdp->type.str;
-      return (mr_ra_printf (mr_ra_str, "(%s)0x%llx", type, (long long unsigned int)(uintptr_t)*(void**)ptrdes->data.ptr));
+      return (mr_ra_printf (mr_ra_str, "(%s)0x%llx", type, (long long unsigned int)*(uintptr_t*)ptrdes->data.ptr));
     }
 }
 

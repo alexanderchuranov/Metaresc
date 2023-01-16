@@ -24,8 +24,8 @@
 WS	[[:space:]]*
 ID	[_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [+-]?[[:digit:]]+
-HEX_NUMBER (0x|0X)[[:xdigit:]]+
-NUMBER {INT_NUMBER}|{HEX_NUMBER}
+HEX_NUMBER [+-]?#(x|X)[[:xdigit:]]+
+OCT_NUMBER [+-]?#(o|O)[[0-7]]+
 FLOAT_NAN [+-]?[Nn][Aa][Nn]
 FLOAT_INF [+-]?[Ii][Nn][Ff]
 FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?
@@ -34,7 +34,9 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 
 [[:space:]]+  { return (TOK_SCM_WS); }
 
-{NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (yytext, NULL, 0); return (TOK_SCM_NUMBER); }
+{INT_NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (yytext, NULL, 10); return (TOK_SCM_NUMBER); }
+{HEX_NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (&yytext[2], NULL, 16); return (TOK_SCM_NUMBER); }
+{OCT_NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (&yytext[2], NULL, 8); return (TOK_SCM_NUMBER); }
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_SCM_NUMBER); }
 {IMAGENARY_NUMBER} {
   yylval->value.value_type = MR_VT_COMPLEX;
