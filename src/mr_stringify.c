@@ -82,7 +82,7 @@ int mr_ra_printf_int128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes
   if (value < 0)
     {
       negative = true;
-      value = -value;
+      value = ~value + 1; /* clang has a bug so that -(1 << 127) == 0 */
     }
   char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
   if (negative)
