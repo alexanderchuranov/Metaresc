@@ -18,19 +18,19 @@ TYPEDEF_ENUM (enum16_discriminator_t,
 	      ATTRIBUTES (__attribute__ ((packed))),
 	      (U16D_FLOAT, , "x"),
 	      (U16D_INT32, , "y"),
-	      (U16D_LAST, = 1ULL << __CHAR_BIT__ * (sizeof (uint16_t) >> 1)))
+	      (U16D_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint16_t) - 1)))
 
 TYPEDEF_ENUM (enum32_discriminator_t,
 	      ATTRIBUTES (__attribute__ ((packed))),
 	      (U32D_FLOAT, , "x"),
 	      (U32D_INT32, , "y"),
-	      (U32D_LAST, = 1ULL << __CHAR_BIT__ * (sizeof (uint32_t) >> 1)))
+	      (U32D_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint32_t) - 1)))
 
 TYPEDEF_ENUM (enum64_discriminator_t,
 	      ATTRIBUTES (__attribute__ ((packed))),
 	      (U64D_FLOAT, , "x"),
 	      (U64D_INT32, , "y"),
-	      (U64D_LAST, = 1ULL << __CHAR_BIT__ * (sizeof (uint64_t) >> 1)))
+	      (U64D_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)))
 
 TYPEDEF_STRUCT (struct_embed_anon_union_t,
 		int dummy,

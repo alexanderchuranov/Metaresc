@@ -25,11 +25,11 @@ TYPEDEF_ENUM (mr_bitmask_t,
 TYPEDEF_ENUM (mr_enum_uint8_t, ATTRIBUTES (__attribute__ ((packed))),
 	      UINT8_ZERO, UINT8_ONE, (UINT8_TWO, = 2), (UINT8_THREE, = 3))
 TYPEDEF_ENUM (mr_enum_uint16_t, ATTRIBUTES (__attribute__ ((packed))),
-	      UINT16_ZERO, UINT16_ONE, (UINT16_TWO, = 2), (UINT16_THREE, = 3), (UINT16_LAST, = 1ULL << __CHAR_BIT__ * (sizeof (uint16_t) >> 1)))
+	      UINT16_ZERO, UINT16_ONE, (UINT16_TWO, = 2), (UINT16_THREE, = 3), (UINT16_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint16_t) - 1)))
 TYPEDEF_ENUM (mr_enum_uint32_t, ATTRIBUTES (__attribute__ ((packed))),
-	      UINT32_ZERO, UINT32_ONE, (UINT32_TWO, = 2), (UINT32_THREE, = 3), (UINT32_LAST, = 1ULL << __CHAR_BIT__ * (sizeof (uint32_t) >> 1)))
+	      UINT32_ZERO, UINT32_ONE, (UINT32_TWO, = 2), (UINT32_THREE, = 3), (UINT32_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint32_t) - 1)))
 TYPEDEF_ENUM (mr_enum_uint64_t, ATTRIBUTES (__attribute__ ((packed))),
-	      UINT64_ZERO, UINT64_ONE, (UINT64_TWO, = 2), (UINT64_THREE, = 3), (UINT64_LAST, = 1ULL << __CHAR_BIT__ * (sizeof (uint64_t) >> 1)))
+	      UINT64_ZERO, UINT64_ONE, (UINT64_TWO, = 2), (UINT64_THREE, = 3), (UINT64_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)))
 
 TYPEDEF_STRUCT (struct_mr_enum_t, (mr_enum_t, x))
 TYPEDEF_STRUCT (struct_mr_enum_uint8_t, (mr_enum_uint8_t, x))

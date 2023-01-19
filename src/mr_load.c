@@ -153,8 +153,11 @@ mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
 
   switch (ptrdes->mr_type)
     {
-#define CASE_SET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
+#define CASE_SET_VALUE_BY_TYPE(TYPE) CASE_SET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define CASE_SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
       MR_FOREACH (CASE_SET_VALUE_BY_TYPE, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+      CASE_SET_VALUE_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
+      CASE_SET_VALUE_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
       
     case MR_TYPE_ENUM:
       switch (ptrdes->fdp->size)
@@ -771,6 +774,8 @@ static mr_load_handler_t mr_load_handler[MR_TYPE_LAST] =
     [MR_TYPE_UINT32] = mr_load_integer,
     [MR_TYPE_INT64] = mr_load_integer,
     [MR_TYPE_UINT64] = mr_load_integer,
+    [MR_TYPE_INT128] = mr_load_integer,
+    [MR_TYPE_UINT128] = mr_load_integer,
     [MR_TYPE_FLOAT] = mr_load_float,
     [MR_TYPE_COMPLEX_FLOAT] = mr_load_complex,
     [MR_TYPE_DOUBLE] = mr_load_float,

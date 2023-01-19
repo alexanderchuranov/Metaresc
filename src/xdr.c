@@ -466,6 +466,14 @@ XDR_INT_TYPE (int32_t)
 XDR_INT_TYPE (uint64_t)
 XDR_INT_TYPE (int64_t)
 
+static mr_status_t _xdr_uint128_t (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
+{
+  uint64_t * u64 = ptrs->ra[idx].data.ptr;
+  if (!xdr_uint64_t (xdrs, &u64[0]))
+    return (MR_FAILURE);
+  return (xdr_uint64_t (xdrs, &u64[1]) ? MR_SUCCESS : MR_FAILURE);
+}
+
 /**
  * Handler for type float.
  * @param xdrs XDR stream descriptor
@@ -791,6 +799,7 @@ mr_xdr_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
     case sizeof (uint16_t): return (_xdr_uint16_t (xdrs, idx, ptrs));
     case sizeof (uint32_t): return (_xdr_uint32_t (xdrs, idx, ptrs));
     case sizeof (uint64_t): return (_xdr_uint64_t (xdrs, idx, ptrs));
+    case sizeof (mr_uint128_t): return (_xdr_uint128_t (xdrs, idx, ptrs));
     }
   return (MR_FAILURE);
 }
@@ -804,6 +813,7 @@ mr_xdr_bool (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
     case sizeof (uint16_t): return (_xdr_uint16_t (xdrs, idx, ptrs));
     case sizeof (uint32_t): return (_xdr_uint32_t (xdrs, idx, ptrs));
     case sizeof (uint64_t): return (_xdr_uint64_t (xdrs, idx, ptrs));
+    case sizeof (mr_uint128_t): return (_xdr_uint128_t (xdrs, idx, ptrs));
     }
   return (MR_FAILURE);
 }
@@ -1029,6 +1039,8 @@ static xdr_handler_t xdr_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_UINT32] = _xdr_uint32_t,
     [MR_TYPE_INT64] = _xdr_int64_t,
     [MR_TYPE_UINT64] = _xdr_uint64_t,
+    [MR_TYPE_INT128] = _xdr_uint128_t,
+    [MR_TYPE_UINT128] = _xdr_uint128_t,
     [MR_TYPE_FLOAT] = xdr_float_,
     [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float,
     [MR_TYPE_DOUBLE] = xdr_double_,
@@ -1097,6 +1109,8 @@ static xdr_handler_t xdr_load_handler[MR_TYPE_LAST] =
     [MR_TYPE_UINT32] = _xdr_uint32_t,
     [MR_TYPE_INT64] = _xdr_int64_t,
     [MR_TYPE_UINT64] = _xdr_uint64_t,
+    [MR_TYPE_INT128] = _xdr_uint128_t,
+    [MR_TYPE_UINT128] = _xdr_uint128_t,
     [MR_TYPE_FLOAT] = xdr_float_,
     [MR_TYPE_COMPLEX_FLOAT] = xdr_complex_float,
     [MR_TYPE_DOUBLE] = xdr_double_,

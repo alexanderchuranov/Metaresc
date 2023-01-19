@@ -137,17 +137,27 @@ done
 AC_MSG_CHECKING(uncovered int type)
 AC_MSG_RESULT(${UNCOVERED_TYPE})
 
+AC_MSG_CHECKING(size of uncovered int type)
 for TYPE_SIZE in 8 16 32 64
 do
   AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[#include <stdint.h>]], [[ (int)sizeof (struct { int:-!!(sizeof (uint${TYPE_SIZE}_t) != sizeof (${UNCOVERED_TYPE})); }); ]])], [ SIZEOF_UNCOVERED_TYPE=${TYPE_SIZE} ])
 done
-AC_MSG_CHECKING(size of uncovered int type)
 AC_MSG_RESULT(${SIZEOF_UNCOVERED_TYPE})
 
 AC_DEFINE_UNQUOTED(MR_UNCOVERED_TYPE, ${UNCOVERED_TYPE}, [int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 AC_DEFINE_UNQUOTED(MR_SIZEOF_UNCOVERED_TYPE, ${SIZEOF_UNCOVERED_TYPE}, [sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (int)sizeof (struct { int:-!!(sizeof (long double) != sizeof (double)); }); ]])], [ AC_DEFINE(MR_LONG_DOUBLE_IS_DOUBLE, [], [define if long double is double]) ])
+AC_MSG_CHECKING(if long double is double)
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (void)sizeof (struct { int:-!!(sizeof (long double) != sizeof (double)); }); ]])], [ AC_DEFINE(MR_LONG_DOUBLE_IS_DOUBLE, [], [define if long double is double]) LONG_DOUBLE_IS_DOUBLE=yes ], [ LONG_DOUBLE_IS_DOUBLE=no ])
+AC_MSG_RESULT(${LONG_DOUBLE_IS_DOUBLE})
+
+AC_MSG_CHECKING(if __int128 is supported)
+AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (void)(__int128)0; ]])], [ HAVE_INT128=yes], [ HAVE_INT128=no ])
+AC_MSG_RESULT(${HAVE_INT128})
+AM_CONDITIONAL(HAVE_INT128, test x${HAVE_INT128} = xyes)
+if [[ x${HAVE_INT128} = xyes ]]; then
+  AC_DEFINE(MR_HAVE_INT128, [], [define if __int128 is supported])
+fi
 
 AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile examples/Makefile])
 AC_OUTPUT

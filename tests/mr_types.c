@@ -32,6 +32,8 @@ TYPEDEF_STRUCT (struct_t,
 		uint32_t uint32_,
 		int64_t int64_,
 		uint64_t uint64_,
+		(mr_intmax_t, mr_intmax),
+		(mr_uintmax_t, mr_uintmax),
 		float float_,
 		complex float complex_float_,
 		double double_,
@@ -266,6 +268,10 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (uint32_, MR_TYPE_UINT32);
   ASSERT_STRUCT_FIELD_TYPE (int64_, MR_TYPE_INT64);
   ASSERT_STRUCT_FIELD_TYPE (uint64_, MR_TYPE_UINT64);
+#ifdef HAVE_INT128
+  ASSERT_STRUCT_FIELD_TYPE (mr_intmax, MR_TYPE_INT128);
+  ASSERT_STRUCT_FIELD_TYPE (mr_uintmax, MR_TYPE_UINT128);
+#endif /* HAVE_INT128 */
 
   ASSERT_STRUCT_FIELD_TYPE (float_, MR_TYPE_FLOAT);
   ASSERT_STRUCT_FIELD_TYPE (complex_float_, MR_TYPE_COMPLEX_FLOAT);

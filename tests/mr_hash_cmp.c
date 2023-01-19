@@ -35,6 +35,8 @@ TYPEDEF_STRUCT (all_t,
 		uint32_t _uint32,
 		int64_t _int64,
 		uint64_t _uint64,
+		(mr_intmax_t, mr_intmax),
+		(mr_uintmax_t, mr_uintmax),
 		float _float,
 		complex float _complex_float,
 		double _double,
@@ -108,59 +110,73 @@ START_TEST (mr_hash_cmp_all_types) {
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._int8 = 1;
+  x._int8 = (int8_t)(((int8_t)1) << (__CHAR_BIT__ * sizeof (int8_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._int8 = 1;
+  y._int8 = (int8_t)(((int8_t)1) << (__CHAR_BIT__ * sizeof (int8_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._uint8 = 1;
+  x._uint8 = (uint8_t)(((uint8_t)1) << (__CHAR_BIT__ * sizeof (uint8_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._uint8 = 1;
+  y._uint8 = (uint8_t)(((uint8_t)1) << (__CHAR_BIT__ * sizeof (uint8_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._int16 = 1;
+  x._int16 = (int16_t)(((int16_t)1) << (__CHAR_BIT__ * sizeof (int16_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._int16 = 1;
+  y._int16 = (int16_t)(((int16_t)1) << (__CHAR_BIT__ * sizeof (int16_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._uint16 = 1;
+  x._uint16 = (uint16_t)(((uint16_t)1) << (__CHAR_BIT__ * sizeof (uint16_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._uint16 = 1;
+  y._uint16 = (uint16_t)(((uint16_t)1) << (__CHAR_BIT__ * sizeof (uint16_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._int32 = 1;
+  x._int32 = (int32_t)(((int32_t)1) << (__CHAR_BIT__ * sizeof (int32_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._int32 = 1;
+  y._int32 = (int32_t)(((int32_t)1) << (__CHAR_BIT__ * sizeof (int32_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._uint32 = 1;
+  x._uint32 = (uint32_t)(((uint32_t)1) << (__CHAR_BIT__ * sizeof (uint32_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._uint32 = 1;
+  y._uint32 = (uint32_t)(((uint32_t)1) << (__CHAR_BIT__ * sizeof (uint32_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._int64 = 1;
+  x._int64 = (int64_t)(((int64_t)1) << (__CHAR_BIT__ * sizeof (int64_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._int64 = 1;
+  y._int64 = (int64_t)(((int64_t)1) << (__CHAR_BIT__ * sizeof (int64_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 
-  x._uint64 = 1;
+  x._uint64 = (uint64_t)(((uint64_t)1) << (__CHAR_BIT__ * sizeof (uint64_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
-  y._uint64 = 1;
+  y._uint64 = (uint64_t)(((uint64_t)1) << (__CHAR_BIT__ * sizeof (uint64_t) - 1));
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
+
+  x.mr_intmax = (mr_intmax_t)(((mr_intmax_t)1) << (__CHAR_BIT__ * sizeof (mr_intmax_t) - 1));
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
+  y.mr_intmax = (mr_intmax_t)(((mr_intmax_t)1) << (__CHAR_BIT__ * sizeof (mr_intmax_t) - 1));
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
+
+  x.mr_uintmax = (mr_uintmax_t)(((mr_uintmax_t)1) << (__CHAR_BIT__ * sizeof (mr_uintmax_t) - 1));
+  ck_assert_msg (MR_HASH_STRUCT (all_t, &x) != MR_HASH_STRUCT (all_t, &y), "match of hash for non-identical structs");
+  ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) != 0, "wrong equals check for non-identical structs");
+  y.mr_uintmax = (mr_uintmax_t)(((mr_uintmax_t)1) << (__CHAR_BIT__ * sizeof (mr_uintmax_t) - 1));
   ck_assert_msg (MR_HASH_STRUCT (all_t, &x) == MR_HASH_STRUCT (all_t, &y), "mismatch of hash for identical structs");
   ck_assert_msg (MR_CMP_STRUCTS (all_t, &x, &y) == 0, "wrong equals check for identical structs");
 

@@ -53,14 +53,50 @@ MR_RA_PRINTF_TMPLT (double, "%.17g")
 #define __SCNu8 SCNu8
 #endif /* __SCNu8 */
   
-MR_RA_PRINTF_TMPLT (int8_t, "%" __SCNi8)
-MR_RA_PRINTF_TMPLT (uint8_t, "%" __SCNu8)
-MR_RA_PRINTF_TMPLT (int16_t, "%" SCNi16)
-MR_RA_PRINTF_TMPLT (uint16_t, "%" SCNu16)
-MR_RA_PRINTF_TMPLT (int32_t, "%" SCNi32)
-MR_RA_PRINTF_TMPLT (uint32_t, "%" SCNu32)
-MR_RA_PRINTF_TMPLT (int64_t, "%" SCNi64)
-MR_RA_PRINTF_TMPLT (uint64_t, "%" SCNu64)
+MR_RA_PRINTF_TMPLT (int8_t, "%" __SCNi8);
+MR_RA_PRINTF_TMPLT (uint8_t, "%" __SCNu8);
+MR_RA_PRINTF_TMPLT (int16_t, "%" SCNi16);
+MR_RA_PRINTF_TMPLT (uint16_t, "%" SCNu16);
+MR_RA_PRINTF_TMPLT (int32_t, "%" SCNi32);
+MR_RA_PRINTF_TMPLT (uint32_t, "%" SCNu32);
+MR_RA_PRINTF_TMPLT (int64_t, "%" SCNi64);
+MR_RA_PRINTF_TMPLT (uint64_t, "%" SCNu64);
+
+static char *
+mr_uintmaxtostr (char * out, mr_uintmax_t value)
+{
+  *--out = 0;
+  do {
+    *--out = '0' + value % 10;
+    value /= 10;
+  } while (value != 0);
+  return (out);
+}
+
+int mr_ra_printf_int128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  mr_intmax_t value = *(mr_intmax_t*)ptrdes->data.ptr;
+  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
+  bool negative = false;
+
+  if (value < 0)
+    {
+      negative = true;
+      value = -value;
+    }
+  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
+  if (negative)
+    *--out = '-';
+  return (mr_ra_append_string (mr_ra_str, out));
+}
+
+int mr_ra_printf_uint128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  mr_uintmax_t value = *(mr_uintmax_t*)ptrdes->data.ptr;
+  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
+  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
+  return (mr_ra_append_string (mr_ra_str, out));
+}
 
 #define MR_RA_PRINTF_COMPLEX(TYPE, SUFFIX)				\
   int mr_ra_printf_complex_ ## SUFFIX (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)	\
@@ -110,6 +146,8 @@ MR_RA_PRINTF_TYPE (int32_t, MR_TYPE_INT32);
 MR_RA_PRINTF_TYPE (uint32_t, MR_TYPE_UINT32);
 MR_RA_PRINTF_TYPE (int64_t, MR_TYPE_INT64);
 MR_RA_PRINTF_TYPE (uint64_t, MR_TYPE_UINT64);
+MR_RA_PRINTF_TYPE (int128_t, MR_TYPE_INT128);
+MR_RA_PRINTF_TYPE (uint128_t, MR_TYPE_UINT128);
 MR_RA_PRINTF_TYPE (float, MR_TYPE_FLOAT);
 MR_RA_PRINTF_TYPE (double, MR_TYPE_DOUBLE);
 MR_RA_PRINTF_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);

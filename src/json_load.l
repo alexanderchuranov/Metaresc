@@ -34,7 +34,7 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUM
 "false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_JSON_NUMBER); }
 "true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_JSON_NUMBER); }
 
-{INT_NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = strtoull (yytext, NULL, 0); return (TOK_JSON_NUMBER); }
+{INT_NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 0); return (TOK_JSON_NUMBER); }
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_JSON_NUMBER); }
 
 "\""([^\"\\]|\\.)*"\"" {

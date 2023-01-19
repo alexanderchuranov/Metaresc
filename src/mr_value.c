@@ -29,7 +29,7 @@ enum_names_visitor (mr_ptr_t key, const void * context)
  * @return A pointer on the rest of parsed string
  */
 static char *
-mr_get_enum (char * str, uint64_t * data)
+mr_get_enum (char * str, mr_uintmax_t * data)
 {
   static int enum_max_length = 0;
   if (0 == enum_max_length)
@@ -76,24 +76,24 @@ mr_get_enum (char * str, uint64_t * data)
  * @return A pointer on the rest of parsed string
  */
 static char *
-mr_get_int (char * str, uint64_t * data)
+mr_get_int (char * str, mr_uintmax_t * data)
 {
   while (isspace (*str))
     ++str;
   if (isalpha (*str))
     str = mr_get_enum (str, data);
   else
-    *data = strtoull (str, &str, 0);
+    *data = mr_strtouintmax (str, &str, 0);
   return (str);
 }
 
 static char * 
 mr_load_bitmask (char * str, mr_value_t * mr_value)
 {
-  uint64_t accum = 0;
+  mr_uintmax_t accum = 0;
   for (;;)
     {
-      uint64_t value;
+      mr_uintmax_t value;
       str = mr_get_int (str, &value);
       if (NULL == str)
 	return (NULL);

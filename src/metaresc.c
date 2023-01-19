@@ -32,8 +32,8 @@
 MR_FOREACH (MR_TYPEDEF_DESC_BI,
 	    MR_BUILTIN_TYPES,
 	    char *, char*, va_list,
-	    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t,
-	    mr_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
+	    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t,
+	    mr_uintmax_t, mr_intmax_t, mr_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
 	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, mr_enum_value_type_t, long_double_t,
 	    complex_float_t, complex_double_t, complex_long_double_t);
 
@@ -1014,7 +1014,7 @@ mr_type_size (mr_type_t mr_type)
       [MR_TYPE_FUNC_TYPE] = sizeof (void*),
       MR_FOREACH (MR_TYPE_SIZE,
 		  string_t, char, bool,
-		  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+		  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
 		  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };
 
@@ -1588,6 +1588,8 @@ mr_validate_fd (mr_fd_t * fdp)
     case MR_TYPE_UINT32:
     case MR_TYPE_INT64:
     case MR_TYPE_UINT64:
+    case MR_TYPE_INT128:
+    case MR_TYPE_UINT128:
     case MR_TYPE_FLOAT:
     case MR_TYPE_COMPLEX_FLOAT:
     case MR_TYPE_DOUBLE:
@@ -1735,7 +1737,7 @@ mr_detect_type (mr_fd_t * fdp)
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
 		string_t, char, bool,
-		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t,
+		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
 		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };
 
@@ -1786,6 +1788,54 @@ mr_detect_type (mr_fd_t * fdp)
       (fdp->mr_type > 0) && (fdp->mr_type < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[fdp->mr_type])
       fdp->type = fdp->name.str = type_name[fdp->mr_type];
+}
+
+mr_uintmax_t
+mr_strtouintmax (char * s, char ** endptr, int base)
+{
+  mr_uintmax_t acc = 0;
+
+  while (isspace (s[0]))
+    ++s;
+
+  bool neg = (s[0] == '-');
+
+  if ((s[0] == '+') || (s[0] == '-'))
+    ++s;
+
+  if (((base == 0) || (base == 16)) &&
+      (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X')))
+    {
+      s += 2;
+      base = 16;
+    }
+  if (base == 0)
+    base = (s[0] == '0') ? 8 : 10;
+
+  for ( ; ; ++s)
+    {
+      unsigned int c = s[0];
+
+      if (isdigit (c))
+	c -= '0';
+      else if (isalpha (c))
+	c -= isupper (c) ? 'A' - 10 : 'a' - 10;
+      else
+	break;
+
+      if (c >= base)
+	break;
+
+      acc = acc * base + c;
+    }
+
+  if (neg)
+    acc = -acc;
+
+  if (endptr != NULL)
+    *endptr = s;
+
+  return (acc);
 }
 
 /**

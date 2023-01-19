@@ -117,7 +117,8 @@
     complex float, complex double, complex long double, complex double long, \
     float complex, double complex,					\
     long complex double, double complex long,				\
-    long double complex, double long complex
+    long double complex, double long complex				\
+    MR_BUILTIN_TYPES_INT128
 
 /* each refereed structure will have REF_IDX property */
 #define MR_REF_IDX "ref_idx"
@@ -185,6 +186,8 @@
    | (__builtin_types_compatible_p (uint32_t SUFFIX, TYPE) ? MR_TYPE_UINT32 : 0) \
    | (__builtin_types_compatible_p (int64_t SUFFIX, TYPE) ? MR_TYPE_INT64 : 0) \
    | (__builtin_types_compatible_p (uint64_t SUFFIX, TYPE) ? MR_TYPE_UINT64 : 0) \
+   | (__builtin_types_compatible_p (mr_int128_t SUFFIX, TYPE) ? MR_TYPE_INT128 : 0) \
+   | (__builtin_types_compatible_p (mr_uint128_t SUFFIX, TYPE) ? MR_TYPE_UINT128 : 0) \
    | (__builtin_types_compatible_p (MR_UNCOVERED_TYPE SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
    | (__builtin_types_compatible_p (unsigned MR_UNCOVERED_TYPE SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_UNCOVERED_TYPE) : 0) \
    | (__builtin_types_compatible_p (float SUFFIX, TYPE) ? MR_TYPE_FLOAT : 0) \
@@ -1256,6 +1259,24 @@ typedef struct mr_dummy_struct_t {
 typedef __typeof__ (offsetof (mr_dummy_struct_t, dummy_field)) mr_offset_t;
 typedef __typeof__ (sizeof (0)) mr_size_t;
 
+#ifdef MR_HAVE_INT128
+
+#define MR_BUILTIN_TYPES_INT128 , __int128, signed __int128, __int128 signed, unsigned __int128, __int128 unsigned
+typedef unsigned __int128 mr_uintmax_t;
+typedef signed __int128 mr_intmax_t;
+typedef unsigned __int128 mr_uint128_t;
+typedef signed __int128 mr_int128_t;
+
+#else /* HAVE_INT128 */
+
+#define MR_BUILTIN_TYPES_INT128
+typedef unsigned long long int mr_uintmax_t;
+typedef signed long long int mr_intmax_t;
+typedef uint64_t mr_uint128_t[2];
+typedef int64_t mr_int128_t[2];
+
+#endif
+
 #ifndef MR_MODE
 #define MR_MODE_UNDEFINED
 #define MR_MODE PROTO
@@ -1278,6 +1299,7 @@ extern int mr_get_struct_type_name (const char * fmt, ...);
 extern int mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...);
 
 extern mr_status_t mr_add_type (mr_td_t * tdp);
+extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
 extern void mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data);

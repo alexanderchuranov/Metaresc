@@ -97,6 +97,8 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      (MR_TYPE_UINT32, , "_unsigned"),
 	      (MR_TYPE_INT64, , "_signed"),
 	      (MR_TYPE_UINT64, , "_unsigned"),
+	      (MR_TYPE_INT128, , "_signed"),
+	      (MR_TYPE_UINT128, , "_unsigned"),
 	      MR_TYPE_FLOAT,
 	      MR_TYPE_COMPLEX_FLOAT,
 	      MR_TYPE_DOUBLE,
@@ -571,7 +573,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		VOID (uint8_t, default_serialization, , "no serialization by default"),
 		(mr_complex_long_double_t, vt_complex),
 		(mr_quoted_substr_t, vt_quoted_substr),
-		long long int vt_int,
+		(mr_intmax_t, vt_int),
 		long double vt_float,
 		string_t vt_string,
 		char vt_char,
@@ -604,6 +606,8 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
     { MR_TYPE_UINT32, "data" },					\
     { MR_TYPE_INT64, "data" },					\
     { MR_TYPE_UINT64, "data" },					\
+    { MR_TYPE_INT128, "data" },					\
+    { MR_TYPE_UINT128, "data" },				\
     { MR_TYPE_FLOAT, "data" },					\
     { MR_TYPE_COMPLEX_FLOAT, "data" },				\
     { MR_TYPE_DOUBLE, "data" },					\

@@ -12,6 +12,10 @@ if HAVE_CHECK
 
   check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic btree generic_ic mr_types mem_allocations mr_copy mr_hash_cmp dw_types
 
+if HAVE_INT128
+  check_PROGRAMS += int128
+endif
+
 if HAVE_PERFTEST
   check_PROGRAMS += union_resolution_complexity
 endif

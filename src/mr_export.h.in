@@ -24,3 +24,6 @@
 /* int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t
    */
 #undef MR_UNCOVERED_TYPE
+
+/* define if __int128 is supported */
+#undef MR_HAVE_INT128

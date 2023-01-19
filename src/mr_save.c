@@ -60,8 +60,9 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
     {
       switch (mr_type) /* switch over basic types */
 	{
-#define CASE_RETURN_BY_TYPE(TYPE)					\
-	  case MR_TYPE_DETECT (TYPE):					\
+#define CASE_RETURN_BY_TYPE(TYPE) CASE_RETURN_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define CASE_RETURN_BY_TYPE_(TYPE, MR_TYPE)				\
+	  case MR_TYPE:							\
 	    {								\
 	      mr_fd_t * fdp = mr_ud_override_value (ud_overrides, *(TYPE*)discriminator); \
 	      if (fdp)							\
@@ -70,6 +71,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    }
 
 	  MR_FOREACH (CASE_RETURN_BY_TYPE, bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	  CASE_RETURN_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
+	  CASE_RETURN_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
 
 	case MR_TYPE_BITFIELD:
 	  {
@@ -432,6 +435,8 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_UINT32:
     case MR_TYPE_INT64:
     case MR_TYPE_UINT64:
+    case MR_TYPE_INT128:
+    case MR_TYPE_UINT128:
     case MR_TYPE_FLOAT:
     case MR_TYPE_COMPLEX_FLOAT:
     case MR_TYPE_DOUBLE:
@@ -730,7 +735,8 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 	
 	switch (tdp->param.enum_param.mr_type_effective)
 	  {
-#define GET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): value = *(TYPE*)src_data; break;
+#define GET_VALUE_BY_TYPE(TYPE) GET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define GET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: value = *(TYPE*)src_data; break;
 	    MR_FOREACH (GET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 	  default:
 	    break;
@@ -739,6 +745,8 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
       }
       
       MR_FOREACH (GET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+      GET_VALUE_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
+      GET_VALUE_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
 
     case MR_TYPE_BITFIELD:
       mr_save_bitfield_value (src, &value); /* get value of the bitfield */
@@ -765,7 +773,8 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 	
 	switch (tdp->param.enum_param.mr_type_effective)
 	  {
-#define SET_VALUE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)dst_data = value; break;
+#define SET_VALUE_BY_TYPE(TYPE) SET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: *(TYPE*)dst_data = value; break;
 	    MR_FOREACH (SET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 	  default:
 	    break;
@@ -774,6 +783,8 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
       }
 
       MR_FOREACH (SET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+      SET_VALUE_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
+      SET_VALUE_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
 
     case MR_TYPE_BITFIELD:
       mr_load_bitfield_value (dst, &value); /* set value of the bitfield */
