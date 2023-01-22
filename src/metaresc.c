@@ -1835,7 +1835,7 @@ mr_strtouintmax (char * str, char ** endptr, int base)
 
 	  acc = acc * base + c;
 	}
-g
+
       if (neg)
 	acc = -acc;
     }
