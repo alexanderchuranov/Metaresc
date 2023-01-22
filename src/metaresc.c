@@ -769,9 +769,9 @@ mr_add_enum (mr_td_t * tdp)
 
 	  MR_FOREACH (CASE_SET_TYPE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 	default:
-	  tdp->param.enum_param.mr_type_effective = MR_TYPE_UINT8;
-	  tdp->param.enum_param.size_effective = sizeof (uint8_t);
-	  tdp->size = sizeof (uint8_t);
+	  tdp->param.enum_param.mr_type_effective = MR_TYPE_DETECT (int);
+	  tdp->param.enum_param.size_effective = sizeof (int);
+	  tdp->size = sizeof (int);
 	  break;
 	}
       break;
@@ -1112,6 +1112,8 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       case MR_TYPE_INT32:
       case MR_TYPE_UINT32:
       case MR_TYPE_INT64:
+      case MR_TYPE_UINT128:
+      case MR_TYPE_INT128:
       case MR_TYPE_UINT64:
       case MR_TYPE_FLOAT:
       case MR_TYPE_COMPLEX_FLOAT:
@@ -1791,9 +1793,10 @@ mr_detect_type (mr_fd_t * fdp)
 }
 
 mr_uintmax_t
-mr_strtouintmax (char * s, char ** endptr, int base)
+mr_strtouintmax (char * str, char ** endptr, int base)
 {
   mr_uintmax_t acc = 0;
+  char * s = str;
 
   while (isspace (s[0]))
     ++s;
@@ -1803,34 +1806,39 @@ mr_strtouintmax (char * s, char ** endptr, int base)
   if ((s[0] == '+') || (s[0] == '-'))
     ++s;
 
-  if (((base == 0) || (base == 16)) &&
-      (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X')))
+  if (!isdigit (*s))
+    s = str;
+  else
     {
-      s += 2;
-      base = 16;
+      if (((base == 0) || (base == 16)) &&
+	  (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X')))
+	{
+	  s += 2;
+	  base = 16;
+	}
+      if (base == 0)
+	base = (s[0] == '0') ? 8 : 10;
+
+      for ( ; ; ++s)
+	{
+	  unsigned int c = s[0];
+
+	  if (isdigit (c))
+	    c -= '0';
+	  else if (isalpha (c))
+	    c -= isupper (c) ? 'A' - 10 : 'a' - 10;
+	  else
+	    break;
+
+	  if (c >= base)
+	    break;
+
+	  acc = acc * base + c;
+	}
+g
+      if (neg)
+	acc = -acc;
     }
-  if (base == 0)
-    base = (s[0] == '0') ? 8 : 10;
-
-  for ( ; ; ++s)
-    {
-      unsigned int c = s[0];
-
-      if (isdigit (c))
-	c -= '0';
-      else if (isalpha (c))
-	c -= isupper (c) ? 'A' - 10 : 'a' - 10;
-      else
-	break;
-
-      if (c >= base)
-	break;
-
-      acc = acc * base + c;
-    }
-
-  if (neg)
-    acc = -acc;
 
   if (endptr != NULL)
     *endptr = s;

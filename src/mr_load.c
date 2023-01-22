@@ -180,35 +180,37 @@ mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
   return (MR_SUCCESS);
 }
 
-static void *
-mr_get_func (char * func_name)
+static mr_status_t
+mr_get_func_wrapper (char * func_name, void * dst)
 {
   if (NULL == func_name)
-    return (NULL);
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (MR_FAILURE);
+    }
 
   void * func_addr = NULL;
 #ifdef HAVE_LIBDL
   func_addr = dlsym (RTLD_DEFAULT, func_name);
 #endif /* HAVE_LIBDL */
   if (func_addr != NULL)
-    return (func_addr);
-
-  if (1 == sscanf (func_name, "%p", &func_addr))
-    return (func_addr);
-
-  return (NULL);
-}
-
-static mr_status_t
-mr_get_func_wrapper (char * func_name, void * dst)
-{
-  void * func_addr = mr_get_func (func_name);
-  if (NULL == func_name)
+    *(void**)dst = func_addr;
+  else
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_FUNC, func_name);
-      return (MR_FAILURE);
+      char * end = NULL;
+      mr_uintmax_t ptr = mr_strtouintmax (func_name, &end, 0);
+
+      while (isspace (*end))
+	++end;
+      if (*end != 0)
+	{
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_FUNC, func_name);
+	  return (MR_FAILURE);
+	}
+
+      *(void**)dst = (void*)(uintptr_t)ptr;
     }
-  *(void**)dst = func_addr;
+
   return (MR_SUCCESS);
 }
 

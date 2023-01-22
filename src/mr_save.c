@@ -1127,6 +1127,8 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type);
+  if (fd_.size == 0)
+    return (1);
   count = mr_save_data->ptrs.ra[idx].MR_SIZE / fd_.size;
 
   for (i = 0; i < count; )

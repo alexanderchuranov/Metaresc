@@ -1,6 +1,7 @@
 #ifndef _FLT_VALUES_H_
 #define _FLT_VALUES_H_
 
+#include <math.h>
 #include <metaresc.h>
 
 #ifdef HAVE_CONFIG_H

@@ -202,7 +202,7 @@ xml_ra_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   if (func_str)
     return (mr_ra_append_string (mr_ra_str, (char*)func_str));
   else
-    return (mr_ra_printf (mr_ra_str, "%p", *(void**)ptrdes->data.ptr));
+    return (mr_ra_printf (mr_ra_str, "0x%llx", (unsigned long long int)*(uintptr_t*)ptrdes->data.ptr));
 }
 
 /**
