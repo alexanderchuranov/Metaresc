@@ -140,7 +140,7 @@ TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classific
 	      /* MR_LANG_TYPE_CLASS, */
 	      )
     
-TYPEDEF_ENUM (mr_sign_t, (PLUS, = 0), (MINUS, = 1))
+TYPEDEF_ENUM (mr_sign_t, (MR_PLUS, = 0), (MR_MINUS, = 1))
 
 #define IEEE_754_HALF_MANTISSA (10)
 #define IEEE_754_HALF_EXPONENT (5)
@@ -219,7 +219,7 @@ TYPEDEF_STRUCT (ieee_754_double_nan_t,
 		BITFIELD (uint32_t, exponent, : IEEE_754_DOUBLE_EXPONENT),
 		BITFIELD (mr_sign_t, sign, : 1))
 
-  TYPEDEF_ENUM (ieee_754_double_nan_enum_t, (IEEE_754_DOUBLE_NAN_ENUM_T, = (1 << IEEE_754_DOUBLE_EXPONENT) - 1, "ieee_754_double_nan"))
+TYPEDEF_ENUM (ieee_754_double_nan_enum_t, (IEEE_754_DOUBLE_NAN_ENUM_T, = (1 << IEEE_754_DOUBLE_EXPONENT) - 1, "ieee_754_double_nan"))
 
 TYPEDEF_UNION (ieee_double_t,
 	       ANON_UNION (),
