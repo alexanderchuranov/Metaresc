@@ -89,6 +89,15 @@ static int ic_index_cb (mr_ic_t * ic, char * mr_ic_type)
 
 START_TEST (ic_index) { ic_types_foreach (ic_index_cb); } END_TEST
 
+static int ic_index_non_empty_cb (mr_ic_t * ic, char * mr_ic_type)
+{
+  mr_ptr_t x = { .uintptr = 4, }; /* value which is not presented in mr_ic_rarray.ra */
+  ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
+  return (ic_index_cb (ic, mr_ic_type));
+}
+
+START_TEST (ic_index_non_empty) { ic_types_foreach (ic_index_non_empty_cb); } END_TEST
+
 static int ic_add_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   uint32_t mask = 0;
@@ -211,7 +220,8 @@ static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
 START_TEST (ic_find_added) { ic_types_foreach (ic_find_add_cb); } END_TEST
 
 MAIN_TEST_SUITE ((ic_empty, "Check empty ic"),
-		 (ic_index, "Check indexing"),
+		 (ic_index, "Check indexing of empty collection"),
+		 (ic_index_non_empty, "Check indexing of non empty collection"),
 		 (ic_add_empty, "Check add to empty collection"),
 		 (ic_add_indexed, "Add existing element to indexed collection"),
 		 (ic_add_non_indexed, "Add new element to indexed collection"),

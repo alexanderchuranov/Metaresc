@@ -241,38 +241,67 @@ mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key)
 	  &ic->rarray.ra[idx] : NULL);
 }
 
+TYPEDEF_STRUCT (mr_sort_context_t,
+		(mr_ptr_t *, rarray, , "input array for indexing"),
+		(mr_compar_fn_t, compar_fn, , "sorting function"),
+		(typeof (((mr_ic_t*)0)->context.data.ptr), context_data_ptr, , "context pointer for sorting function"),
+		);
+
 static int
 mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_ic_t * ic = context;
-  const mr_ptr_t * x_ = x.ptr;
-  const mr_ptr_t * y_ = y.ptr;
-  return (ic->compar_fn (*x_, *y_, ic->context.data.ptr));
+  const mr_sort_context_t * mr_sort_context = context;
+  const mr_ptr_t * _x = x.ptr;
+  const mr_ptr_t * _y = y.ptr;
+  /* First compare values */
+  int diff = mr_sort_context->compar_fn (mr_sort_context->rarray[_x->uintptr],
+					 mr_sort_context->rarray[_y->uintptr],
+					 mr_sort_context->context_data_ptr);
+  if (diff)
+    return (diff);
+  /* If values are equal sort by indexes in input array */
+  return ((_x->uintptr > _y->uintptr) - (_x->uintptr < _y->uintptr));
 }
 
 mr_status_t
 mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
+  ic->items_count = 0;
+  ic->rarray.size = 0;
   unsigned items_count = size / sizeof (rarray[0]);
   if (items_count > 0)
     {
-      ic->rarray.ra = MR_CALLOC (items_count, sizeof (rarray[0]));
-      if (NULL == ic->rarray.ra)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (MR_FAILURE);
-	}
+      mr_ptr_t * add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, items_count * sizeof (ic->rarray.ra[0]));
+      if (NULL == add)
+	return (MR_FAILURE);
 
-      memcpy (ic->rarray.ra, rarray, items_count * sizeof (rarray[0]));
-      mr_hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, ic);
+      /*
+	Heap sort is not a stable sort. As a result elements with equal keys might come out in an arbitrary oerder.
+	To achieve stable sorting here we will sort array of indexes in original array. After that will make deduplication
+	and finally replace indexes on values from the input array.
+       */
+      unsigned i;
+      for (i = 0; i < items_count; ++i)
+	ic->rarray.ra[i].uintptr = i;
+      mr_sort_context_t mr_sort_context = {
+	.rarray = rarray,
+	.compar_fn = ic->compar_fn,
+	.context_data_ptr = ic->context.data.ptr,
+      };
 
+      mr_hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, &mr_sort_context);
+
+      /* Deduplicate equal elements */
       unsigned src, dst = 0;
       ic->rarray.ra[dst++] = ic->rarray.ra[0];
       for (src = 1; src < items_count; ++src)
-	if (ic->compar_fn (ic->rarray.ra[src], ic->rarray.ra[src - 1], ic->context.data.ptr) != 0)
+	if (ic->compar_fn (rarray[ic->rarray.ra[src].uintptr], rarray[ic->rarray.ra[src - 1].uintptr], ic->context.data.ptr) != 0)
 	  ic->rarray.ra[dst++] = ic->rarray.ra[src];
+
+      /* Replase indexes on values from the input array */
+      for (i = 0; i < dst; ++i)
+	ic->rarray.ra[i] = rarray[ic->rarray.ra[i].uintptr];
       
-      ic->rarray.alloc_size = items_count * sizeof (ic->rarray.ra[0]); /* allocated array size */
       ic->items_count = dst; /* after deduplication actual number of elements might be lower */
       ic->rarray.size = ic->items_count * sizeof (ic->rarray.ra[0]); /* used array size */
     }
@@ -397,19 +426,28 @@ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
 static mr_status_t
 mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
 {
-  mr_ic_hash_free (dst_ic);
+  dst_ic->hash.zero_key = false;
+  dst_ic->items_count = 0;
 
   if (0 == src_ic->items_count)
     return (MR_SUCCESS);
 
   unsigned count = (src_ic->items_count << 2) + 6;
-  dst_ic->hash.hash_table = MR_CALLOC (count, sizeof (dst_ic->hash.hash_table[0]));
-  if (NULL == dst_ic->hash.hash_table)
+  typeof (dst_ic->hash.hash_table) hash_table = dst_ic->hash.hash_table;
+  if (dst_ic->hash.size < count * sizeof (dst_ic->hash.hash_table[0]))
+    {
+      dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
+      hash_table = MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.size);
+    }
+
+  if (NULL == hash_table)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      mr_ic_hash_free (dst_ic);
       return (MR_FAILURE);
     }
-  dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
+  dst_ic->hash.hash_table = hash_table;
+  memset (hash_table, 0, dst_ic->hash.size);
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
 }
 
@@ -781,8 +819,10 @@ mr_ic_tree_free (mr_ic_t * ic)
 
 mr_status_t mr_ic_tree_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
-  int i;
-  for (i = size / sizeof (rarray[0]) - 1; i >= 0; --i)
+  /* Add elements into the tree in the natuaral order. In case of equal elements only first will be added. */
+  int i, count = size / sizeof (rarray[0]);
+  mr_tree_reserve (&ic->tree, count, true);
+  for (i = 0; i < count; ++i)
     if (NULL == mr_ic_add (ic, rarray[i]))
       return (MR_FAILURE);
 

@@ -23,6 +23,29 @@ mr_tree_free (mr_tree_t * tree)
   mr_tree_init (tree);
 }
 
+mr_status_t
+mr_tree_reserve (mr_tree_t * tree, unsigned items_count, bool reset)
+{
+  if (reset)
+    tree->size = 0;
+
+  if (0 == items_count)
+    return (MR_SUCCESS);
+
+  ++items_count; /* add extra slot for root node */
+
+  if (tree->size >= items_count * sizeof (tree->pool[0]))
+    {
+      typeof (tree->size) tree_size = tree->size;
+      typeof (tree->pool) extra = mr_rarray_allocate_element
+	((void**)&tree->pool, &tree->size, &tree->alloc_size, items_count * sizeof (tree->pool[0]) - tree_size);
+      if (NULL == extra)
+	return (MR_FAILURE);
+      tree->size = tree_size;
+    }
+  return (MR_SUCCESS);
+}
+
 static unsigned
 mr_tree_node_new (mr_tree_t * tree)
 {
