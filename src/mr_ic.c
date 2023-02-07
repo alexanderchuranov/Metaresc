@@ -1,6 +1,6 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of Metaresc project */
+/* This file is a part of Metaresc project */
 
 #include <string.h>
 
@@ -276,7 +276,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 	return (MR_FAILURE);
 
       /*
-	Heap sort is not a stable sort. As a result elements with equal keys might come out in an arbitrary oerder.
+	Heap sort is not a stable sort. As a result elements with equal keys might come out in an arbitrary order.
 	To achieve stable sorting here we will sort array of indexes in original array. After that will make deduplication
 	and finally replace indexes on values from the input array.
        */
@@ -298,7 +298,7 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 	if (ic->compar_fn (rarray[ic->rarray.ra[src].uintptr], rarray[ic->rarray.ra[src - 1].uintptr], ic->context.data.ptr) != 0)
 	  ic->rarray.ra[dst++] = ic->rarray.ra[src];
 
-      /* Replase indexes on values from the input array */
+      /* Replace indexes on values from the input array */
       for (i = 0; i < dst; ++i)
 	ic->rarray.ra[i] = rarray[ic->rarray.ra[i].uintptr];
       
@@ -432,22 +432,22 @@ mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
   if (0 == src_ic->items_count)
     return (MR_SUCCESS);
 
-  unsigned count = (src_ic->items_count << 2) + 6;
-  typeof (dst_ic->hash.hash_table) hash_table = dst_ic->hash.hash_table;
+  unsigned count = (src_ic->items_count << 2) + 6; /* 6 is a magic constant found in a manual performance test */
+
   if (dst_ic->hash.size < count * sizeof (dst_ic->hash.hash_table[0]))
     {
       dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
-      hash_table = MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.size);
+      typeof (dst_ic->hash.hash_table) hash_table = MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.size);
+      if (NULL == hash_table)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  mr_ic_hash_free (dst_ic);
+	  return (MR_FAILURE);
+	}
+      dst_ic->hash.hash_table = hash_table;
     }
-
-  if (NULL == hash_table)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      mr_ic_hash_free (dst_ic);
-      return (MR_FAILURE);
-    }
-  dst_ic->hash.hash_table = hash_table;
-  memset (hash_table, 0, dst_ic->hash.size);
+      
+  memset (dst_ic->hash.hash_table, 0, dst_ic->hash.size);
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
 }
 

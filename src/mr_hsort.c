@@ -1,6 +1,6 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of Metaresc project */
+/* This file is a part of Metaresc project */
 
 #include <stddef.h> /* size_t */
 #include <string.h> /* memcpy */

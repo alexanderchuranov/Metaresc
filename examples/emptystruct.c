@@ -1,5 +1,5 @@
 /* -*- C -*- */
-/* This file is part of Metaresc project */
+/* This file is a part of Metaresc project */
 
 #include <stdio.h>
 #include <stdlib.h>

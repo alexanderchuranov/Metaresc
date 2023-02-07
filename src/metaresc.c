@@ -1,6 +1,6 @@
 /* -*- C -*- */
 /* I hate this bloody country. Smash. */
-/* This file is part of Metaresc project */
+/* This file is a part of Metaresc project */
 
 #define __USE_GNU
 #define _GNU_SOURCE
