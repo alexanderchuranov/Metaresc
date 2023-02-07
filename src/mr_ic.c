@@ -424,30 +424,31 @@ mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
 }
 
 static mr_status_t
-mr_ic_hash_reindex (mr_ic_t * src_ic, mr_ic_t * dst_ic)
+mr_ic_hash_reindex (mr_ic_t * dst_ic, mr_ic_t * src_ic)
 {
   dst_ic->hash.zero_key = false;
   dst_ic->items_count = 0;
 
-  if (0 == src_ic->items_count)
-    return (MR_SUCCESS);
-
-  unsigned count = (src_ic->items_count << 2) + 6; /* 6 is a magic constant found in a manual performance test */
-
-  if (dst_ic->hash.size < count * sizeof (dst_ic->hash.hash_table[0]))
+  if (0 != src_ic->items_count)
     {
-      dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
-      typeof (dst_ic->hash.hash_table) hash_table = MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.size);
-      if (NULL == hash_table)
+      unsigned count = (src_ic->items_count << 2) + 6; /* 6 is a magic constant found in a manual performance test */
+
+      if (dst_ic->hash.size < count * sizeof (dst_ic->hash.hash_table[0]))
 	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  mr_ic_hash_free (dst_ic);
-	  return (MR_FAILURE);
+	  dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
+	  typeof (dst_ic->hash.hash_table) hash_table = MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.size);
+	  if (NULL == hash_table)
+	    {
+	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	      mr_ic_hash_free (dst_ic);
+	      return (MR_FAILURE);
+	    }
+	  dst_ic->hash.hash_table = hash_table;
 	}
-      dst_ic->hash.hash_table = hash_table;
     }
-      
-  memset (dst_ic->hash.hash_table, 0, dst_ic->hash.size);
+
+  if ((NULL != dst_ic->hash.hash_table) && (0 != dst_ic->hash.size))
+    memset (dst_ic->hash.hash_table, 0, dst_ic->hash.size);
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
 }
 
@@ -463,7 +464,7 @@ mr_ic_hash_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
   if (MR_SUCCESS != status)
     return (status);
   
-  status = mr_ic_hash_reindex (&ic_unsorted_array, ic);
+  status = mr_ic_hash_reindex (ic, &ic_unsorted_array);
   mr_ic_free (&ic_unsorted_array);
 
   return (status);
@@ -482,7 +483,7 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key)
       if (MR_SUCCESS != mr_ic_hash_new (&dst_ic, ic->hash.hash_fn, ic->compar_fn, ic->key_type, &ic->context))
 	return (NULL);
       ++ic->items_count;
-      if (MR_SUCCESS != mr_ic_hash_reindex (ic, &dst_ic))
+      if (MR_SUCCESS != mr_ic_hash_reindex (&dst_ic, ic))
 	return (NULL);
 
       mr_ic_free (ic);
