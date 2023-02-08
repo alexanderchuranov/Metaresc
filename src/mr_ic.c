@@ -706,8 +706,6 @@ mr_ic_static_array_free (mr_ic_t * ic)
 
 mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
-  int i;
-  
   if (size > sizeof (ic->static_array.static_array))
     {
       mr_status_t status = mr_ic_sorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
@@ -715,8 +713,11 @@ mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t si
 	return (status);
       return (mr_ic_index (ic, rarray, size));
     }
+
+  size /= sizeof (rarray[0]);
   
-  for (i = size / sizeof (rarray[0]) - 1; i >= 0; --i)
+  int i;
+  for (i = 0; i < size; ++i)
     mr_ic_add (ic, rarray[i]);
 
   return (MR_SUCCESS);

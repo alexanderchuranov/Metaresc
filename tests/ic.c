@@ -6,6 +6,18 @@
 
 #include <mr_ic.h>
 
+#define MR_IC_INIT(TYPE) [MR_IC_##TYPE] = #TYPE
+
+static char *
+mr_ic_types[] = {
+  MR_IC_INIT (UNSORTED_ARRAY),
+  MR_IC_INIT (SORTED_ARRAY),
+  MR_IC_INIT (HASH),
+  MR_IC_INIT (STATIC_ARRAY),
+  MR_IC_INIT (RBTREE),
+  MR_IC_INIT (AVLTREE),
+};
+
 static mr_hash_value_t
 uintptr_t_get_hash (mr_ptr_t node, const void * context)
 {
@@ -30,26 +42,14 @@ uintptr_t_visitor (mr_ptr_t node, const void * context)
 static void
 ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
 {
-  int i;
-#define MR_IC_INIT(TYPE) [MR_IC_##TYPE] = #TYPE
-
-  static char *
-    mr_ic_types[] = {
-    MR_IC_INIT (UNSORTED_ARRAY),
-    MR_IC_INIT (SORTED_ARRAY),
-    MR_IC_INIT (HASH),
-    MR_IC_INIT (STATIC_ARRAY),
-    MR_IC_INIT (RBTREE),
-    MR_IC_INIT (AVLTREE),
-  };
-
-  for (i = 0; i < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++i)
-    if (mr_ic_types[i] != NULL)
+  int ic_type;
+  for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
+    if (mr_ic_types[ic_type] != NULL)
       {
 	mr_ic_t ic;
-	ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, uintptr_t_get_hash, uintptr_t_cmp, "uintptr", i, NULL),
-		       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[i]);
-	ck_assert_msg (callback (&ic, mr_ic_types[i]), "test failed for mr_ic_type_t %s", mr_ic_types[i]);
+	ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, uintptr_t_get_hash, uintptr_t_cmp, "uintptr", ic_type, NULL),
+		       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
+	ck_assert_msg (callback (&ic, mr_ic_types[ic_type]), "test failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
 	mr_ic_free (&ic);
       }
 }
@@ -97,6 +97,37 @@ static int ic_index_non_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 }
 
 START_TEST (ic_index_non_empty) { ic_types_foreach (ic_index_non_empty_cb); } END_TEST
+
+TYPEDEF_STRUCT (key_value_t,
+		string_t key,
+		ANON_UNION (),
+		VOID (char, unserializible),
+		char value,
+		END_ANON_UNION (),
+		);
+
+static mr_ptr_t kv[] = {
+  { (key_value_t[]){{"key_a", { .value = 'a' }}}},
+  { (key_value_t[]){{"key_x", { .value = 'x' }}}},
+  { (key_value_t[]){{"key_x", { .value = 'X' }}}},
+};
+  
+START_TEST (ic_index_order)
+{
+  int ic_type;
+  for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
+    if (mr_ic_types[ic_type] != NULL)
+      {
+	mr_ic_t ic;
+	ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, NULL, NULL, "key_value_t", ic_type, NULL),
+		       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
+	ck_assert_msg (MR_SUCCESS == mr_ic_index (&ic, kv, sizeof (kv)), "index failed for mr_ic_type %s", mr_ic_types[ic_type]);
+	mr_ptr_t * find = mr_ic_find (&ic, (key_value_t[]){{"key_x"}});
+	ck_assert_msg (find != NULL, "find failed for mr_ic_type %s", mr_ic_types[ic_type]);
+	ck_assert_msg ('x' == ((key_value_t*)(find->ptr))->value, "found value mismatched expected for mr_ic_type %s", mr_ic_types[ic_type]);
+	mr_ic_free (&ic);
+      }
+} END_TEST
 
 static int ic_add_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 {
@@ -222,6 +253,7 @@ START_TEST (ic_find_added) { ic_types_foreach (ic_find_add_cb); } END_TEST
 MAIN_TEST_SUITE ((ic_empty, "Check empty ic"),
 		 (ic_index, "Check indexing of empty collection"),
 		 (ic_index_non_empty, "Check indexing of non empty collection"),
+		 (ic_index_order, "Check indexing order"),
 		 (ic_add_empty, "Check add to empty collection"),
 		 (ic_add_indexed, "Add existing element to indexed collection"),
 		 (ic_add_non_indexed, "Add new element to indexed collection"),
