@@ -102,7 +102,6 @@ mr_ic_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
   if ((NULL == ic) || (NULL == ic->virt_func) || (NULL == ic->virt_func->index))
     return (MR_FAILURE);
-  mr_ic_free (ic);
   return (ic->virt_func->index (ic, rarray, size));
 }
 

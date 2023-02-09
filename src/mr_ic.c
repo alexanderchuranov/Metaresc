@@ -715,6 +715,7 @@ mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t si
     }
 
   size /= sizeof (rarray[0]);
+  ic->items_count = 0;
   
   int i;
   for (i = 0; i < size; ++i)
