@@ -6,17 +6,8 @@
 
 #include <mr_ic.h>
 
-#define MR_IC_INIT(TYPE) [MR_IC_##TYPE] = #TYPE
-
-static char *
-mr_ic_types[] = {
-  MR_IC_INIT (UNSORTED_ARRAY),
-  MR_IC_INIT (SORTED_ARRAY),
-  MR_IC_INIT (HASH),
-  MR_IC_INIT (STATIC_ARRAY),
-  MR_IC_INIT (RBTREE),
-  MR_IC_INIT (AVLTREE),
-};
+#define MR_IC_INIT(TYPE) [MR_IC_##TYPE] = #TYPE,
+static char * mr_ic_types[] = { MR_FOREACH (MR_IC_INIT, UNSORTED_ARRAY, SORTED_ARRAY, STATIC_ARRAY, HASH, RBTREE, AVLTREE) };
 
 static mr_hash_value_t
 uintptr_t_get_hash (mr_ptr_t node, const void * context)

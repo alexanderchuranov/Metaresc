@@ -50,17 +50,8 @@ static type_samples_t type_samples[] = {
 };
 
 START_TEST (generic_ic) {
-#define MR_IC_INIT(TYPE) [MR_IC_##TYPE] = #TYPE
-  static char *
-    mr_ic_types[] = {
-    MR_IC_INIT (UNSORTED_ARRAY),
-    MR_IC_INIT (SORTED_ARRAY),
-    MR_IC_INIT (STATIC_ARRAY),
-    MR_IC_INIT (HASH),
-    MR_IC_INIT (RBTREE),
-    MR_IC_INIT (AVLTREE),
-    MR_IC_INIT (STATIC_ARRAY),
-  };
+#define MR_IC_INIT(TYPE) [MR_IC_##TYPE] = #TYPE,
+  static char * mr_ic_types[] = { MR_FOREACH (MR_IC_INIT, UNSORTED_ARRAY, SORTED_ARRAY, STATIC_ARRAY, HASH, RBTREE, AVLTREE) };
   int ic_type, mr_type;
 
   for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
