@@ -100,7 +100,7 @@ jobs:
 
   aarch64-ubuntu-clang:
     runs-on: ubuntu-latest
-    name: Ubuntu Linux with clang
+    name: non-x86 Ubuntu Linux with clang
     steps:
       - uses: actions/checkout@v3
       - uses: uraimo/run-on-arch-action@v2
@@ -115,8 +115,8 @@ jobs:
           githubToken: ${{ github.token }}
 
           run: |
-            sudo apt-get update -y
-            sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+            apt-get update -y
+            apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
             git submodule update --init --recursive --remote
             ./autogen.sh
             ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang --without-perftest
