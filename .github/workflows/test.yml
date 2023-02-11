@@ -106,7 +106,7 @@ jobs:
           run: |
             apt-get update -y
             apt-get install -y git clang make autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
-            git config --global --add safe.directory `pwd`
+            git config --global --add safe.directory '*'
             git submodule update --init --recursive --remote
             ./autogen.sh
             ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang --without-perftest
