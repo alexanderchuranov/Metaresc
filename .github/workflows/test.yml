@@ -20,7 +20,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{ cc }}
+        run: ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{ matrix.cc }}
       - name: make check
         run: make check -j 2
       - name: check with valgrind
