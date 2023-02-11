@@ -3,9 +3,14 @@ name: ci
 on: [ push, pull_request ]
 
 jobs:
-  linux-gcc:
+  x86-ubuntu-gcc-clang:
     runs-on: ubuntu-latest
-    name: Ubuntu Linux with gcc
+    name: x86 Ubuntu with gcc/clang
+    strategy:
+      matrix:
+        include:
+          - cc: gcc
+          - cc: clang
     steps:
       - uses: actions/checkout@v3
       - name: install dependencies
@@ -15,25 +20,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=gcc
-      - name: make check
-        run: make check -j 2
-      - name: check with valgrind
-        run: cd tests; make valgrind -j 2
-
-  linux-clang:
-    runs-on: ubuntu-latest
-    name: Ubuntu Linux with clang
-    steps:
-      - uses: actions/checkout@v3
-      - name: install dependencies
-        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
-      - name: submodule update
-        run: git submodule update --init --recursive --remote
-      - name: autoconf/automake
-        run: ./autogen.sh
-      - name: configure
-        run: ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang
+        run: ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{ cc }}
       - name: make check
         run: make check -j 2
       - name: check with valgrind
@@ -100,7 +87,7 @@ jobs:
 
   non-x86-ubuntu-clang:
     runs-on: ubuntu-latest
-    name: non-x86 Ubuntu clang
+    name: non-x86 Ubuntu with clang
     steps:
       - uses: actions/checkout@v3
       - uses: uraimo/run-on-arch-action@v2
@@ -120,7 +107,7 @@ jobs:
             git config --global --add safe.directory '*'
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang --without-perftest
+            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang MAKE=gmake --without-perftest 
             sed -i.bak "s/test_dwarfdumpPE.sh test_dwarfdumpMacos.sh//g" libdwarf-code/test/Makefile
             make check -j 2
             cd tests; make valgrind -j 2
