@@ -13,8 +13,10 @@ jobs:
           - cc: clang
     steps:
       - uses: actions/checkout@v3
+      - name: update packages
+        run: apt-get update -y
       - name: install dependencies
-        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+        run: apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
@@ -107,7 +109,7 @@ jobs:
             git config --global --add safe.directory '*'
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang MAKE=gmake --without-perftest 
+            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang --without-perftest --disable-dependency-tracking
             sed -i.bak "s/test_dwarfdumpPE.sh test_dwarfdumpMacos.sh//g" libdwarf-code/test/Makefile
             make check -j 2
             cd tests; make valgrind -j 2
