@@ -165,8 +165,14 @@ check_td (mr_ptr_t key, const void * context)
 {
   mr_td_t * mr_td = key.ptr;
   mr_td_t * dw_td = get_td_by_name (&mr_td->type);
-  
-  if (dw_td != NULL)
+
+  /*
+    Metaresc has type descriptors for most of builin types like int, long, float.
+    This list also include va_args which on x86 Linux is an alias for char*.
+    On aarch64 platform va_args is not a char*, but a struct, that's why builtin type for it is MR_TYPE_NONE.
+    We need to skip types that were not detected by DWARF (most of builtin types) and types that were not properly detected Metaresc.
+  */
+  if ((dw_td != NULL) && (mr_td->mr_type != MR_TYPE_NONE))
     {
       ck_assert_msg (dw_td->mr_type == mr_td->mr_type, "DWARF descriptor for type '%s' mismatched builtin: mr_type %d != %d",
 		     mr_td->type.str, dw_td->mr_type, mr_td->mr_type);
