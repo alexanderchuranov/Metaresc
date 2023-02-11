@@ -98,3 +98,28 @@ jobs:
       - name: make check
         run: make check -j 2
 
+  aarch64-ubuntu-clang:
+    runs-on: ubuntu-latest
+    name: Ubuntu Linux with clang
+    steps:
+      - uses: actions/checkout@v3
+      - uses: uraimo/run-on-arch-action@v2
+        name: Run commands
+        id: build-and-check
+        with:
+          arch: aarch64
+          distro: ubuntu-latest
+
+          # Not required, but speeds up builds by storing container images in
+          # a GitHub package registry.
+          githubToken: ${{ github.token }}
+
+          run: |
+	    sudo apt-get update -y
+	    sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+	    git submodule update --init --recursive --remote
+	    ./autogen.sh
+	    ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang
+	    make check -j 2
+	    cd tests; make valgrind -j 2
+
