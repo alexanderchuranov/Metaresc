@@ -115,11 +115,11 @@ jobs:
           githubToken: ${{ github.token }}
 
           run: |
-	    sudo apt-get update -y
-	    sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
-	    git submodule update --init --recursive --remote
-	    ./autogen.sh
-	    ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang
-	    make check -j 2
-	    cd tests; make valgrind -j 2
+            sudo apt-get update -y
+            sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+            git submodule update --init --recursive --remote
+            ./autogen.sh
+            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang --without-perftest
+            make check -j 2
+            cd tests; make valgrind -j 2
 
