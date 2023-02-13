@@ -128,7 +128,7 @@ jobs:
 
           run: |
             apt-get update -y
-            apt-get install -y git gcc clang make autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+            apt-get install -y git gcc clang make autoconf automake libtool pkg-config flex bison libxml2-dev check python3
             git config --global --add safe.directory '*'
             git submodule update --init --recursive --remote
             ./autogen.sh
