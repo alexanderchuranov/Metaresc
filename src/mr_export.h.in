@@ -27,3 +27,6 @@
 
 /* define if __int128 is supported */
 #undef MR_HAVE_INT128
+
+/* long double significant bytes */
+#undef MR_SIZEOF_LONG_DOUBLE

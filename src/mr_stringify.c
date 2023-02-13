@@ -40,10 +40,10 @@ int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 #define MR_RA_PRINTF_TMPLT(TYPE, TMPLT)					\
   int mr_ra_printf_ ## TYPE ## _default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)	\
   { return (mr_ra_printf (mr_ra_str, TMPLT, *(TYPE *)ptrdes->data.ptr)); }
-  
-MR_RA_PRINTF_TMPLT (float, "%.8g")
-MR_RA_PRINTF_TMPLT (double, "%.17g")
-  int mr_ra_printf_long_double_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) { return (mr_ra_printf (mr_ra_str, "%.20Lg", *(long double *)ptrdes->data.ptr)); }
+
+MR_RA_PRINTF_TMPLT (float, "%." MR_STRINGIFY_READONLY (MR_FLT_DIG) "g");
+MR_RA_PRINTF_TMPLT (double, "%." MR_STRINGIFY_READONLY (MR_DBL_DIG) "g");
+MR_RA_PRINTF_TMPLT (long_double_t, "%." MR_STRINGIFY_READONLY (MR_LDBL_DIG) "Lg");
 
 #ifndef __SCNi8
 #define __SCNi8 SCNi8

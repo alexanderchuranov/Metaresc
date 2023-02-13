@@ -33,7 +33,7 @@ AC_PROG_YACC
 AC_PROG_LEX
 
 AM_CFLAGS=""
-for aux_CFLAGS in -ffast-math -Wall -Werror -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion
+for aux_CFLAGS in -Wall -Werror -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion
 do
   save_CFLAGS=${CFLAGS}
   CFLAGS="${CFLAGS} ${aux_CFLAGS}"
@@ -147,9 +147,55 @@ AC_MSG_RESULT(${SIZEOF_UNCOVERED_TYPE})
 AC_DEFINE_UNQUOTED(MR_UNCOVERED_TYPE, ${UNCOVERED_TYPE}, [int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 AC_DEFINE_UNQUOTED(MR_SIZEOF_UNCOVERED_TYPE, ${SIZEOF_UNCOVERED_TYPE}, [sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 
-AC_MSG_CHECKING(if long double is double)
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (void)sizeof (struct { int:-!!(sizeof (long double) != sizeof (double)); }); ]])], [ AC_DEFINE(MR_LONG_DOUBLE_IS_DOUBLE, [], [define if long double is double]) LONG_DOUBLE_IS_DOUBLE=yes ], [ LONG_DOUBLE_IS_DOUBLE=no ])
-AC_MSG_RESULT(${LONG_DOUBLE_IS_DOUBLE})
+AC_CHECK_SIZEOF([long double])
+AC_CHECK_SIZEOF([double])
+
+AC_MSG_CHECKING(long double significant bytes)
+MR_SIZEOF_LONG_DOUBLE=$ac_cv_sizeof_long_double
+AC_RUN_IFELSE([dnl
+  AC_LANG_PROGRAM(
+    [#include <stdio.h>],
+    [static const long double ld = 0.3L; int i, size = 0; for (i = 0; i < sizeof (ld); ++i) if (*(((unsigned char*)&ld) + i)) ++size; fprintf (stderr, "%d", size);]
+    )],
+    [MR_SIZEOF_LONG_DOUBLE=$(./conftest$EXEEXT 2>&1)])
+AC_DEFINE_UNQUOTED(MR_SIZEOF_LONG_DOUBLE, ${MR_SIZEOF_LONG_DOUBLE}, [long double significant bytes])
+AC_MSG_RESULT(${MR_SIZEOF_LONG_DOUBLE})
+
+AC_MSG_CHECKING(digits for float values)
+MR_FLT_DIG=8
+AC_RUN_IFELSE([dnl
+  AC_LANG_PROGRAM(
+    [#include <stdio.h>
+     #include <float.h>],
+    [fprintf (stderr, "%d", FLT_DIG + 2);]
+    )],
+    [MR_FLT_DIG=$(./conftest$EXEEXT 2>&1)])
+AC_DEFINE_UNQUOTED(MR_FLT_DIG, ${MR_FLT_DIG}, [digits for float values])
+AC_MSG_RESULT(${MR_FLT_DIG})
+
+AC_MSG_CHECKING(digits for double values)
+MR_DBL_DIG=17
+AC_RUN_IFELSE([dnl
+  AC_LANG_PROGRAM(
+    [#include <stdio.h>
+     #include <float.h>],
+    [fprintf (stderr, "%d", DBL_DIG + 2);]
+    )],
+    [MR_DBL_DIG=$(./conftest$EXEEXT 2>&1)])
+AC_DEFINE_UNQUOTED(MR_DBL_DIG, ${MR_DBL_DIG}, [digits for double values])
+AC_MSG_RESULT(${MR_DBL_DIG})
+
+AC_MSG_CHECKING(digits for long double values)
+MR_DBL_DIG=35
+AC_RUN_IFELSE([dnl
+  AC_LANG_PROGRAM(
+    [#include <stdio.h>
+     #include <float.h>],
+    [fprintf (stderr, "%d", LDBL_DIG + 2);]
+    )],
+    [MR_LDBL_DIG=$(./conftest$EXEEXT 2>&1)])
+AC_DEFINE_UNQUOTED(MR_LDBL_DIG, ${MR_LDBL_DIG}, [digits for long double values])
+AC_MSG_RESULT(${MR_LDBL_DIG})
 
 AC_MSG_CHECKING(if __int128 is supported)
 AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (void)(__int128)0; ]])], [ HAVE_INT128=yes], [ HAVE_INT128=no ])

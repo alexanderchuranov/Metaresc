@@ -110,7 +110,6 @@ jobs:
             git submodule update --init --recursive --remote
             ./autogen.sh
             ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang --without-perftest
-            sed -i.bak "s/test_dwarfdumpPE.sh test_dwarfdumpMacos.sh//g" libdwarf-code/test/Makefile
-            make check -j 2
-            cd tests; make valgrind -j 2
+            make check
+            cd tests; make valgrind
 

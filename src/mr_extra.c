@@ -253,13 +253,9 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void
 	  mr_hash_block (ptrdes->data.ptr, sizeof (TYPE));	\
 	break;
 
-#define SIZEOF_float (sizeof (float))
-#define SIZEOF_double (sizeof (double))
-#define SIZEOF_long_double_t (MR_SIZEOF_LONG_DOUBLE)
-
 #define CASE_MR_FLOAT_TYPE_HASH(TYPE)					\
       case MR_TYPE_DETECT (TYPE):					\
-	ptrdes->res.data.uintptr = MR_ISNAN (*(TYPE*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, SIZEOF_ ## TYPE); \
+	ptrdes->res.data.uintptr = MR_ISNAN (*(TYPE*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, sizeof (TYPE)); \
 	break;
 
 #define CASE_MR_COMPLEX_FLOAT_TYPE_HASH(TYPE)				\
@@ -268,14 +264,21 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void
 	break;
 
       MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t);
-      MR_FOREACH (CASE_MR_FLOAT_TYPE_HASH, float, double, long_double_t);
+      MR_FOREACH (CASE_MR_FLOAT_TYPE_HASH, float, double);
       MR_FOREACH (CASE_MR_COMPLEX_FLOAT_TYPE_HASH, complex_float_t, complex_double_t);
 	  
+    case MR_TYPE_LONG_DOUBLE:
+      ptrdes->res.data.uintptr = MR_ISNAN (*(long_double_t*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
+      break;
+
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
-      ptrdes->res.data.uintptr =
-	(MR_ISNAN (__real__ *(complex long double *)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(complex long double *)ptrdes->data.ptr)) ? -1 :
-      mr_hash_block (&__real__ *(complex long double *)ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE) +
-	mr_hash_block (&__imag__ *(complex long double *)ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
+      {
+	long double * real = &__real__ *(complex long double *)ptrdes->data.ptr;
+	long double * imag = &__imag__ *(complex long double *)ptrdes->data.ptr;
+	ptrdes->res.data.uintptr =
+	  (MR_ISNAN (*real) || MR_ISNAN (*imag)) ? -1 :
+	  mr_hash_block (real, MR_SIZEOF_LONG_DOUBLE) + mr_hash_block (imag, MR_SIZEOF_LONG_DOUBLE);
+      }
       break;
 	  
     case MR_TYPE_STRUCT:
