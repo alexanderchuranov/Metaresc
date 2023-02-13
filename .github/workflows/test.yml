@@ -105,10 +105,6 @@ jobs:
             cc: gcc
           - arch: riscv64
             cc: clang
-          - arch: s390x
-            cc: gcc
-          - arch: s390x
-            cc: clang
           - arch: ppc64le
             cc: gcc
           - arch: ppc64le
