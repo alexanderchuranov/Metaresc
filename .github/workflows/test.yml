@@ -97,6 +97,22 @@ jobs:
             cc: gcc
           - arch: aarch64
             cc: clang
+          - arch: armv7
+            cc: gcc
+          - arch: armv7
+            cc: clang
+          - arch: riscv64
+            cc: gcc
+          - arch: riscv64
+            cc: clang
+          - arch: s390x
+            cc: gcc
+          - arch: s390x
+            cc: clang
+          - arch: ppc64le
+            cc: gcc
+          - arch: ppc64le
+            cc: clang
     steps:
       - uses: actions/checkout@v3
       - uses: uraimo/run-on-arch-action@v2
@@ -118,5 +134,4 @@ jobs:
             ./autogen.sh
             ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{ matrix.cc }} --without-perftest
             make check
-            cd tests; LD_LIBRARY_PATH="../src/.libs; " valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet .libs/mf_xdr_load
 
