@@ -81,7 +81,7 @@ jobs:
         with:
           msystem: ${{matrix.sys}}
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-toolchain mingw-w64-${{matrix.env}}-libxml2
+          install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
