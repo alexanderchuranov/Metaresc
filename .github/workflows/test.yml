@@ -103,7 +103,7 @@ jobs:
         name: Run commands
         id: build-and-check
         with:
-          arch: {{ matrix.arch }}
+          arch: ${{ matrix.arch }}
           distro: ubuntu_latest
 
           # Not required, but speeds up builds by storing container images in
@@ -116,7 +116,7 @@ jobs:
             git config --global --add safe.directory '*'
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC={{ matrix.cc }} --without-perftest
+            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{ matrix.cc }} --without-perftest
             make check
             cd tests; make valgrind
 
