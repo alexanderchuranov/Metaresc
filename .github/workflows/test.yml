@@ -5,7 +5,7 @@ on: [ push, pull_request ]
 jobs:
   x86-ubuntu-gcc-clang:
     runs-on: ubuntu-latest
-    name: x86 Ubuntu with gcc/clang
+    name: x86 Ubuntu with
     strategy:
       matrix:
         include:
@@ -89,7 +89,7 @@ jobs:
 
   non-x86-ubuntu-clang:
     runs-on: ubuntu-latest
-    name: non-x86 Ubuntu with clang
+    name: non-x86 Ubuntu with
     strategy:
       matrix:
         include:
@@ -118,5 +118,5 @@ jobs:
             ./autogen.sh
             ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{ matrix.cc }} --without-perftest
             make check
-            cd tests; make valgrind
+            cd tests; LD_LIBRARY_PATH="../src/.libs; " valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet .libs/mf_xdr_load
 
