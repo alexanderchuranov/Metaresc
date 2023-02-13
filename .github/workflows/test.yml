@@ -60,7 +60,7 @@ jobs:
             git config --global --add safe.directory `pwd`
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure --without-perftest
+            ./configure LIBS=-lm --without-perftest
             make check -j 2
 
   windows-gcc:
@@ -90,13 +90,20 @@ jobs:
   non-x86-ubuntu-clang:
     runs-on: ubuntu-latest
     name: non-x86 Ubuntu with clang
+    strategy:
+      matrix:
+        include:
+          - arch: aarch64
+            cc: gcc
+          - arch: aarch64
+            cc: clang
     steps:
       - uses: actions/checkout@v3
       - uses: uraimo/run-on-arch-action@v2
         name: Run commands
         id: build-and-check
         with:
-          arch: aarch64
+          arch: {{ matrix.arch }}
           distro: ubuntu_latest
 
           # Not required, but speeds up builds by storing container images in
@@ -105,11 +112,11 @@ jobs:
 
           run: |
             apt-get update -y
-            apt-get install -y git clang make autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
+            apt-get install -y git gcc clang make autoconf automake libtool pkg-config flex bison libxml2-dev check valgrind python3
             git config --global --add safe.directory '*'
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=clang --without-perftest
+            ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC={{ matrix.cc }} --without-perftest
             make check
             cd tests; make valgrind
 
