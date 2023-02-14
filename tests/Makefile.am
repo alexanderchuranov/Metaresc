@@ -33,6 +33,9 @@ endif
 
 if HAVE_BISON_FLEX
   check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr
+
+  expr.$(OBJEXT): CFLAGS += -ffast-math
+
 if HAVE_PERFTEST
   check_PROGRAMS += perf_cinit perf_json perf_scm perf_xml1
 endif

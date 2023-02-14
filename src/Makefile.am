@@ -42,6 +42,8 @@ if HAVE_XDR
   libmetaresc_la_SOURCES += xdr.c
 endif
 
+mr_value.lo: CFLAGS += -ffast-math
+
 pkginclude_HEADERS = metaresc.h mr_protos.h mr_export.h mr_pp.h
 
 xml1_load.tab.c: xml1_load.y xml1_load.lex.h

@@ -60,7 +60,7 @@ jobs:
             git config --global --add safe.directory `pwd`
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure LIBS=-lm --without-perftest
+            ./configure --without-perftest
             make check -j 2
 
   windows-gcc:
