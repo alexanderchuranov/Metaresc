@@ -291,16 +291,17 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 
       mr_hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, &mr_sort_context);
 
-      /* Deduplicate equal elements */
+      /* Deduplicate equal elements and replace indexes on values from the input array */
       unsigned src, dst = 0;
-      ic->rarray.ra[dst++] = ic->rarray.ra[0];
+      mr_ptr_t prev = rarray[ic->rarray.ra[0].uintptr];
+      ic->rarray.ra[dst++] = prev;
       for (src = 1; src < items_count; ++src)
-	if (ic->compar_fn (rarray[ic->rarray.ra[src].uintptr], rarray[ic->rarray.ra[src - 1].uintptr], ic->context.data.ptr) != 0)
-	  ic->rarray.ra[dst++] = ic->rarray.ra[src];
-
-      /* Replace indexes on values from the input array */
-      for (i = 0; i < dst; ++i)
-	ic->rarray.ra[i] = rarray[ic->rarray.ra[i].uintptr];
+	{
+	  mr_ptr_t next = rarray[ic->rarray.ra[src].uintptr];
+	  if (ic->compar_fn (next, prev, ic->context.data.ptr) != 0)
+	    ic->rarray.ra[dst++] = next;
+	  prev = next;
+	}
       
       ic->items_count = dst; /* after deduplication actual number of elements might be lower */
       ic->rarray.size = ic->items_count * sizeof (ic->rarray.ra[0]); /* used array size */
