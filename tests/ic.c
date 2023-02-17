@@ -9,6 +9,12 @@
 #define MR_IC_INIT(TYPE) [MR_IC_##TYPE] = #TYPE,
 static char * mr_ic_types[] = { MR_FOREACH (MR_IC_INIT, UNSORTED_ARRAY, SORTED_ARRAY, STATIC_ARRAY, HASH, RBTREE, AVLTREE) };
 
+static mr_ptr_t mr_ic_rarray[] = {
+  { .uintptr = 1, },
+  { .uintptr = 2, },
+  { .uintptr = 3, },
+};
+
 static mr_hash_value_t
 uintptr_t_get_hash (mr_ptr_t node, const void * context)
 {
@@ -45,16 +51,6 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
       }
 }
 
-static mr_ic_rarray_t mr_ic_rarray = {
-  .ra = (mr_ptr_t[]) {
-    { .uintptr = 1, },
-    { .uintptr = 2, },
-    { .uintptr = 3, },
-  },
-  .size = 3 * sizeof (mr_ic_rarray.ra[0]),
-  .alloc_size = -1,
-};
-
 static int ic_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 {
   uint32_t mask = 0;
@@ -70,11 +66,11 @@ static int ic_index_cb (mr_ic_t * ic, char * mr_ic_type)
   uint32_t mask_expected = 0;
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray.ra, mr_ic_rarray.size), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray, sizeof (mr_ic_rarray)), "index failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, uintptr_t_visitor, &mask), "visitor failed for mr_ic_type %s", mr_ic_type);
   
-  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
-    uintptr_t_visitor (mr_ic_rarray.ra[i], &mask_expected);
+  for (i = 0; i < sizeof (mr_ic_rarray) / sizeof (mr_ic_rarray[0]); ++i)
+    uintptr_t_visitor (mr_ic_rarray[i], &mask_expected);
   return (mask == mask_expected);
 }
 
@@ -82,7 +78,7 @@ START_TEST (ic_index) { ic_types_foreach (ic_index_cb); } END_TEST
 
 static int ic_index_non_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 {
-  mr_ptr_t x = { .uintptr = 4, }; /* value which is not presented in mr_ic_rarray.ra */
+  mr_ptr_t x = { .uintptr = 4, }; /* value which is not presented in mr_ic_rarray */
   ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
   return (ic_index_cb (ic, mr_ic_type));
 }
@@ -138,12 +134,12 @@ static int ic_add_existing_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   mr_ptr_t x = { .uintptr = 1, };
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray.ra, mr_ic_rarray.size), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray, sizeof (mr_ic_rarray)), "index failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, uintptr_t_visitor, &mask), "sum failed for mr_ic_type %s", mr_ic_type);
 
-  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
-    uintptr_t_visitor (mr_ic_rarray.ra[i], &mask_expected);
+  for (i = 0; i < sizeof (mr_ic_rarray) / sizeof (mr_ic_rarray[0]); ++i)
+    uintptr_t_visitor (mr_ic_rarray[i], &mask_expected);
   return (mask == mask_expected);
 }
 
@@ -156,12 +152,12 @@ static int ic_add_non_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   uint32_t mask_expected = 1 << x.uintptr;
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray.ra, mr_ic_rarray.size), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray, sizeof (mr_ic_rarray)), "index failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (NULL != mr_ic_add (ic, x), "add failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, uintptr_t_visitor, &mask), "sum failed for mr_ic_type %s", mr_ic_type);
 
-  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
-    uintptr_t_visitor (mr_ic_rarray.ra[i], &mask_expected);
+  for (i = 0; i < sizeof (mr_ic_rarray) / sizeof (mr_ic_rarray[0]); ++i)
+    uintptr_t_visitor (mr_ic_rarray[i], &mask_expected);
   return (mask == mask_expected);
 }
 
@@ -196,12 +192,12 @@ static int ic_del_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   uint32_t mask_expected = 0;
   int i;
 
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray.ra, mr_ic_rarray.size), "index failed for mr_ic_type %s", mr_ic_type);
-  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, mr_ic_rarray.ra[0]), "del failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray, sizeof (mr_ic_rarray)), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, mr_ic_rarray[0]), "del failed for mr_ic_type %s", mr_ic_type);
   ck_assert_msg (MR_SUCCESS == mr_ic_foreach (ic, uintptr_t_visitor, &mask), "sum failed for mr_ic_type %s", mr_ic_type);
   
-  for (i = 1; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
-    uintptr_t_visitor (mr_ic_rarray.ra[i], &mask_expected);
+  for (i = 1; i < sizeof (mr_ic_rarray) / sizeof (mr_ic_rarray[0]); ++i)
+    uintptr_t_visitor (mr_ic_rarray[i], &mask_expected);
   return (mask == mask_expected);
 }
 
@@ -213,16 +209,16 @@ static int ic_find_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
   mr_ptr_t * find;
   mr_ptr_t x = { .uintptr = 0, };
   
-  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray.ra, mr_ic_rarray.size), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, mr_ic_rarray, sizeof (mr_ic_rarray)), "index failed for mr_ic_type %s", mr_ic_type);
   
   find = mr_ic_find (ic, x);
   ck_assert_msg (NULL == find, "Non-indexed element was found for mr_ic_type_t %s", mr_ic_type);
   
-  for (i = 0; i < mr_ic_rarray.size / sizeof (mr_ic_rarray.ra[0]); ++i)
+  for (i = 0; i < sizeof (mr_ic_rarray) / sizeof (mr_ic_rarray[0]); ++i)
     {
-      find = mr_ic_find (ic, mr_ic_rarray.ra[i]);
+      find = mr_ic_find (ic, mr_ic_rarray[i]);
       ck_assert_msg (NULL != find, "Failed to find element in indexed data for mr_ic_type_t %s", mr_ic_type);
-      ck_assert_msg (mr_ic_rarray.ra[i].uintptr == find->uintptr,
+      ck_assert_msg (mr_ic_rarray[i].uintptr == find->uintptr,
 		     "Found wrong element in indexed data for mr_ic_type_t %s", mr_ic_type);
     }
   return (!0);
