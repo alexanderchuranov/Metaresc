@@ -341,16 +341,11 @@ mr_load_complex (int idx, mr_ra_ptrdes_t * ptrs)
   if (MR_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);
 
-  complex_long_double_t cld;
-  memset (&cld, 0, sizeof (cld));
-  cld = MR_CLD_UNPACK (ptrdes->load_params.mr_value.vt_complex);
-  complex_double_t cd = cld;
-  complex_float_t cf = cld;
-
+  complex_long_double_t cld = MR_CLD_UNPACK (ptrdes->load_params.mr_value.vt_complex);
   switch (ptrdes->mr_type)
     {
-#define CASE_SET_COMPLEX_BY_TYPE(VALUE) case MR_TYPE_DETECT (typeof (VALUE)): memcpy (ptrdes->data.ptr, &VALUE, sizeof (VALUE)); break;
-      MR_FOREACH (CASE_SET_COMPLEX_BY_TYPE, cf, cd, cld);
+#define CASE_SET_COMPLEX_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = cld; break;
+      MR_FOREACH (CASE_SET_COMPLEX_BY_TYPE, complex_float_t, complex_double_t, complex_long_double_t);
 
     default:
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);

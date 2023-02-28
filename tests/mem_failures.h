@@ -51,7 +51,7 @@ extern mr_mem_t _mr_mem, mr_mem;
   }									\
   START_TEST (mem_load_failures_ ## METHOD)				\
   {									\
-    mr_detect_type (NULL); /* explicitly init library */		\
+    mr_conf_init ();							\
     mr_rarray_t ra = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf);	\
     ck_assert_msg (ra.data.ptr != NULL, "Failed to save mr_conf for tests of load methods"); \
     mem_failures_method (METHOD ## _load_method, &ra, true);		\

@@ -25,7 +25,6 @@ xml2_load_method (void * arg)
 
 START_TEST (mem_load_failures_xml2)
 {
-  mr_detect_type (NULL); /* explicitly init library */
   char * xml2 = MR_SAVE_XML2 (mr_conf_t, &mr_conf);
   ck_assert_msg (xml2 != NULL, "Failed to save mr_conf for tests of load methods");
   xmlDocPtr doc = xmlParseMemory (xml2, strlen (xml2));

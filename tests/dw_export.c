@@ -200,10 +200,7 @@ check_td (mr_ptr_t key, const void * context)
 
 START_TEST (dw_check_all)
 {
-  mr_type_void_fields ("ieee_half_t", "is_nan");
-  mr_type_void_fields ("ieee_float_t", "is_nan");
-  mr_type_void_fields ("ieee_double_t", "is_nan");
-  mr_type_void_fields ("ieee_long_double_t", "is_nan");
+  mr_conf_init ();
   mr_ic_foreach (&mr_conf.type_by_name, check_td, NULL);
 } END_TEST
 

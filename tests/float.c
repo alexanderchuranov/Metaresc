@@ -1,5 +1,3 @@
-#define __USE_GNU
-#include <math.h>
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
@@ -26,8 +24,8 @@ START_TEST (neg_flt_min_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, -FLT_MIN);
 START_TEST (flt_epsilon_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, FLT_EPSILON); } END_TEST
 START_TEST (neg_flt_epsilon_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, -FLT_EPSILON); } END_TEST
 START_TEST (random_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, 1.23456789012345678909L); } END_TEST
-START_TEST (pi_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, M_PI); } END_TEST
-START_TEST (e_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, M_E); } END_TEST
+START_TEST (pi_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, MR_PI); } END_TEST
+START_TEST (e_float) { ALL_METHODS (ASSERT_SAVE_LOAD_FLOAT, MR_E); } END_TEST
 
 MAIN_TEST_SUITE ((zero_float, "zero float"),
 		 (nan_float, "NAN float"),

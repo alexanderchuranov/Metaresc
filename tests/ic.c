@@ -1,5 +1,3 @@
-#include <stdlib.h>
-
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>

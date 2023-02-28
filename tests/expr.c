@@ -1,4 +1,3 @@
-#include <math.h>
 #include <complex.h>
 
 #include <check.h>
@@ -56,7 +55,7 @@ MAIN_TEST_SUITE ((parse_bool_true, "parse bool true = (0)"),
 		 (parse_int_sum, "parse int x = 1 + 1"),
 		 (parse_complex_sum, "parse float complex x = 1 + 1i"),
 		 (parse_float_op1, "parse float x = (1. + 1i) / 2"),
-		 (parse_float_op2, "parse float x = M_PI + 2 * M_E"),
+		 (parse_float_op2, "parse float x = MR_PI + 2 * MR_E"),
 		 (parse_bits_op1, "parse int x = 7 ^ 5 * 8"),
 		 (parse_bits_op2, "parse int x = 2 | 5 * 8"),
 		 (scm_add_3args, "parse int ( + 1 2 3)"),

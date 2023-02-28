@@ -1,16 +1,9 @@
 #define __USE_GNU
-#include <math.h>
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
 
-#define PTR_CMP(TYPE, X, Y, ...) ({					\
-      int cmp = (*(void**)(X) != *(void**)(Y));				\
-      if (cmp)								\
-	fprintf (stderr, "Pointers missmatched %p != %p\n",		\
-		 *(void**)X, *(void**)Y);				\
-      cmp;								\
-    })
+#define PTR_CMP(TYPE, X, Y, ...) (*(void**)(X) != *(void**)(Y))
 
 #define ASSERT_SAVE_LOAD_FUNC(METHOD, VALUE) ({				\
       ASSERT_SAVE_LOAD_TYPE (METHOD, int_int_func_t, VALUE, PTR_CMP);	\

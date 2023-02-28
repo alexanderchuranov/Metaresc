@@ -357,7 +357,7 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
   mr_status_t status;
   int i;
 
-  mr_detect_type (NULL); /* explicitly init library */
+  mr_conf_init ();
 
   mr_conf.cache_func_resolve = false;
   

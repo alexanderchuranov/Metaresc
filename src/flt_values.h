@@ -12,13 +12,8 @@
 #include <values.h>
 #endif /* HAVE_VALUES_H */
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif /* M_PI */
-
-#ifndef M_E
-#define M_E 2.7182818284590452354
-#endif /* M_E */
+#define MR_PI 3.14159265358979323846L
+#define MR_E 2.7182818284590452354L
 
 #ifndef FLT_MAX
 #define FLT_MAX (0x1.fffffep+127)

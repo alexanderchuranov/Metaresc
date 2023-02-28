@@ -1,4 +1,3 @@
-#include <math.h>
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
@@ -7,17 +6,17 @@
 #include <union.h>
 
 #define ASSERT_SAVE_LOAD_ANON_UNION(METHOD, TYPE, VALUE, ...) ({	\
-      TYPE x = { .dummy = 0, "", { M_PI }, VALUE };			\
+      TYPE x = { .dummy = 0, "", { MR_PI }, VALUE };			\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
 #define ASSERT_SAVE_LOAD_UNION(METHOD, TYPE, VALUE, ...) ({		\
-      TYPE x = { .dummy = 0, { M_PI }, MR_REMOVE_PAREN (VALUE) };	\
+      TYPE x = { .dummy = 0, { MR_PI }, MR_REMOVE_PAREN (VALUE) };	\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
 
 #define ASSERT_UNION_RESOLUTION(TYPE, ...) ({				\
-      TYPE orig = { .dummy = 0, { M_PI }, __VA_ARGS__ };		\
+      TYPE orig = { .dummy = 0, { MR_PI }, __VA_ARGS__ };		\
       mr_ra_ptrdes_t ptrs = MR_SAVE (TYPE, &orig);			\
       bool union_resolved_correctly = false;				\
       if (ptrs.ra != NULL)						\

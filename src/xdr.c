@@ -17,7 +17,6 @@
 #include <mr_ic.h>
 #include <mr_load.h>
 #include <mr_save.h>
-#include <flt_values.h>
 
 TYPEDEF_FUNC (mr_status_t, xdr_handler_t, (XDR *, int, mr_ra_ptrdes_t *))
 

@@ -1,5 +1,3 @@
-#define __USE_GNU
-#include <math.h>
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
@@ -37,8 +35,8 @@ START_TEST (neg_ldbl_min_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBL
 START_TEST (ldbl_epsilon_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, LDBL_EPSILON); } END_TEST
 START_TEST (neg_ldbl_epsilon_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, -LDBL_EPSILON); } END_TEST
 START_TEST (random_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, 1.2345678901234566904L); } END_TEST
-START_TEST (pi_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, MR_PASTE2 (M_PI, L)); } END_TEST
-START_TEST (e_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, MR_PASTE2 (M_E, L)); } END_TEST
+START_TEST (pi_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, MR_PI); } END_TEST
+START_TEST (e_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_LONG_DOUBLE, MR_E); } END_TEST
 
 MAIN_TEST_SUITE ((zero_long_double, "zero long_double"),
 		 (nan_long_double, "NAN long_double"),

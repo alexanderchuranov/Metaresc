@@ -52,7 +52,7 @@
   }									\
 									\
   START_TEST (test_performance) {					\
-    mr_detect_type (NULL);						\
+    mr_conf_init ();							\
     int size = 1 << 8;							\
     int base_time, double_time = test_run (size);			\
     do {								\
