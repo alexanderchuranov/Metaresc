@@ -40,8 +40,10 @@ static type_samples_t type_samples[] = {
   MR_TYPE_SAMPLES_VALUES (char, '0', '1', '2')
   MR_TYPE_SAMPLES_VALUES (string_t, "0", "1", "2")
   MR_TYPE_SAMPLES_VALUES (char_array_t, "0", "1", "2")
-  [MR_TYPE_INT128] = MR_TYPE_SAMPLES_VALUES_INIT (mr_int128_t, 0, 1, 2)
-  [MR_TYPE_UINT128] = MR_TYPE_SAMPLES_VALUES_INIT (mr_uint128_t, 0, 1, 2)
+#ifdef MR_HAVE_INT128
+  MR_TYPE_SAMPLES_NUMBERS (mr_int128_t)
+  MR_TYPE_SAMPLES_NUMBERS (mr_uint128_t)
+#endif /* MR_HAVE_INT128 */
   [MR_TYPE_STRUCT] = MR_TYPE_SAMPLES_VALUES_INIT (struct_func_t, {func_zero}, {func_one}, {func_two})
   [MR_TYPE_ENUM] = MR_TYPE_SAMPLES_VALUES_INIT (mr_enum_t, ZERO, ONE, TWO)
   [MR_TYPE_FUNC_TYPE] = MR_TYPE_SAMPLES_VALUES_INIT (void_func_t, func_zero, func_one, func_two)
