@@ -118,8 +118,10 @@ TYPEDEF_STRUCT (struct_t,
 		BITFIELD (int32_t, bf_int32_t, :__CHAR_BIT__ * sizeof (int32_t) - 1),
 		BITFIELD (uint64_t, bf_uint64_t, :__CHAR_BIT__ * sizeof (uint64_t) - 1),
 		BITFIELD (int64_t, bf_int64_t, :__CHAR_BIT__ * sizeof (int64_t) - 1),
+#ifdef HAVE_INT128
 		BITFIELD (mr_uint128_t, bf_uint128_t, :__CHAR_BIT__ * sizeof (mr_uint128_t) - 1),
 		BITFIELD (mr_int128_t, bf_int128_t, :__CHAR_BIT__ * sizeof (mr_int128_t) - 1),
+#endif /* HAVE_INT128 */
 		BITFIELD (_enum_t, bf_enum, :1),
 		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, :1),
 		);
