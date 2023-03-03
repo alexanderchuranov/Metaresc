@@ -102,7 +102,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	}
       case MR_TYPE_INT128:
 	{
-	  mr_intmax_t value = va_arg (args, mr_int128_t);
+	  mr_intmax_t value = va_arg (args, mr_intmax_t);
 	  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
 	  bool negative = false;
 
@@ -119,7 +119,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	}
       case MR_TYPE_UINT128:
 	{
-	  mr_uintmax_t value = va_arg (args, mr_uint128_t);
+	  mr_uintmax_t value = va_arg (args, mr_uintmax_t);
 	  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
 	  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
 	  rv = fprintf (fd, "%s", out);
