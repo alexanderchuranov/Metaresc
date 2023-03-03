@@ -118,6 +118,8 @@ TYPEDEF_STRUCT (struct_t,
 		BITFIELD (int32_t, bf_int32_t, :__CHAR_BIT__ * sizeof (int32_t) - 1),
 		BITFIELD (uint64_t, bf_uint64_t, :__CHAR_BIT__ * sizeof (uint64_t) - 1),
 		BITFIELD (int64_t, bf_int64_t, :__CHAR_BIT__ * sizeof (int64_t) - 1),
+		BITFIELD (mr_uint128_t, bf_uint128_t, :__CHAR_BIT__ * sizeof (mr_uint128_t) - 1),
+		BITFIELD (mr_int128_t, bf_int128_t, :__CHAR_BIT__ * sizeof (mr_int128_t) - 1),
 		BITFIELD (_enum_t, bf_enum, :1),
 		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, :1),
 		);
@@ -361,6 +363,10 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (bf_int32_t, MR_TYPE_BITFIELD, MR_TYPE_INT32);
   ASSERT_STRUCT_FIELD_TYPE (bf_uint64_t, MR_TYPE_BITFIELD, MR_TYPE_UINT64);
   ASSERT_STRUCT_FIELD_TYPE (bf_int64_t, MR_TYPE_BITFIELD, MR_TYPE_INT64);
+#ifdef HAVE_INT128
+  ASSERT_STRUCT_FIELD_TYPE (bf_uint128_t, MR_TYPE_BITFIELD, MR_TYPE_UINT128);
+  ASSERT_STRUCT_FIELD_TYPE (bf_int128_t, MR_TYPE_BITFIELD, MR_TYPE_INT128);
+#endif /* HAVE_INT128 */
   ASSERT_STRUCT_FIELD_TYPE (bf_enum, MR_TYPE_BITFIELD, MR_TYPE_ENUM);
   ASSERT_STRUCT_FIELD_TYPE (bf_const_volatile_enum_enum, MR_TYPE_BITFIELD, MR_TYPE_ENUM);
   
