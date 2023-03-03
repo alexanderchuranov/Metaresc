@@ -62,7 +62,7 @@ MR_RA_PRINTF_TMPLT (uint32_t, "%" SCNu32);
 MR_RA_PRINTF_TMPLT (int64_t, "%" SCNi64);
 MR_RA_PRINTF_TMPLT (uint64_t, "%" SCNu64);
 
-static char *
+char *
 mr_uintmaxtostr (char * out, mr_uintmax_t value)
 {
   *--out = 0;

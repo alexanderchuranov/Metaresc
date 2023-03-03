@@ -1,4 +1,5 @@
 #include <metaresc.h>
+#include <mr_stringify.h>
 
 static int
 mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, void * value)
@@ -97,6 +98,31 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	    rv = fprintf (fd, "true");
 	  else
 	    rv = fprintf (fd, "false");
+	  break;
+	}
+      case MR_TYPE_INT128:
+	{
+	  mr_intmax_t value = va_arg (args, mr_int128_t);
+	  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
+	  bool negative = false;
+
+	  if (value < 0)
+	    {
+	      negative = true;
+	      value = ~value + 1; /* clang has a bug so that -(1 << 127) == 0 */
+	    }
+	  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
+	  if (negative)
+	    *--out = '-';
+	  rv = fprintf (fd, "%s", out);
+	  break;
+	}
+      case MR_TYPE_UINT128:
+	{
+	  mr_uintmax_t value = va_arg (args, mr_uint128_t);
+	  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
+	  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
+	  rv = fprintf (fd, "%s", out);
 	  break;
 	}
       case MR_TYPE_COMPLEX_FLOAT:
