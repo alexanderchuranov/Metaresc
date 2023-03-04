@@ -1232,7 +1232,9 @@
 
 #define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr (MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ), (OBJ), "")
 
-#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT (__typeof__ (X)), MR_TYPE_DETECT (__typeof__ (*MR_CAST_TO_PTR (X))), MR_PTR_DETECT_TYPE (MR_CAST_TO_PTR (X)), MR_ARRAY_SIZE (X), X)
+#define MR_TYPE_DETECT_OBJ(OBJ) ({ __typeof__ (OBJ) _mr; MR_TYPE_DETECT (__typeof__ (_mr)); })
+
+#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT_OBJ (X), MR_TYPE_DETECT_OBJ (*MR_CAST_TO_PTR (X)), MR_PTR_DETECT_TYPE (MR_CAST_TO_PTR (X)), MR_ARRAY_SIZE (X), X)
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
