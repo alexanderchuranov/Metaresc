@@ -1011,6 +1011,8 @@ mr_save_enum (mr_save_data_t * mr_save_data)
     case MR_TYPE_INT32:
     case MR_TYPE_UINT64:
     case MR_TYPE_INT64:
+    case MR_TYPE_UINT128:
+    case MR_TYPE_INT128:
       break;
     default:
       {

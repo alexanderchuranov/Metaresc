@@ -1112,9 +1112,9 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       case MR_TYPE_INT32:
       case MR_TYPE_UINT32:
       case MR_TYPE_INT64:
-      case MR_TYPE_UINT128:
-      case MR_TYPE_INT128:
       case MR_TYPE_UINT64:
+      case MR_TYPE_INT128:
+      case MR_TYPE_UINT128:
       case MR_TYPE_FLOAT:
       case MR_TYPE_COMPLEX_FLOAT:
       case MR_TYPE_DOUBLE:
@@ -1140,6 +1140,8 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       case MR_TYPE_UINT32:
       case MR_TYPE_INT64:
       case MR_TYPE_UINT64:
+      case MR_TYPE_INT128:
+      case MR_TYPE_UINT128:
 	fdp->mr_type = tdp->mr_type;
 	break;
 
@@ -1696,6 +1698,8 @@ basic_types_visitor (mr_ptr_t key, const void * context)
     case MR_TYPE_UINT32:
     case MR_TYPE_INT64:
     case MR_TYPE_UINT64:
+    case MR_TYPE_INT128:
+    case MR_TYPE_UINT128:
     case MR_TYPE_FLOAT:
     case MR_TYPE_COMPLEX_FLOAT:
     case MR_TYPE_DOUBLE:
@@ -1762,6 +1766,8 @@ mr_detect_type (mr_fd_t * fdp)
     case MR_TYPE_INT32:
     case MR_TYPE_UINT64:
     case MR_TYPE_INT64:
+    case MR_TYPE_UINT128:
+    case MR_TYPE_INT128:
     case MR_TYPE_NONE:
     case MR_TYPE_VOID:
       /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
