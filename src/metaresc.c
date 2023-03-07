@@ -681,7 +681,10 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
     {
 #define CASE_GET_ENUM_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): enum_value = *(TYPE*)data; break;
 
-      MR_FOREACH (CASE_GET_ENUM_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t);
+      MR_FOREACH (CASE_GET_ENUM_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+#ifdef HAVE_INT128
+      MR_FOREACH (CASE_GET_ENUM_BY_TYPE, mr_uint128_t, mr_int128_t);
+#endif /* HAVE_INT128 */
 
     default:
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
