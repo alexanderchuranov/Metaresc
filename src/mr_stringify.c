@@ -130,27 +130,18 @@ MR_RA_PRINTF_COMPLEX (float, float)
 MR_RA_PRINTF_COMPLEX (double, double)
 MR_RA_PRINTF_COMPLEX (long double, long_double_t)
 
-#define MR_RA_PRINTF_TYPE(TYPE, MR_TYPE)				\
+#define MR_RA_PRINTF_TYPE(TYPE)	MR_RA_PRINTF_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define MR_RA_PRINTF_TYPE_(TYPE, MR_TYPE)				\
   int mr_ra_printf_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) { \
     if (mr_conf.output_format[MR_TYPE])					\
       return (mr_conf.output_format[MR_TYPE](mr_ra_str, ptrdes));	\
     return (mr_ra_printf_ ## TYPE ## _default (mr_ra_str, ptrdes));	\
   }
 
-MR_RA_PRINTF_TYPE (bool, MR_TYPE_BOOL);
-MR_RA_PRINTF_TYPE (int8_t, MR_TYPE_INT8);
-MR_RA_PRINTF_TYPE (uint8_t, MR_TYPE_UINT8);
-MR_RA_PRINTF_TYPE (int16_t, MR_TYPE_INT16);
-MR_RA_PRINTF_TYPE (uint16_t, MR_TYPE_UINT16);
-MR_RA_PRINTF_TYPE (int32_t, MR_TYPE_INT32);
-MR_RA_PRINTF_TYPE (uint32_t, MR_TYPE_UINT32);
-MR_RA_PRINTF_TYPE (int64_t, MR_TYPE_INT64);
-MR_RA_PRINTF_TYPE (uint64_t, MR_TYPE_UINT64);
-MR_RA_PRINTF_TYPE (int128_t, MR_TYPE_INT128);
-MR_RA_PRINTF_TYPE (uint128_t, MR_TYPE_UINT128);
-MR_RA_PRINTF_TYPE (float, MR_TYPE_FLOAT);
-MR_RA_PRINTF_TYPE (double, MR_TYPE_DOUBLE);
-MR_RA_PRINTF_TYPE (long_double_t, MR_TYPE_LONG_DOUBLE);
+MR_FOREACH (MR_RA_PRINTF_TYPE, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, float, double, long_double_t)
+MR_RA_PRINTF_TYPE_ (bool, MR_TYPE_BOOL);
+MR_RA_PRINTF_TYPE_ (int128_t, MR_TYPE_INT128);
+MR_RA_PRINTF_TYPE_ (uint128_t, MR_TYPE_UINT128);
 
 int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -171,14 +162,11 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   /* save as integer otherwise */
   switch (mr_type)
     {
-    case MR_TYPE_INT8: return (mr_ra_printf_int8_t (mr_ra_str, ptrdes));
-    case MR_TYPE_UINT8: return (mr_ra_printf_uint8_t (mr_ra_str, ptrdes));
-    case MR_TYPE_INT16: return (mr_ra_printf_int16_t (mr_ra_str, ptrdes));
-    case MR_TYPE_UINT16: return (mr_ra_printf_uint16_t (mr_ra_str, ptrdes));
-    case MR_TYPE_INT32: return (mr_ra_printf_int32_t (mr_ra_str, ptrdes));
-    case MR_TYPE_UINT32: return (mr_ra_printf_uint32_t (mr_ra_str, ptrdes));
-    case MR_TYPE_INT64: return (mr_ra_printf_int64_t (mr_ra_str, ptrdes));
-    case MR_TYPE_UINT64: return (mr_ra_printf_uint64_t (mr_ra_str, ptrdes));
+#define MR_RA_PRINTF_INT(TYPE) MR_RA_PRINTF_INT_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define MR_RA_PRINTF_INT_(TYPE, MR_TYPE) case MR_TYPE: return (mr_ra_printf_ ## TYPE (mr_ra_str, ptrdes));
+      MR_FOREACH (MR_RA_PRINTF_INT, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+      MR_RA_PRINTF_INT_ (int128_t, MR_TYPE_INT128);
+      MR_RA_PRINTF_INT_ (uint128_t, MR_TYPE_UINT128);
     default: return (-1);
     }
 }
@@ -220,14 +208,17 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
       if (!first)
 	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
       
-#define CASE_PRINT_BY_TYPE(TYPE)					\
-    case MR_TYPE_DETECT (TYPE):						\
-      count += TRY_CATCH_THROW (mr_ra_printf_ ## TYPE (mr_ra_str, &_ptrdes)); \
-      break;
+#define CASE_PRINT_BY_TYPE(TYPE) CASE_PRINT_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define CASE_PRINT_BY_TYPE_(TYPE, MR_TYPE)				\
+      case MR_TYPE:							\
+	count += TRY_CATCH_THROW (mr_ra_printf_ ## TYPE (mr_ra_str, &_ptrdes)); \
+	break;
       
       switch (tdp->param.enum_param.mr_type_effective)
 	{
 	  MR_FOREACH (CASE_PRINT_BY_TYPE, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+	  CASE_PRINT_BY_TYPE_ (int128_t, MR_TYPE_INT128);
+	  CASE_PRINT_BY_TYPE_ (uint128_t, MR_TYPE_UINT128);
 	default: break;
 	}
     }
@@ -246,9 +237,10 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char *
   switch (ptrdes->mr_type_aux)
     {
       MR_FOREACH (CASE_PRINT_BY_TYPE, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
-    case MR_TYPE_BOOL:
-      count += mr_ra_printf_bool (mr_ra_str, &_ptrdes);
-      break;
+      CASE_PRINT_BY_TYPE_ (bool, MR_TYPE_BOOL);
+      CASE_PRINT_BY_TYPE_ (int128_t, MR_TYPE_INT128);
+      CASE_PRINT_BY_TYPE_ (uint128_t, MR_TYPE_UINT128);
+
     case MR_TYPE_ENUM:
       count += mr_ra_printf_bitmask (mr_ra_str, &_ptrdes, delimiter);
       break;

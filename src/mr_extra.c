@@ -477,7 +477,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	case MR_TYPE_ENUM:
 	  switch (x_i->mr_type_aux)
 	    {
-	      MR_FOREACH (CASE_MR_TYPE_CMP, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+	      MR_FOREACH (CASE_MR_TYPE_CMP, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t);
 	  
 	    default:
 	      break;

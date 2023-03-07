@@ -705,7 +705,8 @@ mr_ic_static_array_free (mr_ic_t * ic)
   memset (&ic->static_array.static_array, 0, sizeof (ic->static_array.static_array));
 }
 
-mr_status_t mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
+mr_status_t
+mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
   if (size > sizeof (ic->static_array.static_array))
     {
@@ -821,7 +822,8 @@ mr_ic_tree_free (mr_ic_t * ic)
   mr_tree_free (&ic->tree);
 }
 
-mr_status_t mr_ic_tree_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
+mr_status_t
+mr_ic_tree_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
   /* Add elements into the tree in the natuaral order. In case of equal elements only first will be added. */
   int i, count = size / sizeof (rarray[0]);

@@ -681,7 +681,7 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
     {
 #define CASE_GET_ENUM_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): enum_value = *(TYPE*)data; break;
 
-      MR_FOREACH (CASE_GET_ENUM_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+      MR_FOREACH (CASE_GET_ENUM_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t);
 
     default:
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -758,7 +758,7 @@ mr_add_enum (mr_td_t * tdp)
     {
 #define CASE_SET_SIZE_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): tdp->param.enum_param.size_effective = sizeof (TYPE); break;
 
-      MR_FOREACH (CASE_SET_SIZE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+      MR_FOREACH (CASE_SET_SIZE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t);
 
     default:
       tdp->param.enum_param.size_effective = tdp->size;
@@ -767,7 +767,7 @@ mr_add_enum (mr_td_t * tdp)
 	{
 #define CASE_SET_TYPE_BY_SIZE(TYPE) case sizeof (TYPE): tdp->param.enum_param.mr_type_effective = MR_TYPE_DETECT (TYPE); break;
 
-	  MR_FOREACH (CASE_SET_TYPE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
+	  MR_FOREACH (CASE_SET_TYPE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t, mr_uint128_t);
 	default:
 	  tdp->param.enum_param.mr_type_effective = MR_TYPE_DETECT (int);
 	  tdp->param.enum_param.size_effective = sizeof (int);

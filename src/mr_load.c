@@ -163,7 +163,7 @@ mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
       switch (ptrdes->fdp->size)
 	{
 #define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
-	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
+	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t, mr_uint128_t);
 
 	default:
 	  {
