@@ -737,7 +737,10 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 	  {
 #define GET_VALUE_BY_TYPE(TYPE) GET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define GET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: value = *(TYPE*)src_data; break;
-	    MR_FOREACH (GET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t);
+	    MR_FOREACH (GET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+#ifdef HAVE_INT128
+	    MR_FOREACH (GET_VALUE_BY_TYPE, mr_uint128_t, mr_int128_t);
+#endif /* HAVE_INT128 */
 	  default:
 	    break;
 	  }
@@ -775,7 +778,10 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 	  {
 #define SET_VALUE_BY_TYPE(TYPE) SET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: *(TYPE*)dst_data = value; break;
-	    MR_FOREACH (SET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t);
+	    MR_FOREACH (SET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+#ifdef HAVE_INT128
+	    MR_FOREACH (SET_VALUE_BY_TYPE, mr_uint128_t, mr_int128_t);
+#endif /* HAVE_INT128 */
 	  default:
 	    break;
 	  }
