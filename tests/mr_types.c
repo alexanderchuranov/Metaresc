@@ -148,6 +148,7 @@ typedef struct ext_struct_t {
   const float * c_z;
   volatile double * v_z;
   const volatile long double * cv_z;
+  struct { int _1; } * struct_ptr;
   struct ext_struct_t * self_ptr;
   const struct ext_struct_t * c_self_ptr;
   volatile struct ext_struct_t * v_self_ptr;
@@ -164,6 +165,7 @@ TYPEDEF_STRUCT (ext_struct_t,
 		( , y),
 		x,
 		z, z_c, z_v, z_cv, c_z, v_z, cv_z,
+		struct_ptr,
 		self_ptr, c_self_ptr, v_self_ptr, cv_self_ptr, self_ptr_c, self_ptr_v, self_ptr_cv, c_self_ptr_c, v_self_ptr_v,
 		);
 
@@ -206,6 +208,7 @@ START_TEST (check_ext_struct) {
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (c_z);
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (v_z);
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cv_z);
+  ASSERT_FIELD_TYPE (ext_struct_t, struct_ptr, MR_TYPE_POINTER, MR_TYPE_VOID);
   ASSERT_FIELD_TYPE (ext_struct_t, self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
   ASSERT_FIELD_TYPE (ext_struct_t, c_self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
   ASSERT_FIELD_TYPE (ext_struct_t, v_self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);

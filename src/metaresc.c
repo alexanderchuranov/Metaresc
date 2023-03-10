@@ -1162,6 +1162,15 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
       default:
 	break;
       }
+
+  /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
+  if ((MR_TYPE_NONE == fdp->mr_type) &&
+      (MR_TYPE_NONE == fdp->mr_type_aux) &&
+      (MR_POINTER_TYPE_CLASS == fdp->mr_type_class))
+    {
+      fdp->mr_type = MR_TYPE_POINTER;
+      fdp->mr_type_aux = MR_TYPE_VOID;
+    }
 }
 
 static mr_status_t
