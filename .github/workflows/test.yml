@@ -93,18 +93,13 @@ jobs:
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
         run: make check -j 2
+      - name: tar files
+        run: tar -zcvf win-${{matrix.env}}-${{matrix.sys}}.tar.gz src/.libs/libmetaresc.* src/.libs/mr_dwarf* src/metaresc.h src/mr_protos.h src/mr_export.h src/mr_pp.h tests/test-suite.log
       - name: archive build artifacts
         uses: actions/upload-artifact@v3
         with:
-          name: binaries_and_headers
-          path: |
-            src/.libs/libmetaresc.*
-            src/.libs/mr_dwarf*
-            src/metaresc.h
-            src/mr_protos.h
-            src/mr_export.h
-            src/mr_pp.h
-            tests/test-suite.log
+          name:	win-${{matrix.env}}-${{matrix.sys}}
+          path: win-${{matrix.env}}-${{matrix.sys}}.tar.gz
 
   non-x86-ubuntu-clang:
     runs-on: ubuntu-latest
