@@ -97,7 +97,14 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: binaries_and_headers
-          path: src/.libs/libmetaresc.* src/.libs/mr_dwarf* src/metaresc.h src/mr_protos.h src/mr_export.h src/mr_pp.h
+          path: |
+            src/.libs/libmetaresc.*
+            src/.libs/mr_dwarf*
+            src/metaresc.h
+            src/mr_protos.h
+            src/mr_export.h
+            src/mr_pp.h
+            tests/test-suite.log
 
   non-x86-ubuntu-clang:
     runs-on: ubuntu-latest
