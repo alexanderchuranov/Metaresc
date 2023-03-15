@@ -388,6 +388,12 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		) /* type descriptor */
 
+TYPEDEF_STRUCT (mr_basic_type_td_t, ATTRIBUTES ( , "Stucture for bulk allocation of type descriptor and sentinel field descriptor"),
+		(mr_td_t, td, , "type descriptor"),
+		(mr_fd_t, fd, [1], "sentinel field descriptor"),
+		(mr_fd_ptr_t, fd_ptr, , "array of single pointer on field descriptor for 'fields' initialization"),
+		)
+
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(void *, calloc, (const char *, const char *, int, size_t, size_t), "pointer on malloc() function"),
 		(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
@@ -573,6 +579,12 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 TYPEDEF_STRUCT (mr_get_struct_type_name_t, ATTRIBUTES ( , "long jump buffer and type name"),
 		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
 		(char *, type_name, , "type name"),
+		)
+
+TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type detection with __builtin_dump_struct"),
+		(void *, struct_ptr, , "pointer on a sample struct variable"),
+		(mr_td_t *, tdp, , "type desctiptor"),
+		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
 		)
 
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),

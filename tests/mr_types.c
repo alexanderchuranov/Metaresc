@@ -208,7 +208,7 @@ START_TEST (check_ext_struct) {
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (c_z);
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (v_z);
   ASSERT_EXT_STRUCT_FIELD_TYPE_PTR (cv_z);
-  ASSERT_FIELD_TYPE (ext_struct_t, struct_ptr, MR_TYPE_POINTER, MR_TYPE_VOID);
+  ASSERT_FIELD_TYPE (ext_struct_t, struct_ptr, MR_TYPE_POINTER, MR_TYPE_NONE);
   ASSERT_FIELD_TYPE (ext_struct_t, self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
   ASSERT_FIELD_TYPE (ext_struct_t, c_self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
   ASSERT_FIELD_TYPE (ext_struct_t, v_self_ptr, MR_TYPE_POINTER, MR_TYPE_STRUCT);
@@ -377,10 +377,73 @@ START_TEST (check_types_detection) {
   
 } END_TEST
 
+#ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+#undef MR_MODE
+
+#define TYPEDEF_STRUCT_HACK(TYPE_NAME, ...)				\
+  TYPEDEF_STRUCT (TYPE_NAME, __VA_ARGS__);				\
+  P00_TYPEDEF_MODE (PROTO, __COUNTER__, STRUCT, _ ## TYPE_NAME, __VA_ARGS__)
+
+TYPEDEF_STRUCT_HACK (dump_struct_types_t,
+		     (string_t, string),
+		     CHAR_ARRAY (char, char_array, [sizeof ("")]),
+		     (char, _char),
+		     (bool, _bool),
+		     (int8_t, _int8),
+		     (uint8_t, _uint8),
+		     (int16_t, _int16),
+		     (uint16_t, _uint16),
+		     (int32_t, _int32),
+		     (uint32_t, _uint32),
+		     (int64_t, _int64),
+		     (uint64_t, _uint64),
+		     (mr_int128_t, _int128),
+		     (mr_uint128_t, _uint128),
+		     (double, _double),
+		     (float, _float),
+		     (long_double_t, _long_double),
+		     (void, void_function, (void)),
+		     (mr_empty_t *, _struct_ptr),
+		     /* (int, _array, [2]), // TODO: Add support for arrays */
+		     (void *, void_ptr),
+		     );
+
+MR_ADD_TYPE (_dump_struct_types_t);
+
+START_TEST (dump_struct_types_detection) {
+  mr_conf_init ();
+
+  mr_td_t * mr_tdp = mr_get_td_by_name ("dump_struct_types_t");
+  ck_assert_msg (mr_tdp != NULL, "Failed to get type descriptor for type dump_struct_types_t.");
+  mr_td_t * dst_tdp = mr_get_td_by_name ("_dump_struct_types_t");
+  ck_assert_msg (dst_tdp != NULL, "Failed to get type descriptor for type _dump_struct_types_t.");
+
+  int i, count = mr_tdp->fields_size / sizeof (mr_tdp->fields[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_fd_t * mr_fdp = mr_tdp->fields[i].fdp;
+      mr_fd_t * dst_fdp = mr_get_fd_by_name (dst_tdp, mr_fdp->name.str);
+      ck_assert_msg (dst_fdp != NULL, "dump_struct have not detected field '%s'", mr_fdp->name.str);
+      if ((mr_fdp->mr_type != MR_TYPE_CHAR_ARRAY) && (mr_fdp->mr_type != MR_TYPE_FUNC))
+	ck_assert_msg (mr_fdp->mr_type == dst_fdp->mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->mr_type, dst_fdp->mr_type, mr_fdp->name.str);
+      if (!(mr_fdp->mr_type == MR_TYPE_STRING) &&
+	  !((mr_fdp->mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
+	ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
+      ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
+    }
+} END_TEST
+
+#else
+
+START_TEST (dump_struct_types_detection) { } END_TEST
+
+#endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+
 MAIN_TEST_SUITE ((check_void_function_field, "check that non-serializable function pointer is declared correctly"),
 		 (check_ext_struct, "check that descriptor for external type is correct"),
 		 (check_type_autodetection, "check struct type autodetection"),
 		 (check_struct_array_autodetect, "check strcuts array autodetection"),
 		 (check_basic_type_array_autodetect, "check that MR_SAVE handles array correctly"),
-		 (check_types_detection, "check that types detected correctly")
+		 (check_types_detection, "check that types detected correctly"),
+		 (dump_struct_types_detection, "check types detected by __builtin_dump_struct")
 		 );

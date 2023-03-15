@@ -604,64 +604,64 @@
 #define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	  .type = MR_STRINGIFY (TYPE),					\
-	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
-	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
-	     .mr_type = MR_TYPE,					\
-	     .mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	     .meta = "" __VA_ARGS__,					\
-		} } },
+	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
+	.offset = offsetof (MR_TYPE_NAME, NAME),			\
+	.mr_type = MR_TYPE,						\
+	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.meta = "" __VA_ARGS__,						\
+      } } },
 
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	  .type = MR_STRINGIFY (TYPE),					\
-	     .size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
-	     .offset = offsetof (MR_TYPE_NAME, NAME),			\
-	     .mr_type = MR_TYPE_ARRAY,					\
-	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
-	     .mr_type_ptr = MR_TYPE_DETECT_PTR (TYPE),			\
-	     .mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	     .param =							\
-	     {								\
-	       .array_param = {						\
-		 .count = sizeof (((MR_TYPE_NAME*)0)->NAME) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
-		 .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
-		 .pointer_param = (mr_fd_t[]){{}},			\
-	       },							\
-	     },								\
-	     .meta = "" __VA_ARGS__,					\
-		} } },
+	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
+	.offset = offsetof (MR_TYPE_NAME, NAME),			\
+	.mr_type = MR_TYPE_ARRAY,					\
+	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
+	.mr_type_ptr = MR_TYPE_DETECT_PTR (TYPE),			\
+	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.param =							\
+	{								\
+	  .array_param = {						\
+	    .count = sizeof (((MR_TYPE_NAME*)0)->NAME) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
+	    .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
+	    .pointer_param = (mr_fd_t[]){{}},				\
+	  },								\
+	},								\
+	.meta = "" __VA_ARGS__,						\
+      } } },
 
 #define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
-	  .type = MR_STRINGIFY (TYPE),					\
-	     .size = sizeof (TYPE),					\
-	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
-	     .mr_type = MR_TYPE_VOID,					\
-	     MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
-	     MR_IF_ELSE (MR_IS_IN_PAREN (NAME))				\
-	     (.mr_type_class = MR_FUNCTION_TYPE_CLASS,) \
-	     (.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
-	     .meta = "" __VA_ARGS__,					\
-	     } } },
+	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.size = sizeof (TYPE),						\
+	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
+	.mr_type = MR_TYPE_VOID,					\
+	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
+	MR_IF_ELSE (MR_IS_IN_PAREN (NAME))				\
+	(.mr_type_class = MR_FUNCTION_TYPE_CLASS,)			\
+	(.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
+	.meta = "" __VA_ARGS__,						\
+      } } },
 
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	  .type = MR_STRINGIFY (TYPE),					\
-	     .size = sizeof (TYPE),					\
-	     .mr_type = MR_TYPE_BITFIELD,				\
-	     .mr_type_aux = MR_TYPE_DETECT (TYPE),			\
-	     .mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	     .param = {							\
+	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.size = sizeof (TYPE),						\
+	.mr_type = MR_TYPE_BITFIELD,					\
+	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
+	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.param = {							\
 	  .bitfield_param = {						\
 	    .size = sizeof (MR_TYPE_NAME),				\
 	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), \
 	  }, },								\
-	     .meta = "" __VA_ARGS__,					\
-		} } },
+	.meta = "" __VA_ARGS__,						\
+      } } },
 
 #define MR_IS_SELF_PTR(MR_TYPE_NAME, NAME, SUFFIX) __builtin_types_compatible_p (MR_TYPE_NAME SUFFIX, __typeof__ (((MR_TYPE_NAME*)0)->NAME))
 
@@ -692,12 +692,12 @@
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_LAST, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
     .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
-      .type = MR_STRINGIFY (TYPE),				\
-	 .size = sizeof (TYPE),					\
-	 .mr_type = MR_TYPE_DETECT (TYPE),			\
-	 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),		\
-	 .meta = "" __VA_ARGS__,				\
-	 },
+    .type = MR_STRINGIFY_READONLY (TYPE),			\
+    .size = sizeof (TYPE),					\
+    .mr_type = MR_TYPE_DETECT (TYPE),				\
+    .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
+    .meta = "" __VA_ARGS__,					\
+  },
 
 #define MR_TYPEDEF_STRUCT_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_STRUCT)
 #define MR_END_STRUCT_DESC(ID, MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
@@ -727,12 +727,12 @@
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...) { \
     (mr_fd_t[]){ {						     \
-	.type = #MR_TYPE_NAME,					     \
-	  .name = { .str = #NAME, .hash_value = 0, },		     \
-	  .mr_type = MR_TYPE_ENUM,				     \
-	     .param = { .enum_param = { NAME }, },		     \
-	     .meta = "" __VA_ARGS__,				     \
-		} } },
+	.type = MR_STRINGIFY_READONLY (MR_TYPE_NAME),		     \
+	.name = { .str = #NAME, .hash_value = 0, },		     \
+	.mr_type = MR_TYPE_ENUM,				     \
+	.param = { .enum_param = { NAME }, },			     \
+	.meta = "" __VA_ARGS__,					     \
+      } } },
 #define MR_END_ENUM_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_FUNC_ARG_PTR(...) { (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) } },
@@ -762,6 +762,28 @@
 	  } } } },							\
     .meta = "" __VA_ARGS__ };						\
   static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) { mr_add_type (&MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME)); }
+
+#define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
+#define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
+  static inline void __attribute__((constructor)) mr_init_ ## ID (void) { \
+    if (sizeof (MR_TYPE_NAME) >= (1 << __CHAR_BIT__))			\
+      return;								\
+    mr_dump_struct_type_ctx_t dst_ctx;					\
+    MR_TYPE_NAME __value;						\
+    uint8_t * __ptr = (uint8_t*)&__value;				\
+    int __i;								\
+    for (__i = 0; __i < sizeof (__value); ++__i)			\
+      *__ptr++ = __i;							\
+    memset (&dst_ctx, 0, sizeof (dst_ctx));				\
+    dst_ctx.struct_ptr = &__value;					\
+    if (0 == setjmp (dst_ctx._jmp_buf))					\
+      __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
+    if (dst_ctx.tdp)							\
+      {									\
+	dst_ctx.tdp->size = sizeof (__value);				\
+	mr_add_type (dst_ctx.tdp);					\
+      }									\
+  }
 
 /*
   User can turn off strict types checking for Metaresc macroses, so compilation will produce only warnings.
@@ -1296,6 +1318,8 @@ extern mr_conf_t mr_conf;
 #ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 extern __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
 extern int mr_get_struct_type_name (const char * fmt, ...);
+#else /* ! HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+extern int mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...);
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
 extern int mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...);

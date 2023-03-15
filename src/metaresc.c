@@ -71,6 +71,9 @@ static mr_status_t basic_types_visitor (mr_ptr_t key, const void * context);
 
 static mr_ic_t basic_types;
 
+#define MR_STRUCT_KEYWORD "struct"
+#define MR_UNION_KEYWORD "union"
+
 #ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
 
@@ -85,10 +88,172 @@ mr_get_struct_type_name (const char * fmt, char * value)
 {
   return (0);
 }
-#endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
-#define MR_STRUCT_KEYWORD "struct"
-#define MR_UNION_KEYWORD "union"
+TYPEDEF_UNION (mr_dump_struct_types_union_t,
+	       int8_t _int8,
+	       uint8_t _uint8,
+	       int16_t _int16,
+	       uint16_t _uint16,
+	       int32_t _int32,
+	       uint32_t _uint32,
+	       int64_t _int64,
+	       uint64_t _uint64,
+	       float _float,
+	       double _double,
+	       long double _long_double,
+	       (void *, _ptr),
+	       (uint8_t, dump, [sizeof (long double)]),
+	       );
+
+static void
+mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
+			       char * type,
+			       char * name,
+			       mr_type_t mr_type,
+			       mr_dump_struct_types_union_t * value)
+{
+  int i;
+  mr_offset_t offset = -1;
+  switch (mr_type)
+    {
+    case MR_TYPE_INT32:
+      for (i = 1; i < sizeof (value); ++i)
+	if (value->dump[i] != 0)
+	  break;
+      if (i >= sizeof (*value))
+	mr_type = MR_TYPE_BOOL;
+      /* fall trhough */
+    case MR_TYPE_INT8:
+    case MR_TYPE_UINT8:
+    case MR_TYPE_INT16:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_INT64:
+    case MR_TYPE_UINT64:
+    case MR_TYPE_LONG_DOUBLE:
+    case MR_TYPE_STRING:
+    case MR_TYPE_POINTER:
+      offset = value->_uint8;
+      break;
+
+    case MR_TYPE_DOUBLE:
+      for (i = 0; i < sizeof (double) - sizeof (float); ++i)
+	if (value->dump[i] != 0)
+	  break;
+      if (i >= sizeof (double) - sizeof (float))
+	{
+	  mr_type = MR_TYPE_FLOAT;
+	  value->_float = value->_double;
+	}
+
+      offset = value->_uint8;
+      break;
+
+    case MR_TYPE_NONE:
+      offset = value->_ptr - ctx->struct_ptr;
+      break;
+
+    default:
+      break;
+    }
+
+  if (offset == -1)
+    return;
+
+  int fields_count = ctx->tdp->fields_size / sizeof (ctx->tdp->fields[0]);
+  mr_basic_type_td_t * basic_type_td = MR_REALLOC (ctx->tdp, sizeof (*basic_type_td) + (sizeof (basic_type_td->fd) + sizeof (basic_type_td->fd_ptr)) * fields_count);
+  if (NULL == basic_type_td)
+    {
+      MR_FREE (ctx->tdp);
+      ctx->tdp = NULL;
+      longjmp (ctx->_jmp_buf, !0);
+    }
+
+  mr_fd_t * fdp = &basic_type_td->fd[fields_count - 1];
+  basic_type_td->fd[fields_count] = *fdp;
+  fdp->mr_type = mr_type;
+  fdp->type = type;
+  fdp->name.str = name;
+  fdp->offset = offset;
+
+  basic_type_td->td.fields = (mr_fd_ptr_t*)&basic_type_td->fd[fields_count + 1];
+  for (i = 0; i <= fields_count; ++i)
+    basic_type_td->td.fields[i].fdp = &basic_type_td->fd[i];
+  basic_type_td->td.fields_size += sizeof (basic_type_td->td.fields[0]);
+  ctx->tdp = &basic_type_td->td;
+}
+
+int
+mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
+{
+  va_list args;
+  va_start (args, fmt);
+
+#define FMT "%s%s %s = "
+#define FIRST_LEVEL_INDENT "  "
+
+  if (ctx->tdp == NULL)
+    {
+      mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td));
+      if (NULL == basic_type_td)
+	longjmp (ctx->_jmp_buf, !0);
+
+      ctx->tdp = &basic_type_td->td;
+      ctx->tdp->fields_size = sizeof (ctx->tdp->fields[0]);
+      ctx->tdp->fields = &basic_type_td->fd_ptr;
+      ctx->tdp->fields[0].fdp = basic_type_td->fd;
+      ctx->tdp->fields[0].fdp->mr_type = MR_TYPE_LAST;
+      ctx->tdp->is_dynamically_allocated = true;
+      ctx->tdp->mr_type = MR_TYPE_STRUCT;
+
+      char * type = va_arg (args, char *);
+
+      if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
+	type += sizeof (MR_STRUCT_KEYWORD);
+
+      if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0)
+	type += sizeof (MR_UNION_KEYWORD);
+
+      ctx->tdp->type.str = type;
+    }
+  else if (strncmp (fmt, FMT, sizeof (FMT) - sizeof ("")) == 0)
+    {
+      char * indent = va_arg (args, char *);
+      char * type = va_arg (args, char *);
+      char * name = va_arg (args, char *);
+      if (strcmp (indent, FIRST_LEVEL_INDENT) == 0)
+	{
+	  mr_dump_struct_types_union_t value;
+	  mr_type_t mr_type = MR_TYPE_LAST;
+
+	  memset (&value, 0, sizeof (value));
+	  fmt += sizeof (FMT) - sizeof ("");
+
+#define CASE(FIELD, MR_TYPE) value.FIELD = va_arg (args, typeof (0 + (typeof (value.FIELD))0)); mr_type = MR_TYPE;
+
+	  if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (_ptr, MR_TYPE_STRING) }
+	  else if (strcmp (fmt, "*%p\n") == 0) { CASE (_ptr, MR_TYPE_NONE) }
+	  else if (strcmp (fmt, "%p\n") == 0) { CASE (_ptr, MR_TYPE_POINTER) }
+	  else if (strcmp (fmt, "%hhd\n") == 0) { CASE (_int8, MR_TYPE_INT8) }
+	  else if (strcmp (fmt, "%hhu\n") == 0) { CASE (_uint8, MR_TYPE_UINT8) }
+	  else if (strcmp (fmt, "%hd\n") == 0) { CASE (_int16, MR_TYPE_INT16) }
+	  else if (strcmp (fmt, "%hu\n") == 0) { CASE (_uint16, MR_TYPE_UINT16) }
+	  else if (strcmp (fmt, "%d\n") == 0) { CASE (_int32, MR_TYPE_INT32) }
+	  else if (strcmp (fmt, "%u\n") == 0) { CASE (_uint32, MR_TYPE_UINT32) }
+	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (_int64, MR_TYPE_INT64) }
+	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (_uint64, MR_TYPE_UINT64) }
+	  else if (strcmp (fmt, "%f\n") == 0) { CASE (_double, MR_TYPE_DOUBLE) }
+	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (_long_double, MR_TYPE_LONG_DOUBLE) }
+
+	  if (mr_type != MR_TYPE_LAST)
+	    mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
+	}
+    }
+
+  va_end (args);
+  return (0);
+}
+#endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
 int
 mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...)
@@ -1042,7 +1207,152 @@ mr_type_is_a_pointer (char * type)
   return (false);
 }
 
-static void mr_fd_detect_field_type (mr_fd_t * fdp);
+static void
+mr_fd_detect_field_type (mr_fd_t * fdp)
+{
+  switch (fdp->mr_type)
+    {
+    case MR_TYPE_NONE:
+    case MR_TYPE_INT8:
+    case MR_TYPE_UINT8:
+    case MR_TYPE_INT16:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_INT32:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_INT64:
+    case MR_TYPE_UINT64:
+    case MR_TYPE_INT128:
+    case MR_TYPE_UINT128:
+    case MR_TYPE_BITFIELD:
+    case MR_TYPE_ARRAY:
+    case MR_TYPE_POINTER:
+      break;
+      
+    default:
+      return;
+    }
+  if (fdp->type == NULL)
+    return;
+
+  int type_name_langth = strlen (fdp->type);
+  char type[type_name_langth + 1];
+
+  strcpy (type, fdp->type);
+  mr_normalize_type (type);
+
+  mr_td_t * tdp = mr_get_td_by_name (type);
+
+  if (NULL == tdp)
+    if (mr_type_is_a_pointer (type))
+      {
+	if (MR_TYPE_ARRAY == fdp->mr_type)
+	  fdp->mr_type_aux = MR_TYPE_POINTER;
+	else
+	  fdp->mr_type = MR_TYPE_POINTER;
+
+	tdp = mr_get_td_by_name (type);
+      }
+
+  fdp->tdp = tdp;
+
+  /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
+  if ((fdp->mr_type == MR_TYPE_NONE) && (fdp->mr_type_aux != MR_TYPE_NONE))
+    fdp->mr_type = MR_TYPE_POINTER;
+  if ((fdp->mr_type == MR_TYPE_ARRAY) && (fdp->mr_type_aux == MR_TYPE_NONE) && (fdp->mr_type_ptr != MR_TYPE_NONE))
+    fdp->mr_type_aux = MR_TYPE_POINTER;
+
+  if (tdp)
+    {
+      fdp->type = tdp->type.str;
+      switch (fdp->mr_type)
+	{
+	case MR_TYPE_NONE:
+	  /* Enum detection */
+	case MR_TYPE_INT8:
+	case MR_TYPE_UINT8:
+	case MR_TYPE_INT16:
+	case MR_TYPE_UINT16:
+	case MR_TYPE_INT32:
+	case MR_TYPE_UINT32:
+	case MR_TYPE_INT64:
+	case MR_TYPE_UINT64:
+	case MR_TYPE_INT128:
+	case MR_TYPE_UINT128:
+	  fdp->mr_type = tdp->mr_type;
+	  break;
+
+	  /*
+	    pointer, arrays and bit fields need to detect mr_type_aux for basic type
+	  */
+	case MR_TYPE_BITFIELD:
+	case MR_TYPE_POINTER:
+	  fdp->mr_type_aux = tdp->mr_type;
+	  break;
+
+	case MR_TYPE_ARRAY:
+	  if (MR_TYPE_POINTER == fdp->mr_type_aux)
+	    fdp->mr_type_ptr = tdp->mr_type;
+	  else
+	    fdp->mr_type_aux = tdp->mr_type;
+	  break;
+
+	default:
+	  break;
+	}
+    }
+
+  /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
+  if ((MR_TYPE_NONE == fdp->mr_type) && (MR_POINTER_TYPE_CLASS == fdp->mr_type_class))
+    fdp->mr_type = MR_TYPE_POINTER;
+}
+
+static void
+mr_add_basic_types (mr_fd_t * fdp)
+{
+  if (mr_get_td_by_name (fdp->type))
+    return;
+
+  switch (fdp->mr_type)
+    {
+    case MR_TYPE_POINTER:
+    case MR_TYPE_BITFIELD:
+    case MR_TYPE_VOID:
+      if ((fdp->mr_type_aux != MR_TYPE_NONE) && (fdp->mr_type_aux != MR_TYPE_VOID))
+	mr_ic_add (&basic_types, fdp);
+      break;
+
+    case MR_TYPE_ARRAY:
+      if (fdp->mr_type_aux != MR_TYPE_POINTER)
+	mr_ic_add (&basic_types, fdp);
+      break;
+
+    case MR_TYPE_STRING:
+    case MR_TYPE_CHAR_ARRAY:
+    case MR_TYPE_CHAR:
+    case MR_TYPE_BOOL:
+    case MR_TYPE_INT8:
+    case MR_TYPE_UINT8:
+    case MR_TYPE_INT16:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_INT32:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_INT64:
+    case MR_TYPE_UINT64:
+    case MR_TYPE_INT128:
+    case MR_TYPE_UINT128:
+    case MR_TYPE_FLOAT:
+    case MR_TYPE_COMPLEX_FLOAT:
+    case MR_TYPE_DOUBLE:
+    case MR_TYPE_COMPLEX_DOUBLE:
+    case MR_TYPE_LONG_DOUBLE:
+    case MR_TYPE_COMPLEX_LONG_DOUBLE:
+      mr_ic_add (&basic_types, fdp);
+      break;
+
+    default:
+      break;
+    }
+}
 
 /**
  * Initialize fields that are pointers on functions. Detects types of arguments.
@@ -1054,123 +1364,11 @@ mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
   for (i = 0; fdp->param.func_param.args[i].mr_type != MR_TYPE_LAST; ++i)
-    mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
+    {
+      mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
+      mr_add_basic_types (&fdp->param.func_param.args[i]);
+    }
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
-}
-
-static void
-mr_fd_detect_field_type (mr_fd_t * fdp)
-{
-  mr_normalize_type (fdp->type);
-
-  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
-  bool type_is_a_pointer = false;
-  
-  switch (fdp->mr_type)
-    {
-    case MR_TYPE_NONE: /* MR_AUTO type resolution */
-      /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
-      if (fdp->mr_type_aux != MR_TYPE_NONE)
-	fdp->mr_type = MR_TYPE_POINTER;
-      if (mr_type_is_a_pointer (fdp->type))
-	{
-	  fdp->mr_type = MR_TYPE_POINTER;
-	  type_is_a_pointer = true;
-	  tdp = mr_get_td_by_name (fdp->type);
-	}
-      break;
-      
-    case MR_TYPE_FUNC:
-      mr_func_field_detect (fdp);
-      return;
-      
-    default:
-      break;
-    }
-
-  fdp->tdp = tdp;
-
-  if (NULL == tdp)
-    switch (fdp->mr_type)
-      {
-      case MR_TYPE_POINTER:
-	if (!type_is_a_pointer)
-	  break;
-	
-      case MR_TYPE_BITFIELD:
-      case MR_TYPE_VOID:
-      case MR_TYPE_ARRAY:
-	if ((fdp->mr_type_aux != MR_TYPE_NONE) && (fdp->mr_type_aux != MR_TYPE_VOID))
-	  mr_ic_add (&basic_types, fdp);
-	break;
-	
-      case MR_TYPE_STRING:
-      case MR_TYPE_CHAR_ARRAY:
-      case MR_TYPE_CHAR:
-      case MR_TYPE_BOOL:
-      case MR_TYPE_INT8:
-      case MR_TYPE_UINT8:
-      case MR_TYPE_INT16:
-      case MR_TYPE_UINT16:
-      case MR_TYPE_INT32:
-      case MR_TYPE_UINT32:
-      case MR_TYPE_INT64:
-      case MR_TYPE_UINT64:
-      case MR_TYPE_INT128:
-      case MR_TYPE_UINT128:
-      case MR_TYPE_FLOAT:
-      case MR_TYPE_COMPLEX_FLOAT:
-      case MR_TYPE_DOUBLE:
-      case MR_TYPE_COMPLEX_DOUBLE:
-      case MR_TYPE_LONG_DOUBLE:
-      case MR_TYPE_COMPLEX_LONG_DOUBLE:
-	mr_ic_add (&basic_types, fdp);
-	break;
-
-      default:
-	break;
-      }
-  else
-    switch (fdp->mr_type)
-      {
-      case MR_TYPE_NONE:
-	/* Enum detection */
-      case MR_TYPE_INT8:
-      case MR_TYPE_UINT8:
-      case MR_TYPE_INT16:
-      case MR_TYPE_UINT16:
-      case MR_TYPE_INT32:
-      case MR_TYPE_UINT32:
-      case MR_TYPE_INT64:
-      case MR_TYPE_UINT64:
-      case MR_TYPE_INT128:
-      case MR_TYPE_UINT128:
-	fdp->mr_type = tdp->mr_type;
-	break;
-
-	/*
-	  pointer, arrays and bit fields need to detect mr_type_aux for basic type
-	*/
-      case MR_TYPE_ARRAY:
-	if (fdp->mr_type_aux == MR_TYPE_POINTER)
-	  break;
-      case MR_TYPE_BITFIELD:
-      case MR_TYPE_POINTER:
-	fdp->mr_type_aux = tdp->mr_type;
-	break;
-
-      default:
-	break;
-      }
-
-  /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
-  if ((MR_TYPE_NONE == fdp->mr_type) &&
-      (MR_TYPE_NONE == fdp->mr_type_aux) &&
-      (MR_POINTER_TYPE_CLASS == fdp->mr_type_class))
-    {
-      fdp->mr_type = MR_TYPE_POINTER;
-      fdp->mr_type_aux = MR_TYPE_VOID;
-    }
 }
 
 static mr_status_t
@@ -1277,43 +1475,36 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
 static void
 mr_fd_init_array_params (mr_fd_t * fdp)
 {
-  bool add_basic_type = false;
-      
-  if (MR_TYPE_NONE == fdp->mr_type_aux)
+  switch (fdp->mr_type_aux)
     {
-      if (fdp->mr_type_ptr != MR_TYPE_NONE)
-	fdp->mr_type_aux = MR_TYPE_POINTER;
-	  
-      if (mr_type_is_a_pointer (fdp->type))
-	{
-	  add_basic_type = true;
-	  mr_td_t * tdp = mr_get_td_by_name (fdp->type);
-	  if (tdp != NULL)
-	    {
-	      add_basic_type = false;
-	      fdp->mr_type_aux = MR_TYPE_POINTER;
-	      fdp->mr_type_ptr = tdp->mr_type;
-	      fdp->tdp = tdp;
-	    }
-	}
-    }
+    case MR_TYPE_NONE:
+    case MR_TYPE_VOID:
+    case MR_TYPE_BITFIELD:
+    case MR_TYPE_ARRAY:
+    case MR_TYPE_ANON_UNION:
+    case MR_TYPE_NAMED_ANON_UNION:
+    case MR_TYPE_END_ANON_UNION:
+      fdp->mr_type = MR_TYPE_VOID;
+      break;
 
-  if (MR_TYPE_NONE == fdp->mr_type_aux)
-    fdp->mr_type = MR_TYPE_VOID;
-  else if (MR_TYPE_POINTER == fdp->mr_type_aux)
-    {
-      mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
-      *pointer_param = *fdp;
-      pointer_param->mr_type = MR_TYPE_POINTER;
-      pointer_param->mr_type_aux = fdp->mr_type_ptr;
-      pointer_param->mr_type_class = MR_POINTER_TYPE_CLASS;
-      pointer_param->size = sizeof (void*);
-      pointer_param->unnamed = true;
-      pointer_param->param.array_param.pointer_param = NULL;
+    case MR_TYPE_POINTER:
+      {
+	mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
+	*pointer_param = *fdp;
+	pointer_param->mr_type = MR_TYPE_POINTER;
+	pointer_param->mr_type_aux = fdp->mr_type_ptr;
+	pointer_param->mr_type_class = MR_POINTER_TYPE_CLASS;
+	pointer_param->size = sizeof (void*);
+	pointer_param->unnamed = true;
+	pointer_param->param.array_param.pointer_param = NULL;
 
-      if (add_basic_type)
-	mr_ic_add (&basic_types, pointer_param);
-      mr_fd_init_ud_overrides (pointer_param);
+	mr_fd_init_ud_overrides (pointer_param);
+	mr_add_basic_types (pointer_param);
+	break;
+      }
+
+    default:
+      break;
     }
 }
 
@@ -1338,11 +1529,20 @@ mr_detect_fields_types (mr_td_t * tdp)
 	}
 
       mr_fd_detect_field_type (fdp);
+
+      if (fdp->size == 0)
+	fdp->size = mr_type_size (fdp->mr_type);
+      if ((fdp->size == 0) && tdp)
+	fdp->size = tdp->size;
+
       mr_fd_detect_res_size (fdp);
       mr_fd_init_ud_overrides (fdp);
       
       if (MR_TYPE_ARRAY == fdp->mr_type)
 	mr_fd_init_array_params (fdp);
+      else if (MR_TYPE_FUNC == fdp->mr_type)
+	mr_func_field_detect (fdp);
+      mr_add_basic_types (fdp);
     }
 }
 
@@ -1677,12 +1877,6 @@ mr_post_conf_init_visitor (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
-TYPEDEF_STRUCT (mr_basic_type_td_t,
-		(mr_td_t, td),
-		(mr_fd_ptr_t, fd_ptr),
-		(mr_fd_t, fd),
-		);
-
 static mr_status_t
 basic_types_visitor (mr_ptr_t key, const void * context)
 {
@@ -1724,6 +1918,11 @@ basic_types_visitor (mr_ptr_t key, const void * context)
     default:
       break;
     }
+
+#define MR_BASIC_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_CHAR, MR_TYPE_BOOL, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128, MR_TYPE_FLOAT, MR_TYPE_COMPLEX_FLOAT, MR_TYPE_DOUBLE, MR_TYPE_COMPLEX_DOUBLE, MR_TYPE_LONG_DOUBLE, MR_TYPE_COMPLEX_LONG_DOUBLE))
+
+  if (!((MR_BASIC_TYPES >> mr_type) & 1))
+    return (MR_SUCCESS); /* skip non-basic types */
   
   mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td));
   if (NULL == basic_type_td)
@@ -1734,7 +1933,7 @@ basic_types_visitor (mr_ptr_t key, const void * context)
   basic_type_td->td.mr_type = mr_type;
   basic_type_td->td.size = mr_type_size (mr_type);
   basic_type_td->td.fields = &basic_type_td->fd_ptr;
-  basic_type_td->fd_ptr.fdp = &basic_type_td->fd;
+  basic_type_td->fd_ptr.fdp = basic_type_td->fd;
 
   mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
 
@@ -1750,7 +1949,6 @@ basic_types_visitor (mr_ptr_t key, const void * context)
 void
 mr_detect_type (mr_fd_t * fdp)
 {
-  mr_td_t * tdp;
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
@@ -1763,51 +1961,16 @@ mr_detect_type (mr_fd_t * fdp)
 
   if (NULL == fdp)
     return;
-  
-  mr_normalize_type (fdp->type);
-  fdp->name.str = fdp->type;
-  fdp->name.hash_value = 0;
 
-  switch (fdp->mr_type)
-    {
-    case MR_TYPE_UINT8:
-    case MR_TYPE_INT8:
-    case MR_TYPE_UINT16:
-    case MR_TYPE_INT16:
-    case MR_TYPE_UINT32:
-    case MR_TYPE_INT32:
-    case MR_TYPE_UINT64:
-    case MR_TYPE_INT64:
-    case MR_TYPE_UINT128:
-    case MR_TYPE_INT128:
-    case MR_TYPE_NONE:
-    case MR_TYPE_VOID:
-      /* we need to detect only enums, structs and unions. string_t is declared as MR_TYPE_CHAR_ARRAY, but detected as MR_TYPE_STRING */
-      tdp = mr_get_td_by_name (fdp->type);
-      if (tdp)
-	{
-	  fdp->mr_type = tdp->mr_type;
-	  fdp->size = tdp->size;
-	  fdp->tdp = tdp;
+  mr_fd_detect_field_type (fdp);
 
-	  char * type_name_ = NULL;
-	  if ((tdp->mr_type > 0) && (tdp->mr_type < sizeof (type_name) / sizeof (type_name[0])))
-	    type_name_ = type_name[tdp->mr_type];
-	  
-	  if (type_name_)
-	    fdp->type = fdp->name.str = type_name[tdp->mr_type];
-	  else
-	    fdp->type = fdp->name.str = tdp->type.str;
-	}
-      break;
-    default:
-      break;
-    }
+  if (fdp->tdp)
+    fdp->type = fdp->name.str = fdp->tdp->type.str;
   
-  if ((NULL == fdp->tdp) &&
-      (fdp->mr_type > 0) && (fdp->mr_type < sizeof (type_name) / sizeof (type_name[0])))
+  if ((fdp->mr_type > 0) && (fdp->mr_type < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[fdp->mr_type])
       fdp->type = fdp->name.str = type_name[fdp->mr_type];
+  fdp->name.hash_value = 0;
 }
 
 mr_uintmax_t
