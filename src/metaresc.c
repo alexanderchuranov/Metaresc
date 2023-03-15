@@ -117,7 +117,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   switch (mr_type)
     {
     case MR_TYPE_INT32:
-      for (i = 1; i < sizeof (value); ++i)
+      for (i = 1; i < sizeof (*value); ++i)
 	if (value->dump[i] != 0)
 	  break;
       if (i >= sizeof (*value))
