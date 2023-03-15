@@ -321,6 +321,39 @@ int main (int argc, char * argv[])
 }
 ```
 
+For happy users of clang15+ library provides one more option to
+discover type descriptors. Use macro `MR_ADD_TYPE` for structs and
+unions. This macro will automatically discover fields of most basic
+types, structures, unions and pointers of known types. Example above
+will look as follows:
+
+```c
+#include <metaresc.h>
+
+typedef struct tree_node_t {
+  char * value;
+  struct tree_node_t * left;
+  struct tree_node_t * right;
+} tree_node_t;
+
+MR_ADD_TYPE (tree_node_t);
+  
+int main (int argc, char * argv[])
+{
+  tree_node_t root = {
+    "root",
+    (tree_node_t[]){ { "left" } },
+    (tree_node_t[]){ { "right" } },
+  };
+  
+  MR_PRINT ("tree = ", (tree_node_t, &root));
+  return (EXIT_SUCCESS);
+}
+```
+
+For registration on multiple types use macro lambda iterator
+`MR_FOREACH (MR_ADD_TYPE, my_struct0_t, my_struct1_t, my_struct2_t);`.
+
 I would expect that some of the users still will find this a bit
 challenging and overcomplicated. For those users library provides a
 way to generate metadata from compiler debug symbols. It adds some
