@@ -763,9 +763,11 @@
     .meta = "" __VA_ARGS__ };						\
   static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) { mr_add_type (&MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME)); }
 
+#define MR_CONSTRUCTOR_PREFIX_ID(ID, MR_TYPE_NAME) mr_init_ ## ID
+
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
-  static inline void __attribute__((constructor)) mr_init_ ## ID (void) { \
+  static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX_ID (ID, MR_TYPE_NAME) (void) { \
     if (sizeof (MR_TYPE_NAME) >= (1 << __CHAR_BIT__))			\
       return;								\
     mr_dump_struct_type_ctx_t dst_ctx;					\
