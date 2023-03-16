@@ -386,7 +386,6 @@ START_TEST (check_types_detection) {
 
 TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (string_t, string),
-		     CHAR_ARRAY (char, char_array, [sizeof ("")]),
 		     (char, _char),
 		     (bool, _bool),
 		     (int8_t, _int8),
@@ -402,9 +401,10 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (double, _double),
 		     (float, _float),
 		     (long_double_t, _long_double),
-		     (void, void_function, (void)),
 		     (mr_empty_t *, _struct_ptr),
-		     /* (int, _array, [2]), // TODO: Add support for arrays */
+		     (uint8_t, _array, [2]),
+		     (uint8_t, _2d_array, [3][2]),
+		     (uint8_t, _3d_array, [4][3][2]),
 		     (void *, void_ptr),
 		     );
 
@@ -424,11 +424,20 @@ START_TEST (dump_struct_types_detection) {
       mr_fd_t * mr_fdp = mr_tdp->fields[i].fdp;
       mr_fd_t * dst_fdp = mr_get_fd_by_name (dst_tdp, mr_fdp->name.str);
       ck_assert_msg (dst_fdp != NULL, "dump_struct have not detected field '%s'", mr_fdp->name.str);
-      if ((mr_fdp->mr_type != MR_TYPE_CHAR_ARRAY) && (mr_fdp->mr_type != MR_TYPE_FUNC))
-	ck_assert_msg (mr_fdp->mr_type == dst_fdp->mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->mr_type, dst_fdp->mr_type, mr_fdp->name.str);
+
+      ck_assert_msg (mr_fdp->mr_type == dst_fdp->mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->mr_type, dst_fdp->mr_type, mr_fdp->name.str);
       if (!(mr_fdp->mr_type == MR_TYPE_STRING) &&
 	  !((mr_fdp->mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
 	ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
+      if (mr_fdp->mr_type == MR_TYPE_ARRAY)
+	{
+	  ck_assert_msg (mr_fdp->param.array_param.count == dst_fdp->param.array_param.count,
+			 "dump_struct mismatched array_param.count (%d != %d) for field '%s'",
+			 mr_fdp->param.array_param.count, dst_fdp->param.array_param.count, mr_fdp->name.str);
+	  ck_assert_msg (mr_fdp->param.array_param.row_count == dst_fdp->param.array_param.row_count,
+			 "dump_struct mismatched array_param.count (%d != %d) for field '%s'",
+			 mr_fdp->param.array_param.row_count, dst_fdp->param.array_param.row_count, mr_fdp->name.str);
+	}
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
     }
 } END_TEST

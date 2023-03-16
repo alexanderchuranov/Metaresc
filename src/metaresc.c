@@ -1207,31 +1207,39 @@ mr_type_is_a_pointer (char * type)
   return (false);
 }
 
+static bool
+mr_type_is_an_array (mr_fd_t * fdp, char * type)
+{
+  char * end = &type[strlen (type) - 1];
+  int row_count = 0, count = 1;
+  while (']' == *end)
+    {
+      char * open_bracket = strrchr (type, '[');
+      if (NULL == open_bracket)
+	break;
+      int last_row_count = atoi (open_bracket + 1);
+      row_count = count;
+      count *= last_row_count;
+      *open_bracket = 0;
+      end = open_bracket - 1;
+    }
+
+  if (row_count != 0)
+    {
+      fdp->mr_type = MR_TYPE_ARRAY;
+      fdp->param.array_param.count = count;
+      fdp->param.array_param.row_count = row_count;
+    }
+  
+  return (MR_TYPE_ARRAY == fdp->mr_type);
+}
+
 static void
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
-  switch (fdp->mr_type)
-    {
-    case MR_TYPE_NONE:
-    case MR_TYPE_INT8:
-    case MR_TYPE_UINT8:
-    case MR_TYPE_INT16:
-    case MR_TYPE_UINT16:
-    case MR_TYPE_INT32:
-    case MR_TYPE_UINT32:
-    case MR_TYPE_INT64:
-    case MR_TYPE_UINT64:
-    case MR_TYPE_INT128:
-    case MR_TYPE_UINT128:
-    case MR_TYPE_BITFIELD:
-    case MR_TYPE_ARRAY:
-    case MR_TYPE_POINTER:
-      break;
-      
-    default:
-      return;
-    }
-  if (fdp->type == NULL)
+#define MR_TYPES_REQUIRE_RESOLUTION (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128, MR_TYPE_BITFIELD, MR_TYPE_ARRAY, MR_TYPE_POINTER))
+
+  if (!((MR_TYPES_REQUIRE_RESOLUTION >> fdp->mr_type) & 1) || (NULL == fdp->type))
     return;
 
   int type_name_langth = strlen (fdp->type);
@@ -1240,16 +1248,19 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   strcpy (type, fdp->type);
   mr_normalize_type (type);
 
+  bool is_array = mr_type_is_an_array (fdp, type);;
+  if (is_array)
+    {
+      fdp->mr_type = fdp->mr_type_aux;
+      fdp->mr_type_aux = fdp->mr_type_ptr;
+    }
+  
   mr_td_t * tdp = mr_get_td_by_name (type);
 
   if (NULL == tdp)
     if (mr_type_is_a_pointer (type))
       {
-	if (MR_TYPE_ARRAY == fdp->mr_type)
-	  fdp->mr_type_aux = MR_TYPE_POINTER;
-	else
-	  fdp->mr_type = MR_TYPE_POINTER;
-
+	fdp->mr_type = MR_TYPE_POINTER;
 	tdp = mr_get_td_by_name (type);
       }
 
@@ -1258,8 +1269,6 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
   if ((fdp->mr_type == MR_TYPE_NONE) && (fdp->mr_type_aux != MR_TYPE_NONE))
     fdp->mr_type = MR_TYPE_POINTER;
-  if ((fdp->mr_type == MR_TYPE_ARRAY) && (fdp->mr_type_aux == MR_TYPE_NONE) && (fdp->mr_type_ptr != MR_TYPE_NONE))
-    fdp->mr_type_aux = MR_TYPE_POINTER;
 
   if (tdp)
     {
@@ -1282,23 +1291,23 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	  break;
 
 	  /*
-	    pointer, arrays and bit fields need to detect mr_type_aux for basic type
+	    pointers and bit fields needs to detect mr_type_aux for basic types
 	  */
 	case MR_TYPE_BITFIELD:
 	case MR_TYPE_POINTER:
 	  fdp->mr_type_aux = tdp->mr_type;
 	  break;
 
-	case MR_TYPE_ARRAY:
-	  if (MR_TYPE_POINTER == fdp->mr_type_aux)
-	    fdp->mr_type_ptr = tdp->mr_type;
-	  else
-	    fdp->mr_type_aux = tdp->mr_type;
-	  break;
-
 	default:
 	  break;
 	}
+    }
+
+  if (is_array)
+    {
+      fdp->mr_type_ptr = fdp->mr_type_aux;
+      fdp->mr_type_aux = fdp->mr_type;
+      fdp->mr_type = MR_TYPE_ARRAY;
     }
 
   /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
@@ -1490,6 +1499,11 @@ mr_fd_init_array_params (mr_fd_t * fdp)
     case MR_TYPE_POINTER:
       {
 	mr_fd_t * pointer_param = fdp->param.array_param.pointer_param;
+	if (NULL == pointer_param)
+	  {
+	    fdp->mr_type = MR_TYPE_VOID;
+	    break;
+	  }
 	*pointer_param = *fdp;
 	pointer_param->mr_type = MR_TYPE_POINTER;
 	pointer_param->mr_type_aux = fdp->mr_type_ptr;
