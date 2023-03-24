@@ -4,6 +4,18 @@
 
 typedef char char_array_t[1];
 typedef char * char_ptr_t;
+typedef int32_t int32_alias0_t;
+typedef int32_t int32_alias1_t;
+typedef int32_t int32_alias2_t;
+typedef int32_t int32_alias3_t;
+typedef int32_t int32_alias4_t;
+typedef int32_t int32_alias5_t;
+typedef int32_t int32_alias6_t;
+typedef int32_t int32_alias7_t;
+typedef int32_t int32_alias8_t;
+typedef int32_t int32_alias9_t;
+typedef int32_t int32_alias10_t;
+typedef int32_t * int32_ptr_t;
 
 TYPEDEF_STRUCT (mr_empty_t);
 
@@ -51,6 +63,12 @@ TYPEDEF_STRUCT (struct_t,
 		const volatile string_t const_volatile_string,
 		volatile const string_t volatile_const_string,
 		(char_ptr_t, char_ptr_),
+		(int32_alias0_t, int32_alias0),
+		(int32_alias1_t *, int32_alias1),
+		(int32_alias2_t, int32_alias2, [1]),
+		(int32_alias3_t *, int32_alias3, [1]),
+		BITFIELD (int32_alias4_t, int32_alias4, : 1),
+		(int32_ptr_t, int32_ptr),
 		(char *, string_),
 		(const char *, const_string_),
 		(volatile char *, volatile_string_),
@@ -300,6 +318,23 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (volatile_const_string, MR_TYPE_STRING, MR_TYPE_CHAR);
 
   ASSERT_STRUCT_FIELD_TYPE (char_ptr_, MR_TYPE_STRING, MR_TYPE_CHAR);
+  ASSERT_STRUCT_FIELD_TYPE (int32_alias0, MR_TYPE_INT32, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (int32_alias1, MR_TYPE_POINTER, MR_TYPE_INT32);
+  ASSERT_STRUCT_FIELD_TYPE (int32_alias2, MR_TYPE_ARRAY, MR_TYPE_INT32);
+  ASSERT_STRUCT_FIELD_TYPE (int32_alias3, MR_TYPE_ARRAY, MR_TYPE_POINTER);
+  ASSERT_STRUCT_FIELD_TYPE (int32_ptr, MR_TYPE_POINTER, MR_TYPE_INT32);
+
+  int i;
+  char * aliases[] = {"int32_alias0_t", "int32_alias1_t", "int32_alias2_t", "int32_alias3_t", "int32_alias4_t"};
+  for (i = 0; i < sizeof (aliases) / sizeof (aliases[0]); ++i)
+    {
+      mr_td_t * tdp = mr_get_td_by_name (aliases[i]);
+      ck_assert_msg (tdp != NULL, "Type alias %s was not registered as a type", aliases[i]);
+      ck_assert_msg (tdp->mr_type == MR_TYPE_INT32, "Type alias %s was registered with a wrong mr_type (%d)", aliases[i], tdp->mr_type);
+    }
+
+  mr_td_t * tdp = mr_get_td_by_name ("int32_ptr_t");
+  ck_assert_msg (tdp == NULL, "Type int32_ptr_t was registered as a type of mr_type = %d", tdp->mr_type);
   
   ASSERT_STRUCT_FIELD_TYPE (string_, MR_TYPE_STRING, MR_TYPE_CHAR);
   ASSERT_STRUCT_FIELD_TYPE (const_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
@@ -406,9 +441,24 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (uint8_t, _2d_array, [3][2]),
 		     (uint8_t, _3d_array, [4][3][2]),
 		     (void *, void_ptr),
+		     (int32_alias5_t, int32_alias5),
+		     (const int32_alias6_t, int32_alias6),
+		     (int32_alias7_t volatile, int32_alias7),
 		     );
 
-MR_ADD_TYPE (_dump_struct_types_t);
+typedef char * alias_string_t;
+
+struct aliases_t {
+  int32_alias8_t int32_alias8;
+  const int32_alias9_t int32_alias9;
+  int32_alias10_t volatile int32_alias10;
+  const alias_string_t volatile alias_string1;
+  const volatile alias_string_t alias_string0;
+  const char * volatile const string;
+  const volatile char * volatile const cv_string;
+};
+
+MR_FOREACH (MR_ADD_TYPE, _dump_struct_types_t, struct aliases_t);
 
 START_TEST (dump_struct_types_detection) {
   mr_conf_init ();
@@ -439,6 +489,26 @@ START_TEST (dump_struct_types_detection) {
 			 mr_fdp->param.array_param.row_count, dst_fdp->param.array_param.row_count, mr_fdp->name.str);
 	}
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
+    }
+
+  char * aliases[] = {"int32_alias5_t", "int32_alias6_t", "int32_alias7_t", "int32_alias8_t", "int32_alias9_t", "int32_alias10_t"};
+  for (i = 0; i < sizeof (aliases) / sizeof (aliases[0]); ++i)
+    {
+      mr_td_t * tdp = mr_get_td_by_name (aliases[i]);
+      ck_assert_msg (tdp != NULL, "Type alias %s was not registered as a type", aliases[i]);
+      ck_assert_msg (tdp->mr_type == MR_TYPE_INT32, "Type alias %s was registered with a wrong mr_type (%d)", aliases[i], tdp->mr_type);
+    }
+
+  mr_td_t * tdp = mr_get_td_by_name ("aliases_t");
+  ck_assert_msg (tdp != NULL, "Type descriptor for aliases_t was not found");
+
+  char * string_fields[] = {"alias_string1", "alias_string0", "string", "cv_string"};
+  for (i = 0; i < sizeof (string_fields) / sizeof (string_fields[0]); ++i)
+    {
+      mr_fd_t * fdp = mr_get_fd_by_name (tdp, string_fields[i]);
+      ck_assert_msg (fdp != NULL, "Fields descriptor for field '%s' was not found", string_fields[i]);
+      ck_assert_msg (fdp->mr_type == MR_TYPE_STRING, "Field '%s' was registered with a wrong mr_type (%d)", string_fields[i], fdp->mr_type);
+      ck_assert_msg (fdp->tdp != NULL, "Type desicriptor for field '%s' was registered", string_fields[i]);
     }
 } END_TEST
 

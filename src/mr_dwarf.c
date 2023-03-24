@@ -1005,7 +1005,8 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	    assert (fdp_ptr != NULL);
 	    fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
 	    assert (fdp_ptr->fdp != NULL);
-      
+
+	    fdp_ptr->fdp->readonly = true;
 	    load_child (fdp_ptr->fdp, &mr_die->children[i], die_off_ic);
 	  }
     }

@@ -137,7 +137,7 @@ TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classific
 	      MR_UNION_TYPE_CLASS,
 	      MR_ARRAY_TYPE_CLASS,
 	      MR_STRING_TYPE_CLASS,
-	      /* MR_LANG_TYPE_CLASS, */
+	      MR_LANG_TYPE_CLASS,
 	      )
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
@@ -334,11 +334,12 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
-		(mr_type_t, mr_type_ptr, , "Metaresc type to detect pointers on basic type"),
+		BITFIELD (mr_type_t, mr_type_ptr, : 6, "Metaresc type to detect pointers on basic type"),
+		BITFIELD (bool, readonly, : 1, "true if field is a pointer on a base type"),
 		BITFIELD (bool, self_ptr, : 1, "true if field is a pointer on a base type"),
 		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
 		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
-		BITFIELD (mr_type_class_t, mr_type_class, : 5, "required to distinguish records and unions from scalar types"),
+		BITFIELD (mr_type_class_t, mr_type_class, : 6, "required to distinguish records and unions from scalar types"),
 		(mr_offset_t, offset, , "offset in structure"),
 		(mr_size_t, size, , "size of field"),
 		(mr_fd_param_t, param, , "mr_type"),
@@ -387,6 +388,10 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		) /* type descriptor */
+
+TYPEDEF_STRUCT (mr_td_ptr_t, ATTRIBUTES ( , "wrapper for mr_td_t"),
+		(mr_td_t *, tdp, , "wrapper for mr_td_t pointer type")
+		)
 
 TYPEDEF_STRUCT (mr_basic_type_td_t, ATTRIBUTES ( , "Stucture for bulk allocation of type descriptor and sentinel field descriptor"),
 		(mr_td_t, td, , "type descriptor"),

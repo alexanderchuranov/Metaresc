@@ -134,6 +134,8 @@
 #define MR_SIZE_STR MR_STRINGIFY_READONLY (MR_SIZE)
 #define MR_VOIDP_T void*
 #define MR_VOIDP_T_STR MR_STRINGIFY_READONLY (MR_VOIDP_T)
+#define MR_STRUCT_KEYWORD "struct"
+#define MR_UNION_KEYWORD "union"
 
 #define MR_STRINGIFY_READONLY(...) MR_STRINGIFY_READONLY_ (__VA_ARGS__)
 #define MR_STRINGIFY_READONLY_(...) #__VA_ARGS__
@@ -604,7 +606,7 @@
 #define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE,						\
@@ -615,7 +617,7 @@
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE_ARRAY,					\
@@ -636,7 +638,7 @@
 #define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
-	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (TYPE),						\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	.mr_type = MR_TYPE_VOID,					\
@@ -650,7 +652,7 @@
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
     (mr_fd_t[]){ {							\
 	.name = { .str = #NAME, .hash_value = 0, },			\
-	.type = MR_STRINGIFY_READONLY (TYPE),				\
+	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (TYPE),						\
 	.mr_type = MR_TYPE_BITFIELD,					\
 	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
@@ -692,7 +694,7 @@
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_LAST, }, }, }, })
 #define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
     .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
-    .type = MR_STRINGIFY_READONLY (TYPE),			\
+    .type = MR_STRINGIFY (TYPE),				\
     .size = sizeof (TYPE),					\
     .mr_type = MR_TYPE_DETECT (TYPE),				\
     .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
@@ -727,7 +729,7 @@
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...) { \
     (mr_fd_t[]){ {						     \
-	.type = MR_STRINGIFY_READONLY (MR_TYPE_NAME),		     \
+	.type = MR_STRINGIFY (MR_TYPE_NAME),			     \
 	.name = { .str = #NAME, .hash_value = 0, },		     \
 	.mr_type = MR_TYPE_ENUM,				     \
 	.param = { .enum_param = { NAME }, },			     \
@@ -749,21 +751,23 @@
 
 #define MR_TYPEDEF_DESC(ID, MR_TYPE_NAME, MR_TYPE, ...)			\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-    .type = { .str = #MR_TYPE_NAME, .hash_value = 0, },			\
+    .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
     .mr_type = MR_TYPE,							\
     .param = { .enum_param = { .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME), }, }, \
     .size = sizeof (MR_TYPE_NAME),					\
     .fields_size = 0,							\
     .fields = (mr_fd_ptr_t[]){
-#define MR_TYPEDEF_END_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...) {	\
-    (mr_fd_t[]){ {							\
-	.type = #MR_TYPE_NAME,						\
-	.mr_type = MR_TYPE_LAST,					\
-	  } } } },							\
+#define MR_TYPEDEF_END_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...) 	\
+  { (mr_fd_t[]){ { .mr_type = MR_TYPE_LAST, } } } },			\
     .meta = "" __VA_ARGS__ };						\
-  static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) { mr_add_type (&MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME)); }
+    static inline void __attribute__((constructor))			\
+    MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
+      mr_add_type (&MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME));		\
+    }
 
 #define MR_CONSTRUCTOR_PREFIX_ID(ID, MR_TYPE_NAME) mr_init_ ## ID
+
+#ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
@@ -778,15 +782,37 @@
       *__ptr++ = __i;							\
     memset (&dst_ctx, 0, sizeof (dst_ctx));				\
     dst_ctx.struct_ptr = &__value;					\
-    if (0 == setjmp (dst_ctx._jmp_buf))					\
-      __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
-    if (dst_ctx.tdp)							\
+    mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td)); \
+    if (NULL == basic_type_td)						\
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);		\
+    else								\
       {									\
-	dst_ctx.tdp->size = sizeof (__value);				\
-	mr_add_type (dst_ctx.tdp);					\
+	dst_ctx.tdp = &basic_type_td->td;				\
+	dst_ctx.tdp->fields_size = sizeof (dst_ctx.tdp->fields[0]);	\
+	dst_ctx.tdp->fields = &basic_type_td->fd_ptr;			\
+	dst_ctx.tdp->fields[0].fdp = basic_type_td->fd;			\
+	dst_ctx.tdp->fields[0].fdp->mr_type = MR_TYPE_LAST;		\
+	dst_ctx.tdp->is_dynamically_allocated = true;			\
+	dst_ctx.tdp->mr_type = MR_TYPE_STRUCT;				\
+	char * type = MR_STRINGIFY_READONLY (MR_TYPE_NAME);		\
+	if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0) \
+	  type += sizeof (MR_STRUCT_KEYWORD);				\
+	if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0) \
+	  type += sizeof (MR_UNION_KEYWORD);				\
+	dst_ctx.tdp->type.str = type;					\
+	if (0 == setjmp (dst_ctx._jmp_buf))				\
+	  __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
+	if (dst_ctx.tdp)						\
+	  {								\
+	    dst_ctx.tdp->size = sizeof (__value);			\
+	    mr_add_type (dst_ctx.tdp);					\
+	  }								\
       }									\
   }
 
+#else /* ! HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+#define MR_ADD_TYPE(MR_TYPE_NAME) "This feature require __builtin_dump_struct with support of extra args" + 0 / 0
+#endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 /*
   User can turn off strict types checking for Metaresc macroses, so compilation will produce only warnings.
   MR_CHECK_TYPES macro should be predefined as
@@ -856,6 +882,7 @@
 
 # ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 #  define MR_PTR_DETECT_TYPE(S_PTR) ({					\
+      mr_conf_init ();							\
       mr_get_struct_type_name_t ctx;					\
       ctx.type_name = NULL;						\
       if (0 == setjmp (ctx._jmp_buf))					\
@@ -867,6 +894,7 @@
     })
 # else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 #  define MR_PTR_DETECT_TYPE(S_PTR) ({					\
+      mr_conf_init ();							\
       if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
 	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR),		\
 			       &mr_get_struct_type_name);		\

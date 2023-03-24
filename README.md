@@ -327,8 +327,8 @@ unions. This macro will automatically discover fields of most basic
 types, structures, unions and pointers of known types. Unfortunatelly
 this method doesn't work for structures and unions bigger then 256
 bytes. Fields of the following types are not supported: inline strings,
-enums, function pointers, bitfields and arrays of pointers. Example
-above will look as follows:
+enums, inline structures and unions, function pointers, bitfields and
+arrays of pointers. Example above will look as follows:
 
 ```c
 #include <metaresc.h>
