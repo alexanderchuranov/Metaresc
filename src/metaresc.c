@@ -1518,8 +1518,8 @@ mr_detect_fields_types (mr_td_t * tdp)
 
       if (fdp->size == 0)
 	fdp->size = mr_type_size (fdp->mr_type);
-      if ((fdp->size == 0) && tdp)
-	fdp->size = tdp->size;
+      if ((fdp->size == 0) && fdp->tdp)
+	fdp->size = fdp->tdp->size;
 
       mr_fd_detect_res_size (fdp);
       mr_fd_init_ud_overrides (fdp);
@@ -1531,6 +1531,16 @@ mr_detect_fields_types (mr_td_t * tdp)
       else if (MR_TYPE_BITFIELD == fdp->mr_type)
 	mr_fd_init_bitfield_params (fdp);
     }
+
+  /*
+    fields descriptors might be generated in an arbitrary order
+    if user used macro language only for meta data generation and
+    types were defined with a standard typedefs.
+    Here we sort structures fields by offset, and field size as second dimension.
+    Zero size fields will have the same offsets with the field declared afterwards.
+  */
+  if (tdp->mr_type == MR_TYPE_STRUCT)
+    mr_hsort (tdp->fields, count, sizeof (tdp->fields[0]), mr_fd_offset_cmp_sorting, NULL);
 }
 
 /**
@@ -1672,30 +1682,6 @@ mr_add_type (mr_td_t * tdp)
   mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
   if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, (mr_ptr_t*)tdp->fields, tdp->fields_size))
     status = MR_FAILURE;
-
-  switch (tdp->mr_type)
-    {
-    case MR_TYPE_STRUCT:
-      /*
-	fields descriptors might be generated in an arbitrary order
-	if user used macro language only for meta data generation and
-	types were defined with a standard typedefs.
-	Here we sort structures fields by offset, and field size as second dimension.
-	Zero size fields will have the same offsets with the field declared afterwards.
-      */
-      mr_hsort (tdp->fields,
-		tdp->fields_size / sizeof (tdp->fields[0]), sizeof (tdp->fields[0]),
-		mr_fd_offset_cmp_sorting, NULL);
-      break;
-      
-    case MR_TYPE_ENUM:
-      if (MR_SUCCESS != mr_add_enum (tdp))
-	status = MR_FAILURE;
-      break;
-      
-    default:
-      break;
-    }
 
   if (NULL == mr_ic_add (&mr_conf.type_by_name, tdp))
     status = MR_FAILURE;
@@ -1849,10 +1835,14 @@ mr_conf_init ()
 	  int i, count = types_rarray.mr_size / sizeof (*tdp_list);
 	  for (i = 0; i < count; ++i)
 	    {
-	      mr_detect_fields_types (tdp_list[i].tdp);
-	      mr_td_detect_res_size (tdp_list[i].tdp);
-	      mr_register_type_pointer (tdp_list[i].tdp);
+	      mr_td_t * tdp = tdp_list[i].tdp;
+	      if (tdp->mr_type == MR_TYPE_ENUM)
+		mr_add_enum (tdp);
+	      mr_detect_fields_types (tdp);
+	      mr_td_detect_res_size (tdp);
+	      mr_register_type_pointer (tdp);
 	    }
+
 	  for (i = 0; i < count; ++i)
 	    mr_validate_td (tdp_list[i].tdp);
 
