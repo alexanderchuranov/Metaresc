@@ -2,14 +2,24 @@
 #include <metaresc.h>
 #include <regression.h>
 
-TYPEDEF_STRUCT (int8_ptr_t, (int8_t *, x))
-TYPEDEF_STRUCT (uint8_ptr_t, (uint8_t *, x))
-TYPEDEF_STRUCT (int16_ptr_t, (int16_t *, x))
-TYPEDEF_STRUCT (uint16_ptr_t, (uint16_t *, x))
-TYPEDEF_STRUCT (int32_ptr_t, (int32_t *, x))
-TYPEDEF_STRUCT (uint32_ptr_t, (uint32_t *, x))
-TYPEDEF_STRUCT (int64_ptr_t, (int64_t *, x))
-TYPEDEF_STRUCT (uint64_ptr_t, (uint64_t *, x))
+TYPEDEF_STRUCT (int32_dptr_t, (int32_t **, x));
+
+TYPEDEF_STRUCT (int8_ptr_t, (int8_t *, x));
+TYPEDEF_STRUCT (uint8_ptr_t, (uint8_t *, x));
+TYPEDEF_STRUCT (int16_ptr_t, (int16_t *, x));
+TYPEDEF_STRUCT (uint16_ptr_t, (uint16_t *, x));
+TYPEDEF_STRUCT (int32_ptr_t, (int32_t *, x));
+TYPEDEF_STRUCT (uint32_ptr_t, (uint32_t *, x));
+TYPEDEF_STRUCT (int64_ptr_t, (int64_t *, x));
+TYPEDEF_STRUCT (uint64_ptr_t, (uint64_t *, x));
+
+START_TEST (int32_dptr) {
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, int32_dptr_t, NULL);
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, int32_dptr_t, (int32_t*[]){ NULL });
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, int32_dptr_t, (int32_t*[]){ (int32_t[]){ 0 } });
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, int32_dptr_t, (int32_t*[]){ (int32_t[]){ -1 } });
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, int32_dptr_t, (int32_t*[]){ (int32_t[]){ 1 } });
+} END_TEST
 
 START_TEST (int8_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, int8_ptr_t, NULL);
@@ -67,7 +77,8 @@ START_TEST (uint64_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, uint64_ptr_t, (uint64_t[]){ 1 });
 } END_TEST
 
-MAIN_TEST_SUITE ((int8_ptr, "pointer on int"),
+MAIN_TEST_SUITE ((int32_dptr, "double pointer on int"),
+		 (int8_ptr, "pointer on int"),
 		 (uint8_ptr, "pointer on uint"),
 		 (int16_ptr, "pointer on int"),
 		 (uint16_ptr, "pointer on uint"),

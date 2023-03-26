@@ -158,9 +158,15 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
 		)
 
-TYPEDEF_UNION (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
-		VOID (void *, default_serialization),
+TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
+		ANON_UNION (),
+		VOID (void *, union_default_serialization),
 		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
+		END_ANON_UNION ("mr_type_aux"),
+		ANON_UNION (),
+		VOID (void *, pointer_default_serialization),
+		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
+		END_ANON_UNION ("mr_type_aux"),
 		)
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),

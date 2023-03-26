@@ -611,6 +611,11 @@
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE,						\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.param = {							\
+	  .pointer_param = {						\
+	    .pointer_param = (mr_fd_t[]){{}},				\
+	  },								\
+	},								\
 	.meta = "" __VA_ARGS__,						\
       } } },
 
@@ -627,9 +632,9 @@
 	.param =							\
 	{								\
 	  .array_param = {						\
+	    .pointer_param = (mr_fd_t[]){{}},				\
 	    .count = sizeof (((MR_TYPE_NAME*)0)->NAME) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
 	    .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
-	    .pointer_param = (mr_fd_t[]){{}},				\
 	  },								\
 	},								\
 	.meta = "" __VA_ARGS__,						\

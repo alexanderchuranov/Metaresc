@@ -698,12 +698,17 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   if (0 == count)
     return (MR_SUCCESS);
 
-  fd_.non_persistent = true;
-  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
-  fd_.mr_type = fd_.mr_type_aux;
+  mr_fd_t * fdp = fd_.param.pointer_param.pointer_param;
+  if (MR_TYPE_POINTER != fd_.mr_type_aux)
+    {
+      fd_.non_persistent = true;
+      fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
+      fd_.mr_type = fd_.mr_type_aux;
+      fdp = &fd_;
+    }
   
   /* allocate memory */
-  *data = MR_CALLOC (count, fd_.size);
+  *data = MR_CALLOC (count, fdp->size);
   if (NULL == *data)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -714,12 +719,12 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   count = 0;
   for (node = ptrs->ra[idx].first_child; node >= 0; node = ptrs->ra[node].next)
     {
-      mr_status_t subnode_status = mr_load (*data + count++ * fd_.size, &fd_, node, ptrs);
+      mr_status_t subnode_status = mr_load (*data + count++ * fdp->size, fdp, node, ptrs);
       if (MR_SUCCESS != subnode_status)
 	status = subnode_status;
     }
 
-  ptrs->ra[idx].MR_SIZE = count * fd_.size;
+  ptrs->ra[idx].MR_SIZE = count * fdp->size;
   mr_pointer_set_size (idx, ptrs);
   
   return (status);

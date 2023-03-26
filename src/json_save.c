@@ -224,7 +224,7 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
     {
       if (parent < 0)
 	unnamed = false;
-      else if (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type)
+      else if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION)) >> ptrs->ra[parent].mr_type) & 1)
 	unnamed = false;
     }
   

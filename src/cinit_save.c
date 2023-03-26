@@ -116,7 +116,9 @@ cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_printf (mr_ra_str, "(%s[]){\n", ptrdes->tdp ? ptrdes->tdp->type.str : MR_VOIDP_T_STR));
+  char * type = ptrdes->tdp ? ptrdes->tdp->type.str : MR_VOIDP_T_STR;
+  char * pointer = (MR_TYPE_POINTER == ptrdes->mr_type_aux) ? "*" : "";
+  return (mr_ra_printf (mr_ra_str, "(%s%s[]){\n", type, pointer));
 }
 
 static int
