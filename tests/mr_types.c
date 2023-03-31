@@ -143,8 +143,8 @@ TYPEDEF_STRUCT (struct_t,
 		BITFIELD (mr_uint128_t, bf_uint128_t, :__CHAR_BIT__ * sizeof (mr_uint128_t) - 1),
 		BITFIELD (mr_int128_t, bf_int128_t, :__CHAR_BIT__ * sizeof (mr_int128_t) - 1),
 #endif /* HAVE_INT128 */
-		BITFIELD (_enum_t, bf_enum, : 3),
-		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, : 3),
+		BITFIELD (mr_type_t, bf_enum, : 6),
+		BITFIELD (const volatile enum mr_type_t, bf_const_volatile_enum_enum, : 6),
 		);
 
 TYPEDEF_STRUCT (void_function_field_t,
