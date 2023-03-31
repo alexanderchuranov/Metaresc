@@ -21,8 +21,11 @@ TYPEDEF_STRUCT (mr_empty_t);
 
 TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));
 
-TYPEDEF_ENUM (_enum_t,
-	      ZERO
+TYPEDEF_ENUM (_enum_t, ATTRIBUTES (__attribute__ ((packed))),
+	      (ZERO, = 0),
+	      (ONE, = 1 << 0),
+	      (TWO, = 1 << 1),
+	      (HIGHEST_BIT, = -(1 << (__CHAR_BIT__ - 1))),
 	      );
 
 TYPEDEF_STRUCT (embeded_struct_t,
@@ -140,8 +143,8 @@ TYPEDEF_STRUCT (struct_t,
 		BITFIELD (mr_uint128_t, bf_uint128_t, :__CHAR_BIT__ * sizeof (mr_uint128_t) - 1),
 		BITFIELD (mr_int128_t, bf_int128_t, :__CHAR_BIT__ * sizeof (mr_int128_t) - 1),
 #endif /* HAVE_INT128 */
-		BITFIELD (_enum_t, bf_enum, :1),
-		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, :1),
+		BITFIELD (_enum_t, bf_enum, : 3),
+		BITFIELD (const volatile enum _enum_t, bf_const_volatile_enum_enum, : 3),
 		);
 
 TYPEDEF_STRUCT (void_function_field_t,
@@ -336,6 +339,10 @@ START_TEST (check_types_detection) {
   mr_td_t * tdp = mr_get_td_by_name ("int32_ptr_t");
   ck_assert_msg (tdp == NULL, "Type int32_ptr_t was registered as a type of mr_type = %d", tdp->mr_type);
   
+  tdp = mr_get_td_by_name ("_enum_t");
+  ck_assert_msg (tdp != NULL, "Type descriptor for _enum_t is not found");
+  ck_assert_msg (tdp->param.enum_param.is_bitmask, "Type descriptor for _enum_t is not bitmask");
+
   ASSERT_STRUCT_FIELD_TYPE (string_, MR_TYPE_STRING, MR_TYPE_CHAR);
   ASSERT_STRUCT_FIELD_TYPE (const_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
   ASSERT_STRUCT_FIELD_TYPE (volatile_string_, MR_TYPE_STRING, MR_TYPE_CHAR);
