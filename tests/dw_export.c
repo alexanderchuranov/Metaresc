@@ -25,8 +25,8 @@ get_fd_by_name (mr_td_t * tdp, mr_hashed_string_t * name)
 {
   int i;
   for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
-    if (mr_hashed_string_cmp (&tdp->fields[i].fdp->name, name) == 0)
-      return (tdp->fields[i].fdp);
+    if (mr_hashed_string_cmp (&tdp->fields[i]->name, name) == 0)
+      return (tdp->fields[i]);
   return (NULL);
 }
 
@@ -36,7 +36,7 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
   int i, named_anon_union_count = 0;
   for (i = mr_td->fields_size / sizeof (mr_td->fields[0]) - 1; i >= 0; --i)
     {
-      mr_fd_t * mr_fdp = mr_td->fields[i].fdp;
+      mr_fd_t * mr_fdp = mr_td->fields[i];
       
       if (mr_fdp->mr_type == MR_TYPE_NAMED_ANON_UNION)
 	++named_anon_union_count;
@@ -76,6 +76,12 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_aux %d != %d",
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type_aux, dw_fdp->mr_type_aux);
       
+      if (((mr_fdp->mr_type == MR_TYPE_POINTER) || (mr_fdp->mr_type == MR_TYPE_ARRAY)) &&
+	  (mr_fdp->mr_type_aux == MR_TYPE_POINTER))
+	ck_assert_msg (mr_fdp->mr_type_ptr == dw_fdp->mr_type_ptr,
+		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_ptr %d != %d",
+		       mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type_ptr, dw_fdp->mr_type_ptr);
+
       if (mr_fdp->mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->size == dw_fdp->size,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %d != %d",
@@ -88,14 +94,6 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
 	{
-	  if (mr_fdp->mr_type == MR_TYPE_POINTER)
-	    {
-	      ck_assert_msg (mr_fdp->mr_type_ptr == dw_fdp->mr_type_ptr,
-			     "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_ptr %d != %d",
-			     mr_td->type.str, mr_fdp->name.str,
-			     mr_fdp->mr_type_ptr, dw_fdp->mr_type_ptr);
-	    }
-	  
 	  ck_assert_msg (mr_fdp->param.array_param.count == dw_fdp->param.array_param.count,
 			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' count %d != %d",
 			 mr_td->type.str, mr_fdp->name.str,
@@ -142,7 +140,7 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
   int i;
   for (i = mr_td->fields_size / sizeof (mr_td->fields[0]) - 1; i >= 0; --i)
     {
-      mr_fd_t * mr_fdp = mr_td->fields[i].fdp;
+      mr_fd_t * mr_fdp = mr_td->fields[i];
       mr_fd_t * dw_fdp = get_fd_by_name (dw_td, &mr_fdp->name);
 
       ck_assert_msg (mr_fdp->mr_type == dw_fdp->mr_type,

@@ -57,8 +57,8 @@ mr_message_format (mr_message_id_t message_id, va_list args)
       if (tdp)
 	{
 	  int i;
-	  for (i = 0; MR_TYPE_ENUM == tdp->fields[i].fdp->mr_type; ++i)
-	    messages[tdp->fields[i].fdp->param.enum_param._unsigned] = tdp->fields[i].fdp->meta;
+	  for (i = 0; MR_TYPE_ENUM == tdp->fields[i]->mr_type; ++i)
+	    messages[tdp->fields[i]->param.enum_param._unsigned] = tdp->fields[i]->meta;
 	  messages_inited = true;
 	}
     }

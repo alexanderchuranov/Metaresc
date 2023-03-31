@@ -212,10 +212,10 @@ START_TEST (check_ext_struct) {
   ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type ext_struct_t.");
   int i;
   for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i > 0; --i)
-    ck_assert_msg (tdp->fields[i].fdp->offset > tdp->fields[i - 1].fdp->offset,
+    ck_assert_msg (tdp->fields[i]->offset > tdp->fields[i - 1]->offset,
 		   "Fields of ext_struct_t are not sorted according to their offsets. '%s' %d < '%s' %d",
-		   tdp->fields[i - 1].fdp->name.str, (int)tdp->fields[i - 1].fdp->offset,
-		   tdp->fields[i].fdp->name.str, (int)tdp->fields[i].fdp->offset);
+		   tdp->fields[i - 1]->name.str, (int)tdp->fields[i - 1]->offset,
+		   tdp->fields[i]->name.str, (int)tdp->fields[i]->offset);
   
   ASSERT_EXT_STRUCT_FIELD_TYPE (x);
   ASSERT_EXT_STRUCT_FIELD_TYPE (y);
@@ -471,7 +471,7 @@ START_TEST (dump_struct_types_detection) {
   int i, count = mr_tdp->fields_size / sizeof (mr_tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * mr_fdp = mr_tdp->fields[i].fdp;
+      mr_fd_t * mr_fdp = mr_tdp->fields[i];
       mr_fd_t * dst_fdp = mr_get_fd_by_name (dst_tdp, mr_fdp->name.str);
       ck_assert_msg (dst_fdp != NULL, "dump_struct have not detected field '%s'", mr_fdp->name.str);
 

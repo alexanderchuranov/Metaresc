@@ -33,7 +33,7 @@ int main ()
   count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i];
       if ((MR_TYPE_UINT8 == fdp->mr_type_aux) ||
 	  (MR_TYPE_UINT16 == fdp->mr_type_aux) ||
 	  (MR_TYPE_UINT32 == fdp->mr_type_aux) ||

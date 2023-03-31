@@ -683,7 +683,7 @@ xdr_load_struct (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i];
       if (MR_SUCCESS != xdr_load_inner (&data[fdp->offset], fdp, xdrs, ptrs, idx))
 	return (MR_FAILURE);
     }

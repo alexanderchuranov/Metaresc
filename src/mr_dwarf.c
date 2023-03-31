@@ -685,6 +685,15 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 }
 
 static void
+push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
+{
+  assert (fdp->mr_type == MR_TYPE_NONE);
+  fdp->mr_type = fdp->mr_type_aux;
+  fdp->mr_type_aux = fdp->mr_type_ptr;
+  fdp->mr_type_ptr = mr_type;
+}
+
+static void
 get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 {
   mr_type_sign_t mr_type_sign;
@@ -706,7 +715,7 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   assert (find != NULL);
 
   mr_type_sign_t * found_sign = find->ptr;
-  fdp->mr_type_aux = found_sign->mr_type;
+  push_mr_type (fdp, found_sign->mr_type);
   fdp->size = mr_type_sign.size;
   if (fdp->type == NULL)
     fdp->type = mr_strdup (mr_type_sign.type.str);
@@ -716,9 +725,6 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 static void
 get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 {
-  assert (fdp->mr_type == MR_TYPE_NONE);
-  fdp->mr_type = MR_TYPE_ARRAY;
-
   unsigned count = 1, dimension = 1;
   int i;
   for (i = mr_die->children_size / sizeof (mr_die->children[0]) - 1; i >= 0; --i)
@@ -761,55 +767,60 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       
       switch (mr_die->tag)
 	{
-	case _DW_TAG_base_type:
-	  get_base_mr_type (fdp, mr_die);
-	  break;
-      
-	case _DW_TAG_subroutine_type:
-	  assert (fdp->mr_type == MR_TYPE_POINTER);
-	  fdp->mr_type = MR_TYPE_FUNC_TYPE;
-	  break;
-	
+	case _DW_TAG_const_type:
+	case _DW_TAG_volatile_type:
+	  continue;
+
 	case _DW_TAG_array_type:
+	  push_mr_type (fdp, MR_TYPE_ARRAY);
 	  get_array_mr_type (fdp, mr_die);
 	  continue;
 	
 	case _DW_TAG_pointer_type:
-	  if (fdp->mr_type == MR_TYPE_ARRAY)
-	    fdp->mr_type_ptr = MR_TYPE_ARRAY;
-	  else if (fdp->mr_type != MR_TYPE_NONE)
-	    break;
-	  fdp->mr_type = MR_TYPE_POINTER;
+	  push_mr_type (fdp, MR_TYPE_POINTER);
 	  continue;
 	
 	case _DW_TAG_typedef:
 	  get_type_name (fdp, mr_die, die_off_ic);
 	  continue;
 
+	case _DW_TAG_base_type:
+	  get_base_mr_type (fdp, mr_die);
+	  break;
+
+	case _DW_TAG_subroutine_type:
+	  assert (fdp->mr_type_ptr == MR_TYPE_POINTER);
+	  fdp->mr_type_ptr = MR_TYPE_FUNC_TYPE;
+	  break;
+
 	case _DW_TAG_structure_type:
-	  fdp->mr_type_aux = MR_TYPE_STRUCT;
+	  push_mr_type (fdp, MR_TYPE_STRUCT);
 	  get_type_name (fdp, mr_die, die_off_ic);
 	  break;
 	
 	case _DW_TAG_union_type:
-	  fdp->mr_type_aux = MR_TYPE_UNION;
+	  push_mr_type (fdp, MR_TYPE_UNION);
 	  get_type_name (fdp, mr_die, die_off_ic);
 	  break;
 	
 	case _DW_TAG_enumeration_type:
-	  fdp->mr_type_aux = MR_TYPE_ENUM;
+	  push_mr_type (fdp, MR_TYPE_ENUM);
 	  get_type_name (fdp, mr_die, die_off_ic);
 	  break;
 	
-	case _DW_TAG_const_type:
-	case _DW_TAG_volatile_type:
-	  continue;
-	  
 	default:
 	  assert (false);
 	}
       break;
     }
+
+  if (fdp->mr_type_ptr != MR_TYPE_NONE)
+    while (fdp->mr_type == MR_TYPE_NONE)
+      {
+	fdp->mr_type = fdp->mr_type_aux;
+	fdp->mr_type_aux = fdp->mr_type_ptr;
+	fdp->mr_type_ptr = MR_TYPE_NONE;
+      }
 }
 
 static void
@@ -875,7 +886,7 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (attr != NULL)
     {
       assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
-      fdp->mr_type = MR_TYPE_BITFIELD;
+      fdp->mr_type_ptr = MR_TYPE_BITFIELD;
       fdp->param.bitfield_param.width = attr->dw_unsigned;
 
       attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
@@ -897,8 +908,6 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     }
 
   get_mr_type (fdp, mr_die, die_off_ic);
-  if (MR_TYPE_NONE == fdp->mr_type)
-    fdp->mr_type = fdp->mr_type_aux;
 }
 
 static void
@@ -958,11 +967,13 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       break;
     case _DW_TAG_pointer_type:
       {
-	mr_fd_t fd = { .mr_type = MR_TYPE_POINTER };
+	mr_fd_t fd;
+	memset (&fd, 0, sizeof (fd));
+	fd.mr_type_ptr = MR_TYPE_POINTER;
 	get_mr_type (&fd, mr_die, die_off_ic);
 	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
 	
-	if (MR_TYPE_CHAR == fd.mr_type_aux)
+	if (MR_TYPE_CHAR == fd.mr_type)
 	  mr_type = MR_TYPE_STRING;
 	else if (MR_TYPE_FUNC_TYPE == fd.mr_type)
 	  mr_type = MR_TYPE_FUNC_TYPE;
@@ -1001,21 +1012,20 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       for (i = 0; i < count; ++i)
 	if (mr_die->children[i].tag == children_tag)
 	  {
-	    mr_fd_ptr_t * fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
+	    mr_fd_t ** fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
 	    assert (fdp_ptr != NULL);
-	    fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
-	    assert (fdp_ptr->fdp != NULL);
+	    *fdp_ptr = MR_CALLOC (1, sizeof (**fdp_ptr));
+	    assert (*fdp_ptr != NULL);
 
-	    fdp_ptr->fdp->readonly = true;
-	    load_child (fdp_ptr->fdp, &mr_die->children[i], die_off_ic);
+	    load_child (*fdp_ptr, &mr_die->children[i], die_off_ic);
 	  }
     }
   
-  mr_fd_ptr_t * fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
+  mr_fd_t ** fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
   assert (fdp_ptr != NULL);
-  fdp_ptr->fdp = MR_CALLOC (1, sizeof (*fdp_ptr->fdp));
-  assert (fdp_ptr->fdp != NULL);
-  fdp_ptr->fdp->mr_type = MR_TYPE_LAST;
+  *fdp_ptr = MR_CALLOC (1, sizeof (**fdp_ptr));
+  assert (*fdp_ptr != NULL);
+  (*fdp_ptr)->mr_type = MR_TYPE_LAST;
 }
 
 static mr_hash_value_t
@@ -1113,7 +1123,7 @@ process_td (mr_ptr_t key, const void * context)
   if (tdp->mr_type == MR_TYPE_ENUM)
     {
       bool _signed = ((tdp->fields_size >= sizeof (tdp->fields[0])) &&
-		      (tdp->fields[0].fdp->mr_type_aux == MR_TYPE_INT64));
+		      (tdp->fields[0]->mr_type_aux == MR_TYPE_INT64));
       tdp->param.enum_param.size_effective = tdp->size;
       switch (tdp->size)
 	{
@@ -1134,14 +1144,25 @@ process_td (mr_ptr_t key, const void * context)
   else
     for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
       {
-	mr_fd_t * fdp = tdp->fields[i].fdp;
+	mr_fd_t * fdp = tdp->fields[i];
 
 	switch (fdp->mr_type)
 	  {
+	  case MR_TYPE_ARRAY:
+	    if (fdp->mr_type_aux == MR_TYPE_POINTER)
+	      {
+		fdp->param.array_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.array_param.pointer_param));
+		assert (fdp->param.array_param.pointer_param != NULL);
+	      }
+
+	    if ((fdp->mr_type_aux == MR_TYPE_POINTER) || (fdp->mr_type_aux == MR_TYPE_FUNC_TYPE))
+	      fdp->size = sizeof (void*);
+
+	    __attribute__ ((fallthrough));
+
 	  case MR_TYPE_UNION:
 	  case MR_TYPE_ENUM:
 	  case MR_TYPE_STRUCT:
-	  case MR_TYPE_ARRAY:
 	  case MR_TYPE_BITFIELD:
 	    if (0 == fdp->size)
 	      {
@@ -1152,16 +1173,6 @@ process_td (mr_ptr_t key, const void * context)
 		    fdp->size = field_tdp->size;
 		  }
 	      }
-	    break;
-
-	  case MR_TYPE_FUNC_TYPE:
-	    if (fdp->mr_type_ptr == MR_TYPE_ARRAY)
-	      {
-		fdp->mr_type = MR_TYPE_ARRAY;
-		fdp->mr_type_aux = MR_TYPE_FUNC_TYPE;
-		fdp->mr_type_ptr = MR_TYPE_NONE;
-	      }
-	    fdp->size = sizeof (void *);
 	    break;
 
 	  case MR_TYPE_POINTER:
@@ -1180,14 +1191,6 @@ process_td (mr_ptr_t key, const void * context)
 	      }
 	    else
 	      {
-		if (fdp->mr_type_ptr == MR_TYPE_ARRAY)
-		  {
-		    fdp->mr_type_ptr = fdp->mr_type_aux;
-		    fdp->mr_type_aux = MR_TYPE_POINTER;
-		    fdp->mr_type = MR_TYPE_ARRAY;
-		    fdp->param.array_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.array_param.pointer_param));
-		    assert (fdp->param.array_param.pointer_param != NULL);
-		  }
 #define POINTER_SIZE_SUFFIX "_size"
 		assert (fdp->name.str != NULL);
 		char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));
@@ -1197,6 +1200,12 @@ process_td (mr_ptr_t key, const void * context)
 		fdp->res.ptr = size;
 		fdp->res_type = mr_strdup ("string");
 		assert (fdp->res_type != NULL);
+
+		if (fdp->mr_type_aux == MR_TYPE_POINTER)
+		  {
+		    fdp->param.pointer_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.pointer_param.pointer_param));
+		    assert (fdp->param.pointer_param.pointer_param != NULL);
+		  }
 	      }
 	    break;
 
@@ -1246,7 +1255,7 @@ static void
 tweak_mr_conf ()
 {
   mr_type_void_fields ("mr_td_t", "field_by_name", "meta", "res", "res_type", "mr_size", "is_dynamically_allocated");
-  mr_type_void_fields ("mr_fd_t", "tdp", "self_ptr", "mr_size", "non_persistent", "mr_type_class");
+  mr_type_void_fields ("mr_fd_t", "tdp", "self_ptr", "readonly", "mr_size", "non_persistent", "mr_type_class");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");
@@ -1308,6 +1317,7 @@ main (int argc, char * argv [])
       mr_die_t mr_die;
       memset (&mr_die, 0, sizeof (mr_die));
       dump_cu_list (debug, &mr_die);
+
       extract_type_descriptors (&td_ic, &mr_die);
       free_die (&mr_die);
 

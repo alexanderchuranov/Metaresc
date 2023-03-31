@@ -537,8 +537,8 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
 
   for (i = 0; i < count; ++i)
     if (NULL == fdp)
-      return (tdp->fields[i].fdp);
-    else if (tdp->fields[i].fdp == fdp)
+      return (tdp->fields[i]);
+    else if (tdp->fields[i] == fdp)
       fdp = NULL;
 
   return (NULL);

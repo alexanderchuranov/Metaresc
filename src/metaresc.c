@@ -176,9 +176,9 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   fdp->offset = offset;
   fdp->readonly = true;
 
-  basic_type_td->td.fields = (mr_fd_ptr_t*)&basic_type_td->fd[fields_count + 1];
+  basic_type_td->td.fields = (mr_fd_t**)&basic_type_td->fd[fields_count + 1];
   for (i = 0; i <= fields_count; ++i)
-    basic_type_td->td.fields[i].fdp = &basic_type_td->fd[i];
+    basic_type_td->td.fields[i] = &basic_type_td->fd[i];
   basic_type_td->td.fields_size += sizeof (basic_type_td->td.fields[0]);
   ctx->tdp = &basic_type_td->td;
 }
@@ -271,7 +271,7 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i];
 
       if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
 	{
@@ -621,10 +621,10 @@ mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 int
 mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_fd_ptr_t * x_ = x.ptr;
-  const mr_fd_ptr_t * y_ = y.ptr;
-  const mr_fd_t * x_fdp = x_->fdp;
-  const mr_fd_t * y_fdp = y_->fdp;
+  const mr_fd_t ** x_ = x.ptr;
+  const mr_fd_t ** y_ = y.ptr;
+  const mr_fd_t * x_fdp = *x_;
+  const mr_fd_t * y_fdp = *y_;
   
   int diff = ((x_fdp->offset > y_fdp->offset) - (x_fdp->offset < y_fdp->offset));
   if (diff)
@@ -698,18 +698,18 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i];
       if ((MR_TYPE_ANON_UNION == fdp->mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->mr_type))
 	{
 	  static int mr_type_anonymous_union_cnt = 0;
 	  mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
-	  mr_fd_t ** first = &tdp->fields[i + 1].fdp;
+	  mr_fd_t ** first = &tdp->fields[i + 1];
 	  mr_fd_t * last;
 	  int opened = 1;
 
 	  for (j = i + 1; j < count; ++j)
 	    {
-	      mr_fd_t * fdp_ = tdp->fields[j].fdp;
+	      mr_fd_t * fdp_ = tdp->fields[j];
 	      if ((MR_TYPE_ANON_UNION == fdp_->mr_type) ||
 		  (MR_TYPE_NAMED_ANON_UNION == fdp_->mr_type))
 		++opened;
@@ -747,7 +747,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		  tdp_->size = fields[j]->size; /* find union max size member */
 	      }
 
-	    last = tdp->fields[count].fdp;
+	    last = tdp->fields[count];
 	    last->mr_type = MR_TYPE_LAST; /* trailing record */
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
@@ -844,10 +844,12 @@ mr_fd_enum_value_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 int
 mr_fd_enum_value_cmp_sorting (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
-  mr_fd_ptr_t * x_ = x.ptr;
-  mr_fd_ptr_t * y_ = y.ptr;
-  return ((x_->fdp->param.enum_param._unsigned > y_->fdp->param.enum_param._unsigned) -
-	  (x_->fdp->param.enum_param._unsigned < y_->fdp->param.enum_param._unsigned));
+  mr_fd_t ** x_ = x.ptr;
+  mr_fd_t ** y_ = y.ptr;
+  mr_fd_t * _x_ = *x_;
+  mr_fd_t * _y_ = *y_;
+  return ((_x_->param.enum_param._unsigned > _y_->param.enum_param._unsigned) -
+	  (_x_->param.enum_param._unsigned < _y_->param.enum_param._unsigned));
 }
 
 /**
@@ -902,9 +904,9 @@ mr_add_enum (mr_td_t * tdp)
   tdp->param.enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
-      mr_enum_value_type_t value = tdp->fields[i].fdp->param.enum_param._unsigned;
+      mr_enum_value_type_t value = tdp->fields[i]->param.enum_param._unsigned;
 
-      tdp->fields[i].fdp->mr_type_aux = tdp->param.enum_param.mr_type_effective;
+      tdp->fields[i]->mr_type_aux = tdp->param.enum_param.mr_type_effective;
       /*
 	there is a corner case when enum has a single negative value which is a highest sign bit
 	Compiler will extend sign bit to higher positoins and this value will not be classified
@@ -919,7 +921,7 @@ mr_add_enum (mr_td_t * tdp)
 	tdp->param.enum_param.is_bitmask = false;
       
       /* adding to global lookup table by enum literal names */
-      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, tdp->fields[i].fdp);
+      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, tdp->fields[i]);
       if (NULL == result)
 	{
 	  status = MR_FAILURE;
@@ -953,7 +955,7 @@ mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value)
   uintptr_t key = (uintptr_t)&value - offsetof (mr_fd_t, param.enum_param._unsigned); /* (mr_fd_t[]){{ .param = { .enum_param = { value }, }, }}; */
   mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
   int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_fd_enum_value_cmp, NULL, &idx);
-  return (diff ? NULL : tdp->fields[idx].fdp);
+  return (diff ? NULL : tdp->fields[idx]);
 }
 
 /**
@@ -1131,14 +1133,14 @@ mr_register_type_pointer (mr_td_t * tdp)
     return (MR_SUCCESS);
 
   /* statically allocated trailing record is used for field descriptor */
-  mr_fd_t * fdp = tdp->fields[tdp->fields_size / sizeof (tdp->fields[0])].fdp;
+  mr_fd_t * fdp = tdp->fields[tdp->fields_size / sizeof (tdp->fields[0])];
   if (NULL == fdp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
       return (MR_FAILURE);
     }
 
-  *fdp = *union_tdp->fields[0].fdp;
+  *fdp = *union_tdp->fields[0];
   fdp->type = tdp->type.str;
   fdp->name = tdp->type;
   fdp->size = sizeof (void *);
@@ -1217,7 +1219,7 @@ mr_add_basic_type (mr_fd_t * fdp, char * type, mr_type_t mr_type)
   basic_type_td->td.mr_type = mr_type;
   basic_type_td->td.size = mr_type_size (mr_type);
   basic_type_td->td.fields = &basic_type_td->fd_ptr;
-  basic_type_td->fd_ptr.fdp = basic_type_td->fd;
+  basic_type_td->fd_ptr = basic_type_td->fd;
 
   mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
 
@@ -1304,10 +1306,13 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	  fdp->mr_type = tdp->mr_type;
 	  break;
 
-	  /*
-	    pointers and bit fields needs to detect mr_type_aux for basic types
-	  */
 	case MR_TYPE_BITFIELD:
+	  fdp->mr_type_aux = tdp->mr_type; /* enums case */
+	  break;
+
+	  /*
+	    pointers and arrays needs to detect mr_type_aux for basic types
+	  */
 	case MR_TYPE_POINTER:
 	case MR_TYPE_ARRAY:
 	  if (fdp->mr_type_aux == MR_TYPE_POINTER)
@@ -1502,7 +1507,7 @@ mr_detect_fields_types (mr_td_t * tdp)
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i].fdp;
+      mr_fd_t * fdp = tdp->fields[i];
       if (fdp->self_ptr)
 	{
 	  fdp->type = tdp->type.str;
@@ -1547,6 +1552,8 @@ mr_detect_fields_types (mr_td_t * tdp)
   */
   if (tdp->mr_type == MR_TYPE_STRUCT)
     mr_hsort (tdp->fields, count, sizeof (tdp->fields[0]), mr_fd_offset_cmp_sorting, NULL);
+  else if (tdp->mr_type == MR_TYPE_ENUM)
+    mr_add_enum (tdp);
 }
 
 /**
@@ -1674,7 +1681,7 @@ mr_add_type (mr_td_t * tdp)
 
   for (count = 0; ; ++count)
     {
-      mr_fd_t * fdp = tdp->fields[count].fdp;
+      mr_fd_t * fdp = tdp->fields[count];
       if (NULL == fdp)
 	return (MR_FAILURE);
       if (MR_TYPE_LAST == fdp->mr_type)
@@ -1811,7 +1818,7 @@ mr_validate_td (mr_td_t * tdp)
 {
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
-    mr_validate_fd (tdp->fields[i].fdp);
+    mr_validate_fd (tdp->fields[i]);
   return (MR_SUCCESS);
 }
 
@@ -1848,12 +1855,9 @@ mr_conf_init ()
 	  int i, count = types_rarray.mr_size / sizeof (*tdp_list);
 	  for (i = 0; i < count; ++i)
 	    {
-	      mr_td_t * tdp = tdp_list[i].tdp;
-	      if (tdp->mr_type == MR_TYPE_ENUM)
-		mr_add_enum (tdp);
-	      mr_detect_fields_types (tdp);
-	      mr_td_detect_res_size (tdp);
-	      mr_register_type_pointer (tdp);
+	      mr_detect_fields_types (tdp_list[i].tdp);
+	      mr_td_detect_res_size (tdp_list[i].tdp);
+	      mr_register_type_pointer (tdp_list[i].tdp);
 	    }
 
 	  for (i = 0; i < count; ++i)

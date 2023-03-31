@@ -763,19 +763,8 @@ keywords: `const`, `volatile`, `restrict`, `struct`, `union`,
 #### Pointer declaration
 Metaresc is capable to resolve pointers on basic types and on custom
 user's types. `char *` is treated as pointer on a NULL-terminated
-string, but not a pointer on a single character.
-
-Double pointers are not supported and user should use intermediate
-wrapper structure to represent each level of indirect
-access. I.e. `int ** double_pointer` should be declared as follows:
-
-```c
-TYPEDEF_STRUCT (int_ptr_t,
-		(int *, ptr));
-
-TYPEDEF_STRUCT (sample_t,
-		(int_ptr_t *, double_pointer));
-```
+string, but not a pointer on a single character. Double pointers are
+also supported.
 
 Default serialization of a pointer is a single instance of designated
 type, but Metaresc also supports representation of pointers as arrays
@@ -815,6 +804,12 @@ field could also be a pointer on any type listed above except
 `bitfield`. `bitfields` could be specified as `size` field only with
 the first declaration method, because compiler can't calculate
 `offsetof` for the `bitfields`.
+
+Size should be specified in bytes, i.e. number of elemenets in this
+dynamic array will be calculated as total size divided by size of one
+element. Size specification for double pointers will affect only top
+level pointer, and second level pointer will be serialized as a single
+element.
 
 Descriptors for pointer fields that are generated from DWARF debug
 info have structured resource configured according to the first
@@ -859,6 +854,7 @@ Base type of array's declaration might be:
 * any other type declared within Metaresc (struct, enum, union,
 function, char array)
 * pointer on types listed above
+* double pointers are not supported
 
 `meta` and `res` fields will be derived for serialization of
 individual array's elements. This allows extended semantics for

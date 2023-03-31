@@ -603,9 +603,9 @@
 
 /* Macroses for descriptors generation mode */
 
-#define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) { \
-    (mr_fd_t[]){ {							\
-	.name = { .str = #NAME, .hash_value = 0, },			\
+#define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) \
+  (mr_fd_t[]){ {							\
+      .name = { .str = #NAME, .hash_value = 0, },			\
 	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
@@ -617,11 +617,11 @@
 	  },								\
 	},								\
 	.meta = "" __VA_ARGS__,						\
-      } } },
+	} },
 
-#define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
-    (mr_fd_t[]){ {							\
-	.name = { .str = #NAME, .hash_value = 0, },			\
+#define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+  (mr_fd_t[]){ {							\
+      .name = { .str = #NAME, .hash_value = 0, },			\
 	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
@@ -638,11 +638,11 @@
 	  },								\
 	},								\
 	.meta = "" __VA_ARGS__,						\
-      } } },
+	} },
 
-#define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
-    (mr_fd_t[]){ {							\
-	.name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },	\
+#define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+  (mr_fd_t[]){ {							\
+      .name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },		\
 	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (TYPE),						\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
@@ -652,11 +652,11 @@
 	(.mr_type_class = MR_FUNCTION_TYPE_CLASS,)			\
 	(.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
 	.meta = "" __VA_ARGS__,						\
-      } } },
+	} },
 
-#define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) { \
-    (mr_fd_t[]){ {							\
-	.name = { .str = #NAME, .hash_value = 0, },			\
+#define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+  (mr_fd_t[]){ {							\
+      .name = { .str = #NAME, .hash_value = 0, },			\
 	.type = MR_STRINGIFY (TYPE),					\
 	.size = sizeof (TYPE),						\
 	.mr_type = MR_TYPE_BITFIELD,					\
@@ -668,7 +668,7 @@
 	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), \
 	  }, },								\
 	.meta = "" __VA_ARGS__,						\
-      } } },
+	} },
 
 #define MR_IS_SELF_PTR(MR_TYPE_NAME, NAME, SUFFIX) __builtin_types_compatible_p (MR_TYPE_NAME SUFFIX, __typeof__ (((MR_TYPE_NAME*)0)->NAME))
 
@@ -712,37 +712,37 @@
 #define MR_TYPEDEF_UNION_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_UNION)
 #define MR_END_UNION_DESC(ID, MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...) {	\
-    (mr_fd_t[]){ {							\
-	.name = { .str = #NAME, .hash_value = 0, },			\
-	  .type = "",							\
-	     .offset = 0,						\
-	     .unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false), \
-	     .mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
-	     .res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
-	     .res_type = "mr_td_t",					\
-		} } },
-#define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...) {	\
-    (mr_fd_t[]){ {							\
+#define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...)		\
+  (mr_fd_t[]){ {							\
+      .name = { .str = #NAME, .hash_value = 0, },			\
 	.type = "",							\
-	  .mr_type = MR_TYPE_END_ANON_UNION,				\
-	  .meta = "" __VA_ARGS__,					\
-	  } } },
+	.offset = 0,							\
+	.unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false),	\
+	.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
+	.res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
+	.res_type = "mr_td_t",						\
+	} },
+#define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\
+  (mr_fd_t[]){ {							\
+      .type = "",							\
+	.mr_type = MR_TYPE_END_ANON_UNION,				\
+	.meta = "" __VA_ARGS__,						\
+	} },
 
 #define MR_TYPEDEF_ENUM_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_ENUM)
 
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
-#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...) { \
+#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)   \
     (mr_fd_t[]){ {						     \
 	.type = MR_STRINGIFY (MR_TYPE_NAME),			     \
-	.name = { .str = #NAME, .hash_value = 0, },		     \
-	.mr_type = MR_TYPE_ENUM,				     \
-	.param = { .enum_param = { NAME }, },			     \
-	.meta = "" __VA_ARGS__,					     \
-      } } },
+	  .name = { .str = #NAME, .hash_value = 0, },		     \
+	  .mr_type = MR_TYPE_ENUM,				     \
+	  .param = { .enum_param = { NAME }, },			     \
+	  .meta = "" __VA_ARGS__,				     \
+	  } },
 #define MR_END_ENUM_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_FUNC_ARG_PTR(...) { (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) } },
+#define MR_FUNC_ARG_PTR(...) (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) },
 
 #define MR_TYPEDEF_CHAR_ARRAY_DESC(ID, MR_TYPE_NAME, SIZE, /* ATTR */ ...) \
   MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY)		\
@@ -761,9 +761,9 @@
     .param = { .enum_param = { .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME), }, }, \
     .size = sizeof (MR_TYPE_NAME),					\
     .fields_size = 0,							\
-    .fields = (mr_fd_ptr_t[]){
+    .fields = (mr_fd_t*[]){
 #define MR_TYPEDEF_END_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...) 	\
-  { (mr_fd_t[]){ { .mr_type = MR_TYPE_LAST, } } } },			\
+  (mr_fd_t[]){ { .mr_type = MR_TYPE_LAST, } } },			\
     .meta = "" __VA_ARGS__ };						\
     static inline void __attribute__((constructor))			\
     MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
@@ -795,8 +795,8 @@
 	dst_ctx.tdp = &basic_type_td->td;				\
 	dst_ctx.tdp->fields_size = sizeof (dst_ctx.tdp->fields[0]);	\
 	dst_ctx.tdp->fields = &basic_type_td->fd_ptr;			\
-	dst_ctx.tdp->fields[0].fdp = basic_type_td->fd;			\
-	dst_ctx.tdp->fields[0].fdp->mr_type = MR_TYPE_LAST;		\
+	dst_ctx.tdp->fields[0] = basic_type_td->fd;			\
+	dst_ctx.tdp->fields[0]->mr_type = MR_TYPE_LAST;			\
 	dst_ctx.tdp->is_dynamically_allocated = true;			\
 	dst_ctx.tdp->mr_type = MR_TYPE_STRUCT;				\
 	char * type = MR_STRINGIFY_READONLY (MR_TYPE_NAME);		\
