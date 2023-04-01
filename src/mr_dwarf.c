@@ -687,6 +687,8 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 static void
 push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
 {
+  if (fdp->mr_type != MR_TYPE_NONE)
+    fprintf (stderr, "name '%s' type '%s' mr_type %d aux %d ptr %d new %d\n", fdp->name.str, fdp->type, fdp->mr_type, fdp->mr_type_aux, fdp->mr_type_ptr, mr_type);
   assert (fdp->mr_type == MR_TYPE_NONE);
   fdp->mr_type = fdp->mr_type_aux;
   fdp->mr_type_aux = fdp->mr_type_ptr;
