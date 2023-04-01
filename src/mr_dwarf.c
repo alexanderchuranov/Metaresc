@@ -687,8 +687,6 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 static void
 push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
 {
-  if (fdp->mr_type != MR_TYPE_NONE)
-    fprintf (stderr, "name '%s' type '%s' mr_type %d aux %d ptr %d new %d\n", fdp->name.str, fdp->type, fdp->mr_type, fdp->mr_type_aux, fdp->mr_type_ptr, mr_type);
   assert (fdp->mr_type == MR_TYPE_NONE);
   fdp->mr_type = fdp->mr_type_aux;
   fdp->mr_type_aux = fdp->mr_type_ptr;
@@ -717,11 +715,24 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   assert (find != NULL);
 
   mr_type_sign_t * found_sign = find->ptr;
-  push_mr_type (fdp, found_sign->mr_type);
   fdp->size = mr_type_sign.size;
   if (fdp->type == NULL)
     fdp->type = mr_strdup (mr_type_sign.type.str);
   assert (fdp->type != NULL);
+
+  if ((fdp->mr_type_ptr == MR_TYPE_POINTER) && (found_sign->mr_type == MR_TYPE_CHAR))
+    {
+      fdp->mr_type_ptr = MR_TYPE_STRING;
+      fdp->size = sizeof (char*);
+      assert (fdp->type != NULL);
+      int length = strlen (fdp->type);
+      fdp->type = MR_REALLOC (fdp->type, length + 2 * sizeof (fdp->type[0]));
+      assert (fdp->type != NULL);
+      fdp->type[length] = '*';
+      fdp->type[length + 1] = 0;
+    }
+  else
+    push_mr_type (fdp, found_sign->mr_type);
 }
 
 static void
@@ -975,9 +986,9 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	get_mr_type (&fd, mr_die, die_off_ic);
 	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
 	
-	if (MR_TYPE_CHAR == fd.mr_type)
+	if (MR_TYPE_CHAR == fd.mr_type_aux)
 	  mr_type = MR_TYPE_STRING;
-	else if (MR_TYPE_FUNC_TYPE == fd.mr_type)
+	else if (MR_TYPE_FUNC_TYPE == fd.mr_type_aux)
 	  mr_type = MR_TYPE_FUNC_TYPE;
 	else
 	  return;
@@ -1181,16 +1192,6 @@ process_td (mr_ptr_t key, const void * context)
 	    fdp->size = sizeof (void *);
 	    if (fdp->mr_type_aux == MR_TYPE_NONE)
 	      fdp->mr_type_aux = MR_TYPE_VOID;
-	    else if (fdp->mr_type_aux == MR_TYPE_CHAR)
-	      {
-		fdp->mr_type = MR_TYPE_STRING;
-		assert (fdp->type != NULL);
-		int length = strlen (fdp->type);
-		fdp->type = MR_REALLOC (fdp->type, length + 2 * sizeof (fdp->type[0]));
-		assert (fdp->type != NULL);
-		fdp->type[length] = '*';
-		fdp->type[length + 1] = 0;
-	      }
 	    else
 	      {
 #define POINTER_SIZE_SUFFIX "_size"
