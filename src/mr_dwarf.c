@@ -687,10 +687,21 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 static void
 push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
 {
-  assert (fdp->mr_type == MR_TYPE_NONE);
-  fdp->mr_type = fdp->mr_type_aux;
-  fdp->mr_type_aux = fdp->mr_type_ptr;
-  fdp->mr_type_ptr = mr_type;
+  if (fdp->mr_type != MR_TYPE_NONE)
+    {
+      /* mr_type definition takes more then 3 levels and is not supported */
+      if (fdp->mr_type != MR_TYPE_VOID)
+	{
+	  fdp->mr_type_aux = fdp->mr_type;
+	  fdp->mr_type = MR_TYPE_VOID;
+	}
+    }
+  else
+    {
+      fdp->mr_type = fdp->mr_type_aux;
+      fdp->mr_type_aux = fdp->mr_type_ptr;
+      fdp->mr_type_ptr = mr_type;
+    }
 }
 
 static void
