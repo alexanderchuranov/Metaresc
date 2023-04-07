@@ -1523,18 +1523,25 @@ mr_detect_fields_types (mr_td_t * tdp)
 
 #define INVALID_ARRAY_AUX_TYPE (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_NONE MR_TYPE_VOID MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
 #define INVALID_POINTER_AUX_TYPE (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
-      
-      if (MR_TYPE_ARRAY == fdp->mr_type)
-	mr_fd_init_pointer_params (fdp, INVALID_ARRAY_AUX_TYPE, fdp->param.array_param.pointer_param);
-      else if (MR_TYPE_FUNC == fdp->mr_type)
-	mr_func_field_detect (fdp);
-      else if (MR_TYPE_BITFIELD == fdp->mr_type)
-	mr_fd_init_bitfield_params (fdp);
-      else if (MR_TYPE_POINTER == fdp->mr_type)
+
+      switch (fdp->mr_type)
 	{
+	case MR_TYPE_ARRAY:
+	  mr_fd_init_pointer_params (fdp, INVALID_ARRAY_AUX_TYPE, fdp->param.array_param.pointer_param);
+	  break;
+	case MR_TYPE_FUNC:
+	  mr_func_field_detect (fdp);
+	  break;
+	case MR_TYPE_BITFIELD:
+	  mr_fd_init_bitfield_params (fdp);
+	  break;
+	case MR_TYPE_POINTER:
 	  mr_fd_init_pointer_params (fdp, INVALID_POINTER_AUX_TYPE, fdp->param.pointer_param.pointer_param);
 	  if (fdp->param.pointer_param.pointer_param)
 	    fdp->param.pointer_param.pointer_param->res_type = NULL; /* size specification should work only for a top level pointer */
+	  break;
+	default:
+	  break;
 	}
     }
 
