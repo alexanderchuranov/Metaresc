@@ -561,15 +561,21 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   uint32_t str_len;
   int parent = ptrs->ra[idx].parent;
   bool is_a_dynamic_string = ((parent >= 0) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+  typeof (ptrdes->fdp->size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->size;
 
   if (XDR_ENCODE == xdrs->x_op)
     {
-      str_len = strlen (ptrs->ra[idx].data.ptr) + 1;
-      if (!is_a_dynamic_string && !ptrs->ra[idx].non_persistent &&
-	  (str_len > ptrs->ra[idx].fdp->size))
+      char * string = ptrs->ra[idx].data.string;
+      if (is_a_dynamic_string)
+	str_len = strlen (string) + 1;
+      else
 	{
-	  str_len = ptrs->ra[idx].fdp->size;
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
+	  for (str_len = 0; (str_len < size) && (*string != 0); ++str_len)
+	    ++string;
+
+	  if (str_len < size)
+	    str_len += 1;
 	}
     }
 

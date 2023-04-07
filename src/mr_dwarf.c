@@ -999,7 +999,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	
 	if (MR_TYPE_CHAR == fd.mr_type_aux)
 	  mr_type = MR_TYPE_STRING;
-	else if (MR_TYPE_FUNC_TYPE == fd.mr_type_aux)
+	else if (MR_TYPE_FUNC_TYPE == fd.mr_type)
 	  mr_type = MR_TYPE_FUNC_TYPE;
 	else
 	  return;
@@ -1197,6 +1197,10 @@ process_td (mr_ptr_t key, const void * context)
 		    fdp->size = field_tdp->size;
 		  }
 	      }
+	    break;
+
+	  case MR_TYPE_FUNC_TYPE:
+	    fdp->size = sizeof (void *);
 	    break;
 
 	  case MR_TYPE_POINTER:

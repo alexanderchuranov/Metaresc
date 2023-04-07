@@ -928,7 +928,8 @@ mr_add_enum (mr_td_t * tdp)
 	  continue;
 	}
       mr_fd_t * fdp = result->ptr;
-      if (fdp->param.enum_param._unsigned != value)
+      if ((fdp != tdp->fields[i]) &&
+	  (fdp->param.enum_param._unsigned != tdp->fields[i]->param.enum_param._unsigned))
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_ENUMS, fdp->name.str, tdp->type.str, value, fdp->type, fdp->param.enum_param._unsigned);
 	  status = MR_FAILURE;
@@ -1517,12 +1518,6 @@ mr_detect_fields_types (mr_td_t * tdp)
 
       mr_normalize_field_name (fdp);
       mr_fd_detect_field_type (fdp);
-
-      if (fdp->size == 0)
-	fdp->size = mr_type_size (fdp->mr_type);
-      if ((fdp->size == 0) && fdp->tdp)
-	fdp->size = fdp->tdp->size;
-
       mr_fd_detect_res_size (fdp);
       mr_fd_init_ud_overrides (fdp);
 

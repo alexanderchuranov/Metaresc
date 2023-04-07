@@ -64,7 +64,11 @@ cinit_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
 static int
 cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf_quote_string (mr_ra_str, ptrdes->data.ptr, CINIT_QUOTE_CHAR_PATTERN));
+  typeof (ptrdes->fdp->size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->size;
+  char buffer[size + 1];
+  strncpy (buffer, ptrdes->data.ptr, size);
+  buffer[size] = 0;
+  return (mr_ra_printf_quote_string (mr_ra_str, buffer, CINIT_QUOTE_CHAR_PATTERN));
 }
 
 static int

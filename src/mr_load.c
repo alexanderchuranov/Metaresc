@@ -467,11 +467,11 @@ mr_get_char_array (char * str, void * dst)
   if (NULL == str)
     return (MR_FAILURE);
   
-  int str_len = strlen (str) + 1;
-  if ((str_len > max_size) && (ptrdes->parent >= 0))
+  int str_len = strlen (str);
+  if ((str_len >= max_size) && (ptrdes->parent >= 0))
     if (MR_TYPE_POINTER == load_node_context->ptrs->ra[ptrdes->parent].mr_type)
       {
-	void * data = MR_REALLOC (ptrdes->data.ptr, str_len);
+	void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
 	if (NULL == data)
 	  {
 	    if (ptrdes->data.ptr != NULL)
@@ -481,7 +481,7 @@ mr_get_char_array (char * str, void * dst)
 	  }
 		  
 	*(void**)load_node_context->ptrs->ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
-	max_size = str_len;
+	max_size = str_len + 1;
       }
 
   if (str_len > max_size)
@@ -491,7 +491,11 @@ mr_get_char_array (char * str, void * dst)
     }
 		  
   if (ptrdes->data.ptr != NULL)
-    memcpy (ptrdes->data.ptr, str, str_len);
+    {
+      memcpy (ptrdes->data.string, str, str_len);
+      if (str_len < max_size)
+	ptrdes->data.string[str_len] = 0;
+    }
 
   return (status);
 }  

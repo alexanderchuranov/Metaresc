@@ -186,7 +186,11 @@ xml_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 xml_ra_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (xml_ra_printf_quote_string (mr_ra_str, ptrdes->data.ptr));
+  typeof (ptrdes->fdp->size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->size;
+  char buffer[size + 1];
+  strncpy (buffer, ptrdes->data.ptr, size);
+  buffer[size] = 0;
+  return (xml_ra_printf_quote_string (mr_ra_str, buffer));
 }
 
 static int
