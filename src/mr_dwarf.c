@@ -727,23 +727,27 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 
   mr_type_sign_t * found_sign = find->ptr;
   fdp->size = mr_type_sign.size;
-  if (fdp->type == NULL)
-    fdp->type = mr_strdup (mr_type_sign.type.str);
-  assert (fdp->type != NULL);
 
   if ((fdp->mr_type_ptr == MR_TYPE_POINTER) && (found_sign->mr_type == MR_TYPE_CHAR))
     {
       fdp->mr_type_ptr = MR_TYPE_STRING;
       fdp->size = sizeof (char*);
-      assert (fdp->type != NULL);
-      int length = strlen (fdp->type);
-      fdp->type = MR_REALLOC (fdp->type, length + 2 * sizeof (fdp->type[0]));
-      assert (fdp->type != NULL);
-      fdp->type[length] = '*';
-      fdp->type[length + 1] = 0;
+      if (fdp->type == NULL)
+	{
+	  mr_size_t length = strlen (mr_type_sign.type.str);
+	  fdp->type = MR_CALLOC (length + 1, sizeof (char));
+	  assert (fdp->type != NULL);
+	  memcpy (fdp->type, mr_type_sign.type.str, length);
+	  fdp->type[length] = '*';
+	  fdp->type[length + 1] = 0;
+	}
     }
   else
     push_mr_type (fdp, found_sign->mr_type);
+
+  if (fdp->type == NULL)
+    fdp->type = mr_strdup (mr_type_sign.type.str);
+  assert (fdp->type != NULL);
 }
 
 static void
@@ -996,13 +1000,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	fd.mr_type_ptr = MR_TYPE_POINTER;
 	get_mr_type (&fd, mr_die, die_off_ic);
 	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
-	
-	if (MR_TYPE_CHAR == fd.mr_type_aux)
-	  mr_type = MR_TYPE_STRING;
-	else if (MR_TYPE_FUNC_TYPE == fd.mr_type)
-	  mr_type = MR_TYPE_FUNC_TYPE;
-	else
-	  return;
+	mr_type = fd.mr_type;
       }
       break;
     default:
@@ -1014,10 +1012,9 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   
   memset (tdp, 0, sizeof (*tdp));
   tdp->mr_type = mr_type;
+  tdp->size = mr_type_size (mr_type);
   tdp->type.str = mr_strdup (attr->dw_str);
   assert (tdp->type.str != NULL);
-  if ((MR_TYPE_STRING == mr_type) || (MR_TYPE_FUNC_TYPE == mr_type))
-    tdp->size = sizeof (void *);
 
   find = mr_ic_add (td_ic, tdp);
   assert (find != NULL);

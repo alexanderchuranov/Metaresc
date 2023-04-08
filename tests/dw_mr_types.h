@@ -7,9 +7,15 @@ TYPEDEF_STRUCT (mr_pointer_t,
 		(mr_type_t * *, enum_dptr_),
 		);
 
+typedef char * my_string_t;
+
 TYPEDEF_STRUCT (mr_array_t,
 		(signed int *, int_ptr_array, [2]),
 		(mr_type_t *, enum_ptr_array, [2]),
+		(my_string_t, my_string_array, [2]),
+		(my_string_t *, my_string_ptrs_array, [2]),
+		(char *, string_array, [2]),
+		(char * *, string_ptrs_array, [2]),
 		(int, array1d, [2]),
 		(int, array2d, [2][3]),
 		(int, array3d, [2][3][4]),
