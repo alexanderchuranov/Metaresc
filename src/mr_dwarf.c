@@ -734,12 +734,12 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
       fdp->size = sizeof (char*);
       if (fdp->type == NULL)
 	{
+#define POINTER_SUFFIX "*"
 	  mr_size_t length = strlen (mr_type_sign.type.str);
-	  fdp->type = MR_CALLOC (length + 1, sizeof (char));
+	  fdp->type = MR_CALLOC (length + sizeof (POINTER_SUFFIX), sizeof (char));
 	  assert (fdp->type != NULL);
 	  memcpy (fdp->type, mr_type_sign.type.str, length);
-	  fdp->type[length] = '*';
-	  fdp->type[length + 1] = 0;
+	  memcpy (&fdp->type[length], POINTER_SUFFIX, sizeof (POINTER_SUFFIX));
 	}
     }
   else
