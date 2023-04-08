@@ -729,19 +729,7 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   fdp->size = mr_type_sign.size;
 
   if ((fdp->mr_type_ptr == MR_TYPE_POINTER) && (found_sign->mr_type == MR_TYPE_CHAR))
-    {
-      fdp->mr_type_ptr = MR_TYPE_STRING;
-      fdp->size = sizeof (char*);
-      if (fdp->type == NULL)
-	{
-#define POINTER_SUFFIX "*"
-	  mr_size_t length = strlen (mr_type_sign.type.str);
-	  fdp->type = MR_CALLOC (length + sizeof (POINTER_SUFFIX), sizeof (char));
-	  assert (fdp->type != NULL);
-	  memcpy (fdp->type, mr_type_sign.type.str, length);
-	  memcpy (&fdp->type[length], POINTER_SUFFIX, sizeof (POINTER_SUFFIX));
-	}
-    }
+    fdp->mr_type_ptr = MR_TYPE_STRING;
   else
     push_mr_type (fdp, found_sign->mr_type);
 
@@ -804,13 +792,26 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  get_array_mr_type (fdp, mr_die);
 	  continue;
 	
-	case _DW_TAG_pointer_type:
-	  push_mr_type (fdp, MR_TYPE_POINTER);
-	  continue;
-	
 	case _DW_TAG_typedef:
 	  get_type_name (fdp, mr_die, die_off_ic);
 	  continue;
+
+	case _DW_TAG_pointer_type:
+	  {
+	    bool type_not_defined = (fdp->type == NULL);
+	    push_mr_type (fdp, MR_TYPE_POINTER);
+	    get_mr_type (fdp, mr_die, die_off_ic); /* recursive call instead of looping */
+	    if (type_not_defined && (fdp->type != NULL))
+	      {
+#define POINTER_SUFFIX " *"
+		mr_size_t length = strlen (fdp->type);
+		fdp->type = MR_REALLOC (fdp->type, length + sizeof (POINTER_SUFFIX));
+		assert (fdp->type != NULL);
+		memcpy (&fdp->type[length], POINTER_SUFFIX, sizeof (POINTER_SUFFIX));
+	      }
+	    fdp->size = sizeof (void*);
+	    break;
+	  }
 
 	case _DW_TAG_base_type:
 	  get_base_mr_type (fdp, mr_die);
@@ -852,9 +853,8 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 }
 
 static void
-load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
+load_enumerator (int idx, mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
-  memset (fdp, 0, sizeof (*fdp));
   fdp->mr_type = MR_TYPE_ENUM;
   
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
@@ -881,10 +881,8 @@ load_enumerator (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 }
 
 static void
-load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
+load_member (int idx, mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
-  memset (fdp, 0, sizeof (*fdp));
-  
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   if (attr != NULL)
     {
@@ -893,8 +891,17 @@ load_member (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       fdp->name.str = mr_strdup (attr->dw_str);
       assert (fdp->name.str != NULL);
     }
+
   if (fdp->name.str == NULL)
-    fdp->unnamed = true;
+    {
+#define ANONYMOUS_FIELD_TEMPLATE "anonymous_field_%d"
+      char field_name[sizeof (ANONYMOUS_FIELD_TEMPLATE) + sizeof (idx) * 3];
+      sprintf (field_name, ANONYMOUS_FIELD_TEMPLATE, idx);
+      fdp->name.str = mr_strdup (field_name);
+      assert (fdp->name.str != NULL);
+
+      fdp->unnamed = true;
+    }
 
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
@@ -974,7 +981,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
   mr_type_t mr_type = MR_TYPE_NONE;
   mr_dw_tag_t children_tag = _DW_TAG_undefined;
-  void (*load_child) (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
+  void (*load_child) (int idx, mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
 
   switch (mr_die->tag)
     {
@@ -1037,8 +1044,8 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	    assert (fdp_ptr != NULL);
 	    *fdp_ptr = MR_CALLOC (1, sizeof (**fdp_ptr));
 	    assert (*fdp_ptr != NULL);
-
-	    load_child (*fdp_ptr, &mr_die->children[i], die_off_ic);
+	    (*fdp_ptr)->readonly = true;
+	    load_child (i, *fdp_ptr, &mr_die->children[i], die_off_ic);
 	  }
     }
   
@@ -1270,7 +1277,7 @@ static void
 tweak_mr_conf ()
 {
   mr_type_void_fields ("mr_td_t", "field_by_name", "meta", "res", "res_type", "mr_size", "is_dynamically_allocated");
-  mr_type_void_fields ("mr_fd_t", "tdp", "self_ptr", "readonly", "mr_size", "non_persistent", "mr_type_class");
+  mr_type_void_fields ("mr_fd_t", "tdp", "self_ptr", "mr_size", "non_persistent", "mr_type_class");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");
