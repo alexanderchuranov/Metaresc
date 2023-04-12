@@ -682,6 +682,13 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       fdp->type = mr_strdup (attr->dw_str);
       assert (fdp->type != NULL);
     }
+
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_byte_size);
+  if (attr != NULL)
+    {
+      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+      fdp->size = attr->dw_unsigned;
+    }
 }
 
 static void
@@ -1145,7 +1152,6 @@ static mr_status_t
 process_td (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  mr_ic_t * td_ic = (mr_ic_t*)context;
   int i;
 
   if (tdp->mr_type == MR_TYPE_ENUM)
@@ -1174,44 +1180,12 @@ process_td (mr_ptr_t key, const void * context)
       {
 	mr_fd_t * fdp = tdp->fields[i];
 
-	switch (fdp->mr_type)
+	if (MR_TYPE_POINTER == fdp->mr_type)
 	  {
-	  case MR_TYPE_ARRAY:
-	    if (fdp->mr_type_aux == MR_TYPE_POINTER)
-	      {
-		fdp->param.array_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.array_param.pointer_param));
-		assert (fdp->param.array_param.pointer_param != NULL);
-	      }
-
-	    if ((fdp->mr_type_aux == MR_TYPE_POINTER) || (fdp->mr_type_aux == MR_TYPE_FUNC_TYPE))
-	      fdp->size = sizeof (void*);
-
-	    __attribute__ ((fallthrough));
-
-	  case MR_TYPE_UNION:
-	  case MR_TYPE_ENUM:
-	  case MR_TYPE_STRUCT:
-	  case MR_TYPE_BITFIELD:
-	    if (0 == fdp->size)
-	      {
-		mr_ptr_t * find = mr_ic_find (td_ic, (mr_td_t[]){{ .type = { .str = fdp->type, .hash_value = 0 }}});
-		if (find)
-		  {
-		    mr_td_t * field_tdp = find->ptr;
-		    fdp->size = field_tdp->size;
-		  }
-	      }
-	    break;
-
-	  case MR_TYPE_FUNC_TYPE:
-	    fdp->size = sizeof (void *);
-	    break;
-
-	  case MR_TYPE_POINTER:
-	    fdp->size = sizeof (void *);
 	    if (fdp->mr_type_aux == MR_TYPE_NONE)
 	      fdp->mr_type_aux = MR_TYPE_VOID;
-	    else
+
+	    if (fdp->mr_type_aux != MR_TYPE_VOID)
 	      {
 #define POINTER_SIZE_SUFFIX "_size"
 		assert (fdp->name.str != NULL);
@@ -1222,28 +1196,30 @@ process_td (mr_ptr_t key, const void * context)
 		fdp->res.ptr = size;
 		fdp->res_type = mr_strdup ("string");
 		assert (fdp->res_type != NULL);
-
-		if (fdp->mr_type_aux == MR_TYPE_POINTER)
-		  {
-		    fdp->param.pointer_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.pointer_param.pointer_param));
-		    assert (fdp->param.pointer_param.pointer_param != NULL);
-		  }
 	      }
-	    break;
 
-	  default:
-	    break;
+	    if (fdp->mr_type_aux == MR_TYPE_POINTER)
+	      {
+		fdp->param.pointer_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.pointer_param.pointer_param));
+		assert (fdp->param.pointer_param.pointer_param != NULL);
+	      }
 	  }
 
 	if (MR_TYPE_ARRAY == fdp->mr_type)
 	  {
 	    fdp->size *= fdp->param.array_param.count;
+
 	    if (MR_TYPE_CHAR == fdp->mr_type_aux)
 	      fdp->mr_type = MR_TYPE_CHAR_ARRAY;
+
+	    if (fdp->mr_type_aux == MR_TYPE_POINTER)
+	      {
+		fdp->param.array_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.array_param.pointer_param));
+		assert (fdp->param.array_param.pointer_param != NULL);
+	      }
 	  }
 
-	if ((fdp->name.str != NULL) &&
-	    ((MR_TYPE_UNION == fdp->mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux)))
+	if ((MR_TYPE_UNION == fdp->mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux) || (MR_TYPE_UNION == fdp->mr_type_ptr))
 	  {
 #define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
 	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
@@ -1348,7 +1324,7 @@ main (int argc, char * argv [])
     }
 
   tweak_mr_conf ();
-  mr_ic_foreach (&td_ic, process_td, &td_ic);
+  mr_ic_foreach (&td_ic, process_td, NULL);
   mr_ic_foreach (&td_ic, print_td, NULL);
   mr_ic_foreach (&td_ic, free_td, NULL);
   mr_ic_free (&td_ic);
