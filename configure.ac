@@ -152,48 +152,48 @@ AC_CHECK_SIZEOF([double])
 
 AC_MSG_CHECKING(long double significant bytes)
 MR_SIZEOF_LONG_DOUBLE=$ac_cv_sizeof_long_double
-AC_RUN_IFELSE([dnl
+AC_RUN_IFELSE([
   AC_LANG_PROGRAM(
     [#include <stdio.h>],
     [static const long double ld = 0.3L; int i, size = 0; for (i = 0; i < sizeof (ld); ++i) if (*(((unsigned char*)&ld) + i)) ++size; fprintf (stderr, "%d", size);]
     )],
-    [MR_SIZEOF_LONG_DOUBLE=$(./conftest$EXEEXT 2>&1)], [[]], [[]])
+    [MR_SIZEOF_LONG_DOUBLE=$(./conftest$EXEEXT 2>&1)], [true], [true])
 AC_DEFINE_UNQUOTED(MR_SIZEOF_LONG_DOUBLE, ${MR_SIZEOF_LONG_DOUBLE}, [long double significant bytes])
 AC_MSG_RESULT(${MR_SIZEOF_LONG_DOUBLE})
 
 AC_MSG_CHECKING(digits for float values)
 MR_FLT_DIG=8
-AC_RUN_IFELSE([dnl
+AC_RUN_IFELSE([
   AC_LANG_PROGRAM(
     [#include <stdio.h>
      #include <float.h>],
     [fprintf (stderr, "%d", FLT_DIG + 2);]
     )],
-    [MR_FLT_DIG=$(./conftest$EXEEXT 2>&1)], [[]], [[]])
+    [MR_FLT_DIG=$(./conftest$EXEEXT 2>&1)], [true], [true])
 AC_DEFINE_UNQUOTED(MR_FLT_DIG, ${MR_FLT_DIG}, [digits for float values])
 AC_MSG_RESULT(${MR_FLT_DIG})
 
 AC_MSG_CHECKING(digits for double values)
 MR_DBL_DIG=17
-AC_RUN_IFELSE([dnl
+AC_RUN_IFELSE([
   AC_LANG_PROGRAM(
     [#include <stdio.h>
      #include <float.h>],
     [fprintf (stderr, "%d", DBL_DIG + 2);]
     )],
-    [MR_DBL_DIG=$(./conftest$EXEEXT 2>&1)], [[]], [[]])
+    [MR_DBL_DIG=$(./conftest$EXEEXT 2>&1)], [true], [true])
 AC_DEFINE_UNQUOTED(MR_DBL_DIG, ${MR_DBL_DIG}, [digits for double values])
 AC_MSG_RESULT(${MR_DBL_DIG})
 
 AC_MSG_CHECKING(digits for long double values)
 MR_DBL_DIG=35
-AC_RUN_IFELSE([dnl
+AC_RUN_IFELSE([
   AC_LANG_PROGRAM(
     [#include <stdio.h>
      #include <float.h>],
     [fprintf (stderr, "%d", LDBL_DIG + 2);]
     )],
-    [MR_LDBL_DIG=$(./conftest$EXEEXT 2>&1)], [[]], [[]])
+    [MR_LDBL_DIG=$(./conftest$EXEEXT 2>&1)], [true], [true])
 AC_DEFINE_UNQUOTED(MR_LDBL_DIG, ${MR_LDBL_DIG}, [digits for long double values])
 AC_MSG_RESULT(${MR_LDBL_DIG})
 
