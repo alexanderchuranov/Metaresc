@@ -110,14 +110,13 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 			       mr_dump_struct_types_union_t * value)
 {
   int i;
-  mr_offset_t offset = -1;
+  mr_offset_t offset = 0;
+  int fields_count = ctx->tdp->fields_size / sizeof (ctx->tdp->fields[0]);
+  
   switch (mr_type)
     {
     case MR_TYPE_INT32:
-      for (i = 1; i < sizeof (*value); ++i)
-	if (value->dump[i] != 0)
-	  break;
-      if (i >= sizeof (*value))
+      if (0 == (value->_uint32 >> __CHAR_BIT__))
 	mr_type = MR_TYPE_BOOL;
       __attribute__ ((fallthrough));
 
@@ -135,15 +134,11 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       break;
 
     case MR_TYPE_DOUBLE:
-      for (i = 0; i < sizeof (double) - sizeof (float); ++i)
-	if (value->dump[i] != 0)
-	  break;
-      if (i >= sizeof (double) - sizeof (float))
+      if (0 == value->_uint16)
 	{
 	  mr_type = MR_TYPE_FLOAT;
 	  value->_float = value->_double;
 	}
-
       offset = value->_uint8;
       break;
 
@@ -152,19 +147,13 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       break;
 
     default:
-      break;
+      return;
     }
-
-  if (offset == -1)
-    return;
-
-  int fields_count = ctx->tdp->fields_size / sizeof (ctx->tdp->fields[0]);
 
   if (ctx->offset_byte != 0)
     {
       if (MR_TYPE_NONE == mr_type)
 	return;
-      int i;
       for (i = 0; i < fields_count; ++i)
 	if (0 == strcmp (ctx->tdp->fields[i]->name.str, name))
 	  break;

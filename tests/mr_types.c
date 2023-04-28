@@ -440,8 +440,6 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (uint64_t, _uint64),
 		     (mr_int128_t, _int128),
 		     (mr_uint128_t, _uint128),
-		     (double, _double),
-		     (float, _float),
 		     (long_double_t, _long_double),
 		     (mr_empty_t *, _struct_ptr),
 		     (char, _char_array, [2]),
@@ -453,6 +451,8 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (int32_alias5_t, int32_alias5),
 		     (const int32_alias6_t, int32_alias6),
 		     (int32_alias7_t volatile, int32_alias7),
+		     (double, _double),
+		     (float, _float),
 		     );
 
 typedef char * alias_string_t;
