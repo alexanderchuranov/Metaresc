@@ -589,9 +589,10 @@ TYPEDEF_STRUCT (mr_get_struct_type_name_t, ATTRIBUTES ( , "long jump buffer and 
 		)
 
 TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type detection with __builtin_dump_struct"),
+		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
 		(void *, struct_ptr, , "pointer on a sample struct variable"),
 		(mr_td_t *, tdp, , "type desctiptor"),
-		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
+		(int, offset_byte, , "which byte of offset is set in struct"),
 		)
 
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),

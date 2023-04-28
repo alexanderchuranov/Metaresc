@@ -521,7 +521,7 @@
 
 #define MR_UNIQ_NAME(ID) name_ ## ID
 #define MR_COMPILETIME_ASSERT(X) MR_COMPILETIME_ASSERT_ (X, __COUNTER__)
-#define MR_COMPILETIME_ASSERT_(X, ID) typedef struct { int:-!(X); } MR_UNIQ_NAME (ID)
+#define MR_COMPILETIME_ASSERT_(X, ID) __attribute__ ((unused)) struct { int:-!(X); } MR_UNIQ_NAME (ID)
 /*
   For types defined using standard language approach you will need to create analog types with metaresc.
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
@@ -777,21 +777,20 @@
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
   static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX_ID (ID, MR_TYPE_NAME) (void) { \
-    if (sizeof (MR_TYPE_NAME) >= (1 << __CHAR_BIT__))			\
-      return;								\
-    mr_dump_struct_type_ctx_t dst_ctx;					\
-    MR_TYPE_NAME __value;						\
-    uint8_t * __ptr = (uint8_t*)&__value;				\
-    int __i;								\
-    for (__i = 0; __i < sizeof (__value); ++__i)			\
-      *__ptr++ = __i;							\
-    memset (&dst_ctx, 0, sizeof (dst_ctx));				\
-    dst_ctx.struct_ptr = &__value;					\
     mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td)); \
     if (NULL == basic_type_td)						\
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);		\
     else								\
       {									\
+        mr_dump_struct_type_ctx_t dst_ctx;				\
+	MR_TYPE_NAME __value;						\
+	uint8_t * __ptr = (uint8_t*)&__value;				\
+	mr_size_t __block_size, __i;					\
+	for (__i = 0; __i < sizeof (__value); ++__i)			\
+	  *__ptr++ = __i;						\
+	memset (&dst_ctx, 0, sizeof (dst_ctx));				\
+	dst_ctx.struct_ptr = &__value;					\
+	dst_ctx.offset_byte = 0;					\
 	dst_ctx.tdp = &basic_type_td->td;				\
 	dst_ctx.tdp->fields_size = sizeof (dst_ctx.tdp->fields[0]);	\
 	dst_ctx.tdp->fields = &basic_type_td->fd_ptr;			\
@@ -799,19 +798,28 @@
 	dst_ctx.tdp->fields[0]->mr_type = MR_TYPE_LAST;			\
 	dst_ctx.tdp->is_dynamically_allocated = true;			\
 	dst_ctx.tdp->mr_type = MR_TYPE_STRUCT;				\
+	dst_ctx.tdp->size = sizeof (__value);				\
 	char * type = MR_STRINGIFY_READONLY (MR_TYPE_NAME);		\
 	if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0) \
 	  type += sizeof (MR_STRUCT_KEYWORD);				\
 	if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0) \
 	  type += sizeof (MR_UNION_KEYWORD);				\
 	dst_ctx.tdp->type.str = type;					\
-	if (0 == setjmp (dst_ctx._jmp_buf))				\
-	  __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
-	if (dst_ctx.tdp)						\
+	while (dst_ctx.tdp != NULL)					\
 	  {								\
-	    dst_ctx.tdp->size = sizeof (__value);			\
-	    mr_add_type (dst_ctx.tdp);					\
+	    if (0 == setjmp (dst_ctx._jmp_buf))				\
+	      __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
+	    __block_size = 1 << (__CHAR_BIT__ * ++dst_ctx.offset_byte);	\
+	    if (sizeof (__value) < __block_size)			\
+	      break;							\
+	    __i = 0;							\
+	    for (__ptr = (uint8_t*)&__value;				\
+		 __ptr - (uint8_t*)&__value < sizeof (__value) - (__block_size - 1); \
+		 __ptr += __block_size)					\
+	      memset (__ptr, __i++, __block_size);			\
+	    memset (__ptr, __i, sizeof (__value) & (__block_size - 1));	\
 	  }								\
+	mr_add_type (dst_ctx.tdp);					\
       }									\
   }
 

@@ -159,6 +159,20 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     return;
 
   int fields_count = ctx->tdp->fields_size / sizeof (ctx->tdp->fields[0]);
+
+  if (ctx->offset_byte != 0)
+    {
+      if (MR_TYPE_NONE == mr_type)
+	return;
+      int i;
+      for (i = 0; i < fields_count; ++i)
+	if (0 == strcmp (ctx->tdp->fields[i]->name.str, name))
+	  break;
+      if (i < fields_count)
+	ctx->tdp->fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
+      return;
+    }
+
   mr_basic_type_td_t * basic_type_td = MR_REALLOC (ctx->tdp, sizeof (*basic_type_td) + (sizeof (basic_type_td->fd) + sizeof (basic_type_td->fd_ptr)) * fields_count);
   if (NULL == basic_type_td)
     {
