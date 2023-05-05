@@ -11,7 +11,6 @@
 
 #undef MR_SAVE
 #define MR_SAVE(TDP, S_PTR) ({						\
-      mr_save_data_t __mr_save_data__;					\
       void * __ptr__ = (void*)S_PTR;					\
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
@@ -21,10 +20,7 @@
       __fd__.type = __fd__.tdp->type.str;				\
       __fd__.size = __fd__.tdp->size;					\
       __fd__.mr_type = __fd__.tdp->mr_type;				\
-      memset (&__mr_save_data__, 0, sizeof (__mr_save_data__));		\
-      if (__ptr__ != NULL)						\
-	mr_save (__ptr__, &__fd__, &__mr_save_data__);			\
-      __mr_save_data__.ptrs;						\
+      mr_save (__ptr__, &__fd__);					\
     })
 
 mr_hash_value_t

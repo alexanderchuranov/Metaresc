@@ -1444,63 +1444,63 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
  * @param fdp a ponter of field descriptor
  * @param mr_save_data save routines data and lookup structures
  */
-void
-mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data)
+mr_ra_ptrdes_t
+mr_save (void * data, mr_fd_t * fdp)
 {
   int i;
+  mr_save_data_t mr_save_data;
   mr_res_t context = {
-    .data = { &mr_save_data->ptrs },
+    .data = { &mr_save_data.ptrs },
     .type = "mr_ra_ptrdes_t",
     .MR_SIZE = sizeof (mr_ra_ptrdes_t),
   };
 
-  memset (mr_save_data, 0, sizeof (*mr_save_data));
-  mr_save_data->ptrs.ptrdes_type = MR_PD_SAVE;
-#define MR_IC_METHOD MR_IC_HASH
-  mr_ic_new (&mr_save_data->typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
-  mr_ic_new (&mr_save_data->untyped_ptrs, mr_typed_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
-  mr_ic_new (&mr_save_data->union_discriminators, mr_uds_get_hash, mr_uds_cmp, "intptr", MR_IC_METHOD, &context);
+  memset (&mr_save_data, 0, sizeof (mr_save_data));
+  if (NULL == data)
+    return (mr_save_data.ptrs);
 
-  mr_save_data->mr_ra_ud_size = 0;
-  mr_save_data->mr_ra_ud = NULL;
-  mr_save_data->ptrs.size = 0;
-  mr_save_data->ptrs.ra = NULL;
+  mr_save_data.ptrs.ptrdes_type = MR_PD_SAVE;
+#define MR_IC_METHOD MR_IC_HASH
+  mr_ic_new (&mr_save_data.typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data.untyped_ptrs, mr_typed_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data.union_discriminators, mr_uds_get_hash, mr_uds_cmp, "intptr", MR_IC_METHOD, &context);
 
   fdp->unnamed = true;
-  int nodes_added = mr_save_inner (data, fdp, 1, mr_save_data, -1);
+  int nodes_added = mr_save_inner (data, fdp, 1, &mr_save_data, -1);
   if (nodes_added > 0)
     {
-      for (i = 0; i < mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]); ++i)
-	if ((MR_TYPE_POINTER == mr_save_data->ptrs.ra[i].mr_type) &&
-	    (MR_TYPE_VOID != mr_save_data->ptrs.ra[i].mr_type_aux) &&
-	    (MR_TYPE_NONE != mr_save_data->ptrs.ra[i].mr_type_aux) &&
-	    !mr_save_data->ptrs.ra[i].flags.is_opaque_data &&
-	    !mr_save_data->ptrs.ra[i].flags.is_null)
+      for (i = 0; i < mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]); ++i)
+	if ((MR_TYPE_POINTER == mr_save_data.ptrs.ra[i].mr_type) &&
+	    (MR_TYPE_VOID != mr_save_data.ptrs.ra[i].mr_type_aux) &&
+	    (MR_TYPE_NONE != mr_save_data.ptrs.ra[i].mr_type_aux) &&
+	    !mr_save_data.ptrs.ra[i].flags.is_opaque_data &&
+	    !mr_save_data.ptrs.ra[i].flags.is_null)
 	  {
-	    nodes_added = mr_save_pointer_content (i, mr_save_data);
+	    nodes_added = mr_save_pointer_content (i, &mr_save_data);
 	    if (nodes_added < 0)
 	      break;
 	  }
       if (nodes_added >= 0)
-	mr_post_process (mr_save_data);
+	mr_post_process (&mr_save_data);
     }
 
-  for (i = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1; i >= 0; --i)
-    mr_ud_free (&mr_save_data->ptrs.ra[i]);
+  for (i = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]) - 1; i >= 0; --i)
+    mr_ud_free (&mr_save_data.ptrs.ra[i]);
 
-  if ((nodes_added < 0) && (mr_save_data->ptrs.ra != NULL))
+  if ((nodes_added < 0) && (mr_save_data.ptrs.ra != NULL))
     {
-      MR_FREE (mr_save_data->ptrs.ra);
-      mr_save_data->ptrs.ra = NULL;
+      MR_FREE (mr_save_data.ptrs.ra);
+      mr_save_data.ptrs.ra = NULL;
     }
 
-  if (mr_save_data->mr_ra_ud != NULL)
-    MR_FREE (mr_save_data->mr_ra_ud);
-  mr_save_data->mr_ra_ud = NULL;
+  if (mr_save_data.mr_ra_ud != NULL)
+    MR_FREE (mr_save_data.mr_ra_ud);
   
-  mr_ic_free (&mr_save_data->union_discriminators);
-  mr_ic_free (&mr_save_data->typed_ptrs);
-  mr_ic_free (&mr_save_data->untyped_ptrs);
+  mr_ic_free (&mr_save_data.union_discriminators);
+  mr_ic_free (&mr_save_data.typed_ptrs);
+  mr_ic_free (&mr_save_data.untyped_ptrs);
+
+  return (mr_save_data.ptrs);
 }
 
 /**

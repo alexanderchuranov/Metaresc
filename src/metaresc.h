@@ -930,7 +930,6 @@
 	MR_SAVE_STR_TYPED (MR_STRINGIFY (MR_TYPE_NAME), S_PTR); }))
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
-      mr_save_data_t __mr_save_data__;					\
       void * __ptr__ = (void*)S_PTR;					\
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
@@ -947,10 +946,7 @@
 	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
 	  __fd__.param.array_param.row_count = 1;			\
 	}								\
-      memset (&__mr_save_data__, 0, sizeof (__mr_save_data__));		\
-      if (__ptr__ != NULL)						\
-	mr_save (__ptr__, &__fd__, &__mr_save_data__);			\
-      __mr_save_data__.ptrs;						\
+      mr_save (__ptr__, &__fd__);					\
     })
 
 #define MR_SAVE_XDR(MR_TYPE_NAME, XDRS, S_PTR) ({			\
@@ -1371,7 +1367,7 @@ extern mr_status_t mr_add_type (mr_td_t * tdp);
 extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
-extern void mr_save (void * data, mr_fd_t * fdp, mr_save_data_t * mr_save_data);
+extern mr_ra_ptrdes_t mr_save (void * data, mr_fd_t * fdp);
 extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs);
 #ifdef HAVE_LIBXML2
 extern xmlDocPtr xml2_save (mr_ra_ptrdes_t * ptrs);
