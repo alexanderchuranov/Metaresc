@@ -32,17 +32,17 @@ endif
 endif
 
 if HAVE_BISON_FLEX
-  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr
+  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 smoke_yaml1 expr
 
   expr.$(OBJEXT): CFLAGS += -ffast-math
 
 if HAVE_PERFTEST
-  check_PROGRAMS += perf_cinit perf_json perf_scm perf_xml1
+  check_PROGRAMS += perf_cinit perf_json perf_scm perf_xml1 perf_yaml1
 endif
 if HAVE_EXECINFO
   check_PROGRAMS += mf_cinit_save mf_cinit_load mf_json_save mf_json_load
   check_PROGRAMS += mf_scm_save mf_scm_load mf_xml1_save mf_xml1_load 
-  check_PROGRAMS += mf_yaml1_load
+  check_PROGRAMS += mf_yaml1_save mf_yaml1_load 
 endif
 endif
 

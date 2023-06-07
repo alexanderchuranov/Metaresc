@@ -8,7 +8,7 @@
 #include <metaresc.h>
 
 #ifdef HAVE_BISON_FLEX
-#define BISON_FLEX_METHODS XML1, SCM, CINIT, JSON,
+#define BISON_FLEX_METHODS XML1, SCM, CINIT, JSON, YAML1,
 #else /* HAVE_BISON_FLEX */
 #define BISON_FLEX_METHODS
 #endif /* HAVE_BISON_FLEX */

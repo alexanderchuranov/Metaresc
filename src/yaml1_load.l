@@ -30,26 +30,26 @@ FLOAT_INF    [+-]?[Ii][Nn][Ff]
 FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?
 %%
 
-"null"  { return (TOK_YAML_NULL); }
-"false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_YAML_NUMBER); }
-"true"  { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_YAML_NUMBER); }
+"null"  { return (TOK_YAML1_NULL); }
+"false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_YAML1_NUMBER); }
+"true"  { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_YAML1_NUMBER); }
 
-{INT_NUMBER}   { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = mr_strtouintmax(yytext, NULL, 0); return (TOK_YAML_NUMBER); }
-{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold(yytext, NULL); return (TOK_YAML_NUMBER); }
+{INT_NUMBER}   { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = mr_strtouintmax(yytext, NULL, 0); return (TOK_YAML1_NUMBER); }
+{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold(yytext, NULL); return (TOK_YAML1_NUMBER); }
 
 \"(\\\"|[^\"])*\" {
   yylval->string.str = strdup(yytext + 1); /* Remove the leading quote */
   yylval->string.length = yyleng - 2; /* Exclude the leading and trailing quotes */
-  return (TOK_YAML_STRING);
+  return (TOK_YAML1_STRING);
 }
 
 {WS}      { /* eat up whitespace */ }
-":"       { return (TOK_YAML_SEMICOLON); }
-"{"       { return (TOK_YAML_LBRACE); }
-"}"       { return (TOK_YAML_RBRACE); }
-"["       { return (TOK_YAML_LBRACKET); }
-"]"       { return (TOK_YAML_RBRACKET); }
-","       { return (TOK_YAML_COMMA); }
-.         { return (TOK_YAML_ERROR); }
+":"       { return (TOK_YAML1_SEMICOLON); }
+"{"       { return (TOK_YAML1_LBRACE); }
+"}"       { return (TOK_YAML1_RBRACE); }
+"["       { return (TOK_YAML1_LBRACKET); }
+"]"       { return (TOK_YAML1_RBRACKET); }
+","       { return (TOK_YAML1_COMMA); }
+.         { return (TOK_YAML1_ERROR); }
 %%
 

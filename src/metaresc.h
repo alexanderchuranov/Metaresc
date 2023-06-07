@@ -987,7 +987,7 @@
 #define MR_SAVE_CINIT(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (cinit_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (json_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (scm_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_YAML1(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (yaml_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_YAML1(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (yaml1_save, MR_TYPE_NAME, S_PTR)
 
 #define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
       mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "string" }; \
@@ -1383,7 +1383,7 @@ extern char * xml1_save (mr_ra_ptrdes_t * ptrs);
 extern char * cinit_save (mr_ra_ptrdes_t * ptrs);
 extern char * json_save (mr_ra_ptrdes_t * ptrs);
 extern char * scm_save (mr_ra_ptrdes_t * ptrs);
-extern char * yaml_save (mr_ra_ptrdes_t * ptrs);
+extern char * yaml1_save (mr_ra_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
 extern mr_status_t xml1_load (char * str, mr_ra_ptrdes_t * ptrs);

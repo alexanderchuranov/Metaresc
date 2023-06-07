@@ -25,7 +25,7 @@
 
 %code {
 void
-yaml_unquote_str (mr_substr_t * substr, char * dst)
+yaml1_unquote_str (mr_substr_t * substr, char * dst)
 {
   int i, size, length;
 
@@ -87,9 +87,9 @@ yaml_unquote_str (mr_substr_t * substr, char * dst)
 }
 
 /* Bison declarations. */
-%token <value> TOK_YAML_NUMBER
-%token <string> TOK_YAML_STRING
-%token TOK_YAML_SEMICOLON TOK_YAML_LBRACE TOK_YAML_RBRACE TOK_YAML_LBRACKET TOK_YAML_RBRACKET TOK_YAML_COMMA TOK_YAML_NULL TOK_YAML_ERROR
+%token <value> TOK_YAML1_NUMBER
+%token <string> TOK_YAML1_STRING
+%token TOK_YAML1_SEMICOLON TOK_YAML1_LBRACE TOK_YAML1_RBRACE TOK_YAML1_LBRACKET TOK_YAML1_RBRACKET TOK_YAML1_COMMA TOK_YAML1_NULL TOK_YAML1_ERROR
 
 %start yaml
 
@@ -104,50 +104,50 @@ pop_node: {
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
 }
 
-push_node: {
-  mr_load_t * mr_load = MR_LOAD;
-  mr_load->parent = mr_parse_add_node (mr_load);
+push_node: { 
+  mr_load_t * mr_load = MR_LOAD; 
+  mr_load->parent = mr_parse_add_node (mr_load); 
   if (mr_load->parent < 0)
-  {
-    YYERROR;
-  }
+    {
+      YYERROR;
+    }
   mr_load->ptrs->ra[mr_load->parent].idx = mr_load->parent;
 }
 
 value: object | array
-| TOK_YAML_STRING {
+| TOK_YAML1_STRING {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = yaml_unquote_str;
+  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = yaml1_unquote_str;
   }
-| TOK_YAML_NUMBER {
+| TOK_YAML1_NUMBER {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1;
   }
-| TOK_YAML_NULL {
+| TOK_YAML1_NULL {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_INT;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_int = 0;
   }
 
-object: TOK_YAML_LBRACE TOK_YAML_RBRACE
-| TOK_YAML_LBRACE members TOK_YAML_RBRACE
+object: TOK_YAML1_LBRACE TOK_YAML1_RBRACE
+| TOK_YAML1_LBRACE members TOK_YAML1_RBRACE
 
-members: member | member TOK_YAML_COMMA members
+members: member | member TOK_YAML1_COMMA members
 
-member: TOK_YAML_STRING TOK_YAML_SEMICOLON element {
+member: TOK_YAML1_STRING TOK_YAML1_SEMICOLON element {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
   mr_load->ptrs->ra[idx].name = mr_get_static_field_name_from_substring (&$1);
 }
 
-array: TOK_YAML_LBRACKET TOK_YAML_RBRACKET
-| TOK_YAML_LBRACKET elements TOK_YAML_RBRACKET
+array: TOK_YAML1_LBRACKET TOK_YAML1_RBRACKET
+| TOK_YAML1_LBRACKET elements TOK_YAML1_RBRACKET
 
-elements: element | element TOK_YAML_COMMA elements
+elements: element | element TOK_YAML1_COMMA elements
 
 %%
 
