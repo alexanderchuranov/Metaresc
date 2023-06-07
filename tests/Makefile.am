@@ -40,7 +40,9 @@ if HAVE_PERFTEST
   check_PROGRAMS += perf_cinit perf_json perf_scm perf_xml1
 endif
 if HAVE_EXECINFO
-  check_PROGRAMS += mf_cinit_save mf_cinit_load mf_json_save mf_json_load mf_scm_save mf_scm_load mf_xml1_save mf_xml1_load
+  check_PROGRAMS += mf_cinit_save mf_cinit_load mf_json_save mf_json_load
+  check_PROGRAMS += mf_scm_save mf_scm_load mf_xml1_save mf_xml1_load 
+  check_PROGRAMS += mf_yaml1_load
 endif
 endif
 
@@ -80,6 +82,9 @@ mf_xml1_save_LDADD = mem_failures.$(OBJEXT)
 mf_xml1_load_LDADD = mem_failures.$(OBJEXT)
 mf_xml2_save_LDADD = mem_failures.$(OBJEXT)
 mf_xml2_load_LDADD = mem_failures.$(OBJEXT)
+mf_yaml1_save_LDADD = mem_failures.$(OBJEXT)
+mf_yaml1_load_LDADD = mem_failures.$(OBJEXT)
+
 
 TESTS=$(check_PROGRAMS)
 

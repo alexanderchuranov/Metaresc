@@ -31,9 +31,9 @@ mr_dwarf_CPPFLAGS = -I$(top_srcdir)/libdwarf-code/src/lib/libdwarf/
 mr_dwarf_LDADD = libmetaresc.la $(LIBXML2_LIBS) ../libdwarf-code/src/lib/libdwarf/.libs/libdwarf.la
 endif
 
-libmetaresc_la_SOURCES = metaresc.c mr_message.c mr_extra.c mr_print.c mr_stringify.c mr_save.c mr_load.c xml_save.c cinit_save.c json_save.c scm_save.c mr_ic.c mr_hsort.c mr_value.c mr_btree.c
+libmetaresc_la_SOURCES = metaresc.c mr_message.c mr_extra.c mr_print.c mr_stringify.c mr_save.c mr_load.c xml_save.c cinit_save.c json_save.c scm_save.c yaml_save.c mr_ic.c mr_hsort.c mr_value.c mr_btree.c
 if HAVE_BISON_FLEX
-  libmetaresc_la_SOURCES += xml1_load.tab.c xml1_load.lex.c cinit_load.tab.c cinit_load.lex.c json_load.tab.c json_load.lex.c scm_load.tab.c scm_load.lex.c
+  libmetaresc_la_SOURCES += yaml1_load.tab.c yaml1_load.lex.c xml1_load.tab.c xml1_load.lex.c cinit_load.tab.c cinit_load.lex.c json_load.tab.c json_load.lex.c scm_load.tab.c scm_load.lex.c
 endif
 if HAVE_LIBXML2
   libmetaresc_la_SOURCES += xml2_load.c
@@ -48,6 +48,8 @@ pkginclude_HEADERS = metaresc.h mr_protos.h mr_export.h mr_pp.h
 
 xml1_load.tab.c: xml1_load.y xml1_load.lex.h
 xml1_load.lex.c: xml1_load.l xml1_load.tab.h
+yaml1_load.tab.c: yaml1_load.y yaml1_load.lex.h
+yaml1_load.lex.c: yaml1_load.l yaml1_load.tab.h
 cinit_load.tab.c: cinit_load.y cinit_load.lex.h
 cinit_load.lex.c: cinit_load.l cinit_load.tab.h
 json_load.tab.c: json_load.y json_load.lex.h

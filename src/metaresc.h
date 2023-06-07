@@ -987,6 +987,7 @@
 #define MR_SAVE_CINIT(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (cinit_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (json_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (scm_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_YAML1(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (yaml_save, MR_TYPE_NAME, S_PTR)
 
 #define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
       mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "string" }; \
@@ -1001,6 +1002,7 @@
 #define MR_SAVE_CINIT_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_CINIT, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_JSON, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_SCM, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_YAML1_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_YAML1, MR_TYPE_NAME, S_PTR)
 
 #define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR)			\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
@@ -1209,6 +1211,7 @@
 #define MR_LOAD_METHOD_ARG2(METHOD, MR_TYPE_NAME, STR, S_PTR) MR_LOAD_METHOD_ARG2_ (METHOD, MR_TYPE_NAME, STR)
 
 #define MR_LOAD_XML1(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_YAML1(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (yaml1_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_CINIT(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_JSON(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (json_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (scm_load, MR_TYPE_NAME, __VA_ARGS__)
@@ -1217,6 +1220,7 @@
 #define MR_LOAD_METHOD_RA_ARGN(METHOD, MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, (char*)((RA)->data.ptr), S_PTR)
 
 #define MR_LOAD_XML1_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_YAML1_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (yaml1_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_CINIT_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_JSON_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (json_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_SCM_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (scm_load, MR_TYPE_NAME, __VA_ARGS__)
@@ -1379,12 +1383,14 @@ extern char * xml1_save (mr_ra_ptrdes_t * ptrs);
 extern char * cinit_save (mr_ra_ptrdes_t * ptrs);
 extern char * json_save (mr_ra_ptrdes_t * ptrs);
 extern char * scm_save (mr_ra_ptrdes_t * ptrs);
+extern char * yaml_save (mr_ra_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
 extern mr_status_t xml1_load (char * str, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t cinit_load (char * str, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t json_load (char * str, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t scm_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t yaml1_load (char * str, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_BISON_FLEX */
 
 extern void * mr_calloc (const char * filename, const char * function, int line, size_t count, size_t size);

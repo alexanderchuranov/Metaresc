@@ -4,7 +4,6 @@
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <yaml.h>
 
 #include <metaresc.h>
 #include <mr_save.h>

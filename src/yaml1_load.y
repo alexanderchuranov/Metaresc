@@ -6,19 +6,19 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#define MR_YAML_DEBUG 0
+#define MR_YAML1_DEBUG 0
 /* Pass the argument to yyparse through to yylex. */
-#define MR_YAML_LTYPE mr_token_lloc_t
-#define MR_LOAD (mr_yaml_get_extra (scanner))
-#define mr_yaml_error MR_PARSE_ERROR
+#define MR_YAML1_LTYPE mr_token_lloc_t
+#define MR_LOAD (mr_yaml1_get_extra (scanner))
+#define mr_yaml1_error MR_PARSE_ERROR
 
 #include <metaresc.h>
 #include <mr_stringify.h>
 #include <lexer.h>
 #include <mr_value.h>
 #include <yaml1_load.tab.h>
-#define YYSTYPE MR_YAML_STYPE
-#define YYLTYPE MR_YAML_LTYPE
+#define YYSTYPE MR_YAML1_STYPE
+#define YYLTYPE MR_YAML1_LTYPE
 #include <yaml1_load.lex.h>
 
 }
@@ -73,7 +73,7 @@ yaml_unquote_str (mr_substr_t * substr, char * dst)
 
 }
 
-%define api.prefix {mr_yaml_}
+%define api.prefix {mr_yaml1_}
 %define api.pure full
 %param {void * scanner}
 %locations
@@ -138,7 +138,7 @@ object: TOK_YAML_LBRACE TOK_YAML_RBRACE
 
 members: member | member TOK_YAML_COMMA members
 
-member: TOK_YAML_STRING TOK_YAML_COLON element {
+member: TOK_YAML_STRING TOK_YAML_SEMICOLON element {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
   mr_load->ptrs->ra[idx].name = mr_get_static_field_name_from_substring (&$1);
@@ -151,4 +151,4 @@ elements: element | element TOK_YAML_COMMA elements
 
 %%
 
-MR_LOAD_FUNC (yaml);
+MR_LOAD_FUNC (yaml1);
