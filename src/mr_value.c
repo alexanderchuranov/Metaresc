@@ -246,7 +246,28 @@ mr_value_id_to_int (char * str, void * arg)
     }
   
   mr_value->value_type = MR_VT_INT;
-  mr_value->vt_int = fdp->param.enum_param._signed;
+
+  switch (fdp->mr_type_aux)
+    {
+    case MR_TYPE_INT8:
+    case MR_TYPE_INT16:
+    case MR_TYPE_INT32:
+    case MR_TYPE_INT64:
+      mr_value->vt_int = fdp->param.enum_param._signed;
+      break;
+
+    case MR_TYPE_UINT8:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_UINT64:
+      mr_value->vt_int = fdp->param.enum_param._unsigned;
+      break;
+
+    default:
+      mr_value->vt_int = fdp->param.enum_param._unsigned;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_BAD_ENUM_TYPE, fdp->mr_type_aux);
+      return (MR_FAILURE);
+    }
   return (MR_SUCCESS);
 }
 

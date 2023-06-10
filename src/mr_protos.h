@@ -44,6 +44,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_IDS_COLLISION, , "Two XML nodes have the same %s = %" SCNd32 "."),
 	      (MR_MESSAGE_UNDEFINED_REF_IDX, , "Reference on a node with %s = %" SCNd32 " could not be found."),
 	      (MR_MESSAGE_UNKNOWN_ENUM, , "Unknown enum value '%s'."),
+	      (MR_MESSAGE_BAD_ENUM_TYPE, , "Bad enum type %d."),
 	      (MR_MESSAGE_READ_INT, , "Can't read integer value from string `%s`."),
 	      (MR_MESSAGE_READ_LONG_DOUBLE, , "Can't read long double from string `%s`."),
 	      (MR_MESSAGE_READ_COMPLEX_LONG_DOUBLE, , "Can't read complex long double from string `%s`."),

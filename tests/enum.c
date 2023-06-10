@@ -38,6 +38,9 @@ TYPEDEF_ENUM (mr_enum_uint32_t, ATTRIBUTES (__attribute__ ((packed))),
 	      UINT32_ZERO, UINT32_ONE, (UINT32_TWO, = 2), (UINT32_THREE, = 3), (UINT32_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint32_t) - 1)));
 TYPEDEF_ENUM (mr_enum_uint64_t, ATTRIBUTES (__attribute__ ((packed))),
 	      UINT64_ZERO, UINT64_ONE, (UINT64_TWO, = 2), (UINT64_THREE, = 3), (UINT64_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)));
+TYPEDEF_ENUM (mr_enum_int64_t, ATTRIBUTES (__attribute__ ((packed))),
+	      (INT64_FIRST, = -1),
+	      (INT64_LAST, = (1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)) - 1));
 
 TYPEDEF_STRUCT (struct_mr_enum_t, (mr_enum_t, x));
 TYPEDEF_STRUCT (struct_mr_enum_uint8_t, (mr_enum_uint8_t, x));
@@ -74,6 +77,18 @@ START_TEST (three_mr_struct_enum_t) { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM,
 START_TEST (seven_mr_enum_t) { ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, (int)SEVEN); } END_TEST
 START_TEST (seven_mr_struct_enum_t) { ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, (int)SEVEN); } END_TEST
 
+START_TEST (mr_intmax_signed_max_value) {
+  mr_intmax_t x = INT64_FIRST;
+  mr_intmax_t parsed_x = MR_LOAD_CINIT (mr_intmax_t, "INT64_FIRST");
+  ck_assert_msg ((x == parsed_x), "Parsed unsigned value mismatches static initialization");
+ } END_TEST
+
+START_TEST (mr_intmax_unsigned_max_value) {
+  mr_intmax_t x = UINT64_LAST;
+  mr_intmax_t parsed_x = MR_LOAD_CINIT (mr_intmax_t, "UINT64_LAST");
+  ck_assert_msg ((x == parsed_x), "Parsed unsigned value mismatches static initialization");
+ } END_TEST
+
 static int warnings = 0;
 
 static void
@@ -108,5 +123,7 @@ MAIN_TEST_SUITE ((zero_mr_enum_t, "zero as number enum"),
 		 (three_mr_struct_enum_t, "three as enum in struct"),
 		 (seven_mr_enum_t, "seven as enum"),
 		 (seven_mr_struct_enum_t, "seven as enum in struct"),
+		 (mr_intmax_signed_max_value, "Signed enum parsing"),
+		 (mr_intmax_unsigned_max_value, "Unsigned enum parsing"),
 		 (invalid_mr_enum_t, "invalid enum")
 		 );
