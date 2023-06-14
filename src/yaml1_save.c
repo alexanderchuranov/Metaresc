@@ -10,12 +10,12 @@
 #include <mr_stringify.h>
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
-#define YAML_INDENT_SPACES (2)
-#define YAML_INDENT_TEMPLATE "%*s"
-#define YAML_NULL "~"
+#define YAML1_INDENT_SPACES (2)
+#define YAML1_INDENT_TEMPLATE "%*s"
+#define YAML1_NULL "null"
 
-#define YAML_QUOTE_CHAR_PATTERN "\\u%04x"
-#define YAML_BITMASK_DELIMITER " | "
+#define YAML1_QUOTE_CHAR_PATTERN "\\u%04x"
+#define YAML1_BITMASK_DELIMITER " | "
 
 static int
 yaml1_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
@@ -35,7 +35,7 @@ yaml1_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   else if (isprint (c))
     count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, c));
   else
-    count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, YAML_QUOTE_CHAR_PATTERN, c));
+    count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, YAML1_QUOTE_CHAR_PATTERN, c));
   count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   return (count);
 }
@@ -45,7 +45,9 @@ yaml1_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   int count = 0;
 
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   count += TRY_CATCH_THROW (mr_ra_printf_complex_float (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   
   return (count);
 }
@@ -55,7 +57,9 @@ yaml1_printf_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   int count = 0;
 
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   count += TRY_CATCH_THROW (mr_ra_printf_complex_double (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   
   return (count);
 }
@@ -65,7 +69,9 @@ yaml1_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
 {
   int count = 0;
 
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   count += TRY_CATCH_THROW (mr_ra_printf_complex_long_double_t (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   
   return (count);
 }
@@ -77,13 +83,13 @@ yaml1_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   char buffer[size + 1];
   strncpy (buffer, ptrdes->data.ptr, size);
   buffer[size] = 0;
-  return (mr_ra_printf_quote_string (mr_ra_str, buffer, YAML_QUOTE_CHAR_PATTERN));
+  return (mr_ra_printf_quote_string (mr_ra_str, buffer, YAML1_QUOTE_CHAR_PATTERN));
 }
 
 static int
 yaml1_printf_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, YAML_QUOTE_CHAR_PATTERN));
+  return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, YAML1_QUOTE_CHAR_PATTERN));
 }
 
 static int
@@ -91,7 +97,9 @@ yaml1_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   int count = 0;
 
-  count += TRY_CATCH_THROW (mr_ra_printf_bitmask (mr_ra_str, ptrdes, YAML_BITMASK_DELIMITER));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  count += TRY_CATCH_THROW (mr_ra_printf_bitmask (mr_ra_str, ptrdes, YAML1_BITMASK_DELIMITER));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   
   return (count);
 }
@@ -109,13 +117,13 @@ yaml1_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       return (yaml1_printf_bitmask (mr_ra_str, &_ptrdes));
     }
 
-  return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, YAML_BITMASK_DELIMITER));
+  return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, YAML1_BITMASK_DELIMITER));
 }
 
 static int
 yaml1_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  ptrdes->res.data.string = "}";
+  ptrdes->res.data.string = "";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
   return (mr_ra_append_string (mr_ra_str, "\n"));
@@ -127,25 +135,25 @@ yaml1_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
 
   if (func_str) /* pointer serialized as name */
-    return (mr_ra_printf (mr_ra_str, "!!str \"%s\"", func_str));
+    return (mr_ra_printf (mr_ra_str, "\"%s\"", func_str));
   else
-    return (mr_ra_printf (mr_ra_str, "!!str \"0x%llx\"", (unsigned long long int)*(uintptr_t*)ptrdes->data.ptr));
+    return (mr_ra_printf (mr_ra_str, "\"0x%llx\"", (unsigned long long int)*(uintptr_t*)ptrdes->data.ptr));
 }
 
 static int
 yaml1_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  ptrdes->res.data.string = "]";
+  ptrdes->res.data.string = ""; //after printing a node
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  return (mr_ra_append_string (mr_ra_str, "-\n"));
+  return (mr_ra_append_string (mr_ra_str, ""));
 }
 
 static int
 yaml1_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   if (ptrdes->non_persistent)
-    return (mr_ra_append_string (mr_ra_str, YAML_NULL));
+    return (mr_ra_append_string (mr_ra_str, YAML1_NULL));
 
   switch (ptrdes->fdp->mr_type_class)
     {
@@ -154,7 +162,7 @@ yaml1_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     case MR_ARRAY_TYPE_CLASS:
       return (mr_ra_append_string (mr_ra_str, "{}"));
     case MR_POINTER_TYPE_CLASS:
-      return (mr_ra_append_string (mr_ra_str, YAML_NULL));
+      return (mr_ra_append_string (mr_ra_str, YAML1_NULL));
     default:
       return (mr_ra_append_char (mr_ra_str, '0'));
     }
@@ -199,56 +207,52 @@ static mr_status_t
 yaml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
   mr_ra_printf_t save_handler = NULL;
-
   if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
+  {
     save_handler = yaml1_save_tbl[ptrs->ra[idx].mr_type];
+  }
 
   if (NULL == save_handler)
-  {
-    save_handler = mr_ra_printf_void;
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
-  }
+    {
+      save_handler = mr_ra_printf_void;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+    }
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
 
-  if (mr_ra_printf (mr_ra_str, YAML_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML_INDENT_SPACES, "") < 0)
+  if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML1_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
-
+  
   bool unnamed = ptrs->ra[idx].unnamed;
   int parent = ptrs->ra[idx].parent;
   if (unnamed && (parent >= 0))
     if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION)) >> ptrs->ra[parent].mr_type) & 1)
       unnamed = false;
-
+  
   if (!unnamed)
-  {
-    if (mr_ra_append_char (mr_ra_str, '-') < 0)
-      return (MR_FAILURE);
-    if (mr_ra_append_char (mr_ra_str, ' ') < 0)
-      return (MR_FAILURE);
-  }
+    {
+      if (mr_ra_append_string (mr_ra_str, ptrs->ra[idx].name) < 0)
+	return (MR_FAILURE);
+      if (mr_ra_append_string (mr_ra_str, ": ") < 0)
+	return (MR_FAILURE);
+    }
 
   if (ptrs->ra[idx].ref_idx >= 0)
-  {
-    if (mr_ra_printf (mr_ra_str, "*%" SCNu32, ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-      return (MR_FAILURE);
-  }
+    {
+      if (ptrs->ra[idx].flags.is_content_reference)
+	if (mr_ra_append_char (mr_ra_str, '-') < 0)
+	  return (MR_FAILURE);
+      if (mr_ra_printf (mr_ra_str, "%" SCNu32, ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+	return (MR_FAILURE);
+    }
   else if (ptrs->ra[idx].flags.is_null)
-  {
-    if (mr_ra_append_string (mr_ra_str, YAML_NULL) < 0)
-      return (MR_FAILURE);
-  }
+    {
+      if (mr_ra_append_string (mr_ra_str, YAML1_NULL) < 0)
+	return (MR_FAILURE);
+    }
   else if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
-  {
     return (MR_FAILURE);
-  }
-
-  if (!unnamed)
-  {
-    if (mr_ra_append_string (mr_ra_str, " :") < 0)
-      return (MR_FAILURE);
-  }
-
+  
   return (MR_SUCCESS);
 }
 
@@ -256,13 +260,13 @@ static mr_status_t
 yaml1_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
   if (ptrs->ra[idx].res.data.string)
-    if (mr_ra_printf (mr_ra_str, YAML_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML_INDENT_SPACES, ptrs->ra[idx].res.data.string) < 0)
+  {
+    if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML1_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
       return (MR_FAILURE);
-
-  if (ptrs->ra[idx].next >= 0)
-    if (mr_ra_append_char (mr_ra_str, '\n') < 0)
-      return (MR_FAILURE);
-
+  }
+  if (mr_ra_append_char (mr_ra_str, '\n') < 0)
+    return (MR_FAILURE);
+    
   return (MR_SUCCESS);
 }
 
