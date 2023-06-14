@@ -123,7 +123,9 @@ yaml1_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 yaml1_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  ptrdes->res.data.string = "";
+  ptrdes->res.data.string = "}";
+  ptrdes->res.type = "string";
+  ptrdes->res.MR_SIZE = 0;
   return (mr_ra_append_string (mr_ra_str, "\n"));
 }
 
@@ -141,15 +143,10 @@ yaml1_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 yaml1_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  ptrdes->res.data.string = "";
+  ptrdes->res.data.string = "]";
+  ptrdes->res.type = "string";
+  ptrdes->res.MR_SIZE = 0;
   return (mr_ra_append_string (mr_ra_str, "\n"));
-}
-
-static int
-yaml1_printf_ptr (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
-{
-  ptrdes->res.data.string = "";
-  return (mr_ra_append_string (mr_ra_str, ""));
 }
 
 static int
@@ -200,7 +197,7 @@ static mr_ra_printf_t yaml1_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_FUNC] = yaml1_printf_func,
   [MR_TYPE_FUNC_TYPE] = yaml1_printf_func,
   [MR_TYPE_ARRAY] = yaml1_printf_array,
-  [MR_TYPE_POINTER] = yaml1_printf_ptr,
+  [MR_TYPE_POINTER] = yaml1_printf_array,
   [MR_TYPE_UNION] = yaml1_printf_struct,
   [MR_TYPE_ANON_UNION] = yaml1_printf_struct,
   [MR_TYPE_NAMED_ANON_UNION] = yaml1_printf_struct,
@@ -210,10 +207,9 @@ static mr_status_t
 yaml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
   mr_ra_printf_t save_handler = NULL;
+  
   if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
-  {
     save_handler = yaml1_save_tbl[ptrs->ra[idx].mr_type];
-  }
 
   if (NULL == save_handler)
     {
@@ -222,44 +218,51 @@ yaml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
     }
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
-
-  if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML1_INDENT_SPACES, "") < 0)
-    return (MR_FAILURE);
+  
   bool unnamed = ptrs->ra[idx].unnamed;
   int parent = ptrs->ra[idx].parent;
-  if (unnamed && (parent >= 0))
+  if (unnamed && (parent >= 0)){
     if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION)) >> ptrs->ra[parent].mr_type) & 1)
-      unnamed = false;
+        unnamed = false;
+  }
+  if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML1_INDENT_SPACES, "") < 0)
+    return (MR_FAILURE);
+  
+  // TODO: YAML array nodes, identation, wrong-placed \n...
 
   if (!unnamed)
     {
-      // Add a special symbol to start of nested YAML array / structure.
-      if (ptrs->ra[parent].unnamed)
+      if (ptrs->ra[parent].unnamed && ptrs->ra[idx].mr_type != MR_TYPE_STRUCT)
       {
-       if (ptrs->ra[idx].prev < 0)
-       {
-        if (mr_ra_append_string(mr_ra_str, "- ") < 0)
-            return MR_FAILURE;
-       }
-       else {
-        if (mr_ra_append_string(mr_ra_str, "  ") < 0)
-            return MR_FAILURE;
-       }
+        if (ptrs->ra[idx].prev < 0)
+        {
+          if (mr_ra_append_string(mr_ra_str, "- ") < 0)
+              return MR_FAILURE;
+        }
+        else
+        {
+          if (mr_ra_append_string(mr_ra_str, "  ") < 0)
+              return MR_FAILURE;
+        }
+        
       }
       if (mr_ra_append_string (mr_ra_str, ptrs->ra[idx].name) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       if (mr_ra_append_string (mr_ra_str, ": ") < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
   if (ptrs->ra[idx].ref_idx >= 0)
     {
+      if (ptrs->ra[idx].flags.is_content_reference)
+  if (mr_ra_append_char (mr_ra_str, '-') < 0)
+    return (MR_FAILURE);
       if (mr_ra_printf (mr_ra_str, "%" SCNu32, ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
-	return (MR_FAILURE);
+  return (MR_FAILURE);
     }
   else if (ptrs->ra[idx].flags.is_null)
     {
       if (mr_ra_append_string (mr_ra_str, YAML1_NULL) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
   else if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
     return (MR_FAILURE);
@@ -268,14 +271,16 @@ yaml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
 }
 
 static mr_status_t
-yaml1_post_print_node(mr_ra_ptrdes_t* ptrs, int idx, int level, mr_rarray_t* mr_ra_str)
+yaml1_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
   if (!ptrs->ra[idx].res.data.string)
-      if (mr_ra_append_char(mr_ra_str, '\n') < 0)
+  {
+      if (mr_ra_append_char (mr_ra_str, '\n') < 0)
         return (MR_FAILURE);
+  }
+  
   return (MR_SUCCESS);
 }
-
 
 static mr_status_t
 yaml1_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
