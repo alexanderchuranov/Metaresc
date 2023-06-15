@@ -126,7 +126,7 @@ yaml1_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  if (ptrdes->unnamed)
+  if (ptrdes->unnamed && ptrdes->mr_type != MR_TYPE_ANON_UNION)
   {
     return (mr_ra_append_string (mr_ra_str, ""));
   }
