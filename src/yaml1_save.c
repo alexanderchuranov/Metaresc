@@ -231,16 +231,13 @@ yaml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
   if (!unnamed)
   {
     // Add a special symbol to start of nested YAML array / structure.
+    char* symb = "";
     if (ptrs->ra[parent].unnamed)
     {
-      char* symb = (ptrs->ra[idx].prev < 0)? "- " : "";
-      if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML1_INDENT_SPACES, symb) < 0)
-        return (MR_FAILURE);
+      symb = (ptrs->ra[idx].prev < 0)? "- " : "";
     }
-    else {
-      if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML1_INDENT_SPACES, "") < 0)
-        return (MR_FAILURE);
-    }
+    if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * YAML1_INDENT_SPACES, symb) < 0)
+      return (MR_FAILURE);
     if (mr_ra_append_string (mr_ra_str, ptrs->ra[idx].name) < 0)
       return (MR_FAILURE);
     if (mr_ra_append_string (mr_ra_str, ": ") < 0)
