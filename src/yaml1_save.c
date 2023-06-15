@@ -228,6 +228,15 @@ yaml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
   if (unnamed && (parent >= 0))
     if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION)) >> ptrs->ra[parent].mr_type) & 1)
       unnamed = false;
+
+  // Indent and add dashes to array entries which are not a struct/union/etc.
+  if (unnamed && (parent >= 0) && ptrs->ra[idx].mr_type != MR_TYPE_UNION && \
+      ptrs->ra[idx].mr_type != MR_TYPE_STRUCT)
+  {
+    if (mr_ra_printf (mr_ra_str, YAML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level + 1) * YAML1_INDENT_SPACES, "- ") < 0)
+      return (MR_FAILURE);
+  }
+
   if (!unnamed)
   {
     // Add a special symbol to start of nested YAML array / structure.
