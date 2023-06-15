@@ -24,6 +24,7 @@
 }
 
 %code {
+
 void
 yaml1_unquote_str (mr_substr_t * substr, char * dst)
 {
@@ -52,12 +53,7 @@ yaml1_unquote_str (mr_substr_t * substr, char * dst)
 	  int c = map[(unsigned char)substr->str[++i]];
 	  if (c > 0)
 	    dst[length++] = c;
-	  else if (1 == sscanf (&substr->str[i], "x%02x%n", &c, &size))
-	    {
-	      i += size - 1;
-	      dst[length++] = c;
-	    }
-      else if (1 == sscanf (&substr->str[i], "u%04x%n", &c, &size))
+	  else if (1 == sscanf (&substr->str[i], "u%04x%n", &c, &size))
 	    {
 	      i += size - 1;
 	      dst[length++] = c;
@@ -86,16 +82,16 @@ yaml1_unquote_str (mr_substr_t * substr, char * dst)
   mr_substr_t string;
 }
 
-/* Bison declarations. */
+/* Bison declarations.  */
 %token <value> TOK_YAML1_NUMBER
 %token <string> TOK_YAML1_STRING
 %token TOK_YAML1_SEMICOLON TOK_YAML1_LBRACE TOK_YAML1_RBRACE TOK_YAML1_LBRACKET TOK_YAML1_RBRACKET TOK_YAML1_COMMA TOK_YAML1_NULL TOK_YAML1_ERROR
 
-%start yaml
+%start yaml1
 
-%% /* The grammar follows. */
+%% /* The grammar follows.  */
 
-yaml: element
+yaml1: element
 
 element: push_node value pop_node
 

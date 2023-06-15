@@ -6,7 +6,6 @@
 %option warn nounput never-interactive noyywrap
 %option extra-type="mr_load_t*"
 %option prefix="mr_yaml1_"
-
 %{
 #include <string.h>
 #include <complex.h>
@@ -20,26 +19,27 @@
 #include <yaml1_load.tab.h>
 #define YYSTYPE MR_YAML1_STYPE
 #define YYLTYPE MR_YAML1_LTYPE
+
 %}
 
-WS           [[:space:]]+
-ID           [[:alpha:]][[:alnum:]]*
-INT_NUMBER   [+-]?[[:digit:]]+
-FLOAT_NAN    [+-]?[Nn][Aa][Nn]
-FLOAT_INF    [+-]?[Ii][Nn][Ff]
+WS	[[:space:]]+
+ID	[_[:alpha:]][_[:alnum:]]*
+INT_NUMBER [+-]?[[:digit:]]+
+FLOAT_NAN [+-]?[Nn][Aa][Nn]
+FLOAT_INF [+-]?[Ii][Nn][Ff]
 FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?
 %%
 
-"null"  { return (TOK_YAML1_NULL); }
+"null" { return (TOK_YAML1_NULL); }
 "false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_YAML1_NUMBER); }
-"true"  { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_YAML1_NUMBER); }
+"true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_YAML1_NUMBER); }
 
-{INT_NUMBER}   { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = mr_strtouintmax(yytext, NULL, 0); return (TOK_YAML1_NUMBER); }
-{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold(yytext, NULL); return (TOK_YAML1_NUMBER); }
+{INT_NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 0); return (TOK_YAML1_NUMBER); }
+{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_YAML1_NUMBER); }
 
-\"(\\\"|[^\"])*\" {
-  yylval->string.str = strdup(yytext + 1); /* Remove the leading quote */
-  yylval->string.length = yyleng - 2; /* Exclude the leading and trailing quotes */
+"\""([^\"\\]|\\.)*"\"" {
+  yylval->string.str = &yytext[1];
+  yylval->string.length = strlen (yytext) - 2 * sizeof (yytext[0]);
   return (TOK_YAML1_STRING);
 }
 
@@ -52,4 +52,5 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUM
 ","       { return (TOK_YAML1_COMMA); }
 .         { return (TOK_YAML1_ERROR); }
 %%
+
 
