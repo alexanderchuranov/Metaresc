@@ -314,7 +314,8 @@ yaml1_save (mr_ra_ptrdes_t * ptrs)
     return (NULL);
 
   ptrs->ptrdes_type = MR_PD_CUSTOM;
-
+  // Add a YAML document identifier.
+  mr_ra_append_string (&mr_ra_str, "---\n");
   mr_ptrs_dfs (ptrs, yaml1_print_node, &mr_ra_str);
 
   return (mr_ra_str.data.string);
