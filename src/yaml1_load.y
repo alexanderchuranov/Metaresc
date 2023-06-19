@@ -71,6 +71,7 @@ yaml1_unquote_str (mr_substr_t * substr, char * dst)
 
 %define api.prefix {mr_yaml1_}
 %define api.pure full
+%define api.push-pull push
 %param {void * scanner}
 %locations
  /* generate include-file with symbols and types */
@@ -83,15 +84,25 @@ yaml1_unquote_str (mr_substr_t * substr, char * dst)
 }
 
 /* Bison declarations.  */
+
 %token <value> TOK_YAML1_NUMBER
-%token <string> TOK_YAML1_STRING
-%token TOK_YAML1_SEMICOLON TOK_YAML1_LBRACE TOK_YAML1_RBRACE TOK_YAML1_LBRACKET TOK_YAML1_RBRACKET TOK_YAML1_COMMA TOK_YAML1_NULL TOK_YAML1_ERROR
+%token <string> TOK_YAML1_KEY TOK_YAML1_STRING 
+
+%token TOK_YAML1_BLOCK_START TOK_YAML1_BLOCK_END
+%token TOK_YAML1_COLON TOK_YAML1_NEWLINE TOK_YAML1_NULL
+%token TOK_YAML1_OBJ_START TOK_YAML1_OBJ_END
+%token TOK_YAML1_ARR_START TOK_YAML1_ARR_END
 
 %start yaml1
 
 %% /* The grammar follows.  */
 
-yaml1: element
+
+yaml1: document
+
+document: TOK_YAML1_BLOCK_START element TOK_YAML1_BLOCK_END
+  | element TOK_YAML1_BLOCK_END
+  | element
 
 element: push_node value pop_node
 
@@ -129,21 +140,21 @@ value: object | array
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_int = 0;
   }
 
-object: TOK_YAML1_LBRACE TOK_YAML1_RBRACE
-| TOK_YAML1_LBRACE members TOK_YAML1_RBRACE
+object: TOK_YAML1_OBJ_START TOK_YAML1_OBJ_END
+| TOK_YAML1_OBJ_START members TOK_YAML1_OBJ_END
 
-members: member | member TOK_YAML1_COMMA members
+members: member | member TOK_YAML1_NEWLINE members
 
-member: TOK_YAML1_STRING TOK_YAML1_SEMICOLON element {
+member: TOK_YAML1_KEY TOK_YAML1_COLON element {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
   mr_load->ptrs->ra[idx].name = mr_get_static_field_name_from_substring (&$1);
 }
 
-array: TOK_YAML1_LBRACKET TOK_YAML1_RBRACKET
-| TOK_YAML1_LBRACKET elements TOK_YAML1_RBRACKET
+array: TOK_YAML1_ARR_START TOK_YAML1_ARR_END
+| TOK_YAML1_ARR_START elements TOK_YAML1_ARR_END
 
-elements: element | element TOK_YAML1_COMMA elements
+elements: element | element TOK_YAML1_NEWLINE elements
 
 %%
 
