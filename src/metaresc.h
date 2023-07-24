@@ -965,7 +965,7 @@
 	  mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
 	  if (__ptrs__.ra != NULL)					\
 	    {								\
-	      __status__ = xdr_save (__xdrs__, &__ptrs__);		\
+	      __status__ = mr_xdr_save (__xdrs__, &__ptrs__);		\
 	      MR_FREE (__ptrs__.ra);					\
 	    }								\
 	}								\
@@ -975,7 +975,7 @@
 #define MR_SAVE_XDR_RA(MR_TYPE_NAME, S_PTR) ({				\
       XDR _xdrs_;							\
       mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "uint8_t" }; \
-      xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
+      mr_xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
       if (MR_SUCCESS != MR_SAVE_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR))	\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_SAVE_FAILED);		\
       _ra_;								\
@@ -993,11 +993,11 @@
       __str__;								\
     })
 
-#define MR_SAVE_XML1(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (xml1_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_CINIT(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (cinit_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_JSON(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (json_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (scm_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_YAML(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (yaml_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_XML1(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_xml1_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_CINIT(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_cinit_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_JSON(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_json_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_scm_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_YAML(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_yaml_save, MR_TYPE_NAME, S_PTR)
 
 #define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
       mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "string" }; \
@@ -1036,7 +1036,7 @@
 	     .size = sizeof (*(S_PTR)),					\
 	    };								\
 	  mr_detect_type (&__fd__);					\
-	  __status__ = xdr_load ((S_PTR), &__fd__, __xdrs__);		\
+	  __status__ = mr_xdr_load ((S_PTR), &__fd__, __xdrs__);	\
 	}								\
       __status__;							\
     })
@@ -1057,8 +1057,8 @@
 
 #define MR_LOAD_XDR_RA(MR_TYPE_NAME, ...) MR_LOAD_XDR_RA_ARGN (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
 #define MR_LOAD_XDR_RA_ARGN(MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_XDR_RA_ARG ## N (MR_TYPE_NAME, RA, S_PTR)
-#define MR_LOAD_XDR_RA_ARG2(MR_TYPE_NAME, RA, S_PTR) ({ XDR _xdrs_; xdrra_create (&_xdrs_, RA, XDR_DECODE); MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_); })
-#define MR_LOAD_XDR_RA_ARG3(MR_TYPE_NAME, RA, S_PTR) ({ XDR _xdrs_; xdrra_create (&_xdrs_, RA, XDR_DECODE); MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR); })
+#define MR_LOAD_XDR_RA_ARG2(MR_TYPE_NAME, RA, S_PTR) ({ XDR _xdrs_; mr_xdrra_create (&_xdrs_, RA, XDR_DECODE); MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_); })
+#define MR_LOAD_XDR_RA_ARG3(MR_TYPE_NAME, RA, S_PTR) ({ XDR _xdrs_; mr_xdrra_create (&_xdrs_, RA, XDR_DECODE); MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR); })
 
 #ifdef HAVE_LIBXML2
 
@@ -1072,7 +1072,7 @@
       if (__ptrs__.ra != NULL)						\
 	{								\
 	  mr_remove_empty_nodes (&__ptrs__);				\
-	  xmlDocPtr __doc__ = xml2_save (&__ptrs__);			\
+	  xmlDocPtr __doc__ = mr_xml2_save (&__ptrs__);			\
 	  MR_FREE (__ptrs__.ra);					\
 	  if (__doc__)							\
 	    {								\
@@ -1117,7 +1117,7 @@
       else								\
 	{								\
 	  mr_detect_type (&__fd__);					\
-	  int __idx__ = xml2_load (__xml__, &__ptrs__);			\
+	  int __idx__ = mr_xml2_load (__xml__, &__ptrs__);		\
 	  if (__idx__ >= 0)						\
 	    __status__ = mr_load ((S_PTR), &__fd__, __idx__, &__ptrs__); \
 	  if (__ptrs__.ra)						\
@@ -1221,20 +1221,20 @@
 #define MR_LOAD_METHOD_ARGN(METHOD, MR_TYPE_NAME, STR, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, STR, S_PTR)
 #define MR_LOAD_METHOD_ARG2(METHOD, MR_TYPE_NAME, STR, S_PTR) MR_LOAD_METHOD_ARG2_ (METHOD, MR_TYPE_NAME, STR)
 
-#define MR_LOAD_XML1(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_CINIT(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_JSON(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (json_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (scm_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_YAML(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (yaml_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_XML1(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_xml1_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_CINIT(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_cinit_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_JSON(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_json_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_scm_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_YAML(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_yaml_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_LOAD_METHOD_RA(METHOD, MR_TYPE_NAME, ...) MR_LOAD_METHOD_RA_ARGN (METHOD, MR_TYPE_NAME, __VA_ARGS__, 3, 2)
 #define MR_LOAD_METHOD_RA_ARGN(METHOD, MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, (char*)((RA)->data.ptr), S_PTR)
 
-#define MR_LOAD_XML1_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (xml1_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_CINIT_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_JSON_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (json_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_SCM_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (scm_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_YAML_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (yaml_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_XML1_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_xml1_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_CINIT_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_cinit_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_JSON_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_json_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_SCM_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_scm_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_YAML_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_yaml_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #else /* ! HAVE_BISON_FLEX */
 
@@ -1381,30 +1381,29 @@ extern char * mr_read_xml_doc (FILE * fd);
 extern mr_ra_ptrdes_t mr_save (void * data, mr_fd_t * fdp);
 extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs);
 #ifdef HAVE_LIBXML2
-extern xmlDocPtr xml2_save (mr_ra_ptrdes_t * ptrs);
-extern int xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
+extern xmlDocPtr mr_xml2_save (mr_ra_ptrdes_t * ptrs);
+extern int mr_xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBXML2 */
 #ifdef HAVE_LIBYAML
-extern char * yaml_save (mr_ra_ptrdes_t * ptrs);
-extern mr_status_t yaml_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern char * mr_yaml_save (mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBYAML */
 #ifdef HAVE_RPC_TYPES_H
-extern mr_status_t xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs);
-extern mr_status_t xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs);
-extern void xdrra_create (XDR * xdrs, mr_rarray_t * rarray, enum xdr_op op);
+extern mr_status_t mr_xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs);
+extern void mr_xdrra_create (XDR * xdrs, mr_rarray_t * rarray, enum xdr_op op);
 #endif /* HAVE_RPC_TYPES_H */
 
-extern char * xml1_save (mr_ra_ptrdes_t * ptrs);
-extern char * cinit_save (mr_ra_ptrdes_t * ptrs);
-extern char * json_save (mr_ra_ptrdes_t * ptrs);
-extern char * scm_save (mr_ra_ptrdes_t * ptrs);
-extern char * yaml_save (mr_ra_ptrdes_t * ptrs);
+extern char * mr_xml1_save (mr_ra_ptrdes_t * ptrs);
+extern char * mr_cinit_save (mr_ra_ptrdes_t * ptrs);
+extern char * mr_json_save (mr_ra_ptrdes_t * ptrs);
+extern char * mr_scm_save (mr_ra_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
-extern mr_status_t xml1_load (char * str, mr_ra_ptrdes_t * ptrs);
-extern mr_status_t cinit_load (char * str, mr_ra_ptrdes_t * ptrs);
-extern mr_status_t json_load (char * str, mr_ra_ptrdes_t * ptrs);
-extern mr_status_t scm_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_xml1_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_cinit_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_json_load (char * str, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_scm_load (char * str, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_BISON_FLEX */
 
 extern void * mr_calloc (const char * filename, const char * function, int line, size_t count, size_t size);

@@ -350,7 +350,7 @@ xml1_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order
  * @return stringified representation of object
  */
 char *
-xml1_save (mr_ra_ptrdes_t * ptrs)
+mr_xml1_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup (MR_XML1_DOCUMENT_HEADER) },
@@ -445,7 +445,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
  * @return XML document
  */
 xmlDocPtr
-xml2_save (mr_ra_ptrdes_t * ptrs)
+mr_xml2_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },

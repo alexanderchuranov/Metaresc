@@ -5,7 +5,7 @@
 #include <metaresc.h>
 
 int
-xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
+mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
 {
   int idx = mr_add_ptr_to_list (ptrs);
   xmlNodePtr node_;
@@ -65,7 +65,7 @@ xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)
     if (XML_ELEMENT_NODE == node_->type)
       {
-	int child = xml2_load (node_, ptrs);
+	int child = mr_xml2_load (node_, ptrs);
 	if (child < 0)
 	  return (child);
 	mr_add_child (idx, child, ptrs->ra);

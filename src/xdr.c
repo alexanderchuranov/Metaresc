@@ -208,7 +208,7 @@ xdrra_putint32 (XDR * xdrs, const int32_t * ip)
  * @param op XDR operation XDR_DECODE XDR_ENCODE
  */
 void
-xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
+mr_xdrra_create (XDR * xdrs, mr_rarray_t * ra, enum xdr_op op)
 {
   static struct xdr_ops xdrra_ops =
     {
@@ -323,7 +323,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
 }
 
 mr_status_t
-xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
+mr_xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
 {
   if (NULL == data)
     {
@@ -1096,7 +1096,7 @@ xdr_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, 
  * @return status
  */
 mr_status_t
-xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs)
+mr_xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs)
 {
   return (mr_ptrs_dfs (ptrs, xdr_save_node, xdrs));
 }

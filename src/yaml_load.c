@@ -86,7 +86,7 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, int * parent, char * name, char * value, c
 }
 
 mr_status_t
-yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
+mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 {
   yaml_parser_t parser;
   mr_status_t status;

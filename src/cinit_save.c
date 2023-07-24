@@ -272,7 +272,7 @@ cinit_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t orde
 }
 
 char *
-cinit_save (mr_ra_ptrdes_t * ptrs)
+mr_cinit_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },

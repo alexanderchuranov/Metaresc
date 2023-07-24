@@ -53,13 +53,13 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
 					 1, 0, YAML_PLAIN_SCALAR_STYLE))
 	{
 	  yaml_event_delete (event);
-	  return (MR_SUCCESS);
+	  return (MR_FAILURE);
 	}
   
       if (!yaml_emitter_emit (emitter, &name_event))
 	{
 	  yaml_event_delete (event);
-	  return (MR_SUCCESS);
+	  return (MR_FAILURE);
 	}
     }
 
@@ -412,7 +412,7 @@ yaml_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order
  * @return stringified representation of object
  */
 char *
-yaml_save (mr_ra_ptrdes_t * ptrs)
+mr_yaml_save (mr_ra_ptrdes_t * ptrs)
 {
   yaml_event_t event;
   mr_rarray_t mr_ra_str = {
