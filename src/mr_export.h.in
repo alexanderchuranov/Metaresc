@@ -8,8 +8,11 @@
 /* define if __builtin_dump_struct supports extra args */
 #undef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 
-/* Libxml2 found */
+/* define if libxml2 is present */
 #undef HAVE_LIBXML2
+
+/* define if libyaml is present */
+#undef HAVE_LIBYAML
 
 /* Define to 1 if you have the <rpc/types.h> header file. */
 #undef HAVE_RPC_TYPES_H

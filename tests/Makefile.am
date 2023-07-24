@@ -4,7 +4,7 @@ AUTOMAKE_OPTIONS = parallel-tests
 AM_CFLAGS = @AM_CFLAGS@ $(CHECK_CFLAGS)
 AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src
-LIBS += ../src/libmetaresc.la $(CHECK_LIBS) $(LIBXML2_LIBS)
+LIBS += ../src/libmetaresc.la $(CHECK_LIBS)
 VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
@@ -51,6 +51,13 @@ if HAVE_EXECINFO
 endif
 endif
 
+if HAVE_LIBYAML
+  check_PROGRAMS += smoke_yaml
+if HAVE_EXECINFO
+  check_PROGRAMS += mf_yaml_save mf_yaml_load
+endif
+endif
+
 if HAVE_LIBDWARF
   check_PROGRAMS += dw_export
 endif
@@ -80,6 +87,8 @@ mf_xml1_save_LDADD = mem_failures.$(OBJEXT)
 mf_xml1_load_LDADD = mem_failures.$(OBJEXT)
 mf_xml2_save_LDADD = mem_failures.$(OBJEXT)
 mf_xml2_load_LDADD = mem_failures.$(OBJEXT)
+mf_yaml_save_LDADD = mem_failures.$(OBJEXT)
+mf_yaml_load_LDADD = mem_failures.$(OBJEXT)
 
 TESTS=$(check_PROGRAMS)
 

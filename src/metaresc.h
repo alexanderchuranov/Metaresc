@@ -62,8 +62,6 @@
 /* Library exports */
 #define MR_MAX_STRING_LENGTH ((unsigned int)-1)
 
-#define MR_TYPE_ANONYMOUS_UNION_TEMPLATE "mr_type_anonymous_union_%d_t"
-
 #define MR_INT_TO_STRING_BUF_SIZE (32)
 #define MR_FLOAT_TO_STRING_BUF_SIZE (256)
 #define MR_CHAR_TO_STRING_BUF_SIZE (8)
@@ -125,6 +123,14 @@
 /* references on already saved structures will be replaced with nodes that have only REF index property */
 #define MR_REF "ref"
 #define MR_REF_CONTENT "ref_content"
+
+#define MR_YAML_ANCHOR_TMPLT MR_REF_IDX "_%" SCNd32
+#define MR_YAML_REF_ANCHOR_TMPLT MR_YAML_ANCHOR_TMPLT
+#define MR_YAML_REF_ANCHOR_CONTENT_TMPLT MR_REF_CONTENT "_%" SCNd32
+
+#define MR_TYPE_ANONYMOUS_UNION_TEMPLATE "mr_type_anonymous_union_%d_t"
+#define MR_PTR_META "mr_ptr_t magic meta feild"
+
 /* XML attribute for zero length strings */
 #define MR_ISNULL "isnull"
 #define MR_ISNULL_VALUE "true"
@@ -991,6 +997,7 @@
 #define MR_SAVE_CINIT(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (cinit_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (json_save, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (scm_save, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_YAML(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (yaml_save, MR_TYPE_NAME, S_PTR)
 
 #define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
       mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "string" }; \
@@ -1005,6 +1012,7 @@
 #define MR_SAVE_CINIT_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_CINIT, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_JSON_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_JSON, MR_TYPE_NAME, S_PTR)
 #define MR_SAVE_SCM_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_SCM, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_YAML_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_YAML, MR_TYPE_NAME, S_PTR)
 
 #define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR)			\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
@@ -1180,6 +1188,7 @@
 #define MR_LOAD_METHOD_ARG3_(METHOD, MR_TYPE_NAME, STR, S_PTR) ({	\
       mr_ra_ptrdes_t _ptrs_ =						\
 	{ .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }; \
+      memset ((S_PTR), 0, sizeof (*(S_PTR)));				\
       mr_status_t _status_ = METHOD ((STR), &_ptrs_);			\
       if (MR_SUCCESS == _status_)					\
 	{								\
@@ -1199,11 +1208,11 @@
     })
 
 #define MR_LOAD_METHOD_ARG2_(METHOD, MR_TYPE_NAME, STR) ({		\
-      mr_status_t _status_ = MR_FAILURE;				\
+      mr_status_t __status__ = MR_FAILURE;				\
       MR_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
-      _status_ = MR_LOAD_METHOD_ARG3 (METHOD, MR_TYPE_NAME, STR, &__result__); \
-      if (MR_SUCCESS != _status_)					\
+      __status__ = MR_LOAD_METHOD_ARG3 (METHOD, MR_TYPE_NAME, STR, &__result__); \
+      if (MR_SUCCESS != __status__)					\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_LOAD_STRUCT_FAILED);		\
       __result__;							\
     })
@@ -1216,6 +1225,7 @@
 #define MR_LOAD_CINIT(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_JSON(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (json_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (scm_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_YAML(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (yaml_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_LOAD_METHOD_RA(METHOD, MR_TYPE_NAME, ...) MR_LOAD_METHOD_RA_ARGN (METHOD, MR_TYPE_NAME, __VA_ARGS__, 3, 2)
 #define MR_LOAD_METHOD_RA_ARGN(METHOD, MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, (char*)((RA)->data.ptr), S_PTR)
@@ -1224,6 +1234,7 @@
 #define MR_LOAD_CINIT_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (cinit_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_JSON_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (json_load, MR_TYPE_NAME, __VA_ARGS__)
 #define MR_LOAD_SCM_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (scm_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_YAML_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (yaml_load, MR_TYPE_NAME, __VA_ARGS__)
 
 #else /* ! HAVE_BISON_FLEX */
 
@@ -1373,6 +1384,10 @@ extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t 
 extern xmlDocPtr xml2_save (mr_ra_ptrdes_t * ptrs);
 extern int xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBXML2 */
+#ifdef HAVE_LIBYAML
+extern char * yaml_save (mr_ra_ptrdes_t * ptrs);
+extern mr_status_t yaml_load (char * str, mr_ra_ptrdes_t * ptrs);
+#endif /* HAVE_LIBYAML */
 #ifdef HAVE_RPC_TYPES_H
 extern mr_status_t xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs);
 extern mr_status_t xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs);
@@ -1383,6 +1398,7 @@ extern char * xml1_save (mr_ra_ptrdes_t * ptrs);
 extern char * cinit_save (mr_ra_ptrdes_t * ptrs);
 extern char * json_save (mr_ra_ptrdes_t * ptrs);
 extern char * scm_save (mr_ra_ptrdes_t * ptrs);
+extern char * yaml_save (mr_ra_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
 extern mr_status_t xml1_load (char * str, mr_ra_ptrdes_t * ptrs);

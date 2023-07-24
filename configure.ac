@@ -75,6 +75,19 @@ AM_CONDITIONAL(HAVE_LIBXML2, test x${HAVE_LIBXML2} = xyes)
 if [[ x${HAVE_LIBXML2} = xyes ]]; then
   AC_DEFINE(HAVE_LIBXML2, [], [define if libxml2 is present])
   AM_CFLAGS="${AM_CFLAGS} ${LIBXML2_CFLAGS}"
+  LIBS="${LIBS} ${LIBXML2_LIBS}"
+fi
+
+AC_ARG_WITH([libyaml], AS_HELP_STRING([--without-libyaml], [Build without libyaml]))
+
+if test "x${with_libyaml}" != "xno"; then
+  AC_CHECK_LIB(yaml, yaml_parser_initialize, [ HAVE_LIBYAML=yes ])
+fi
+
+AM_CONDITIONAL(HAVE_LIBYAML, test x${HAVE_LIBYAML} = xyes)
+if [[ x${HAVE_LIBYAML} = xyes ]]; then
+  AC_DEFINE(HAVE_LIBYAML, [], [define if libyaml is present])
+  LIBS="${LIBS} -lyaml"
 fi
 
 AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})

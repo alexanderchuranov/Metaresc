@@ -5,7 +5,7 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , , { MR_SIZE_STR }, "string", .unnamed = true),
+	       (void *, ptr, , MR_PTR_META, { MR_SIZE_STR }, "string", .unnamed = true),
 	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "string"),
 	       (char *, string),
 	       (mr_offset_t, offset),
@@ -80,6 +80,8 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
 	      (MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, , "Unexpected number of items in static array collection %d."),
 	      (MR_MESSAGE_FIELD_NOT_FOUND, , "Field '%s' is not found in type '%s'."),
+	      (MR_MESSAGE_YAML_ERROR, , "YAML error '%s'."),
+	      (MR_MESSAGE_UNKNOWN_FIELD_NAME, , "Field name '%s' is not valid."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -440,6 +442,7 @@ TYPEDEF_STRUCT (mr_complex_long_double_t, ATTRIBUTES ( , "complex long double pa
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      (MR_VT_VOID, = 0, "vt_void"),
 	      (MR_VT_CHAR, , "vt_char"),
+	      (MR_VT_STRING, , "vt_string"),
 	      (MR_VT_QUOTED_SUBSTR, , "vt_quoted_substr"),
 	      (MR_VT_ID, , "vt_quoted_substr"),
 	      (MR_VT_INT, , "vt_int"),

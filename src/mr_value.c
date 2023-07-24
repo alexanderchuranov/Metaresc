@@ -274,10 +274,22 @@ mr_value_id_to_int (char * str, void * arg)
 static mr_status_t
 mr_value_id (mr_value_t * mr_value)
 {
-  if (MR_VT_ID != mr_value->value_type)
-    return (MR_SUCCESS);
-
-  return (mr_process_quoted_str (&mr_value->vt_quoted_substr, mr_value_id_to_int, mr_value));
+  switch (mr_value->value_type)
+    {
+    case MR_VT_ID:
+      return (mr_process_quoted_str (&mr_value->vt_quoted_substr, mr_value_id_to_int, mr_value));
+    case MR_VT_STRING:
+      {
+	char * value = mr_value->vt_string;
+	if (NULL == value)
+	  return (MR_FAILURE);
+	mr_status_t status = mr_value_id_to_int (value, mr_value);
+	MR_FREE (value);
+	return (status);
+      }
+    default:
+      return (MR_SUCCESS);
+    }
 }
 
 mr_status_t
@@ -329,6 +341,20 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	status = mr_process_quoted_str (&mr_value->vt_quoted_substr, mr_load_var, &result);
 	if (MR_SUCCESS == status)
 	  *mr_value = result;
+	break;
+      }
+
+    case MR_VT_STRING:
+      {
+	mr_value_t result = { .value_type = value_type };
+	if (NULL == mr_value->vt_string)
+	  return (MR_FAILURE);
+	status = mr_load_var (mr_value->vt_string, &result);
+	if (MR_SUCCESS == status)
+	  {
+	    MR_FREE (mr_value->vt_string);
+	    *mr_value = result;
+	  }
 	break;
       }
       
