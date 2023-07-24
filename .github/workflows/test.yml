@@ -60,7 +60,8 @@ jobs:
             git config --global --add safe.directory `pwd`
             git submodule update --init --recursive --remote
             ./autogen.sh
-            ./configure --without-perftest
+            ./configure CFLAGS=-I/usr/local/include/ --without-perftest
+            ls -lr /usr/local/include
             make check -j 2
 
   windows-gcc:
