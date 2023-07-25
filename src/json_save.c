@@ -234,7 +234,7 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
 	return (MR_FAILURE);
       if (mr_ra_append_string (mr_ra_str, ptrs->ra[idx].name) < 0)
 	return (MR_FAILURE);
-      if (mr_ra_append_string (mr_ra_str, "\" : ") < 0)
+      if (mr_ra_append_string (mr_ra_str, "\": ") < 0)
 	return (MR_FAILURE);
     }
 
