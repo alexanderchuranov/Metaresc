@@ -69,7 +69,7 @@ Clone Metaresc from the Github, configure and build according to the standard au
 On Ubuntu, run the following command:
 
 ```console
-# apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev check
+# apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev check
 ```
 
 Checkout Metaresc from github
@@ -89,7 +89,7 @@ $ ./autogen.sh
 Configure project for target system
 
 ```console
-$ ./configure
+$ ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc
 ```
 
 Build and check library
@@ -107,7 +107,7 @@ $ xcode-select --install
 
 Install external dependencies:
 ```console
-# brew install autoconf automake libtool pkg-config flex bison libxml2 check
+# brew install autoconf automake libtool pkg-config flex bison libxml2 libyaml check
 ```
 
 Checkout and build Metaresc:
@@ -125,7 +125,7 @@ $ make -j 4 check
 
 On FreeBSD 12.1 install external dependencies:
 ```console
-# pkg install git autoconf automake libtool pkgconf flex bison libxml2 check
+# pkg install git autoconf automake libtool pkgconf flex bison libxml2 libyaml check
 ```
 
 Checkout and build Metaresc:
@@ -135,7 +135,7 @@ $ git clone https://github.com/alexanderchuranov/Metaresc.git
 $ cd Metaresc
 $ git submodule update --init --recursive --remote
 $ ./autogen.sh
-$ ./configure
+$ ./configure CFLAGS=-I/usr/local/include/
 $ make -j 4 check
 ```
 
@@ -146,7 +146,7 @@ Download and install msys2 from https://www.msys2.org/
 Install external dependencies:
 
 ```console
-# pacman --noconfirm -S --needed --overwrite "*" base-devel git autoconf automake libtool pkg-config flex bison mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
+# pacman --noconfirm -S --needed --overwrite "*" base-devel git autoconf automake libtool pkg-config flex bison libyaml-devel mingw-w64-x86_64-check mingw-w64-x86_64-toolchain
 ```
 
 Checkout and build Metaresc:
@@ -230,7 +230,7 @@ Metaresc library files. `Makefile` should be extended as follows:
 all: sample
 
 CFLAGS += -I../Metaresc/src `xml2-config --cflags`
-LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
+LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs` -lyaml
 ```
 
 Output of this sample application is as follows:
@@ -417,7 +417,7 @@ clean:
 	$(RM) *.o sample_types.h
 
 CFLAGS += -I../Metaresc/src `xml2-config --cflags` -O2 -g -Wall
-LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs`
+LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs` -lyaml
 ```
 
 By default library provides serialization/deserialization to/from
@@ -425,6 +425,7 @@ following formats:
 * CINIT - format consumable by C compiler for static initialization of
 corresponding types
 * JSON - [JavaScript Object Notation](https://www.json.org/json-en.html)
+* YAML - [YAML Ain't Markup Language](https://yaml.org/)
 * XML1 - builtin parser/serializer of XML
 * XML2 - interface to libxml2
 * SCM - Lisp-like notation
@@ -436,7 +437,7 @@ Standard](https://tools.ietf.org/html/rfc4506)
 ### Serialization
 
 `MR_SAVE_*` macroses do a serialization. 
-`MR_SAVE_CINIT`/`MR_SAVE_JSON`/`MR_SAVE_XML1`/`MR_SAVE_XML2`/`MR_SAVE_SCM`
+`MR_SAVE_CINIT`/`MR_SAVE_JSON/`MR_SAVE_YAML`/`MR_SAVE_XML1`/`MR_SAVE_XML2`/`MR_SAVE_SCM`
 are string based serialization and require only two arguments: type of
 the pointer and pointer on data. Type of the pointer by default should
 be specified as C language token. Save macro do verification that
@@ -499,7 +500,7 @@ an enum of type `mr_status_t`. Possible values of this enum are
 Stream descriptor is a structure of type `XDR` that must be
 initialized with designated constructor. LibC provides constructor
 (`xdr_create`) for stream that will redirect serialized data to file
-descriptor. Metaresc also provide constructor (`xdrra_create`) that
+descriptor. Metaresc also provide constructor (`mr_xdrra_create`) that
 will store serialized data into memory. 
 For convenience purposes library also provides wrapper macro
 (`MR_SAVE_XDR_RA (type, pointer)`) that have all boiler plate 
@@ -592,17 +593,17 @@ int main ()
 {
   linked_list_t linked_list;
   linked_list.next = &linked_list;
-  char * dump = MR_SAVE_CINIT (linked_list_t, &linked_list);
+  char * dump = MR_SAVE_YAML (linked_list_t, &linked_list);
   if (dump)
     {
-      linked_list_t ll3, ll2 = MR_LOAD_CINIT (linked_list_t, dump);
-      mr_status_t status = MR_LOAD_CINIT (linked_list_t, dump, &ll3);
+      linked_list_t ll3, ll2 = MR_LOAD_YAML (linked_list_t, dump);
+      mr_status_t status = MR_LOAD_YAML (linked_list_t, dump, &ll3);
       bool ll2_self_referenced = &ll2 == ll2.next;
       bool ll3_self_referenced = &ll3 == ll3.next;
-      MR_PRINT ("dump = ", dump, "status = ", (mr_status_t, &status),
+      MR_PRINT ("YAML:\n\n", dump, "\n\n",
+		"status = ", (mr_status_t, &status),
 		"ll2_self_referenced = ", ll2_self_referenced, "\n",
-		"ll3_self_referenced = ", ll3_self_referenced, "\n"
-		);
+		"ll3_self_referenced = ", ll3_self_referenced, "\n");
       MR_FREE (dump);
     }
   return (EXIT_SUCCESS);
@@ -610,9 +611,12 @@ int main ()
 ```
 The output is:
 ```c
-dump = /* ref_idx = 0 */ {
-  .next = /* ref = 0 */ NULL
-}
+YAML:
+
+--- &ref_idx_0
+next: *ref_idx_0
+...
+
 status = MR_SUCCESS
 ll2_self_referenced = false
 ll3_self_referenced = true
@@ -635,7 +639,8 @@ serialization engine. There should be 2 or 3 arguments in parentheses
 to trigger serialization routine. 2 arguments case is `(type,
 pointer)` that are passed to `MR_SAVE_CINIT` macro. 3 arguments case
 is `(type, pointer, format)` that allows to serialize into any other
-supported format.
+supported format. Possible formats are: CINIT, JSON, YAML, SCM, XML,
+XML1, XML2.
 
 `MR_PRINT` output to `stdout` and `MR_FPRINT` use the first argument as
 file descriptor. Both macroses returns number of outputed bytes.
@@ -972,7 +977,7 @@ For declaration of anonymous union use keywords:
 
 All arguments for them are optional. Even though union is anonymous it
 still require some **name** for serialization into self-descriptive
-formats like XML or JSON. If name is not specified Metaresc will
+formats like XML, JSON or YAML. If name is not specified Metaresc will
 auto-generate the name for it. Compiler specific `__attributes__ (())`
 modifiers could be passed over **attributes** argument. Previous
 example with anonymous union will look as follows:
