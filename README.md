@@ -437,7 +437,7 @@ Standard](https://tools.ietf.org/html/rfc4506)
 ### Serialization
 
 `MR_SAVE_*` macroses do a serialization. 
-`MR_SAVE_CINIT`/`MR_SAVE_JSON/`MR_SAVE_YAML`/`MR_SAVE_XML1`/`MR_SAVE_XML2`/`MR_SAVE_SCM`
+`MR_SAVE_CINIT`/`MR_SAVE_JSON`/`MR_SAVE_YAML`/`MR_SAVE_XML1`/`MR_SAVE_XML2`/`MR_SAVE_SCM`
 are string based serialization and require only two arguments: type of
 the pointer and pointer on data. Type of the pointer by default should
 be specified as C language token. Save macro do verification that
