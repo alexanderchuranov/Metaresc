@@ -487,8 +487,9 @@ mr_yaml_save (mr_ra_ptrdes_t * ptrs)
       return (NULL);
     }
 
-  if (mr_ra_append_char (&mr_ra_str, 0) != sizeof (char))
-    return (NULL);
+  if (mr_ra_str.data.string)
+    if (mr_ra_append_char (&mr_ra_str, mr_ra_str.data.string[mr_ra_str.mr_size - 1]) != sizeof (char))
+      return (NULL);
   
   return (mr_ra_str.data.string);
 }

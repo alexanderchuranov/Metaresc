@@ -2,7 +2,7 @@
 #include <mr_stringify.h>
 
 static int
-mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, void * value)
+mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, char * method, void * value)
 {
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
   static char * type_name[] = {
@@ -32,18 +32,42 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, v
       __fd__.type = MR_TYPE_NAME_STR;					\
       __fd__.non_persistent = true;					\
       mr_detect_type (&__fd__);						\
-      if ((size >= 0) && __fd__.tdp)					\
+      if (__fd__.tdp)							\
 	{								\
-	  __fd__.mr_type_aux = __fd__.mr_type;				\
-	  __fd__.mr_type = MR_TYPE_ARRAY;				\
-	  __fd__.param.array_param.count = size / __fd__.tdp->size;	\
-	  __fd__.param.array_param.row_count = 1;			\
-	  __fd__.size = size;						\
+	  if (size < 0)							\
+	    __fd__.size = __fd__.tdp->size;				\
+	  else								\
+	    {								\
+	      __fd__.mr_type_aux = __fd__.mr_type;			\
+	      __fd__.mr_type = MR_TYPE_ARRAY;				\
+	      __fd__.param.array_param.count = size / __fd__.tdp->size;	\
+	      __fd__.param.array_param.row_count = 1;			\
+	      __fd__.size = size;					\
+	    }								\
 	}								\
       mr_save (__ptr__, &__fd__);					\
     })
 
-  char * serialized = MR_SAVE_CINIT (type, value);
+  char * serialized = NULL;
+  if (0 == strcmp (method, "CINIT"))
+    serialized = MR_SAVE_CINIT (type, value);
+  else if (0 == strcmp (method, "JSON"))
+    serialized = MR_SAVE_JSON (type, value);
+  else if (0 == strcmp (method, "SCM"))
+    serialized = MR_SAVE_SCM (type, value);
+  else if (0 == strcmp (method, "XML"))
+    serialized = MR_SAVE_XML (type, value);
+  else if (0 == strcmp (method, "XML1"))
+    serialized = MR_SAVE_XML1 (type, value);
+#ifdef HAVE_LIBXML2
+  else if (0 == strcmp (method, "XML2"))
+    serialized = MR_SAVE_XML2 (type, value);
+#endif /* HAVE_LIBXML2 */
+#ifdef HAVE_LIBYAML
+  else if (0 == strcmp (method, "YAML"))
+    serialized = MR_SAVE_YAML (type, value);
+#endif /* HAVE_LIBYAML */
+
   if (NULL == serialized)
     return (fprintf (fd, "%p", value));
 
@@ -54,7 +78,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, v
 }
 
 int
-mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, ssize_t size, ...)
+mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, ssize_t size, char * method, ...)
 {
   static const char * const formats[] =
     {
@@ -76,7 +100,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
   const char * format = NULL;
   int rv = 0;
   va_list args;
-  va_start (args, size);
+  va_start (args, method);
 
   if ((mr_type >= 0) &&
       (mr_type < sizeof (formats) / sizeof (formats[0])))
@@ -140,7 +164,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	  break;
 	}
       case MR_TYPE_NONE:
-	rv = mr_print_pointer (fd, mr_type_aux, type, size, va_arg (args, void *));
+	rv = mr_print_pointer (fd, mr_type_aux, type, size, method, va_arg (args, void *));
 	break;
 	
       default:
