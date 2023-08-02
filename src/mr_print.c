@@ -72,7 +72,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
     return (fprintf (fd, "%p", value));
 
   serialized[strlen (serialized) - 1] = 0;
-  int rv = fprintf (fd, "%p ((%s)%s)", value, type, serialized);
+  int rv = fprintf (fd, "%p ((%s%s)%s)", value, type, (size >= 0) ? "[]" : "", serialized);
   MR_FREE (serialized);
   return (rv);
 }
