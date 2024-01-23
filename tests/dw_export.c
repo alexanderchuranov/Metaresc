@@ -20,20 +20,10 @@ get_td_by_name (mr_hashed_string_t * type)
   return (NULL);
 }
 
-static mr_fd_t *
-get_fd_by_name (mr_td_t * tdp, mr_hashed_string_t * name)
-{
-  int i;
-  for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
-    if (mr_hashed_string_cmp (&tdp->fields[i]->name, name) == 0)
-      return (tdp->fields[i]);
-  return (NULL);
-}
-
 static void
 compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
-  int i, named_anon_union_count = 0;
+  int i, j, named_anon_union_count = 0;
   for (i = mr_td->fields_size / sizeof (mr_td->fields[0]) - 1; i >= 0; --i)
     {
       mr_fd_t * mr_fdp = mr_td->fields[i];
@@ -44,7 +34,14 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       if ((mr_fdp->mr_type == MR_TYPE_ANON_UNION) || (mr_fdp->mr_type == MR_TYPE_NAMED_ANON_UNION))
 	continue;
       
-      mr_fd_t * dw_fdp = get_fd_by_name (dw_td, &mr_fdp->name);
+      mr_fd_t * dw_fdp = NULL;
+      for (j = dw_td->fields_size / sizeof (dw_td->fields[0]) - 1; j >= 0; --j)
+	if (mr_hashed_string_cmp (&dw_td->fields[j]->name, &mr_fdp->name) == 0)
+	  {
+	    dw_fdp = dw_td->fields[j];
+	    break;
+	  }
+
       ck_assert_msg (dw_fdp != NULL, "DWARF descriptor for type '%s' mismatched builtin: missed field '%s'",
 		     mr_td->type.str, mr_fdp->name.str);
 
@@ -132,29 +129,35 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 static void
 compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
+  ck_assert_msg (mr_td->param.enum_param.mr_type_effective == dw_td->param.enum_param.mr_type_effective,
+		 "DWARF descriptor for type '%s' mismatched builtin: effective mr_type %d != %d",
+		 mr_td->type.str, (int)mr_td->param.enum_param.mr_type_effective, (int)dw_td->param.enum_param.mr_type_effective);
   ck_assert_msg (mr_td->param.enum_param.size_effective == dw_td->param.enum_param.size_effective,
 		 "DWARF descriptor for type '%s' mismatched builtin: effective size %d != %d",
 		 mr_td->type.str, (int)mr_td->param.enum_param.size_effective, (int)dw_td->param.enum_param.size_effective);
-  
-  int i;
-  for (i = mr_td->fields_size / sizeof (mr_td->fields[0]) - 1; i >= 0; --i)
-    {
-      mr_fd_t * mr_fdp = mr_td->fields[i];
-      mr_fd_t * dw_fdp = get_fd_by_name (dw_td, &mr_fdp->name);
 
-      ck_assert_msg (mr_fdp->mr_type == dw_fdp->mr_type,
-		     "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type %d != %d",
-		     mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type, dw_fdp->mr_type);
-      ck_assert_msg (dw_fdp != NULL, "DWARF descriptor for type '%s' mismatched builtin: missed enumeration '%s'",
-		     mr_td->type.str, mr_fdp->name.str);
-      ck_assert_msg (mr_fdp->param.enum_param._signed == dw_fdp->param.enum_param._signed,
+  int i, j;
+  for (i = mr_td->param.enum_param.enums_size / sizeof (mr_td->param.enum_param.enums[0]) - 1; i >= 0; --i)
+    {
+      mr_ed_t * mr_edp = mr_td->param.enum_param.enums[i];
+      mr_ed_t * dw_edp = NULL;
+      for (j = dw_td->param.enum_param.enums_size / sizeof (dw_td->param.enum_param.enums[0]) - 1; j >= 0; --j)
+	if (mr_hashed_string_cmp (&dw_td->param.enum_param.enums[j]->name, &mr_edp->name) == 0)
+	  {
+	    dw_edp = dw_td->param.enum_param.enums[j];
+	    break;
+	  }
+
+      ck_assert_msg (dw_edp != NULL, "DWARF descriptor for type '%s' mismatched builtin: missed enumeration '%s'",
+		     mr_td->type.str, mr_edp->name.str);
+      ck_assert_msg (mr_edp->value._signed == dw_edp->value._signed,
 		     "DWARF descriptor for type '%s' mismatched builtin: enumeration value '%'" SCNi64 " != '%'" SCNi64,
-		     mr_td->type.str, mr_fdp->param.enum_param._signed, dw_fdp->param.enum_param._signed);
+		     mr_td->type.str, mr_edp->value._signed, dw_edp->value._signed);
     }
 
-  ck_assert_msg (dw_td->fields_size == mr_td->fields_size,
+  ck_assert_msg (dw_td->param.enum_param.enums_size == mr_td->param.enum_param.enums_size,
 		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
-		 mr_td->type.str, (int)dw_td->fields_size, (int)mr_td->fields_size);
+		 mr_td->type.str, (int)dw_td->param.enum_param.enums_size, (int)mr_td->param.enum_param.enums_size);
 }
 
 static mr_status_t
@@ -177,15 +180,16 @@ check_td (mr_ptr_t key, const void * context)
 		     mr_td->type.str, (int)dw_td->size, (int)mr_td->size);
 
       dw_td->fields_size -= sizeof (dw_td->fields[0]);
-      mr_detect_fields_types (dw_td);
   
       switch (mr_td->mr_type)
 	{
 	case MR_TYPE_STRUCT:
 	case MR_TYPE_UNION:
+	  mr_init_struct (dw_td);
 	  compare_fields_meta (mr_td, dw_td);
 	  break;
 	case MR_TYPE_ENUM:
+	  mr_init_enum (dw_td);
 	  compare_enum_meta (mr_td, dw_td);
 	  break;
 	default:

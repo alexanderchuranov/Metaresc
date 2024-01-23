@@ -350,6 +350,7 @@
 #define P00_TYPEDEF_ATTR_STRUCT TYPEDEF_ATTR
 #define P00_TYPEDEF_ATTR_UNION TYPEDEF_ATTR
 #define P00_TYPEDEF_ATTR_ENUM TYPEDEF_ATTR
+
 #define P00_TYPEDEF_ATTR_CHAR_ARRAY(P00_MODE, P00_ID, P00_TYPE, ATTR_META_RES, P00_TYPE_NAME, SIZE, ...) MR_PASTE2 (MR_TYPEDEF_CHAR_ARRAY_, P00_MODE) (P00_ID, P00_TYPE_NAME, SIZE, MR_PASTE2 (P00_REMOVE_, ATTR_META_RES), __VA_ARGS__)
 #define P00_TYPEDEF_ATTR_FUNC(P00_MODE, P00_ID, P00_TYPE, ATTR_META_RES, RET_TYPE, P00_TYPE_NAME, ARGS, ...) MR_PASTE2 (MR_TYPEDEF_FUNC_, P00_MODE) (P00_ID, RET_TYPE, P00_TYPE_NAME, ARGS, MR_PASTE2 (P00_REMOVE_, ATTR_META_RES), __VA_ARGS__)
 
@@ -639,8 +640,10 @@
 	{								\
 	  .array_param = {						\
 	    .pointer_param = (mr_fd_t[]){{}},				\
-	    .count = sizeof (((MR_TYPE_NAME*)0)->NAME) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
-	    .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) / __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
+	    .count = sizeof (((MR_TYPE_NAME*)0)->NAME) /		\
+	    __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
+	    .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) /		\
+	    __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
 	  },								\
 	},								\
 	.meta = "" __VA_ARGS__,						\
@@ -702,15 +705,23 @@
 
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_fd_t []){ MR_FUNC_ARG (TYPE, "return value") MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) { .mr_type = MR_TYPE_LAST, }, }, }, })
-#define MR_FUNC_ARG(TYPE, /* META */ ...) {			\
-    .name = { .str = MR_STRINGIFY (TYPE), .hash_value = 0, },	\
-    .type = MR_STRINGIFY (TYPE),				\
-    .size = sizeof (TYPE),					\
-    .mr_type = MR_TYPE_DETECT (TYPE),				\
-    .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
-    .meta = "" __VA_ARGS__,					\
-  },
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_structured_type_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, }, })
+
+/*
+  MR_OBJ_OF_TYPE returns an object of specified type. It could be as simple as (TYPE){},
+  but will not work for type void, that's why it's wrapped into __builtin_choose_expr.
+  Type cast require additional typeof wrapper for array types, otherwise construct is invalid.
+*/
+#define MR_OBJ_OF_TYPE(TYPE) *__builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), "", (__typeof__ (TYPE) *)0)
+
+#define MR_FUNC_ARG(TYPE) (mr_structured_type_t[]){ {			\
+      .type = MR_STRINGIFY (TYPE),					\
+	.size = sizeof (TYPE),						\
+	.mr_type = MR_TYPE_DETECT (TYPE),				\
+	.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (TYPE)),		\
+	.mr_type_class = __builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), MR_VOID_TYPE_CLASS, \
+						__builtin_classify_type (MR_OBJ_OF_TYPE (TYPE))), \
+	} },
 
 #define MR_TYPEDEF_STRUCT_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_STRUCT)
 #define MR_END_STRUCT_DESC(ID, MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
@@ -735,20 +746,34 @@
 	.meta = "" __VA_ARGS__,						\
 	} },
 
-#define MR_TYPEDEF_ENUM_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_ENUM)
+#define MR_TYPEDEF_ENUM_DESC(ID, MR_TYPE_NAME, ...)			\
+  MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
+    .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
+    .mr_type = MR_TYPE_ENUM,						\
+    .size = sizeof (MR_TYPE_NAME),					\
+    .param = {								\
+      .enum_param = {							\
+	.mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),		\
+	.enums_size = 0,						\
+	.enums = (mr_ed_t*[]){
+
+#define MR_END_ENUM_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...)	\
+  NULL, }, }, },							\
+    .meta = "" __VA_ARGS__ };						\
+    static inline void __attribute__((constructor))			\
+    MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
+      mr_add_type (&MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME));		\
+    }
 
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
-#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)   \
-    (mr_fd_t[]){ {						     \
-	.type = MR_STRINGIFY (MR_TYPE_NAME),			     \
-	  .name = { .str = #NAME, .hash_value = 0, },		     \
-	  .mr_type = MR_TYPE_ENUM,				     \
-	  .param = { .enum_param = { NAME }, },			     \
+#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)  \
+    (mr_ed_t[]){ {						     \
+	.name = { .str =  #NAME, .hash_value = 0, },		     \
+	  .value = { ._unsigned = NAME, },			     \
 	  .meta = "" __VA_ARGS__,				     \
 	  } },
-#define MR_END_ENUM_DESC(MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_FUNC_ARG_PTR(...) (mr_fd_t[]){ MR_FUNC_ARG (__VA_ARGS__) },
+#define MR_FUNC_ARG_PTR(...) /* FIXME */
 
 #define MR_TYPEDEF_CHAR_ARRAY_DESC(ID, MR_TYPE_NAME, SIZE, /* ATTR */ ...) \
   MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY)		\
@@ -756,9 +781,9 @@
 
 #define MR_TYPEDEF_FUNC_DESC(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) \
   MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_FUNC_TYPE)			\
-  MR_FUNC_ARG_PTR (RET_TYPE, "return value")				\
-  MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))			\
-  MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
+       MR_FUNC_ARG_PTR (RET_TYPE)					\
+       MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))		\
+       MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_TYPEDEF_DESC(ID, MR_TYPE_NAME, MR_TYPE, ...)			\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
@@ -769,7 +794,7 @@
     .fields_size = 0,							\
     .fields = (mr_fd_t*[]){
 #define MR_TYPEDEF_END_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...) 	\
-  (mr_fd_t[]){ { .mr_type = MR_TYPE_LAST, } } },			\
+  NULL },								\
     .meta = "" __VA_ARGS__ };						\
     static inline void __attribute__((constructor))			\
     MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
@@ -783,8 +808,8 @@
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
   static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX_ID (ID, MR_TYPE_NAME) (void) { \
-    mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td)); \
-    if (NULL == basic_type_td)						\
+    mr_basic_type_td_t * btdp = MR_CALLOC (1, sizeof (*btdp));		\
+    if (NULL == btdp)							\
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);		\
     else								\
       {									\
@@ -797,21 +822,20 @@
 	memset (&dst_ctx, 0, sizeof (dst_ctx));				\
 	dst_ctx.struct_ptr = &__value;					\
 	dst_ctx.offset_byte = 0;					\
-	dst_ctx.tdp = &basic_type_td->td;				\
-	dst_ctx.tdp->fields_size = sizeof (dst_ctx.tdp->fields[0]);	\
-	dst_ctx.tdp->fields = &basic_type_td->fd_ptr;			\
-	dst_ctx.tdp->fields[0] = basic_type_td->fd;			\
-	dst_ctx.tdp->fields[0]->mr_type = MR_TYPE_LAST;			\
-	dst_ctx.tdp->is_dynamically_allocated = true;			\
-	dst_ctx.tdp->mr_type = MR_TYPE_STRUCT;				\
-	dst_ctx.tdp->size = sizeof (__value);				\
+	dst_ctx.btdp = btdp;						\
+	btdp->td.fields_size = sizeof (btdp->td.fields[0]);		\
+	btdp->td.fields = &btdp->fd_ptr;				\
+	btdp->td.fields[0] = NULL;					\
+	btdp->td.is_dynamically_allocated = true;			\
+	btdp->td.mr_type = MR_TYPE_STRUCT;				\
+	btdp->td.size = sizeof (__value);				\
 	char * type = MR_STRINGIFY_READONLY (MR_TYPE_NAME);		\
 	if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0) \
 	  type += sizeof (MR_STRUCT_KEYWORD);				\
 	if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0) \
 	  type += sizeof (MR_UNION_KEYWORD);				\
-	dst_ctx.tdp->type.str = type;					\
-	while (dst_ctx.tdp != NULL)					\
+	btdp->td.type.str = type;					\
+	while (dst_ctx.btdp != NULL)					\
 	  {								\
 	    if (0 == setjmp (dst_ctx._jmp_buf))				\
 	      __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
@@ -825,7 +849,7 @@
 	      memset (__ptr, __i++, __block_size);			\
 	    memset (__ptr, __i, sizeof (__value) & (__block_size - 1));	\
 	  }								\
-	mr_add_type (dst_ctx.tdp);					\
+	mr_add_type (&dst_ctx.btdp->td);				\
       }									\
   }
 
@@ -1367,7 +1391,7 @@ typedef int64_t mr_int128_t[2];
 #undef MR_MODE
 #endif
 
-typedef __typeof__ (((mr_fd_t*)0)->param.enum_param._unsigned) mr_enum_value_type_t;
+typedef __typeof__ (((mr_enum_value_t*)0)->_unsigned) mr_enum_value_type_t;
 
 extern mr_conf_t mr_conf;
 
@@ -1421,7 +1445,8 @@ extern char * mr_strndup (const char * str, size_t size);
 extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
-extern void mr_detect_fields_types (mr_td_t * tdp);
+extern void mr_init_struct (mr_td_t * tdp);
+extern void mr_init_enum (mr_td_t * tdp);
 #define MR_IS_STRING(X) __builtin_types_compatible_p (char, __typeof__ (*__builtin_choose_expr ((__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS) || (__builtin_classify_type (X) == MR_ARRAY_TYPE_CLASS), X, NULL)))
 #define MR_AND_IS_STRING(X) && MR_IS_STRING (X)
 #define MR_VALIDATE_ALL_ARGS_ARE_STRINGS(...) (void*) (0 / (true MR_FOREACH (MR_AND_IS_STRING, __VA_ARGS__)))
@@ -1435,8 +1460,8 @@ extern mr_hash_value_t mr_hash_struct (mr_ra_ptrdes_t * ptrs);
 extern int mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_enum_value_type_t mr_get_enum_value (mr_td_t * tdp, void * data);
-extern mr_fd_t * mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value);
-extern mr_fd_t * mr_get_enum_by_name (char * name);
+extern mr_ed_t * mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value);
+extern mr_ed_t * mr_get_enum_by_name (char * name);
 extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
 extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
 extern mr_td_t * mr_get_td_by_name (char * type);

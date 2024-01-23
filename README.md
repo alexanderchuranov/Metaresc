@@ -117,7 +117,7 @@ $ git clone https://github.com/alexanderchuranov/Metaresc.git
 $ cd Metaresc
 $ git submodule update --init --recursive --remote
 $ ./autogen.sh
-$ ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison
+$ ./configure HAVE_BISON=yes YACC=/opt/homebrew/opt/bison/bin/bison
 $ make -j 4 check
 ```
 

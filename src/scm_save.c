@@ -64,10 +64,10 @@ scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
   for (i = 0; i < fields_count; ++i)
-    if (value & tdp->fields[i]->param.enum_param._unsigned)
+    if (value & tdp->param.enum_param.enums[i]->value._unsigned)
       {
 	++tokens;
-	value ^= tdp->fields[i]->param.enum_param._unsigned;
+	value ^= tdp->param.enum_param.enums[i]->value._unsigned;
 	if (0 == value)
 	  break;
       }

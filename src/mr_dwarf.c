@@ -860,16 +860,16 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 }
 
 static void
-load_enumerator (int idx, mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
+load_enumerator (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
-  fdp->mr_type = MR_TYPE_ENUM;
+  mr_ed_t * edp = elem;
   
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   assert (attr != NULL);
   assert ((DW_FORM_STRING >> attr->form) & 1);
   assert (attr->dw_str != NULL);
-  fdp->name.str = mr_strdup (attr->dw_str);
-  assert (fdp->name.str != NULL);
+  edp->name.str = mr_strdup (attr->dw_str);
+  assert (edp->name.str != NULL);
 
   attr = die_attribute (mr_die, _DW_AT_const_value);
   assert (attr != NULL);
@@ -877,19 +877,22 @@ load_enumerator (int idx, mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic
 
   if (_DW_FORM_sdata == attr->form)
     {
-      fdp->param.enum_param._signed = attr->dw_signed;
-      fdp->mr_type_aux = MR_TYPE_INT64;
+      edp->value._signed = attr->dw_signed;
+      edp->mr_type = MR_TYPE_DETECT (typeof (attr->dw_signed));
     }
   else
     {
-      fdp->param.enum_param._unsigned = attr->dw_unsigned;
-      fdp->mr_type_aux = MR_TYPE_UINT64;
+      edp->value._unsigned = attr->dw_unsigned;
+      edp->mr_type = MR_TYPE_DETECT (typeof (attr->dw_unsigned));
     }
 }
 
 static void
-load_member (int idx, mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
+load_member (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
+  mr_fd_t * fdp = elem;
+  fdp->readonly = true;
+
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   if (attr != NULL)
     {
@@ -988,24 +991,21 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
   mr_type_t mr_type = MR_TYPE_NONE;
   mr_dw_tag_t children_tag = _DW_TAG_undefined;
-  void (*load_child) (int idx, mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
+  void (*load_child) (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
+  void ** rarray = NULL;
+  ssize_t * rarray_size = NULL;
+  size_t elem_size = 0;
 
   switch (mr_die->tag)
     {
     case _DW_TAG_structure_type:
       mr_type = MR_TYPE_STRUCT;
-      children_tag = _DW_TAG_member;
-      load_child = load_member;
       break;
     case _DW_TAG_union_type:
       mr_type = MR_TYPE_UNION;
-      children_tag = _DW_TAG_member;
-      load_child = load_member;
       break;
     case _DW_TAG_enumeration_type:
       mr_type = MR_TYPE_ENUM;
-      children_tag = _DW_TAG_enumerator;
-      load_child = load_enumerator;
       break;
     case _DW_TAG_pointer_type:
       {
@@ -1023,8 +1023,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
   mr_td_t * tdp = MR_CALLOC (1, sizeof (*tdp));
   assert (tdp != NULL);
-  
-  memset (tdp, 0, sizeof (*tdp));
+
   tdp->mr_type = mr_type;
   tdp->size = mr_type_size (mr_type);
   tdp->type.str = mr_strdup (attr->dw_str);
@@ -1040,6 +1039,29 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       tdp->size = attr->dw_unsigned;
     }
 
+  switch (mr_type)
+    {
+    case MR_TYPE_STRUCT:
+    case MR_TYPE_UNION:
+      children_tag = _DW_TAG_member;
+      load_child = load_member;
+      rarray = (void*)&tdp->fields;
+      rarray_size = &tdp->fields_size;
+      elem_size = sizeof (*tdp->fields[0]);
+      break;
+    case MR_TYPE_ENUM:
+      children_tag = _DW_TAG_enumerator;
+      load_child = load_enumerator;
+      rarray = (void*)&tdp->param.enum_param.enums;
+      rarray_size = &tdp->param.enum_param.enums_size;
+      elem_size = sizeof (*tdp->param.enum_param.enums[0]);
+      break;
+    default:
+      rarray = (void*)&tdp->fields;
+      rarray_size = &tdp->fields_size;
+      break;
+    }
+
   ssize_t alloc_size = 0;
   if (load_child != NULL)
     {
@@ -1047,20 +1069,17 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       for (i = 0; i < count; ++i)
 	if (mr_die->children[i].tag == children_tag)
 	  {
-	    mr_fd_t ** fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
-	    assert (fdp_ptr != NULL);
-	    *fdp_ptr = MR_CALLOC (1, sizeof (**fdp_ptr));
-	    assert (*fdp_ptr != NULL);
-	    (*fdp_ptr)->readonly = true;
-	    load_child (i, *fdp_ptr, &mr_die->children[i], die_off_ic);
+	    void ** elem = mr_rarray_allocate_element (rarray, rarray_size, &alloc_size, sizeof (*elem));
+	    assert (elem != NULL);
+	    *elem = MR_CALLOC (1, elem_size);
+	    assert (*elem != NULL);
+	    load_child (i, *elem, &mr_die->children[i], die_off_ic);
 	  }
     }
   
-  mr_fd_t ** fdp_ptr = mr_rarray_allocate_element ((void*)&tdp->fields, &tdp->fields_size, &alloc_size, sizeof (tdp->fields[0]));
-  assert (fdp_ptr != NULL);
-  *fdp_ptr = MR_CALLOC (1, sizeof (**fdp_ptr));
-  assert (*fdp_ptr != NULL);
-  (*fdp_ptr)->mr_type = MR_TYPE_LAST;
+  void ** elem = mr_rarray_allocate_element (rarray, rarray_size, &alloc_size, sizeof (*elem));
+  assert (elem != NULL);
+  *elem = NULL;
 }
 
 static mr_hash_value_t
@@ -1156,8 +1175,8 @@ process_td (mr_ptr_t key, const void * context)
 
   if (tdp->mr_type == MR_TYPE_ENUM)
     {
-      bool _signed = ((tdp->fields_size >= sizeof (tdp->fields[0])) &&
-		      (tdp->fields[0]->mr_type_aux == MR_TYPE_INT64));
+      bool _signed = ((tdp->param.enum_param.enums_size >= sizeof (tdp->param.enum_param.enums[0])) &&
+		      (tdp->param.enum_param.enums[0]->mr_type == MR_TYPE_INT64));
       tdp->param.enum_param.size_effective = tdp->size;
       switch (tdp->size)
 	{
@@ -1174,11 +1193,20 @@ process_td (mr_ptr_t key, const void * context)
 	  tdp->param.enum_param.mr_type_effective = _signed ? MR_TYPE_INT64 : MR_TYPE_UINT64;
 	  break;
 	}
+
+      for (i = tdp->param.enum_param.enums_size / sizeof (tdp->param.enum_param.enums[0]) - 2; i >= 0; --i)
+	tdp->param.enum_param.enums[i]->mr_type = tdp->param.enum_param.mr_type_effective;
     }
   else
-    for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 1; i >= 0; --i)
+    for (i = tdp->fields_size / sizeof (tdp->fields[0]) - 2; i >= 0; --i)
       {
 	mr_fd_t * fdp = tdp->fields[i];
+
+	if (fdp == NULL)
+	  {
+	    fprintf (stderr, "type %s fdp NULL [%d]\n", tdp->type.str, i);
+	    continue;
+	  }
 
 	if (MR_TYPE_POINTER == fdp->mr_type)
 	  {
@@ -1252,9 +1280,10 @@ free_td (mr_ptr_t key, const void * context)
 static void
 tweak_mr_conf ()
 {
-  mr_type_void_fields ("mr_td_t", "field_by_name", "meta", "res", "res_type", "mr_size", "is_dynamically_allocated");
+  mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "field_by_name", "meta", "res", "res_type", "mr_size", "is_dynamically_allocated");
   mr_type_void_fields ("mr_fd_t", "tdp", "self_ptr", "mr_size", "non_persistent", "mr_type_class");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
+  mr_type_void_fields ("mr_ed_t", "mr_type", "meta", "res", "res_type", "mr_size");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");
 }

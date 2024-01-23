@@ -111,7 +111,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 {
   int i;
   mr_offset_t offset = 0;
-  int fields_count = ctx->tdp->fields_size / sizeof (ctx->tdp->fields[0]);
+  int fields_count = ctx->btdp->td.fields_size / sizeof (ctx->btdp->td.fields[0]);
   
   switch (mr_type)
     {
@@ -155,35 +155,37 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       if (MR_TYPE_NONE == mr_type)
 	return;
       for (i = 0; i < fields_count; ++i)
-	if (0 == strcmp (ctx->tdp->fields[i]->name.str, name))
+	if (0 == strcmp (ctx->btdp->td.fields[i]->name.str, name))
 	  break;
       if (i < fields_count)
-	ctx->tdp->fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
+	ctx->btdp->td.fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
       return;
     }
 
-  mr_basic_type_td_t * basic_type_td = MR_REALLOC (ctx->tdp, sizeof (*basic_type_td) + (sizeof (basic_type_td->fd) + sizeof (basic_type_td->fd_ptr)) * fields_count);
+  mr_basic_type_td_t * basic_type_td = MR_REALLOC (ctx->btdp, sizeof (*basic_type_td) + (sizeof (basic_type_td->fd[1]) + sizeof (basic_type_td->fd_ptr)) * fields_count);
   if (NULL == basic_type_td)
     {
-      MR_FREE (ctx->tdp);
-      ctx->tdp = NULL;
+      MR_FREE (ctx->btdp);
+      ctx->btdp = NULL;
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
       longjmp (ctx->_jmp_buf, !0);
     }
 
   mr_fd_t * fdp = &basic_type_td->fd[fields_count - 1];
-  basic_type_td->fd[fields_count] = *fdp;
+  memset (fdp, 0, sizeof (*fdp));
   fdp->mr_type = mr_type;
   fdp->type = type;
   fdp->name.str = name;
   fdp->offset = offset;
+  fdp->size = mr_type_size (mr_type);
   fdp->readonly = true;
 
-  basic_type_td->td.fields = (mr_fd_t**)&basic_type_td->fd[fields_count + 1];
-  for (i = 0; i <= fields_count; ++i)
+  basic_type_td->td.fields = (mr_fd_t**)&basic_type_td->fd[fields_count];
+  for (i = 0; i < fields_count; ++i)
     basic_type_td->td.fields[i] = &basic_type_td->fd[i];
+  basic_type_td->td.fields[i] = NULL;
   basic_type_td->td.fields_size += sizeof (basic_type_td->td.fields[0]);
-  ctx->tdp = &basic_type_td->td;
+  ctx->btdp = basic_type_td;
 }
 
 int
@@ -593,6 +595,13 @@ mr_fd_name_get_hash (mr_ptr_t x, const void * context)
   return (mr_hashed_string_get_hash (&x_->name));
 }
 
+mr_hash_value_t
+mr_ed_name_get_hash (mr_ptr_t x, const void * context)
+{
+  mr_ed_t * x_ = x.ptr;
+  return (mr_hashed_string_get_hash (&x_->name));
+}
+
 /**
  * Comparator for mr_fd_t by name field
  * @param x pointer on one mr_fd_t
@@ -604,6 +613,14 @@ mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_fd_t * x_ = x.ptr;
   const mr_fd_t * y_ = y.ptr;
+  return (mr_hashed_string_cmp (&x_->name, &y_->name));
+}
+
+int
+mr_ed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_ed_t * x_ = x.ptr;
+  const mr_ed_t * y_ = y.ptr;
   return (mr_hashed_string_cmp (&x_->name, &y_->name));
 }
 
@@ -751,7 +768,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	      }
 
 	    last = tdp->fields[count];
-	    last->mr_type = MR_TYPE_LAST; /* trailing record */
+	    tdp->fields[count] = NULL;
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
@@ -825,8 +842,8 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
 mr_hash_value_t
 mr_enumfd_get_hash (mr_ptr_t x, const void * context)
 {
-  mr_fd_t * fdp = x.ptr;
-  return (fdp->param.enum_param._unsigned);
+  mr_ed_t * edp = x.ptr;
+  return (edp->value._unsigned);
 }
 
 /**
@@ -836,35 +853,32 @@ mr_enumfd_get_hash (mr_ptr_t x, const void * context)
  * @return comparation sign
  */
 int
-mr_fd_enum_value_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
+mr_ed_enum_value_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
-  mr_fd_t * x_ = x.ptr;
-  mr_fd_t * y_ = y.ptr;
-  return ((x_->param.enum_param._unsigned > y_->param.enum_param._unsigned) -
-	  (x_->param.enum_param._unsigned < y_->param.enum_param._unsigned));
+  mr_ed_t * x_ = x.ptr;
+  mr_ed_t * y_ = y.ptr;
+  return ((x_->value._unsigned > y_->value._unsigned) -
+	  (x_->value._unsigned < y_->value._unsigned));
 }
 
 int
-mr_fd_enum_value_cmp_sorting (mr_ptr_t x, mr_ptr_t y, const void * context)
+mr_ed_enum_value_cmp_sorting (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
-  mr_fd_t ** x_ = x.ptr;
-  mr_fd_t ** y_ = y.ptr;
-  mr_fd_t * _x_ = *x_;
-  mr_fd_t * _y_ = *y_;
-  return ((_x_->param.enum_param._unsigned > _y_->param.enum_param._unsigned) -
-	  (_x_->param.enum_param._unsigned < _y_->param.enum_param._unsigned));
+  return (mr_ed_enum_value_cmp (*(void**)x.ptr, *(void**)y.ptr, context));
 }
 
 /**
  * New enum descriptor preprocessing. Enum literal values should be added to global lookup table and enum type descriptor should have a lookup by enum values.
  * @param tdp pointer on a new enum type descriptor
- * @return status
  */
-static mr_status_t
-mr_add_enum (mr_td_t * tdp)
+void
+mr_init_enum (mr_td_t * tdp)
 {
-  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
-  mr_status_t status = MR_SUCCESS;
+  int i, count;
+
+  for (count = 0; tdp->param.enum_param.enums[count] != NULL; ++count)
+    tdp->param.enum_param.enums[count]->mr_type = tdp->param.enum_param.mr_type_effective;
+  tdp->param.enum_param.enums_size = count * sizeof (tdp->param.enum_param.enums[0]);
 
   /*
     Old versions of GCC (e.g. 4.x) might have mismatched sizeof and effectivily used size for enums.
@@ -901,15 +915,14 @@ mr_add_enum (mr_td_t * tdp)
       break;
     }
 
-  mr_hsort (tdp->fields, count, sizeof (tdp->fields[0]), mr_fd_enum_value_cmp_sorting, NULL);
+  mr_hsort (tdp->param.enum_param.enums, count, sizeof (tdp->param.enum_param.enums[0]), mr_ed_enum_value_cmp_sorting, NULL);
 
   int non_zero_cnt = 0;
   tdp->param.enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
-      mr_enum_value_type_t value = tdp->fields[i]->param.enum_param._unsigned;
+      mr_enum_value_type_t value = tdp->param.enum_param.enums[i]->value._unsigned;
 
-      tdp->fields[i]->mr_type_aux = tdp->param.enum_param.mr_type_effective;
       /*
 	there is a corner case when enum has a single negative value which is a highest sign bit
 	Compiler will extend sign bit to higher positoins and this value will not be classified
@@ -924,25 +937,18 @@ mr_add_enum (mr_td_t * tdp)
 	tdp->param.enum_param.is_bitmask = false;
       
       /* adding to global lookup table by enum literal names */
-      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, tdp->fields[i]);
+      mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, tdp->param.enum_param.enums[i]);
       if (NULL == result)
-	{
-	  status = MR_FAILURE;
-	  continue;
-	}
-      mr_fd_t * fdp = result->ptr;
-      if ((fdp != tdp->fields[i]) &&
-	  (fdp->param.enum_param._unsigned != tdp->fields[i]->param.enum_param._unsigned))
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_ENUMS, fdp->name.str, tdp->type.str, value, fdp->type, fdp->param.enum_param._unsigned);
-	  status = MR_FAILURE;
-	}
+	continue;
+
+      mr_ed_t * edp = result->ptr;
+      if ((edp != tdp->param.enum_param.enums[i]) &&
+	  (edp->value._unsigned != tdp->param.enum_param.enums[i]->value._unsigned))
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_ENUMS, edp->name.str, tdp->type.str, value, edp->value._unsigned);
     }
 
   if (non_zero_cnt < 2)
     tdp->param.enum_param.is_bitmask = false;
-
-  return (status);
 }
 
 /**
@@ -952,14 +958,14 @@ mr_add_enum (mr_td_t * tdp)
  * @param value enums value
  * @return pointer on enum value descriptor (mr_fd_t*) or NULL is value was not found
  */
-mr_fd_t *
+mr_ed_t *
 mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value)
 {
   unsigned idx;
-  uintptr_t key = (uintptr_t)&value - offsetof (mr_fd_t, param.enum_param._unsigned); /* (mr_fd_t[]){{ .param = { .enum_param = { value }, }, }}; */
-  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
-  int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_fd_enum_value_cmp, NULL, &idx);
-  return (diff ? NULL : tdp->fields[idx]);
+  uintptr_t key = (uintptr_t)&value - offsetof (mr_ed_t, value);
+  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->param.enum_param.enums, .size = tdp->param.enum_param.enums_size, };
+  int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_ed_enum_value_cmp, NULL, &idx);
+  return (diff ? NULL : tdp->param.enum_param.enums[idx]);
 }
 
 /**
@@ -968,11 +974,11 @@ mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value)
  * @param name literal name of enum to lookup
  * @return status
  */
-mr_fd_t *
+mr_ed_t *
 mr_get_enum_by_name (char * name)
 {
   mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), }; 
-  uintptr_t key = (uintptr_t)&hashed_name - offsetof (mr_fd_t, name);
+  uintptr_t key = (uintptr_t)&hashed_name - offsetof (mr_ed_t, name);
   mr_ptr_t * result = mr_ic_find (&mr_conf.enum_by_name, key);
   return (result ? result->ptr : NULL);
 }
@@ -1137,7 +1143,7 @@ mr_register_type_pointer (mr_td_t * tdp)
     return (MR_SUCCESS);
 
   /* statically allocated trailing record is used for field descriptor */
-  mr_fd_t * fdp = tdp->fields[tdp->fields_size / sizeof (tdp->fields[0])];
+  mr_fd_t * fdp = &tdp->mr_ptr_fd;
   if (NULL == fdp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
@@ -1223,7 +1229,7 @@ mr_add_basic_type (mr_fd_t * fdp, char * type, mr_type_t mr_type)
   basic_type_td->td.mr_type = mr_type;
   basic_type_td->td.size = mr_type_size (mr_type);
   basic_type_td->td.fields = &basic_type_td->fd_ptr;
-  basic_type_td->fd_ptr = basic_type_td->fd;
+  basic_type_td->fd_ptr = NULL;
 
   mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
 
@@ -1344,8 +1350,8 @@ static void
 mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
-  for (i = 0; fdp->param.func_param.args[i].mr_type != MR_TYPE_LAST; ++i)
-    mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
+  for (i = 0; fdp->param.func_param.args[i] != NULL; ++i);
+  //FIXME: mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
 }
 
@@ -1506,7 +1512,7 @@ mr_normalize_field_name (mr_fd_t * fdp)
  * @return status
  */
 void
-mr_detect_fields_types (mr_td_t * tdp)
+mr_init_struct (mr_td_t * tdp)
 {
   int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
   for (i = 0; i < count; ++i)
@@ -1540,6 +1546,7 @@ mr_detect_fields_types (mr_td_t * tdp)
 	  break;
 	case MR_TYPE_POINTER:
 	  mr_fd_init_pointer_params (fdp, INVALID_POINTER_AUX_TYPE, fdp->param.pointer_param.pointer_param);
+
 	  if (fdp->param.pointer_param.pointer_param)
 	    fdp->param.pointer_param.pointer_param->res_type = NULL; /* size specification should work only for a top level pointer */
 	  break;
@@ -1557,8 +1564,6 @@ mr_detect_fields_types (mr_td_t * tdp)
   */
   if (tdp->mr_type == MR_TYPE_STRUCT)
     mr_hsort (tdp->fields, count, sizeof (tdp->fields[0]), mr_fd_offset_cmp_sorting, NULL);
-  else if (tdp->mr_type == MR_TYPE_ENUM)
-    mr_add_enum (tdp);
 }
 
 /**
@@ -1664,7 +1669,7 @@ mr_add_type (mr_td_t * tdp)
   int count;
 
   if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
-    mr_ic_new (&mr_conf.enum_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
+    mr_ic_new (&mr_conf.enum_by_name, mr_ed_name_get_hash, mr_ed_name_cmp, "mr_ed_t", MR_IC_HASH, NULL);
 
   if (MR_IC_UNINITIALIZED == mr_conf.type_by_name.ic_type)
     mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
@@ -1684,22 +1689,22 @@ mr_add_type (mr_td_t * tdp)
   if (mr_get_td_by_name (tdp->type.str))
     return (MR_SUCCESS); /* this type is already registered */
 
-  for (count = 0; ; ++count)
+  if ((tdp->mr_type == MR_TYPE_STRUCT)
+      || (tdp->mr_type == MR_TYPE_UNION)
+      || (tdp->mr_type == MR_TYPE_ANON_UNION)
+      || (tdp->mr_type == MR_TYPE_NAMED_ANON_UNION)
+      )
     {
-      mr_fd_t * fdp = tdp->fields[count];
-      if (NULL == fdp)
-	return (MR_FAILURE);
-      if (MR_TYPE_LAST == fdp->mr_type)
-	break;
+      for (count = 0; tdp->fields[count] != NULL; ++count);
+      tdp->fields_size = count * sizeof (tdp->fields[0]);
+
+      if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
+	status = MR_FAILURE;
+
+      mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
+      if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, (mr_ptr_t*)tdp->fields, tdp->fields_size))
+	status = MR_FAILURE;
     }
-  tdp->fields_size = count * sizeof (tdp->fields[0]);
-
-  if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
-    status = MR_FAILURE;
-
-  mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
-  if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, (mr_ptr_t*)tdp->fields, tdp->fields_size))
-    status = MR_FAILURE;
 
   if (NULL == mr_ic_add (&mr_conf.type_by_name, tdp))
     status = MR_FAILURE;
@@ -1860,9 +1865,25 @@ mr_conf_init ()
 	  int i, count = types_rarray.mr_size / sizeof (*tdp_list);
 	  for (i = 0; i < count; ++i)
 	    {
-	      mr_detect_fields_types (tdp_list[i].tdp);
-	      mr_td_detect_res_size (tdp_list[i].tdp);
-	      mr_register_type_pointer (tdp_list[i].tdp);
+	      mr_td_t * tdp = tdp_list[i].tdp;
+	      switch (tdp->mr_type)
+		{
+		case MR_TYPE_STRUCT:
+		case MR_TYPE_UNION:
+		case MR_TYPE_ANON_UNION:
+		case MR_TYPE_NAMED_ANON_UNION:
+		  mr_init_struct (tdp);
+		  break;
+
+		case MR_TYPE_ENUM:
+		  mr_init_enum (tdp);
+		  break;
+
+		default:
+		  break;
+		}
+	      mr_td_detect_res_size (tdp);
+	      mr_register_type_pointer (tdp);
 	    }
 
 	  for (i = 0; i < count; ++i)

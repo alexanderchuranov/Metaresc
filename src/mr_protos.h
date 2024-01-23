@@ -59,7 +59,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_RANGE_CHECK, , "Range check error in array '%s'."),
 	      (MR_MESSAGE_READ_REF, , "Can't read '%s' as index."),
 	      (MR_MESSAGE_SAVE_ENUM, , "Can't find enum name for value %" SCNu64 " type '%s' field '%s'."),
-	      (MR_MESSAGE_CONFLICTED_ENUMS, , "Literal enum `%s` has a different value in types '%s' (%" SCNu64") and '%s' (%" SCNu64 ")."),
+	      (MR_MESSAGE_CONFLICTED_ENUMS, , "Literal enum `%s` has a different value in type '%s': %" SCNu64" != %" SCNu64 "."),
 	      (MR_MESSAGE_CONFLICTED_OVERRIDES, , "Overrides for value %" SCNu64 " has two different discriminators '%s' and '%s'."),
 	      (MR_MESSAGE_INVALID_OVERRIDE, , "Override for value %" SCNu64 " has invalid discriminator '%s'."),
 	      (MR_MESSAGE_PARSE_ERROR, , "Parser error: '%s'. Position: %d:%d-%d:%d."),
@@ -92,16 +92,16 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_CHAR,
 	      MR_TYPE_VOID,
 	      MR_TYPE_BOOL,
-	      (MR_TYPE_INT8, , "_signed"),
-	      (MR_TYPE_UINT8, , "_unsigned"),
-	      (MR_TYPE_INT16, , "_signed"),
-	      (MR_TYPE_UINT16, , "_unsigned"),
-	      (MR_TYPE_INT32, , "_signed"),
-	      (MR_TYPE_UINT32, , "_unsigned"),
-	      (MR_TYPE_INT64, , "_signed"),
-	      (MR_TYPE_UINT64, , "_unsigned"),
-	      (MR_TYPE_INT128, , "_signed"),
-	      (MR_TYPE_UINT128, , "_unsigned"),
+	      MR_TYPE_INT8,
+	      MR_TYPE_UINT8,
+	      MR_TYPE_INT16,
+	      MR_TYPE_UINT16,
+	      MR_TYPE_INT32,
+	      MR_TYPE_UINT32,
+	      MR_TYPE_INT64,
+	      MR_TYPE_UINT64,
+	      MR_TYPE_INT128,
+	      MR_TYPE_UINT128,
 	      MR_TYPE_FLOAT,
 	      MR_TYPE_COMPLEX_FLOAT,
 	      MR_TYPE_DOUBLE,
@@ -191,17 +191,21 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(bool, initialized, , "flag that width and shift are initialized"),
 		)
 
+TYPEDEF_STRUCT (mr_structured_type_t, ATTRIBUTES ( , "structured type"),
+		(struct mr_td_t *, tdp, , "type descriptor"),
+		(char *, type, , "stringified type name"),
+		(mr_size_t, size, , "type size"),
+		(mr_type_t, mr_type, , "Metaresc type"),
+		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
+		(mr_type_t, mr_type_ptr, , "Metaresc type to detect pointers on basic type"),
+		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
+		)
+
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
-		(struct mr_fd_t *, args, , "function arguments descriptors saved as resizable array of field descriptors",
+		(mr_structured_type_t **, args, , "function arguments saved as resizable array of pointers on structured types",
 		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
 		(size_t, size, , "size of args array"),
 		)
-
-TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enum"),
-	       VOID (uint64_t, default_serialization),
-	       (uint64_t, _unsigned),
-	       (int64_t, _signed),
-	       )
 
 TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
 
@@ -330,10 +334,9 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       VOID (uint8_t, default_serialization, , "default serialization is empty"),
 	       (mr_array_param_t, array_param, , "array parameters"),
-	       (mr_enum_value_t, enum_param, , "mr_type_aux"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
-	       (mr_pointer_param_t, pointer_param, , "mr_type_aux"),
+	       (mr_pointer_param_t, pointer_param, , "extra parameters for pointers"),
 	       (mr_ic_t *, union_param, , "indexed collection with union descriminators overrides"),
 	       )
 
@@ -368,10 +371,42 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		)
 
+#define MR_ENUM_VALUE_UDO					\
+  (mr_ud_override_t[]) {					\
+    { MR_TYPE_INT8, "_signed" },				\
+      { MR_TYPE_UINT8, "_unsigned" },				\
+      { MR_TYPE_INT16, "_signed" },				\
+      { MR_TYPE_UINT16, "_unsigned" },				\
+      { MR_TYPE_INT32, "_signed" },				\
+      { MR_TYPE_UINT32, "_unsigned" },				\
+      { MR_TYPE_INT64, "_signed" },				\
+      { MR_TYPE_UINT64, "_unsigned" },				\
+      { MR_TYPE_INT128, "_signed" },				\
+      { MR_TYPE_UINT128, "_unsigned" },				\
+      }
+
+TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enum"),
+	       VOID (uint64_t, default_serialization),
+	       (uint64_t, _unsigned),
+	       (int64_t, _signed),
+	       )
+
+TYPEDEF_STRUCT (mr_ed_t, ATTRIBUTES ( , "Metaresc enum descriptor"),
+		(mr_hashed_string_t, name, , "hashed name of the field"),
+		(mr_type_t, mr_type, , "how many bits and signedness of the value"),
+		(mr_enum_value_t, value, , "mr_type", { MR_ENUM_VALUE_UDO }, "mr_ud_override_t", sizeof (MR_ENUM_VALUE_UDO)),
+		(char *, meta, , "field meta info"),
+		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
+		(char *, res_type, , "union discriminator"),
+		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
+		)
+
 TYPEDEF_STRUCT (mr_enum_param_t,
 		(uint8_t, size_effective, , "effective size"),
-		BITFIELD (mr_type_t, mr_type_effective, : __CHAR_BIT__ - 1, "automatic type detection is required for enums size adjustment"),
-		BITFIELD (bool, is_bitmask, : 1, "set to true if all enum values are power of 2"),
+		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
+		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
+		(mr_ed_t **, enums, , "fields or enums descriptors", { .offset = offsetof (mr_enum_param_t, enums_size) }, "offset"),
+		(ssize_t, enums_size, , "size of 'enums' array"),
 		)
 
 TYPEDEF_UNION (mr_td_param_t,
@@ -381,8 +416,9 @@ TYPEDEF_UNION (mr_td_param_t,
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
-		(mr_type_t, mr_type, , "Metaresc type"), /* possible variants MR_TYPE_ENUM, MR_TYPE_STRUCT, MR_TYPE_UNION */
+		(mr_type_t, mr_type, , "Metaresc type"),
 		(bool, is_dynamically_allocated, , "mark types that require free at exit"),
+		(mr_fd_t, mr_ptr_fd, , "field descriptor for mr_ptr_t"),
 		(mr_td_param_t, param, , "mr_type"),
 		(mr_size_t, size, , "size of type"),
 		(mr_ic_t, field_by_name, , "lookup by field names"),
@@ -400,8 +436,8 @@ TYPEDEF_STRUCT (mr_td_ptr_t, ATTRIBUTES ( , "wrapper for mr_td_t"),
 
 TYPEDEF_STRUCT (mr_basic_type_td_t, ATTRIBUTES ( , "Stucture for bulk allocation of type descriptor and sentinel field descriptor"),
 		(mr_td_t, td, , "type descriptor"),
-		(mr_fd_t, fd, [1], "sentinel field descriptor"),
-		(mr_fd_t *, fd_ptr, , "array of single pointer on field descriptor for 'fields' initialization"),
+		(mr_fd_t, fd, [0], "field descriptors"),
+		(mr_fd_t *, fd_ptr, , "array of pointers on field descriptor for 'fields' initialization"),
 		)
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
@@ -595,7 +631,7 @@ TYPEDEF_STRUCT (mr_get_struct_type_name_t, ATTRIBUTES ( , "long jump buffer and 
 TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type detection with __builtin_dump_struct"),
 		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
 		(void *, struct_ptr, , "pointer on a sample struct variable"),
-		(mr_td_t *, tdp, , "type desctiptor"),
+		(mr_basic_type_td_t *, btdp, , "memory for type desctiptor and 'fields'"),
 		(int, offset_byte, , "which byte of offset is set in struct"),
 		)
 

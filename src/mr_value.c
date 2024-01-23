@@ -14,8 +14,8 @@
 static mr_status_t
 enum_names_visitor (mr_ptr_t key, const void * context)
 {
-  mr_fd_t * enum_fdp = key.ptr;
-  int enum_name_length = strlen (enum_fdp->name.str);
+  mr_ed_t * edp = key.ptr;
+  int enum_name_length = strlen (edp->name.str);
   int * enum_max_length = (int*)context;
   if (enum_name_length > *enum_max_length)
     *enum_max_length = enum_name_length;
@@ -58,13 +58,13 @@ mr_get_enum (char * str, mr_uintmax_t * data)
     *data = true;
   else
     {
-      mr_fd_t * fdp = mr_get_enum_by_name (name_);
-      if (NULL == fdp)
+      mr_ed_t * edp = mr_get_enum_by_name (name_);
+      if (NULL == edp)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
 	  return (NULL);
 	}
-      *data = fdp->param.enum_param._unsigned;
+      *data = edp->value._unsigned;
     }
   return (str);
 }
@@ -237,9 +237,9 @@ static mr_status_t
 mr_value_id_to_int (char * str, void * arg)
 {
   mr_value_t * mr_value = arg;
-  mr_fd_t * fdp = mr_get_enum_by_name (str);
+  mr_ed_t * edp = mr_get_enum_by_name (str);
     
-  if (NULL == fdp)
+  if (NULL == edp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, str);
       return (MR_FAILURE);
@@ -247,27 +247,28 @@ mr_value_id_to_int (char * str, void * arg)
   
   mr_value->value_type = MR_VT_INT;
 
-  switch (fdp->mr_type_aux)
+  switch (edp->mr_type)
     {
     case MR_TYPE_INT8:
     case MR_TYPE_INT16:
     case MR_TYPE_INT32:
     case MR_TYPE_INT64:
-      mr_value->vt_int = fdp->param.enum_param._signed;
+      mr_value->vt_int = edp->value._signed;
       break;
 
     case MR_TYPE_UINT8:
     case MR_TYPE_UINT16:
     case MR_TYPE_UINT32:
     case MR_TYPE_UINT64:
-      mr_value->vt_int = fdp->param.enum_param._unsigned;
+      mr_value->vt_int = edp->value._unsigned;
       break;
 
     default:
-      mr_value->vt_int = fdp->param.enum_param._unsigned;
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_BAD_ENUM_TYPE, fdp->mr_type_aux);
+      mr_value->vt_int = edp->value._unsigned;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_BAD_ENUM_TYPE, edp->mr_type);
       return (MR_FAILURE);
     }
+
   return (MR_SUCCESS);
 }
 

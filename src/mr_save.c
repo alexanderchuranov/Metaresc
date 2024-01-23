@@ -90,8 +90,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	      if (MR_TYPE_ENUM == enum_tdp->mr_type)
 		{
 		  /* if bitfield is a enumeration then get named discriminator from enum value meta field */
-		  mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value);
-		  return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
+		  mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, value);
+		  return (mr_union_discriminator_by_name (tdp, edp ? edp->meta : NULL));
 		}
 	    
 	    return (mr_union_discriminator_by_idx (tdp, value));
@@ -110,8 +110,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
 	    if (fdp)
 	      return (fdp);
-	    mr_fd_t * enum_fdp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
-	    return (mr_union_discriminator_by_name (tdp, enum_fdp ? enum_fdp->meta : NULL));
+	    mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
+	    return (mr_union_discriminator_by_name (tdp, edp ? edp->meta : NULL));
 	  }
 	    
 	case MR_TYPE_ARRAY:
