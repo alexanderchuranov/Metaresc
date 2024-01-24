@@ -100,6 +100,7 @@ static mr_ptr_t kv[] = {
 START_TEST (ic_index_order)
 {
   int ic_type;
+  mr_conf_init ();
   for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
     if (mr_ic_types[ic_type] != NULL)
       {

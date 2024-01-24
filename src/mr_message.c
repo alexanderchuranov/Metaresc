@@ -53,7 +53,7 @@ mr_message_format (mr_message_id_t message_id, va_list args)
 
   if (!messages_inited)
     {
-      mr_td_t * tdp = mr_get_td_by_name ("mr_message_id_t");
+      mr_td_t * tdp = mr_get_td_by_name_internal ("mr_message_id_t");
       if (tdp)
 	{
 	  int i;

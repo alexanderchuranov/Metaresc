@@ -1308,7 +1308,7 @@ main (int argc, char * argv [])
       fprintf (stderr, "Usage: %s filename\n", argv[0]);
       return (EXIT_FAILURE);
     }
-  
+
   mr_status_t status = mr_ic_new (&mr_type_sign_ic, mr_type_sign_hash, mr_type_sign_cmp, "mr_type_sign_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
   status = mr_ic_index (&mr_type_sign_ic, (mr_ptr_t*)mr_type_sign, sizeof (mr_type_sign));

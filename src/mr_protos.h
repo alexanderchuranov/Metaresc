@@ -433,11 +433,8 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
+		(mr_td_t *, next, , "single linked list"),
 		) /* type descriptor */
-
-TYPEDEF_STRUCT (mr_td_ptr_t, ATTRIBUTES ( , "wrapper for mr_td_t"),
-		(mr_td_t *, tdp, , "wrapper for mr_td_t pointer type")
-		)
 
 TYPEDEF_STRUCT (mr_basic_type_td_t, ATTRIBUTES ( , "Stucture for bulk allocation of type descriptor and sentinel field descriptor"),
 		(mr_td_t, td, , "type descriptor"),
@@ -644,6 +641,7 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(bool, cache_func_resolve, , "global knob to enable dladdr caching"),
+		(mr_td_t *, list, , "linked list of all type descriptors"),
 		(mr_msg_handler_t, msg_handler),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
 		(mr_ic_t, fields_names, , "index of all fields names"),

@@ -141,7 +141,6 @@ mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_typ
     .free = mr_ic_unsorted_array_free,
   };
   mr_res_t generic_context = {
-    .data = { mr_get_td_by_name (key_type) },
     .type = "mr_td_t",
     .mr_size = sizeof (mr_td_t),
   };
@@ -149,11 +148,15 @@ mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_typ
   if (NULL == ic)
     return (MR_FAILURE);
 
-  if ((compar_fn == NULL) && (context == NULL) &&
-      (generic_context.data.ptr != NULL))
+  if ((compar_fn == NULL) && (context == NULL))
     {
-      compar_fn = mr_generic_cmp;
-      context = &generic_context;
+      mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
+      if (tdp)
+	{
+	  generic_context.data.ptr = tdp;
+	  compar_fn = mr_generic_cmp;
+	  context = &generic_context;
+	}
     }
 
   if (NULL == compar_fn)
@@ -327,7 +330,6 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
     .free = mr_ic_sorted_array_free,
   };
   mr_res_t generic_context = {
-    .data = { mr_get_td_by_name (key_type) },
     .type = "mr_td_t",
     .mr_size = sizeof (mr_td_t),
   };
@@ -335,11 +337,15 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
   if (NULL == ic)
     return (MR_FAILURE);
 
-  if ((compar_fn == NULL) && (context == NULL) &&
-      (generic_context.data.ptr != NULL))
+  if ((compar_fn == NULL) && (context == NULL))
     {
-      compar_fn = mr_generic_cmp;
-      context = &generic_context;
+      mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
+      if (tdp)
+	{
+	  generic_context.data.ptr = tdp;
+	  compar_fn = mr_generic_cmp;
+	  context = &generic_context;
+	}
     }
   
   if (NULL == compar_fn)
@@ -592,17 +598,20 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
     .free = mr_ic_hash_free,
   };
   mr_res_t generic_context = {
-    .data = { mr_get_td_by_name (key_type) },
     .type = "mr_td_t",
     .mr_size = sizeof (mr_td_t),
   };
 
-  if ((NULL == compar_fn) && (context == NULL) && (NULL == hash_fn) &&
-      (generic_context.data.ptr != NULL))
+  if ((compar_fn == NULL) && (context == NULL) && (NULL == hash_fn))
     {
-      hash_fn = mr_generic_hash;
-      compar_fn = mr_generic_cmp;
-      context = &generic_context;
+      mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
+      if (tdp)
+	{
+	  generic_context.data.ptr = tdp;
+	  hash_fn = mr_generic_hash;
+	  compar_fn = mr_generic_cmp;
+	  context = &generic_context;
+	}
     }
   
   if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
@@ -734,7 +743,6 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
     .free = mr_ic_static_array_free,
   };
   mr_res_t generic_context = {
-    .data = { mr_get_td_by_name (key_type) },
     .type = "mr_td_t",
     .mr_size = sizeof (mr_td_t),
   };
@@ -742,11 +750,15 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
   if (NULL == ic)
     return (MR_FAILURE);
 
-  if ((compar_fn == NULL) && (context == NULL) &&
-      (generic_context.data.ptr != NULL))
+  if ((compar_fn == NULL) && (context == NULL))
     {
-      compar_fn = mr_generic_cmp;
-      context = &generic_context;
+      mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
+      if (tdp)
+	{
+	  generic_context.data.ptr = tdp;
+	  compar_fn = mr_generic_cmp;
+	  context = &generic_context;
+	}
     }
   
   if (NULL == compar_fn)
@@ -843,7 +855,6 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
     .free = mr_ic_tree_free,
   };
   mr_res_t generic_context = {
-    .data = { mr_get_td_by_name (key_type) },
     .type = "mr_td_t",
     .mr_size = sizeof (mr_td_t),
   };
@@ -851,11 +862,15 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
   if (NULL == ic)
     return (MR_FAILURE);
 
-  if ((compar_fn == NULL) && (context == NULL) &&
-      (generic_context.data.ptr != NULL))
+  if ((compar_fn == NULL) && (context == NULL))
     {
-      compar_fn = mr_generic_cmp;
-      context = &generic_context;
+      mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
+      if (tdp)
+	{
+	  generic_context.data.ptr = tdp;
+	  compar_fn = mr_generic_cmp;
+	  context = &generic_context;
+	}
     }
   
   if (NULL == compar_fn)
@@ -907,7 +922,6 @@ mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_r
     .free = mr_ic_tree_free,
   };
   mr_res_t generic_context = {
-    .data = { mr_get_td_by_name (key_type) },
     .type = "mr_td_t",
     .mr_size = sizeof (mr_td_t),
   };
@@ -915,11 +929,15 @@ mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_r
   if (NULL == ic)
     return (MR_FAILURE);
 
-  if ((compar_fn == NULL) && (context == NULL) &&
-      (generic_context.data.ptr != NULL))
+  if ((compar_fn == NULL) && (context == NULL))
     {
-      compar_fn = mr_generic_cmp;
-      context = &generic_context;
+      mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
+      if (tdp)
+	{
+	  generic_context.data.ptr = tdp;
+	  compar_fn = mr_generic_cmp;
+	  context = &generic_context;
+	}
     }
   
   if (NULL == compar_fn)

@@ -102,6 +102,7 @@ START_TEST (pointer_match_another_pointer) {
   mr_td_t * string_tdp = mr_get_td_by_name ("string_t");
   orig.y = orig.x;
   mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_str_t, &orig);
+
   if (ptrs.ra != NULL)
     {
       int i, count = 0;

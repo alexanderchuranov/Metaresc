@@ -24,6 +24,8 @@ static void
 compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
   int i, j, named_anon_union_count = 0;
+  dw_td->param.struct_param.fields_size -= sizeof (dw_td->param.struct_param.fields[0]);
+
   for (i = mr_td->param.struct_param.fields_size / sizeof (mr_td->param.struct_param.fields[0]) - 1; i >= 0; --i)
     {
       mr_fd_t * mr_fdp = mr_td->param.struct_param.fields[i];
@@ -129,6 +131,8 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 static void
 compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
+  dw_td->param.enum_param.enums_size -= sizeof (dw_td->param.enum_param.enums[0]);
+
   ck_assert_msg (mr_td->param.enum_param.mr_type_effective == dw_td->param.enum_param.mr_type_effective,
 		 "DWARF descriptor for type '%s' mismatched builtin: effective mr_type %d != %d",
 		 mr_td->type.str, (int)mr_td->param.enum_param.mr_type_effective, (int)dw_td->param.enum_param.mr_type_effective);
@@ -179,17 +183,13 @@ check_td (mr_ptr_t key, const void * context)
       ck_assert_msg (dw_td->size == mr_td->size, "DWARF descriptor for type '%s' mismatched builtin: type size %d != %d",
 		     mr_td->type.str, (int)dw_td->size, (int)mr_td->size);
 
-      dw_td->param.struct_param.fields_size -= sizeof (dw_td->param.struct_param.fields[0]);
-  
       switch (mr_td->mr_type)
 	{
 	case MR_TYPE_STRUCT:
 	case MR_TYPE_UNION:
-	  mr_init_struct (dw_td);
 	  compare_fields_meta (mr_td, dw_td);
 	  break;
 	case MR_TYPE_ENUM:
-	  mr_init_enum (dw_td);
 	  compare_enum_meta (mr_td, dw_td);
 	  break;
 	default:

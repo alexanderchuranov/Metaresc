@@ -58,6 +58,8 @@ START_TEST (generic_ic) {
   static char * mr_ic_types[] = { MR_FOREACH (MR_IC_INIT, UNSORTED_ARRAY, SORTED_ARRAY, STATIC_ARRAY, HASH, RBTREE, AVLTREE) };
   int ic_type, mr_type;
 
+  mr_conf_init ();
+
   for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
     if (mr_ic_types[ic_type] != NULL)
       for (mr_type = 0; mr_type < sizeof (type_samples) / sizeof (type_samples[0]); ++mr_type)

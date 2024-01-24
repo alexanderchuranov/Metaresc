@@ -1402,7 +1402,7 @@ extern int mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const
 
 extern int mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...);
 
-extern mr_status_t mr_add_type (mr_td_t * tdp);
+extern void mr_add_type (mr_td_t * tdp);
 extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
@@ -1443,8 +1443,6 @@ extern char * mr_strndup (const char * str, size_t size);
 extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
-extern void mr_init_struct (mr_td_t * tdp);
-extern void mr_init_enum (mr_td_t * tdp);
 #define MR_IS_STRING(X) __builtin_types_compatible_p (char, __typeof__ (*__builtin_choose_expr ((__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS) || (__builtin_classify_type (X) == MR_ARRAY_TYPE_CLASS), X, NULL)))
 #define MR_AND_IS_STRING(X) && MR_IS_STRING (X)
 #define MR_VALIDATE_ALL_ARGS_ARE_STRINGS(...) (void*) (0 / (true MR_FOREACH (MR_AND_IS_STRING, __VA_ARGS__)))
@@ -1463,6 +1461,7 @@ extern mr_ed_t * mr_get_enum_by_name (char * name);
 extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
 extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value);
 extern mr_td_t * mr_get_td_by_name (char * type);
+extern mr_td_t * mr_get_td_by_name_internal (char * type);
 extern char * mr_message_format (mr_message_id_t message_id, va_list args);
 extern void mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, ...);
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);

@@ -697,7 +697,7 @@ mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
  * @return pointer on type descriptor
  */
 mr_td_t *
-mr_get_td_by_name (char * type)
+mr_get_td_by_name_internal (char * type)
 {
   mr_hashed_string_t hashed_type = { .str = type, .hash_value = mr_hash_str (type), };
   uintptr_t key = (uintptr_t)&hashed_type - offsetof (mr_td_t, type);
@@ -705,6 +705,14 @@ mr_get_td_by_name (char * type)
   return (result ? result->ptr : NULL);
 }
 
+mr_td_t *
+mr_get_td_by_name (char * type)
+{
+  mr_conf_init ();
+  return (mr_get_td_by_name_internal (type));
+}
+
+static void mr_init_struct (mr_td_t * tdp); /* recursive call */
 /**
  * Preprocessign of a new type. Anonymous unions should be extracted into new independant types.
  * @param tdp pointer on a new type descriptor
@@ -791,8 +799,9 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	      
 	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
-	    if (MR_SUCCESS != mr_add_type (tdp_))
-	      return (MR_FAILURE);
+	    mr_init_struct (tdp_);
+	    mr_ic_add (&mr_conf.type_by_name, tdp_);
+	    mr_add_type (tdp_);
 	  }
 	}
     }
@@ -874,8 +883,10 @@ mr_ed_enum_value_cmp_sorting (mr_ptr_t x, mr_ptr_t y, const void * context)
 void
 mr_init_enum (mr_td_t * tdp)
 {
-  int i, count;
+  if (tdp->mr_type != MR_TYPE_ENUM)
+    return;
 
+  int i, count;
   for (count = 0; tdp->param.enum_param.enums[count] != NULL; ++count)
     tdp->param.enum_param.enums[count]->mr_type = tdp->param.enum_param.mr_type_effective;
   tdp->param.enum_param.enums_size = count * sizeof (tdp->param.enum_param.enums[0]);
@@ -1134,7 +1145,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   /* check that mr_ptr_t have already a registered */
   if (NULL == union_tdp)
     {
-      union_tdp = mr_get_td_by_name ("mr_ptr_t");
+      union_tdp = mr_get_td_by_name_internal ("mr_ptr_t");
       if (NULL == union_tdp)
 	return (MR_SUCCESS);
     }
@@ -1250,7 +1261,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   mr_normalize_type (type);
   mr_type_is_an_array (fdp, type);
 
-  mr_td_t * tdp = mr_get_td_by_name (type);
+  mr_td_t * tdp = mr_get_td_by_name_internal (type);
   if (NULL == tdp)
     {
       if ((MR_BASIC_TYPES >> fdp->mr_type) & 1)
@@ -1265,7 +1276,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	  else
 	    fdp->mr_type = MR_TYPE_POINTER;
 
-	  tdp = mr_get_td_by_name (type);
+	  tdp = mr_get_td_by_name_internal (type);
 	  if (NULL == tdp)
 	    {
 	      if (fdp->mr_type == MR_TYPE_ARRAY)
@@ -1280,7 +1291,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 		  else if (mr_type_is_a_pointer (type))
 		    {
 		      fdp->mr_type_aux = MR_TYPE_POINTER;
-		      tdp = mr_get_td_by_name (type);
+		      tdp = mr_get_td_by_name_internal (type);
 		    }
 		}
 	    }
@@ -1360,7 +1371,7 @@ mr_fd_detect_res_size (mr_fd_t * fdp)
 {
   if ((0 == fdp->MR_SIZE) && (fdp->res_type != NULL) && (fdp->res.ptr != NULL))
     {
-      mr_td_t * res_tdp = mr_get_td_by_name (fdp->res_type);
+      mr_td_t * res_tdp = mr_get_td_by_name_internal (fdp->res_type);
       if (res_tdp != NULL)
 	fdp->MR_SIZE = res_tdp->size;
     }
@@ -1505,15 +1516,36 @@ mr_normalize_field_name (mr_fd_t * fdp)
     }
 }
 
+#define MR_VALID_STRUCT_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
+
 /**
  * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
  * @param tdp pointer on a type descriptor
  * @param args auxiliary arguments
  * @return status
  */
-void
+static void
 mr_init_struct (mr_td_t * tdp)
 {
+  if (!((MR_VALID_STRUCT_TYPES >> tdp->mr_type) & 1))
+    return;
+
+  int count;
+  for (count = 0; tdp->param.struct_param.fields[count] != NULL; ++count);
+  tdp->param.struct_param.fields_size = count * sizeof (tdp->param.struct_param.fields[0]);
+
+  mr_anon_unions_extract (tdp); /* important to extract unions before building index over fields */
+
+  mr_ic_new (&tdp->param.struct_param.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
+  mr_ic_index (&tdp->param.struct_param.field_by_name, (mr_ptr_t*)tdp->param.struct_param.fields, tdp->param.struct_param.fields_size);
+}
+
+static void
+mr_detect_struct_fields (mr_td_t * tdp)
+{
+  if (!((MR_VALID_STRUCT_TYPES >> tdp->mr_type) & 1))
+    return;
+
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     {
@@ -1595,7 +1627,7 @@ mr_type_void_fields_impl (char * type, char * name, ...)
       return;
     }
   
-  mr_td_t * tdp = mr_get_td_by_name (type);
+  mr_td_t * tdp = mr_get_td_by_name_internal (type);
   if (tdp == NULL)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
@@ -1660,58 +1692,17 @@ mr_get_static_field_name_from_substring (mr_substr_t * substr)
 /**
  * Add type description into repository
  * @param tdp a pointer on statically initialized type descriptor
- * @return status
  */
-mr_status_t
+void
 mr_add_type (mr_td_t * tdp)
 {
-  mr_status_t status = MR_SUCCESS;
-  int count;
-
-  if (MR_IC_UNINITIALIZED == mr_conf.enum_by_name.ic_type)
-    mr_ic_new (&mr_conf.enum_by_name, mr_ed_name_get_hash, mr_ed_name_cmp, "mr_ed_t", MR_IC_HASH, NULL);
-
-  if (MR_IC_UNINITIALIZED == mr_conf.type_by_name.ic_type)
-    mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
-  
-  if (MR_IC_UNINITIALIZED == mr_conf.fields_names.ic_type)
-    mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH, NULL);
-
   if (NULL == tdp)
-    return (MR_FAILURE);
+    return;
   if (MR_TYPE_NONE == tdp->mr_type)
-    return (MR_SUCCESS); /* skip types that were not properly detected */
+    return; /* skip types that were not properly detected */
 
-  mr_normalize_type (tdp->type.str);
-  tdp->type.hash_value = 0;
-
-  /* check whether this type is already in the list */
-  if (mr_get_td_by_name (tdp->type.str))
-    return (MR_SUCCESS); /* this type is already registered */
-
-  if ((tdp->mr_type == MR_TYPE_STRUCT)
-      || (tdp->mr_type == MR_TYPE_UNION)
-      || (tdp->mr_type == MR_TYPE_ANON_UNION)
-      || (tdp->mr_type == MR_TYPE_NAMED_ANON_UNION)
-      )
-    {
-      for (count = 0; tdp->param.struct_param.fields[count] != NULL; ++count);
-      tdp->param.struct_param.fields_size = count * sizeof (tdp->param.struct_param.fields[0]);
-
-      if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
-	status = MR_FAILURE;
-
-      mr_ic_new (&tdp->param.struct_param.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
-      if (MR_SUCCESS != mr_ic_index (&tdp->param.struct_param.field_by_name,
-				     (mr_ptr_t*)tdp->param.struct_param.fields,
-				     tdp->param.struct_param.fields_size))
-	status = MR_FAILURE;
-    }
-
-  if (NULL == mr_ic_add (&mr_conf.type_by_name, tdp))
-    status = MR_FAILURE;
-
-  return (status);
+  tdp->next = mr_conf.list;
+  mr_conf.list = tdp;
 }
 
 static void
@@ -1719,7 +1710,7 @@ mr_td_detect_res_size (mr_td_t * tdp)
 {
   if ((0 == tdp->MR_SIZE) && (tdp->res_type != NULL) && (tdp->res.ptr != NULL))
     {
-      mr_td_t * res_tdp = mr_get_td_by_name (tdp->res_type);
+      mr_td_t * res_tdp = mr_get_td_by_name_internal (tdp->res_type);
       if (res_tdp != NULL)
 	tdp->MR_SIZE = res_tdp->size;
     }
@@ -1730,7 +1721,7 @@ mr_validate_fd (mr_fd_t * fdp)
 {
   mr_status_t status = MR_SUCCESS;
   if (fdp->tdp == NULL)
-    fdp->tdp = mr_get_td_by_name (fdp->type);
+    fdp->tdp = mr_get_td_by_name_internal (fdp->type);
 
   switch (fdp->mr_type)
     {
@@ -1825,24 +1816,15 @@ mr_validate_fd (mr_fd_t * fdp)
   return (status);
 }
 
-static mr_status_t
+static void
 mr_validate_td (mr_td_t * tdp)
 {
+  if (!((MR_VALID_STRUCT_TYPES >> tdp->mr_type) & 1))
+    return;
+
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     mr_validate_fd (tdp->param.struct_param.fields[i]);
-  return (MR_SUCCESS);
-}
-
-static mr_status_t
-mr_append_to_rarray (mr_ptr_t key, const void * context)
-{
-  mr_rarray_t * rarray = (mr_rarray_t*)context;
-  mr_ptr_t * slot = mr_rarray_append (rarray, sizeof (*slot));
-  if (NULL == slot)
-    return (MR_FAILURE);
-  *slot = key;
-  return (MR_SUCCESS);
 }
 
 inline void
@@ -1856,43 +1838,36 @@ mr_conf_init ()
 
   if (!__atomic_test_and_set (&init_in_progress, __ATOMIC_RELAXED))
     {
-      mr_rarray_t types_rarray;
-      memset (&types_rarray, 0, sizeof (types_rarray));
-      types_rarray.type = "mr_td_ptr_t";
+      mr_ic_new (&mr_conf.enum_by_name, mr_ed_name_get_hash, mr_ed_name_cmp, "mr_ed_t", MR_IC_HASH, NULL);
+      mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
+      mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH, NULL);
 
-      mr_ic_foreach (&mr_conf.type_by_name, mr_append_to_rarray, &types_rarray);
-      mr_td_ptr_t * tdp_list = types_rarray.data.ptr;
-      if (tdp_list)
+      mr_td_t * tdp;
+      for (tdp = mr_conf.list; tdp; tdp = tdp->next)
 	{
-	  int i, count = types_rarray.mr_size / sizeof (*tdp_list);
-	  for (i = 0; i < count; ++i)
-	    {
-	      mr_td_t * tdp = tdp_list[i].tdp;
-	      switch (tdp->mr_type)
-		{
-		case MR_TYPE_STRUCT:
-		case MR_TYPE_UNION:
-		case MR_TYPE_ANON_UNION:
-		case MR_TYPE_NAMED_ANON_UNION:
-		  mr_init_struct (tdp);
-		  break;
+	  mr_normalize_type (tdp->type.str);
+	  tdp->type.hash_value = 0;
 
-		case MR_TYPE_ENUM:
-		  mr_init_enum (tdp);
-		  break;
+	  /* check whether this type is already in the list */
+	  if (mr_get_td_by_name_internal (tdp->type.str))
+	    continue; /* this type is already registered */
 
-		default:
-		  break;
-		}
-	      mr_td_detect_res_size (tdp);
-	      mr_register_type_pointer (tdp);
-	    }
-
-	  for (i = 0; i < count; ++i)
-	    mr_validate_td (tdp_list[i].tdp);
-
-	  MR_FREE (tdp_list);
+	  mr_init_struct (tdp);
+	  mr_init_enum (tdp);
+	  mr_ic_add (&mr_conf.type_by_name, tdp);
 	}
+
+      for (tdp = mr_conf.list; tdp; tdp = tdp->next)
+	{
+	  if (tdp != mr_get_td_by_name_internal (tdp->type.str))
+	    continue; /* this type is a duplicate */
+
+	  mr_detect_struct_fields (tdp);
+	  mr_td_detect_res_size (tdp);
+	  mr_register_type_pointer (tdp);
+	  mr_validate_td (tdp);
+	}
+
       initialized = true;
     }
   while (!initialized);

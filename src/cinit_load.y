@@ -141,7 +141,7 @@ value
   char type[$1.length + 1];
   memcpy (type, $1.str, $1.length);
   type[$1.length] = 0;
-  mr_td_t * tdp = mr_get_td_by_name (type);
+  mr_td_t * tdp = mr_get_td_by_name_internal (type);
   if (tdp != NULL)
     {
       mr_load->ptrs->ra[mr_load->parent].tdp = tdp;
