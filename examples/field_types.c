@@ -23,10 +23,10 @@ int main ()
       return (EXIT_FAILURE);
     }
 
-  count = tdp->fields_size / sizeof (tdp->fields[0]);
+  count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i];
+      mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       printf("\t%d: name = %s, type = %s, size = %zu bytes\n",
 	     i, fdp->name.str, fdp->type, fdp->size);
     }

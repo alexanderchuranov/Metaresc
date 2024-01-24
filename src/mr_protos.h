@@ -108,7 +108,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_COMPLEX_DOUBLE,
 	      MR_TYPE_LONG_DOUBLE,
 	      MR_TYPE_COMPLEX_LONG_DOUBLE,
-	      MR_TYPE_STRUCT,
+	      (MR_TYPE_STRUCT, , "struct_param"),
 	      (MR_TYPE_ENUM, , "enum_param"),
 	      MR_TYPE_FUNC_TYPE,
 	      (MR_TYPE_FUNC, , "func_param"),
@@ -409,9 +409,17 @@ TYPEDEF_STRUCT (mr_enum_param_t,
 		(ssize_t, enums_size, , "size of 'enums' array"),
 		)
 
+TYPEDEF_STRUCT (mr_struct_param_t,
+		(mr_ic_t, field_by_name, , "lookup by field names"),
+		(mr_fd_t **, fields, , "fields or enums descriptors", { .offset = offsetof (mr_struct_param_t, fields_size) }, "offset"),
+		(ssize_t, fields_size, , "size of 'fields' array"),
+		)
+
 TYPEDEF_UNION (mr_td_param_t,
 	       VOID (uint8_t, default_serialization, , "default serialization"),
 	       (mr_enum_param_t, enum_param, , "parameters specific for enums"),
+	       (mr_struct_param_t, struct_param, , "parameters specific for structures/unions"),
+	       (mr_struct_param_t, union_param, , "parameters specific for structures/unions"),
 	       )
 
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
@@ -421,9 +429,6 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_fd_t, mr_ptr_fd, , "field descriptor for mr_ptr_t"),
 		(mr_td_param_t, param, , "mr_type"),
 		(mr_size_t, size, , "size of type"),
-		(mr_ic_t, field_by_name, , "lookup by field names"),
-		(mr_fd_t **, fields, , "fields or enums descriptors", { .offset = offsetof (mr_td_t, fields_size) }, "offset"),
-		(ssize_t, fields_size, , "size of 'fields' array"),
 		(char *, meta, , "type meta info"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),

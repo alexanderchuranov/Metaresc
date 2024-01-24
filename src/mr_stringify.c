@@ -182,7 +182,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
 
   bool first = true;
   int count = 0;
-  int i, fields_count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int i, fields_count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       
   if (0 == value)
@@ -195,7 +195,7 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
 	  first = false;
 	else
 	  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
-	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, tdp->fields[i]->name.str));
+	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, tdp->param.struct_param.fields[i]->name.str));
 	value ^= tdp->param.enum_param.enums[i]->value._unsigned;
 	if (0 == value)
 	  break;

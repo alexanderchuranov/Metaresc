@@ -24,9 +24,9 @@ static void
 compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
   int i, j, named_anon_union_count = 0;
-  for (i = mr_td->fields_size / sizeof (mr_td->fields[0]) - 1; i >= 0; --i)
+  for (i = mr_td->param.struct_param.fields_size / sizeof (mr_td->param.struct_param.fields[0]) - 1; i >= 0; --i)
     {
-      mr_fd_t * mr_fdp = mr_td->fields[i];
+      mr_fd_t * mr_fdp = mr_td->param.struct_param.fields[i];
       
       if (mr_fdp->mr_type == MR_TYPE_NAMED_ANON_UNION)
 	++named_anon_union_count;
@@ -35,10 +35,10 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	continue;
       
       mr_fd_t * dw_fdp = NULL;
-      for (j = dw_td->fields_size / sizeof (dw_td->fields[0]) - 1; j >= 0; --j)
-	if (mr_hashed_string_cmp (&dw_td->fields[j]->name, &mr_fdp->name) == 0)
+      for (j = dw_td->param.struct_param.fields_size / sizeof (dw_td->param.struct_param.fields[0]) - 1; j >= 0; --j)
+	if (mr_hashed_string_cmp (&dw_td->param.struct_param.fields[j]->name, &mr_fdp->name) == 0)
 	  {
-	    dw_fdp = dw_td->fields[j];
+	    dw_fdp = dw_td->param.struct_param.fields[j];
 	    break;
 	  }
 
@@ -121,9 +121,9 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->type, dw_fdp->type);
     }
 
-  ck_assert_msg (dw_td->fields_size == mr_td->fields_size + named_anon_union_count * sizeof (mr_td->fields[0]),
+  ck_assert_msg (dw_td->param.struct_param.fields_size == mr_td->param.struct_param.fields_size + named_anon_union_count * sizeof (mr_td->param.struct_param.fields[0]),
 		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
-		 mr_td->type.str, (int)dw_td->fields_size, (int)mr_td->fields_size);
+		 mr_td->type.str, (int)dw_td->param.struct_param.fields_size, (int)mr_td->param.struct_param.fields_size);
 }
 
 static void
@@ -179,7 +179,7 @@ check_td (mr_ptr_t key, const void * context)
       ck_assert_msg (dw_td->size == mr_td->size, "DWARF descriptor for type '%s' mismatched builtin: type size %d != %d",
 		     mr_td->type.str, (int)dw_td->size, (int)mr_td->size);
 
-      dw_td->fields_size -= sizeof (dw_td->fields[0]);
+      dw_td->param.struct_param.fields_size -= sizeof (dw_td->param.struct_param.fields[0]);
   
       switch (mr_td->mr_type)
 	{

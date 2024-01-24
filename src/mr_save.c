@@ -15,10 +15,10 @@ static inline mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
   /* check that field index in union is valid and reset to default otherwise */
-  if ((idx < 0) || (idx >= tdp->fields_size / sizeof (tdp->fields[0])))
+  if ((idx < 0) || (idx >= tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0])))
     idx = 0;
-  if (tdp->fields_size > 0) /* check for an empty union */
-    return (tdp->fields[idx]);
+  if (tdp->param.struct_param.fields_size > 0) /* check for an empty union */
+    return (tdp->param.struct_param.fields[idx]);
   else
     return (NULL);
 }
@@ -34,8 +34,8 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
 	  return (fdp);
       }
   
-  if (tdp->fields_size > 0) /* check for an empty union */
-    return (tdp->fields[0]);
+  if (tdp->param.struct_param.fields_size > 0) /* check for an empty union */
+    return (tdp->param.struct_param.fields[0]);
   else
     return (NULL);
 }
@@ -142,10 +142,10 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
 	  if (parent_fdp->tdp)
-	    if (parent_fdp->tdp->fields_size >= sizeof (parent_fdp->tdp->fields[0]))
+	    if (parent_fdp->tdp->param.struct_param.fields_size >= sizeof (parent_fdp->tdp->param.struct_param.fields[0]))
 	      {
-		discriminator = (char*)discriminator + parent_fdp->tdp->fields[0]->offset;
-		parent_fdp = parent_fdp->tdp->fields[0];
+		discriminator = (char*)discriminator + parent_fdp->tdp->param.struct_param.fields[0]->offset;
+		parent_fdp = parent_fdp->tdp->param.struct_param.fields[0];
 		mr_type = parent_fdp->mr_type;
 		break;
 	      }
@@ -809,7 +809,7 @@ mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->offset) offset)
 {
   unsigned idx;
   uintptr_t key = (uintptr_t)&offset - offsetof (mr_fd_t, offset); /* (mr_fd_t[]){{ .offset = offset }}; */
-  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->fields, .size = tdp->fields_size, };
+  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->param.struct_param.fields, .size = tdp->param.struct_param.fields_size, };
   int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_fd_offset_cmp, NULL, &idx);
   /* do binary search first */
   if (diff)
@@ -819,10 +819,10 @@ mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->offset) offset)
     We need to skip them and find last relevant field in the ordered array.
     Iterate to the last field with the requested offset.
   */
-  unsigned count = tdp->fields_size / sizeof (tdp->fields[0]);
-  while ((idx + 1 < count) && (tdp->fields[idx + 1]->offset == offset))
+  unsigned count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
+  while ((idx + 1 < count) && (tdp->param.struct_param.fields[idx + 1]->offset == offset))
     ++idx;
-  return (tdp->fields[idx]);
+  return (tdp->param.struct_param.fields[idx]);
 }
 
 void
@@ -1044,10 +1044,10 @@ mr_save_struct (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   mr_td_t * tdp = mr_save_data->ptrs.ra[idx].fdp->tdp;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
-  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i];
+      mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       int nodes_added = mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
       if (nodes_added < 0)
 	return (nodes_added);

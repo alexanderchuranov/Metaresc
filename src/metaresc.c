@@ -111,7 +111,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 {
   int i;
   mr_offset_t offset = 0;
-  int fields_count = ctx->btdp->td.fields_size / sizeof (ctx->btdp->td.fields[0]);
+  int fields_count = ctx->btdp->td.param.struct_param.fields_size / sizeof (ctx->btdp->td.param.struct_param.fields[0]);
   
   switch (mr_type)
     {
@@ -155,10 +155,10 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       if (MR_TYPE_NONE == mr_type)
 	return;
       for (i = 0; i < fields_count; ++i)
-	if (0 == strcmp (ctx->btdp->td.fields[i]->name.str, name))
+	if (0 == strcmp (ctx->btdp->td.param.struct_param.fields[i]->name.str, name))
 	  break;
       if (i < fields_count)
-	ctx->btdp->td.fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
+	ctx->btdp->td.param.struct_param.fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
       return;
     }
 
@@ -180,11 +180,11 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   fdp->size = mr_type_size (mr_type);
   fdp->readonly = true;
 
-  basic_type_td->td.fields = (mr_fd_t**)&basic_type_td->fd[fields_count];
+  basic_type_td->td.param.struct_param.fields = (mr_fd_t**)&basic_type_td->fd[fields_count];
   for (i = 0; i < fields_count; ++i)
-    basic_type_td->td.fields[i] = &basic_type_td->fd[i];
-  basic_type_td->td.fields[i] = NULL;
-  basic_type_td->td.fields_size += sizeof (basic_type_td->td.fields[0]);
+    basic_type_td->td.param.struct_param.fields[i] = &basic_type_td->fd[i];
+  basic_type_td->td.param.struct_param.fields[i] = NULL;
+  basic_type_td->td.param.struct_param.fields_size += sizeof (basic_type_td->td.param.struct_param.fields[0]);
   ctx->btdp = basic_type_td;
 }
 
@@ -271,12 +271,12 @@ static mr_status_t
 mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
-  mr_ic_free (&tdp->field_by_name);
+  mr_ic_free (&tdp->param.struct_param.field_by_name);
 
-  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i];
+      mr_fd_t * fdp = tdp->param.struct_param.fields[i];
 
       if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
 	{
@@ -713,23 +713,23 @@ mr_get_td_by_name (char * type)
 static mr_status_t
 mr_anon_unions_extract (mr_td_t * tdp)
 {
-  int count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   int i, j;
 
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i];
+      mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if ((MR_TYPE_ANON_UNION == fdp->mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->mr_type))
 	{
 	  static int mr_type_anonymous_union_cnt = 0;
 	  mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
-	  mr_fd_t ** first = &tdp->fields[i + 1];
+	  mr_fd_t ** first = &tdp->param.struct_param.fields[i + 1];
 	  mr_fd_t * last;
 	  int opened = 1;
 
 	  for (j = i + 1; j < count; ++j)
 	    {
-	      mr_fd_t * fdp_ = tdp->fields[j];
+	      mr_fd_t * fdp_ = tdp->param.struct_param.fields[j];
 	      if ((MR_TYPE_ANON_UNION == fdp_->mr_type) ||
 		  (MR_TYPE_NAMED_ANON_UNION == fdp_->mr_type))
 		++opened;
@@ -767,18 +767,18 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		  tdp_->size = fields[j]->size; /* find union max size member */
 	      }
 
-	    last = tdp->fields[count];
-	    tdp->fields[count] = NULL;
+	    last = tdp->param.struct_param.fields[count];
+	    tdp->param.struct_param.fields[count] = NULL;
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
-	    tdp_->fields = &tdp->fields[count - fields_count + 1];
+	    tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
 
 	    fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
 	    fdp->res = last->res;
 	    fdp->res_type = last->res_type;
 	    fdp->MR_SIZE = last->MR_SIZE;
-	    tdp->fields_size -= fields_count * sizeof (tdp->fields[0]);
+	    tdp->param.struct_param.fields_size -= fields_count * sizeof (tdp->param.struct_param.fields[0]);
 	    count -= fields_count;
 	    fdp->type = tdp_->type.str;
 	    fdp->size = tdp_->size;
@@ -1150,7 +1150,7 @@ mr_register_type_pointer (mr_td_t * tdp)
       return (MR_FAILURE);
     }
 
-  *fdp = *union_tdp->fields[0];
+  *fdp = *union_tdp->param.struct_param.fields[0];
   fdp->type = tdp->type.str;
   fdp->name = tdp->type;
   fdp->size = sizeof (void *);
@@ -1161,7 +1161,7 @@ mr_register_type_pointer (mr_td_t * tdp)
 
   mr_ic_add (&mr_conf.fields_names, &tdp->type);
 
-  return ((NULL == mr_ic_add (&union_tdp->field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
+  return ((NULL == mr_ic_add (&union_tdp->param.struct_param.field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
 static bool
@@ -1228,7 +1228,7 @@ mr_add_basic_type (mr_fd_t * fdp, char * type, mr_type_t mr_type)
   basic_type_td->td.type.str = fdp->type;
   basic_type_td->td.mr_type = mr_type;
   basic_type_td->td.size = mr_type_size (mr_type);
-  basic_type_td->td.fields = &basic_type_td->fd_ptr;
+  basic_type_td->td.param.struct_param.fields = &basic_type_td->fd_ptr;
   basic_type_td->fd_ptr = NULL;
 
   mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
@@ -1514,10 +1514,10 @@ mr_normalize_field_name (mr_fd_t * fdp)
 void
 mr_init_struct (mr_td_t * tdp)
 {
-  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     {
-      mr_fd_t * fdp = tdp->fields[i];
+      mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if (fdp->self_ptr)
 	{
 	  fdp->type = tdp->type.str;
@@ -1563,7 +1563,7 @@ mr_init_struct (mr_td_t * tdp)
     Zero size fields will have the same offsets with the field declared afterwards.
   */
   if (tdp->mr_type == MR_TYPE_STRUCT)
-    mr_hsort (tdp->fields, count, sizeof (tdp->fields[0]), mr_fd_offset_cmp_sorting, NULL);
+    mr_hsort (tdp->param.struct_param.fields, count, sizeof (tdp->param.struct_param.fields[0]), mr_fd_offset_cmp_sorting, NULL);
 }
 
 /**
@@ -1577,7 +1577,7 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
   mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), };
   uintptr_t key = (uintptr_t)&hashed_name - offsetof (mr_fd_t, name);
-  mr_ptr_t * result = mr_ic_find (&tdp->field_by_name, key);
+  mr_ptr_t * result = mr_ic_find (&tdp->param.struct_param.field_by_name, key);
   return (result ? result->ptr : NULL);
 }
 
@@ -1695,14 +1695,16 @@ mr_add_type (mr_td_t * tdp)
       || (tdp->mr_type == MR_TYPE_NAMED_ANON_UNION)
       )
     {
-      for (count = 0; tdp->fields[count] != NULL; ++count);
-      tdp->fields_size = count * sizeof (tdp->fields[0]);
+      for (count = 0; tdp->param.struct_param.fields[count] != NULL; ++count);
+      tdp->param.struct_param.fields_size = count * sizeof (tdp->param.struct_param.fields[0]);
 
       if (MR_SUCCESS != mr_anon_unions_extract (tdp)) /* important to extract unions before building index over fields */
 	status = MR_FAILURE;
 
-      mr_ic_new (&tdp->field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
-      if (MR_SUCCESS != mr_ic_index (&tdp->field_by_name, (mr_ptr_t*)tdp->fields, tdp->fields_size))
+      mr_ic_new (&tdp->param.struct_param.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
+      if (MR_SUCCESS != mr_ic_index (&tdp->param.struct_param.field_by_name,
+				     (mr_ptr_t*)tdp->param.struct_param.fields,
+				     tdp->param.struct_param.fields_size))
 	status = MR_FAILURE;
     }
 
@@ -1826,9 +1828,9 @@ mr_validate_fd (mr_fd_t * fdp)
 static mr_status_t
 mr_validate_td (mr_td_t * tdp)
 {
-  int i, count = tdp->fields_size / sizeof (tdp->fields[0]);
+  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
-    mr_validate_fd (tdp->fields[i]);
+    mr_validate_fd (tdp->param.struct_param.fields[i]);
   return (MR_SUCCESS);
 }
 

@@ -754,7 +754,6 @@
     .param = {								\
       .enum_param = {							\
 	.mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),		\
-	.enums_size = 0,						\
 	.enums = (mr_ed_t*[]){
 
 #define MR_END_ENUM_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...)	\
@@ -789,12 +788,10 @@
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
     .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
     .mr_type = MR_TYPE,							\
-    .param = { .enum_param = { .mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME), }, }, \
     .size = sizeof (MR_TYPE_NAME),					\
-    .fields_size = 0,							\
-    .fields = (mr_fd_t*[]){
+    .param = { .struct_param = { .fields = (mr_fd_t*[]){
 #define MR_TYPEDEF_END_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...) 	\
-  NULL },								\
+  NULL, }, }, },							\
     .meta = "" __VA_ARGS__ };						\
     static inline void __attribute__((constructor))			\
     MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
@@ -823,9 +820,10 @@
 	dst_ctx.struct_ptr = &__value;					\
 	dst_ctx.offset_byte = 0;					\
 	dst_ctx.btdp = btdp;						\
-	btdp->td.fields_size = sizeof (btdp->td.fields[0]);		\
-	btdp->td.fields = &btdp->fd_ptr;				\
-	btdp->td.fields[0] = NULL;					\
+	btdp->td.param.struct_param.fields_size =			\
+	  sizeof (btdp->td.param.struct_param.fields[0]);		\
+	btdp->td.param.struct_param.fields = &btdp->fd_ptr;		\
+	btdp->fd_ptr = NULL;						\
 	btdp->td.is_dynamically_allocated = true;			\
 	btdp->td.mr_type = MR_TYPE_STRUCT;				\
 	btdp->td.size = sizeof (__value);				\
