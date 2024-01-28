@@ -605,6 +605,7 @@
 
 #define MR_TYPEDEF_CHAR_ARRAY_PROTO(ID, MR_TYPE_NAME, SIZE, /* ATTR */...) MR_TYPEDEF_CHAR_ARRAY_PROTO_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
 #define MR_TYPEDEF_CHAR_ARRAY_PROTO_(MR_TYPE_NAME, SIZE, ATTR, /* META */ ...) typedef ATTR char MR_TYPE_NAME[SIZE];
+
 #define MR_TYPEDEF_FUNC_PROTO(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_PROTO_ (RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
 #define MR_TYPEDEF_FUNC_PROTO_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) typedef ATTR RET_TYPE (*MR_TYPE_NAME) ARGS;
 
@@ -705,7 +706,7 @@
 
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .size = 0, .args = (mr_structured_type_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, }, })
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .args = (mr_structured_type_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, }, })
 
 /*
   MR_OBJ_OF_TYPE returns an object of specified type. It could be as simple as (TYPE){},
@@ -765,24 +766,34 @@
     }
 
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
-#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)  \
-    (mr_ed_t[]){ {						     \
-	.name = { .str =  #NAME, .hash_value = 0, },		     \
-	  .value = { ._unsigned = NAME, },			     \
-	  .meta = "" __VA_ARGS__,				     \
-	  } },
-
-#define MR_FUNC_ARG_PTR(...) /* FIXME */
+#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)   \
+  (mr_ed_t[]){ {						     \
+      .name = { .str =  #NAME, .hash_value = 0, },		     \
+	.value = { ._unsigned = NAME, },			     \
+	.meta = "" __VA_ARGS__,					     \
+	} },
 
 #define MR_TYPEDEF_CHAR_ARRAY_DESC(ID, MR_TYPE_NAME, SIZE, /* ATTR */ ...) \
   MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY)		\
     MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
 
-#define MR_TYPEDEF_FUNC_DESC(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) \
-  MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_FUNC_TYPE)			\
-       MR_FUNC_ARG_PTR (RET_TYPE)					\
-       MR_FOREACH (MR_FUNC_ARG_PTR, MR_REMOVE_PAREN (ARGS))		\
-       MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_TYPEDEF_FUNC_DESC(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (ID, RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
+#define MR_TYPEDEF_FUNC_DESC_(ID, RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) \
+  MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
+    .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
+    .mr_type = MR_TYPE_FUNC_TYPE,					\
+    .size = sizeof (MR_TYPE_NAME),					\
+    .param = {								\
+      .func_param = {							\
+	.args = (mr_structured_type_t*[]){				\
+	  MR_FUNC_ARG (RET_TYPE)					\
+	  MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS))		\
+	  NULL, }, }, },						\
+    .meta = "" __VA_ARGS__ };						\
+  static inline void __attribute__((constructor))			\
+  MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
+    mr_add_type (&MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME));		\
+  }
 
 #define MR_TYPEDEF_DESC(ID, MR_TYPE_NAME, MR_TYPE, ...)			\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \

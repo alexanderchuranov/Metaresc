@@ -962,6 +962,17 @@ mr_init_enum (mr_td_t * tdp)
     tdp->param.enum_param.is_bitmask = false;
 }
 
+void
+mr_init_func (mr_td_t * tdp)
+{
+  if (tdp->mr_type != MR_TYPE_FUNC_TYPE)
+    return;
+
+  int i;
+  for (i = 0; tdp->param.func_param.args[i] != NULL; ++i);
+  tdp->param.func_param.size = i * sizeof (tdp->param.func_param.args[0]);
+}
+
 /**
  * Get enum by value.
  *
@@ -1854,6 +1865,7 @@ mr_conf_init ()
 
 	  mr_init_struct (tdp);
 	  mr_init_enum (tdp);
+	  mr_init_func (tdp);
 	  mr_ic_add (&mr_conf.type_by_name, tdp);
 	}
 
