@@ -108,16 +108,16 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_COMPLEX_DOUBLE,
 	      MR_TYPE_LONG_DOUBLE,
 	      MR_TYPE_COMPLEX_LONG_DOUBLE,
-	      (MR_TYPE_STRUCT, , "struct_param"),
-	      (MR_TYPE_ENUM, , "enum_param"),
-	      (MR_TYPE_FUNC_TYPE, , "func_param"),
-	      (MR_TYPE_FUNC, , "func_param"),
-	      (MR_TYPE_BITFIELD, , "bitfield_param"),
-	      (MR_TYPE_ARRAY, , "array_param"),
-	      (MR_TYPE_POINTER, , "pointer_param"),
-	      (MR_TYPE_UNION, , "union_param"),
-	      (MR_TYPE_ANON_UNION, , "union_param"),
-	      (MR_TYPE_NAMED_ANON_UNION, , "union_param"),
+	      MR_TYPE_STRUCT,
+	      MR_TYPE_ENUM,
+	      MR_TYPE_FUNC_TYPE,
+	      MR_TYPE_FUNC,
+	      MR_TYPE_BITFIELD,
+	      MR_TYPE_ARRAY,
+	      MR_TYPE_POINTER,
+	      MR_TYPE_UNION,
+	      MR_TYPE_ANON_UNION,
+	      MR_TYPE_NAMED_ANON_UNION,
 	      MR_TYPE_END_ANON_UNION,
 	      MR_TYPE_LAST, /* keep it last */
 	      )
@@ -161,23 +161,38 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
 		)
 
+#define MR_UNION_PARAM_UDO					\
+  (mr_ud_override_t[]) {					\
+    { MR_TYPE_UNION, "union_param" },				\
+      { MR_TYPE_ANON_UNION, "union_param" },			\
+      { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
+      }
+
 TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
 		ANON_UNION (),
 		VOID (void *, union_default_serialization),
 		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
-		END_ANON_UNION ("mr_type_aux"),
+		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
 		ANON_UNION (pointer_serialization),
 		VOID (void *, pointer_default_serialization),
 		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
-		END_ANON_UNION ("mr_type_aux"),
+		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
 		)
+
+#define MR_UNION_AND_POINTER_PARAM_UDO				\
+  (mr_ud_override_t[]) {					\
+    { MR_TYPE_POINTER, "pointer_param" },			\
+      { MR_TYPE_UNION, "union_param" },				\
+      { MR_TYPE_ANON_UNION, "union_param" },			\
+      { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
+      }
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		ANON_UNION (),
 		VOID (void *, default_serialization),
 		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
 		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
-		END_ANON_UNION ("mr_type_aux"),
+		END_ANON_UNION ("mr_type_aux", { MR_UNION_AND_POINTER_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_AND_POINTER_PARAM_UDO)),
 		(unsigned int, count, , "array size"),
 		(unsigned int, row_count, , "row size"),
 		)
@@ -340,6 +355,17 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 	       (mr_ic_t *, union_param, , "indexed collection with union descriminators overrides"),
 	       )
 
+#define MR_FIELD_PARAM_UDO					\
+  (mr_ud_override_t[]) {					\
+    { MR_TYPE_ARRAY, "array_param" },				\
+      { MR_TYPE_BITFIELD, "bitfield_param" },			\
+      { MR_TYPE_FUNC, "func_param" },				\
+      { MR_TYPE_POINTER, "pointer_param" },			\
+      { MR_TYPE_UNION, "union_param" },				\
+      { MR_TYPE_ANON_UNION, "union_param" },			\
+      { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
+      }
+
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(struct mr_td_t *, tdp, , "type descriptor"),
 		(char *, type, , "stringified type name"),
@@ -354,7 +380,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		BITFIELD (mr_type_class_t, mr_type_class, : 6, "required to distinguish records and unions from scalar types"),
 		(mr_offset_t, offset, , "offset in structure"),
 		(mr_size_t, size, , "size of field"),
-		(mr_fd_param_t, param, , "mr_type"),
+		(mr_fd_param_t, param, , "mr_type", { MR_FIELD_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_UDO)),
 		(char *, meta, , "field meta info"),
 		/*
 		  res field can be used by user for extended information
@@ -423,12 +449,22 @@ TYPEDEF_UNION (mr_td_param_t,
 	       (mr_func_param_t, func_param, , "types of function arguments"),
 	       )
 
+#define MR_TYPE_PARAM_UDO					\
+  (mr_ud_override_t[]) {					\
+    { MR_TYPE_ENUM, "enum_param" },				\
+      { MR_TYPE_STRUCT, "struct_param" },			\
+      { MR_TYPE_UNION, "union_param" },				\
+      { MR_TYPE_ANON_UNION, "union_param" },			\
+      { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
+      { MR_TYPE_FUNC_TYPE, "func_param" },			\
+      }
+
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(bool, is_dynamically_allocated, , "mark types that require free at exit"),
 		(mr_fd_t, mr_ptr_fd, , "field descriptor for mr_ptr_t"),
-		(mr_td_param_t, param, , "mr_type"),
+		(mr_td_param_t, param, , "mr_type", { MR_TYPE_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_TYPE_PARAM_UDO)),
 		(mr_size_t, size, , "size of type"),
 		(char *, meta, , "type meta info"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
