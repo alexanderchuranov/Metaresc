@@ -517,7 +517,7 @@ START_TEST (dump_struct_types_detection) {
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, string_fields[i]);
       ck_assert_msg (fdp != NULL, "Fields descriptor for field '%s' was not found", string_fields[i]);
       ck_assert_msg (fdp->mr_type == MR_TYPE_STRING, "Field '%s' was registered with a wrong mr_type (%d)", string_fields[i], fdp->mr_type);
-      ck_assert_msg (fdp->tdp != NULL, "Type desicriptor for field '%s' was registered", string_fields[i]);
+      ck_assert_msg (fdp->tdp != NULL, "Type desicriptor for field '%s' was not registered", string_fields[i]);
     }
 } END_TEST
 

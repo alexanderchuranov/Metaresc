@@ -891,8 +891,6 @@ static void
 load_member (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   mr_fd_t * fdp = elem;
-  fdp->readonly = true;
-
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   if (attr != NULL)
     {

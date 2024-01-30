@@ -843,7 +843,7 @@
 	  type += sizeof (MR_STRUCT_KEYWORD);				\
 	if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0) \
 	  type += sizeof (MR_UNION_KEYWORD);				\
-	btdp->td.type.str = type;					\
+	btdp->td.type.str = mr_strdup (type);				\
 	while (dst_ctx.btdp != NULL)					\
 	  {								\
 	    if (0 == setjmp (dst_ctx._jmp_buf))				\

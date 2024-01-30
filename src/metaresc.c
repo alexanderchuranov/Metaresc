@@ -178,7 +178,6 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   fdp->name.str = name;
   fdp->offset = offset;
   fdp->size = mr_type_size (mr_type);
-  fdp->readonly = true;
 
   basic_type_td->td.param.struct_param.fields = (mr_fd_t**)&basic_type_td->fd[fields_count];
   for (i = 0; i < fields_count; ++i)
@@ -322,7 +321,10 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
     }
   
   if (tdp->is_dynamically_allocated)
-    MR_FREE (tdp);
+    {
+      MR_FREE (tdp->type.str);
+      MR_FREE (tdp);
+    }
   return (MR_SUCCESS);
 }
 
@@ -1229,33 +1231,28 @@ mr_type_is_an_array (mr_fd_t * fdp, char * type)
   return (MR_TYPE_ARRAY == fdp->mr_type);
 }
 
-static mr_status_t
-mr_add_basic_type (mr_fd_t * fdp, char * type, mr_type_t mr_type)
+static mr_td_t *
+mr_add_basic_type (char * type, mr_type_t mr_type)
 {
-  char * tail = &fdp->type[strlen (fdp->type) - strlen (type)];
-  if (strcmp (tail, type) == 0)
-    fdp->type = tail;
-  else
-    {
-      if (fdp->readonly)
-	return (MR_FAILURE);
-      strcpy (fdp->type, type);
-    }
-
   mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td));
   if (NULL == basic_type_td)
-    return (MR_FAILURE);
+    return (NULL);
 
   basic_type_td->td.is_dynamically_allocated = true;
-  basic_type_td->td.type.str = fdp->type;
+  basic_type_td->td.type.str = mr_strdup (type);
+  if (NULL == basic_type_td->td.type.str)
+    {
+      MR_FREE (&basic_type_td->td);
+      return (NULL);
+    }
   basic_type_td->td.mr_type = mr_type;
   basic_type_td->td.size = mr_type_size (mr_type);
   basic_type_td->td.param.struct_param.fields = &basic_type_td->fd_ptr;
   basic_type_td->fd_ptr = NULL;
 
   mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
-
-  return (mr_register_type_pointer (&basic_type_td->td));
+  mr_register_type_pointer (&basic_type_td->td);
+  return (&basic_type_td->td);
 }
 
 static void
@@ -1276,10 +1273,10 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   if (NULL == tdp)
     {
       if ((MR_BASIC_TYPES >> fdp->mr_type) & 1)
-	mr_add_basic_type (fdp, type, fdp->mr_type);
+	tdp = mr_add_basic_type (type, fdp->mr_type);
       else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_ARRAY)) >> fdp->mr_type) & 1)
 	       && ((MR_BASIC_TYPES >> fdp->mr_type_aux) & 1))
-	mr_add_basic_type (fdp, type, fdp->mr_type_aux);
+	tdp = mr_add_basic_type (type, fdp->mr_type_aux);
       else if (mr_type_is_a_pointer (type))
 	{
 	  if (fdp->mr_type == MR_TYPE_ARRAY)
@@ -1293,12 +1290,12 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	      if (fdp->mr_type == MR_TYPE_ARRAY)
 		{
 		  if ((MR_BASIC_TYPES >> fdp->mr_type_ptr) & 1)
-		    mr_add_basic_type (fdp, type, fdp->mr_type_ptr);
+		    tdp = mr_add_basic_type (type, fdp->mr_type_ptr);
 		}
 	      else
 		{
 		  if ((MR_BASIC_TYPES >> fdp->mr_type_aux) & 1)
-		    mr_add_basic_type (fdp, type, fdp->mr_type_aux);
+		    tdp = mr_add_basic_type (type, fdp->mr_type_aux);
 		  else if (mr_type_is_a_pointer (type))
 		    {
 		      fdp->mr_type_aux = MR_TYPE_POINTER;
