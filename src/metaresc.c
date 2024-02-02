@@ -321,10 +321,8 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
     }
   
   if (tdp->is_dynamically_allocated)
-    {
-      MR_FREE (tdp->type.str);
-      MR_FREE (tdp);
-    }
+    MR_FREE (tdp);
+
   return (MR_SUCCESS);
 }
 
@@ -1234,21 +1232,21 @@ mr_type_is_an_array (mr_fd_t * fdp, char * type)
 static mr_td_t *
 mr_add_basic_type (char * type, mr_type_t mr_type)
 {
-  mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td));
+  if (!((mr_type > MR_TYPE_NONE) && (mr_type < MR_TYPE_LAST)) ||
+      !((MR_BASIC_TYPES >> mr_type) & 1) ||
+      (NULL == type))
+    return (NULL);
+
+  mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td) + strlen (type) + sizeof (""));
   if (NULL == basic_type_td)
     return (NULL);
 
   basic_type_td->td.is_dynamically_allocated = true;
-  basic_type_td->td.type.str = mr_strdup (type);
-  if (NULL == basic_type_td->td.type.str)
-    {
-      MR_FREE (&basic_type_td->td);
-      return (NULL);
-    }
+  basic_type_td->td.type.str = (void*)&basic_type_td[1];
+  strcpy (basic_type_td->td.type.str, type);
+
   basic_type_td->td.mr_type = mr_type;
   basic_type_td->td.size = mr_type_size (mr_type);
-  basic_type_td->td.param.struct_param.fields = &basic_type_td->fd_ptr;
-  basic_type_td->fd_ptr = NULL;
 
   mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
   mr_register_type_pointer (&basic_type_td->td);
