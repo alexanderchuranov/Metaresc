@@ -12,7 +12,7 @@ jobs:
           - cc: gcc
           - cc: clang
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: update packages
         run: sudo apt-get update -y
       - name: install dependencies
@@ -32,7 +32,7 @@ jobs:
     runs-on: macos-latest
     name: Macos with clang
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: install dependencies
         run: brew install autoconf automake libtool pkg-config flex bison libxml2 libyaml check python3
       - name: submodule update
@@ -45,23 +45,24 @@ jobs:
         run: make check -j 2
 
   freebsd-clang:
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     name: FreeBSD with clang
     steps:
-      - uses: actions/checkout@v3
-      - name: FreeBSD VM
-        uses: vmactions/freebsd-vm@v0
-        with:
-          usesh: true
-          sync: rsync
-          copyback: false
-          prepare: pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 libyaml check python3
-          run: |
-            git config --global --add safe.directory `pwd`
-            git submodule update --init --recursive --remote
-            ./autogen.sh
-            ./configure CFLAGS=-I/usr/local/include/ --without-perftest
-            make check -j 2
+    - uses: actions/checkout@v4
+    - name: Test in FreeBSD
+      id: test
+      uses: vmactions/freebsd-vm@v1
+      with:
+        usesh: true
+        prepare: |
+	  pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 libyaml check python3	
+
+        run: |
+          git config --global --add safe.directory `pwd`
+          git submodule update --init --recursive --remote
+          ./autogen.sh
+          ./configure CFLAGS=-I/usr/local/include/ --without-perftest
+          make check -j 2
 
   windows-gcc:
     runs-on: windows-latest
@@ -77,7 +78,7 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: msys2/setup-msys2@v2
         with:
           msystem: ${{matrix.sys}}
@@ -85,6 +86,8 @@ jobs:
           install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
+      - name: exclude mr_ptr from tests on mingw32
+        run: sed -i.bak -e "s/mr_ptr//" tests/Makefile.am
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
@@ -119,7 +122,7 @@ jobs:
           - { arch: ppc64le, cc: gcc }
           - { arch: ppc64le, cc: clang }
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: uraimo/run-on-arch-action@v2
         name: Run commands
         id: build-and-check
