@@ -59,7 +59,7 @@ jobs:
           git config --global --add safe.directory `pwd`
           git submodule update --init --recursive --remote
           ./autogen.sh
-          ./configure CFLAGS=-I/usr/local/include/ --without-perftest
+          ./configure CFLAGS="-I/usr/local/include/ -Wno-unused-but-set-variable" --without-perftest
           make check -j 2
 
   windows-gcc:
@@ -85,7 +85,7 @@ jobs:
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: exclude mr_ptr from tests on mingw32
-        run: sed -i.bak -e "s/mr_ptr//" tests/Makefile.am
+        run: sed -i.bak -e "s/union //" tests/Makefile.am
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
