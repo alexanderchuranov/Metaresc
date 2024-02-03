@@ -2,7 +2,7 @@
 #include <metaresc.h>
 #include <regression.h>
 
-TYPEDEF_ENUM (_enum_t, ZERO, ONE, (TWO, = 2), (THREE, = 3))
+TYPEDEF_ENUM (_enum_t, (MINUS_ONE, = -1), ZERO, ONE, (TWO, = 2), (THREE, = 3))
 
 TYPEDEF_STRUCT (struct_bitfield_int8_t, BITFIELD (int8_t, x, :7))
 TYPEDEF_STRUCT (struct_bitfield_uint8_t, BITFIELD (uint8_t, x, :7))
@@ -47,7 +47,7 @@ START_TEST (invalid_bitfield_enum_t) {
 #define CMP_STRUCT_(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
 
   mr_conf.msg_handler = msg_handler;
-  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, -1, CMP_STRUCT_);
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, -2, CMP_STRUCT_);
   mr_conf.msg_handler = save_msg_handler;
 
   ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
@@ -67,10 +67,21 @@ START_TEST (bitfield_int_m1) {
   ALL_METHODS (ASSERT_SAVE_LOAD_BITFIELD, -1);
 } END_TEST
 
+START_TEST (bitfield_negative_enum) {
+  mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
+
+  mr_conf.msg_handler = msg_handler;
+  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, MINUS_ONE);
+  mr_conf.msg_handler = save_msg_handler;
+
+  ck_assert_msg ((0 == warnings), "Save/load of negative enum value produced %d warnings", warnings);
+} END_TEST
+
 MAIN_TEST_SUITE ((bitfield_enum_zero, "bitfield as enum"),
 		 (bitfield_enum_three, "bitfield as enum"),
 		 (invalid_bitfield_enum_t, "invalid enum"),
 		 (bitfield_int_0, "bitfield as integer for value 0"),
 		 (bitfield_int_3, "bitfield as integer for value 3"),
-		 (bitfield_int_m1, "bitfield as integer for value -1")
+		 (bitfield_int_m1, "bitfield as integer for value -1"),
+		 (bitfield_negative_enum, "-1 should serialize as enum value, but not integer")
 		 );

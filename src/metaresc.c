@@ -408,7 +408,12 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   for (i = __CHAR_BIT__ - ptrdes->fdp->param.bitfield_param.shift; i < ptrdes->fdp->param.bitfield_param.width; i += __CHAR_BIT__)
     _value |= ((uint64_t)*ptr++) << i;
   _value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
-  switch (ptrdes->mr_type_aux)
+
+  mr_type_t mr_type = ptrdes->mr_type_aux;
+  if ((MR_TYPE_ENUM == mr_type) && (ptrdes->tdp != NULL))
+    mr_type = ptrdes->tdp->param.enum_param.mr_type_effective;
+
+  switch (mr_type)
     {
     case MR_TYPE_INT8:
     case MR_TYPE_INT16:
