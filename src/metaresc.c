@@ -87,17 +87,23 @@ mr_get_struct_type_name (const char * fmt, char * value)
 }
 
 TYPEDEF_UNION (mr_dump_struct_types_union_t,
-	       int8_t _int8,
 	       uint8_t _uint8,
-	       int16_t _int16,
 	       uint16_t _uint16,
-	       int32_t _int32,
 	       uint32_t _uint32,
-	       int64_t _int64,
 	       uint64_t _uint64,
 	       float _float,
 	       double _double,
 	       long double _long_double,
+	       (signed char, sc),
+	       (unsigned char, uc),
+	       (signed short, ss),
+	       (unsigned short, us),
+	       (signed int, si),
+	       (unsigned int, ui),
+	       (signed long, sl),
+	       (unsigned long, ul),
+	       (signed long long, sll),
+	       (unsigned long long, ull),
 	       (void *, _ptr),
 	       (uint8_t, dump, [sizeof (long double)]),
 	       );
@@ -209,23 +215,26 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  memset (&value, 0, sizeof (value));
 	  fmt += sizeof (FMT) - sizeof ("");
 
-#define CASE(FIELD, MR_TYPE) value.FIELD = va_arg (args, typeof (0 + (typeof (value.FIELD))0)); mr_type = MR_TYPE;
-
-	  if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (_ptr, MR_TYPE_STRING) }
-	  else if (strcmp (fmt, "*%p\n") == 0) { CASE (_ptr, MR_TYPE_NONE) }
-	  else if (strcmp (fmt, "%p\n") == 0) { CASE (_ptr, MR_TYPE_POINTER) }
-	  else if (strcmp (fmt, "%hhd\n") == 0) { CASE (_int8, MR_TYPE_DETECT (signed char)) }
-	  else if (strcmp (fmt, "%hhu\n") == 0) { CASE (_uint8, MR_TYPE_DETECT (unsigned char)) }
-	  else if (strcmp (fmt, "%hd\n") == 0) { CASE (_int16, MR_TYPE_DETECT (signed short)) }
-	  else if (strcmp (fmt, "%hu\n") == 0) { CASE (_uint16, MR_TYPE_DETECT (unsigned short)) }
-	  else if (strcmp (fmt, "%d\n") == 0) { CASE (_int32, MR_TYPE_DETECT (signed int)) }
-	  else if (strcmp (fmt, "%u\n") == 0) { CASE (_uint32, MR_TYPE_DETECT (unsigned int)) }
-	  else if (strcmp (fmt, "%ld\n") == 0) { CASE (_int64, MR_TYPE_DETECT (signed long)) }
-	  else if (strcmp (fmt, "%lu\n") == 0) { CASE (_uint64, MR_TYPE_DETECT (unsigned long)) }
-	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (_int64, MR_TYPE_DETECT (signed long long)) }
-	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (_uint64, MR_TYPE_DETECT (unsigned long long)) }
-	  else if (strcmp (fmt, "%f\n") == 0) { CASE (_double, MR_TYPE_DETECT (double)) }
-	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (_long_double, MR_TYPE_DETECT (long double)) }
+#define CASE_(FIELD, MR_TYPE) FIELD = va_arg (args, typeof (0 + (typeof (FIELD))0)); mr_type = MR_TYPE;
+#define CASE(FIELD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) \
+	    (CASE_ (FIELD, MR_TYPE_DETECT (typeof (FIELD))))	\
+	    (CASE_ (FIELD, __VA_ARGS__))
+	  
+	  if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
+	  else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
+	  else if (strcmp (fmt, "%p\n") == 0) { CASE (value._ptr, MR_TYPE_POINTER) }
+	  else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value.sc) }
+	  else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value.uc) }
+	  else if (strcmp (fmt, "%hd\n") == 0) { CASE (value.ss) }
+	  else if (strcmp (fmt, "%hu\n") == 0) { CASE (value.us) }
+	  else if (strcmp (fmt, "%d\n") == 0) { CASE (value.si) }
+	  else if (strcmp (fmt, "%u\n") == 0) { CASE (value.ui) }
+	  else if (strcmp (fmt, "%ld\n") == 0) { CASE (value.sl) }
+	  else if (strcmp (fmt, "%lu\n") == 0) { CASE (value.ul) }
+	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (value.sll) }
+	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value.ull) }
+	  else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
+	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double) }
 
 	  if (mr_type != MR_TYPE_LAST)
 	    mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
