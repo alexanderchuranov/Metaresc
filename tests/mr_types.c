@@ -15,6 +15,10 @@ typedef int32_t int32_alias7_t;
 typedef int32_t int32_alias8_t;
 typedef int32_t int32_alias9_t;
 typedef int32_t int32_alias10_t;
+typedef int32_t int32_alias11_t;
+typedef int32_t int32_alias12_t;
+typedef int32_t int32_alias13_t;
+typedef int32_t int32_alias14_t;
 typedef int32_t * int32_ptr_t;
 
 TYPEDEF_STRUCT (mr_empty_t);
@@ -145,10 +149,13 @@ TYPEDEF_STRUCT (struct_t,
 #endif /* HAVE_INT128 */
 		BITFIELD (mr_type_t, bf_enum, : 6),
 		BITFIELD (const volatile enum mr_type_t, bf_const_volatile_enum_enum, : 6),
+		(int32_alias11_t, f, (volatile int32_alias12_t const *)),
 		);
 
 TYPEDEF_STRUCT (void_function_field_t,
 		VOID (void, (*func), (void)));
+
+TYPEDEF_FUNC (int32_alias13_t, func_t, (volatile int32_alias14_t const *));
 
 START_TEST (check_void_function_field) {
   mr_conf_init ();
@@ -328,7 +335,7 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (int32_ptr, MR_TYPE_POINTER, MR_TYPE_INT32);
 
   int i;
-  char * aliases[] = {"int32_alias0_t", "int32_alias1_t", "int32_alias2_t", "int32_alias3_t", "int32_alias4_t"};
+  char * aliases[] = {"int32_alias0_t", "int32_alias1_t", "int32_alias2_t", "int32_alias3_t", "int32_alias4_t", "int32_alias11_t", "int32_alias12_t", "int32_alias13_t", "int32_alias14_t"};
   for (i = 0; i < sizeof (aliases) / sizeof (aliases[0]); ++i)
     {
       mr_td_t * tdp = mr_get_td_by_name (aliases[i]);

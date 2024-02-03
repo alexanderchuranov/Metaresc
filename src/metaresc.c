@@ -1202,20 +1202,25 @@ mr_type_is_a_pointer (char * type)
   return (false);
 }
 
-static bool
-mr_type_is_an_array (mr_fd_t * fdp, char * type)
+static void
+mr_fd_of_array_type (mr_fd_t * fdp)
 {
-  char * end = &type[strlen (type) - 1];
+  if (NULL == fdp->type)
+    return;
+
+  char * end = &fdp->type[strlen (fdp->type) - 1];
   int row_count = 0, count = 1;
   while (']' == *end)
     {
-      char * open_bracket = strrchr (type, '[');
-      if (NULL == open_bracket)
+      char * open_bracket;
+      for (open_bracket = end - 1; open_bracket >= fdp->type; --open_bracket)
+	if ('[' == *open_bracket)
+	  break;
+      if (open_bracket < fdp->type)
 	break;
       int last_row_count = atoi (open_bracket + 1);
       row_count = count;
       count *= last_row_count;
-      *open_bracket = 0;
       end = open_bracket - 1;
     }
 
@@ -1225,8 +1230,6 @@ mr_type_is_an_array (mr_fd_t * fdp, char * type)
       fdp->param.array_param.count = count;
       fdp->param.array_param.row_count = row_count;
     }
-  
-  return (MR_TYPE_ARRAY == fdp->mr_type);
 }
 
 static mr_td_t *
@@ -1254,49 +1257,51 @@ mr_add_basic_type (char * type, mr_type_t mr_type)
 }
 
 static void
-mr_fd_detect_field_type (mr_fd_t * fdp)
+mr_detect_structured_type (mr_structured_type_t * stype)
 {
 #define MR_TYPES_SKIP_RESOLUTION (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_FUNC))
-  if (((MR_TYPES_SKIP_RESOLUTION >> fdp->mr_type) & 1) || (NULL == fdp->type))
+  if (((MR_TYPES_SKIP_RESOLUTION >> stype->mr_type) & 1) || (NULL == stype->type))
     return;
 
-  int type_name_length = strlen (fdp->type);
+  int type_name_length = strlen (stype->type);
   char type[type_name_length + 1];
 
-  strcpy (type, fdp->type);
+  strcpy (type, stype->type);
   mr_normalize_type (type);
-  mr_type_is_an_array (fdp, type);
+  char * bracket = strchr (type, '[');
+  if (bracket)
+    *bracket = 0;
 
   mr_td_t * tdp = mr_get_td_by_name_internal (type);
   if (NULL == tdp)
     {
-      if ((MR_BASIC_TYPES >> fdp->mr_type) & 1)
-	tdp = mr_add_basic_type (type, fdp->mr_type);
-      else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_ARRAY)) >> fdp->mr_type) & 1)
-	       && ((MR_BASIC_TYPES >> fdp->mr_type_aux) & 1))
-	tdp = mr_add_basic_type (type, fdp->mr_type_aux);
+      if ((MR_BASIC_TYPES >> stype->mr_type) & 1)
+	tdp = mr_add_basic_type (type, stype->mr_type);
+      else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_ARRAY)) >> stype->mr_type) & 1)
+	       && ((MR_BASIC_TYPES >> stype->mr_type_aux) & 1))
+	tdp = mr_add_basic_type (type, stype->mr_type_aux);
       else if (mr_type_is_a_pointer (type))
 	{
-	  if (fdp->mr_type == MR_TYPE_ARRAY)
-	    fdp->mr_type_aux = MR_TYPE_POINTER;
+	  if (stype->mr_type == MR_TYPE_ARRAY)
+	    stype->mr_type_aux = MR_TYPE_POINTER;
 	  else
-	    fdp->mr_type = MR_TYPE_POINTER;
+	    stype->mr_type = MR_TYPE_POINTER;
 
 	  tdp = mr_get_td_by_name_internal (type);
 	  if (NULL == tdp)
 	    {
-	      if (fdp->mr_type == MR_TYPE_ARRAY)
+	      if (stype->mr_type == MR_TYPE_ARRAY)
 		{
-		  if ((MR_BASIC_TYPES >> fdp->mr_type_ptr) & 1)
-		    tdp = mr_add_basic_type (type, fdp->mr_type_ptr);
+		  if ((MR_BASIC_TYPES >> stype->mr_type_ptr) & 1)
+		    tdp = mr_add_basic_type (type, stype->mr_type_ptr);
 		}
 	      else
 		{
-		  if ((MR_BASIC_TYPES >> fdp->mr_type_aux) & 1)
-		    tdp = mr_add_basic_type (type, fdp->mr_type_aux);
+		  if ((MR_BASIC_TYPES >> stype->mr_type_aux) & 1)
+		    tdp = mr_add_basic_type (type, stype->mr_type_aux);
 		  else if (mr_type_is_a_pointer (type))
 		    {
-		      fdp->mr_type_aux = MR_TYPE_POINTER;
+		      stype->mr_type_aux = MR_TYPE_POINTER;
 		      tdp = mr_get_td_by_name_internal (type);
 		    }
 		}
@@ -1304,19 +1309,19 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	}
     }
 
-  fdp->tdp = tdp;
+  stype->tdp = tdp;
 
   /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
-  if ((fdp->mr_type == MR_TYPE_NONE) && (fdp->mr_type_aux != MR_TYPE_NONE))
-    fdp->mr_type = MR_TYPE_POINTER;
+  if ((stype->mr_type == MR_TYPE_NONE) && (stype->mr_type_aux != MR_TYPE_NONE))
+    stype->mr_type = MR_TYPE_POINTER;
 
-  if ((fdp->mr_type == MR_TYPE_ARRAY) && (fdp->mr_type_aux == MR_TYPE_NONE) && (fdp->mr_type_ptr != MR_TYPE_NONE))
-    fdp->mr_type_aux = MR_TYPE_POINTER;
+  if ((stype->mr_type == MR_TYPE_ARRAY) && (stype->mr_type_aux == MR_TYPE_NONE) && (stype->mr_type_ptr != MR_TYPE_NONE))
+    stype->mr_type_aux = MR_TYPE_POINTER;
 
   if (tdp)
     {
-      fdp->type = tdp->type.str;
-      switch (fdp->mr_type)
+      stype->type = tdp->type.str;
+      switch (stype->mr_type)
 	{
 	case MR_TYPE_NONE:
 	  /* Enum detection */
@@ -1330,11 +1335,11 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	case MR_TYPE_UINT64:
 	case MR_TYPE_INT128:
 	case MR_TYPE_UINT128:
-	  fdp->mr_type = tdp->mr_type;
+	  stype->mr_type = tdp->mr_type;
 	  break;
 
 	case MR_TYPE_BITFIELD:
-	  fdp->mr_type_aux = tdp->mr_type; /* enums case */
+	  stype->mr_type_aux = tdp->mr_type; /* enums case */
 	  break;
 
 	  /*
@@ -1342,10 +1347,10 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 	  */
 	case MR_TYPE_POINTER:
 	case MR_TYPE_ARRAY:
-	  if (fdp->mr_type_aux == MR_TYPE_POINTER)
-	    fdp->mr_type_ptr = tdp->mr_type;
+	  if (stype->mr_type_aux == MR_TYPE_POINTER)
+	    stype->mr_type_ptr = tdp->mr_type;
 	  else
-	    fdp->mr_type_aux = tdp->mr_type;
+	    stype->mr_type_aux = tdp->mr_type;
 	  break;
 
 	default:
@@ -1354,8 +1359,31 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
     }
 
   /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
-  if ((MR_TYPE_NONE == fdp->mr_type) && (MR_POINTER_TYPE_CLASS == fdp->mr_type_class))
-    fdp->mr_type = MR_TYPE_POINTER;
+  if ((MR_TYPE_NONE == stype->mr_type) && (MR_POINTER_TYPE_CLASS == stype->mr_type_class))
+    stype->mr_type = MR_TYPE_POINTER;
+}
+
+static void
+mr_fd_detect_field_type (mr_fd_t * fdp)
+{
+  mr_fd_of_array_type (fdp);
+
+  mr_structured_type_t stype;
+  memset (&stype, 0, sizeof (stype));
+
+  stype.type = fdp->type;
+  stype.mr_type = fdp->mr_type;
+  stype.mr_type_aux = fdp->mr_type_aux;
+  stype.mr_type_ptr = fdp->mr_type_ptr;
+  stype.mr_type_class = fdp->mr_type_class;
+
+  mr_detect_structured_type (&stype);
+
+  fdp->type = stype.type;
+  fdp->mr_type = stype.mr_type;
+  fdp->mr_type_aux = stype.mr_type_aux;
+  fdp->mr_type_ptr = stype.mr_type_ptr;
+  fdp->tdp = stype.tdp;
 }
 
 /**
@@ -1367,8 +1395,8 @@ static void
 mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
-  for (i = 0; fdp->param.func_param.args[i] != NULL; ++i);
-  //FIXME: mr_fd_detect_field_type (&fdp->param.func_param.args[i]);
+  for (i = 0; fdp->param.func_param.args[i] != NULL; ++i)
+    mr_detect_structured_type (fdp->param.func_param.args[i]);
   fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
 }
 
@@ -1545,6 +1573,17 @@ mr_init_struct (mr_td_t * tdp)
 
   mr_ic_new (&tdp->param.struct_param.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
   mr_ic_index (&tdp->param.struct_param.field_by_name, (mr_ptr_t*)tdp->param.struct_param.fields, tdp->param.struct_param.fields_size);
+}
+
+static void
+mr_detect_func_args_types (mr_td_t * tdp)
+{
+  if (tdp->mr_type != MR_TYPE_FUNC_TYPE)
+    return;
+
+  int i;
+  for (i = tdp->param.func_param.size / sizeof (tdp->param.func_param.args[0]) - 1; i >= 0; --i)
+    mr_detect_structured_type (tdp->param.func_param.args[i]);
 }
 
 static void
@@ -1870,6 +1909,7 @@ mr_conf_init ()
 	  if (tdp != mr_get_td_by_name_internal (tdp->type.str))
 	    continue; /* this type is a duplicate */
 
+	  mr_detect_func_args_types (tdp);
 	  mr_detect_struct_fields (tdp);
 	  mr_td_detect_res_size (tdp);
 	  mr_register_type_pointer (tdp);
