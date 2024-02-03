@@ -54,9 +54,7 @@ jobs:
       uses: vmactions/freebsd-vm@v1
       with:
         usesh: true
-        prepare: |
-	  pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 libyaml check python3	
-
+        prepare: pkg install -y git autoconf automake libtool pkgconf flex bison libxml2 libyaml check python3	
         run: |
           git config --global --add safe.directory `pwd`
           git submodule update --init --recursive --remote
