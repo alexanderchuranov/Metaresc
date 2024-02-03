@@ -220,6 +220,8 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  else if (strcmp (fmt, "%hu\n") == 0) { CASE (_uint16, MR_TYPE_UINT16) }
 	  else if (strcmp (fmt, "%d\n") == 0) { CASE (_int32, MR_TYPE_INT32) }
 	  else if (strcmp (fmt, "%u\n") == 0) { CASE (_uint32, MR_TYPE_UINT32) }
+	  else if (strcmp (fmt, "%ld\n") == 0) { CASE (_int64, MR_TYPE_INT64) }
+	  else if (strcmp (fmt, "%lu\n") == 0) { CASE (_uint64, MR_TYPE_UINT64) }
 	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (_int64, MR_TYPE_INT64) }
 	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (_uint64, MR_TYPE_UINT64) }
 	  else if (strcmp (fmt, "%f\n") == 0) { CASE (_double, MR_TYPE_DOUBLE) }
