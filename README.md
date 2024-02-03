@@ -634,13 +634,14 @@ Supported types are: strings, charecters, booleans,
 integers, float, complex, pointers. Pointers on basic types also
 output content of referenced memory. With Clang pointers on structures
 and unions are also augmented with serialized content of referenced
-memory (CINIT format). Arguments in parentheses are passed to
-serialization engine. There should be 2 or 3 arguments in parentheses
+memory. Arguments in parentheses are passed to serialization
+engine. There should be 2 or 3 arguments in parentheses
 to trigger serialization routine. 2 arguments case is `(type,
-pointer)` that are passed to `MR_SAVE_CINIT` macro. 3 arguments case
-is `(type, pointer, format)` that allows to serialize into any other
-supported format. Possible formats are: CINIT, JSON, YAML, SCM, XML,
-XML1, XML2.
+pointer)` that are passed to serialization macro. Default
+serialization method is CINIT, but you can change this preprocessor
+variable MR_PRINT_SERIALIZATION_METHOD. 3 arguments case is `(type,
+pointer, format)` that allows to serialize into any other supported
+format. Possible formats are: CINIT, JSON, YAML, SCM, XML, XML1, XML2.
 
 `MR_PRINT` output to `stdout` and `MR_FPRINT` use the first argument as
 file descriptor. Both macroses returns number of outputed bytes.
