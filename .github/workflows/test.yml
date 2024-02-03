@@ -40,7 +40,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure HAVE_BISON=yes YACC=/opt/homebrew/opt/bison/bin/bison --without-perftest
+        run: ./configure HAVE_BISON=yes YACC=/usr/local/opt/bison/bin/bison --without-perftest
       - name: make check
         run: make check -j 2
 
