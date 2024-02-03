@@ -1443,6 +1443,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   mr_ud_override_t * ud_overrides = fdp->res.ptr;
   for (i = 0; i < count; ++i)
     {
+      ud_overrides[i].typed_value.ptr = &ud_overrides[i].value;
       ud_overrides[i].fdp = mr_get_fd_by_name (fdp->tdp, ud_overrides[i].discriminator);
       if (NULL == ud_overrides[i].fdp)
 	{

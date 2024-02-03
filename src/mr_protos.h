@@ -156,8 +156,10 @@ TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      )
 
 TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discriminator override"),
-		(uint64_t, value, , "discriminator value that has a custom override"),
+		(int64_t, value, , "discriminator value that has a custom override"),
 		(char *, discriminator, , "name of union branch for this value"),
+		(char *, type, , "discriminator for typed_value"),
+		(mr_ptr_t, typed_value, , "type"),
 		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
 		)
 
@@ -373,10 +375,10 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		BITFIELD (mr_type_t, mr_type_ptr, : 6, "Metaresc type to detect pointers on basic type"),
+		BITFIELD (mr_type_class_t, mr_type_class, : 6, "required to distinguish records and unions from scalar types"),
 		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
 		BITFIELD (bool, self_ptr, : 1, "true if field is a pointer on itself"),
 		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
-		BITFIELD (mr_type_class_t, mr_type_class, : 6, "required to distinguish records and unions from scalar types"),
 		(mr_offset_t, offset, , "offset in structure"),
 		(mr_size_t, size, , "size of field"),
 		(mr_fd_param_t, param, , "mr_type", { MR_FIELD_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_UDO)),
