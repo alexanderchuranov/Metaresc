@@ -154,23 +154,29 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 
   /* now we should update pointers in a copy */
   for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i > 0; --i)
-    if ((ptrs->ra[i].idx >= 0) && (true != ptrs->ra[i].flags.is_null)) /* skip NULL and invalid nodes */
+    if ((ptrs->ra[i].idx >= 0)) /* skip invalid nodes */
       switch (ptrs->ra[i].mr_type)
 	{
 	case MR_TYPE_STRING:
 	  /* update pointer in the copy */
-	  if (ptrs->ra[i].ref_idx < 0)
-	    *(char**)ptrs->ra[i].res.data.ptr = ptrs->ra[i].res.type;
-	  else if (ptrs->ra[i].flags.is_content_reference)
-	    *(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.type;
-	  else
-	    *(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.data.ptr;
+	  if (!ptrs->ra[i].flags.is_null)
+	    {
+	      if (ptrs->ra[i].ref_idx < 0)
+		*(char**)ptrs->ra[i].res.data.ptr = ptrs->ra[i].res.type;
+	      else if (ptrs->ra[i].flags.is_content_reference)
+		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.type;
+	      else
+		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.data.ptr;
+	    }
 	  break;
 
 	case MR_TYPE_POINTER:
 	  /* update pointer in the copy */
 	  if (ptrs->ra[i].ref_idx < 0)
-	    *(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.data.ptr;
+	    {
+	      if (ptrs->ra[i].first_child >= 0)
+		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.data.ptr;
+	    }
 	  else
 	    *(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.data.ptr;
 	  break;
