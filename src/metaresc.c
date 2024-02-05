@@ -1968,6 +1968,19 @@ mr_detect_type (mr_fd_t * fdp)
 {
   mr_conf_init ();
   mr_fd_detect_field_type (fdp);
+  
+  if (fdp->tdp)
+    fdp->name.str = fdp->tdp->type.str;
+  
+  mr_fd_t * ptr_fdp = fdp->param.array_param.pointer_param;
+  if (ptr_fdp)
+    {
+      *ptr_fdp = *fdp;
+      ptr_fdp->mr_type = MR_TYPE_POINTER;
+      ptr_fdp->mr_type_aux = fdp->mr_type_ptr;
+      ptr_fdp->size = sizeof (void*);
+    }
+  
   mr_validate_fd (fdp);
 }
 

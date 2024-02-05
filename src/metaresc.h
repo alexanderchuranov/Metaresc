@@ -1002,12 +1002,6 @@
 	  __fd__.param.array_param.pointer_param = &__ptr_fd__;		\
 	}								\
       mr_detect_type (&__fd__);						\
-      if (__fd__.tdp)							\
-	__fd__.name.str = __fd__.tdp->type.str;				\
-      __ptr_fd__ = __fd__;						\
-      __ptr_fd__.mr_type = MR_TYPE_POINTER;				\
-      __ptr_fd__.mr_type_aux = __fd__.mr_type_ptr;			\
-      __ptr_fd__.size = sizeof (void*);					\
       mr_save (__ptr__, &__fd__);					\
     })
 
