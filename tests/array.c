@@ -1,5 +1,6 @@
 #include <check.h>
 #include <metaresc.h>
+#include <mr_save.h> /* MR_ONE_SHIFT */
 #include <regression.h>
 
 TYPEDEF_ENUM (packed_enum_t, ATTRIBUTES (__attribute__ ((packed))), ZERO, ONE, TWO, THREE)
@@ -98,16 +99,20 @@ mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_
   int i, count = expected_size / sizeof (*expected);
   for (i = 0; i < count; ++i)
     {
-      ck_assert_msg (strcmp (ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str) == 0,
-		     "[%d] type %s != %s", i, ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str);
       ck_assert_msg (strcmp (ptrs->ra[i].name, expected[i].name) == 0,
-		     "[%d] type %s != %s", i, ptrs->ra[i].name, expected[i].name);
+		     "[%d] name %s != %s", i, ptrs->ra[i].name, expected[i].name);
       ck_assert_msg (ptrs->ra[i].mr_type == expected[i].mr_type,
-		     "[%d] type %d != %d", i, ptrs->ra[i].mr_type, expected[i].mr_type);
+		     "[%d] mr_type %d != %d", i, ptrs->ra[i].mr_type, expected[i].mr_type);
+
+#define MR_TYPED_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_ENUM, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
+
+      if ((MR_TYPED_TYPES >> ptrs->ra[i].mr_type) & 1)
+	ck_assert_msg (strcmp (ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str) == 0,
+		       "[%d] type %s != %s", i, ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str);
       ck_assert_msg (ptrs->ra[i].first_child == expected[i].first_child,
-		     "[%d] type %d != %d", i, ptrs->ra[i].first_child, expected[i].first_child);
+		     "[%d] first_child %d != %d", i, ptrs->ra[i].first_child, expected[i].first_child);
       ck_assert_msg (ptrs->ra[i].next == expected[i].next,
-		     "[%d] type %d != %d", i, ptrs->ra[i].next, expected[i].next);
+		     "[%d] next %d != %d", i, ptrs->ra[i].next, expected[i].next);
     }
 }
 
@@ -132,7 +137,6 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -140,7 +144,6 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 4,
@@ -148,7 +151,6 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -156,7 +158,6 @@ START_TEST (int_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "int" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_INT32,
 	.first_child = -1,
@@ -182,7 +183,6 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -190,7 +190,6 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 4,
@@ -198,7 +197,6 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -232,7 +230,6 @@ START_TEST (union_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -240,7 +237,6 @@ START_TEST (union_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 5,
@@ -248,7 +244,6 @@ START_TEST (union_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -272,7 +267,6 @@ START_TEST (union_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "float" }}},
 	.name = "_float",
 	.mr_type = MR_TYPE_FLOAT,
 	.first_child = -1,
@@ -298,7 +292,6 @@ START_TEST (ud_overrided_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_ARRAY,
 	.first_child = 2,
@@ -306,7 +299,6 @@ START_TEST (ud_overrided_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = 5,
@@ -314,7 +306,6 @@ START_TEST (ud_overrided_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
 	.name = "x",
 	.mr_type = MR_TYPE_POINTER,
 	.first_child = -1,
@@ -338,7 +329,6 @@ START_TEST (ud_overrided_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "float" }}},
 	.name = "_float",
 	.mr_type = MR_TYPE_FLOAT,
 	.first_child = -1,
@@ -348,6 +338,64 @@ START_TEST (ud_overrided_ptr_array)
     };      
   ASSERT_MR_SAVE (ud_overrided_ptr_array_t, &orig, expected);
   ALL_METHODS (ASSERT_SAVE_LOAD, ud_overrided_ptr_array_t, &orig);
+} END_TEST
+
+START_TEST (string_ptr_array)
+{
+  char ** orig[] = { NULL, (char*[]){NULL}, (char*[]){"1"}};
+  mr_ptrdes_t expected[] =
+    {
+      {
+	.name = "string_t",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "string_t",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = -1,
+	.next = 2
+      }
+      ,
+      {
+	.name = "string_t",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = 4,
+	.next = 3
+      }
+      ,
+      {
+	.name = "string_t",
+	.mr_type = MR_TYPE_POINTER,
+	.first_child = 5,
+	.next = -1
+      }
+      ,
+      {
+	.name = "string_t",
+	.mr_type = MR_TYPE_STRING,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "string_t",
+	.mr_type = MR_TYPE_STRING,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "string_t",
+	.mr_type = MR_TYPE_CHAR_ARRAY,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };
+  ASSERT_MR_SAVE ( , orig, expected);
 } END_TEST
 
 MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
@@ -367,5 +415,6 @@ MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
 		 (int_ptr_array, "array of int pointers"),
 		 (enum_ptr_array, "array of pointers on enums"),
 		 (union_ptr_array, "array of union pointers"),
-		 (ud_overrided_ptr_array, "array of union pointers with overrides")
+		 (ud_overrided_ptr_array, "array of union pointers with overrides"),
+		 (string_ptr_array, "array of pointers on strings")
 		 );

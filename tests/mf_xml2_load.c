@@ -11,7 +11,7 @@ xml2_load_method (void * arg)
   mr_status_t status;
   xmlNodePtr node = arg;
   memset (&_mr_conf, 0, sizeof (_mr_conf));
-  status = MR_LOAD_XML2_NODE_ARG3 (mr_conf_t, node, &_mr_conf);
+  status = MR_LOAD_XML2_NODE_ARGS3 (mr_conf_t, node, &_mr_conf);
   mr_conf.mr_mem = mr_mem;
   mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &_mr_conf);
   mr_conf.mr_mem = _mr_mem;

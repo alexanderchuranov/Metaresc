@@ -874,9 +874,8 @@
 #define MR_CHECK_TYPES(MR_TYPE_NAME, S_PTR) MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME)) () (((void) (1 / __builtin_types_compatible_p (MR_TYPE_NAME, __typeof__ (*(S_PTR))))))
 #endif /* MR_CHECK_TYPES */
 
-#define MR_COPY_RECURSIVELY(MR_TYPE_NAME, ...) MR_COPY_RECURSIVELY_ (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_COPY_RECURSIVELY_(MR_TYPE_NAME, S_PTR, D_PTR, N, ...) MR_PASTE2 (MR_COPY_RECURSIVELY_ARG, N) (MR_TYPE_NAME, S_PTR, D_PTR)
-#define MR_COPY_RECURSIVELY_ARG3(MR_TYPE_NAME, S_PTR, D_PTR) ({		\
+#define MR_COPY_RECURSIVELY(...) MR_PASTE2 (MR_COPY_RECURSIVELY_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+#define MR_COPY_RECURSIVELY_ARGS3(MR_TYPE_NAME, S_PTR, D_PTR) ({	\
       mr_status_t ___status = MR_FAILURE;				\
       MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
       mr_ra_ptrdes_t ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
@@ -887,14 +886,16 @@
 	}								\
       ___status;							\
     })
-#define MR_COPY_RECURSIVELY_ARG2(MR_TYPE_NAME, S_PTR, D_PTR) ({ \
-      __typeof__ (*(S_PTR)) dst;				\
-      memset (&dst, 0, sizeof (dst));				\
-      MR_COPY_RECURSIVELY_ARG3 (MR_TYPE_NAME, S_PTR, &dst);	\
-      dst;							\
+#define MR_COPY_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
+      __typeof__ (__builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (S_PTR), __typeof__ (&*(S_PTR))), *(S_PTR), S_PTR)) dst; \
+      memset (&dst, 0, sizeof (dst));					\
+      MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &dst);		\
+      dst;								\
     })
+#define MR_COPY_RECURSIVELY_ARGS1(S_PTR) MR_COPY_RECURSIVELY_ARGS2 ( , S_PTR)
 
-#define MR_FREE_RECURSIVELY(MR_TYPE_NAME, S_PTR) ({		\
+#define MR_FREE_RECURSIVELY(...) MR_PASTE2 (MR_FREE_RECURSIVELY_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+#define MR_FREE_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({	\
       mr_ra_ptrdes_t ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       mr_status_t status = MR_SUCCESS;				\
       mr_free_recursively (&ptrs);				\
@@ -904,16 +905,20 @@
 	MR_FREE (ptrs.ra);					\
       status;							\
     })
+#define MR_FREE_RECURSIVELY_ARGS1(S_PTR) MR_FREE_RECURSIVELY_ARGS2 ( , S_PTR)
 
-#define MR_HASH_STRUCT(MR_TYPE_NAME, S_PTR) ({			\
+#define MR_HASH_STRUCT(...) MR_PASTE2 (MR_HASH_STRUCT_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+#define MR_HASH_STRUCT_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
       mr_ra_ptrdes_t _s_ptr_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       mr_hash_value_t _hash_value_ = mr_hash_struct (&_s_ptr_);	\
       if (_s_ptr_.ra)						\
 	MR_FREE (_s_ptr_.ra);					\
       _hash_value_;						\
     })
+#define MR_HASH_STRUCT_ARGS1(S_PTR) MR_HASH_STRUCT_ARGS2 ( , S_PTR)
 
-#define MR_CMP_STRUCTS(MR_TYPE_NAME, X, Y) ({			\
+#define MR_CMP_STRUCTS(...) MR_PASTE2 (MR_CMP_STRUCTS_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+#define MR_CMP_STRUCTS_ARGS3(MR_TYPE_NAME, X, Y) ({		\
       mr_ra_ptrdes_t _x_ = MR_SAVE (MR_TYPE_NAME, X);		\
       mr_ra_ptrdes_t _y_ = MR_SAVE (MR_TYPE_NAME, Y);		\
       int _cmp_ = mr_cmp_structs (&_x_, &_y_);			\
@@ -923,6 +928,7 @@
 	MR_FREE (_y_.ra);					\
       _cmp_;							\
     })
+#define MR_CMP_STRUCTS_ARGS2(X, Y) MR_CMP_STRUCTS_ARGS3 ( , X, Y)
     
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
 
@@ -962,7 +968,9 @@
 
 #define MR_SAVE MR_SAVE_TYPED
 
-#define MR_SAVE_TYPED(MR_TYPE_NAME, S_PTR)			\
+#define MR_SAVE_TYPED(...) MR_PASTE2 (MR_SAVE_TYPED_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+#define MR_SAVE_TYPED_ARGS1(S_PTR) MR_SAVE_TYPED_ARGS2 ( , S_PTR)
+#define MR_SAVE_TYPED_ARGS2(MR_TYPE_NAME, S_PTR)		\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))			\
     (MR_SAVE_STR_TYPED (MR_PTR_DETECT_TYPE (S_PTR), S_PTR))	\
     (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);			\
@@ -970,32 +978,47 @@
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       void * __ptr__ = (void*)S_PTR;					\
-      mr_fd_t __fd__;							\
+      mr_fd_t __fd__, __ptr_fd__;					\
       memset (&__fd__, 0, sizeof (__fd__));				\
       __fd__.type = MR_TYPE_NAME_STR;					\
+      if (__fd__.type == NULL)						\
+	__fd__.type = "";						\
+      __fd__.name.str = "entity";					\
+      __fd__.name.hash_value = 0;					\
+      __fd__.unnamed = true;						\
       __fd__.non_persistent = true;					\
       __fd__.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));		\
+      __fd__.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*(S_PTR)));	\
       __fd__.size = sizeof (*(S_PTR));					\
-      mr_detect_type (&__fd__);						\
-      if (!__builtin_types_compatible_p (__typeof__ ((S_PTR) + 0), __typeof__ (S_PTR)))	\
+      __fd__.param.pointer_param.pointer_param = &__ptr_fd__;		\
+      if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)), __typeof__ (S_PTR))) \
 	{								\
+	  __fd__.mr_type_ptr = __fd__.mr_type_aux;			\
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
 	  __fd__.size = sizeof (S_PTR);					\
 	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
 	  __fd__.param.array_param.row_count = 1;			\
+	  __fd__.param.array_param.pointer_param = &__ptr_fd__;		\
 	}								\
+      mr_detect_type (&__fd__);						\
+      if (__fd__.tdp)							\
+	__fd__.name.str = __fd__.tdp->type.str;				\
+      __ptr_fd__ = __fd__;						\
+      __ptr_fd__.mr_type = MR_TYPE_POINTER;				\
+      __ptr_fd__.mr_type_aux = __fd__.mr_type_ptr;			\
+      __ptr_fd__.size = sizeof (void*);					\
       mr_save (__ptr__, &__fd__);					\
     })
 
-#define MR_SAVE_XDR(MR_TYPE_NAME, XDRS, S_PTR) ({			\
+#define MR_SAVE_XDR(XDRS, ...) ({					\
       mr_status_t __status__ = MR_FAILURE;				\
       XDR * __xdrs__ = (XDRS);						\
       if (XDR_ENCODE != __xdrs__->x_op)					\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
-	  mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+	  mr_ra_ptrdes_t __ptrs__ = MR_SAVE (__VA_ARGS__);		\
 	  if (__ptrs__.ra != NULL)					\
 	    {								\
 	      __status__ = mr_xdr_save (__xdrs__, &__ptrs__);		\
@@ -1005,17 +1028,17 @@
       __status__;							\
     })
 
-#define MR_SAVE_XDR_RA(MR_TYPE_NAME, S_PTR) ({				\
+#define MR_SAVE_XDR_RA(...) ({						\
       XDR _xdrs_;							\
       mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "uint8_t" }; \
       mr_xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
-      if (MR_SUCCESS != MR_SAVE_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR))	\
+      if (MR_SUCCESS != MR_SAVE_XDR (&_xdrs_, __VA_ARGS__))		\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_SAVE_FAILED);		\
       _ra_;								\
     })
 
-#define MR_SAVE_METHOD(METHOD, MR_TYPE_NAME, S_PTR) ({			\
-      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
+#define MR_SAVE_METHOD(METHOD, ...) ({					\
+      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (__VA_ARGS__);			\
       char * __str__ = NULL;						\
       if (__ptrs__.ra != NULL)						\
 	{								\
@@ -1026,34 +1049,37 @@
       __str__;								\
     })
 
-#define MR_SAVE_XML1(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_xml1_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_CINIT(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_cinit_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_JSON(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_json_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_SCM(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_scm_save, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_YAML(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD (mr_yaml_save, MR_TYPE_NAME, S_PTR)
-
-#define MR_SAVE_METHOD_RA(METHOD, MR_TYPE_NAME, S_PTR) ({		\
-      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "string" }; \
-      _ra_.data.ptr = METHOD (MR_TYPE_NAME, S_PTR);			\
+#define MR_SAVE_METHOD_RA(STR) ({					\
+      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .type = "string" }; \
+      _ra_.data.string = STR;						\
       if (_ra_.data.ptr)						\
-	_ra_.MR_SIZE = _ra_.alloc_size = strlen (_ra_.data.ptr) + 1;	\
+	_ra_.MR_SIZE = _ra_.alloc_size = strlen (_ra_.data.string) + 1;	\
       _ra_;								\
     })
 
-#define MR_SAVE_XML_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_XML, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_XML1_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_XML1, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_CINIT_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_CINIT, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_JSON_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_JSON, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_SCM_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_SCM, MR_TYPE_NAME, S_PTR)
-#define MR_SAVE_YAML_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_YAML, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_XML1(...) MR_SAVE_METHOD (mr_xml1_save, __VA_ARGS__)
+#define MR_SAVE_CINIT(...) MR_SAVE_METHOD (mr_cinit_save, __VA_ARGS__)
+#define MR_SAVE_JSON(...) MR_SAVE_METHOD (mr_json_save, __VA_ARGS__)
+#define MR_SAVE_SCM(...) MR_SAVE_METHOD (mr_scm_save, __VA_ARGS__)
 
-#define MR_LOAD_XDR_ARG3(MR_TYPE_NAME, XDRS, S_PTR)			\
+#define MR_SAVE_XML_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_XML (__VA_ARGS__))
+#define MR_SAVE_XML1_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_XML1 (__VA_ARGS__))
+#define MR_SAVE_CINIT_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_CINIT (__VA_ARGS__))
+#define MR_SAVE_JSON_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_JSON (__VA_ARGS__))
+#define MR_SAVE_SCM_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_SCM (__VA_ARGS__))
+
+#ifdef HAVE_LIBYAML
+#define MR_SAVE_YAML(...) MR_SAVE_METHOD (mr_yaml_save, __VA_ARGS__)
+#define MR_SAVE_YAML_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_YAML (__VA_ARGS__))
+#endif /* HAVE_LIBYAML */
+
+#define MR_LOAD_XDR_ARGS3(MR_TYPE_NAME, XDRS, D_PTR)			\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-    (MR_LOAD_XDR_ARG3_ (MR_PTR_DETECT_TYPE (S_PTR), XDRS, S_PTR))	\
-    (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-	MR_LOAD_XDR_ARG3_ (#MR_TYPE_NAME, XDRS, S_PTR); }))
+       (MR_LOAD_XDR_ARGS3_ (MR_PTR_DETECT_TYPE (D_PTR), XDRS, D_PTR))	\
+       (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
+	   MR_LOAD_XDR_ARGS3_ (#MR_TYPE_NAME, XDRS, D_PTR); }))
 
-#define MR_LOAD_XDR_ARG3_(MR_TYPE_NAME, XDRS, S_PTR) ({			\
+#define MR_LOAD_XDR_ARGS3_(MR_TYPE_NAME, XDRS, D_PTR) ({		\
       mr_status_t __status__ = MR_FAILURE;				\
       XDR * __xdrs__ = (XDRS);						\
       if (XDR_DECODE != __xdrs__->x_op)					\
@@ -1065,43 +1091,44 @@
 	     .type = MR_TYPE_NAME,					\
 	     .name = { .str = NULL, .hash_value = 0, },			\
 	     .non_persistent = true,					\
-	     .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),		\
-	     .size = sizeof (*(S_PTR)),					\
+	     .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),		\
+	     .size = sizeof (*(D_PTR)),					\
 	    };								\
 	  mr_detect_type (&__fd__);					\
-	  __status__ = mr_xdr_load ((S_PTR), &__fd__, __xdrs__);	\
+	  __status__ = mr_xdr_load ((D_PTR), &__fd__, __xdrs__);	\
 	}								\
       __status__;							\
     })
 
-#define MR_LOAD_XDR_ARG2_(MR_TYPE_NAME, XDRS) ({			\
+#define MR_LOAD_XDR_ARGS2(MR_TYPE_NAME, XDRS) ({			\
       mr_status_t _status_ = MR_FAILURE;				\
-      MR_TYPE_NAME __result__;						\
-      memset (&__result__, 0, sizeof (__result__));			\
-      _status_ = MR_LOAD_XDR_ARG3 (MR_TYPE_NAME, XDRS, &__result__);	\
+      MR_TYPE_NAME _result_;						\
+      memset (&_result_, 0, sizeof (_result_));				\
+      _status_ = MR_LOAD_XDR_ARGS3 (MR_TYPE_NAME, XDRS, &_result_);	\
       if (MR_SUCCESS != _status_)					\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_LOAD_FAILED);		\
-      __result__;							\
+      _result_;								\
     })
 
-#define MR_LOAD_XDR(MR_TYPE_NAME, ...) MR_LOAD_XDR_ARGN (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_XDR_ARGN(MR_TYPE_NAME, XDRS, S_PTR, N, ...) MR_LOAD_XDR_ARG ## N (MR_TYPE_NAME, XDRS, S_PTR)
-#define MR_LOAD_XDR_ARG2(MR_TYPE_NAME, XDRS, S_PTR) MR_LOAD_XDR_ARG2_ (MR_TYPE_NAME, XDRS)
+#define MR_LOAD_XDR(...) MR_PASTE2 (MR_LOAD_XDR_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 
-#define MR_LOAD_XDR_RA(MR_TYPE_NAME, ...) MR_LOAD_XDR_RA_ARGN (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_XDR_RA_ARGN(MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_XDR_RA_ARG ## N (MR_TYPE_NAME, RA, S_PTR)
-#define MR_LOAD_XDR_RA_ARG2(MR_TYPE_NAME, RA, S_PTR) ({ XDR _xdrs_; mr_xdrra_create (&_xdrs_, RA, XDR_DECODE); MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_); })
-#define MR_LOAD_XDR_RA_ARG3(MR_TYPE_NAME, RA, S_PTR) ({ XDR _xdrs_; mr_xdrra_create (&_xdrs_, RA, XDR_DECODE); MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_, S_PTR); })
+#define MR_LOAD_XDR_RA(MR_TYPE_NAME, RA, ...) ({			\
+      XDR _xdrs_;							\
+      mr_xdrra_create (&_xdrs_, RA, XDR_DECODE);			\
+      MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
+	(MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_))				\
+	(MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_, __VA_ARGS__));		\
+    })
 
 #ifdef HAVE_LIBXML2
 
-#define MR_SAVE_XML2_RA(MR_TYPE_NAME, S_PTR) MR_SAVE_METHOD_RA (MR_SAVE_XML2, MR_TYPE_NAME, S_PTR)
+#define MR_SAVE_XML2_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_XML2 (__VA_ARGS__))
 
-#define MR_SAVE_XML2(MR_TYPE_NAME, S_PTR) ({				\
+#define MR_SAVE_XML2(...) ({						\
       int __size__;							\
       char * __str__ = NULL;						\
       xmlChar * __xml_str__ = NULL;					\
-      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
+      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (__VA_ARGS__);			\
       if (__ptrs__.ra != NULL)						\
 	{								\
 	  mr_remove_empty_nodes (&__ptrs__);				\
@@ -1121,13 +1148,13 @@
       __str__;								\
     })
 
-#define MR_LOAD_XML2_NODE_ARG3(MR_TYPE_NAME, XML, S_PTR)		\
+#define MR_LOAD_XML2_NODE_ARGS3(MR_TYPE_NAME, XML, D_PTR)		\
     MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-      (MR_LOAD_XML2_NODE_ARG3_ (MR_PTR_DETECT_TYPE (S_PTR), XML, S_PTR)) \
-      (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-	  MR_LOAD_XML2_NODE_ARG3_ (#MR_TYPE_NAME, XML, S_PTR); }))
+      (MR_LOAD_XML2_NODE_ARGS3_ (MR_PTR_DETECT_TYPE (D_PTR), XML, D_PTR)) \
+      (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
+	  MR_LOAD_XML2_NODE_ARGS3_ (#MR_TYPE_NAME, XML, D_PTR); }))
 
-#define MR_LOAD_XML2_NODE_ARG3_(MR_TYPE_NAME, XML, S_PTR) ({		\
+#define MR_LOAD_XML2_NODE_ARGS3_(MR_TYPE_NAME, XML, D_PTR) ({		\
       mr_status_t __status__ = MR_FAILURE;				\
       mr_ra_ptrdes_t __ptrs__ =						\
 	{								\
@@ -1141,8 +1168,8 @@
 	 .type = MR_TYPE_NAME,						\
 	 .name = { .str = NULL, .hash_value = 0, },			\
 	 .non_persistent = true,					\
-	 .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),		\
-	 .size = sizeof (*(S_PTR)),					\
+	 .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),		\
+	 .size = sizeof (*(D_PTR)),					\
 	};								\
       xmlNodePtr __xml__ = (XML);					\
       if (NULL == __xml__)						\
@@ -1152,28 +1179,26 @@
 	  mr_detect_type (&__fd__);					\
 	  int __idx__ = mr_xml2_load (__xml__, &__ptrs__);		\
 	  if (__idx__ >= 0)						\
-	    __status__ = mr_load ((S_PTR), &__fd__, __idx__, &__ptrs__); \
+	    __status__ = mr_load ((D_PTR), &__fd__, __idx__, &__ptrs__); \
 	  if (__ptrs__.ra)						\
 	    MR_FREE (__ptrs__.ra);					\
 	}								\
       __status__;							\
     })
 
-#define MR_LOAD_XML2_NODE_ARG2_(MR_TYPE_NAME, XML) ({			\
+#define MR_LOAD_XML2_NODE_ARGS2(MR_TYPE_NAME, XML) ({			\
       mr_status_t _status_ = MR_FAILURE;				\
-      MR_TYPE_NAME __result__;						\
-      memset (&__result__, 0, sizeof (__result__));			\
-      _status_ = MR_LOAD_XML2_NODE_ARG3 (MR_TYPE_NAME, XML, &__result__); \
+      MR_TYPE_NAME _result_;						\
+      memset (&_result_, 0, sizeof (_result_));				\
+      _status_ = MR_LOAD_XML2_NODE_ARGS3 (MR_TYPE_NAME, XML, &_result_); \
       if (MR_SUCCESS != _status_)					\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_LOAD_STRUCT_FAILED);		\
-      __result__;							\
+      _result_;								\
     })
 
-#define MR_LOAD_XML2_NODE(MR_TYPE_NAME, ...) MR_LOAD_XML2_NODE_ARGN (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_XML2_NODE_ARGN(MR_TYPE_NAME, XML, S_PTR, N, ...) MR_LOAD_XML2_NODE_ARG ## N (MR_TYPE_NAME, XML, S_PTR)
-#define MR_LOAD_XML2_NODE_ARG2(MR_TYPE_NAME, XML, S_PTR) MR_LOAD_XML2_NODE_ARG2_ (MR_TYPE_NAME, XML)
+#define MR_LOAD_XML2_NODE(...) MR_PASTE2 (MR_LOAD_XML2_NODE_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 
-#define MR_LOAD_XML2_ARG3(MR_TYPE_NAME, STR, S_PTR) ({			\
+#define MR_LOAD_XML2_ARGS3(MR_TYPE_NAME, STR, S_PTR) ({			\
       mr_status_t _status_ = MR_FAILURE;				\
       char * __str__ = (STR);						\
       if (NULL == __str__)						\
@@ -1184,44 +1209,42 @@
 	  if (__doc__)							\
 	    {								\
 	      xmlNodePtr __node__ = xmlDocGetRootElement (__doc__);	\
-	      _status_ = MR_LOAD_XML2_NODE_ARG3 (MR_TYPE_NAME, __node__, (S_PTR)); \
+	      _status_ = MR_LOAD_XML2_NODE_ARGS3 (MR_TYPE_NAME, __node__, (S_PTR)); \
 	      xmlFreeDoc (__doc__);					\
 	    }								\
 	}								\
       _status_;								\
     })
 
-#define MR_LOAD_XML2_ARG2_(MR_TYPE_NAME, STR) ({			\
+#define MR_LOAD_XML2_ARGS2(MR_TYPE_NAME, STR) ({			\
       mr_status_t ___status___ = MR_FAILURE;				\
       MR_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
-      ___status___ = MR_LOAD_XML2_ARG3 (MR_TYPE_NAME, STR, &__result__); \
+      ___status___ = MR_LOAD_XML2_ARGS3 (MR_TYPE_NAME, STR, &__result__); \
       if (MR_SUCCESS != ___status___)					\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_LOAD_STRUCT_FAILED);		\
       __result__;							\
     })
 
-#define MR_LOAD_XML2(MR_TYPE_NAME, ...) MR_LOAD_XML2_N (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_XML2_N(MR_TYPE_NAME, STR, S_PTR, N, ...) MR_LOAD_XML2_ARG ## N (MR_TYPE_NAME, STR, S_PTR)
-#define MR_LOAD_XML2_ARG2(MR_TYPE_NAME, STR, S_PTR) MR_LOAD_XML2_ARG2_ (MR_TYPE_NAME, STR)
+#define MR_LOAD_XML2(...) MR_PASTE2 (MR_LOAD_XML2_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+
+#define MR_LOAD_XML2_RA(MR_TYPE_NAME, RA, ...)				\
+  MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
+    (MR_LOAD_XML2_ARGS2 (MR_TYPE_NAME, (char*)((RA)->data.ptr)))	\
+    (MR_LOAD_XML2_ARGS3 (MR_TYPE_NAME, (char*)((RA)->data.ptr), __VA_ARGS__))
 
 #endif /* HAVE_LIBXML2 */
 
-#define MR_LOAD_XML2_RA(MR_TYPE_NAME, ...) MR_LOAD_XML2_RA_ARGN (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_XML2_RA_ARGN(MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_XML2_ARG ## N (MR_TYPE_NAME, (char*)((RA)->data.ptr), S_PTR)
+#define MR_LOAD_METHOD_ARGS4(METHOD, MR_TYPE_NAME, STR, D_PTR)		\
+  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
+       (MR_LOAD_METHOD_ARGS4_ (METHOD, MR_PTR_DETECT_TYPE (D_PTR), STR, D_PTR)) \
+       (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
+	   MR_LOAD_METHOD_ARGS4_ (METHOD, #MR_TYPE_NAME, STR, D_PTR); }))
 
-#ifdef HAVE_BISON_FLEX
-
-#define MR_LOAD_METHOD_ARG3(METHOD, MR_TYPE_NAME, STR, S_PTR)		\
-    MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-      (MR_LOAD_METHOD_ARG3_ (METHOD, MR_PTR_DETECT_TYPE (S_PTR), STR, S_PTR)) \
-      (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
-	  MR_LOAD_METHOD_ARG3_ (METHOD, #MR_TYPE_NAME, STR, S_PTR); }))
-
-#define MR_LOAD_METHOD_ARG3_(METHOD, MR_TYPE_NAME, STR, S_PTR) ({	\
+#define MR_LOAD_METHOD_ARGS4_(METHOD, MR_TYPE_NAME, STR, D_PTR) ({	\
       mr_ra_ptrdes_t _ptrs_ =						\
 	{ .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }; \
-      memset ((S_PTR), 0, sizeof (*(S_PTR)));				\
+      memset ((D_PTR), 0, sizeof (*(D_PTR)));				\
       mr_status_t _status_ = METHOD ((STR), &_ptrs_);			\
       if (MR_SUCCESS == _status_)					\
 	{								\
@@ -1229,82 +1252,80 @@
 	    {								\
 	      .type = MR_TYPE_NAME,					\
 	      .name = { .str = NULL, .hash_value = 0, },		\
-	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR))),	\
-	      .size = sizeof (*(S_PTR)),				\
+	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
+	      .size = sizeof (*(D_PTR)),				\
 	    };								\
 	  mr_detect_type (&_fd_);					\
-	  _status_ = mr_load ((S_PTR), &_fd_, 0, &_ptrs_);		\
+	  _status_ = mr_load ((D_PTR), &_fd_, 0, &_ptrs_);		\
 	}								\
       if (_ptrs_.ra)							\
 	MR_FREE (_ptrs_.ra);						\
       _status_;								\
     })
 
-#define MR_LOAD_METHOD_ARG2_(METHOD, MR_TYPE_NAME, STR) ({		\
+#define MR_LOAD_METHOD_ARGS3(METHOD, MR_TYPE_NAME, STR) ({		\
       mr_status_t __status__ = MR_FAILURE;				\
       MR_TYPE_NAME __result__;						\
       memset (&__result__, 0, sizeof (__result__));			\
-      __status__ = MR_LOAD_METHOD_ARG3 (METHOD, MR_TYPE_NAME, STR, &__result__); \
+      __status__ = MR_LOAD_METHOD_ARGS4 (METHOD, MR_TYPE_NAME, STR, &__result__); \
       if (MR_SUCCESS != __status__)					\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_LOAD_STRUCT_FAILED);		\
       __result__;							\
     })
 
-#define MR_LOAD_METHOD(METHOD, MR_TYPE_NAME, ...) MR_LOAD_METHOD_ARGN (METHOD, MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_METHOD_ARGN(METHOD, MR_TYPE_NAME, STR, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, STR, S_PTR)
-#define MR_LOAD_METHOD_ARG2(METHOD, MR_TYPE_NAME, STR, S_PTR) MR_LOAD_METHOD_ARG2_ (METHOD, MR_TYPE_NAME, STR)
+#define MR_LOAD_METHOD(...) MR_PASTE2 (MR_LOAD_METHOD_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 
-#define MR_LOAD_XML1(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_xml1_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_CINIT(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_cinit_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_JSON(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_json_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_SCM(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_scm_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_YAML(MR_TYPE_NAME, /* STR */ ...) MR_LOAD_METHOD (mr_yaml_load, MR_TYPE_NAME, __VA_ARGS__)
+#define MR_LOAD_METHOD_RA(METHOD, MR_TYPE_NAME, RA, ...)		\
+  MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
+    (MR_LOAD_METHOD_ARGS3 (METHOD, MR_TYPE_NAME, (RA)->data.string))	\
+    (MR_LOAD_METHOD_ARGS4 (METHOD, MR_TYPE_NAME, (RA)->data.string, __VA_ARGS__))
 
-#define MR_LOAD_METHOD_RA(METHOD, MR_TYPE_NAME, ...) MR_LOAD_METHOD_RA_ARGN (METHOD, MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_METHOD_RA_ARGN(METHOD, MR_TYPE_NAME, RA, S_PTR, N, ...) MR_LOAD_METHOD_ARG ## N (METHOD, MR_TYPE_NAME, (char*)((RA)->data.ptr), S_PTR)
+#ifdef HAVE_LIBYAML
+#define MR_LOAD_YAML(...) MR_LOAD_METHOD (mr_yaml_load, __VA_ARGS__)
+#define MR_LOAD_YAML_RA(...) MR_LOAD_METHOD_RA (mr_yaml_load, __VA_ARGS__)
+#endif /* HAVE_LIBYAML */
 
-#define MR_LOAD_XML1_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_xml1_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_CINIT_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_cinit_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_JSON_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_json_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_SCM_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_scm_load, MR_TYPE_NAME, __VA_ARGS__)
-#define MR_LOAD_YAML_RA(MR_TYPE_NAME, /* RA */ ...) MR_LOAD_METHOD_RA (mr_yaml_load, MR_TYPE_NAME, __VA_ARGS__)
+#ifdef HAVE_BISON_FLEX
+
+#define MR_LOAD_XML1(...) MR_LOAD_METHOD (mr_xml1_load, __VA_ARGS__)
+#define MR_LOAD_CINIT(...) MR_LOAD_METHOD (mr_cinit_load, __VA_ARGS__)
+#define MR_LOAD_JSON(...) MR_LOAD_METHOD (mr_json_load, __VA_ARGS__)
+#define MR_LOAD_SCM(...) MR_LOAD_METHOD (mr_scm_load, __VA_ARGS__)
+
+#define MR_LOAD_XML1_RA(...) MR_LOAD_METHOD_RA (mr_xml1_load, __VA_ARGS__)
+#define MR_LOAD_CINIT_RA(...) MR_LOAD_METHOD_RA (mr_cinit_load, __VA_ARGS__)
+#define MR_LOAD_JSON_RA(...) MR_LOAD_METHOD_RA (mr_json_load, __VA_ARGS__)
+#define MR_LOAD_SCM_RA(...) MR_LOAD_METHOD_RA (mr_scm_load, __VA_ARGS__)
 
 #else /* ! HAVE_BISON_FLEX */
 
-#define MR_ZERO_RESULT(MR_TYPE_NAME) ({				\
+#define MR_LOAD_STUB(...) MR_PASTE2 (MR_LOAD_STUB_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+#define MR_LOAD_STUB_ARGS2(MR_TYPE_NAME, STR) ({		\
       MR_TYPE_NAME __result__;					\
       memset (&__result__, 0, sizeof (__result__));		\
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_METHOD_MISSED);	\
       __result__;						\
     })
-
-#define MR_LOAD_STUB(MR_TYPE_NAME, ...) MR_LOAD_STUB_ARGN (MR_TYPE_NAME, __VA_ARGS__, 3, 2)
-#define MR_LOAD_STUB_ARGN(MR_TYPE_NAME, STR, S_PTR, N, ...) MR_LOAD_STUB_ARG ## N (MR_TYPE_NAME, STR, S_PTR)
-#define MR_LOAD_STUB_ARG2(MR_TYPE_NAME, STR, S_PTR) (MR_ZERO_RESULT (MR_TYPE_NAME))
-#define MR_LOAD_STUB_ARG3(MR_TYPE_NAME, STR, S_PTR) ({ MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_METHOD_MISSED); 0;})
+#define MR_LOAD_STUB_ARGS3(MR_TYPE_NAME, STR, D_PTR) ({ MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_LOAD_METHOD_MISSED); 0;})
 
 #define MR_LOAD_XML1 MR_LOAD_STUB
 #define MR_LOAD_CINIT MR_LOAD_STUB
+#define MR_LOAD_JSON MR_LOAD_STUB
 #define MR_LOAD_SCM MR_LOAD_STUB
 
 #endif /* HAVE_BISON_FLEX */
 
 #ifdef HAVE_LIBXML2
+
 #define MR_LOAD_XML MR_LOAD_XML2
-#define MR_LOAD_XML_RA MR_LOAD_XML2_RA
 #define MR_SAVE_XML MR_SAVE_XML2
+#define MR_LOAD_XML_RA MR_LOAD_XML2_RA
 
 #else /* ! HAVE_LIBXML2 */
 
 #define MR_SAVE_XML MR_SAVE_XML1
-
-#ifdef HAVE_BISON_FLEX
 #define MR_LOAD_XML MR_LOAD_XML1
 #define MR_LOAD_XML_RA MR_LOAD_XML1_RA
-#else /* ! HAVE_BISON_FLEX */
-#define MR_LOAD_XML MR_LOAD_STUB
-#define MR_LOAD_XML_RA MR_LOAD_STUB
-#endif /* HAVE_BISON_FLEX */
 
 #endif /* HAVE_LIBXML2 */
 

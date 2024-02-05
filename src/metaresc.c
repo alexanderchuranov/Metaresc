@@ -1205,6 +1205,8 @@ mr_register_type_pointer (mr_td_t * tdp)
 static bool
 mr_type_is_a_pointer (char * type)
 {
+  if ((NULL == type) || (0 == type[0]))
+    return (false);
   /* auto detect pointers */
   char * end = &type[strlen (type) - 1];
   if ('*' == *end)
@@ -1374,6 +1376,21 @@ mr_detect_structured_type (mr_structured_type_t * stype)
 	}
     }
 
+#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
+  static char * type_name[] = {
+    MR_FOREACH (MR_TYPE_NAME,
+		string_t, char, bool,
+		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
+		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
+  };
+  mr_type_t mr_type = stype->mr_type;
+  if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_POINTER, MR_TYPE_ARRAY)) >> stype->mr_type) & 1)
+    mr_type = (MR_TYPE_POINTER == stype->mr_type_aux) ? stype->mr_type_ptr : stype->mr_type_aux;
+
+  if ((mr_type > 0) && (mr_type < sizeof (type_name) / sizeof (type_name[0])))
+    if (type_name[mr_type])
+      stype->tdp = mr_get_td_by_name_internal (type_name[mr_type]);
+
   /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
   if ((MR_TYPE_NONE == stype->mr_type) && (MR_POINTER_TYPE_CLASS == stype->mr_type_class))
     stype->mr_type = MR_TYPE_POINTER;
@@ -1382,6 +1399,9 @@ mr_detect_structured_type (mr_structured_type_t * stype)
 static void
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
+  if (NULL == fdp)
+    return;
+
   mr_fd_of_array_type (fdp);
 
   mr_structured_type_t stype;
@@ -1946,28 +1966,9 @@ mr_conf_init ()
 void
 mr_detect_type (mr_fd_t * fdp)
 {
-#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
-  static char * type_name[] = {
-    MR_FOREACH (MR_TYPE_NAME,
-		string_t, char, bool,
-		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
-		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
-  };
-
   mr_conf_init ();
-
-  if (NULL == fdp)
-    return;
-
   mr_fd_detect_field_type (fdp);
-
-  if (fdp->tdp)
-    fdp->type = fdp->name.str = fdp->tdp->type.str;
-  
-  if ((fdp->mr_type > 0) && (fdp->mr_type < sizeof (type_name) / sizeof (type_name[0])))
-    if (type_name[fdp->mr_type])
-      fdp->type = fdp->name.str = type_name[fdp->mr_type];
-  fdp->name.hash_value = 0;
+  mr_validate_fd (fdp);
 }
 
 mr_uintmax_t
