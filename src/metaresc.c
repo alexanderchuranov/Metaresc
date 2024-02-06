@@ -413,8 +413,6 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
   if ((MR_TYPE_ENUM == mr_type) && (ptrdes->tdp != NULL))
     mr_type = ptrdes->tdp->param.enum_param.mr_type_effective;
 
-  fprintf (stderr, "_value %" PRIx64 " mr_type %d\n", _value, mr_type);
-
   switch (mr_type)
     {
     case MR_TYPE_INT8:

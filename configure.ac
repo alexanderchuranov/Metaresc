@@ -14,7 +14,7 @@ AC_CANONICAL_HOST
 case $host_os in
 mingw*)
   lt_cv_deplibs_check_method=pass_all
-  CFLAGS="${CFLAGS} -Werror=format=0 -mno-ms-bitfields"
+  CFLAGS="${CFLAGS} -Werror=format=2 -mno-ms-bitfields"
   CPPLAGS="${CPPFLAGS} -D__SCNi8=SCNi16 -D__SCNu8=SCNu16"
   ;;
 esac

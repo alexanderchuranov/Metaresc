@@ -233,7 +233,6 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char *
   uint64_t value;
 
   mr_save_bitfield_value (ptrdes, &value);
-  fprintf (stderr, "value %" PRIx64 "\n", value);
   _ptrdes.data.ptr = &value;
 
   switch (ptrdes->mr_type_aux)
