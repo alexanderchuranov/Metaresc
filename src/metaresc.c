@@ -1915,58 +1915,44 @@ mr_conf_init ()
   static volatile bool initialized = false;
   static volatile bool init_in_progress = false;
 
-  fprintf (stderr, "Init\n");
   if (initialized)
     return;
 
   if (!__atomic_test_and_set (&init_in_progress, __ATOMIC_RELAXED))
     {
-      fprintf (stderr, "IC init\n");
       mr_ic_new (&mr_conf.enum_by_name, mr_ed_name_get_hash, mr_ed_name_cmp, "mr_ed_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH, NULL);
 
-      fprintf (stderr, "IC init done\n");
       mr_td_t * tdp;
       for (tdp = mr_conf.list; tdp; tdp = tdp->next)
 	{
 	  mr_normalize_type (tdp->type.str);
 	  tdp->type.hash_value = 0;
-	  fprintf (stderr, "type %s\n", tdp->type.str);
+	  fprintf (stderr, "type %s tdp %p next %p\n", tdp->type.str, tdp, tdp->next);
 
 	  /* check whether this type is already in the list */
 	  if (mr_get_td_by_name_internal (tdp->type.str))
 	    continue; /* this type is already registered */
 
-	  fprintf (stderr, "type %s mr_init_struct\n", tdp->type.str);
 	  mr_init_struct (tdp);
-	  fprintf (stderr, "type %s mr_init_enum\n", tdp->type.str);
 	  mr_init_enum (tdp);
-	  fprintf (stderr, "type %s mr_init_func\n", tdp->type.str);
 	  mr_init_func (tdp);
-	  fprintf (stderr, "type %s add\n", tdp->type.str);
 	  mr_ic_add (&mr_conf.type_by_name, tdp);
 	}
 
       for (tdp = mr_conf.list; tdp; tdp = tdp->next)
 	{
-	  fprintf (stderr, "type %s second\n", tdp->type.str);
 	  if (tdp != mr_get_td_by_name_internal (tdp->type.str))
 	    continue; /* this type is a duplicate */
 
-	  fprintf (stderr, "type %s mr_detect_func_args_types\n", tdp->type.str);
 	  mr_detect_func_args_types (tdp);
-	  fprintf (stderr, "type %s mr_detect_struct_fields\n", tdp->type.str);
 	  mr_detect_struct_fields (tdp);
-	  fprintf (stderr, "type %s mr_td_detect_res_size\n", tdp->type.str);
 	  mr_td_detect_res_size (tdp);
-	  fprintf (stderr, "type %s mr_register_type_pointer\n", tdp->type.str);
 	  mr_register_type_pointer (tdp);
-	  fprintf (stderr, "type %s mr_validate_td\n", tdp->type.str);
 	  mr_validate_td (tdp);
 	}
 
-      fprintf (stderr, "Init done\n");
       initialized = true;
     }
   while (!initialized);
