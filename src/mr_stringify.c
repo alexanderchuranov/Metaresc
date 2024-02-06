@@ -153,6 +153,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     {
       mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_ed_t * edp = mr_get_enum_by_value (tdp, value);
+      fprintf (stderr, "value %" PRIx64 " edp %p\n", value, edp);
       if (edp)
 	if (edp->name.str)
 	  return (mr_ra_append_string (mr_ra_str, edp->name.str));
