@@ -84,18 +84,16 @@ jobs:
           install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
-      - name: exclude 'union' from tests on mingw32
-        run: sed -i.bak -e "s/union //" tests/Makefile.am
+#      - name: exclude 'union' from tests on mingw32
+#        run: sed -i.bak -e "s/union //" tests/Makefile.am
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
         run: ./configure --disable-static --enable-shared --without-perftest --without-libxml2
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
-#     - name: make check
-#       run: make check -j 2
-      - name: debug
-        run: make -j 2 check; cd tests; ./bitfield
+      - name: make check
+        run: make check -j 2
       - name: archive build artifacts
         uses: actions/upload-artifact@v3
         with:
