@@ -1784,10 +1784,11 @@ mr_add_type (mr_td_t * tdp)
   if (MR_TYPE_NONE == tdp->mr_type)
     return; /* skip types that were not properly detected */
 
+  if ((tdp->next != NULL) || (mr_conf.list == tdp))
+    return;
+
   tdp->next = mr_conf.list;
   mr_conf.list = tdp;
-
-  fprintf (stderr, "Reg type %s tdp %p next %p\n", tdp->type.str, tdp, tdp->next);
 }
 
 static void
