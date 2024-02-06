@@ -35,7 +35,13 @@ static void
 msg_handler (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args)
 {
   if (MR_MESSAGE_SAVE_ENUM == message_id)
-    ++warnings;
+    {
+      uint64_t value = va_arg (args, typeof (value));
+      char * type = va_arg (args, typeof (type));
+      char * field = va_arg (args, typeof (field));
+      fprintf (stderr, "Can't find enum name for value %" PRIx64 " type '%s' field '%s'." "\n", value, type, field);
+      ++warnings;
+    }
 }
 
 #define SKIP_METHOD_XDR 0
