@@ -1933,7 +1933,6 @@ mr_conf_init ()
 	{
 	  mr_normalize_type (tdp->type.str);
 	  tdp->type.hash_value = 0;
-	  fprintf (stderr, "type %s tdp %p next %p\n", tdp->type.str, tdp, tdp->next);
 
 	  /* check whether this type is already in the list */
 	  if (mr_get_td_by_name_internal (tdp->type.str))
