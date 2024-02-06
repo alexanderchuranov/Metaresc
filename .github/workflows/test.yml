@@ -2,7 +2,7 @@ name: ci
 
 on: [ push, pull_request ]
 
-  jobs:
+jobs:
 #   x86-ubuntu-gcc-clang:
 #     runs-on: ubuntu-latest
 #     name: x86 Ubuntu with
