@@ -85,9 +85,9 @@ jobs:
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: exclude 'union', it fails with 'out of memory' on mingw32
-        run: sed -e "s/union //" tests/Makefile.am
+        run: sed -i.bak -e "s/union //" tests/Makefile.am
       - name: exclude 'bitfield', it fails, but works correctly with debug output
-        run: sed -e "s/bitfield //" tests/Makefile.am
+        run: sed -i.bak -e "s/bitfield //" tests/Makefile.am
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
