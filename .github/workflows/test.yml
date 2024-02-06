@@ -84,7 +84,7 @@ jobs:
           install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
-      - name: exclude mr_ptr from tests on mingw32
+      - name: exclude 'union' from tests on mingw32
         run: sed -i.bak -e "s/union //" tests/Makefile.am
       - name: autoconf/automake
         run: ./autogen.sh
