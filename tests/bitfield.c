@@ -29,19 +29,13 @@ TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, :sizeof (_enum_t) 
 START_TEST (bitfield_enum_zero) { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, ZERO); } END_TEST
 START_TEST (bitfield_enum_three) { ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, THREE); } END_TEST
 
-static int warnings = 0;
+static int warnings;
 
 static void
 msg_handler (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args)
 {
   if (MR_MESSAGE_SAVE_ENUM == message_id)
-    {
-      uint64_t value = va_arg (args, typeof (value));
-      char * type = va_arg (args, typeof (type));
-      char * field = va_arg (args, typeof (field));
-      fprintf (stderr, "Can't find enum name for value %" PRIx64 " type '%s' field '%s'." "\n", value, type, field);
-      ++warnings;
-    }
+    ++warnings;
 }
 
 #define SKIP_METHOD_XDR 0
@@ -52,6 +46,7 @@ START_TEST (invalid_bitfield_enum_t) {
 
 #define CMP_STRUCT_(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
 
+  warnings = 0;
   mr_conf.msg_handler = msg_handler;
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, -2, CMP_STRUCT_);
   mr_conf.msg_handler = save_msg_handler;
@@ -76,6 +71,7 @@ START_TEST (bitfield_int_m1) {
 START_TEST (bitfield_negative_enum) {
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
 
+  warnings = 0;
   mr_conf.msg_handler = msg_handler;
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_bitfield_enum_t, MINUS_ONE);
   mr_conf.msg_handler = save_msg_handler;
