@@ -290,25 +290,10 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
 
       if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
-	{
-	  mr_ic_t ** icpp = &fdp->param.array_param.pointer_param->param.union_param;
-	  if (*icpp)
-	    {
-	      mr_ic_free (*icpp);
-	      MR_FREE (*icpp);
-	      *icpp = NULL;
-	    }
-	}
+	mr_ic_free (fdp->param.array_param.pointer_param->param.union_param);
+
       if ((MR_TYPE_POINTER == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
-	{
-	  mr_ic_t ** icpp = &fdp->param.pointer_param.pointer_param->param.union_param;
-	  if (*icpp)
-	    {
-	      mr_ic_free (*icpp);
-	      MR_FREE (*icpp);
-	      *icpp = NULL;
-	    }
-	}
+	mr_ic_free (fdp->param.pointer_param.pointer_param->param.union_param);
 
       switch (fdp->mr_type)
 	{
@@ -320,12 +305,7 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 	case MR_TYPE_UNION:
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
-	  if (fdp->param.union_param)
-	    {
-	      mr_ic_free (fdp->param.union_param);
-	      MR_FREE (fdp->param.union_param);
-	      fdp->param.union_param = NULL;
-	    }
+	  mr_ic_free (fdp->param.union_param);
 	  __attribute__ ((fallthrough));
 	default:
 	  break;
@@ -1482,8 +1462,6 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
       return (MR_SUCCESS);
     }
 
-  fdp->param.union_param = NULL;
-  
   if ((NULL == fdp->res.ptr) || (NULL == fdp->res_type) || (0 == fdp->MR_SIZE))
     return (MR_SUCCESS);
 
@@ -1493,17 +1471,9 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   if (NULL == fdp->tdp)
     return (MR_FAILURE);
   
-  fdp->param.union_param = MR_CALLOC (1, sizeof (mr_ic_t));
-  if (NULL == fdp->param.union_param)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
-    }
-
   mr_ic_new (fdp->param.union_param, mr_ud_override_hash, mr_ud_override_cmp, "mr_ud_override_t", MR_IC_HASH, NULL);
 
   mr_status_t status = MR_SUCCESS;
-  bool is_empty = true;
   int i, count = fdp->MR_SIZE / sizeof (mr_ud_override_t);
   mr_ud_override_t * ud_overrides = fdp->res.ptr;
   for (i = 0; i < count; ++i)
@@ -1526,17 +1496,8 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
       mr_ud_override_t * udo = add->ptr;
       if (strcmp (udo->discriminator, ud_overrides[i].discriminator) != 0)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_OVERRIDES, udo->value, udo->discriminator, ud_overrides[i].discriminator);
-            
-      is_empty = false;
     }
 
-  if (is_empty)
-    {
-      mr_ic_free (fdp->param.union_param);
-      MR_FREE (fdp->param.union_param);
-      fdp->param.union_param = NULL;
-    }
-  
   return (status);
 }
 
