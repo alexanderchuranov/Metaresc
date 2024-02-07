@@ -85,7 +85,8 @@ jobs:
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: exclude 'union', it fails with 'out of memory' on mingw32
-        run: [ ${{matrix.sys}} = "mingw32" ] && sed -i.bak -e "s/union //" tests/Makefile.am
+        if: ${{ matrix.sys == 'mingw32' }}
+        run: sed -i.bak -e "s/union //" tests/Makefile.am
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
