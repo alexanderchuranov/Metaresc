@@ -368,7 +368,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
       
       /* get an address of discriminator field */
       void * discriminator_ptr = (char*)parent_ptrdes->data.ptr + parent_fdp->offset;
-      fdp = mr_union_discriminator_by_type (tdp, parent_fdp, discriminator_ptr, union_fdp->param.union_param);
+      fdp = mr_union_discriminator_by_type (tdp, parent_fdp, discriminator_ptr, &union_fdp->param.union_param.udo);
       break;
     }
 

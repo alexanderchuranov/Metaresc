@@ -155,81 +155,6 @@ TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      MR_FAILURE,
 	      )
 
-TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discriminator override"),
-		(int64_t, value, , "discriminator value that has a custom override"),
-		(char *, discriminator, , "name of union branch for this value"),
-		(char *, type, , "discriminator for typed_value"),
-		(mr_ptr_t, typed_value, , "type"),
-		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
-		)
-
-#define MR_UNION_PARAM_UDO					\
-  (mr_ud_override_t[]) {					\
-    { MR_TYPE_UNION, "union_param" },				\
-      { MR_TYPE_ANON_UNION, "union_param" },			\
-      { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
-      }
-
-TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
-		ANON_UNION (),
-		VOID (void *, union_default_serialization),
-		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
-		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
-		ANON_UNION (pointer_serialization),
-		VOID (void *, pointer_default_serialization),
-		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
-		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
-		)
-
-TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
-		ANON_UNION (),
-		VOID (void *, union_default_serialization),
-		(struct mr_ic_t *, union_param, , "IC for union discriminator overrides"),
-		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
-		ANON_UNION (pointer_serialization),
-		VOID (void *, pointer_default_serialization),
-		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
-		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
-		(unsigned int, count, , "array size"),
-		(unsigned int, row_count, , "row size"),
-		)
-
-TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
-		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
-		{ .offset = offsetof (mr_bitfield_param_t, size) }, "offset"), 
-		(unsigned int, size, , "size of bitfield array"),
-		(uint8_t, width, , "bit-field width in bits"),
-		(uint8_t, shift, , "bit-field shift in first byte"),
-		(bool, initialized, , "flag that width and shift are initialized"),
-		)
-
-TYPEDEF_STRUCT (mr_structured_type_t, ATTRIBUTES ( , "structured type"),
-		(struct mr_td_t *, tdp, , "type descriptor"),
-		(char *, type, , "stringified type name"),
-		(mr_size_t, size, , "type size"),
-		(mr_type_t, mr_type, , "Metaresc type"),
-		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
-		(mr_type_t, mr_type_ptr, , "Metaresc type to detect pointers on basic type"),
-		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
-		)
-
-TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
-		(mr_structured_type_t **, args, , "function arguments saved as resizable array of pointers on structured types",
-		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
-		(size_t, size, , "size of args array"),
-		)
-
-TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
-
-TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
-
-TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
-
-TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES (__attribute__ ((packed)) , "hashed string"),
-		(char *, str, , "key field"),
-		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
-		)
-
 TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_UNINITIALIZED, = 0, "void_ptr"),
 	      (MR_IC_UNSORTED_ARRAY, , "rarray"),
@@ -239,6 +164,12 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_RBTREE, , "rb"),
 	      (MR_IC_AVLTREE, , "avl"),
 	      )
+
+TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
+
+TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+
+TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
 		(mr_ptr_t *, ra, , "key_type", { .offset = offsetof (mr_ic_rarray_t, size) }, "offset"), 
@@ -343,13 +274,86 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 		(void, free, (mr_ic_t * /* ic */)),
 		)
 
+TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discriminator override"),
+		(int64_t, value, , "discriminator value that has a custom override"),
+		(char *, discriminator, , "name of union branch for this value"),
+		(char *, type, , "discriminator for typed_value"),
+		(mr_ptr_t, typed_value, , "type"),
+		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
+		)
+
+#define MR_UNION_PARAM_UDO					\
+  (mr_ud_override_t[]) {					\
+    { MR_TYPE_UNION, "union_param" },				\
+      { MR_TYPE_ANON_UNION, "union_param" },			\
+      { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
+      }
+
+TYPEDEF_STRUCT (mr_union_param_t, ATTRIBUTES ( , "union parameters"),
+		(mr_ic_t, udo, , "index of union descriminator overrides"),
+		)
+
+TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
+		ANON_UNION (),
+		VOID (void *, union_default_serialization),
+		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
+		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
+		ANON_UNION (pointer_serialization),
+		VOID (void *, pointer_default_serialization),
+		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
+		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
+		)
+
+TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
+		ANON_UNION (),
+		VOID (void *, union_default_serialization),
+		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
+		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
+		ANON_UNION (pointer_serialization),
+		VOID (void *, pointer_default_serialization),
+		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
+		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
+		(unsigned int, count, , "array size"),
+		(unsigned int, row_count, , "row size"),
+		)
+
+TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
+		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
+		{ .offset = offsetof (mr_bitfield_param_t, size) }, "offset"), 
+		(unsigned int, size, , "size of bitfield array"),
+		(uint8_t, width, , "bit-field width in bits"),
+		(uint8_t, shift, , "bit-field shift in first byte"),
+		(bool, initialized, , "flag that width and shift are initialized"),
+		)
+
+TYPEDEF_STRUCT (mr_structured_type_t, ATTRIBUTES ( , "structured type"),
+		(struct mr_td_t *, tdp, , "type descriptor"),
+		(char *, type, , "stringified type name"),
+		(mr_size_t, size, , "type size"),
+		(mr_type_t, mr_type, , "Metaresc type"),
+		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
+		(mr_type_t, mr_type_ptr, , "Metaresc type to detect pointers on basic type"),
+		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
+		)
+
+TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
+		(mr_structured_type_t **, args, , "function arguments saved as resizable array of pointers on structured types",
+		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
+		(size_t, size, , "size of args array"),
+		)
+
+TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES (__attribute__ ((packed)) , "hashed string"),
+		(char *, str, , "key field"),
+		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
+		)
+
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       VOID (uint8_t, default_serialization, , "default serialization is empty"),
 	       (mr_array_param_t, array_param, , "array parameters"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
 	       (mr_pointer_param_t, pointer_param, , "extra parameters for pointers"),
-	       (mr_ic_t *, union_param, , "indexed collection with union descriminators overrides"),
+	       (mr_union_param_t, union_param, , "indexed collection with union descriminators overrides"),
 	       )
 
 #define MR_FIELD_PARAM_UDO					\
@@ -370,10 +374,10 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		BITFIELD (mr_type_t, mr_type_ptr, : 6, "Metaresc type to detect pointers on basic type"),
+		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		BITFIELD (mr_type_class_t, mr_type_class, : 6, "required to distinguish records and unions from scalar types"),
 		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
 		BITFIELD (bool, self_ptr, : 1, "true if field is a pointer on itself"),
-		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		(mr_offset_t, offset, , "offset in structure"),
 		(mr_size_t, size, , "size of field"),
 		(mr_fd_param_t, param, , "mr_type", { MR_FIELD_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_UDO)),

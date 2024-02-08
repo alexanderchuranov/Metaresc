@@ -290,10 +290,10 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
 
       if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
-	mr_ic_free (fdp->param.array_param.pointer_param->param.union_param);
+	mr_ic_free (&fdp->param.array_param.pointer_param->param.union_param.udo);
 
       if ((MR_TYPE_POINTER == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
-	mr_ic_free (fdp->param.pointer_param.pointer_param->param.union_param);
+	mr_ic_free (&fdp->param.pointer_param.pointer_param->param.union_param.udo);
 
       switch (fdp->mr_type)
 	{
@@ -305,7 +305,7 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 	case MR_TYPE_UNION:
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
-	  mr_ic_free (fdp->param.union_param);
+	  mr_ic_free (&fdp->param.union_param.udo);
 	  __attribute__ ((fallthrough));
 	default:
 	  break;
@@ -1471,7 +1471,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   if (NULL == fdp->tdp)
     return (MR_FAILURE);
   
-  mr_ic_new (fdp->param.union_param, mr_ud_override_hash, mr_ud_override_cmp, "mr_ud_override_t", MR_IC_HASH, NULL);
+  mr_ic_new (&fdp->param.union_param.udo, mr_ud_override_hash, mr_ud_override_cmp, "mr_ud_override_t", MR_IC_HASH, NULL);
 
   mr_status_t status = MR_SUCCESS;
   int i, count = fdp->MR_SIZE / sizeof (mr_ud_override_t);
@@ -1486,7 +1486,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
 	  continue;
 	}
       
-      mr_ptr_t * add = mr_ic_add (fdp->param.union_param, &ud_overrides[i]);
+      mr_ptr_t * add = mr_ic_add (&fdp->param.union_param.udo, &ud_overrides[i]);
       if (NULL == add)
 	{
 	  status = MR_FAILURE;

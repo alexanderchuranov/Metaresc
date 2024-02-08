@@ -621,8 +621,7 @@
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.param = {							\
 	  .pointer_param = {						\
-	    .union_param = (mr_ic_t[]){{}},				\
-	    .pointer_param = (mr_fd_t[]){{ .param.pointer_param.union_param = (mr_ic_t[]){{}}, }}, \
+	    .pointer_param = (mr_fd_t[]){{}},				\
 	  },								\
 	},								\
 	.meta = "" __VA_ARGS__,						\
@@ -641,8 +640,7 @@
 	.param =							\
 	{								\
 	  .array_param = {						\
-	    .union_param = (mr_ic_t[]){{}},				\
-	    .pointer_param = (mr_fd_t[]){{ .param.pointer_param.union_param = (mr_ic_t[]){{}}, }}, \
+	    .pointer_param = (mr_fd_t[]){{}},				\
 	    .count = sizeof (((MR_TYPE_NAME*)0)->NAME) /		\
 	    __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
 	    .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) /		\
@@ -739,11 +737,6 @@
 	.offset = 0,							\
 	.unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false),	\
 	.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
-	.param = {							\
-	  .pointer_param = {						\
-	    .union_param = (mr_ic_t[]){{}},				\
-	  },								\
-	},								\
 	.res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
 	.res_type = "mr_td_t",						\
 	} },
