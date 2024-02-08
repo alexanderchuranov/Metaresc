@@ -140,6 +140,11 @@ AC_MSG_RESULT(${PP_DEPTH})
 AC_DEFINE_UNQUOTED(MR_PP_DEPTH, ${PP_DEPTH}, [Preprocessor routines depth])
 AC_SUBST(PP_DEPTH, ${PP_DEPTH})
 
+AC_ARG_ENABLE(ra_ud_idx,	[  --enable-ra-ud-idx		set type for resizable array of union discriminators indexes], RA_UD_IDX=$enableval, RA_UD_IDX=uint8_t)
+AC_MSG_CHECKING(type of union discriminators indexes)
+AC_MSG_RESULT(${RA_UD_IDX})
+AC_DEFINE_UNQUOTED(MR_RA_UD_IDX_TYPE, ${RA_UD_IDX}, [type of union discriminators indexes])
+
 UNCOVERED_TYPE="long long"
 SIZEOF_UNCOVERED_TYPE=64
 

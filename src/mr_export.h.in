@@ -20,6 +20,9 @@
 /* Preprocessor routines depth */
 #undef MR_PP_DEPTH
 
+/* type of union discriminators indexes */
+#undef MR_RA_UD_IDX_TYPE
+
 /* sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t,
    uint64_t */
 #undef MR_SIZEOF_UNCOVERED_TYPE
