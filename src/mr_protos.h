@@ -79,6 +79,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) for dynamics array."),
 	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
 	      (MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, , "Unexpected number of items in static array collection %d."),
+	      (MR_MESSAGE_TOO_MANY_UD, , "Serialization require more distinct union discriminators. Recompile Metaresc with MR_RA_UD_IDX_TYPE defined to a type bigger then '%s' (e.g. ./configure CFLAGS=-DMR_RA_UD_IDX_TYPE=uint16_t)"),
 	      (MR_MESSAGE_FIELD_NOT_FOUND, , "Field '%s' is not found in type '%s'."),
 	      (MR_MESSAGE_YAML_ERROR, , "YAML error '%s'."),
 	      (MR_MESSAGE_UNKNOWN_FIELD_NAME, , "Field name '%s' is not valid."),
@@ -542,11 +543,19 @@ TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loadin
 		(mr_value_t, mr_value, , "loaded value"),
 		)
 
+#ifndef MR_RA_UD_IDX_TYPE
+#define MR_RA_UD_IDX_TYPE uint8_t
+#endif /* MR_RA_UD_IDX_TYPE */
+
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
-		ANON_UNION (),
-		(int, static_array, [sizeof (mr_load_params_t) / sizeof (int) - 2], "in place list of union discriminators"),
+		ANON_UNION ( , __attribute__ ((packed))),
+		/* to make mr_ptrdes_t more compact we need to align size of mr_save_params_t with size of mr_load_params_t */
+		(MR_RA_UD_IDX_TYPE, static_array, [(sizeof (mr_load_params_t) - 2 * sizeof (int) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
+		 "in place list of union discriminators"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
-		END_ANON_UNION ("ud_as_ic"),
+		END_ANON_UNION ("ud_is_ic"),
+		BITFIELD (unsigned, ud_size, : __CHAR_BIT__ - 1, "size of union discriminator in place list"),
+		BITFIELD (bool, ud_is_ic, : 1, "true if union discriminator is an indexed collection"),
 		(int, next_typed, , "linked list of nodes with same type and pointer"),
 		(int, next_untyped, , "linked list of nodes with same pointer"),
 		)
@@ -584,8 +593,6 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
 		BITFIELD (bool, unnamed, : 1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
 		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
-		BITFIELD (bool, ud_is_ic, : 1, "true if union discriminator is an indexed collection"),
-		BITFIELD (unsigned, ud_count, : 3, "size of union discriminator in place list"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
