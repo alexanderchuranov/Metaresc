@@ -543,21 +543,29 @@ TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loadin
 		(mr_value_t, mr_value, , "loaded value"),
 		)
 
+TYPEDEF_STRUCT (mr_sp_ll_next_t, ATTRIBUTES ( , "save parameters linked list next fields"),
+		(int32_t, typed, , "linked list of nodes with same type and pointer"),
+		(int32_t, untyped, , "linked list of nodes with same pointer"),
+		)
+
 #ifndef MR_RA_UD_IDX_TYPE
 #define MR_RA_UD_IDX_TYPE uint8_t
 #endif /* MR_RA_UD_IDX_TYPE */
 
-TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
+TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
 		ANON_UNION ( , __attribute__ ((packed))),
 		/* to make mr_ptrdes_t more compact we need to align size of mr_save_params_t with size of mr_load_params_t */
-		(MR_RA_UD_IDX_TYPE, static_array, [(sizeof (mr_load_params_t) - 2 * sizeof (int) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
+		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (mr_sp_ll_next_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
 		 "in place list of union discriminators"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
 		END_ANON_UNION ("ud_is_ic"),
-		BITFIELD (unsigned, ud_size, : __CHAR_BIT__ - 1, "size of union discriminator in place list"),
-		BITFIELD (bool, ud_is_ic, : 1, "true if union discriminator is an indexed collection"),
-		(int, next_typed, , "linked list of nodes with same type and pointer"),
-		(int, next_untyped, , "linked list of nodes with same pointer"),
+		BITFIELD (unsigned, size, : __CHAR_BIT__ - 1, "size of union discriminator in place list"),
+		BITFIELD (bool, is_ic, : 1, "true if union discriminator is an indexed collection"),
+		)
+
+TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
+		(mr_sp_ll_next_t, next, , "linked list indexes"),
+		(mr_ud_set_t, ud_set, , "set union discriminator indexes"),
 		)
 
 #define MR_DATA_UDO						\

@@ -208,41 +208,41 @@ mr_ud_get_hash (mr_ptr_t x, const void * context)
 }
 
 static int
-mr_ud_find (mr_save_params_t * sp, mr_ptr_t key, mr_save_data_t * mr_save_data)
+mr_ud_find (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
 {
-  if (sp->ud_is_ic)
+  if (uds->is_ic)
     {
-      mr_ptr_t * find = mr_ic_find (sp->union_discriminator, key);
+      mr_ptr_t * find = mr_ic_find (uds->union_discriminator, key);
       return (find ? find->intptr : -1);
     }
 
-  int i, count = sp->ud_size / sizeof (sp->static_array[0]);
+  int i, count = uds->size / sizeof (uds->idx[0]);
   for (i = 0; i < count; ++i)
-    if (0 == mr_ud_cmp (key, (intptr_t)sp->static_array[i], mr_save_data))
-      return (sp->static_array[i]);
+    if (0 == mr_ud_cmp (key, (intptr_t)uds->idx[i], mr_save_data))
+      return (uds->idx[i]);
   return (-1);
 }
 
 static int
-mr_ud_add (mr_save_params_t * sp, mr_ptr_t key, mr_save_data_t * mr_save_data)
+mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
 {
-  if (sp->ud_is_ic)
+  if (uds->is_ic)
     {
-      mr_ptr_t * add = mr_ic_add (sp->union_discriminator, key);
+      mr_ptr_t * add = mr_ic_add (uds->union_discriminator, key);
       return (add ? add->intptr : -1);
     }
 
-  int find = mr_ud_find (sp, key, mr_save_data);
+  int find = mr_ud_find (uds, key, mr_save_data);
   if (find != -1)
     return (find);
 
-  if (sp->ud_size > sizeof (sp->static_array))
+  if (uds->size > sizeof (uds->idx))
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, sp->ud_size / sizeof (sp->static_array[0]));
-      sp->ud_size = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, uds->size / sizeof (uds->idx[0]));
+      uds->size = 0;
     }
 
-  if (sp->ud_size == sizeof (sp->static_array))
+  if (uds->size == sizeof (uds->idx))
     {
       mr_ic_t * dst_ic = MR_CALLOC (1, sizeof (*dst_ic));
       if (NULL == dst_ic)
@@ -263,55 +263,55 @@ mr_ud_add (mr_save_params_t * sp, mr_ptr_t key, mr_save_data_t * mr_save_data)
 	}
 
       int i;
-      mr_ptr_t static_array[sizeof (sp->static_array) / sizeof (sp->static_array[0])];
+      mr_ptr_t idx[sizeof (uds->idx) / sizeof (uds->idx[0])];
 
-      for (i = 0; i < sizeof (static_array) / sizeof (static_array[0]); ++i)
-	static_array[i].intptr = sp->static_array[i];
+      for (i = 0; i < sizeof (idx) / sizeof (idx[0]); ++i)
+	idx[i].intptr = uds->idx[i];
 
-      status = mr_ic_index (dst_ic, static_array, sizeof (static_array));
+      status = mr_ic_index (dst_ic, idx, sizeof (idx));
       if (MR_SUCCESS != status)
 	{
 	  MR_FREE (dst_ic);
 	  return (-1);
 	}
 
-      sp->union_discriminator = dst_ic;
-      sp->ud_is_ic = true;
+      uds->union_discriminator = dst_ic;
+      uds->is_ic = true;
       mr_ptr_t * add = mr_ic_add (dst_ic, key);
       return (add ? add->intptr : -1);
     }
 
-  int idx = sp->ud_size / sizeof (sp->static_array[0]);
-  sp->static_array[idx] = key.intptr;
-  sp->ud_size += sizeof (sp->static_array[0]);
+  int idx = uds->size / sizeof (uds->idx[0]);
+  uds->idx[idx] = key.intptr;
+  uds->size += sizeof (uds->idx[0]);
 
   return (key.intptr);
 }
 
 static mr_status_t
-mr_ud_foreach (mr_save_params_t * sp, mr_visit_fn_t visit_fn, const void * context)
+mr_ud_foreach (mr_ud_set_t * uds, mr_visit_fn_t visit_fn, const void * context)
 {
-  if (sp->ud_is_ic)
-    return (mr_ic_foreach (sp->union_discriminator, visit_fn, context));
+  if (uds->is_ic)
+    return (mr_ic_foreach (uds->union_discriminator, visit_fn, context));
 
-  int i, count = sp->ud_size / sizeof (sp->static_array[0]);
+  int i, count = uds->size / sizeof (uds->idx[0]);
   for (i = 0; i < count; ++i)
-    if (MR_SUCCESS != visit_fn ((intptr_t)sp->static_array[i], context))
+    if (MR_SUCCESS != visit_fn ((intptr_t)uds->idx[i], context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
 
 static void
-mr_ud_free (mr_save_params_t * sp)
+mr_ud_free (mr_ud_set_t * uds)
 {
-  if (sp->ud_is_ic)
+  if (uds->is_ic)
     {
-      mr_ic_free (sp->union_discriminator);
-      MR_FREE (sp->union_discriminator);
-      sp->union_discriminator = NULL;
+      mr_ic_free (uds->union_discriminator);
+      MR_FREE (uds->union_discriminator);
+      uds->union_discriminator = NULL;
     }
-  sp->ud_is_ic = false;
-  sp->ud_size = 0;
+  uds->is_ic = false;
+  uds->size = 0;
 }
 
 /**
@@ -358,7 +358,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
     {
       mr_ptrdes_t * parent_ptrdes = &mr_save_data->ptrs.ra[parent];
       /* checks if this parent already have union resolution info */
-      ud_find = mr_ud_find (&parent_ptrdes->save_params, (intptr_t)ud_idx, mr_save_data);
+      ud_find = mr_ud_find (&parent_ptrdes->save_params.ud_set, (intptr_t)ud_idx, mr_save_data);
       /* break the traverse loop if it has */
       if (ud_find != -1)
 	break;
@@ -406,7 +406,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
 
   /* add union discriminator information to all parents which doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
-    if (-1 == mr_ud_add (&mr_save_data->ptrs.ra[idx].save_params, (intptr_t)ud_find, mr_save_data))
+    if (-1 == mr_ud_add (&mr_save_data->ptrs.ra[idx].save_params.ud_set, (intptr_t)ud_find, mr_save_data))
       return (NULL);
 
   return (fdp);
@@ -675,20 +675,20 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
   if (element_size == 0)
     return (-1);
   
-  for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_typed)
+  for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next.typed)
     {
       int ref_parent = ra[ref_idx].parent;
 
       mr_check_ud_ctx.node = ref_idx;
-      mr_status_t status = mr_ud_foreach (&ra[ref_idx].save_params, mr_check_ud, &mr_check_ud_ctx);
+      mr_status_t status = mr_ud_foreach (&ra[ref_idx].save_params.ud_set, mr_check_ud, &mr_check_ud_ctx);
       if (MR_SUCCESS == status)
 	switch (ra[parent].mr_type)
 	  {
 	  case MR_TYPE_STRING:
 	    ra[parent].ref_idx = ref_idx;
 	    ra[ref_idx].flags.is_referenced = true;
-	    ra[parent].save_params.next_typed = ra[ref_parent].save_params.next_typed;
-	    ra[ref_parent].save_params.next_typed = parent;
+	    ra[parent].save_params.next.typed = ra[ref_parent].save_params.next.typed;
+	    ra[ref_parent].save_params.next.typed = parent;
 	    return (0);
 
 	  case MR_TYPE_POINTER:
@@ -920,8 +920,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].non_persistent = fdp->non_persistent;
   ra[idx].MR_SIZE = fdp->size * count;
 
-  ra[idx].save_params.next_typed = -1;
-  ra[idx].save_params.next_untyped = -1;
+  ra[idx].save_params.next.typed = -1;
+  ra[idx].save_params.next.untyped = -1;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
@@ -935,7 +935,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 	return (nodes_matched);
 
       mr_save_data->ptrs.size += sizeof (mr_save_data->ptrs.ra[0]);
-      mr_save_data->ptrs.ra[idx].save_params.next_typed = search_result->intptr;
+      mr_save_data->ptrs.ra[idx].save_params.next.typed = search_result->intptr;
       search_result->intptr = idx;
     }
 
@@ -946,13 +946,13 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     {
       if (ra[idx].MR_SIZE > ra[search_result->intptr].MR_SIZE)
 	{
-	  ra[idx].save_params.next_untyped = search_result->intptr;
+	  ra[idx].save_params.next.untyped = search_result->intptr;
 	  search_result->intptr = idx;
 	}
       else
 	{
-	  ra[idx].save_params.next_untyped = ra[search_result->intptr].save_params.next_untyped;
-	  ra[search_result->intptr].save_params.next_untyped = idx;
+	  ra[idx].save_params.next.untyped = ra[search_result->intptr].save_params.next.untyped;
+	  ra[search_result->intptr].save_params.next.untyped = idx;
 	}
     }
 
@@ -1221,14 +1221,14 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
       {
 	int min_idx = i;
 	/* iterate over other references on this string and find the one with minimal DFS index */
-	for (idx = ptrs->ra[i].save_params.next_typed; idx >= 0; idx = ptrs->ra[idx].save_params.next_typed)
+	for (idx = ptrs->ra[i].save_params.next.typed; idx >= 0; idx = ptrs->ra[idx].save_params.next.typed)
 	  if (ptrs->ra[idx].idx < ptrs->ra[min_idx].idx)
 	    min_idx = idx;
 	
 	if (min_idx != i) /* check if reindexing is required */
 	  {
 	    /* point other references on new primary entry */
-	    for (idx = ptrs->ra[i].save_params.next_typed; idx >= 0; idx = ptrs->ra[idx].save_params.next_typed)
+	    for (idx = ptrs->ra[i].save_params.next.typed; idx >= 0; idx = ptrs->ra[idx].save_params.next.typed)
 	      ptrs->ra[idx].ref_idx = min_idx;
 
 	    /* change old primary entry to be a reference on a new one */
@@ -1493,7 +1493,7 @@ mr_save (void * data, mr_fd_t * fdp)
     }
 
   for (i = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]) - 1; i >= 0; --i)
-    mr_ud_free (&mr_save_data.ptrs.ra[i].save_params);
+    mr_ud_free (&mr_save_data.ptrs.ra[i].save_params.ud_set);
 
   if ((nodes_added < 0) && (mr_save_data.ptrs.ra != NULL))
     {
