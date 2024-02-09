@@ -19,6 +19,7 @@
 #include <mr_ic.h>
 #include <mr_stringify.h>
 #include <mr_hsort.h>
+#include <mr_udo_init.h>
 
 #define MR_MODE DESC /* we'll need descriptors of our own types */
 #include <mr_protos.h>
@@ -1478,7 +1479,8 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   mr_ud_override_t * ud_overrides = fdp->res.ptr;
   for (i = 0; i < count; ++i)
     {
-      ud_overrides[i].typed_value.ptr = &ud_overrides[i].value;
+      if (ud_overrides[i].type != NULL)
+	ud_overrides[i].typed_value.ptr = &ud_overrides[i].value;
       ud_overrides[i].fdp = mr_get_fd_by_name (fdp->tdp, ud_overrides[i].discriminator);
       if (NULL == ud_overrides[i].fdp)
 	{
@@ -1549,8 +1551,6 @@ mr_normalize_field_name (mr_fd_t * fdp)
     }
 }
 
-#define MR_VALID_STRUCT_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
-
 /**
  * Initialize fields descriptors. Everytnig that was not properly initialized in macro.
  * @param tdp pointer on a type descriptor
@@ -1560,7 +1560,7 @@ mr_normalize_field_name (mr_fd_t * fdp)
 static void
 mr_init_struct (mr_td_t * tdp)
 {
-  if (!((MR_VALID_STRUCT_TYPES >> tdp->mr_type) & 1))
+  if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
     return;
 
   int count;
@@ -1587,7 +1587,7 @@ mr_detect_func_args_types (mr_td_t * tdp)
 static void
 mr_detect_struct_fields (mr_td_t * tdp)
 {
-  if (!((MR_VALID_STRUCT_TYPES >> tdp->mr_type) & 1))
+  if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
     return;
 
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
@@ -1866,7 +1866,7 @@ mr_validate_fd (mr_fd_t * fdp)
 static void
 mr_validate_td (mr_td_t * tdp)
 {
-  if (!((MR_VALID_STRUCT_TYPES >> tdp->mr_type) & 1))
+  if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
     return;
 
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
@@ -1916,6 +1916,8 @@ mr_conf_init ()
 	  mr_register_type_pointer (tdp);
 	  mr_validate_td (tdp);
 	}
+
+      mr_udo_init ();
 
       initialized = true;
     }
