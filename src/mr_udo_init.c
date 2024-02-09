@@ -76,7 +76,7 @@ mr_udo_init_index (mr_types_dep_t * types_dep)
 TYPEDEF_STRUCT (mr_append_ref_t,
 		(mr_types_dep_t *, types_dep),
 		(int, idx),
-		(int, type_ref_idx),
+		(uintptr_t, type_ref_idx),
 		);
 
 static mr_status_t
