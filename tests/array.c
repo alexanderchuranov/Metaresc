@@ -104,8 +104,6 @@ mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_
       ck_assert_msg (ptrs->ra[i].mr_type == expected[i].mr_type,
 		     "[%d] mr_type %d != %d", i, ptrs->ra[i].mr_type, expected[i].mr_type);
 
-#define MR_TYPED_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_ENUM, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
-
       if ((MR_TYPED_TYPES >> ptrs->ra[i].mr_type) & 1)
 	ck_assert_msg (strcmp (ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str) == 0,
 		       "[%d] type %s != %s", i, ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str);
@@ -273,7 +271,7 @@ START_TEST (union_ptr_array)
 	.next = -1
       }
       ,
-    };      
+    };
   ASSERT_MR_SAVE (union_ptr_array_t, &orig, expected);
   ALL_METHODS (ASSERT_SAVE_LOAD, union_ptr_array_t, &orig);
 } END_TEST
@@ -335,7 +333,7 @@ START_TEST (ud_overrided_ptr_array)
 	.next = -1
       }
       ,
-    };      
+    };
   ASSERT_MR_SAVE (ud_overrided_ptr_array_t, &orig, expected);
   ALL_METHODS (ASSERT_SAVE_LOAD, ud_overrided_ptr_array_t, &orig);
 } END_TEST
@@ -398,6 +396,125 @@ START_TEST (string_ptr_array)
   ASSERT_MR_SAVE ( , orig, expected);
 } END_TEST
 
+TYPEDEF_STRUCT (dynamically_limitted_array_t,
+		(int32_t, x, [2], "meta", { "size" }, "string"),
+		(int32_t, size)
+		);
+
+
+START_TEST (dynamically_limitted_array)
+{
+  dynamically_limitted_array_t orig = {{1, 2}};
+
+  mr_ptrdes_t expected_0[] =
+    {
+      {
+	.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}},
+	.name = "dynamically_limitted_array_t",
+	.mr_type = MR_TYPE_STRUCT,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "x",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = -1,
+	.next = 2
+      }
+      ,
+      {
+	.name = "size",
+	.mr_type = MR_TYPE_INT32,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };
+
+  orig.size = 0;
+  ASSERT_MR_SAVE (dynamically_limitted_array_t, &orig, expected_0);
+
+  mr_ptrdes_t expected_1[] =
+    {
+      {
+	.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}},
+	.name = "dynamically_limitted_array_t",
+	.mr_type = MR_TYPE_STRUCT,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "x",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = 2,
+	.next = 3
+      }
+      ,
+      {
+	.name = "x",
+	.mr_type = MR_TYPE_INT32,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "size",
+	.mr_type = MR_TYPE_INT32,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };
+
+  orig.size = sizeof (orig.x[0]);
+  ASSERT_MR_SAVE (dynamically_limitted_array_t, &orig, expected_1);
+
+  mr_ptrdes_t expected_3[] =
+    {
+      {
+	.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}},
+	.name = "dynamically_limitted_array_t",
+	.mr_type = MR_TYPE_STRUCT,
+	.first_child = 1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "x",
+	.mr_type = MR_TYPE_ARRAY,
+	.first_child = 2,
+	.next = 4
+      }
+      ,
+      {
+	.name = "x",
+	.mr_type = MR_TYPE_INT32,
+	.first_child = -1,
+	.next = 3
+      }
+      ,
+      {
+	.name = "x",
+	.mr_type = MR_TYPE_INT32,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+      {
+	.name = "size",
+	.mr_type = MR_TYPE_INT32,
+	.first_child = -1,
+	.next = -1
+      }
+      ,
+    };
+
+  orig.size = 3 * sizeof (orig.x[0]);
+  ASSERT_MR_SAVE (dynamically_limitted_array_t, &orig, expected_3);
+} END_TEST
+
 MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
 		 (numeric_array_int16, "array of numerics"),
 		 (numeric_array_int32, "array of numerics"),
@@ -416,5 +533,6 @@ MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
 		 (enum_ptr_array, "array of pointers on enums"),
 		 (union_ptr_array, "array of union pointers"),
 		 (ud_overrided_ptr_array, "array of union pointers with overrides"),
-		 (string_ptr_array, "array of pointers on strings")
+		 (string_ptr_array, "array of pointers on strings"),
+		 (dynamically_limitted_array, "dynamically limitted array")
 		 );

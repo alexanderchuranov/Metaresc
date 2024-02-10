@@ -1104,11 +1104,25 @@ mr_save_array (mr_save_data_t * mr_save_data)
   fd_.unnamed = true;
   fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
   if (fd_.size == 0)
-    return (1);
+    return (0);
 
   if (1 == fd_.param.array_param.row_count)
     {
       count = fd_.param.array_param.count;
+
+      mr_ptrdes_t src, dst;
+      mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
+      if (src.data.ptr != NULL)
+	{
+	  ssize_t size;
+	  dst.data.ptr = &size;
+	  dst.mr_type = MR_TYPE_DETECT (typeof (size));
+	  mr_assign_int (&dst, &src);
+	  int count_ = size / fd_.size;
+	  if (count_ < count)
+	    count = count_;
+	}
+
       fd_.mr_type = fd_.mr_type_aux;
       if (MR_TYPE_POINTER == fd_.mr_type)
 	fdp = fd_.param.array_param.pointer_param;
@@ -1429,7 +1443,7 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       if (src.data.ptr != NULL)
 	{
 	  dst.data.ptr = &ptrdes->MR_SIZE;
-	  dst.mr_type = MR_TYPE_DETECT (__typeof__ (ptrdes->MR_SIZE));
+	  dst.mr_type = MR_TYPE_DETECT (typeof (ptrdes->MR_SIZE));
 	  mr_assign_int (&dst, &src);
 	}
 
