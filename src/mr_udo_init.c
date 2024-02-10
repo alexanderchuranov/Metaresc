@@ -76,7 +76,6 @@ mr_udo_init_index (mr_types_dep_t * types_dep)
 TYPEDEF_STRUCT (mr_append_ref_t,
 		(mr_types_dep_t *, types_dep),
 		(int, idx),
-		(uintptr_t, type_ref_idx),
 		);
 
 static mr_status_t
@@ -84,12 +83,14 @@ mr_append_ref  (mr_ptr_t key, const void * context)
 {
   mr_append_ref_t * append_ref = (mr_append_ref_t *)context;
   mr_fd_t * fdp = key.ptr;
+  mr_types_dep_t * types_dep = append_ref->types_dep;
+  uintptr_t type_ref_idx = types_dep->size / sizeof (types_dep->types[0]);
 
-  append_ref->types_dep->types[append_ref->type_ref_idx].tdp = fdp->tdp;
-  mr_ptr_t * find = mr_ic_find (&append_ref->types_dep->index, append_ref->type_ref_idx);
+  types_dep->types[type_ref_idx].tdp = fdp->tdp;
+  mr_ptr_t * find = mr_ic_find (&types_dep->index, type_ref_idx);
   if (find != NULL)
     {
-      mr_type_ref_t * tr = &append_ref->types_dep->types[find->uintptr];
+      mr_type_ref_t * tr = &types_dep->types[find->uintptr];
       typeof (tr->ref) ref = mr_rarray_allocate_element ((void**)&tr->ref, &tr->size, &tr->alloc_size, sizeof (tr->ref[0]));
       if (NULL == ref)
 	return (MR_FAILURE);
@@ -110,7 +111,6 @@ mr_udo_build_ref_graph (mr_types_dep_t * types_dep)
 
   mr_append_ref_t append_ref;
   append_ref.types_dep = types_dep;
-  append_ref.type_ref_idx = types_dep->size / sizeof (types_dep->types[0]);
 
   int i, types_count = types_dep->size / sizeof (types_dep->types[0]);
   for (i = 0; i < types_count; ++i)
