@@ -323,7 +323,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
 {
   mr_fd_t * fdp = NULL; /* marker that no valid discriminator was found */
   int parent, idx;
-  int ud_idx, ud_find = -1;
+  intptr_t ud_idx, ud_find = -1;
   mr_union_discriminator_t * ud;
   char * discriminator = union_fdp->meta;
   mr_td_t * tdp = union_fdp->tdp;
@@ -358,7 +358,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
     {
       mr_ptrdes_t * parent_ptrdes = &mr_save_data->ptrs.ra[parent];
       /* checks if this parent already have union resolution info */
-      ud_find = mr_ud_find (&parent_ptrdes->save_params.ud_set, (intptr_t)ud_idx, mr_save_data);
+      ud_find = mr_ud_find (&parent_ptrdes->save_params.ud_set, ud_idx, mr_save_data);
       /* break the traverse loop if it has */
       if (ud_find != -1)
 	break;
@@ -390,23 +390,22 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
 
       /* form union discriminator resolution entity and deduplicate it with existing */
       ud->discriminated_fdp = fdp;
-      mr_ptr_t * add = mr_ic_add (&mr_save_data->union_discriminators, (intptr_t)ud_idx);
+      mr_ptr_t * add = mr_ic_add (&mr_save_data->union_discriminators, ud_idx);
       if (NULL == add)
 	return (NULL);
       if (add->intptr == ud_idx)
-	{
-	  /* union discriminator info was not found in parents so we add new record */
-	  mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
-	  /* set 'parent' on one level up to include actual parent node into traversal below */
-	  if (parent >= 0)
-	    parent = mr_save_data->ptrs.ra[parent].parent;
-	}
+	/* union discriminator info was not found in the set so we add new record */
+	mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
+
+      /* set 'parent' on one level up to include actual parent node into traversal below */
+      if (parent >= 0)
+	parent = mr_save_data->ptrs.ra[parent].parent;
       ud_find = add->intptr;
     }
 
   /* add union discriminator information to all parents which doesn't have it yet */
   for (idx = node; idx != parent; idx = mr_save_data->ptrs.ra[idx].parent)
-    if (-1 == mr_ud_add (&mr_save_data->ptrs.ra[idx].save_params.ud_set, (intptr_t)ud_find, mr_save_data))
+    if (-1 == mr_ud_add (&mr_save_data->ptrs.ra[idx].save_params.ud_set, ud_find, mr_save_data))
       return (NULL);
 
   return (fdp);
