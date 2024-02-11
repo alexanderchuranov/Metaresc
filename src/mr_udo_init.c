@@ -136,8 +136,9 @@ mr_udo_dfs (mr_types_dep_t * types_dep, int type_idx, bool * visited, char * fie
     {
       if (NULL == *discriminator_type)
 	*discriminator_type = fdp->tdp->type.str;
-      else if (strcmp (*discriminator_type, fdp->tdp->type.str) != 0)
+      else if (*discriminator_type != fdp->tdp->type.str)
 	return (MR_FAILURE);
+      return (MR_SUCCESS);
     }
 
   mr_type_ref_t * type_ref = &types_dep->types[type_idx];
