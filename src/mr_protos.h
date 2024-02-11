@@ -474,10 +474,13 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_td_t *, next, , "single linked list"),
 		) /* type descriptor */
 
+TYPEDEF_CHAR_ARRAY (mr_char_array_t, 0, ATTRIBUTES ( , "Empty static string"))
+
 TYPEDEF_STRUCT (mr_basic_type_td_t, ATTRIBUTES ( , "Stucture for bulk allocation of type descriptor and sentinel field descriptor"),
 		(mr_td_t, td, , "type descriptor"),
 		(mr_fd_t, fd, [0], "field descriptors"),
 		(mr_fd_t *, fd_ptr, , "array of pointers on field descriptor for 'fields' initialization"),
+		(mr_char_array_t, type, , "type name for basic types"),
 		)
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),

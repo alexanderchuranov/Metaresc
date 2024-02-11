@@ -1243,7 +1243,7 @@ mr_add_basic_type (char * type, mr_type_t mr_type)
     return (NULL);
 
   basic_type_td->td.is_dynamically_allocated = true;
-  basic_type_td->td.type.str = (void*)&basic_type_td[1];
+  basic_type_td->td.type.str = basic_type_td->type;
   strcpy (basic_type_td->td.type.str, type);
 
   basic_type_td->td.mr_type = mr_type;
