@@ -516,6 +516,7 @@ START_TEST (dynamically_limitted_array)
 
 START_TEST (dynamically_limitted_array_xdr)
 {
+#ifdef HAVE_RPC_TYPES_H
   dynamically_limitted_array_t orig = {{1, 2}};
   orig.size = sizeof (orig.x[0]);
   mr_rarray_t ra = MR_SAVE_XDR_RA (dynamically_limitted_array_t, &orig);
@@ -528,6 +529,7 @@ START_TEST (dynamically_limitted_array_xdr)
 
   if (ra.data.ptr)
     MR_FREE (ra.data.ptr);
+#endif /* HAVE_RPC_TYPES_H */
 } END_TEST
 
 MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
