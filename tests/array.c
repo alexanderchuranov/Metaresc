@@ -401,7 +401,6 @@ TYPEDEF_STRUCT (dynamically_limitted_array_t,
 		(int32_t, size)
 		);
 
-
 START_TEST (dynamically_limitted_array)
 {
   dynamically_limitted_array_t orig = {{1, 2}};
@@ -515,6 +514,22 @@ START_TEST (dynamically_limitted_array)
   ASSERT_MR_SAVE (dynamically_limitted_array_t, &orig, expected_3);
 } END_TEST
 
+START_TEST (dynamically_limitted_array_xdr)
+{
+  dynamically_limitted_array_t orig = {{1, 2}};
+  orig.size = sizeof (orig.x[0]);
+  mr_rarray_t ra = MR_SAVE_XDR_RA (dynamically_limitted_array_t, &orig);
+  dynamically_limitted_array_t restored;
+  memset (&restored, 0, sizeof (restored));
+  mr_status_t status = MR_LOAD_XDR_RA (dynamically_limitted_array_t, &ra, &restored);
+
+  ck_assert_msg (status == MR_SUCCESS, "Failed to load from XDR");
+  ck_assert_msg (MR_CMP_STRUCTS (dynamically_limitted_array_t, &orig, &restored) == 0, "Restored value mismatched orig");
+
+  if (ra.data.ptr)
+    MR_FREE (ra.data.ptr);
+} END_TEST
+
 MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
 		 (numeric_array_int16, "array of numerics"),
 		 (numeric_array_int32, "array of numerics"),
@@ -534,5 +549,6 @@ MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
 		 (union_ptr_array, "array of union pointers"),
 		 (ud_overrided_ptr_array, "array of union pointers with overrides"),
 		 (string_ptr_array, "array of pointers on strings"),
-		 (dynamically_limitted_array, "dynamically limitted array")
+		 (dynamically_limitted_array, "dynamically limitted array"),
+		 (dynamically_limitted_array_xdr, "dynamically limitted array with XDR")
 		 );

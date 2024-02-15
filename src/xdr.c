@@ -876,6 +876,15 @@ xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   return (mr_load_bitfield_value (&ptrs->ra[idx], &value));
 }
 
+static mr_status_t
+xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
+{
+  if (ptrs->ra[idx].non_persistent || (1 == ptrs->ra[idx].fdp->param.array_param.row_count))
+      if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
+	return (MR_FAILURE);
+  return (MR_SUCCESS);
+}
+
 /**
  * Loads char array from XDR stream.
  * @param xdrs XDR stream descriptor
@@ -898,10 +907,17 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
   if (1 == fd_.param.array_param.row_count)
     {
-      count = fd_.param.array_param.count;
       fd_.mr_type = fd_.mr_type_aux;
       if (MR_TYPE_POINTER == fd_.mr_type)
 	fdp = fd_.param.array_param.pointer_param;
+
+      if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
+	return (MR_FAILURE);
+
+      count = ptrs->ra[idx].MR_SIZE / fdp->size;
+      ptrs->ra[idx].MR_SIZE = count * fdp->size;
+
+      mr_pointer_set_size (idx, ptrs);
     }
   else
     {
@@ -1063,7 +1079,7 @@ static xdr_handler_t xdr_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_STRUCT] = xdr_none,
     [MR_TYPE_FUNC] = mr_xdr_pointer,
     [MR_TYPE_FUNC_TYPE] = mr_xdr_pointer,
-    [MR_TYPE_ARRAY] = xdr_none,
+    [MR_TYPE_ARRAY] = xdr_save_array,
     [MR_TYPE_POINTER] = xdr_save_pointer,
     [MR_TYPE_UNION] = xdr_save_union,
     [MR_TYPE_ANON_UNION] = xdr_save_union,

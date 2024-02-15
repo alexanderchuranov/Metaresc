@@ -257,7 +257,7 @@ tree = {
 You may find custom macro language for types definition as an
 overkill. In this case you could use Metaresc macro language only for
 metadata generation and keep definitions of your types in a plain
-C. It basically means that you need duplicate type definition:
+C. It basically means that you need to duplicate type definition:
 once in standard C and one more time with a Metaresc macro
 language. In this case global preprocessor variable `MR_MODE` should
 be defined into `DESC`. Example above will look as follows:
