@@ -879,7 +879,8 @@ xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  if (ptrs->ra[idx].non_persistent || (1 == ptrs->ra[idx].fdp->param.array_param.row_count))
+  if (!ptrs->ra[idx].non_persistent)
+    if (1 == ptrs->ra[idx].fdp->param.array_param.row_count)
       if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
@@ -911,13 +912,18 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
       if (MR_TYPE_POINTER == fd_.mr_type)
 	fdp = fd_.param.array_param.pointer_param;
 
-      if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
-	return (MR_FAILURE);
+      if (ptrs->ra[idx].fdp->non_persistent)
+	count = fd_.param.array_param.count;
+      else
+	{
+	  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
+	    return (MR_FAILURE);
 
-      count = ptrs->ra[idx].MR_SIZE / fdp->size;
-      ptrs->ra[idx].MR_SIZE = count * fdp->size;
+	  count = ptrs->ra[idx].MR_SIZE / fdp->size;
+	  ptrs->ra[idx].MR_SIZE = count * fdp->size;
 
-      mr_pointer_set_size (idx, ptrs);
+	  mr_pointer_set_size (idx, ptrs);
+	}
     }
   else
     {
