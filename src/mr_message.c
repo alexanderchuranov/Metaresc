@@ -5,6 +5,7 @@
 # include <execinfo.h>
 #endif /* HAVE_EXECINFO_H */
 
+#include <stdlib.h> /* free () */
 #include <metaresc.h>
 
 static int
