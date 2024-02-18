@@ -6,9 +6,9 @@
 TYPEDEF_STRUCT (ld_ptr_t, (const volatile long double *, x))
 
 START_TEST (ld_ptr) {
-  long double x = 0, y = 0.3;
-  fprintf (stderr, "long double x = %." MR_STRINGIFY_READONLY (MR_LDBL_DIG) "Lg\n", x);
-  fprintf (stderr, "long double y = %." MR_STRINGIFY_READONLY (MR_LDBL_DIG) "Lg\n", y);
+  long double x = 0, y = 1;
+  fprintf (stderr, "long double x = %Lg\n", x);
+  fprintf (stderr, "long double y = %Lg\n", y);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, ld_ptr_t, NULL);
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, ld_ptr_t, (long double[]){ 0 });
 } END_TEST
