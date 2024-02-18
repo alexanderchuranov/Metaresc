@@ -56,10 +56,9 @@
       load_success = (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (TYPE, &serialized, &METHOD ## _restored)); \
       ck_assert_msg (load_success,					\
 		     "load for method " #METHOD " on type " #TYPE " failed"); \
-      orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &METHOD ## _restored, __VA_ARGS__)); \
-      if (!orig_eq_restored) fprintf (stderr, "%s\n", serialized.data.string); \
       if (serialized.data.ptr)						\
 	MR_FREE (serialized.data.ptr);					\
+      orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &METHOD ## _restored, __VA_ARGS__)); \
       ck_assert_msg (orig_eq_restored,					\
 		     "restored value mismatched original for method " #METHOD " on type " #TYPE); \
       MR_FREE_RECURSIVELY (TYPE, &METHOD ## _restored);			\

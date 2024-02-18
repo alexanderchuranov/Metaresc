@@ -93,8 +93,6 @@ jobs:
         run: ./configure --disable-static --enable-shared --without-perftest --without-libxml2 CFLAGS=-D__USE_MINGW_ANSI_STDIO
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
-      - name: make
-        run: make -j 2
       - name: make check
         run: make check -j 2
       - name: archive build artifacts
