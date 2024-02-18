@@ -62,7 +62,7 @@ jobs:
           ./configure CFLAGS="-I/usr/local/include/ -Wno-unused-but-set-variable" --without-perftest
           make check -j 2
 
-  windows-gcc:
+  windows:
     runs-on: windows-latest
     outputs:
       ld_zero: ${{ steps.ld_zero.outputs.ld_zero }}
@@ -100,7 +100,7 @@ jobs:
       - name: ld_zero
         run: echo 'int main () { printf ("%Lg", .0l); return (0); }' | cc -x c -include stdio.h - -o ld_zero && ./ld_zero >> "$GITHUB_OUTPUT"
       - name: make check
-        if: ${{ outputs.ld_zero == '0' }}
+        if: ${{ jobs.windows.outputs.ld_zero == '0' }}
         run: make check -j 2
       - name: archive build artifacts
         uses: actions/upload-artifact@v3
