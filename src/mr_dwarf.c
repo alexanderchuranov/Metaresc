@@ -1189,12 +1189,6 @@ process_td (mr_ptr_t key, const void * context)
       {
 	mr_fd_t * fdp = tdp->param.struct_param.fields[i];
 
-	if (fdp == NULL)
-	  {
-	    fprintf (stderr, "type %s fdp NULL [%d]\n", tdp->type.str, i);
-	    continue;
-	  }
-
 	if (MR_TYPE_POINTER == fdp->mr_type)
 	  {
 	    if (fdp->mr_type_aux == MR_TYPE_NONE)

@@ -963,6 +963,8 @@ mr_init_func (mr_td_t * tdp)
 {
   if (tdp->mr_type != MR_TYPE_FUNC_TYPE)
     return;
+  if (tdp->param.func_param.args == NULL)
+    return;
 
   int i;
   for (i = 0; tdp->param.func_param.args[i] != NULL; ++i);
@@ -1740,14 +1742,15 @@ mr_add_type (mr_td_t * tdp)
 {
   if (NULL == tdp)
     return;
-  if (MR_TYPE_NONE == tdp->mr_type)
+  if ((MR_TYPE_NONE == tdp->mr_type) || tdp->is_registered)
     return; /* skip types that were not properly detected */
 
-  if ((tdp->next != NULL) || (mr_conf.list == tdp))
-    return;
+  if (mr_conf.next_ptr == NULL)
+    mr_conf.next_ptr = &mr_conf.list;
 
-  tdp->next = mr_conf.list;
-  mr_conf.list = tdp;
+  *mr_conf.next_ptr = tdp;
+  mr_conf.next_ptr = &tdp->next;
+  tdp->is_registered = true;
 }
 
 static void
