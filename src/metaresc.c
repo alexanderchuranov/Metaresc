@@ -1742,15 +1742,11 @@ mr_add_type (mr_td_t * tdp)
 {
   if (NULL == tdp)
     return;
-  if ((MR_TYPE_NONE == tdp->mr_type) || tdp->is_registered)
+  if ((MR_TYPE_NONE == tdp->mr_type) || tdp->next)
     return; /* skip types that were not properly detected */
 
-  if (mr_conf.next_ptr == NULL)
-    mr_conf.next_ptr = &mr_conf.list;
-
-  *mr_conf.next_ptr = tdp;
-  mr_conf.next_ptr = &tdp->next;
-  tdp->is_registered = true;
+  tdp->next = mr_conf.list;
+  mr_conf.list = tdp;
 }
 
 static void
@@ -1891,6 +1887,16 @@ mr_conf_init ()
       mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH, NULL);
 
       mr_td_t * tdp;
+      mr_td_t * prev = NULL;
+      mr_td_t * next = NULL;
+      for (tdp = mr_conf.list; tdp; tdp = next)
+	{
+	  next = tdp->next;
+	  tdp->next = prev;
+	  prev = tdp;
+	}
+      mr_conf.list = prev;
+      
       for (tdp = mr_conf.list; tdp; tdp = tdp->next)
 	{
 	  mr_normalize_type (tdp->type.str);

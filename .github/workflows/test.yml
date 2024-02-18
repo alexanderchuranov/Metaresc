@@ -60,7 +60,7 @@ jobs:
           git submodule update --init --recursive --remote
           ./autogen.sh
           ./configure CFLAGS="-I/usr/local/include/ -Wno-unused-but-set-variable" --without-perftest
-          make check -j 2 || cat tests/test-suite.log
+          make check -j 2
 
   windows-gcc:
     runs-on: windows-latest
