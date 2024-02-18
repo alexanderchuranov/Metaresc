@@ -57,7 +57,7 @@
       ck_assert_msg (load_success,					\
 		     "load for method " #METHOD " on type " #TYPE " failed"); \
       orig_eq_restored = (0 == TYPE_CMP (TYPE, X, &METHOD ## _restored, __VA_ARGS__)); \
-      if (orig_eq_restored) fprintf (stderr, "%s\n", serialized.data.string); \
+      if (!orig_eq_restored) fprintf (stderr, "%s\n", serialized.data.string); \
       if (serialized.data.ptr)						\
 	MR_FREE (serialized.data.ptr);					\
       ck_assert_msg (orig_eq_restored,					\
