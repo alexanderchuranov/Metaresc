@@ -64,8 +64,6 @@ jobs:
 
   windows:
     runs-on: windows-latest
-    outputs:
-      ld_zero: ${{ steps.ld_zero.outputs.ld_zero }}
     name: Windows with
     strategy:
       matrix:
@@ -98,9 +96,9 @@ jobs:
       - name: make
         run: make -j 2
       - name: ld_zero
-        run: echo 'int main () { printf ("%Lg", .0l); return (0); }' | cc -x c -include stdio.h - -o ld_zero && ./ld_zero >> "$GITHUB_OUTPUT"
+        run: echo 'int main () { printf ("%Lg", .0l); return (0); }' | cc -x c -include stdio.h - -o ld_zero && [ $(./ld_zero) == 0 ]
       - name: make check
-        if: ${{ jobs.windows.outputs.ld_zero == '0' }}
+        if: ${{ success() }}
         run: make check -j 2
       - name: archive build artifacts
         uses: actions/upload-artifact@v3
