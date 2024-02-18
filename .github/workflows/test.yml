@@ -64,6 +64,8 @@ jobs:
 
   windows-gcc:
     runs-on: windows-latest
+    outputs:
+      ld_zero: ${{ steps.ld_zero.outputs.ld_zero }}
     name: Windows with
     strategy:
       matrix:
@@ -93,8 +95,13 @@ jobs:
         run: ./configure --disable-static --enable-shared --without-perftest --without-libxml2
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
+      - name: make
+        run: make -j 2
+      - name: ld_zero
+        run: echo 'int main () { printf ("%Lg", .0l); return (0); }' | cc -x c -include stdio.h - -o ld_zero && ./ld_zero >> "$GITHUB_OUTPUT"
       - name: make check
-        run: make check -j 2 || cat tests/test-suite.log
+        if: ${{ outputs.ld_zero == '0' }}
+        run: make check -j 2
       - name: archive build artifacts
         uses: actions/upload-artifact@v3
         with:
