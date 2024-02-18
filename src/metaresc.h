@@ -751,6 +751,7 @@
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
     .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
     .mr_type = MR_TYPE_ENUM,						\
+    .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
     .param = {								\
       .enum_param = {							\
@@ -782,6 +783,7 @@
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
     .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
     .mr_type = MR_TYPE_FUNC_TYPE,					\
+    .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
     .param = {								\
       .func_param = {							\
@@ -799,6 +801,7 @@
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
     .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
     .mr_type = MR_TYPE,							\
+    .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
     .param = { .struct_param = { .fields = (mr_fd_t*[]){
 #define MR_TYPEDEF_END_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...) 	\
@@ -837,6 +840,7 @@
 	btdp->fd_ptr = NULL;						\
 	btdp->td.is_dynamically_allocated = true;			\
 	btdp->td.mr_type = MR_TYPE_STRUCT;				\
+	btdp->td.td_producer = MR_TDP_DUMP_STRUCT;			\
 	btdp->td.size = sizeof (__value);				\
 	char * type = MR_STRINGIFY_READONLY (MR_TYPE_NAME);		\
 	if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0) \

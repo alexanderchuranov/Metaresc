@@ -1002,6 +1002,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   mr_td_t * tdp = MR_CALLOC (1, sizeof (*tdp));
   assert (tdp != NULL);
 
+  tdp->td_producer = MR_TDP_DWARF;
   tdp->type.str = mr_strdup (attr->dw_str);
   assert (tdp->type.str != NULL);
 

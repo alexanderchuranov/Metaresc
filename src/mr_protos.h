@@ -144,6 +144,14 @@ TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classific
 	      MR_LANG_TYPE_CLASS,
 	      )
 
+TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type descriptor producer"),
+	      MR_TDP_MACRO,
+	      MR_TDP_DWARF,
+	      MR_TDP_DUMP_STRUCT,
+	      MR_TDP_DYNAMIC,
+	      MR_TDP_LAST,
+	      )
+
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
 		(mr_ptr_t, data, , "type"),
 		(ssize_t, MR_SIZE, , "used space in bytes"),
@@ -463,6 +471,7 @@ TYPEDEF_UNION (mr_td_param_t,
 TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
+		(mr_td_producer_t, td_producer, , "producer of type descriptor"),
 		(bool, is_dynamically_allocated, , "mark types that require free at exit"),
 		(mr_fd_t, mr_ptr_fd, , "field descriptor for mr_ptr_t"),
 		(mr_td_param_t, param, , "mr_type", { MR_TYPE_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_TYPE_PARAM_UDO)),

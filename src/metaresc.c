@@ -774,6 +774,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    last = tdp->param.struct_param.fields[count];
 	    tdp->param.struct_param.fields[count] = NULL;
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
+	    tdp_->td_producer = MR_TDP_DYNAMIC;
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
 	    tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
@@ -1249,6 +1250,7 @@ mr_add_basic_type (char * type, mr_type_t mr_type)
   strcpy (basic_type_td->td.type.str, type);
 
   basic_type_td->td.mr_type = mr_type;
+  basic_type_td->td.td_producer = MR_TDP_DYNAMIC;
   basic_type_td->td.size = mr_type_size (mr_type);
 
   mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
@@ -1871,6 +1873,36 @@ mr_validate_td (mr_td_t * tdp)
     mr_validate_fd (tdp->param.struct_param.fields[i]);
 }
 
+static mr_td_t *
+mr_sort_td (mr_td_t * tdp)
+{
+  mr_td_t * by_producer[MR_TDP_LAST];
+
+  memset (by_producer, 0, sizeof (by_producer));
+  while (tdp)
+    {
+      mr_td_t * next = tdp->next;
+      if (tdp->td_producer < MR_TDP_LAST)
+	{
+	  tdp->next = by_producer[tdp->td_producer];
+	  by_producer[tdp->td_producer] = tdp;
+	}
+      tdp = next;
+    }
+
+  mr_td_t * root = NULL;
+  int i;
+  for (i = MR_TDP_LAST - 1; i >= 0; --i)
+    for (tdp = by_producer[i]; tdp; )
+      {
+	mr_td_t * next = tdp->next;
+	tdp->next = root;
+	root = tdp;
+	tdp = next;
+      }
+  return (root);
+}
+
 inline void
 mr_conf_init ()
 {
@@ -1886,17 +1918,9 @@ mr_conf_init ()
       mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH, NULL);
 
-      mr_td_t * tdp;
-      mr_td_t * prev = NULL;
-      mr_td_t * next = NULL;
-      for (tdp = mr_conf.list; tdp; tdp = next)
-	{
-	  next = tdp->next;
-	  tdp->next = prev;
-	  prev = tdp;
-	}
-      mr_conf.list = prev;
+      mr_conf.list = mr_sort_td (mr_conf.list);
       
+      mr_td_t * tdp;
       for (tdp = mr_conf.list; tdp; tdp = tdp->next)
 	{
 	  mr_normalize_type (tdp->type.str);
