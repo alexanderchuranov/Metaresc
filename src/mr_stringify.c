@@ -45,16 +45,8 @@ MR_RA_PRINTF_TMPLT (float, "%." MR_STRINGIFY_READONLY (MR_FLT_DIG) "g");
 MR_RA_PRINTF_TMPLT (double, "%." MR_STRINGIFY_READONLY (MR_DBL_DIG) "g");
 MR_RA_PRINTF_TMPLT (long_double_t, "%." MR_STRINGIFY_READONLY (MR_LDBL_DIG) "Lg");
 
-#ifndef __SCNi8
-#define __SCNi8 SCNi8
-#endif /* __SCNi8 */
-
-#ifndef __SCNu8
-#define __SCNu8 SCNu8
-#endif /* __SCNu8 */
-  
-MR_RA_PRINTF_TMPLT (int8_t, "%" __SCNi8);
-MR_RA_PRINTF_TMPLT (uint8_t, "%" __SCNu8);
+MR_RA_PRINTF_TMPLT (int8_t, "%" SCNi8);
+MR_RA_PRINTF_TMPLT (uint8_t, "%" SCNu8);
 MR_RA_PRINTF_TMPLT (int16_t, "%" SCNi16);
 MR_RA_PRINTF_TMPLT (uint16_t, "%" SCNu16);
 MR_RA_PRINTF_TMPLT (int32_t, "%" SCNi32);
