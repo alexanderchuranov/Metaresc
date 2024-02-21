@@ -156,7 +156,7 @@ $ git clone https://github.com/alexanderchuranov/Metaresc.git
 $ cd Metaresc
 $ git submodule update --init --recursive --remote
 $ ./autogen.sh
-$ ./configure --without-libxml2 --disable-static --enable-shared CFLAGS=-D__USE_MINGW_ANSI_STDIO
+$ ./configure --without-libxml2 --disable-static --enable-shared
 $ sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
 $ make -j 4 check
 ```

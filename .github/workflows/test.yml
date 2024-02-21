@@ -90,7 +90,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --disable-static --enable-shared --without-perftest --without-libxml2 CFLAGS=-D__USE_MINGW_ANSI_STDIO
+        run: ./configure --disable-static --enable-shared --without-perftest --without-libxml2
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
