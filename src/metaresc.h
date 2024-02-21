@@ -1360,7 +1360,12 @@
 
 #define MR_ARRAY_SIZE(X) __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + (X)), __typeof__ (X)), -1, sizeof (X))
 
-#define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr (MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ), (OBJ), "")
+#define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr ((MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ)) && \
+						   !__builtin_types_compatible_p (__typeof__ (OBJ), void *) && \
+						   !__builtin_types_compatible_p (__typeof__ (OBJ), void const *) && \
+						   !__builtin_types_compatible_p (__typeof__ (OBJ), void volatile *) && \
+						   !__builtin_types_compatible_p (__typeof__ (OBJ), void const volatile *) \
+						   , (OBJ), (void**)0)
 
 #define MR_TYPE_DETECT_OBJ(OBJ) ({ __typeof__ (OBJ) _mr; MR_TYPE_DETECT (__typeof__ (_mr)); })
 
