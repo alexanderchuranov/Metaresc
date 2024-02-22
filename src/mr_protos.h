@@ -142,6 +142,9 @@ TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classific
 	      MR_ARRAY_TYPE_CLASS,
 	      MR_STRING_TYPE_CLASS,
 	      MR_LANG_TYPE_CLASS,
+	      MR_OPAQUE_TYPE_CLASS,
+	      MR_BITINT_TYPE_CLASS,
+	      MR_VECTOR_TYPE_CLASS,
 	      )
 
 TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type descriptor producer"),
