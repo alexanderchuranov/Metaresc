@@ -1596,13 +1596,6 @@ mr_detect_struct_fields (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      if (fdp->self_ptr)
-	{
-	  fdp->type = tdp->type.str;
-	  fdp->mr_type = MR_TYPE_POINTER;
-	  fdp->mr_type_aux = tdp->mr_type;
-	}
-
       mr_normalize_field_name (fdp);
       mr_fd_detect_field_type (fdp);
       mr_fd_detect_res_size (fdp);

@@ -1266,7 +1266,7 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "meta", "res", "res_type", "mr_size", "is_dynamically_allocated", "next");
   mr_type_void_fields ("mr_struct_param_t", "field_by_name");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
-  mr_type_void_fields ("mr_fd_t", "tdp", "self_ptr", "mr_size", "non_persistent", "mr_type_class");
+  mr_type_void_fields ("mr_fd_t", "tdp", "mr_size", "non_persistent", "mr_type_class");
   mr_type_void_fields ("mr_ed_t", "mr_type", "meta", "res", "res_type", "mr_size");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");

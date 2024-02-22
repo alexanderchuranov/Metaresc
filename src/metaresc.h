@@ -680,17 +680,30 @@
 	.meta = "" __VA_ARGS__,						\
 	} },
 
-#define MR_IS_SELF_PTR(MR_TYPE_NAME, NAME, SUFFIX) __builtin_types_compatible_p (MR_TYPE_NAME SUFFIX, __typeof__ (((MR_TYPE_NAME*)0)->NAME))
-
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
-  MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX,			\
-		 MR_TYPE_DETECT (TYPE), __VA_ARGS__,			\
-		 .self_ptr = MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, *) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const * ) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, volatile * ) |	\
-		 MR_IS_SELF_PTR (MR_TYPE_NAME, NAME, const volatile *), \
-		 .mr_type_aux = MR_TYPE_DETECT_PTR (TYPE)		\
-		 + 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)))
+  (mr_fd_t[]){ {							\
+      .name = { .str = #NAME, .hash_value = 0, },			\
+	.type = __builtin_choose_expr (__builtin_types_compatible_p (MR_TYPE_NAME *, TYPE) | \
+				       __builtin_types_compatible_p (MR_TYPE_NAME const *, TYPE) | \
+				       __builtin_types_compatible_p (MR_TYPE_NAME volatile *, TYPE) | \
+				       __builtin_types_compatible_p (MR_TYPE_NAME const volatile *, TYPE), \
+				       MR_STRINGIFY (MR_TYPE_NAME *),	\
+				       MR_STRINGIFY (TYPE)		\
+				       ),				\
+	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
+	.offset = offsetof (MR_TYPE_NAME, NAME),			\
+	.mr_type = MR_TYPE_DETECT (TYPE),				\
+	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
+	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.non_persistent = 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
+	.param = {							\
+	  .pointer_param = {						\
+	    .pointer_param = (mr_fd_t[]){{}},				\
+	  },								\
+	},								\
+	.meta = "" __VA_ARGS__,						\
+	} },
+
 /* Generate division by zero error if type of the field mismatches
    with type provided in macro. This is possible for descriptors
    generated for external types */
