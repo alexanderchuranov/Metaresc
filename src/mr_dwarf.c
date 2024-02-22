@@ -860,7 +860,7 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 }
 
 static void
-load_enumerator (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
+load_enumerator (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   mr_ed_t * edp = elem;
   
@@ -888,7 +888,7 @@ load_enumerator (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 }
 
 static void
-load_member (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
+load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
   mr_fd_t * fdp = elem;
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
@@ -902,9 +902,10 @@ load_member (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
   if (fdp->name.str == NULL)
     {
-#define ANONYMOUS_FIELD_TEMPLATE "anonymous_field_%d"
-      char field_name[sizeof (ANONYMOUS_FIELD_TEMPLATE) + sizeof (idx) * 3];
-      sprintf (field_name, ANONYMOUS_FIELD_TEMPLATE, idx);
+#define ANONYMOUS_FIELD_TEMPLATE "%s_field_%d"
+      int strlen_type = strlen (type);
+      char field_name[sizeof (ANONYMOUS_FIELD_TEMPLATE) + sizeof (idx) * 3 + strlen_type];
+      sprintf (field_name, ANONYMOUS_FIELD_TEMPLATE, type, idx);
       fdp->name.str = mr_strdup (field_name);
       assert (fdp->name.str != NULL);
 
@@ -994,7 +995,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     return;
 
   mr_dw_tag_t children_tag = _DW_TAG_undefined;
-  void (*load_child) (int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
+  void (*load_child) (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
   void ** rarray = NULL;
   ssize_t * rarray_size = NULL;
   size_t elem_size = 0;
@@ -1061,7 +1062,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	    assert (elem != NULL);
 	    *elem = MR_CALLOC (1, elem_size);
 	    assert (*elem != NULL);
-	    load_child (i, *elem, &mr_die->children[i], die_off_ic);
+	    load_child (tdp->type.str, i, *elem, &mr_die->children[i], die_off_ic);
 	  }
 
       void ** elem = mr_rarray_allocate_element (rarray, rarray_size, &alloc_size, sizeof (*elem));
