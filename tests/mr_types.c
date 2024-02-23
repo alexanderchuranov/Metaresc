@@ -541,10 +541,10 @@ START_TEST (dump_struct_types_detection) {
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
 	{
 	  ck_assert_msg (mr_fdp->param.array_param.count == dst_fdp->param.array_param.count,
-			 "dump_struct mismatched array_param.count (%d != %d) for field '%s'",
+			 "dump_struct mismatched array_param.count (%zd != %zd) for field '%s'",
 			 mr_fdp->param.array_param.count, dst_fdp->param.array_param.count, mr_fdp->name.str);
 	  ck_assert_msg (mr_fdp->param.array_param.row_count == dst_fdp->param.array_param.row_count,
-			 "dump_struct mismatched array_param.count (%d != %d) for field '%s'",
+			 "dump_struct mismatched array_param.count (%zd != %zd) for field '%s'",
 			 mr_fdp->param.array_param.row_count, dst_fdp->param.array_param.row_count, mr_fdp->name.str);
 	}
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
