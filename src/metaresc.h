@@ -140,8 +140,6 @@
 #define MR_SIZE_STR MR_STRINGIFY_READONLY (MR_SIZE)
 #define MR_VOIDP_T void*
 #define MR_VOIDP_T_STR MR_STRINGIFY_READONLY (MR_VOIDP_T)
-#define MR_STRUCT_KEYWORD "struct"
-#define MR_UNION_KEYWORD "union"
 
 #define MR_STRINGIFY_READONLY(...) MR_STRINGIFY_READONLY_ (__VA_ARGS__)
 #define MR_STRINGIFY_READONLY_(...) #__VA_ARGS__
@@ -149,11 +147,6 @@
 #define MR_BITMASK_OR_DELIMITER " | "
 
 #define MR_MESSAGE(LOG_LEVEL, /* MSG_ID */ ...) mr_message (__FILE__, __FUNCTION__, __LINE__, LOG_LEVEL, __VA_ARGS__)
-
-/* make a string from argument in writable memory. #STR itself is in read-only memory */
-#define MR_STRINGIFY(STR) (char []) { #STR }
-
-#define MR_MEM_INIT(FUNC, /* ATTR */ ...) __VA_ARGS__ void mr_mem_init (void) { FUNC; }
 
 #define MR_CALLOC(COUNT, SIZE) (mr_conf.mr_mem.calloc)(__FILE__, __FUNCTION__, __LINE__, COUNT, SIZE)
 #define MR_REALLOC(PTR, SIZE) (mr_conf.mr_mem.realloc)(__FILE__, __FUNCTION__, __LINE__, PTR, SIZE)
@@ -163,13 +156,13 @@
   you can redefine this prefixes from outside before first include of metaresc.h
 */
 #ifndef MR_DESCRIPTOR_PREFIX
-#define MR_DESCRIPTOR_PREFIX(ID, MR_TYPE_NAME) mr_td_ ## MR_TYPE_NAME
+#define MR_DESCRIPTOR_PREFIX(ID, MR_TYPE_NAME) mr_td_ ## ID
 #endif /* MR_DESCRIPTOR_PREFIX */
 #ifndef MR_TYPEDEF_PREFIX
 #define MR_TYPEDEF_PREFIX(MR_TYPE_NAME) MR_TYPE_NAME
 #endif /* MR_TYPEDEF_PREFIX */
 #ifndef MR_CONSTRUCTOR_PREFIX
-#define MR_CONSTRUCTOR_PREFIX(ID, MR_TYPE_NAME) mr_init_ ## MR_TYPE_NAME
+#define MR_CONSTRUCTOR_PREFIX(ID, MR_TYPE_NAME) mr_init_ ## ID
 #endif /* MR_CONSTRUCTOR_PREFIX */
 /* this attribute can be redefined from outside */
 #ifndef MR_DESCRIPTOR_ATTR
@@ -613,8 +606,8 @@
 
 #define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) \
   (mr_fd_t[]){ {							\
-      .name = { .str = #NAME, .hash_value = 0, },			\
-	.type = MR_STRINGIFY (TYPE),					\
+      .name = { .str = #NAME, },					\
+	.type = #TYPE,							\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE,						\
@@ -629,8 +622,8 @@
 
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
-      .name = { .str = #NAME, .hash_value = 0, },			\
-	.type = MR_STRINGIFY (TYPE),					\
+      .name = { .str = #NAME, },					\
+	.type = #TYPE,							\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE_ARRAY,					\
@@ -652,8 +645,8 @@
 
 #define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
-      .name = { .str = MR_STRINGIFY (NAME), .hash_value = 0, },		\
-	.type = MR_STRINGIFY (TYPE),					\
+      .name = { .str = (char []) { #NAME }, },				\
+	.type = #TYPE,							\
 	.size = sizeof (TYPE),						\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	.mr_type = MR_TYPE_VOID,					\
@@ -666,8 +659,8 @@
 
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
-      .name = { .str = #NAME, .hash_value = 0, },			\
-	.type = MR_STRINGIFY (TYPE),					\
+      .name = { .str = #NAME, },					\
+	.type = #TYPE,							\
 	.size = sizeof (TYPE),						\
 	.mr_type = MR_TYPE_BITFIELD,					\
 	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
@@ -682,13 +675,13 @@
 
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
-      .name = { .str = #NAME, .hash_value = 0, },			\
+      .name = { .str = #NAME, },					\
 	.type = __builtin_choose_expr (__builtin_types_compatible_p (MR_TYPE_NAME *, TYPE) | \
 				       __builtin_types_compatible_p (MR_TYPE_NAME const *, TYPE) | \
 				       __builtin_types_compatible_p (MR_TYPE_NAME volatile *, TYPE) | \
 				       __builtin_types_compatible_p (MR_TYPE_NAME const volatile *, TYPE), \
-				       MR_STRINGIFY (MR_TYPE_NAME *),	\
-				       MR_STRINGIFY (TYPE)		\
+				       #MR_TYPE_NAME "*",		\
+				       #TYPE				\
 				       ),				\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
@@ -729,7 +722,7 @@
 #define MR_OBJ_OF_TYPE(TYPE) *__builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), "", (__typeof__ (TYPE) *)0)
 
 #define MR_FUNC_ARG(TYPE) (mr_structured_type_t[]){ {			\
-      .type = MR_STRINGIFY (TYPE),					\
+      .type = #TYPE,							\
 	.size = sizeof (TYPE),						\
 	.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (TYPE)),		\
@@ -745,12 +738,12 @@
 
 #define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...)		\
   (mr_fd_t[]){ {							\
-      .name = { .str = #NAME, .hash_value = 0, },			\
+      .name = { .str = #NAME, },					\
 	.type = "",							\
 	.offset = 0,							\
 	.unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false),	\
 	.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
-	.res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, .hash_value = 0, }, } } }, \
+	.res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, }, } } }, \
 	.res_type = "mr_td_t",						\
 	} },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\
@@ -762,7 +755,7 @@
 
 #define MR_TYPEDEF_ENUM_DESC(ID, MR_TYPE_NAME, ...)			\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-    .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
+  .type = { .str = #MR_TYPE_NAME, },					\
     .mr_type = MR_TYPE_ENUM,						\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
@@ -782,7 +775,7 @@
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)   \
   (mr_ed_t[]){ {						     \
-      .name = { .str =  #NAME, .hash_value = 0, },		     \
+      .name = { .str =  #NAME, },				     \
 	.value = { ._unsigned = NAME, },			     \
 	.meta = "" __VA_ARGS__,					     \
 	} },
@@ -794,7 +787,7 @@
 #define MR_TYPEDEF_FUNC_DESC(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (ID, RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
 #define MR_TYPEDEF_FUNC_DESC_(ID, RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) \
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-    .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
+    .type = { .str = #MR_TYPE_NAME, },					\
     .mr_type = MR_TYPE_FUNC_TYPE,					\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
@@ -812,7 +805,7 @@
 
 #define MR_TYPEDEF_DESC(ID, MR_TYPE_NAME, MR_TYPE, ...)			\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-    .type = { .str = MR_STRINGIFY (MR_TYPE_NAME), },			\
+  .type = { .str = #MR_TYPE_NAME, },					\
     .mr_type = MR_TYPE,							\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
@@ -855,12 +848,7 @@
 	btdp->td.mr_type = MR_TYPE_STRUCT;				\
 	btdp->td.td_producer = MR_TDP_DUMP_STRUCT;			\
 	btdp->td.size = sizeof (__value);				\
-	char * type = MR_STRINGIFY_READONLY (MR_TYPE_NAME);		\
-	if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0) \
-	  type += sizeof (MR_STRUCT_KEYWORD);				\
-	if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0) \
-	  type += sizeof (MR_UNION_KEYWORD);				\
-	btdp->td.type.str = mr_strdup (type);				\
+	btdp->td.type.str = #MR_TYPE_NAME;				\
 	while (dst_ctx.btdp != NULL)					\
 	  {								\
 	    if (0 == setjmp (dst_ctx._jmp_buf))				\
@@ -991,7 +979,7 @@
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))			\
     (MR_SAVE_STR_TYPED (MR_PTR_DETECT_TYPE (S_PTR), S_PTR))	\
     (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);			\
-	MR_SAVE_STR_TYPED (MR_STRINGIFY (MR_TYPE_NAME), S_PTR); }))
+	MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       void * __ptr__ = (void*)S_PTR;					\

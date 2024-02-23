@@ -188,14 +188,22 @@ typedef struct ext_struct_t {
   struct ext_struct_t volatile * volatile v_self_ptr_v;
 } ext_struct_t;
 
+typedef enum ext_enum_t {
+  _0,
+  _1,
+  _2,
+} ext_enum_t;
+
 #define MR_MODE DESC
-TYPEDEF_STRUCT (ext_struct_t,
+TYPEDEF_STRUCT (struct ext_struct_t,
 		( , y),
 		x,
 		z, z_c, z_v, z_cv, c_z, v_z, cv_z,
 		struct_ptr,
 		self_ptr, c_self_ptr, v_self_ptr, cv_self_ptr, self_ptr_c, self_ptr_v, self_ptr_cv, c_self_ptr_c, v_self_ptr_v,
 		);
+
+TYPEDEF_ENUM (enum ext_enum_t, _0, _1);
 
 #define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({	\
       mr_td_t * tdp = mr_get_td_by_name (#TYPE);			\
@@ -246,6 +254,25 @@ START_TEST (check_ext_struct) {
   ASSERT_FIELD_TYPE (ext_struct_t, self_ptr_cv, MR_TYPE_POINTER, MR_TYPE_STRUCT);
   ASSERT_FIELD_TYPE (ext_struct_t, c_self_ptr_c, MR_TYPE_POINTER, MR_TYPE_STRUCT);
   ASSERT_FIELD_TYPE (ext_struct_t, v_self_ptr_v, MR_TYPE_POINTER, MR_TYPE_STRUCT);
+} END_TEST
+
+START_TEST (check_ext_enum) {
+  mr_conf_init ();
+
+  mr_td_t * tdp = mr_get_td_by_name ("ext_enum_t");
+  ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type ext_enum_t.");
+  ck_assert_msg (tdp->mr_type == MR_TYPE_ENUM, "Wrong mr_type in type descriptor for type ext_enum_t.");
+
+  mr_ed_t * edp = mr_get_enum_by_name ("_0");
+  ck_assert_msg (edp != NULL, "Failed to get enum descriptor for enum '_0'.");
+  ck_assert_msg (edp->value._unsigned == _0, "Wrong value in enum descriptor for enum '_0'.");
+
+  edp = mr_get_enum_by_name ("_1");
+  ck_assert_msg (edp != NULL, "Failed to get enum descriptor for enum '_1'.");
+  ck_assert_msg (edp->value._unsigned == _1, "Wrong value in enum descriptor for enum '_1'.");
+
+  edp = mr_get_enum_by_name ("_2");
+  ck_assert_msg (edp == NULL, "Unexpected enum descriptor for enum '_2'.");
 } END_TEST
 
 START_TEST (check_type_autodetection) {
@@ -536,6 +563,7 @@ START_TEST (dump_struct_types_detection) { } END_TEST
 
 MAIN_TEST_SUITE ((check_void_function_field, "check that non-serializable function pointer is declared correctly"),
 		 (check_ext_struct, "check that descriptor for external type is correct"),
+		 (check_ext_enum, "check that descriptor for external enum is correct"),
 		 (check_type_autodetection, "check struct type autodetection"),
 		 (check_struct_array_autodetect, "check strcuts array autodetection"),
 		 (check_basic_type_array_autodetect, "check that MR_SAVE handles array correctly"),

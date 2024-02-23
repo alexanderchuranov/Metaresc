@@ -25,11 +25,6 @@
 #include <mr_protos.h>
 #undef MR_MODE
 
-#undef MR_DESCRIPTOR_PREFIX
-#define MR_DESCRIPTOR_PREFIX(ID, MR_TYPE_NAME) mr_td_ ## ID
-#undef MR_CONSTRUCTOR_PREFIX
-#define MR_CONSTRUCTOR_PREFIX(ID, MR_TYPE_NAME) mr_init_ ## ID
-
 MR_FOREACH (MR_TYPEDEF_DESC_BI,
 	    MR_BUILTIN_TYPES,
 	    char *, char*, va_list, void,
@@ -68,8 +63,6 @@ mr_conf_t mr_conf = {
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
   .list = NULL,
 };
-
-MR_MEM_INIT ( , __attribute__((constructor,weak)));
 
 #ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
@@ -246,6 +239,25 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 }
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
+static char *
+mr_skip_keywords (char * type)
+{
+#define MR_STRUCT_KEYWORD "struct"
+#define MR_UNION_KEYWORD "union"
+#define MR_ENUM_KEYWORD "enum"
+
+  if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
+    type += sizeof (MR_STRUCT_KEYWORD);
+
+  if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0)
+    type += sizeof (MR_UNION_KEYWORD);
+
+  if (strncmp (type, MR_ENUM_KEYWORD " ", sizeof (MR_ENUM_KEYWORD)) == 0)
+    type += sizeof (MR_ENUM_KEYWORD);
+
+  return (type);
+}
+
 int
 mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...)
 {
@@ -259,11 +271,7 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
       va_end (args);
     }
 
-  if (strncmp (fmt, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
-    fmt += sizeof (MR_STRUCT_KEYWORD);
-
-  if (strncmp (fmt, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0)
-    fmt += sizeof (MR_UNION_KEYWORD);
+  fmt = mr_skip_keywords ((char*)fmt);
 
   char * tail = strchr (fmt, ' ');
   if (NULL == tail)
@@ -1014,9 +1022,9 @@ mr_normalize_type (char * type)
 {
   static char * keywords[] =
     {
-      "struct",
-      "union",
-      "enum",
+      MR_STRUCT_KEYWORD,
+      MR_UNION_KEYWORD,
+      MR_ENUM_KEYWORD,
       "const",
       "__const",
       "__const__",
@@ -1916,7 +1924,7 @@ mr_conf_init ()
       mr_td_t * tdp;
       for (tdp = mr_conf.list; tdp; tdp = tdp->next)
 	{
-	  mr_normalize_type (tdp->type.str);
+	  tdp->type.str = mr_skip_keywords (tdp->type.str);
 	  tdp->type.hash_value = 0;
 
 	  /* check whether this type is already in the list */
