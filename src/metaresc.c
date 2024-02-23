@@ -1013,81 +1013,6 @@ mr_get_enum_by_name (char * name)
 }
 
 /**
- * Type name clean up. We need to drop all key words.
- * @param fdp pointer on a field descriptor
- * @return status
- */
-static bool
-mr_normalize_type (char * type)
-{
-  static char * keywords[] =
-    {
-      MR_STRUCT_KEYWORD,
-      MR_UNION_KEYWORD,
-      MR_ENUM_KEYWORD,
-      "const",
-      "__const",
-      "__const__",
-      "volatile",
-      "__volatile",
-      "__volatile__",
-      "restrict",
-      "__restrict",
-      "__restrict__",
-    };
-  static bool isdelimiter [1 << (__CHAR_BIT__ * sizeof (uint8_t))] =
-    {
-      [0] = true,
-      [(uint8_t)' '] = true,
-      [(uint8_t)'\t'] = true,
-      [(uint8_t)'*'] = true,
-    };
-  int i;
-  char * ptr;
-  bool prev_is_space = false;
-  bool modified = false;
-
-  if (NULL == type)
-    return (false);
-
-  for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
-    {
-      int length = strlen (keywords[i]);
-      ptr = type;
-      for (;;)
-	{
-	  char * found = strstr (ptr, keywords[i]);
-	  if (!found)
-	    break;
-	  if (isdelimiter[(uint8_t)found[length]] && ((found == type) || isdelimiter[(uint8_t)found[-1]]))
-	    {
-	      memset (found, ' ', length); /* replaced all keywords on spaces */
-	      modified = true;
-	    }
-	  ++ptr; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
-	}
-    }
-  if (modified)
-    {
-      /* we need to drop all space characters */
-      ptr = type;
-      for (i = 0; isspace (type[i]); ++i);
-      for (; type[i]; ++i)
-	if (isspace (type[i]))
-	  prev_is_space = true;
-	else
-	  {
-	    if (prev_is_space)
-	      *ptr++ = ' ';
-	    *ptr++ = type[i];
-	    prev_is_space = false;
-	  }
-      *ptr = 0;
-    }
-  return (modified);
-}
-
-/**
  * Bitfield initialization. We need to calculate offset and shift. Width was initialized by macro.
  * @param fdp pointer on a field descriptor
  * @return status
@@ -1193,54 +1118,6 @@ mr_register_type_pointer (mr_td_t * tdp)
   return ((NULL == mr_ic_add (&union_tdp->param.struct_param.field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
-static bool
-mr_type_is_a_pointer (char * type)
-{
-  if ((NULL == type) || (0 == type[0]))
-    return (false);
-  /* auto detect pointers */
-  char * end = &type[strlen (type) - 1];
-  if ('*' == *end)
-    {
-      /* remove whitespaces before * */
-      while (isspace (end[-1]))
-	--end;
-      *end = 0; /* trancate type name */
-      return (true);
-    }
-  return (false);
-}
-
-static void
-mr_fd_of_array_type (mr_fd_t * fdp)
-{
-  if (NULL == fdp->type)
-    return;
-
-  char * end = &fdp->type[strlen (fdp->type) - 1];
-  int row_count = 0, count = 1;
-  while (']' == *end)
-    {
-      char * open_bracket;
-      for (open_bracket = end - 1; open_bracket >= fdp->type; --open_bracket)
-	if ('[' == *open_bracket)
-	  break;
-      if (open_bracket < fdp->type)
-	break;
-      int last_row_count = atoi (open_bracket + 1);
-      row_count = count;
-      count *= last_row_count;
-      end = open_bracket - 1;
-    }
-
-  if (row_count != 0)
-    {
-      fdp->mr_type = MR_TYPE_ARRAY;
-      fdp->param.array_param.count = count;
-      fdp->param.array_param.row_count = row_count;
-    }
-}
-
 static mr_td_t *
 mr_add_basic_type (char * type, mr_type_t mr_type)
 {
@@ -1266,6 +1143,124 @@ mr_add_basic_type (char * type, mr_type_t mr_type)
   return (&basic_type_td->td);
 }
 
+static bool
+mr_type_is_a_pointer (char * type)
+{
+  if ((NULL == type) || (0 == type[0]))
+    return (false);
+  /* auto detect pointers */
+  char * end = &type[strlen (type) - 1];
+  if ('*' == *end)
+    {
+      /* remove whitespaces before * */
+      while (isspace (end[-1]))
+	--end;
+      *end = 0; /* trancate type name */
+      return (true);
+    }
+  return (false);
+}
+
+static void
+mr_stype_of_array_type (mr_structured_type_t * stype, char * type)
+{
+  char * end = &type[strlen (type) - 1];
+  int row_count = 0, count = 1;
+  for (;;)
+    {
+      for ( ; end >= type; --end)
+	if (!isspace (*end))
+	  break;
+      if (end >= type)
+	if (']' != *end)
+	  break;
+
+      char * open_bracket;
+      for (open_bracket = end - 1; open_bracket >= type; --open_bracket)
+	if ('[' == *open_bracket)
+	  break;
+      if (open_bracket < type)
+	break;
+      *open_bracket = 0;
+
+      int last_row_count = atoi (open_bracket + 1);
+      row_count = count;
+      count *= last_row_count;
+      end = open_bracket - 1;
+    }
+
+  if (row_count != 0)
+    {
+      stype->mr_type = MR_TYPE_ARRAY;
+      stype->count = count;
+      stype->row_count = row_count;
+    }
+}
+
+/**
+ * Type name clean up. We need to drop all key words.
+ * @param fdp pointer on a field descriptor
+ * @return status
+ */
+static void
+mr_normalize_type (char * type)
+{
+  static char * keywords[] =
+    {
+      MR_STRUCT_KEYWORD,
+      MR_UNION_KEYWORD,
+      MR_ENUM_KEYWORD,
+      "const",
+      "__const",
+      "__const__",
+      "volatile",
+      "__volatile",
+      "__volatile__",
+      "restrict",
+      "__restrict",
+      "__restrict__",
+    };
+  static bool isdelimiter [1 << (__CHAR_BIT__ * sizeof (uint8_t))] =
+    {
+      [0] = true,
+      [(uint8_t)' '] = true,
+      [(uint8_t)'\t'] = true,
+      [(uint8_t)'*'] = true,
+    };
+  int i;
+
+  for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); ++i)
+    {
+      int length = strlen (keywords[i]);
+      char * ptr = type;
+      for (;;)
+	{
+	  char * found = strstr (ptr, keywords[i]);
+	  if (NULL == found)
+	    break;
+	  if (isdelimiter[(uint8_t)found[length]] && ((found == type) || isdelimiter[(uint8_t)found[-1]]))
+	    memset (found, ' ', length); /* replaced all keywords on spaces */
+	  ptr = &found[length]; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
+	}
+    }
+
+  /* we need to squeeze all space characters including trailing spaces */
+  bool prev_is_space = false;
+  char * ptr = type;
+  for (i = 0; isspace (type[i]); ++i);
+  for (; type[i]; ++i)
+    if (isspace (type[i]))
+      prev_is_space = true;
+    else
+      {
+	if (prev_is_space)
+	  *ptr++ = ' ';
+	*ptr++ = type[i];
+	prev_is_space = false;
+      }
+  *ptr = 0;
+}
+
 static void
 mr_detect_structured_type (mr_structured_type_t * stype)
 {
@@ -1277,10 +1272,8 @@ mr_detect_structured_type (mr_structured_type_t * stype)
   char type[type_name_length + 1];
 
   strcpy (type, stype->type);
+  mr_stype_of_array_type (stype, type);
   mr_normalize_type (type);
-  char * bracket = strchr (type, '[');
-  if (bracket)
-    *bracket = 0;
 
   mr_td_t * tdp = mr_get_td_by_name_internal (type);
   if (NULL == tdp)
@@ -1394,8 +1387,6 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   if (NULL == fdp)
     return;
 
-  mr_fd_of_array_type (fdp);
-
   mr_structured_type_t stype;
   memset (&stype, 0, sizeof (stype));
 
@@ -1405,6 +1396,12 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   stype.mr_type_ptr = fdp->mr_type_ptr;
   stype.mr_type_class = fdp->mr_type_class;
 
+  if (MR_TYPE_ARRAY == fdp->mr_type)
+    {
+      stype.count = fdp->param.array_param.count;
+      stype.row_count = fdp->param.array_param.row_count;
+    }
+
   mr_detect_structured_type (&stype);
 
   fdp->type = stype.type;
@@ -1412,6 +1409,12 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   fdp->mr_type_aux = stype.mr_type_aux;
   fdp->mr_type_ptr = stype.mr_type_ptr;
   fdp->tdp = stype.tdp;
+
+  if (MR_TYPE_ARRAY == fdp->mr_type)
+    {
+      fdp->param.array_param.count = stype.count;
+      fdp->param.array_param.row_count = stype.row_count;
+    }
 }
 
 /**
@@ -1654,6 +1657,10 @@ mr_detect_struct_fields (mr_td_t * tdp)
 mr_fd_t *
 mr_get_fd_by_name (mr_td_t * tdp, char * name)
 {
+  if (NULL == tdp)
+    return (NULL);
+  if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
+    return (NULL);
   mr_hashed_string_t hashed_name = { .str = name, .hash_value = mr_hash_str (name), };
   uintptr_t key = (uintptr_t)&hashed_name - offsetof (mr_fd_t, name);
   mr_ptr_t * result = mr_ic_find (&tdp->param.struct_param.field_by_name, key);

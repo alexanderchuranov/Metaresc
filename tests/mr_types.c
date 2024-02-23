@@ -149,7 +149,7 @@ TYPEDEF_STRUCT (struct_t,
 #endif /* HAVE_INT128 */
 		BITFIELD (mr_type_t, bf_enum, : 6),
 		BITFIELD (const volatile enum mr_type_t, bf_const_volatile_enum_enum, : 6),
-		(int32_alias11_t, f, (volatile int32_alias12_t const *)),
+		(int32_alias11_t, f, (volatile int32_alias12_t const *, int32_t [2] [3], int32_t * [2] [3])),
 		);
 
 TYPEDEF_STRUCT (void_function_field_t,
@@ -450,7 +450,20 @@ START_TEST (check_types_detection) {
 #endif /* HAVE_INT128 */
   ASSERT_STRUCT_FIELD_TYPE (bf_enum, MR_TYPE_BITFIELD, MR_TYPE_ENUM);
   ASSERT_STRUCT_FIELD_TYPE (bf_const_volatile_enum_enum, MR_TYPE_BITFIELD, MR_TYPE_ENUM);
-  
+
+  ASSERT_STRUCT_FIELD_TYPE (f, MR_TYPE_FUNC);
+  tdp = mr_get_td_by_name ("struct_t");
+  mr_fd_t * fdp = mr_get_fd_by_name (tdp, "f");
+  ck_assert_msg (fdp->param.func_param.size == 4 * sizeof (fdp->param.func_param.args[0]), "Wrong number of arguments for 'f' of type struct_t.");
+  mr_structured_type_t ** args = fdp->param.func_param.args;
+  ck_assert_msg (args[0]->mr_type == MR_TYPE_INT32, "Wrong type of return value for 'f' of type struct_t.");
+  ck_assert_msg (args[1]->mr_type == MR_TYPE_POINTER, "Wrong type of first argument for 'f' of type struct_t.");
+  ck_assert_msg (args[1]->mr_type_aux == MR_TYPE_INT32, "Wrong auxiliary type of first argument for 'f' of type struct_t.");
+  ck_assert_msg (args[2]->mr_type == MR_TYPE_ARRAY, "Wrong type of second argument for 'f' of type struct_t.");
+  ck_assert_msg (args[2]->mr_type_aux == MR_TYPE_INT32, "Wrong auxiliary type of second argument for 'f' of type struct_t.");
+  ck_assert_msg (args[3]->mr_type == MR_TYPE_ARRAY, "Wrong type of third argument for 'f' of type struct_t.");
+  ck_assert_msg (args[3]->mr_type_aux == MR_TYPE_POINTER, "Wrong auxiliary type of third argument for 'f' of type struct_t.");
+  ck_assert_msg (args[3]->mr_type_ptr == MR_TYPE_INT32, "Wrong auxiliary type of third argument for 'f' of type struct_t.");
 } END_TEST
 
 #ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS

@@ -725,7 +725,7 @@
       .type = #TYPE,							\
 	.size = sizeof (TYPE),						\
 	.mr_type = MR_TYPE_DETECT (TYPE),				\
-	.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (TYPE)),		\
+	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), MR_VOID_TYPE_CLASS, \
 						__builtin_classify_type (MR_OBJ_OF_TYPE (TYPE))), \
 	} },

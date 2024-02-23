@@ -346,6 +346,8 @@ TYPEDEF_STRUCT (mr_structured_type_t, ATTRIBUTES ( , "structured type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_type_t, mr_type_ptr, , "Metaresc type to detect pointers on basic type"),
 		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
+		(unsigned int, count, , "array size"),
+		(unsigned int, row_count, , "row size"),
 		)
 
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
