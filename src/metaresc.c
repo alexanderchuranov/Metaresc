@@ -1191,7 +1191,8 @@ mr_stype_of_array_type (mr_structured_type_t * stype, char * type)
 
   if (row_count != 0)
     {
-      stype->mr_type = MR_TYPE_ARRAY;
+      if ((stype->mr_type != MR_TYPE_CHAR_ARRAY) || (row_count != 1))
+	stype->mr_type = MR_TYPE_ARRAY;
       stype->count = count;
       stype->row_count = row_count;
     }
