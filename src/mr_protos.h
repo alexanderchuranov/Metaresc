@@ -151,6 +151,7 @@ TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type des
 	      MR_TDP_MACRO,
 	      MR_TDP_DWARF,
 	      MR_TDP_DUMP_STRUCT,
+	      MR_TDP_ANON_UNION,
 	      MR_TDP_DYNAMIC,
 	      MR_TDP_LAST,
 	      )
@@ -476,7 +477,6 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_td_producer_t, td_producer, , "producer of type descriptor"),
-		(bool, is_dynamically_allocated, , "mark types that require free at exit"),
 		(mr_fd_t, mr_ptr_fd, , "field descriptor for mr_ptr_t"),
 		(mr_td_param_t, param, , "mr_type", { MR_TYPE_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_TYPE_PARAM_UDO)),
 		(mr_size_t, size, , "size of type"),
@@ -486,13 +486,6 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		(mr_td_t *, next, , "single linked list"),
 		) /* type descriptor */
-
-TYPEDEF_STRUCT (mr_basic_type_td_t, ATTRIBUTES ( , "Stucture for bulk allocation of type descriptor and sentinel field descriptor"),
-		(mr_td_t, td, , "type descriptor"),
-		(mr_fd_t, fd, [0], "field descriptors"),
-		(mr_fd_t *, fd_ptr, , "array of pointers on field descriptor for 'fields' initialization"),
-		(mr_empty_string_t, type, , "type name for basic types"),
-		)
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(void *, calloc, (const char *, const char *, int, size_t, size_t), "pointer on malloc() function"),
@@ -695,7 +688,7 @@ TYPEDEF_STRUCT (mr_get_struct_type_name_t, ATTRIBUTES ( , "long jump buffer and 
 TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type detection with __builtin_dump_struct"),
 		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
 		(void *, struct_ptr, , "pointer on a sample struct variable"),
-		(mr_basic_type_td_t *, btdp, , "memory for type desctiptor and 'fields'"),
+		(mr_td_t *, tdp, , "memory for type desctiptor"),
 		(int, offset_byte, , "which byte of offset is set in struct"),
 		)
 

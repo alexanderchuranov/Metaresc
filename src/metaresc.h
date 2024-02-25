@@ -818,53 +818,50 @@
       mr_add_type (&MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME));		\
     }
 
-#define MR_CONSTRUCTOR_PREFIX_ID(ID, MR_TYPE_NAME) mr_init_ ## ID
-
 #ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+
+#define MR_SINGLE_FD(CONTEXT, ARG, I) (mr_fd_t[]){{}},
 
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
-  static inline void __attribute__((constructor)) MR_CONSTRUCTOR_PREFIX_ID (ID, MR_TYPE_NAME) (void) { \
-    mr_basic_type_td_t * btdp = MR_CALLOC (1, sizeof (*btdp));		\
-    if (NULL == btdp)							\
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);		\
-    else								\
+  MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
+    .type = { .str = #MR_TYPE_NAME, },					\
+    .mr_type = MR_TYPE_STRUCT,						\
+    .td_producer = MR_TDP_DUMP_STRUCT,					\
+    .size = sizeof (MR_TYPE_NAME),					\
+    .param = { .struct_param = { .fields = (mr_fd_t*[]){		\
+	  MR_FOR ( , MR_PP_DEPTH, MR_SER, MR_SINGLE_FD)			\
+	  NULL, }, }, }, };						\
+  static inline void __attribute__((constructor))			\
+  MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
+    mr_dump_struct_type_ctx_t dst_ctx;					\
+    MR_TYPE_NAME __value;						\
+    uint8_t * __ptr = (uint8_t*)&__value;				\
+    mr_size_t __block_size, __i;					\
+    for (__i = 0; __i < sizeof (__value); ++__i)			\
+      *__ptr++ = __i;							\
+    memset (&dst_ctx, 0, sizeof (dst_ctx));				\
+    dst_ctx.struct_ptr = &__value;					\
+    dst_ctx.tdp = &MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME);		\
+    for (dst_ctx.offset_byte = 0; ; ++dst_ctx.offset_byte)		\
       {									\
-        mr_dump_struct_type_ctx_t dst_ctx;				\
-	MR_TYPE_NAME __value;						\
-	uint8_t * __ptr = (uint8_t*)&__value;				\
-	mr_size_t __block_size, __i;					\
-	for (__i = 0; __i < sizeof (__value); ++__i)			\
-	  *__ptr++ = __i;						\
-	memset (&dst_ctx, 0, sizeof (dst_ctx));				\
-	dst_ctx.struct_ptr = &__value;					\
-	dst_ctx.offset_byte = 0;					\
-	dst_ctx.btdp = btdp;						\
-	btdp->td.param.struct_param.fields_size =			\
-	  sizeof (btdp->td.param.struct_param.fields[0]);		\
-	btdp->td.param.struct_param.fields = &btdp->fd_ptr;		\
-	btdp->fd_ptr = NULL;						\
-	btdp->td.is_dynamically_allocated = true;			\
-	btdp->td.mr_type = MR_TYPE_STRUCT;				\
-	btdp->td.td_producer = MR_TDP_DUMP_STRUCT;			\
-	btdp->td.size = sizeof (__value);				\
-	btdp->td.type.str = #MR_TYPE_NAME;				\
-	while (dst_ctx.btdp != NULL)					\
-	  {								\
-	    if (0 == setjmp (dst_ctx._jmp_buf))				\
-	      __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
-	    __block_size = 1 << (__CHAR_BIT__ * ++dst_ctx.offset_byte);	\
-	    if (sizeof (__value) < __block_size)			\
-	      break;							\
-	    __i = 0;							\
-	    for (__ptr = (uint8_t*)&__value;				\
-		 __ptr - (uint8_t*)&__value < sizeof (__value) - (__block_size - 1); \
-		 __ptr += __block_size)					\
-	      memset (__ptr, __i++, __block_size);			\
-	    memset (__ptr, __i, sizeof (__value) & (__block_size - 1));	\
-	  }								\
-	mr_add_type (&dst_ctx.btdp->td);				\
+	if (0 == setjmp (dst_ctx._jmp_buf))				\
+	  __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
+	__block_size = 1 << (__CHAR_BIT__ * (1 + dst_ctx.offset_byte));	\
+	if (sizeof (__value) < __block_size)				\
+	  break;							\
+	__i = 0;							\
+	for (__ptr = (uint8_t*)&__value;				\
+	     __ptr - (uint8_t*)&__value < sizeof (__value) - (__block_size - 1); \
+	     __ptr += __block_size)					\
+	  memset (__ptr, __i++, __block_size);				\
+	memset (__ptr, __i, sizeof (__value) & (__block_size - 1));	\
       }									\
+    mr_struct_param_t * struct_param = &dst_ctx.tdp->param.struct_param; \
+    mr_size_t count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
+    struct_param->fields[MR_PP_DEPTH] = struct_param->fields[count];	\
+    struct_param->fields[count] = NULL;					\
+    mr_add_type (dst_ctx.tdp);						\
   }
 
 #else /* ! HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */

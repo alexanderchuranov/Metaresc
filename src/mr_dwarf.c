@@ -1263,7 +1263,7 @@ free_td (mr_ptr_t key, const void * context)
 static void
 tweak_mr_conf ()
 {
-  mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "meta", "res", "res_type", "mr_size", "is_dynamically_allocated", "next");
+  mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "meta", "res", "res_type", "mr_size", "next");
   mr_type_void_fields ("mr_struct_param_t", "field_by_name");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
   mr_type_void_fields ("mr_fd_t", "tdp", "mr_size", "non_persistent", "mr_type_class");

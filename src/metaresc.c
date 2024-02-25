@@ -110,8 +110,12 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 {
   int i;
   mr_offset_t offset = 0;
-  int fields_count = ctx->btdp->td.param.struct_param.fields_size / sizeof (ctx->btdp->td.param.struct_param.fields[0]);
+  mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
+  mr_size_t fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
   
+  if (fields_count >= MR_PP_DEPTH)
+    longjmp (ctx->_jmp_buf, !0);
+
   switch (mr_type)
     {
     case MR_TYPE_INT32:
@@ -154,23 +158,15 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       if (MR_TYPE_NONE == mr_type)
 	return;
       for (i = 0; i < fields_count; ++i)
-	if (0 == strcmp (ctx->btdp->td.param.struct_param.fields[i]->name.str, name))
+	if (0 == strcmp (struct_param->fields[i]->name.str, name))
 	  break;
-      if (i < fields_count)
-	ctx->btdp->td.param.struct_param.fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
+      if (i >= fields_count)
+	longjmp (ctx->_jmp_buf, !0);
+      struct_param->fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
       return;
     }
 
-  mr_basic_type_td_t * basic_type_td = MR_REALLOC (ctx->btdp, sizeof (*basic_type_td) + (sizeof (basic_type_td->fd[1]) + sizeof (basic_type_td->fd_ptr)) * fields_count);
-  if (NULL == basic_type_td)
-    {
-      MR_FREE (ctx->btdp);
-      ctx->btdp = NULL;
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      longjmp (ctx->_jmp_buf, !0);
-    }
-
-  mr_fd_t * fdp = &basic_type_td->fd[fields_count - 1];
+  mr_fd_t * fdp = struct_param->fields[fields_count];
   memset (fdp, 0, sizeof (*fdp));
   fdp->mr_type = mr_type;
   fdp->type = type;
@@ -178,12 +174,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   fdp->offset = offset;
   fdp->size = mr_type_size (mr_type);
 
-  basic_type_td->td.param.struct_param.fields = (mr_fd_t**)&basic_type_td->fd[fields_count];
-  for (i = 0; i < fields_count; ++i)
-    basic_type_td->td.param.struct_param.fields[i] = &basic_type_td->fd[i];
-  basic_type_td->td.param.struct_param.fields[i] = NULL;
-  basic_type_td->td.param.struct_param.fields_size += sizeof (basic_type_td->td.param.struct_param.fields[0]);
-  ctx->btdp = basic_type_td;
+  struct_param->fields_size += sizeof (struct_param->fields[0]);
 }
 
 int
@@ -319,7 +310,7 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 	}
     }
   
-  if (tdp->is_dynamically_allocated)
+  if (MR_TDP_DYNAMIC == tdp->td_producer)
     MR_FREE (tdp);
 
   return (MR_SUCCESS);
@@ -782,7 +773,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    last = tdp->param.struct_param.fields[count];
 	    tdp->param.struct_param.fields[count] = NULL;
 	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
-	    tdp_->td_producer = MR_TDP_DYNAMIC;
+	    tdp_->td_producer = MR_TDP_ANON_UNION;
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
 	    tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
@@ -1126,21 +1117,20 @@ mr_add_basic_type (char * type, mr_type_t mr_type)
       (NULL == type))
     return (NULL);
 
-  mr_basic_type_td_t * basic_type_td = MR_CALLOC (1, sizeof (*basic_type_td) + strlen (type) + sizeof (""));
-  if (NULL == basic_type_td)
+  mr_td_t * tdp = MR_CALLOC (1, sizeof (*tdp) + strlen (type) + sizeof (""));
+  if (NULL == tdp)
     return (NULL);
 
-  basic_type_td->td.is_dynamically_allocated = true;
-  basic_type_td->td.type.str = basic_type_td->type;
-  strcpy (basic_type_td->td.type.str, type);
+  tdp->type.str = (void*)&tdp[1];
+  strcpy (tdp->type.str, type);
 
-  basic_type_td->td.mr_type = mr_type;
-  basic_type_td->td.td_producer = MR_TDP_DYNAMIC;
-  basic_type_td->td.size = mr_type_size (mr_type);
+  tdp->mr_type = mr_type;
+  tdp->td_producer = MR_TDP_DYNAMIC;
+  tdp->size = mr_type_size (mr_type);
 
-  mr_ic_add (&mr_conf.type_by_name, &basic_type_td->td);
-  mr_register_type_pointer (&basic_type_td->td);
-  return (&basic_type_td->td);
+  mr_ic_add (&mr_conf.type_by_name, tdp);
+  mr_register_type_pointer (tdp);
+  return (tdp);
 }
 
 static bool
