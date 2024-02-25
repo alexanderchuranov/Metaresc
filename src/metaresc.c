@@ -114,7 +114,10 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   mr_size_t fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
   
   if (fields_count >= MR_PP_DEPTH)
-    longjmp (ctx->_jmp_buf, !0);
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TOO_MANY_FIELDS, ctx->tdp->type.str, MR_PP_DEPTH);
+      longjmp (ctx->_jmp_buf, !0);
+    }
 
   switch (mr_type)
     {
