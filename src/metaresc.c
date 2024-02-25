@@ -113,6 +113,10 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
   mr_size_t fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
   
+#if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
+#error Support for non little endian architectures to be implemented
+#endif /* __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__ */
+
   if (fields_count >= MR_PP_DEPTH)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TOO_MANY_FIELDS, ctx->tdp->type.str, MR_PP_DEPTH);
