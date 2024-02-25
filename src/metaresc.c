@@ -855,7 +855,7 @@ mr_hash_value_t
 mr_enumfd_get_hash (mr_ptr_t x, const void * context)
 {
   mr_ed_t * edp = x.ptr;
-  return (edp->value._unsigned);
+  return (mr_hash_block (&edp->value._unsigned, sizeof (edp->value._unsigned)));
 }
 
 /**
