@@ -652,10 +652,6 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
   if (diff)
     return (diff);
 
-  diff = ((x_fdp->size > y_fdp->size) - (x_fdp->size < y_fdp->size));
-  if (diff)
-    return (diff);
-
   if ((x_fdp->mr_type == MR_TYPE_BITFIELD) && (y_fdp->mr_type == MR_TYPE_BITFIELD))
     {
       diff = ((x_fdp->param.bitfield_param.shift > y_fdp->param.bitfield_param.shift) -
@@ -668,6 +664,10 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
       if (diff)
 	return (diff);
     }
+
+  diff = ((x_fdp->size > y_fdp->size) - (x_fdp->size < y_fdp->size));
+  if (diff)
+    return (diff);
 
   return (0);
 }
