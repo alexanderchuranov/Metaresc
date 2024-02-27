@@ -470,7 +470,11 @@ START_TEST (check_types_detection) {
 } END_TEST
 
 #ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+
 #undef MR_MODE
+
+TYPEDEF_STRUCT (wrap_embeded_struct_t, (embeded_struct_t, es));
+TYPEDEF_UNION (wrap_embeded_union_t, (embeded_union_t, eu));
 
 #define TYPEDEF_STRUCT_HACK(TYPE_NAME, ...)				\
   TYPEDEF_STRUCT (TYPE_NAME, __VA_ARGS__);				\
@@ -503,6 +507,10 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (int32_alias7_t volatile, int32_alias7),
 		     (double, _double),
 		     (float, _float),
+		     (embeded_struct_t, embeded_struct),
+		     (embeded_union_t, embeded_union),
+		     (wrap_embeded_struct_t, wrap_embeded_struct),
+		     (wrap_embeded_union_t, wrap_embeded_union),
 		     );
 
 typedef char * alias_string_t;

@@ -690,6 +690,8 @@ TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type dete
 		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
 		(void *, struct_ptr, , "pointer on a sample struct variable"),
 		(mr_td_t *, tdp, , "memory for type desctiptor"),
+		(char *, type, , "embeded struct/union type"),
+		(char *, name, , "embeded struct/union name"),
 		(int, offset_byte, , "which byte of offset is set in struct"),
 		)
 

@@ -190,21 +190,46 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
   va_list args;
   va_start (args, fmt);
 
-#define FMT "%s%s %s = "
-#define FIRST_LEVEL_INDENT "  "
+#define FMT "%s%s %s ="
 
   if (strncmp (fmt, FMT, sizeof (FMT) - sizeof ("")) == 0)
     {
       char * indent = va_arg (args, char *);
       char * type = va_arg (args, char *);
       char * name = va_arg (args, char *);
-      if (strcmp (indent, FIRST_LEVEL_INDENT) == 0)
+      int indent_spaces = strlen (indent);
+      bool detect_offset = false;
+
+      fmt += sizeof (FMT) - sizeof ("");
+
+      if (' ' == fmt[0])
+	{
+	  ++fmt;
+	  if ((indent_spaces > 2) && ctx->type && ctx->name)
+	    {
+	      type = ctx->type;
+	      name = ctx->name;
+	      ctx->type = ctx->name = NULL;
+	      detect_offset = true;
+	    }
+	  else
+	    detect_offset = (2 == indent_spaces);
+	}
+      else
+	{
+	  if (2 == indent_spaces)
+	    {
+	      ctx->type = type;
+	      ctx->name = name;
+	    }
+	}
+
+      if (detect_offset)
 	{
 	  mr_dump_struct_types_union_t value;
 	  mr_type_t mr_type = MR_TYPE_LAST;
 
 	  memset (&value, 0, sizeof (value));
-	  fmt += sizeof (FMT) - sizeof ("");
 
 #define CASE_(FIELD, MR_TYPE) FIELD = va_arg (args, typeof (0 + (typeof (FIELD))0)); mr_type = MR_TYPE;
 #define CASE(FIELD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) \
