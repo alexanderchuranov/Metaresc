@@ -101,7 +101,7 @@ TYPEDEF_UNION (mr_dump_struct_types_union_t,
 	       (uint8_t, dump, [sizeof (long double)]),
 	       );
 
-static void
+static mr_fd_t *
 mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 			       char * type,
 			       char * name,
@@ -157,20 +157,22 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       break;
 
     default:
-      return;
+      return (NULL);
     }
 
   if (ctx->offset_byte != 0)
     {
       if (MR_TYPE_NONE == mr_type)
-	return;
+	return (NULL);
+
       for (i = 0; i < fields_count; ++i)
 	if (0 == strcmp (struct_param->fields[i]->name.str, name))
 	  break;
       if (i >= fields_count)
 	longjmp (ctx->_jmp_buf, !0);
+
       struct_param->fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
-      return;
+      return (struct_param->fields[i]);
     }
 
   mr_fd_t * fdp = struct_param->fields[fields_count];
@@ -182,6 +184,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   fdp->size = mr_type_size (mr_type);
 
   struct_param->fields_size += sizeof (struct_param->fields[0]);
+  return (fdp);
 }
 
 int
@@ -253,7 +256,11 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double) }
 
 	  if (mr_type != MR_TYPE_LAST)
-	    mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
+	    {
+	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
+	      if ((indent_spaces > 2) && (fdp != NULL))
+		fdp->mr_type = MR_TYPE_NONE;
+	    }
 	}
     }
 
