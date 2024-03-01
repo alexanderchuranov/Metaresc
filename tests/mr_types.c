@@ -4,21 +4,7 @@
 
 typedef char char_array_t[1];
 typedef char * char_ptr_t;
-typedef int32_t int32_alias0_t;
-typedef int32_t int32_alias1_t;
-typedef int32_t int32_alias2_t;
-typedef int32_t int32_alias3_t;
-typedef int32_t int32_alias4_t;
-typedef int32_t int32_alias5_t;
-typedef int32_t int32_alias6_t;
-typedef int32_t int32_alias7_t;
-typedef int32_t int32_alias8_t;
-typedef int32_t int32_alias9_t;
-typedef int32_t int32_alias10_t;
-typedef int32_t int32_alias11_t;
-typedef int32_t int32_alias12_t;
-typedef int32_t int32_alias13_t;
-typedef int32_t int32_alias14_t;
+typedef int32_t int32_alias_t;
 typedef int32_t * int32_ptr_t;
 
 TYPEDEF_STRUCT (mr_empty_t);
@@ -70,11 +56,11 @@ TYPEDEF_STRUCT (struct_t,
 		const volatile string_t const_volatile_string,
 		volatile const string_t volatile_const_string,
 		(char_ptr_t, char_ptr_),
-		(int32_alias0_t, int32_alias0),
-		(int32_alias1_t *, int32_alias1),
-		(int32_alias2_t, int32_alias2, [1]),
-		(int32_alias3_t *, int32_alias3, [1]),
-		BITFIELD (int32_alias4_t, int32_alias4, : 1),
+		(int32_alias_t, int32_alias0),
+		(int32_alias_t *, int32_alias1),
+		(int32_alias_t, int32_alias2, [1]),
+		(int32_alias_t *, int32_alias3, [1]),
+		BITFIELD (int32_alias_t, int32_alias4, : 1),
 		(int32_ptr_t, int32_ptr),
 		(char *, string_),
 		(const char *, const_string_),
@@ -149,13 +135,13 @@ TYPEDEF_STRUCT (struct_t,
 #endif /* HAVE_INT128 */
 		BITFIELD (mr_type_t, bf_enum, : 6),
 		BITFIELD (const volatile enum mr_type_t, bf_const_volatile_enum_enum, : 6),
-		(int32_alias11_t, f, (volatile int32_alias12_t const *, int32_t [2] [3], int32_t * [2] [3], char [2], char [2] [3])),
+		(int32_alias_t, f, (volatile int32_alias_t const *, int32_t [2] [3], int32_t * [2] [3], char [2], char [2] [3])),
 		);
 
 TYPEDEF_STRUCT (void_function_field_t,
 		VOID (void, (*func), (void)));
 
-TYPEDEF_FUNC (int32_alias13_t, func_t, (volatile int32_alias14_t const *));
+TYPEDEF_FUNC (int32_alias_t, func_t, (volatile int32_alias_t const *));
 
 START_TEST (check_void_function_field) {
   mr_conf_init ();
@@ -361,19 +347,7 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (int32_alias3, MR_TYPE_ARRAY, MR_TYPE_POINTER);
   ASSERT_STRUCT_FIELD_TYPE (int32_ptr, MR_TYPE_POINTER, MR_TYPE_INT32);
 
-  int i;
-  char * aliases[] = {"int32_alias0_t", "int32_alias1_t", "int32_alias2_t", "int32_alias3_t", "int32_alias4_t", "int32_alias11_t", "int32_alias12_t", "int32_alias13_t", "int32_alias14_t"};
-  for (i = 0; i < sizeof (aliases) / sizeof (aliases[0]); ++i)
-    {
-      mr_td_t * tdp = mr_get_td_by_name (aliases[i]);
-      ck_assert_msg (tdp != NULL, "Type alias %s was not registered as a type", aliases[i]);
-      ck_assert_msg (tdp->mr_type == MR_TYPE_INT32, "Type alias %s was registered with a wrong mr_type (%d)", aliases[i], tdp->mr_type);
-    }
-
-  mr_td_t * tdp = mr_get_td_by_name ("int32_ptr_t");
-  ck_assert_msg (tdp == NULL, "Type int32_ptr_t was registered as a type of mr_type = %d", tdp->mr_type);
-  
-  tdp = mr_get_td_by_name ("_enum_t");
+  mr_td_t * tdp = mr_get_td_by_name ("_enum_t");
   ck_assert_msg (tdp != NULL, "Type descriptor for _enum_t is not found");
   ck_assert_msg (tdp->param.enum_param.is_bitmask, "Type descriptor for _enum_t is not bitmask");
 
@@ -502,9 +476,9 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (int, _2d_array, [3][2]),
 		     (int, _3d_array, [4][3][2]),
 		     (void *, void_ptr),
-		     (int32_alias5_t, int32_alias5),
-		     (const int32_alias6_t, int32_alias6),
-		     (int32_alias7_t volatile, int32_alias7),
+		     (int32_alias_t, int32_alias5),
+		     (const int32_alias_t, int32_alias6),
+		     (int32_alias_t volatile, int32_alias7),
 		     (double, _double),
 		     (float, _float),
 		     (embeded_struct_t, embeded_struct),
@@ -516,9 +490,9 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 typedef char * alias_string_t;
 
 struct aliases_t {
-  int32_alias8_t int32_alias8;
-  const int32_alias9_t int32_alias9;
-  int32_alias10_t volatile int32_alias10;
+  int32_alias_t int32_alias8;
+  const int32_alias_t int32_alias9;
+  int32_alias_t volatile int32_alias10;
   const alias_string_t volatile alias_string1;
   const volatile alias_string_t alias_string0;
   const char * volatile const string;
@@ -556,14 +530,6 @@ START_TEST (dump_struct_types_detection) {
 			 mr_fdp->param.array_param.row_count, dst_fdp->param.array_param.row_count, mr_fdp->name.str);
 	}
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
-    }
-
-  char * aliases[] = {"int32_alias5_t", "int32_alias6_t", "int32_alias7_t", "int32_alias8_t", "int32_alias9_t", "int32_alias10_t"};
-  for (i = 0; i < sizeof (aliases) / sizeof (aliases[0]); ++i)
-    {
-      mr_td_t * tdp = mr_get_td_by_name (aliases[i]);
-      ck_assert_msg (tdp != NULL, "Type alias %s was not registered as a type", aliases[i]);
-      ck_assert_msg (tdp->mr_type == MR_TYPE_INT32, "Type alias %s was registered with a wrong mr_type (%d)", aliases[i], tdp->mr_type);
     }
 
   mr_td_t * tdp = mr_get_td_by_name ("aliases_t");

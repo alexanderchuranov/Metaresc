@@ -153,7 +153,6 @@ TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type des
 	      MR_TDP_DWARF,
 	      MR_TDP_DUMP_STRUCT,
 	      MR_TDP_ANON_UNION,
-	      MR_TDP_DYNAMIC,
 	      MR_TDP_LAST,
 	      )
 

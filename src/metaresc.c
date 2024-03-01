@@ -349,9 +349,6 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 	}
     }
   
-  if (MR_TDP_DYNAMIC == tdp->td_producer)
-    MR_FREE (tdp);
-
   return (MR_SUCCESS);
 }
 
@@ -1148,30 +1145,6 @@ mr_register_type_pointer (mr_td_t * tdp)
   return ((NULL == mr_ic_add (&union_tdp->param.struct_param.field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
-static mr_td_t *
-mr_add_basic_type (char * type, mr_type_t mr_type)
-{
-  if (!((mr_type > MR_TYPE_NONE) && (mr_type < MR_TYPE_LAST)) ||
-      !((MR_BASIC_TYPES >> mr_type) & 1) ||
-      (NULL == type))
-    return (NULL);
-
-  mr_td_t * tdp = MR_CALLOC (1, sizeof (*tdp) + strlen (type) + sizeof (""));
-  if (NULL == tdp)
-    return (NULL);
-
-  tdp->type.str = (void*)&tdp[1];
-  strcpy (tdp->type.str, type);
-
-  tdp->mr_type = mr_type;
-  tdp->td_producer = MR_TDP_DYNAMIC;
-  tdp->size = mr_type_size (mr_type);
-
-  mr_ic_add (&mr_conf.type_by_name, tdp);
-  mr_register_type_pointer (tdp);
-  return (tdp);
-}
-
 static bool
 mr_type_is_a_pointer (char * type)
 {
@@ -1306,39 +1279,25 @@ mr_detect_structured_type (mr_structured_type_t * stype)
   mr_normalize_type (type);
 
   mr_td_t * tdp = mr_get_td_by_name_internal (type);
-  if (NULL == tdp)
+  if ((NULL == tdp)
+      && !((MR_BASIC_TYPES >> stype->mr_type) & 1)
+      && !((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_ARRAY)) >> stype->mr_type) & 1)
+	   && ((MR_BASIC_TYPES >> stype->mr_type_aux) & 1))
+      && mr_type_is_a_pointer (type))
     {
-      if ((MR_BASIC_TYPES >> stype->mr_type) & 1)
-	tdp = mr_add_basic_type (type, stype->mr_type);
-      else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_ARRAY)) >> stype->mr_type) & 1)
-	       && ((MR_BASIC_TYPES >> stype->mr_type_aux) & 1))
-	tdp = mr_add_basic_type (type, stype->mr_type_aux);
-      else if (mr_type_is_a_pointer (type))
-	{
-	  if (stype->mr_type == MR_TYPE_ARRAY)
-	    stype->mr_type_aux = MR_TYPE_POINTER;
-	  else
-	    stype->mr_type = MR_TYPE_POINTER;
+      if (stype->mr_type == MR_TYPE_ARRAY)
+	stype->mr_type_aux = MR_TYPE_POINTER;
+      else
+	stype->mr_type = MR_TYPE_POINTER;
 
+      tdp = mr_get_td_by_name_internal (type);
+      if ((NULL == tdp)
+	  && !(stype->mr_type == MR_TYPE_ARRAY)
+	  && !((MR_BASIC_TYPES >> stype->mr_type_aux) & 1)
+	  && mr_type_is_a_pointer (type))
+	{
+	  stype->mr_type_aux = MR_TYPE_POINTER;
 	  tdp = mr_get_td_by_name_internal (type);
-	  if (NULL == tdp)
-	    {
-	      if (stype->mr_type == MR_TYPE_ARRAY)
-		{
-		  if ((MR_BASIC_TYPES >> stype->mr_type_ptr) & 1)
-		    tdp = mr_add_basic_type (type, stype->mr_type_ptr);
-		}
-	      else
-		{
-		  if ((MR_BASIC_TYPES >> stype->mr_type_aux) & 1)
-		    tdp = mr_add_basic_type (type, stype->mr_type_aux);
-		  else if (mr_type_is_a_pointer (type))
-		    {
-		      stype->mr_type_aux = MR_TYPE_POINTER;
-		      tdp = mr_get_td_by_name_internal (type);
-		    }
-		}
-	    }
 	}
     }
 
