@@ -1123,19 +1123,10 @@ mr_register_type_pointer (mr_td_t * tdp)
   if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
     return (MR_SUCCESS);
 
-  /* statically allocated trailing record is used for field descriptor */
   mr_fd_t * fdp = &tdp->mr_ptr_fd;
-  if (NULL == fdp)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (MR_FAILURE);
-    }
-
   *fdp = *union_tdp->param.struct_param.fields[0];
   fdp->type = tdp->type.str;
   fdp->name = tdp->type;
-  fdp->size = sizeof (void *);
-  fdp->offset = 0;
   fdp->mr_type = MR_TYPE_POINTER;
   fdp->mr_type_aux = tdp->mr_type;
   fdp->tdp = tdp;
@@ -1350,10 +1341,29 @@ mr_detect_structured_type (mr_structured_type_t * stype)
 	}
     }
 
+  /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
+  if ((MR_TYPE_NONE == stype->mr_type) && (MR_POINTER_TYPE_CLASS == stype->mr_type_class))
+    stype->mr_type = MR_TYPE_POINTER;
+
+  if (MR_TYPE_ARRAY == stype->mr_type)
+    {
+      if (MR_TYPE_NONE == stype->mr_type_aux)
+	stype->mr_type = MR_TYPE_VOID;
+      else if ((MR_TYPE_POINTER == stype->mr_type_aux) && (MR_TYPE_NONE == stype->mr_type_ptr))
+	stype->mr_type_ptr = MR_TYPE_VOID;
+    }
+  else if (MR_TYPE_POINTER == stype->mr_type)
+    {
+      if (MR_TYPE_NONE == stype->mr_type_aux)
+	stype->mr_type_aux = MR_TYPE_VOID;
+      else if ((MR_TYPE_POINTER == stype->mr_type_aux) && (MR_TYPE_NONE == stype->mr_type_ptr))
+	stype->mr_type_ptr = MR_TYPE_VOID;
+    }
+
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
-		string_t, char, bool,
+		void, string_t, char, bool,
 		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
 		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };
@@ -1364,10 +1374,6 @@ mr_detect_structured_type (mr_structured_type_t * stype)
   if ((mr_type > 0) && (mr_type < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[mr_type])
       stype->tdp = mr_get_td_by_name_internal (type_name[mr_type]);
-
-  /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
-  if ((MR_TYPE_NONE == stype->mr_type) && (MR_POINTER_TYPE_CLASS == stype->mr_type_class))
-    stype->mr_type = MR_TYPE_POINTER;
 }
 
 static void
