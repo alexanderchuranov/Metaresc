@@ -1292,8 +1292,6 @@ mr_detect_structured_type (mr_structured_type_t * stype)
 	}
     }
 
-  stype->tdp = tdp;
-
   /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
   if ((stype->mr_type == MR_TYPE_NONE) && (stype->mr_type_aux != MR_TYPE_NONE))
     stype->mr_type = MR_TYPE_POINTER;
@@ -1304,40 +1302,16 @@ mr_detect_structured_type (mr_structured_type_t * stype)
   if (tdp)
     {
       stype->type = tdp->type.str;
-      switch (stype->mr_type)
+      if (((MR_INT_TYPES | (1 << MR_TYPE_NONE)) >> stype->mr_type) & 1)
+	stype->mr_type = tdp->mr_type;
+      else if (MR_TYPE_BITFIELD == stype->mr_type)
+	stype->mr_type_aux = tdp->mr_type; /* enums case */
+      else if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_POINTER, MR_TYPE_ARRAY)) >> stype->mr_type) & 1)
 	{
-	case MR_TYPE_NONE:
-	  /* Enum detection */
-	case MR_TYPE_INT8:
-	case MR_TYPE_UINT8:
-	case MR_TYPE_INT16:
-	case MR_TYPE_UINT16:
-	case MR_TYPE_INT32:
-	case MR_TYPE_UINT32:
-	case MR_TYPE_INT64:
-	case MR_TYPE_UINT64:
-	case MR_TYPE_INT128:
-	case MR_TYPE_UINT128:
-	  stype->mr_type = tdp->mr_type;
-	  break;
-
-	case MR_TYPE_BITFIELD:
-	  stype->mr_type_aux = tdp->mr_type; /* enums case */
-	  break;
-
-	  /*
-	    pointers and arrays needs to detect mr_type_aux for basic types
-	  */
-	case MR_TYPE_POINTER:
-	case MR_TYPE_ARRAY:
 	  if (stype->mr_type_aux == MR_TYPE_POINTER)
 	    stype->mr_type_ptr = tdp->mr_type;
 	  else
 	    stype->mr_type_aux = tdp->mr_type;
-	  break;
-
-	default:
-	  break;
 	}
     }
 
@@ -1359,21 +1333,31 @@ mr_detect_structured_type (mr_structured_type_t * stype)
       else if ((MR_TYPE_POINTER == stype->mr_type_aux) && (MR_TYPE_NONE == stype->mr_type_ptr))
 	stype->mr_type_ptr = MR_TYPE_VOID;
     }
+  else if (MR_TYPE_NONE == stype->mr_type)
+    stype->mr_type = MR_TYPE_VOID;
 
-#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
+#define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = #TYPE,
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
 		void, string_t, char, bool,
 		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
 		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };
+  static mr_td_t * type_tdp[sizeof (type_name) / sizeof (type_name[0])] = {0};
+
   mr_type_t mr_type = stype->mr_type;
   if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_POINTER, MR_TYPE_ARRAY)) >> stype->mr_type) & 1)
     mr_type = (MR_TYPE_POINTER == stype->mr_type_aux) ? stype->mr_type_ptr : stype->mr_type_aux;
 
   if ((mr_type > 0) && (mr_type < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[mr_type])
-      stype->tdp = mr_get_td_by_name_internal (type_name[mr_type]);
+      {
+	if (NULL == type_tdp[mr_type])
+	  type_tdp[mr_type] = mr_get_td_by_name_internal (type_name[mr_type]);
+	tdp = type_tdp[mr_type];
+      }
+
+  stype->tdp = tdp;
 }
 
 static void
