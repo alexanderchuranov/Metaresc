@@ -1154,9 +1154,12 @@ mr_type_is_a_pointer (char * type)
   return (false);
 }
 
-static void
-mr_stype_of_array_type (mr_structured_type_t * stype, char * type)
+static bool
+mr_type_is_an_array (mr_structured_type_t * stype, char * type)
 {
+  if ((NULL == type) || (0 == type[0]))
+    return (false);
+
   char * end = &type[strlen (type) - 1];
   int row_count = 0, count = 1;
   for (;;)
@@ -1189,6 +1192,8 @@ mr_stype_of_array_type (mr_structured_type_t * stype, char * type)
       stype->count = count;
       stype->row_count = row_count;
     }
+
+  return (MR_TYPE_ARRAY == stype->mr_type);
 }
 
 /**
@@ -1266,7 +1271,7 @@ mr_detect_structured_type (mr_structured_type_t * stype)
   char type[type_name_length + 1];
 
   strcpy (type, stype->type);
-  mr_stype_of_array_type (stype, type);
+  mr_type_is_an_array (stype, type);
   mr_normalize_type (type);
 
   mr_td_t * tdp = mr_get_td_by_name_internal (type);
@@ -1302,9 +1307,8 @@ mr_detect_structured_type (mr_structured_type_t * stype)
   if (tdp)
     {
       stype->type = tdp->type.str;
-      if (((MR_INT_TYPES | (1 << MR_TYPE_NONE)) >> stype->mr_type) & 1)
-	stype->mr_type = tdp->mr_type;
-      else if (MR_TYPE_BITFIELD == stype->mr_type)
+
+      if (MR_TYPE_BITFIELD == stype->mr_type)
 	stype->mr_type_aux = tdp->mr_type; /* enums case */
       else if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_POINTER, MR_TYPE_ARRAY)) >> stype->mr_type) & 1)
 	{
@@ -1313,6 +1317,8 @@ mr_detect_structured_type (mr_structured_type_t * stype)
 	  else
 	    stype->mr_type_aux = tdp->mr_type;
 	}
+      else if (MR_TYPE_CHAR_ARRAY != stype->mr_type)
+	stype->mr_type = tdp->mr_type;
     }
 
   /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
