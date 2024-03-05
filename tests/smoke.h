@@ -27,8 +27,9 @@
       ck_assert_msg (((0 != mr_conf_serialized.MR_SIZE) && (NULL != mr_conf_serialized.data.ptr)), \
 		     "save for method " #METHOD " failed");		\
       mr_conf_t mr_conf_loaded;						\
-      ck_assert_msg (MR_SUCCESS == MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded), \
-		     "load for method " #METHOD " failed");		\
+      memset (&mr_conf_loaded, 0, sizeof (mr_conf_loaded));		\
+      mr_status_t status = MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded);	\
+      ck_assert_msg (MR_SUCCESS == status, "load for method " #METHOD " failed"); \
       mr_conf = mr_conf_loaded;						\
       mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
       ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
