@@ -101,7 +101,6 @@ main (int argc, char * argv[])
 
 #ifdef HAVE_LIBXML2
   LIBXML_TEST_VERSION;
-  xmlKeepBlanksDefault (0);
 #endif /* HAVE_LIBXML2 */
 
   char * xml = mr_read_xml_doc (stdin);
