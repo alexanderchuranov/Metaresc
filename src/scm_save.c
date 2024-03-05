@@ -89,7 +89,7 @@ static int
 scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_ptrdes_t _ptrdes = *ptrdes;
-  uint64_t value;
+  mr_uintmax_t value;
 
   mr_save_bitfield_value (ptrdes, &value);
   _ptrdes.data.ptr = &value;

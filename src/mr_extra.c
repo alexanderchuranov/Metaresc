@@ -315,7 +315,7 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void
 	  
     case MR_TYPE_BITFIELD:
       {
-	uint64_t value;
+	mr_uintmax_t value;
 	mr_save_bitfield_value (ptrdes, &value);
 	ptrdes->res.data.uintptr = mr_hash_block (&value, sizeof (value));
 	break;
@@ -492,7 +492,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	  
 	case MR_TYPE_BITFIELD:
 	  {
-	    uint64_t x_value, y_value;
+	    mr_uintmax_t x_value, y_value;
 	    mr_save_bitfield_value (x_i, &x_value);
 	    mr_save_bitfield_value (y_i, &y_value);
 	    diff = (x_value > y_value) - (x_value < y_value);

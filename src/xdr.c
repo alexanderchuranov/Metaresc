@@ -854,7 +854,7 @@ xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
 static mr_status_t
 xdr_save_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  uint64_t value;
+  mr_uintmax_t value;
   if (MR_SUCCESS != mr_save_bitfield_value (&ptrs->ra[idx], &value))
     return (MR_FAILURE);
   return (xdr_bitfield_value (xdrs, ptrs->ra[idx].fdp, &value));
@@ -870,7 +870,7 @@ xdr_save_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  uint64_t value;
+  mr_uintmax_t value;
   if (MR_SUCCESS != xdr_bitfield_value (xdrs, ptrs->ra[idx].fdp, &value))
     return (MR_FAILURE);
   return (mr_load_bitfield_value (&ptrs->ra[idx], &value));

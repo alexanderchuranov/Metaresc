@@ -413,16 +413,18 @@ mr_strdup (const char * str)
  * @return status 
  */
 mr_status_t
-mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
+mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
 {
+  int shift = ptrdes->fdp->param.bitfield_param.shift;
+  int width = ptrdes->fdp->param.bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
-  uint64_t _value;
+  typeof (*value) _value;
   int i;
 
-  _value = *ptr++ >> ptrdes->fdp->param.bitfield_param.shift;
-  for (i = __CHAR_BIT__ - ptrdes->fdp->param.bitfield_param.shift; i < ptrdes->fdp->param.bitfield_param.width; i += __CHAR_BIT__)
-    _value |= ((uint64_t)*ptr++) << i;
-  _value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
+  _value = *ptr++ >> shift;
+  for (i = __CHAR_BIT__ - shift; i < width; i += __CHAR_BIT__)
+    _value |= ((typeof (*value))*ptr++) << i;
+  _value &= (((typeof (*value))2) << (width - 1)) - 1;
 
   mr_type_t mr_type = ptrdes->mr_type_aux;
   if ((MR_TYPE_ENUM == mr_type) && (ptrdes->tdp != NULL))
@@ -434,9 +436,10 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
     case MR_TYPE_INT16:
     case MR_TYPE_INT32:
     case MR_TYPE_INT64:
+    case MR_TYPE_INT128:
       /* extend sign bit */
-      if (_value & (1 << (ptrdes->fdp->param.bitfield_param.width - 1)))
-	_value |= -1 - ((2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1);
+      if (_value & (((typeof (*value))1) << (width - 1)))
+	_value |= ~((((typeof (*value))2) << (width - 1)) - 1);
       break;
     default:
       break;
@@ -452,24 +455,26 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
  * @return status
  */
 mr_status_t
-mr_load_bitfield_value (mr_ptrdes_t * ptrdes, uint64_t * value)
+mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
 {
+  int shift = ptrdes->fdp->param.bitfield_param.shift;
+  int width = ptrdes->fdp->param.bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
-  uint64_t _value = *value;
+  typeof (*value) _value = *value;
   int i;
 
-  _value &= (2LL << (ptrdes->fdp->param.bitfield_param.width - 1)) - 1;
-  if (ptrdes->fdp->param.bitfield_param.shift + ptrdes->fdp->param.bitfield_param.width >= __CHAR_BIT__)
-    *ptr &= ((1 << ptrdes->fdp->param.bitfield_param.shift) - 1);
+  _value &= (((typeof (*value))2) << (width - 1)) - 1;
+  if (shift + width >= __CHAR_BIT__)
+    *ptr &= ((1 << shift) - 1);
   else
-    *ptr &= (-1 - ((1 << (ptrdes->fdp->param.bitfield_param.shift + ptrdes->fdp->param.bitfield_param.width)) - 1)) | ((1 << ptrdes->fdp->param.bitfield_param.shift) - 1);
-  *ptr++ |= _value << ptrdes->fdp->param.bitfield_param.shift;
-  for (i = __CHAR_BIT__ - ptrdes->fdp->param.bitfield_param.shift; i < ptrdes->fdp->param.bitfield_param.width; i += __CHAR_BIT__)
-    if (ptrdes->fdp->param.bitfield_param.width - i >= __CHAR_BIT__)
+    *ptr &= ~((1 << (shift + width)) - 1) | ((1 << shift) - 1);
+  *ptr++ |= _value << shift;
+  for (i = __CHAR_BIT__ - shift; i < width; i += __CHAR_BIT__)
+    if (width - i >= __CHAR_BIT__)
       *ptr++ = _value >> i;
     else
       {
-	*ptr &= -1 - ((1 << (ptrdes->fdp->param.bitfield_param.width - i)) - 1);
+	*ptr &= ~((1 << (width - i)) - 1);
 	*ptr++ |= _value >> i;
       }
   return (MR_SUCCESS);

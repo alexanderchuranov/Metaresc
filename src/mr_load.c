@@ -298,7 +298,7 @@ static mr_status_t
 mr_load_bitfield (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  uint64_t value;
+  mr_uintmax_t value;
 
   if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
     return (MR_FAILURE);

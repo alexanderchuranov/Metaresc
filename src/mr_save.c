@@ -76,7 +76,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 
 	case MR_TYPE_BITFIELD:
 	  {
-	    uint64_t value = 0;
+	    mr_uintmax_t value = 0;
 	    mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
 	    mr_td_t * enum_tdp = parent_fdp->tdp;
 
@@ -711,7 +711,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 void
 mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 {
-  uint64_t value = 0;
+  mr_uintmax_t value = 0;
   mr_type_t mr_type;
   void * src_data = src->data.ptr;
   void * dst_data = dst->data.ptr;

@@ -80,14 +80,14 @@ fi
 AC_ARG_WITH([libyaml], AS_HELP_STRING([--without-libyaml], [Build without libyaml]))
 
 if test "x${with_libyaml}" != "xno"; then
-  AC_CHECK_HEADER([yaml.h], [ HAVE_YAML_H=yes ])
-  AC_CHECK_LIB(yaml, yaml_parser_initialize, [ HAVE_LIBYAML=yes ])
+  PKG_CHECK_MODULES([LIBYAML], [yaml-0.1 >= 0.2.0], [ HAVE_LIBYAML=yes ], [] )
 fi
 
-AM_CONDITIONAL(HAVE_LIBYAML, test x${HAVE_YAML_H}${HAVE_LIBYAML} = xyesyes)
-if [[ x${HAVE_YAML_H}${HAVE_LIBYAML} = xyesyes ]]; then
+AM_CONDITIONAL(HAVE_LIBYAML, test x${HAVE_LIBYAML} = xyes)
+if [[ x${HAVE_LIBYAML} = xyes ]]; then
   AC_DEFINE(HAVE_LIBYAML, [], [define if libyaml is present])
-  LIBS="${LIBS} -lyaml"
+  AM_CFLAGS="${AM_CFLAGS} ${LIBYAML_CFLAGS}"
+  LIBS="${LIBS} ${LIBYAML_LIBS}"
 fi
 
 AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
