@@ -81,7 +81,7 @@ jobs:
         with:
           msystem: ${{matrix.sys}}
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-toolchain
+          install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-libxml2 mingw-w64-${{matrix.env}}-libyaml mingw-w64-${{matrix.env}}-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: exclude 'union', it fails with 'out of memory' on mingw32
@@ -90,7 +90,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --disable-static --enable-shared --without-perftest --without-libxml2
+        run: ./configure --disable-static --enable-shared --without-perftest
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
