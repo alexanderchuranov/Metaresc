@@ -243,14 +243,14 @@ TYPEDEF_STRUCT (mr_tree_t, ATTRIBUTES ( , "indexed collection for binary tree"),
 		)
 
 TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "element of traverse index and discent direction"), 
-		(mr_child_idx_t, child_idx, , "descent direction"),
-		(unsigned int, idx, , "index in the pool"),
+		BITFIELD (unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		BITFIELD (mr_child_idx_t, child_idx, : 1, "descent direction"),
 		)
 
 TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag for the last comparison"),
-		(unsigned int, size, , "size of tree traverse"),
+		(uint16_t, size, , "size of tree traverse"),
 		(bool, equal, , "equal flag for the last comparison in the traverse"),
-		(mr_tree_path_t, path, [(sizeof (mr_tree_node_idx_t) * __CHAR_BIT__ << 1) - 1], "tree traverse path"),
+		(mr_tree_path_t, path, [(sizeof (mr_tree_node_idx_t) * __CHAR_BIT__ << 1) - 1], "tree traverse path", { .offset = offsetof (mr_tree_traverse_t, size) }, "offset"),
 		)
 
 TYPEDEF_STRUCT (mr_res_t,
