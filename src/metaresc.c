@@ -415,13 +415,12 @@ mr_strdup (const char * str)
 mr_status_t
 mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
 {
+  int i;
   int shift = ptrdes->fdp->param.bitfield_param.shift;
   int width = ptrdes->fdp->param.bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
-  typeof (*value) _value;
-  int i;
+  typeof (*value) _value = *ptr++ >> shift;
 
-  _value = *ptr++ >> shift;
   for (i = __CHAR_BIT__ - shift; i < width; i += __CHAR_BIT__)
     _value |= ((typeof (*value))*ptr++) << i;
   _value &= (((typeof (*value))2) << (width - 1)) - 1;
@@ -430,20 +429,13 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
   if ((MR_TYPE_ENUM == mr_type) && (ptrdes->tdp != NULL))
     mr_type = ptrdes->tdp->param.enum_param.mr_type_effective;
 
-  switch (mr_type)
-    {
-    case MR_TYPE_INT8:
-    case MR_TYPE_INT16:
-    case MR_TYPE_INT32:
-    case MR_TYPE_INT64:
-    case MR_TYPE_INT128:
-      /* extend sign bit */
-      if (_value & (((typeof (*value))1) << (width - 1)))
-	_value |= ~((((typeof (*value))2) << (width - 1)) - 1);
-      break;
-    default:
-      break;
-    }
+#define MR_SIGNED_INT_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_INT8, MR_TYPE_INT16, MR_TYPE_INT32, MR_TYPE_INT64, MR_TYPE_INT128))
+
+  /* extend sign bit */
+  if ((MR_SIGNED_INT_TYPES >> mr_type) & 1)
+    if ((_value >> (width - 1)) & 1)
+      _value |= ~((((typeof (*value))2) << (width - 1)) - 1);
+
   *value = _value;
   return (MR_SUCCESS);
 }
@@ -457,11 +449,11 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
 mr_status_t
 mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
 {
+  int i;
   int shift = ptrdes->fdp->param.bitfield_param.shift;
   int width = ptrdes->fdp->param.bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
   typeof (*value) _value = *value;
-  int i;
 
   _value &= (((typeof (*value))2) << (width - 1)) - 1;
   if (shift + width >= __CHAR_BIT__)
@@ -498,7 +490,7 @@ mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, 
   ssize_t new_size = _size + element_size;
   if (new_size > *alloc_size)
     {
-      ssize_t realloc_size = ((((new_size + 1) << 1) + element_size - 1) / element_size) * element_size;
+      ssize_t realloc_size = new_size * 2;
       if (realloc_size < new_size)
 	realloc_size = new_size;
       _data = MR_REALLOC (_data, realloc_size);
@@ -1602,13 +1594,13 @@ mr_detect_struct_fields (mr_td_t * tdp)
       mr_fd_detect_res_size (fdp);
       mr_fd_init_ud_overrides (fdp);
 
-#define INVALID_ARRAY_AUX_TYPE (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_NONE MR_TYPE_VOID MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
-#define INVALID_POINTER_AUX_TYPE (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
+#define INVALID_ARRAY_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_NONE MR_TYPE_VOID MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
+#define INVALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
 
       switch (fdp->mr_type)
 	{
 	case MR_TYPE_ARRAY:
-	  mr_fd_init_pointer_params (fdp, INVALID_ARRAY_AUX_TYPE, fdp->param.array_param.pointer_param);
+	  mr_fd_init_pointer_params (fdp, INVALID_ARRAY_AUX_TYPES, fdp->param.array_param.pointer_param);
 	  break;
 	case MR_TYPE_FUNC:
 	  mr_func_field_detect (fdp);
@@ -1617,7 +1609,7 @@ mr_detect_struct_fields (mr_td_t * tdp)
 	  mr_fd_init_bitfield_params (fdp);
 	  break;
 	case MR_TYPE_POINTER:
-	  mr_fd_init_pointer_params (fdp, INVALID_POINTER_AUX_TYPE, fdp->param.pointer_param.pointer_param);
+	  mr_fd_init_pointer_params (fdp, INVALID_POINTER_AUX_TYPES, fdp->param.pointer_param.pointer_param);
 
 	  if (fdp->param.pointer_param.pointer_param)
 	    fdp->param.pointer_param.pointer_param->res_type = NULL; /* size specification should work only for a top level pointer */

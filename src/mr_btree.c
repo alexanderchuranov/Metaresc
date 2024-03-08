@@ -32,16 +32,18 @@ mr_tree_reserve (mr_tree_t * tree, unsigned items_count, bool reset)
   if (0 == items_count)
     return (MR_SUCCESS);
 
-  ++items_count; /* add extra slot for root node */
+  size_t alloc_size = (items_count + 1) * sizeof (tree->pool[0]); /* add extra slot for root node */
 
-  if (tree->size >= items_count * sizeof (tree->pool[0]))
+  if (tree->alloc_size < alloc_size)
     {
-      typeof (tree->size) tree_size = tree->size;
-      typeof (tree->pool) extra = mr_rarray_allocate_element
-	((void**)&tree->pool, &tree->size, &tree->alloc_size, items_count * sizeof (tree->pool[0]) - tree_size);
-      if (NULL == extra)
-	return (MR_FAILURE);
-      tree->size = tree_size;
+      void * pool = MR_REALLOC (tree->pool, alloc_size);
+      if (NULL == pool)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  return (MR_FAILURE);
+	}
+      tree->pool = pool;
+      tree->alloc_size = alloc_size;
     }
   return (MR_SUCCESS);
 }
