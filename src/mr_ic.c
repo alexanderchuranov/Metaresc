@@ -49,6 +49,68 @@ mr_generic_sort (void * data, size_t count, char * key_type)
   return (MR_SUCCESS);
 }
 
+#define MR_TYPE_CMP_FUNC_NAME(TYPE) mr_ ## TYPE ## _cmp
+#define MR_TYPE_CMP_FUNC(TYPE)						\
+  static int MR_TYPE_CMP_FUNC_NAME (TYPE)				\
+       (const mr_ptr_t x, const mr_ptr_t y, const void * context)	\
+  {									\
+    TYPE * _x = x.ptr;							\
+    TYPE * _y = y.ptr;							\
+    return ((*_x > *_y) - (*_x < *_y));					\
+  }
+
+typedef void * void_ptr;
+
+#define MR_BASIC_TYPES char, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t, float, double, long_double_t
+
+MR_FOREACH (MR_TYPE_CMP_FUNC, void_ptr, MR_BASIC_TYPES);
+
+static int MR_TYPE_CMP_FUNC_NAME (string_t) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  string_t * _x = x.ptr;
+  string_t * _y = y.ptr;
+  return (strcmp (*_x, *_y));
+}
+
+static int MR_TYPE_CMP_FUNC_NAME (char_array) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  char * _x = x.ptr;
+  char * _y = y.ptr;
+  return (strcmp (_x, _y));
+}
+
+static mr_compar_fn_t
+mr_type_compar_fn (mr_type_t mr_type)
+{
+  static mr_compar_fn_t types_compar_fn[MR_TYPE_LAST] =
+    {
+#define MR_TYPE_CMP_FUNC_ENTRY(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_TYPE_CMP_FUNC_NAME (TYPE),
+      [MR_TYPE_CHAR_ARRAY] = MR_TYPE_CMP_FUNC_NAME (char_array),
+      [MR_TYPE_FUNC] = MR_TYPE_CMP_FUNC_NAME (void_ptr),
+      [MR_TYPE_FUNC_TYPE] = MR_TYPE_CMP_FUNC_NAME (void_ptr),
+      MR_FOREACH (MR_TYPE_CMP_FUNC_ENTRY, string_t, MR_BASIC_TYPES)
+    };
+
+  if ((mr_type >= 0) && (mr_type < MR_TYPE_LAST))
+    return (types_compar_fn[mr_type]);
+  return (NULL);
+}
+
+mr_status_t
+mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_type, size_t element_size)
+{
+  if (MR_TYPE_NONE == mr_type)
+    return (mr_generic_sort (data, count, key_type));
+  else
+    {
+      mr_compar_fn_t compar_fn = mr_type_compar_fn (mr_type);
+      if (NULL == compar_fn)
+	return (MR_FAILURE);
+      mr_hsort (data, count, element_size, compar_fn, NULL);
+    }
+  return (MR_SUCCESS);
+}
+
 /* ----------------------- MR_IC_UNSORTED_ARRAY ----------------------- */
 
 mr_ptr_t *

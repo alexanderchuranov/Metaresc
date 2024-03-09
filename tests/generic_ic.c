@@ -143,8 +143,30 @@ START_TEST (generic_sort_int) {
     ck_assert_msg (array[i - 1] <= array[i], "Elements are not sorted");
 } END_TEST
 
+START_TEST (generic_sort_float) {
+  int i;
+  float array[] = { 2, 3, 1, 0 };
+  ck_assert_msg (MR_SUCCESS == MR_GENERIC_SORT (array),
+		  "mr_generic_sort failed");
+  for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
+    ck_assert_msg (array[i - 1] <= array[i], "Elements are not sorted");
+} END_TEST
+
+typedef char ca_t[sizeof ("abc")];
+
+START_TEST (generic_sort_ca) {
+  int i;
+  ca_t array[] = { "a", "b", "aa", "ab", "abc" };
+  ck_assert_msg (MR_SUCCESS == MR_GENERIC_SORT (array),
+		  "mr_generic_sort failed");
+  for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
+    ck_assert_msg (strcmp (array[i - 1], array[i]) <= 0, "Elements are not sorted");
+} END_TEST
+
 MAIN_TEST_SUITE ((generic_ic, "Check generic IC implementation"),
 		 (generic_sort_struct, "Check generic sort implementation on structures"),
 		 (generic_sort_string, "Check generic sort implementation on strings"),
-		 (generic_sort_int, "Check generic sort implementation on integers")
+		 (generic_sort_int, "Check generic sort implementation on integers"),
+		 (generic_sort_float, "Check MR_GENERIC_SORT on basic type (float)"),
+		 (generic_sort_ca, "Check MR_GENERIC_SORT on basic type of variable size (char array)")
 		 );

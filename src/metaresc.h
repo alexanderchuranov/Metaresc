@@ -932,6 +932,11 @@
     })
 #define MR_CMP_STRUCTS_ARGS2(X, Y) MR_CMP_STRUCTS_ARGS3 ( , X, Y)
     
+#define MR_GENERIC_SORT(...) MR_PASTE2 (MR_GENERIC_SORT_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
+#define MR_GENERIC_SORT_ARGS3(ARRAY, COUNT, TYPE) mr_generic_sort (ARRAY, COUNT, TYPE)
+#define MR_GENERIC_SORT_ARGS2(ARRAY, COUNT) mr_basic_types_sort (ARRAY, COUNT, MR_PTR_DETECT_TYPE (ARRAY), MR_TYPE_DETECT (__typeof__ (ARRAY[0])), sizeof (ARRAY[0]))
+#define MR_GENERIC_SORT_ARGS1(ARRAY) MR_GENERIC_SORT_ARGS2 (ARRAY, sizeof (ARRAY) / sizeof (ARRAY[0]))
+
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
 
 # define MR_IS_STRUCT_OR_UNION(S_PTR)					\
@@ -1512,6 +1517,7 @@ extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_generic_sort (void * data, size_t count, char * key_type);
 extern mr_hash_value_t mr_generic_hash (const mr_ptr_t x, const void * context);
 extern int mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern mr_status_t mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_type, size_t element_size);
 
 extern mr_hash_value_t mr_hash_block (void * block, mr_size_t size);
 extern mr_hash_value_t mr_hash_str (char * str);
