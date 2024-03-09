@@ -231,6 +231,42 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	{
 	  mr_dump_struct_types_union_t value;
 	  mr_type_t mr_type = MR_TYPE_LAST;
+	  static mr_type_class_t tc[MR_TYPE_LAST] =
+	    {
+	      [MR_TYPE_NONE] = MR_POINTER_TYPE_CLASS,
+	      [MR_TYPE_STRING] = MR_POINTER_TYPE_CLASS,
+	      [MR_TYPE_CHAR_ARRAY] = MR_ARRAY_TYPE_CLASS,
+	      [MR_TYPE_CHAR] = MR_CHAR_TYPE_CLASS,
+	      [MR_TYPE_VOID] = MR_VOID_TYPE_CLASS,
+	      [MR_TYPE_BOOL] = MR_BOOLEAN_TYPE_CLASS,
+	      [MR_TYPE_INT8] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_UINT8] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_INT16] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_UINT16] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_INT32] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_UINT32] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_INT64] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_UINT64] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_INT128] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_UINT128] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_FLOAT] = MR_REAL_TYPE_CLASS,
+	      [MR_TYPE_COMPLEX_FLOAT] = MR_COMPLEX_TYPE_CLASS,
+	      [MR_TYPE_DOUBLE] = MR_REAL_TYPE_CLASS,
+	      [MR_TYPE_COMPLEX_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
+	      [MR_TYPE_LONG_DOUBLE] = MR_REAL_TYPE_CLASS,
+	      [MR_TYPE_COMPLEX_LONG_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
+	      [MR_TYPE_STRUCT] = MR_RECORD_TYPE_CLASS,
+	      [MR_TYPE_ENUM] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_FUNC_TYPE] = MR_FUNCTION_TYPE_CLASS,
+	      [MR_TYPE_FUNC] = MR_FUNCTION_TYPE_CLASS,
+	      [MR_TYPE_BITFIELD] = MR_INTEGER_TYPE_CLASS,
+	      [MR_TYPE_ARRAY] = MR_ARRAY_TYPE_CLASS,
+	      [MR_TYPE_POINTER] = MR_POINTER_TYPE_CLASS,
+	      [MR_TYPE_UNION] = MR_UNION_TYPE_CLASS,
+	      [MR_TYPE_ANON_UNION] = MR_UNION_TYPE_CLASS,
+	      [MR_TYPE_NAMED_ANON_UNION] = MR_UNION_TYPE_CLASS,
+	      [MR_TYPE_END_ANON_UNION] = MR_UNION_TYPE_CLASS,
+	    };
 
 	  memset (&value, 0, sizeof (value));
 
@@ -258,8 +294,13 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  if (mr_type != MR_TYPE_LAST)
 	    {
 	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
+	      if (fdp != NULL)
+		fdp->mr_type_class = tc[fdp->mr_type];
 	      if ((indent_spaces > 2) && (fdp != NULL))
-		fdp->mr_type = MR_TYPE_NONE;
+		{
+		  fdp->mr_type = MR_TYPE_NONE;
+		  fdp->mr_type_class = MR_RECORD_TYPE_CLASS;
+		}
 	    }
 	}
     }
