@@ -9,21 +9,6 @@
 #include <mr_pp.h>
 #include <mr_export.h>
 
-#ifndef __USE_XOPEN2K8
-#define __USE_XOPEN2K8
-#define __USE_XOPEN2K8_UNDEFINED
-#endif /* __USE_XOPEN2K8 */
-
-#ifndef __USE_GNU
-#define __USE_GNU
-#define __USE_GNU_UNDEFINED
-#endif /* __USE_GNU */
-
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE
-#define _GNU_SOURCE_UNDEFINED
-#endif /* _GNU_SOURCE */
-
 #include <stdio.h> /* for FILE */
 #include <stddef.h> /* for offsetof */
 #include <stdbool.h> /* for bool */
@@ -43,21 +28,6 @@
 # include <rpc/types.h>
 # include <rpc/xdr.h>
 #endif /* HAVE_RPC_TYPES_H */
-
-#ifdef _GNU_SOURCE_UNDEFINED
-# undef _GNU_SOURCE_UNDEFINED
-# undef _GNU_SOURCE
-#endif /* _GNU_SOURCE_UNDEFINED */
-
-#ifdef __USE_GNU_UNDEFINED
-# undef __USE_GNU_UNDEFINED
-# undef __USE_GNU
-#endif /* __USE_GNU_UNDEFINED */
-
-#ifdef __USE_XOPEN2K8_UNDEFINED
-# undef __USE_XOPEN2K8_UNDEFINED
-# undef __USE_XOPEN2K8
-#endif /* __USE_XOPEN2K8_UNDEFINED */
 
 /* Library exports */
 #define MR_MAX_STRING_LENGTH ((unsigned int)-1)
@@ -1535,5 +1505,7 @@ extern int mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern int mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_hash_value_t mr_ud_override_hash (mr_ptr_t x, const void * context);
 extern int mr_ud_override_cmp (mr_ptr_t x, mr_ptr_t y, const void * context);
+extern mr_hash_value_t mr_ed_name_get_hash (mr_ptr_t x, const void * context);
+extern int mr_ed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 
 #endif /* _METARESC_H_ */
