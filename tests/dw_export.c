@@ -91,16 +91,18 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->offset, (int)dw_fdp->offset);
       
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
-	{
-	  ck_assert_msg (mr_fdp->param.array_param.count == dw_fdp->param.array_param.count,
-			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' count %zd != %zd",
-			 mr_td->type.str, mr_fdp->name.str,
-			 mr_fdp->param.array_param.count, dw_fdp->param.array_param.count);
-	  ck_assert_msg (mr_fdp->param.array_param.row_count == dw_fdp->param.array_param.row_count,
-			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' row count %zd != %zd",
-			 mr_td->type.str, mr_fdp->name.str,
-			 mr_fdp->param.array_param.row_count, dw_fdp->param.array_param.row_count);
-	}
+	for (j = 0; j < sizeof (mr_fdp->param.array_param.dim.dim) / sizeof (mr_fdp->param.array_param.dim.dim[0]); ++j)
+	  {
+	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].count == dw_fdp->param.array_param.dim.dim[j].count,
+			   "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim[%d].count %d != %d",
+			   mr_td->type.str, mr_fdp->name.str, j,
+			   (int)mr_fdp->param.array_param.dim.dim[j].count, (int)dw_fdp->param.array_param.dim.dim[j].count);
+	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].is_last == dw_fdp->param.array_param.dim.dim[j].is_last,
+			   "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim[%d].is_last",
+			   mr_td->type.str, mr_fdp->name.str,j);
+	    if (mr_fdp->param.array_param.dim.dim[j].is_last)
+	      break;
+	  }
       
       if (mr_fdp->mr_type == MR_TYPE_BITFIELD)
 	{

@@ -590,6 +590,19 @@
 	.meta = "" __VA_ARGS__,						\
 	} },
 
+#define MR_ARRAY_SLICE0(TYPE, ARRAY) (__builtin_choose_expr (__builtin_types_compatible_p (TYPE, __typeof__ (ARRAY[0])), (TYPE[]){}, ARRAY[0]))
+#define MR_ARRAY_SLICE1(TYPE, ARRAY) (__builtin_choose_expr (__builtin_types_compatible_p (TYPE, __typeof__ (ARRAY[0])), (TYPE[]){}, ARRAY[0]))
+
+#define MR_ARRAY_DIMENSION(TYPE, ARRAY, SLICE) { .count = sizeof (ARRAY) / sizeof (SLICE), .is_last = __builtin_types_compatible_p (TYPE, __typeof__ (SLICE)), }
+#define MR_ARRAY_DIMENSIONS_(TYPE, A0, A1, A2, A3) {			\
+    MR_ARRAY_DIMENSION (TYPE, A0, A1),					\
+    MR_ARRAY_DIMENSION (TYPE, A1, A2),					\
+    MR_ARRAY_DIMENSION (TYPE, A2, A3),					\
+    MR_ARRAY_DIMENSION (TYPE, A3, (TYPE){}),				\
+  }
+
+#define MR_ARRAY_DIMENSIONS(TYPE, ARRAY) MR_ARRAY_DIMENSIONS_ (TYPE, ARRAY, ARRAY[0], MR_ARRAY_SLICE0 (TYPE, ARRAY)[0], MR_ARRAY_SLICE1 (TYPE, MR_ARRAY_SLICE0 (TYPE, ARRAY))[0])
+
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
@@ -604,10 +617,9 @@
 	{								\
 	  .array_param = {						\
 	    .pointer_param = (mr_fd_t[]){{}},				\
-	    .count = sizeof (((MR_TYPE_NAME*)0)->NAME) /		\
-	    __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
-	    .row_count = sizeof (((MR_TYPE_NAME*)0)->NAME[0]) /		\
-	    __builtin_choose_expr (sizeof (TYPE) == 0, 1, sizeof (TYPE)), \
+	    .dim = {							\
+	      .dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
+	    },								\
 	  },								\
 	},								\
 	.meta = "" __VA_ARGS__,						\
@@ -974,8 +986,8 @@
 	  __fd__.mr_type_aux = __fd__.mr_type;				\
 	  __fd__.mr_type = MR_TYPE_ARRAY;				\
 	  __fd__.size = sizeof (S_PTR);					\
-	  __fd__.param.array_param.count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
-	  __fd__.param.array_param.row_count = 1;			\
+	  __fd__.param.array_param.dim.dim[0].count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
+	  __fd__.param.array_param.dim.dim[0].is_last = true;		\
 	  __fd__.param.array_param.pointer_param = &__ptr_fd__;		\
 	}								\
       mr_detect_type (&__fd__);						\

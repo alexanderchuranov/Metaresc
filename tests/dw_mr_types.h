@@ -19,6 +19,8 @@ TYPEDEF_STRUCT (mr_array_t,
 		(int, array1d, [2]),
 		(int, array2d, [2][3]),
 		(int, array3d, [2][3][4]),
+		(int, array4d, [2][3][4][1]),
+		(int, array5d, [2][3][4][5][6]),
 		);
 
 TYPEDEF_STRUCT (mr_void_fields_t,

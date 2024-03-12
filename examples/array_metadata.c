@@ -5,10 +5,10 @@
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (example_t,
-                (char*, str),
                 (int, a1, [7]),
                 (long, a2, [11][3]),
-                (double, a3, [5][2][9])
+                (double, a3, [5][2][9]),
+                (bool, a4, [7][5][3][1]),
                 )
 
 int print_array_field_info (mr_td_t * td, char name[])
@@ -31,15 +31,17 @@ int print_array_field_info (mr_td_t * td, char name[])
       return (EXIT_FAILURE);
     }
 
-  size_t const total_items = fd->param.array_param.count;
-  size_t const rows = fd->param.array_param.row_count;
-
   printf("field declaration: %s %s", fd->type, fd->name.str);
 
-  if (rows == 1) // 1-dimensional
-    printf("[%zd]\n", total_items);
-  else  // 2- or more dimensional
-    printf("[%zd][%zd]\n", total_items / rows, rows);
+  int i;
+  for (i = 0; i < sizeof (fd->param.array_param.dim.dim) / sizeof (fd->param.array_param.dim.dim[0]); ++i)
+    {
+      printf("[%d]", (int)fd->param.array_param.dim.dim[i].count);
+      if (fd->param.array_param.dim.dim[i].is_last)
+	break;
+    }
+
+  printf("\n");
 
   return (EXIT_SUCCESS);
 }
@@ -58,5 +60,6 @@ int main ()
   print_array_field_info(td, "a1");
   print_array_field_info(td, "a2");
   print_array_field_info(td, "a3");
+  print_array_field_info(td, "a4");
   return (EXIT_SUCCESS);
 }

@@ -475,6 +475,8 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (int, _array, [2]),
 		     (int, _2d_array, [3][2]),
 		     (int, _3d_array, [4][3][2]),
+		     (int, _4d_array, [5][4][3][2]),
+		     (int, _5d_array, [5][4][3][2][1]),
 		     (void *, void_ptr),
 		     (int32_alias_t, int32_alias5),
 		     (const int32_alias_t, int32_alias6),
@@ -520,15 +522,19 @@ START_TEST (dump_struct_types_detection) {
       if (!(mr_fdp->mr_type == MR_TYPE_STRING) &&
 	  !((mr_fdp->mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
 	ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
+      int j;
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
-	{
-	  ck_assert_msg (mr_fdp->param.array_param.count == dst_fdp->param.array_param.count,
-			 "dump_struct mismatched array_param.count (%zd != %zd) for field '%s'",
-			 mr_fdp->param.array_param.count, dst_fdp->param.array_param.count, mr_fdp->name.str);
-	  ck_assert_msg (mr_fdp->param.array_param.row_count == dst_fdp->param.array_param.row_count,
-			 "dump_struct mismatched array_param.count (%zd != %zd) for field '%s'",
-			 mr_fdp->param.array_param.row_count, dst_fdp->param.array_param.row_count, mr_fdp->name.str);
-	}
+	for (j = 0; j < sizeof (mr_fdp->param.array_param.dim.dim) / sizeof (mr_fdp->param.array_param.dim.dim[0]); ++j)
+	  {
+	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].count == dst_fdp->param.array_param.dim.dim[j].count,
+			   "dump_struct mismatched array_param.count[%d] (%d != %d) for field '%s'",
+			   j, (int)mr_fdp->param.array_param.dim.dim[j].count, (int)dst_fdp->param.array_param.dim.dim[j].count, mr_fdp->name.str);
+	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].is_last == dst_fdp->param.array_param.dim.dim[j].is_last,
+			   "dump_struct mismatched array_param.dim.dim[%d].is_last for field '%s'",
+			   j, mr_fdp->name.str);
+	    if (mr_fdp->param.array_param.dim.dim[j].is_last)
+	      break;
+	  }
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
     }
 

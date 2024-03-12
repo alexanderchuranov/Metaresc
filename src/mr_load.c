@@ -616,41 +616,41 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   mr_fd_t * fdp = &fd_;
-  int count, i = 0;
   mr_status_t status = MR_SUCCESS;
+  int i;
 
   fd_.non_persistent = true;
   fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
   if (fd_.size == 0)
     return (MR_FAILURE);
 
-  if (1 == fd_.param.array_param.row_count)
+  if (fd_.param.array_param.dim.dim[0].is_last)
     {
-      count = fd_.param.array_param.count;
       fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
       if (MR_TYPE_POINTER == fd_.mr_type)
 	fdp = fd_.param.array_param.pointer_param;
     }
   else
-    {
-      count = fd_.param.array_param.count / fd_.param.array_param.row_count;
-      fd_.size *= fd_.param.array_param.row_count;
-      fd_.param.array_param.count = fd_.param.array_param.row_count;
-      fd_.param.array_param.row_count = 1;
-    }
+    for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
+      {
+	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
+	fd_.size *= fd_.param.array_param.dim.dim[i].count;
+	if (fd_.param.array_param.dim.dim[i].is_last)
+	  break;
+      }
 
   /* loop on subnodes */
+  i = 0;
   for (idx = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (idx >= 0); idx = ptrs->ra[idx].next)
     {
       /* check if array index is in range */
-      if ((i < 0) || (i >= count))
+      if (i >= fd_.param.array_param.dim.dim[0].count)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fdp->name.str);
 	  return (MR_FAILURE);
 	}
       /* load recursively */
-      status = mr_load (&data[i * fdp->size], fdp, idx, ptrs);
-      ++i;
+      status = mr_load (&data[i++ * fdp->size], fdp, idx, ptrs);
     }
   return (status);
 }

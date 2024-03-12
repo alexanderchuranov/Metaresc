@@ -866,24 +866,25 @@ from the name of the field with `_size` suffix.
 
 #### Array declaration
 Third argument `suffix` in the field's declaration denotes dimensions
-of the array. Metaresc is capable to distinguish one- and two-
-dimensional arrays. Higher orders of dimensions are treated as
-two-dimensional arrays with aggregated lower dimension. User should
-use intermediate wrapper types for propper serialization of 3+
+of the array. Metaresc is capable to distinguish multi-dimensional
+arrays up to 4 diminsions. Higher orders of dimensions are treated as
+four-dimensional arrays with aggregated lower dimension. You could
+use intermediate wrapper types for propper serialization of 5+
 dimensional arrays.
 
 ```c
 TYPEDEF_STRUCT (array_1d_t,
 		(int, array, [2]));
-TYPEDEF_STRUCT (array_2d_t,
-		(int, array, [2][2]));
-TYPEDEF_STRUCT (array_3d_t,
-		(array_1d_t, array, [2][2]));
-TYPEDEF_STRUCT (_array_3d_t,
-		(array_2d_t, array, [2]));
 TYPEDEF_STRUCT (array_4d_t,
-		(array_2d_t, array, [2][2]));
+		(int, array, [2][2][2][2]));
+TYPEDEF_STRUCT (array_5d_t,
+		(array_1d_t, array, [2][2][2][2]));
+TYPEDEF_STRUCT (_array_8d_t,
+		(array_4d_t, array, [2][2][2][2]));
 ```
+
+Each dimension is limitted to 2^31 elements. If you need more than
+that most probably you're doing something wrong.
 
 Zero-size arrays are also supported. Type descriptor will have all
 meta information for those fields, but serialization will omit them as
@@ -906,10 +907,44 @@ function, char array)
 
 `meta` and `res` fields will be derived for serialization of
 individual array's elements. This allows extended semantics for
-serialization of unions and pointers:
-* define discriminators for unions
-* define overrides for union discriminators
-* define size specification for pointers
+arrays of unions:
+* with 'meta' you could define discriminators for unions
+```c
+TYPEDEF_UNION (union_t,
+	       (bool, _bool),
+	       (int, _int),
+	       (float, _float));
+
+TYPEDEF_STRUCT (array_t,
+		(union_t, array, [2], "element_discriminator"),
+		(bool, element_discriminator, , "discriminator for array elements"));
+```
+Example demostrates array of two elements discriminated by boolean
+value 'element_discriminator'. 'element_discriminator' is interpreted
+as an integer index within union, i.e. both elements of the array will
+be serialized as '_bool' or as '_int' respectively.
+
+* with 'res' you could define overrides for union discriminators
+```c
+TYPEDEF_UNION (union_t,
+	       (bool, _bool),
+	       (int, _int),
+	       (float, _float));
+
+TYPEDEF_STRUCT (array_t,
+		(union_t, array, [2], "element_discriminator", { (mr_ud_override_t[]){ { false, "_float" } } }, "mr_ud_override_t"),
+		(bool, element_discriminator, , "discriminator for array elements"));
+```
+Example similar to previous one, but if 'element_discriminator' is
+equal to 'false' union serialized as '_float'.
+* with 'res' you could define size for a single dimensional
+array. Semantics is similar to pointers of variable size. You could
+specify 'size' field either via 'offset' or as a name of the field.
+```c
+TYPEDEF_STRUCT (array_t,
+		(int, array, [16], "static array allocated for a maximal possible size, but real utilization is defined	by 'size' field", { .offset = offsetof (array_t, size) }, "offset"),
+		(size_t, size, , "dynamically limit serialization of a static array to a certain size"));
+```
 
 #### Function pointer declaration
 If `suffix` is an expression in parentheses, then this field is

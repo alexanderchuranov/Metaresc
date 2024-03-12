@@ -880,7 +880,7 @@ static mr_status_t
 xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
   if (!ptrs->ra[idx].non_persistent)
-    if (1 == ptrs->ra[idx].fdp->param.array_param.row_count)
+    if (ptrs->ra[idx].fdp->param.array_param.dim.dim[0].is_last)
       if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
@@ -896,24 +896,24 @@ xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  int i, count;
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   mr_fd_t * fdp = &fd_;
+  int i, count = fd_.param.array_param.dim.dim[0].count;
 
   fd_.non_persistent = true;
   fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
   if (fd_.size <= 0)
     return (MR_FAILURE);
 
-  if (1 == fd_.param.array_param.row_count)
+  if (fd_.param.array_param.dim.dim[0].is_last)
     {
       fd_.mr_type = fd_.mr_type_aux;
       if (MR_TYPE_POINTER == fd_.mr_type)
 	fdp = fd_.param.array_param.pointer_param;
 
       if (ptrs->ra[idx].fdp->non_persistent)
-	count = fd_.param.array_param.count;
+	count = fd_.param.array_param.dim.dim[0].count;
       else
 	{
 	  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
@@ -926,12 +926,13 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	}
     }
   else
-    {
-      count = fd_.param.array_param.count / fd_.param.array_param.row_count;
-      fd_.size *= fd_.param.array_param.row_count;
-      fd_.param.array_param.count = fd_.param.array_param.row_count;
-      fd_.param.array_param.row_count = 1;
-    }
+    for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
+      {
+	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
+	fd_.size *= fd_.param.array_param.dim.dim[i].count;
+	if (fd_.param.array_param.dim.dim[i].is_last)
+	  break;
+      }
 
   for (i = 0; i < count; ++i)
     if (MR_SUCCESS != xdr_load_inner (&data[i * fdp->size], fdp, xdrs, ptrs, idx))

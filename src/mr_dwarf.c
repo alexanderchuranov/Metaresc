@@ -748,13 +748,11 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 static void
 get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 {
-  unsigned count = 1, dimension = 1;
-  int i;
-  for (i = mr_die->children_size / sizeof (mr_die->children[0]) - 1; i >= 0; --i)
+  int i, j = 0;
+  for (i = 0; i < mr_die->children_size / sizeof (mr_die->children[0]); ++i)
     {
       assert (mr_die->children[i].tag == _DW_TAG_subrange_type);
-      count *= dimension;
-      dimension = 0;
+      uint32_t dimension = 1;
       mr_dw_attribute_t * attr = die_attribute (&mr_die->children[i], _DW_AT_count);
       if (attr != NULL)
 	{
@@ -768,10 +766,12 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
 	  dimension = attr->dw_unsigned + 1;
 	}
+      if (j < sizeof (fdp->param.array_param.dim.dim) / sizeof (fdp->param.array_param.dim.dim[0]))
+	fdp->param.array_param.dim.dim[j++].count = dimension;
+      else
+	fdp->param.array_param.dim.dim[j - 1].count *= dimension;
     }
-  
-  fdp->param.array_param.count = count * dimension;
-  fdp->param.array_param.row_count = count;
+  fdp->param.array_param.dim.dim[j - 1].is_last = true;
 }
 
 static void
@@ -1218,9 +1218,15 @@ process_td (mr_ptr_t key, const void * context)
 
 	if (MR_TYPE_ARRAY == fdp->mr_type)
 	  {
-	    fdp->size *= fdp->param.array_param.count;
+	    int j;
+	    for (j = 0; j < sizeof (fdp->param.array_param.dim.dim) / sizeof (fdp->param.array_param.dim.dim[0]); ++j)
+	      {
+		fdp->size *= fdp->param.array_param.dim.dim[j].count;
+		if (fdp->param.array_param.dim.dim[j].is_last)
+		  break;
+	      }
 
-	    if (MR_TYPE_CHAR == fdp->mr_type_aux)
+	    if ((MR_TYPE_CHAR == fdp->mr_type_aux) && fdp->param.array_param.dim.dim[0].is_last)
 	      fdp->mr_type = MR_TYPE_CHAR_ARRAY;
 
 	    if (fdp->mr_type_aux == MR_TYPE_POINTER)

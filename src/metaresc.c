@@ -1198,37 +1198,28 @@ mr_type_is_an_array (mr_structured_type_t * stype, char * type)
   if ((NULL == type) || (0 == type[0]))
     return (false);
 
-  char * end = &type[strlen (type) - 1];
-  int row_count = 0, count = 1;
-  for (;;)
-    {
-      for ( ; end >= type; --end)
-	if (!isspace (*end))
-	  break;
-      if (end >= type)
-	if (']' != *end)
-	  break;
+  mr_array_dimensions_t dim;
+  memset (&dim, 0, sizeof (dim));
 
-      char * open_bracket;
-      for (open_bracket = end - 1; open_bracket >= type; --open_bracket)
-	if ('[' == *open_bracket)
-	  break;
-      if (open_bracket < type)
-	break;
+  int i = 0;
+  char * open_bracket;
+  for (open_bracket = strchr (type, '['); open_bracket != NULL; open_bracket = strchr (open_bracket + 1, '['))
+    {
       *open_bracket = 0;
 
-      int last_row_count = atoi (open_bracket + 1);
-      row_count = count;
-      count *= last_row_count;
-      end = open_bracket - 1;
+      uint32_t count = atoi (open_bracket + 1);
+      if (i < sizeof (dim.dim) / sizeof (dim.dim[0]))
+	dim.dim[i++].count = count;
+      else
+	dim.dim[i - 1].count *= count;
     }
 
-  if (row_count != 0)
+  if ((i > 0) &&
+      !((stype->mr_type == MR_TYPE_CHAR_ARRAY) && (i == 1)))
     {
-      if ((stype->mr_type != MR_TYPE_CHAR_ARRAY) || (row_count != 1))
-	stype->mr_type = MR_TYPE_ARRAY;
-      stype->count = count;
-      stype->row_count = row_count;
+      dim.dim[i - 1].is_last = true;
+      stype->dim = dim;
+      stype->mr_type = MR_TYPE_ARRAY;
     }
 
   return (MR_TYPE_ARRAY == stype->mr_type);
@@ -1420,10 +1411,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   stype.mr_type_class = fdp->mr_type_class;
 
   if (MR_TYPE_ARRAY == fdp->mr_type)
-    {
-      stype.count = fdp->param.array_param.count;
-      stype.row_count = fdp->param.array_param.row_count;
-    }
+    stype.dim = fdp->param.array_param.dim;
 
   mr_detect_structured_type (&stype);
 
@@ -1434,10 +1422,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   fdp->tdp = stype.tdp;
 
   if (MR_TYPE_ARRAY == fdp->mr_type)
-    {
-      fdp->param.array_param.count = stype.count;
-      fdp->param.array_param.row_count = stype.row_count;
-    }
+    fdp->param.array_param.dim = stype.dim;
 }
 
 /**

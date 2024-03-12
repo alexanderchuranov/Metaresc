@@ -1097,7 +1097,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
   mr_fd_t * fdp = &fd_;
-  int count, i;
+  int i, count = fd_.param.array_param.dim.dim[0].count;
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
@@ -1105,10 +1105,10 @@ mr_save_array (mr_save_data_t * mr_save_data)
   if (fd_.size == 0)
     return (0);
 
-  if (1 == fd_.param.array_param.row_count)
+  if (fd_.param.array_param.dim.dim[0].is_last)
     {
-      count = fd_.param.array_param.count;
       fd_.mr_type = fd_.mr_type_aux;
+      fd_.res_type = NULL; /* block size specification for child elements */
       if (MR_TYPE_POINTER == fd_.mr_type)
 	fdp = fd_.param.array_param.pointer_param;
 
@@ -1121,18 +1121,19 @@ mr_save_array (mr_save_data_t * mr_save_data)
 	  dst.mr_type = MR_TYPE_DETECT (typeof (size));
 	  mr_assign_int (&dst, &src);
 	  int count_ = size / fdp->size;
-	  if (count_ < count)
+	  if (count > count_)
 	    count = count_;
 	}
       mr_save_data->ptrs.ra[idx].MR_SIZE = count * fdp->size;
     }
   else
-    {
-      count = fd_.param.array_param.count / fd_.param.array_param.row_count;
-      fd_.size *= fd_.param.array_param.row_count;
-      fd_.param.array_param.count = fd_.param.array_param.row_count;
-      fd_.param.array_param.row_count = 1;
-    }
+    for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
+      {
+	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
+	fd_.size *= fd_.param.array_param.dim.dim[i].count;
+	if (fd_.param.array_param.dim.dim[i].is_last)
+	  break;
+      }
 
   for (i = 0; i < count; )
     {

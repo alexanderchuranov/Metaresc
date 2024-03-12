@@ -317,13 +317,21 @@ TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
 		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
 		)
 
+TYPEDEF_STRUCT (mr_array_dimension_t, ATTRIBUTES ( , "array dimension"),
+		BITFIELD (uint32_t, count, : sizeof (uint32_t) * __CHAR_BIT__ - 1, "number of elements in slice"),
+		BITFIELD (bool, is_last, : 1, "true for a last dimension"),
+		)
+
+TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
+		(mr_array_dimension_t, dim, [4]),
+		)
+
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		ANON_UNION (),
 		VOID (void *, union_default_serialization),
 		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
 		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
-		(size_t, count, , "array size"),
-		(size_t, row_count, , "row size"),
+		(mr_array_dimensions_t, dim, , "array dimensions"),
 		ANON_UNION (),
 		VOID (void *, pointer_default_serialization),
 		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
@@ -343,8 +351,7 @@ TYPEDEF_STRUCT (mr_structured_type_t, ATTRIBUTES ( , "structured type"),
 		(struct mr_td_t *, tdp, , "type descriptor"),
 		(char *, type, , "stringified type name"),
 		(size_t, size, , "type size"),
-		(size_t, count, , "array size"),
-		(size_t, row_count, , "row size"),
+		(mr_array_dimensions_t, dim, , "array dimensions"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_type_t, mr_type_ptr, , "Metaresc type to detect pointers on basic type"),
