@@ -60,6 +60,15 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
     {
       switch (mr_type) /* switch over basic types */
 	{
+	case MR_TYPE_BOOL:
+	  {
+	    int idx = !!*(uint8_t*)discriminator;
+	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, idx);
+	    if (fdp)
+	      return (fdp);
+	    return (mr_union_discriminator_by_idx (tdp, idx));
+	  }
+
 #define CASE_RETURN_BY_TYPE(TYPE) CASE_RETURN_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define CASE_RETURN_BY_TYPE_(TYPE, MR_TYPE)				\
 	  case MR_TYPE:							\
@@ -70,7 +79,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	      return (mr_union_discriminator_by_idx (tdp, *(TYPE*)discriminator)); \
 	    }
 
-	  MR_FOREACH (CASE_RETURN_BY_TYPE, bool, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+	  MR_FOREACH (CASE_RETURN_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 	  CASE_RETURN_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
 	  CASE_RETURN_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
 
