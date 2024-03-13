@@ -176,7 +176,6 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     }
 
   mr_fd_t * fdp = struct_param->fields[fields_count];
-  memset (fdp, 0, sizeof (*fdp));
   fdp->mr_type = mr_type;
   fdp->type = type;
   fdp->name.str = name;

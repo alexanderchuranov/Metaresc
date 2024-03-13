@@ -478,6 +478,9 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (int, _4d_array, [5][4][3][2]),
 		     (int, _5d_array, [5][4][3][2][1]),
 		     (void *, void_ptr),
+		     (int *, int_ptr),
+		     (int *, int_ptr_array, [5][4][3][2]),
+		     (int **, int_dptr),
 		     (int32_alias_t, int32_alias5),
 		     (const int32_alias_t, int32_alias6),
 		     (int32_alias_t volatile, int32_alias7),
@@ -521,7 +524,12 @@ START_TEST (dump_struct_types_detection) {
       ck_assert_msg (mr_fdp->mr_type == dst_fdp->mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->mr_type, dst_fdp->mr_type, mr_fdp->name.str);
       if (!(mr_fdp->mr_type == MR_TYPE_STRING) &&
 	  !((mr_fdp->mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
-	ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
+	{
+	  ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
+	  if (mr_fdp->mr_type_aux == MR_TYPE_POINTER)
+	    ck_assert_msg (mr_fdp->mr_type_ptr == dst_fdp->mr_type_ptr, "dump_struct mismatched mr_type_ptr (%d != %d) for field '%s'", mr_fdp->mr_type_ptr, dst_fdp->mr_type_ptr, mr_fdp->name.str);
+	}
+
       int j;
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)
 	for (j = 0; j < sizeof (mr_fdp->param.array_param.dim.dim) / sizeof (mr_fdp->param.array_param.dim.dim[0]); ++j)

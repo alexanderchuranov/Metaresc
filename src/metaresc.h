@@ -802,7 +802,7 @@
 
 #ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 
-#define MR_SINGLE_FD(CONTEXT, ARG, I) (mr_fd_t[]){{}},
+#define MR_SINGLE_FD(CONTEXT, ARG, I) (mr_fd_t[]){{ .param.pointer_param.pointer_param = (mr_fd_t[]){{}} }},
 
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\

@@ -307,14 +307,14 @@ TYPEDEF_STRUCT (mr_union_param_t, ATTRIBUTES ( , "union parameters"),
 		)
 
 TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
-		ANON_UNION (),
-		VOID (void *, union_default_serialization),
-		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
-		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
-		ANON_UNION (pointer_serialization),
+		ANON_UNION (pointer_param_named_field),
 		VOID (void *, pointer_default_serialization),
 		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
 		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
+		ANON_UNION (union_param_named_field),
+		VOID (void *, union_default_serialization),
+		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
+		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
 		)
 
 TYPEDEF_STRUCT (mr_array_dimension_t, ATTRIBUTES ( , "array dimension"),
@@ -327,15 +327,15 @@ TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
 		)
 
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
-		ANON_UNION (),
+		ANON_UNION (pointer_param_named_field),
+		VOID (void *, pointer_default_serialization),
+		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
+		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
+		ANON_UNION (union_param_named_field),
 		VOID (void *, union_default_serialization),
 		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
 		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
 		(mr_array_dimensions_t, dim, , "array dimensions"),
-		ANON_UNION (),
-		VOID (void *, pointer_default_serialization),
-		(struct mr_fd_t *, pointer_param, , "statically allocated field descriptor for array of pointers case"),
-		END_ANON_UNION ("mr_type_aux", { (mr_ud_override_t[]){ { MR_TYPE_POINTER, "pointer_param" } } }, "mr_ud_override_t"),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
