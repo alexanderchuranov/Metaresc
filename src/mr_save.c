@@ -52,10 +52,24 @@ mr_ud_override_value (mr_ic_t * ud_overrides, uint64_t value)
   return (udo ? udo->fdp : NULL);
 }
 
+static void
+mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
+{
+  *ptr_fdp = **fdp;
+  ptr_fdp->mr_type = ptr_fdp->mr_type_aux;
+  ptr_fdp->mr_type_aux = ptr_fdp->mr_type_ptr;
+  ptr_fdp->mr_type_class = MR_POINTER_TYPE_CLASS;
+  ptr_fdp->size = sizeof (void*);
+  ptr_fdp->offset = 0;
+  ptr_fdp->unnamed = true;
+  *fdp = ptr_fdp;
+}
+
 static mr_fd_t *
 mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * discriminator, mr_ic_t * ud_overrides)
 {
   mr_type_t mr_type = parent_fdp->mr_type;
+  mr_fd_t fd;
   for (;;)
     {
       switch (mr_type) /* switch over basic types */
@@ -115,6 +129,9 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	case MR_TYPE_ENUM:
 	  {
 	    mr_td_t * enum_tdp = parent_fdp->tdp;
+	    if (NULL == enum_tdp)
+	      return (mr_union_discriminator_by_name (tdp, NULL));
+
 	    mr_enum_value_type_t value = mr_get_enum_value (enum_tdp, discriminator);
 	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
 	    if (fdp)
@@ -129,8 +146,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	      mr_type = parent_fdp->mr_type_aux;
 	      break;
 	    }
-	    
-	  parent_fdp = parent_fdp->param.array_param.pointer_param;
+
+	  mr_init_pointer_fd (&parent_fdp, &fd);
 	  /* NB! proceed to pointer branch */
 	case MR_TYPE_POINTER:
 	  /* if discriminator is a pointer then we need address of the content */
@@ -139,7 +156,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    return (mr_union_discriminator_by_name (tdp, NULL));
 	  mr_type = parent_fdp->mr_type_aux;
 	  if (MR_TYPE_POINTER == mr_type)
-	    parent_fdp = parent_fdp->param.pointer_param.pointer_param;
+	    mr_init_pointer_fd (&parent_fdp, &fd);
 	  break;
 	    
 	case MR_TYPE_VOID:
@@ -1087,7 +1104,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
       
   if (parent < 0)
     return (0);
-      
+
   mr_fd_t * discriminated_fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[parent].fdp);
 
   if (NULL != discriminated_fdp)
@@ -1105,35 +1122,37 @@ mr_save_array (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
-  mr_fd_t * fdp = &fd_;
   int i, count = fd_.param.array_param.dim.dim[0].count;
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
+  fd_.offset = 0;
+  fd_.size = mr_type_size (fd_.mr_type_aux);
+  if (fd_.size == 0)
+    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
   if (fd_.size == 0)
     return (0);
 
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
       fd_.mr_type = fd_.mr_type_aux;
-      fd_.res_type = NULL; /* block size specification for child elements */
-      if (MR_TYPE_POINTER == fd_.mr_type)
-	fdp = fd_.param.array_param.pointer_param;
-
-      mr_ptrdes_t src, dst;
-      mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
-      if (src.data.ptr != NULL)
+      fd_.mr_type_aux = fd_.mr_type_ptr;
+      if (!mr_save_data->ptrs.ra[idx].fdp->non_persistent)
 	{
-	  ssize_t size;
-	  dst.data.ptr = &size;
-	  dst.mr_type = MR_TYPE_DETECT (typeof (size));
-	  mr_assign_int (&dst, &src);
-	  int count_ = size / fdp->size;
-	  if (count > count_)
-	    count = count_;
+	  mr_ptrdes_t src, dst;
+	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
+	  if (src.data.ptr != NULL)
+	    {
+	      ssize_t size;
+	      dst.data.ptr = &size;
+	      dst.mr_type = MR_TYPE_DETECT (typeof (size));
+	      mr_assign_int (&dst, &src);
+	      int count_ = size / fd_.size;
+	      if (count > count_)
+		count = count_;
+	    }
+	  mr_save_data->ptrs.ra[idx].MR_SIZE = count * fd_.size;
 	}
-      mr_save_data->ptrs.ra[idx].MR_SIZE = count * fdp->size;
     }
   else
     for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
@@ -1146,7 +1165,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
 
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (data + i * fdp->size, fdp, count - i, mr_save_data, idx);
+      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
       if (nodes_added <= 0)
 	return (nodes_added);
       i += nodes_added;
@@ -1162,26 +1181,31 @@ mr_save_array (mr_save_data_t * mr_save_data)
 static int
 mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 {
-  char ** data = mr_save_data->ptrs.ra[idx].data.ptr;
-  mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
-  mr_fd_t * fdp = fd_.param.pointer_param.pointer_param;
+  mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
+  char ** data = ptrdes->data.ptr;
+  mr_fd_t fd_;
   int count, i;
 
-  if (MR_TYPE_POINTER != fd_.mr_type_aux)
-    {
-      fd_.mr_type = fd_.mr_type_aux;
-      fd_.non_persistent = true;
-      fd_.unnamed = true;
-      fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type);
-      if (fd_.size == 0)
-	return (1);
-      fdp = &fd_;
-    }
+  memset (&fd_, 0, sizeof (fd_));
+  fd_.tdp = ptrdes->tdp;
+  fd_.mr_type = ptrdes->mr_type_aux;
+  fd_.mr_type_aux = fd_.tdp ? fd_.tdp->mr_type : MR_TYPE_VOID;
+  fd_.type = fd_.tdp ? fd_.tdp->type.str : NULL;
+  fd_.name.str = ptrdes->name;
+  fd_.offset = 0;
 
-  count = mr_save_data->ptrs.ra[idx].MR_SIZE / fdp->size;
+  fd_.non_persistent = true;
+  fd_.unnamed = true;
+  fd_.size = mr_type_size (fd_.mr_type);
+  if (fd_.size == 0)
+    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
+  if (fd_.size == 0)
+    return (1);
+
+  count = ptrdes->MR_SIZE / fd_.size;
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (*data + i * fdp->size, fdp, count - i, mr_save_data, idx);
+      int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
       if (nodes_added <= 0)
 	return (nodes_added);
       i += nodes_added;

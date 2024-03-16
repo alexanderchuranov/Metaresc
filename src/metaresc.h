@@ -582,11 +582,6 @@
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE,						\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	.param = {							\
-	  .pointer_param = {						\
-	    .pointer_param = (mr_fd_t[]){{}},				\
-	  },								\
-	},								\
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -613,15 +608,7 @@
 	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_ptr = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	.param =							\
-	{								\
-	  .array_param = {						\
-	    .pointer_param = (mr_fd_t[]){{}},				\
-	    .dim = {							\
-	      .dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
-	    },								\
-	  },								\
-	},								\
+	.param.array_param.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -671,11 +658,6 @@
 	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.non_persistent = 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
-	.param = {							\
-	  .pointer_param = {						\
-	    .pointer_param = (mr_fd_t[]){{}},				\
-	  },								\
-	},								\
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -802,7 +784,7 @@
 
 #ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 
-#define MR_SINGLE_FD(CONTEXT, ARG, I) (mr_fd_t[]){{ .param.pointer_param.pointer_param = (mr_fd_t[]){{}} }},
+#define MR_SINGLE_FD(CONTEXT, ARG, I) (mr_fd_t[]){{}},
 
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
@@ -967,7 +949,7 @@
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       void * __ptr__ = (void*)S_PTR;					\
-      mr_fd_t __fd__, __ptr_fd__;					\
+      mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
       __fd__.type = MR_TYPE_NAME_STR;					\
       if (__fd__.type == NULL)						\
@@ -979,7 +961,6 @@
       __fd__.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));		\
       __fd__.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*(S_PTR)));	\
       __fd__.size = sizeof (*(S_PTR));					\
-      __fd__.param.pointer_param.pointer_param = &__ptr_fd__;		\
       if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)), __typeof__ (S_PTR))) \
 	{								\
 	  __fd__.mr_type_ptr = __fd__.mr_type_aux;			\
@@ -988,7 +969,6 @@
 	  __fd__.size = sizeof (S_PTR);					\
 	  __fd__.param.array_param.dim.dim[0].count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
 	  __fd__.param.array_param.dim.dim[0].is_last = true;		\
-	  __fd__.param.array_param.pointer_param = &__ptr_fd__;		\
 	}								\
       mr_detect_type (&__fd__);						\
       mr_save (__ptr__, &__fd__);					\

@@ -41,6 +41,8 @@ void mr_free (const char * filename, const char * function, int line, void * ptr
 
 #define MR_BASIC_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_CHAR, MR_TYPE_BOOL, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128, MR_TYPE_FLOAT, MR_TYPE_COMPLEX_FLOAT, MR_TYPE_DOUBLE, MR_TYPE_COMPLEX_DOUBLE, MR_TYPE_LONG_DOUBLE, MR_TYPE_COMPLEX_LONG_DOUBLE))
 
+#define MR_UNION_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
+
 /** Metaresc configuration structure */
 mr_conf_t mr_conf = {
   .mr_mem = { /**< all memory functions may be replaced on user defined */
@@ -365,28 +367,9 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-
-      if ((MR_TYPE_ARRAY == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
-	mr_ic_free (&fdp->param.array_param.pointer_param->param.union_param.udo);
-
-      if ((MR_TYPE_POINTER == fdp->mr_type) && (MR_TYPE_POINTER == fdp->mr_type_aux))
-	mr_ic_free (&fdp->param.pointer_param.pointer_param->param.union_param.udo);
-
-      switch (fdp->mr_type)
-	{
-	case MR_TYPE_ARRAY:
-	case MR_TYPE_POINTER:
-	  if (MR_TYPE_UNION != fdp->mr_type_aux)
-	    continue;
-	  __attribute__ ((fallthrough));
-	case MR_TYPE_UNION:
-	case MR_TYPE_ANON_UNION:
-	case MR_TYPE_NAMED_ANON_UNION:
+      if (fdp->tdp != NULL)
+	if ((MR_UNION_TYPES >> fdp->tdp->mr_type) & 1)
 	  mr_ic_free (&fdp->param.union_param.udo);
-	  __attribute__ ((fallthrough));
-	default:
-	  break;
-	}
     }
   
   return (MR_SUCCESS);
@@ -1468,29 +1451,17 @@ mr_ud_override_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 static mr_status_t
 mr_fd_init_ud_overrides (mr_fd_t * fdp)
 {
-  switch (fdp->mr_type)
-    {
-    case MR_TYPE_UNION:
-    case MR_TYPE_ANON_UNION:
-    case MR_TYPE_NAMED_ANON_UNION:
-      break;
-    case MR_TYPE_ARRAY:
-    case MR_TYPE_POINTER:
-      if (MR_TYPE_UNION == fdp->mr_type_aux)
-	break;
-      __attribute__ ((fallthrough));
-    default:
-      return (MR_SUCCESS);
-    }
+  if (NULL == fdp->tdp)
+    return (MR_SUCCESS);
+
+  if ((MR_UNION_TYPES >> fdp->tdp->mr_type) & 1)
+    return (MR_SUCCESS);
 
   if ((NULL == fdp->res.ptr) || (NULL == fdp->res_type) || (0 == fdp->MR_SIZE))
     return (MR_SUCCESS);
 
   if (strcmp (fdp->res_type, "mr_ud_override_t") != 0)
     return (MR_SUCCESS);
-
-  if (NULL == fdp->tdp)
-    return (MR_FAILURE);
   
   mr_ic_new (&fdp->param.union_param.udo, mr_ud_override_hash, mr_ud_override_cmp, "mr_ud_override_t", MR_IC_HASH, NULL);
 
@@ -1521,30 +1492,6 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
     }
 
   return (status);
-}
-
-static void
-mr_fd_init_pointer_params (mr_fd_t * fdp, uint64_t invalid_mr_types, mr_fd_t * pointer_param)
-{
-  if ((invalid_mr_types >> fdp->mr_type_aux) & 1)
-    fdp->mr_type = MR_TYPE_VOID;
-  else if (MR_TYPE_POINTER == fdp->mr_type_aux)
-    {
-      if (NULL == pointer_param)
-	fdp->mr_type = MR_TYPE_VOID;
-      else
-	{
-	  *pointer_param = *fdp;
-	  pointer_param->mr_type = MR_TYPE_POINTER;
-	  pointer_param->mr_type_aux = fdp->mr_type_ptr;
-	  pointer_param->mr_type_class = MR_POINTER_TYPE_CLASS;
-	  pointer_param->size = sizeof (void*);
-	  pointer_param->unnamed = true;
-	  pointer_param->param.array_param.pointer_param = NULL;
-
-	  mr_fd_init_ud_overrides (pointer_param);
-	}
-    }
 }
 
 /**
@@ -1625,7 +1572,8 @@ mr_detect_struct_fields (mr_td_t * tdp)
       switch (fdp->mr_type)
 	{
 	case MR_TYPE_ARRAY:
-	  mr_fd_init_pointer_params (fdp, INVALID_ARRAY_AUX_TYPES, fdp->param.array_param.pointer_param);
+	  if ((INVALID_ARRAY_AUX_TYPES >> fdp->mr_type_aux) & 1)
+	    fdp->mr_type = MR_TYPE_VOID;
 	  break;
 	case MR_TYPE_FUNC:
 	  mr_func_field_detect (fdp);
@@ -1634,10 +1582,8 @@ mr_detect_struct_fields (mr_td_t * tdp)
 	  mr_fd_init_bitfield_params (fdp);
 	  break;
 	case MR_TYPE_POINTER:
-	  mr_fd_init_pointer_params (fdp, INVALID_POINTER_AUX_TYPES, fdp->param.pointer_param.pointer_param);
-
-	  if (fdp->param.pointer_param.pointer_param)
-	    fdp->param.pointer_param.pointer_param->res_type = NULL; /* size specification should work only for a top level pointer */
+	  if ((INVALID_POINTER_AUX_TYPES >> fdp->mr_type_aux) & 1)
+	    fdp->mr_type = MR_TYPE_VOID;
 	  break;
 	default:
 	  break;
@@ -1837,10 +1783,8 @@ mr_validate_fd (mr_fd_t * fdp)
     case MR_TYPE_POINTER:
       if (MR_TYPE_POINTER == fdp->mr_type_aux)
 	{
-	  if (MR_TYPE_ARRAY == fdp->mr_type)
-	    status = mr_validate_fd (fdp->param.array_param.pointer_param);
-	  if (MR_TYPE_POINTER == fdp->mr_type)
-	    status = mr_validate_fd (fdp->param.pointer_param.pointer_param);
+	  if (fdp->tdp == NULL)
+	    status = MR_FAILURE;
 	  break;
 	}
       
@@ -1984,15 +1928,6 @@ mr_detect_type (mr_fd_t * fdp)
   
   if (fdp->tdp)
     fdp->name.str = fdp->tdp->type.str;
-  
-  mr_fd_t * ptr_fdp = fdp->param.array_param.pointer_param;
-  if (ptr_fdp)
-    {
-      *ptr_fdp = *fdp;
-      ptr_fdp->mr_type = MR_TYPE_POINTER;
-      ptr_fdp->mr_type_aux = fdp->mr_type_ptr;
-      ptr_fdp->size = sizeof (void*);
-    }
   
   mr_validate_fd (fdp);
 }

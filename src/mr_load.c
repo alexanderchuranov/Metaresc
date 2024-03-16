@@ -615,20 +615,22 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
 {
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
-  mr_fd_t * fdp = &fd_;
   mr_status_t status = MR_SUCCESS;
   int i;
 
   fd_.non_persistent = true;
-  fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
+  fd_.unnamed = true;
+  fd_.offset = 0;
+  fd_.size = mr_type_size (fd_.mr_type_aux);
+  if (fd_.size == 0)
+    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
   if (fd_.size == 0)
     return (MR_FAILURE);
 
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
       fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
-      if (MR_TYPE_POINTER == fd_.mr_type)
-	fdp = fd_.param.array_param.pointer_param;
+      fd_.mr_type_aux = fd_.mr_type_ptr;
     }
   else
     for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
@@ -646,11 +648,11 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
       /* check if array index is in range */
       if (i >= fd_.param.array_param.dim.dim[0].count)
 	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fdp->name.str);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (MR_FAILURE);
 	}
       /* load recursively */
-      status = mr_load (&data[i++ * fdp->size], fdp, idx, ptrs);
+      status = mr_load (&data[i++ * fd_.size], &fd_, idx, ptrs);
     }
   return (status);
 }
@@ -681,7 +683,6 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   mr_status_t status = MR_SUCCESS;
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   char ** data = ptrs->ra[idx].data.ptr;
-  mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   int count = 0;
   int node;
 
@@ -711,17 +712,22 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   if (0 == count)
     return (MR_SUCCESS);
 
-  mr_fd_t * fdp = fd_.param.pointer_param.pointer_param;
-  if (MR_TYPE_POINTER != fd_.mr_type_aux)
-    {
-      fd_.non_persistent = true;
-      fd_.size = fd_.tdp ? fd_.tdp->size : mr_type_size (fd_.mr_type_aux);
-      fd_.mr_type = fd_.mr_type_aux;
-      fdp = &fd_;
-    }
-  
+  mr_fd_t fd_;
+  memset (&fd_, 0, sizeof (fd_));
+  fd_.non_persistent = true;
+  fd_.unnamed = true;
+  fd_.mr_type = ptrs->ra[idx].mr_type_aux;
+  fd_.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
+  fd_.name.str = ptrs->ra[idx].name;
+  fd_.tdp = ptrs->ra[idx].tdp;
+  fd_.size = mr_type_size (fd_.mr_type);
+  if (fd_.size == 0)
+    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
+  if (fd_.size == 0)
+    return (MR_FAILURE);
+
   /* allocate memory */
-  *data = MR_CALLOC (count, fdp->size);
+  *data = MR_CALLOC (count, fd_.size);
   if (NULL == *data)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -731,9 +737,9 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   /* load recursively */
   count = 0;
   for (node = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (node >= 0); node = ptrs->ra[node].next)
-    status = mr_load (*data + count++ * fdp->size, fdp, node, ptrs);
+    status = mr_load (*data + count++ * fd_.size, &fd_, node, ptrs);
 
-  ptrs->ra[idx].MR_SIZE = count * fdp->size;
+  ptrs->ra[idx].MR_SIZE = count * fd_.size;
   mr_pointer_set_size (idx, ptrs);
   
   return (status);

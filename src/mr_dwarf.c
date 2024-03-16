@@ -1208,12 +1208,6 @@ process_td (mr_ptr_t key, const void * context)
 		fdp->res_type = mr_strdup ("string");
 		assert (fdp->res_type != NULL);
 	      }
-
-	    if (fdp->mr_type_aux == MR_TYPE_POINTER)
-	      {
-		fdp->param.pointer_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.pointer_param.pointer_param));
-		assert (fdp->param.pointer_param.pointer_param != NULL);
-	      }
 	  }
 
 	if (MR_TYPE_ARRAY == fdp->mr_type)
@@ -1228,12 +1222,6 @@ process_td (mr_ptr_t key, const void * context)
 
 	    if ((MR_TYPE_CHAR == fdp->mr_type_aux) && fdp->param.array_param.dim.dim[0].is_last)
 	      fdp->mr_type = MR_TYPE_CHAR_ARRAY;
-
-	    if (fdp->mr_type_aux == MR_TYPE_POINTER)
-	      {
-		fdp->param.array_param.pointer_param = MR_CALLOC (1, sizeof (*fdp->param.array_param.pointer_param));
-		assert (fdp->param.array_param.pointer_param != NULL);
-	      }
 	  }
 
 	if ((MR_TYPE_UNION == fdp->mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux) || (MR_TYPE_UNION == fdp->mr_type_ptr))
