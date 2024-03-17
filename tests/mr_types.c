@@ -437,7 +437,8 @@ START_TEST (check_types_detection) {
   ck_assert_msg (args[2]->mr_type_aux == MR_TYPE_INT32, "Wrong auxiliary type of second argument for 'f' of type struct_t.");
   ck_assert_msg (args[3]->mr_type == MR_TYPE_ARRAY, "Wrong type of third argument for 'f' of type struct_t.");
   ck_assert_msg (args[3]->mr_type_aux == MR_TYPE_POINTER, "Wrong auxiliary type of third argument for 'f' of type struct_t.");
-  ck_assert_msg (args[3]->mr_type_ptr == MR_TYPE_INT32, "Wrong auxiliary type of third argument for 'f' of type struct_t.");
+  ck_assert_msg (args[3]->tdp != NULL, "Undetected type of third argument for 'f' of type struct_t.");
+  ck_assert_msg (args[3]->tdp->mr_type == MR_TYPE_INT32, "Wrong type of third argument for 'f' of type struct_t.");
   ck_assert_msg (args[4]->mr_type == MR_TYPE_CHAR_ARRAY, "Wrong type of fourth argument for 'f' of type struct_t.");
   ck_assert_msg (args[5]->mr_type == MR_TYPE_ARRAY, "Wrong type of fifth argument for 'f' of type struct_t.");
   ck_assert_msg (args[5]->mr_type_aux == MR_TYPE_CHAR, "Wrong auxiliary type of fifth argument for 'f' of type struct_t.");
@@ -524,11 +525,7 @@ START_TEST (dump_struct_types_detection) {
       ck_assert_msg (mr_fdp->mr_type == dst_fdp->mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->mr_type, dst_fdp->mr_type, mr_fdp->name.str);
       if (!(mr_fdp->mr_type == MR_TYPE_STRING) &&
 	  !((mr_fdp->mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
-	{
-	  ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
-	  if (mr_fdp->mr_type_aux == MR_TYPE_POINTER)
-	    ck_assert_msg (mr_fdp->mr_type_ptr == dst_fdp->mr_type_ptr, "dump_struct mismatched mr_type_ptr (%d != %d) for field '%s'", mr_fdp->mr_type_ptr, dst_fdp->mr_type_ptr, mr_fdp->name.str);
-	}
+	ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
 
       int j;
       if (mr_fdp->mr_type == MR_TYPE_ARRAY)

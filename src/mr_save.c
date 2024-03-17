@@ -57,7 +57,7 @@ mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
 {
   *ptr_fdp = **fdp;
   ptr_fdp->mr_type = ptr_fdp->mr_type_aux;
-  ptr_fdp->mr_type_aux = ptr_fdp->mr_type_ptr;
+  ptr_fdp->mr_type_aux = ptr_fdp->tdp ? ptr_fdp->tdp->mr_type : MR_TYPE_VOID;
   ptr_fdp->mr_type_class = MR_POINTER_TYPE_CLASS;
   ptr_fdp->size = sizeof (void*);
   ptr_fdp->offset = 0;
@@ -1136,7 +1136,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
       fd_.mr_type = fd_.mr_type_aux;
-      fd_.mr_type_aux = fd_.mr_type_ptr;
+      fd_.mr_type_aux = fd_.tdp ? fd_.tdp->mr_type : MR_TYPE_VOID;
       if (!mr_save_data->ptrs.ra[idx].fdp->non_persistent)
 	{
 	  mr_ptrdes_t src, dst;

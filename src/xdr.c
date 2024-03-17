@@ -910,7 +910,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
       fd_.mr_type = fd_.mr_type_aux;
-      fd_.mr_type_aux = fd_.mr_type_ptr;
+      fd_.mr_type_aux = fd_.tdp ? fd_.tdp->mr_type : MR_TYPE_VOID;
 
       if (ptrs->ra[idx].fdp->non_persistent)
 	count = fd_.param.array_param.dim.dim[0].count;

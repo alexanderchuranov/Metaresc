@@ -604,10 +604,10 @@
 	.type = #TYPE,							\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
-	.mr_type = MR_TYPE_ARRAY,					\
-	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
-	.mr_type_ptr = MR_TYPE_DETECT_PTR (TYPE),			\
+	.mr_type = MR_TYPE_DETECT (TYPE),				\
+	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.is_array = true,						\
 	.param.array_param.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -963,9 +963,7 @@
       __fd__.size = sizeof (*(S_PTR));					\
       if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)), __typeof__ (S_PTR))) \
 	{								\
-	  __fd__.mr_type_ptr = __fd__.mr_type_aux;			\
-	  __fd__.mr_type_aux = __fd__.mr_type;				\
-	  __fd__.mr_type = MR_TYPE_ARRAY;				\
+	  __fd__.is_array = true;					\
 	  __fd__.size = sizeof (S_PTR);					\
 	  __fd__.param.array_param.dim.dim[0].count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
 	  __fd__.param.array_param.dim.dim[0].is_last = true;		\

@@ -74,12 +74,6 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_aux %d != %d",
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type_aux, dw_fdp->mr_type_aux);
       
-      if (((mr_fdp->mr_type == MR_TYPE_POINTER) || (mr_fdp->mr_type == MR_TYPE_ARRAY)) &&
-	  (mr_fdp->mr_type_aux == MR_TYPE_POINTER))
-	ck_assert_msg (mr_fdp->mr_type_ptr == dw_fdp->mr_type_ptr,
-		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_ptr %d != %d",
-		       mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type_ptr, dw_fdp->mr_type_ptr);
-
       if (mr_fdp->mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->size == dw_fdp->size,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %d != %d",
