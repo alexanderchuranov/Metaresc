@@ -623,14 +623,14 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   fd_.offset = 0;
   fd_.size = mr_type_size (fd_.mr_type_aux);
   if (fd_.size == 0)
-    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
+    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   if (fd_.size == 0)
     return (MR_FAILURE);
 
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
       fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
-      fd_.mr_type_aux = fd_.tdp ? fd_.tdp->mr_type : MR_TYPE_VOID;
+      fd_.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
     }
   else
     for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
@@ -719,10 +719,10 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   fd_.mr_type = ptrs->ra[idx].mr_type_aux;
   fd_.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
-  fd_.tdp = ptrs->ra[idx].tdp;
+  fd_.stype.tdp = ptrs->ra[idx].tdp;
   fd_.size = mr_type_size (fd_.mr_type);
   if (fd_.size == 0)
-    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
+    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   if (fd_.size == 0)
     return (MR_FAILURE);
 
@@ -847,8 +847,8 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 	return (MR_FAILURE);
       }
 
-  if (ptrs->ra[idx].tdp && fdp->tdp)
-    if (ptrs->ra[idx].tdp != fdp->tdp)
+  if (ptrs->ra[idx].tdp && fdp->stype.tdp)
+    if (ptrs->ra[idx].tdp != fdp->stype.tdp)
       {
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, ptrs->ra[idx].tdp->type.str);
 	return (MR_FAILURE);
@@ -860,7 +860,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
   ptrs->ra[idx].mr_size = fdp->size;
   ptrs->ra[idx].mr_type = fdp->mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->mr_type_aux;
-  ptrs->ra[idx].tdp = fdp->tdp;
+  ptrs->ra[idx].tdp = fdp->stype.tdp;
   ptrs->ra[idx].name = fdp->name.str;
 
   /* route loading */

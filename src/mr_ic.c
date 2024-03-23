@@ -15,11 +15,11 @@
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
       __fd__.non_persistent = true;					\
-      __fd__.tdp = TDP;							\
-      __fd__.name = __fd__.tdp->type;					\
-      __fd__.type = __fd__.tdp->type.str;				\
-      __fd__.size = __fd__.tdp->size;					\
-      __fd__.mr_type = __fd__.tdp->mr_type;				\
+      __fd__.stype.tdp = TDP;						\
+      __fd__.name = __fd__.stype.tdp->type;				\
+      __fd__.type = __fd__.stype.tdp->type.str;				\
+      __fd__.size = __fd__.stype.tdp->size;				\
+      __fd__.mr_type = __fd__.stype.tdp->mr_type;			\
       mr_save (__ptr__, &__fd__);					\
     })
 

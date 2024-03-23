@@ -32,16 +32,16 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
       __fd__.type = MR_TYPE_NAME_STR;					\
       __fd__.non_persistent = true;					\
       mr_detect_type (&__fd__);						\
-      if (__fd__.tdp)							\
+      if (__fd__.stype.tdp)						\
 	{								\
 	  if (size < 0)							\
-	    __fd__.size = __fd__.tdp->size;				\
+	    __fd__.size = __fd__.stype.tdp->size;			\
 	  else								\
 	    {								\
 	      __fd__.mr_type_aux = __fd__.mr_type;			\
 	      __fd__.mr_type = MR_TYPE_ARRAY;				\
 	      __fd__.param.array_param.dim.dim[0].count =		\
-		size / __fd__.tdp->size;				\
+		size / __fd__.stype.tdp->size;				\
 	      __fd__.param.array_param.dim.dim[0].is_last = true;	\
 	      __fd__.size = size;					\
 	    }								\

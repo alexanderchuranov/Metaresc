@@ -57,7 +57,7 @@ mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
 {
   *ptr_fdp = **fdp;
   ptr_fdp->mr_type = ptr_fdp->mr_type_aux;
-  ptr_fdp->mr_type_aux = ptr_fdp->tdp ? ptr_fdp->tdp->mr_type : MR_TYPE_VOID;
+  ptr_fdp->mr_type_aux = ptr_fdp->stype.tdp ? ptr_fdp->stype.tdp->mr_type : MR_TYPE_VOID;
   ptr_fdp->mr_type_class = MR_POINTER_TYPE_CLASS;
   ptr_fdp->size = sizeof (void*);
   ptr_fdp->offset = 0;
@@ -101,7 +101,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	  {
 	    mr_uintmax_t value = 0;
 	    mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
-	    mr_td_t * enum_tdp = parent_fdp->tdp;
+	    mr_td_t * enum_tdp = parent_fdp->stype.tdp;
 
 	    mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
 
@@ -128,7 +128,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	
 	case MR_TYPE_ENUM:
 	  {
-	    mr_td_t * enum_tdp = parent_fdp->tdp;
+	    mr_td_t * enum_tdp = parent_fdp->stype.tdp;
 	    if (NULL == enum_tdp)
 	      return (mr_union_discriminator_by_name (tdp, NULL));
 
@@ -167,11 +167,11 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	case MR_TYPE_UNION:
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
-	  if (parent_fdp->tdp)
-	    if (parent_fdp->tdp->param.struct_param.fields_size >= sizeof (parent_fdp->tdp->param.struct_param.fields[0]))
+	  if (parent_fdp->stype.tdp)
+	    if (parent_fdp->stype.tdp->param.struct_param.fields_size >= sizeof (parent_fdp->stype.tdp->param.struct_param.fields[0]))
 	      {
-		discriminator = (char*)discriminator + parent_fdp->tdp->param.struct_param.fields[0]->offset;
-		parent_fdp = parent_fdp->tdp->param.struct_param.fields[0];
+		discriminator = (char*)discriminator + parent_fdp->stype.tdp->param.struct_param.fields[0]->offset;
+		parent_fdp = parent_fdp->stype.tdp->param.struct_param.fields[0];
 		mr_type = parent_fdp->mr_type;
 		break;
 	      }
@@ -352,7 +352,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
   intptr_t ud_idx, ud_find = -1;
   mr_union_discriminator_t * ud;
   char * discriminator = union_fdp->meta;
-  mr_td_t * tdp = union_fdp->tdp;
+  mr_td_t * tdp = union_fdp->stype.tdp;
 
   if (NULL == tdp)
     return (NULL);
@@ -910,7 +910,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   ptrdes->fdp = parent_fdp;
   ptrdes->mr_type = parent_fdp->mr_type;
   ptrdes->mr_type_aux = parent_fdp->mr_type_aux;
-  ptrdes->tdp = parent_fdp->tdp;
+  ptrdes->tdp = parent_fdp->stype.tdp;
   ptrdes->name = parent_fdp->name.str;
   ptrdes->unnamed = parent_fdp->unnamed;
   ptrdes->non_persistent = parent_fdp->non_persistent;
@@ -939,7 +939,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].fdp = fdp;
   ra[idx].mr_type = fdp->mr_type;
   ra[idx].mr_type_aux = fdp->mr_type_aux;
-  ra[idx].tdp = fdp->tdp;
+  ra[idx].tdp = fdp->stype.tdp;
   ra[idx].name = fdp->name.str;
   ra[idx].unnamed = fdp->unnamed;
   ra[idx].non_persistent = fdp->non_persistent;
@@ -1059,7 +1059,7 @@ mr_save_enum (mr_save_data_t * mr_save_data)
       break;
     default:
       {
-	mr_td_t * tdp = ptrdes->fdp->tdp;
+	mr_td_t * tdp = ptrdes->fdp->stype.tdp;
 	ptrdes->mr_type_aux = tdp ? tdp->param.enum_param.mr_type_effective : MR_TYPE_UINT8;
 	break;
       }
@@ -1075,7 +1075,7 @@ static int
 mr_save_struct (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
-  mr_td_t * tdp = mr_save_data->ptrs.ra[idx].fdp->tdp;
+  mr_td_t * tdp = mr_save_data->ptrs.ra[idx].fdp->stype.tdp;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
@@ -1129,14 +1129,14 @@ mr_save_array (mr_save_data_t * mr_save_data)
   fd_.offset = 0;
   fd_.size = mr_type_size (fd_.mr_type_aux);
   if (fd_.size == 0)
-    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
+    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   if (fd_.size == 0)
     return (0);
 
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
       fd_.mr_type = fd_.mr_type_aux;
-      fd_.mr_type_aux = fd_.tdp ? fd_.tdp->mr_type : MR_TYPE_VOID;
+      fd_.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
       if (!mr_save_data->ptrs.ra[idx].fdp->non_persistent)
 	{
 	  mr_ptrdes_t src, dst;
@@ -1187,10 +1187,10 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   int count, i;
 
   memset (&fd_, 0, sizeof (fd_));
-  fd_.tdp = ptrdes->tdp;
+  fd_.stype.tdp = ptrdes->tdp;
   fd_.mr_type = ptrdes->mr_type_aux;
-  fd_.mr_type_aux = fd_.tdp ? fd_.tdp->mr_type : MR_TYPE_VOID;
-  fd_.type = fd_.tdp ? fd_.tdp->type.str : NULL;
+  fd_.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
+  fd_.type = fd_.stype.tdp ? fd_.stype.tdp->type.str : NULL;
   fd_.name.str = ptrdes->name;
   fd_.offset = 0;
 
@@ -1198,7 +1198,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.unnamed = true;
   fd_.size = mr_type_size (fd_.mr_type);
   if (fd_.size == 0)
-    fd_.size = fd_.tdp ? fd_.tdp->size : 0;
+    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   if (fd_.size == 0)
     return (1);
 

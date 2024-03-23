@@ -381,8 +381,12 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
       { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
       }
 
-TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
+TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		(struct mr_td_t *, tdp, , "type descriptor"),
+		)
+
+TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
+		(mr_stype_t, stype, , "structured type"),
 		(char *, type, , "stringified type name"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),

@@ -86,7 +86,7 @@ mr_append_ref  (mr_ptr_t key, const void * context)
   mr_types_dep_t * types_dep = append_ref->types_dep;
   uintptr_t type_ref_idx = types_dep->size / sizeof (types_dep->types[0]);
 
-  types_dep->types[type_ref_idx].tdp = fdp->tdp;
+  types_dep->types[type_ref_idx].tdp = fdp->stype.tdp;
   mr_ptr_t * find = mr_ic_find (&types_dep->index, type_ref_idx);
   if (find != NULL)
     {
@@ -132,11 +132,11 @@ mr_udo_dfs (mr_types_dep_t * types_dep, int type_idx, bool * visited, char * fie
   visited[type_idx] = true;
 
   mr_fd_t * fdp = mr_get_fd_by_name (types_dep->types[type_idx].tdp, field_name);
-  if (fdp && fdp->tdp)
+  if (fdp && fdp->stype.tdp)
     {
       if (NULL == *discriminator_type)
-	*discriminator_type = fdp->tdp->type.str;
-      else if (*discriminator_type != fdp->tdp->type.str)
+	*discriminator_type = fdp->stype.tdp->type.str;
+      else if (*discriminator_type != fdp->stype.tdp->type.str)
 	return (MR_FAILURE);
       return (MR_SUCCESS);
     }
@@ -153,7 +153,7 @@ mr_udo_dfs (mr_types_dep_t * types_dep, int type_idx, bool * visited, char * fie
 static void
 mr_udo_detect_types (mr_types_dep_t * types_dep, int type_idx, mr_fd_t * fdp)
 {
-  if ((NULL == fdp->res.ptr) || (NULL == fdp->res_type) || (NULL == fdp->tdp)
+  if ((NULL == fdp->res.ptr) || (NULL == fdp->res_type) || (NULL == fdp->stype.tdp)
        || (0 == fdp->MR_SIZE) || (NULL == fdp->meta))
     return;
   if (strcmp (fdp->res_type, "mr_ud_override_t") != 0)
