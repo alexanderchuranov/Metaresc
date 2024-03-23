@@ -28,7 +28,7 @@ int main ()
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       printf("\t%d: name = %s, type = %s, size = %zu bytes\n",
-	     i, fdp->name.str, fdp->type, fdp->size);
+	     i, fdp->name.str, fdp->stype.type, fdp->size);
     }
 
   return (EXIT_SUCCESS);

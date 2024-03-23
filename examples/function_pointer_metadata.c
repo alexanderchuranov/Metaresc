@@ -66,7 +66,7 @@ int main ()
       return (EXIT_FAILURE);
     }
 
-  printf ("field '%s' has type name '%s'\n", field_name, fd->type);
+  printf ("field '%s' has type name '%s'\n", field_name, fd->stype.type);
   printf ("the actual type: ");
   return (print_func_field_signature (fd));
 }

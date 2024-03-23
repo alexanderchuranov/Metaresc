@@ -1030,7 +1030,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
   fd_.non_persistent = true;
   fd_.mr_type = MR_TYPE_CHAR_ARRAY;
   fd_.size = sizeof (char);
-  fd_.type = "char";
+  fd_.stype.type = "char";
   return (mr_save_inner (str, &fd_, 1, mr_save_data, idx));
 }
 
@@ -1190,7 +1190,7 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.stype.tdp = ptrdes->tdp;
   fd_.mr_type = ptrdes->mr_type_aux;
   fd_.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
-  fd_.type = fd_.stype.tdp ? fd_.stype.tdp->type.str : NULL;
+  fd_.stype.type = fd_.stype.tdp ? fd_.stype.tdp->type.str : NULL;
   fd_.name.str = ptrdes->name;
   fd_.offset = 0;
 

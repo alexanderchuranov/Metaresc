@@ -383,11 +383,11 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 
 TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		(struct mr_td_t *, tdp, , "type descriptor"),
+		(char *, type, , "stringified type name"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_stype_t, stype, , "structured type"),
-		(char *, type, , "stringified type name"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),

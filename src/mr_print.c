@@ -29,7 +29,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
       __fd__.name.str = MR_TYPE_NAME_STR;				\
-      __fd__.type = MR_TYPE_NAME_STR;					\
+      __fd__.stype.type = MR_TYPE_NAME_STR;				\
       __fd__.non_persistent = true;					\
       mr_detect_type (&__fd__);						\
       if (__fd__.stype.tdp)						\

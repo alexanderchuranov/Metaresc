@@ -850,7 +850,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
   if (ptrs->ra[idx].tdp && fdp->stype.tdp)
     if (ptrs->ra[idx].tdp != fdp->stype.tdp)
       {
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->type, ptrs->ra[idx].tdp->type.str);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->stype.type, ptrs->ra[idx].tdp->type.str);
 	return (MR_FAILURE);
       }
 

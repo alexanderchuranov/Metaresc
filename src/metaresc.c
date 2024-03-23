@@ -179,7 +179,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 
   mr_fd_t * fdp = struct_param->fields[fields_count];
   fdp->mr_type = mr_type;
-  fdp->type = type;
+  fdp->stype.type = type;
   fdp->name.str = name;
   fdp->offset = offset;
   fdp->size = mr_type_size (mr_type);
@@ -840,14 +840,14 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    fdp->MR_SIZE = last->MR_SIZE;
 	    tdp->param.struct_param.fields_size -= fields_count * sizeof (tdp->param.struct_param.fields[0]);
 	    count -= fields_count;
-	    fdp->type = tdp_->type.str;
+	    fdp->stype.type = tdp_->type.str;
 	    fdp->size = tdp_->size;
 	    
 	    /* set name of anonymous union to temporary type name */
 	    if (NULL == fdp->name.str)
-	      fdp->name.str = fdp->type;
+	      fdp->name.str = fdp->stype.type;
 	    else if (0 == fdp->name.str[0])
-	      fdp->name.str = fdp->type;
+	      fdp->name.str = fdp->stype.type;
 	      
 	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
@@ -1145,7 +1145,7 @@ mr_register_type_pointer (mr_td_t * tdp)
 
   mr_fd_t * fdp = &tdp->mr_ptr_fd;
   *fdp = *union_tdp->param.struct_param.fields[0];
-  fdp->type = tdp->type.str;
+  fdp->stype.type = tdp->type.str;
   fdp->name = tdp->type;
   fdp->mr_type = MR_TYPE_POINTER;
   fdp->mr_type_aux = tdp->mr_type;
@@ -1368,7 +1368,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   mr_structured_type_t stype;
   memset (&stype, 0, sizeof (stype));
 
-  stype.type = fdp->type;
+  stype.type = fdp->stype.type;
   stype.mr_type = fdp->mr_type;
   stype.mr_type_aux = fdp->mr_type_aux;
   stype.mr_type_class = fdp->mr_type_class;
@@ -1378,7 +1378,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 
   mr_detect_structured_type (&stype);
 
-  fdp->type = stype.type;
+  fdp->stype.type = stype.type;
   fdp->mr_type = stype.mr_type;
   fdp->mr_type_aux = stype.mr_type_aux;
   fdp->stype.tdp = stype.tdp;
@@ -1708,7 +1708,7 @@ mr_validate_fd (mr_fd_t * fdp)
 {
   mr_status_t status = MR_SUCCESS;
   if (fdp->stype.tdp == NULL)
-    fdp->stype.tdp = mr_get_td_by_name_internal (fdp->type);
+    fdp->stype.tdp = mr_get_td_by_name_internal (fdp->stype.type);
 
   switch (fdp->mr_type)
     {
@@ -1792,7 +1792,7 @@ mr_validate_fd (mr_fd_t * fdp)
   if (status != MR_SUCCESS)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_MATCHED,
-		  fdp->name.str, fdp->type,
+		  fdp->name.str, fdp->stype.type,
 		  fdp->mr_type, fdp->mr_type_aux, fdp->stype.tdp ? fdp->stype.tdp->mr_type : MR_TYPE_VOID);
       if (fdp->mr_type != MR_TYPE_POINTER)
 	fdp->mr_type = MR_TYPE_VOID;

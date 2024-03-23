@@ -114,9 +114,9 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	  (mr_fdp->mr_type == MR_TYPE_UNION) ||
 	  (mr_fdp->mr_type == MR_TYPE_ENUM) ||
 	  ((mr_fdp->mr_type == MR_TYPE_BITFIELD) && (mr_fdp->mr_type_aux == MR_TYPE_ENUM)))
-	ck_assert_msg (strcmp (mr_fdp->type, dw_fdp->type) == 0,
+	ck_assert_msg (strcmp (mr_fdp->stype.type, dw_fdp->stype.type) == 0,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' type '%s' != '%s'",
-		       mr_td->type.str, mr_fdp->name.str, mr_fdp->type, dw_fdp->type);
+		       mr_td->type.str, mr_fdp->name.str, mr_fdp->stype.type, dw_fdp->stype.type);
     }
 
   ck_assert_msg (dw_td->param.struct_param.fields_size == mr_td->param.struct_param.fields_size + named_anon_union_count * sizeof (mr_td->param.struct_param.fields[0]),

@@ -577,7 +577,7 @@
 #define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
-	.type = #TYPE,							\
+	.stype.type = #TYPE,						\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE,						\
@@ -601,7 +601,7 @@
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
-	.type = #TYPE,							\
+	.stype.type = #TYPE,						\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE_DETECT (TYPE),				\
@@ -615,7 +615,7 @@
 #define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name = { .str = (char []) { #NAME }, },				\
-	.type = #TYPE,							\
+	.stype.type = #TYPE,						\
 	.size = sizeof (TYPE),						\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	.mr_type = MR_TYPE_VOID,					\
@@ -629,7 +629,7 @@
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
-	.type = #TYPE,							\
+	.stype.type = #TYPE,							\
 	.size = sizeof (TYPE),						\
 	.mr_type = MR_TYPE_BITFIELD,					\
 	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
@@ -645,13 +645,14 @@
 #define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
-	.type = __builtin_choose_expr (__builtin_types_compatible_p (MR_TYPE_NAME *, TYPE) | \
-				       __builtin_types_compatible_p (MR_TYPE_NAME const *, TYPE) | \
-				       __builtin_types_compatible_p (MR_TYPE_NAME volatile *, TYPE) | \
-				       __builtin_types_compatible_p (MR_TYPE_NAME const volatile *, TYPE), \
-				       #MR_TYPE_NAME "*",		\
-				       #TYPE				\
-				       ),				\
+	.stype.type = __builtin_choose_expr				\
+	(__builtin_types_compatible_p (MR_TYPE_NAME *, TYPE) |		\
+	 __builtin_types_compatible_p (MR_TYPE_NAME const *, TYPE) |	\
+	 __builtin_types_compatible_p (MR_TYPE_NAME volatile *, TYPE) | \
+	 __builtin_types_compatible_p (MR_TYPE_NAME const volatile *, TYPE), \
+	 #MR_TYPE_NAME "*",						\
+	 #TYPE								\
+	 ),								\
 	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE_DETECT (TYPE),				\
@@ -703,7 +704,7 @@
 #define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...)		\
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
-	.type = "",							\
+	.stype.type = "",						\
 	.offset = 0,							\
 	.unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false),	\
 	.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
@@ -712,7 +713,7 @@
 	} },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\
   (mr_fd_t[]){ {							\
-      .type = "",							\
+      .stype.type = "",							\
 	.mr_type = MR_TYPE_END_ANON_UNION,				\
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -951,9 +952,9 @@
       void * __ptr__ = (void*)S_PTR;					\
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
-      __fd__.type = MR_TYPE_NAME_STR;					\
-      if (__fd__.type == NULL)						\
-	__fd__.type = "";						\
+      __fd__.stype.type = MR_TYPE_NAME_STR;				\
+      if (__fd__.stype.type == NULL)					\
+	__fd__.stype.type = "";						\
       __fd__.name.str = "entity";					\
       __fd__.name.hash_value = 0;					\
       __fd__.unnamed = true;						\
@@ -1049,11 +1050,11 @@
 	{								\
 	  mr_fd_t __fd__ =						\
 	    {								\
-	     .type = MR_TYPE_NAME,					\
-	     .name = { .str = NULL, .hash_value = 0, },			\
-	     .non_persistent = true,					\
-	     .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),		\
-	     .size = sizeof (*(D_PTR)),					\
+	      .stype.type = MR_TYPE_NAME,				\
+	      .name = { .str = NULL, .hash_value = 0, },		\
+	      .non_persistent = true,					\
+	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
+	      .size = sizeof (*(D_PTR)),				\
 	    };								\
 	  mr_detect_type (&__fd__);					\
 	  __status__ = mr_xdr_load ((D_PTR), &__fd__, __xdrs__);	\
@@ -1126,11 +1127,11 @@
 	};								\
       mr_fd_t __fd__ =							\
 	{								\
-	 .type = MR_TYPE_NAME,						\
-	 .name = { .str = NULL, .hash_value = 0, },			\
-	 .non_persistent = true,					\
-	 .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),		\
-	 .size = sizeof (*(D_PTR)),					\
+	  .stype.type = MR_TYPE_NAME,					\
+	  .name = { .str = NULL, .hash_value = 0, },			\
+	  .non_persistent = true,					\
+	  .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),		\
+	  .size = sizeof (*(D_PTR)),					\
 	};								\
       xmlNodePtr __xml__ = (XML);					\
       if (NULL == __xml__)						\
@@ -1211,7 +1212,7 @@
 	{								\
 	  mr_fd_t _fd_ =						\
 	    {								\
-	      .type = MR_TYPE_NAME,					\
+	      .stype.type = MR_TYPE_NAME,				\
 	      .name = { .str = NULL, .hash_value = 0, },		\
 	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
 	      .size = sizeof (*(D_PTR)),				\

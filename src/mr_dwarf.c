@@ -659,7 +659,7 @@ die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
 static void
 get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
-  if (fdp->type == NULL)
+  if (fdp->stype.type == NULL)
     {
       mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
       if (attr == NULL)
@@ -679,8 +679,8 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	}
       assert ((DW_FORM_STRING >> attr->form) & 1);
       assert (attr->dw_str != NULL);
-      fdp->type = mr_strdup (attr->dw_str);
-      assert (fdp->type != NULL);
+      fdp->stype.type = mr_strdup (attr->dw_str);
+      assert (fdp->stype.type != NULL);
     }
 
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_byte_size);
@@ -740,9 +740,9 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   else
     push_mr_type (fdp, found_sign->mr_type);
 
-  if (fdp->type == NULL)
-    fdp->type = mr_strdup (mr_type_sign.type.str);
-  assert (fdp->type != NULL);
+  if (fdp->stype.type == NULL)
+    fdp->stype.type = mr_strdup (mr_type_sign.type.str);
+  assert (fdp->stype.type != NULL);
 }
 
 static void
@@ -805,16 +805,16 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
 	case _DW_TAG_pointer_type:
 	  {
-	    bool type_not_defined = (fdp->type == NULL);
+	    bool type_not_defined = (fdp->stype.type == NULL);
 	    push_mr_type (fdp, MR_TYPE_POINTER);
 	    get_mr_type (fdp, mr_die, die_off_ic); /* recursive call instead of looping */
-	    if (type_not_defined && (fdp->type != NULL))
+	    if (type_not_defined && (fdp->stype.type != NULL))
 	      {
 #define POINTER_SUFFIX " *"
-		mr_size_t length = strlen (fdp->type);
-		fdp->type = MR_REALLOC (fdp->type, length + sizeof (POINTER_SUFFIX));
-		assert (fdp->type != NULL);
-		memcpy (&fdp->type[length], POINTER_SUFFIX, sizeof (POINTER_SUFFIX));
+		mr_size_t length = strlen (fdp->stype.type);
+		fdp->stype.type = MR_REALLOC (fdp->stype.type, length + sizeof (POINTER_SUFFIX));
+		assert (fdp->stype.type != NULL);
+		memcpy (&fdp->stype.type[length], POINTER_SUFFIX, sizeof (POINTER_SUFFIX));
 	      }
 	    fdp->size = sizeof (void*);
 	    break;

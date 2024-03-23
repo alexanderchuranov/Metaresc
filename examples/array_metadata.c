@@ -31,7 +31,7 @@ int print_array_field_info (mr_td_t * td, char name[])
       return (EXIT_FAILURE);
     }
 
-  printf("field declaration: %s %s", fd->type, fd->name.str);
+  printf("field declaration: %s %s", fd->stype.type, fd->name.str);
 
   int i;
   for (i = 0; i < sizeof (fd->param.array_param.dim.dim) / sizeof (fd->param.array_param.dim.dim[0]); ++i)
