@@ -1372,7 +1372,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   stype.mr_type = fdp->stype.mr_type;
   stype.mr_type_aux = fdp->stype.mr_type_aux;
   stype.mr_type_class = fdp->stype.mr_type_class;
-  stype.is_array = fdp->is_array;
+  stype.is_array = fdp->stype.is_array;
   if (stype.is_array)
     stype.dim = fdp->param.array_param.dim;
 
