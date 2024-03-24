@@ -296,11 +296,11 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	    {
 	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
 	      if (fdp != NULL)
-		fdp->mr_type_class = tc[fdp->stype.mr_type];
+		fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
 	      if ((indent_spaces > 2) && (fdp != NULL))
 		{
 		  fdp->stype.mr_type = MR_TYPE_NONE;
-		  fdp->mr_type_class = MR_RECORD_TYPE_CLASS;
+		  fdp->stype.mr_type_class = MR_RECORD_TYPE_CLASS;
 		}
 	    }
 	}
@@ -1371,7 +1371,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   stype.type = fdp->stype.type;
   stype.mr_type = fdp->stype.mr_type;
   stype.mr_type_aux = fdp->stype.mr_type_aux;
-  stype.mr_type_class = fdp->mr_type_class;
+  stype.mr_type_class = fdp->stype.mr_type_class;
   stype.is_array = fdp->is_array;
   if (stype.is_array)
     stype.dim = fdp->param.array_param.dim;

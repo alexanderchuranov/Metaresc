@@ -58,7 +58,7 @@ mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
   *ptr_fdp = **fdp;
   ptr_fdp->stype.mr_type = ptr_fdp->stype.mr_type_aux;
   ptr_fdp->stype.mr_type_aux = ptr_fdp->stype.tdp ? ptr_fdp->stype.tdp->mr_type : MR_TYPE_VOID;
-  ptr_fdp->mr_type_class = MR_POINTER_TYPE_CLASS;
+  ptr_fdp->stype.mr_type_class = MR_POINTER_TYPE_CLASS;
   ptr_fdp->stype.size = sizeof (void*);
   ptr_fdp->offset = 0;
   ptr_fdp->unnamed = true;

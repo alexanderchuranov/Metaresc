@@ -580,7 +580,7 @@
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.stype.mr_type = MR_TYPE,					\
-	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -605,7 +605,7 @@
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.stype.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.stype.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
-	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.is_array = true,						\
 	.param.array_param.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
@@ -620,8 +620,8 @@
 	.stype.mr_type = MR_TYPE_VOID,					\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.stype.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
 	MR_IF_ELSE (MR_IS_IN_PAREN (NAME))				\
-	(.mr_type_class = MR_FUNCTION_TYPE_CLASS,)			\
-	(.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
+	(.stype.mr_type_class = MR_FUNCTION_TYPE_CLASS,)		\
+	(.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -633,7 +633,7 @@
 	.stype.size = sizeof (TYPE),					\
 	.stype.mr_type = MR_TYPE_BITFIELD,				\
 	.stype.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
-	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.param = {							\
 	  .bitfield_param = {						\
 	    .size = sizeof (MR_TYPE_NAME),				\
@@ -656,7 +656,7 @@
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.stype.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.stype.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
-	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.non_persistent = 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\

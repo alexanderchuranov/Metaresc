@@ -140,7 +140,7 @@ cinit_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   if (ptrdes->non_persistent)
     return (mr_ra_append_string (mr_ra_str, "{}"));
 
-  switch (ptrdes->fdp->mr_type_class)
+  switch (ptrdes->fdp->stype.mr_type_class)
     {
     case MR_RECORD_TYPE_CLASS:
     case MR_UNION_TYPE_CLASS:
