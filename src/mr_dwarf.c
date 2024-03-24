@@ -699,14 +699,14 @@ push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
       /* mr_type definition takes more then 3 levels and is not supported */
       if (fdp->stype.mr_type != MR_TYPE_VOID)
 	{
-	  fdp->mr_type_aux = fdp->stype.mr_type;
+	  fdp->stype.mr_type_aux = fdp->stype.mr_type;
 	  fdp->stype.mr_type = MR_TYPE_VOID;
 	}
     }
   else
     {
-      fdp->stype.mr_type = fdp->mr_type_aux;
-      fdp->mr_type_aux = (int)fdp->mr_type_class;
+      fdp->stype.mr_type = fdp->stype.mr_type_aux;
+      fdp->stype.mr_type_aux = (int)fdp->mr_type_class;
       fdp->mr_type_class = (int)mr_type;
     }
 }
@@ -853,8 +853,8 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (fdp->mr_type_class != (int)MR_TYPE_NONE)
     while (fdp->stype.mr_type == MR_TYPE_NONE)
       {
-	fdp->stype.mr_type = fdp->mr_type_aux;
-	fdp->mr_type_aux = (int)fdp->mr_type_class;
+	fdp->stype.mr_type = fdp->stype.mr_type_aux;
+	fdp->stype.mr_type_aux = (int)fdp->mr_type_class;
 	fdp->mr_type_class = (int)MR_TYPE_NONE;
       }
 }
@@ -1193,10 +1193,10 @@ process_td (mr_ptr_t key, const void * context)
 
 	if (MR_TYPE_POINTER == fdp->stype.mr_type)
 	  {
-	    if (fdp->mr_type_aux == MR_TYPE_NONE)
-	      fdp->mr_type_aux = MR_TYPE_VOID;
+	    if (fdp->stype.mr_type_aux == MR_TYPE_NONE)
+	      fdp->stype.mr_type_aux = MR_TYPE_VOID;
 
-	    if (fdp->mr_type_aux != MR_TYPE_VOID)
+	    if (fdp->stype.mr_type_aux != MR_TYPE_VOID)
 	      {
 #define POINTER_SIZE_SUFFIX "_size"
 		assert (fdp->name.str != NULL);
@@ -1220,11 +1220,11 @@ process_td (mr_ptr_t key, const void * context)
 		  break;
 	      }
 
-	    if ((MR_TYPE_CHAR == fdp->mr_type_aux) && fdp->param.array_param.dim.dim[0].is_last)
+	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) && fdp->param.array_param.dim.dim[0].is_last)
 	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
 	  }
 
-	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux) || (MR_TYPE_UNION == (int)fdp->mr_type_class))
+	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == (int)fdp->mr_type_class))
 	  {
 #define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
 	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));

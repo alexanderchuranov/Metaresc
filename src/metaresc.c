@@ -1148,7 +1148,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->stype.type = tdp->type.str;
   fdp->name = tdp->type;
   fdp->stype.mr_type = MR_TYPE_POINTER;
-  fdp->mr_type_aux = tdp->mr_type;
+  fdp->stype.mr_type_aux = tdp->mr_type;
   fdp->stype.tdp = tdp;
 
   mr_ic_add (&mr_conf.fields_names, &tdp->type);
@@ -1370,7 +1370,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 
   stype.type = fdp->stype.type;
   stype.mr_type = fdp->stype.mr_type;
-  stype.mr_type_aux = fdp->mr_type_aux;
+  stype.mr_type_aux = fdp->stype.mr_type_aux;
   stype.mr_type_class = fdp->mr_type_class;
   stype.is_array = fdp->is_array;
   if (stype.is_array)
@@ -1380,7 +1380,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 
   fdp->stype.type = stype.type;
   fdp->stype.mr_type = stype.mr_type;
-  fdp->mr_type_aux = stype.mr_type_aux;
+  fdp->stype.mr_type_aux = stype.mr_type_aux;
   fdp->stype.tdp = stype.tdp;
 
   if (stype.is_array)
@@ -1552,7 +1552,7 @@ mr_detect_struct_fields (mr_td_t * tdp)
       switch (fdp->stype.mr_type)
 	{
 	case MR_TYPE_ARRAY:
-	  if ((INVALID_ARRAY_AUX_TYPES >> fdp->mr_type_aux) & 1)
+	  if ((INVALID_ARRAY_AUX_TYPES >> fdp->stype.mr_type_aux) & 1)
 	    fdp->stype.mr_type = MR_TYPE_VOID;
 	  break;
 	case MR_TYPE_FUNC:
@@ -1562,7 +1562,7 @@ mr_detect_struct_fields (mr_td_t * tdp)
 	  mr_fd_init_bitfield_params (fdp);
 	  break;
 	case MR_TYPE_POINTER:
-	  if ((INVALID_POINTER_AUX_TYPES >> fdp->mr_type_aux) & 1)
+	  if ((INVALID_POINTER_AUX_TYPES >> fdp->stype.mr_type_aux) & 1)
 	    fdp->stype.mr_type = MR_TYPE_VOID;
 	  break;
 	default:
@@ -1631,7 +1631,7 @@ mr_type_void_fields_impl (char * type, char * name, ...)
 	  if ((fdp->stype.mr_type != MR_TYPE_BITFIELD) &&
 	      (fdp->stype.mr_type != MR_TYPE_ARRAY) &&
 	      (fdp->stype.mr_type != MR_TYPE_POINTER))
-	    fdp->mr_type_aux = fdp->stype.mr_type;
+	    fdp->stype.mr_type_aux = fdp->stype.mr_type;
 	  fdp->stype.mr_type = MR_TYPE_VOID;
 	}
     }
@@ -1750,18 +1750,18 @@ mr_validate_fd (mr_fd_t * fdp)
       break;
       
     case MR_TYPE_BITFIELD:
-      if (!((MR_INT_TYPES >> fdp->mr_type_aux) & 1))
+      if (!((MR_INT_TYPES >> fdp->stype.mr_type_aux) & 1))
 	status = MR_FAILURE;
-      if (((MR_TYPED_TYPES >> fdp->mr_type_aux) & 1) && (fdp->stype.tdp == NULL))
+      if (((MR_TYPED_TYPES >> fdp->stype.mr_type_aux) & 1) && (fdp->stype.tdp == NULL))
 	status = MR_FAILURE;
-      if (((MR_TYPED_TYPES >> fdp->mr_type_aux) & 1) && fdp->stype.tdp)
-	if (fdp->mr_type_aux != fdp->stype.tdp->mr_type)
+      if (((MR_TYPED_TYPES >> fdp->stype.mr_type_aux) & 1) && fdp->stype.tdp)
+	if (fdp->stype.mr_type_aux != fdp->stype.tdp->mr_type)
 	  status = MR_FAILURE;
       break;
       
     case MR_TYPE_ARRAY:
     case MR_TYPE_POINTER:
-      if (MR_TYPE_POINTER == fdp->mr_type_aux)
+      if (MR_TYPE_POINTER == fdp->stype.mr_type_aux)
 	{
 	  if (fdp->stype.tdp == NULL)
 	    status = MR_FAILURE;
@@ -1769,9 +1769,9 @@ mr_validate_fd (mr_fd_t * fdp)
 	}
       
       if (fdp->stype.tdp)
-	if (fdp->mr_type_aux != fdp->stype.tdp->mr_type)
+	if (fdp->stype.mr_type_aux != fdp->stype.tdp->mr_type)
 	  status = MR_FAILURE;
-      if (((MR_TYPED_TYPES >> fdp->mr_type_aux) & 1) && (fdp->stype.tdp == NULL))
+      if (((MR_TYPED_TYPES >> fdp->stype.mr_type_aux) & 1) && (fdp->stype.tdp == NULL))
 	  status = MR_FAILURE;
       break;
       
@@ -1793,10 +1793,10 @@ mr_validate_fd (mr_fd_t * fdp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_MATCHED,
 		  fdp->name.str, fdp->stype.type,
-		  fdp->stype.mr_type, fdp->mr_type_aux, fdp->stype.tdp ? fdp->stype.tdp->mr_type : MR_TYPE_VOID);
+		  fdp->stype.mr_type, fdp->stype.mr_type_aux, fdp->stype.tdp ? fdp->stype.tdp->mr_type : MR_TYPE_VOID);
       if (fdp->stype.mr_type != MR_TYPE_POINTER)
 	fdp->stype.mr_type = MR_TYPE_VOID;
-      fdp->mr_type_aux = MR_TYPE_VOID;
+      fdp->stype.mr_type_aux = MR_TYPE_VOID;
     }
   return (status);
 }

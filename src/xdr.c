@@ -303,7 +303,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
 
   ptrs->ra[idx].fdp = fdp;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
-  ptrs->ra[idx].mr_type_aux = fdp->mr_type_aux;
+  ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
   ptrs->ra[idx].tdp = fdp->stype.tdp;
   ptrs->ra[idx].name = fdp->name.str;
   ptrs->ra[idx].non_persistent = fdp->non_persistent;
@@ -837,9 +837,9 @@ xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
   mr_ra_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, };
   
   if (XDR_ENCODE == xdrs->x_op)
-    return (xdr_save_handler[fdp->mr_type_aux] (xdrs, 0, &ptrs));
+    return (xdr_save_handler[fdp->stype.mr_type_aux] (xdrs, 0, &ptrs));
   else if (XDR_DECODE == xdrs->x_op)
-    return (xdr_load_handler[fdp->mr_type_aux] (xdrs, 0, &ptrs));
+    return (xdr_load_handler[fdp->stype.mr_type_aux] (xdrs, 0, &ptrs));
   else
     return (MR_SUCCESS);
 }
@@ -901,7 +901,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int i, count = fd_.param.array_param.dim.dim[0].count;
 
   fd_.non_persistent = true;
-  fd_.stype.size = mr_type_size (fd_.mr_type_aux);
+  fd_.stype.size = mr_type_size (fd_.stype.mr_type_aux);
   if (fd_.stype.size == 0)
     fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   if (fd_.stype.size <= 0)
@@ -909,8 +909,8 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
-      fd_.stype.mr_type = fd_.mr_type_aux;
-      fd_.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
+      fd_.stype.mr_type = fd_.stype.mr_type_aux;
+      fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
 
       if (ptrs->ra[idx].fdp->non_persistent)
 	count = fd_.param.array_param.dim.dim[0].count;
@@ -989,7 +989,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.stype.mr_type = ptrs->ra[idx].mr_type_aux;
-  fd_.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
+  fd_.stype.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
   fd_.stype.tdp = ptrs->ra[idx].tdp;
   fd_.stype.size = mr_type_size (fd_.stype.mr_type);

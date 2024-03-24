@@ -198,8 +198,8 @@ TYPEDEF_ENUM (enum ext_enum_t, _0, _1);
       ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field " #FIELD "."); \
       ck_assert_msg (fdp->stype.mr_type == MR_TYPE, "Mismatched mr_type for field " #FIELD " (%d != %d).", \
 		     fdp->stype.mr_type, MR_TYPE);				\
-      ck_assert_msg (fdp->mr_type_aux == MR_TYPE_AUX, "Mismatched mr_type_aux for field " #FIELD " (%d != %d).", \
-		     fdp->mr_type_aux, MR_TYPE_AUX);			\
+      ck_assert_msg (fdp->stype.mr_type_aux == MR_TYPE_AUX, "Mismatched mr_type_aux for field " #FIELD " (%d != %d).", \
+		     fdp->stype.mr_type_aux, MR_TYPE_AUX);			\
     })
   
 #define ASSERT_FIELD_TYPE(TYPE, FIELD, MR_TYPE, ...)			\
@@ -524,8 +524,8 @@ START_TEST (dump_struct_types_detection) {
 
       ck_assert_msg (mr_fdp->stype.mr_type == dst_fdp->stype.mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->stype.mr_type, dst_fdp->stype.mr_type, mr_fdp->name.str);
       if (!(mr_fdp->stype.mr_type == MR_TYPE_STRING) &&
-	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
-	ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
+	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_VOID)))
+	ck_assert_msg (mr_fdp->stype.mr_type_aux == dst_fdp->stype.mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->stype.mr_type_aux, dst_fdp->stype.mr_type_aux, mr_fdp->name.str);
 
       int j;
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)

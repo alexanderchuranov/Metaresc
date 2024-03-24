@@ -604,7 +604,7 @@
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.stype.mr_type = MR_TYPE_DETECT (TYPE),				\
-	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
+	.stype.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.is_array = true,						\
 	.param.array_param.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
@@ -618,7 +618,7 @@
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (TYPE),					\
 	.stype.mr_type = MR_TYPE_VOID,					\
-	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
+	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.stype.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
 	MR_IF_ELSE (MR_IS_IN_PAREN (NAME))				\
 	(.mr_type_class = MR_FUNCTION_TYPE_CLASS,)			\
 	(.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
@@ -632,7 +632,7 @@
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (TYPE),					\
 	.stype.mr_type = MR_TYPE_BITFIELD,				\
-	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
+	.stype.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.param = {							\
 	  .bitfield_param = {						\
@@ -655,7 +655,7 @@
 	 ),								\
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.stype.mr_type = MR_TYPE_DETECT (TYPE),				\
-	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
+	.stype.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.non_persistent = 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
@@ -676,7 +676,7 @@
 #define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
-#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .mr_type_aux = MR_TYPE_DETECT (TYPE))
+#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .stype.mr_type_aux = MR_TYPE_DETECT (TYPE))
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .args = (mr_structured_type_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, }, })
 
 /*
@@ -960,7 +960,7 @@
       __fd__.unnamed = true;						\
       __fd__.non_persistent = true;					\
       __fd__.stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));	\
-      __fd__.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*(S_PTR)));	\
+      __fd__.stype.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*(S_PTR))); \
       __fd__.stype.size = sizeof (*(S_PTR));				\
       if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)), __typeof__ (S_PTR))) \
 	{								\
