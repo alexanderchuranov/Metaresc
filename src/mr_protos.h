@@ -319,29 +319,9 @@ TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		END_ANON_UNION ("mr_type", { (mr_ud_override_t[]){{ MR_TYPE_ARRAY, "dim" }} }, "mr_ud_override_t"),
 		)
 
-#define MR_UNION_PARAM_UDO					\
-  (mr_ud_override_t[]) {					\
-    { MR_TYPE_UNION, "union_param" },				\
-      { MR_TYPE_ANON_UNION, "union_param" },			\
-      { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
-      }
-
-TYPEDEF_STRUCT (mr_union_param_t, ATTRIBUTES ( , "union parameters"),
-		(mr_ic_t, udo, , "index of union descriminator overrides"),
-		)
-
-TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
-		ANON_UNION (),
-		VOID (void *, union_default_serialization),
-		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
-		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
-		)
-
-TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
-		ANON_UNION (),
-		VOID (void *, union_default_serialization),
-		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
-		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
+TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES (__attribute__ ((packed)) , "hashed string"),
+		(char *, str, , "key field"),
+		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
@@ -359,40 +339,39 @@ TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function 
 		(size_t, size, , "size of args array"),
 		)
 
-TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES (__attribute__ ((packed)) , "hashed string"),
-		(char *, str, , "key field"),
-		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
-		)
-
 TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
 	       VOID (uint8_t, default_serialization, , "default serialization is empty"),
-	       (mr_array_param_t, array_param, , "array parameters"),
 	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
-	       (mr_pointer_param_t, pointer_param, , "extra parameters for pointers"),
-	       (mr_union_param_t, union_param, , "indexed collection with union descriminators overrides"),
 	       )
 
-#define MR_FIELD_PARAM_UDO					\
+#define MR_FIELD_PARAM_UNION_UDO				\
   (mr_ud_override_t[]) {					\
-    { MR_TYPE_ARRAY, "array_param" },				\
-      { MR_TYPE_BITFIELD, "bitfield_param" },			\
-      { MR_TYPE_FUNC, "func_param" },				\
-      { MR_TYPE_POINTER, "pointer_param" },			\
       { MR_TYPE_UNION, "union_param" },				\
       { MR_TYPE_ANON_UNION, "union_param" },			\
       { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
       }
 
+#define MR_FIELD_PARAM_NON_UNION_UDO				\
+  (mr_ud_override_t[]) {					\
+      { MR_TYPE_BITFIELD, "bitfield_param" },			\
+      { MR_TYPE_FUNC, "func_param" },				\
+      }
+
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_stype_t, stype, , "structured type"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
+		(mr_type_t, mr_type, [0], "alias of mr_type for union resolution", .offset = offsetof (mr_fd_t, stype.mr_type)),
+		(mr_type_t, mr_type_base, , "copy of mr_type form base type"),
 		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
 		(mr_offset_t, offset, , "offset in structure"),
-		(mr_type_t, mr_type, [0], "alias of mr_type for union resolution", .offset = offsetof (mr_fd_t, stype.mr_type)),
-		(mr_type_t, mr_type_aux, [0], "alias of mr_type_aux for union resolution", .offset = offsetof (mr_fd_t, stype.mr_type_aux)),
-		(mr_fd_param_t, param, , "mr_type", { MR_FIELD_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_UDO)),
+
+		ANON_UNION (),
+		(mr_fd_param_t, param, , "mr_type", { MR_FIELD_PARAM_NON_UNION_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_NON_UNION_UDO)),
+		(mr_ic_t, union_param, , "indexed collection with union discriminators overrides"),
+		END_ANON_UNION ("mr_type_base", { MR_FIELD_PARAM_UNION_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_UNION_UDO)),
+
 		(char *, meta, , "field meta info"),
 		/*
 		  res field can be used by user for extended information

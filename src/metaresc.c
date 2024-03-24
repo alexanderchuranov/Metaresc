@@ -367,9 +367,8 @@ mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      if (fdp->stype.tdp != NULL)
-	if ((MR_UNION_TYPES >> fdp->stype.tdp->mr_type) & 1)
-	  mr_ic_free (&fdp->param.union_param.udo);
+      if ((MR_UNION_TYPES >> fdp->mr_type_base) & 1)
+	mr_ic_free (&fdp->union_param);
     }
   
   return (MR_SUCCESS);
@@ -1375,6 +1374,9 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
     return;
 
   mr_detect_structured_type (&fdp->stype);
+
+  if (fdp->stype.tdp)
+    fdp->mr_type_base = fdp->stype.tdp->mr_type;
 }
 
 /**
@@ -1433,7 +1435,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   if (strcmp (fdp->res_type, "mr_ud_override_t") != 0)
     return (MR_SUCCESS);
   
-  mr_ic_new (&fdp->param.union_param.udo, mr_ud_override_hash, mr_ud_override_cmp, "mr_ud_override_t", MR_IC_HASH, NULL);
+  mr_ic_new (&fdp->union_param, mr_ud_override_hash, mr_ud_override_cmp, "mr_ud_override_t", MR_IC_HASH, NULL);
 
   mr_status_t status = MR_SUCCESS;
   int i, count = fdp->MR_SIZE / sizeof (mr_ud_override_t);
@@ -1449,7 +1451,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
 	  continue;
 	}
       
-      mr_ptr_t * add = mr_ic_add (&fdp->param.union_param.udo, &ud_overrides[i]);
+      mr_ptr_t * add = mr_ic_add (&fdp->union_param, &ud_overrides[i]);
       if (NULL == add)
 	{
 	  status = MR_FAILURE;
