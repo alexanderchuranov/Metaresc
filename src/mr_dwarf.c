@@ -706,8 +706,8 @@ push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
   else
     {
       fdp->stype.mr_type = fdp->stype.mr_type_aux;
-      fdp->stype.mr_type_aux = (int)fdp->stype.mr_type_class;
-      fdp->stype.mr_type_class = (int)mr_type;
+      fdp->stype.mr_type_aux = fdp->stype.mr_type_ptr;
+      fdp->stype.mr_type_ptr = mr_type;
     }
 }
 
@@ -735,8 +735,8 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   mr_type_sign_t * found_sign = find->ptr;
   fdp->stype.size = mr_type_sign.size;
 
-  if ((fdp->stype.mr_type_class == (int)MR_TYPE_POINTER) && (found_sign->mr_type == MR_TYPE_CHAR))
-    fdp->stype.mr_type_class = (int)MR_TYPE_STRING;
+  if ((fdp->stype.mr_type_ptr == MR_TYPE_POINTER) && (found_sign->mr_type == MR_TYPE_CHAR))
+    fdp->stype.mr_type_ptr = MR_TYPE_STRING;
   else
     push_mr_type (fdp, found_sign->mr_type);
 
@@ -825,8 +825,8 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  break;
 
 	case _DW_TAG_subroutine_type:
-	  assert (fdp->stype.mr_type_class == (int)MR_TYPE_POINTER);
-	  fdp->stype.mr_type_class = (int)MR_TYPE_FUNC_TYPE;
+	  assert (fdp->stype.mr_type_ptr == MR_TYPE_POINTER);
+	  fdp->stype.mr_type_ptr = MR_TYPE_FUNC_TYPE;
 	  break;
 
 	case _DW_TAG_structure_type:
@@ -850,12 +850,12 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       break;
     }
 
-  if (fdp->stype.mr_type_class != (int)MR_TYPE_NONE)
+  if (fdp->stype.mr_type_ptr != MR_TYPE_NONE)
     while (fdp->stype.mr_type == MR_TYPE_NONE)
       {
 	fdp->stype.mr_type = fdp->stype.mr_type_aux;
-	fdp->stype.mr_type_aux = (int)fdp->stype.mr_type_class;
-	fdp->stype.mr_type_class = (int)MR_TYPE_NONE;
+	fdp->stype.mr_type_aux = fdp->stype.mr_type_ptr;
+	fdp->stype.mr_type_ptr = MR_TYPE_NONE;
       }
 }
 
@@ -930,7 +930,7 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
   if (attr != NULL)
     {
       assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
-      fdp->stype.mr_type_class = (int)MR_TYPE_BITFIELD;
+      fdp->stype.mr_type_ptr = MR_TYPE_BITFIELD;
       fdp->bitfield_param.width = attr->dw_unsigned;
 
       attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
@@ -1033,7 +1033,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       {
 	mr_fd_t fd;
 	memset (&fd, 0, sizeof (fd));
-	fd.stype.mr_type_class = (int)MR_TYPE_POINTER;
+	fd.stype.mr_type_ptr = MR_TYPE_POINTER;
 	get_mr_type (&fd, mr_die, die_off_ic);
 	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
 	tdp->mr_type = fd.stype.mr_type;
@@ -1220,7 +1220,7 @@ process_td (mr_ptr_t key, const void * context)
 	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
 	  }
 
-	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == (int)fdp->stype.mr_type_class))
+	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == fdp->stype.mr_type_ptr))
 	  {
 #define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
 	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
@@ -1258,7 +1258,7 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
   mr_type_void_fields ("mr_td_param_t", "func_param");
   mr_type_void_fields ("mr_fd_t", "mr_type_base", "mr_size", "non_persistent");
-  mr_type_void_fields ("mr_stype_t", "tdp", "mr_type_class", "is_array");
+  mr_type_void_fields ("mr_stype_t", "tdp", "mr_type_ptr", "mr_type_class", "is_array");
   mr_type_void_fields ("mr_ed_t", "mr_type", "meta", "res", "res_type", "mr_size");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");
