@@ -13,9 +13,9 @@ TYPEDEF_STRUCT (example_t,
 
 int print_array_field_info (mr_td_t * td, char name[])
 {
-  mr_fd_t const * fd = mr_get_fd_by_name (td, name);
+  mr_fd_t const * fdp = mr_get_fd_by_name (td, name);
 
-  if (NULL == fd)
+  if (NULL == fdp)
     {
       fprintf (stderr,
 	       "error: can't obtain type information for field '%s'\n",
@@ -23,7 +23,7 @@ int print_array_field_info (mr_td_t * td, char name[])
       return (EXIT_FAILURE);
     }
 
-  if (fd->mr_type != MR_TYPE_ARRAY)
+  if (fdp->stype.mr_type != MR_TYPE_ARRAY)
     {
       fprintf (stderr,
 	       "error: the '%s' field is not an array\n",
@@ -31,13 +31,13 @@ int print_array_field_info (mr_td_t * td, char name[])
       return (EXIT_FAILURE);
     }
 
-  printf("field declaration: %s %s", fd->stype.type, fd->name.str);
+  printf("field declaration: %s %s", fdp->stype.type, fdp->name.str);
 
   int i;
-  for (i = 0; i < sizeof (fd->param.array_param.dim.dim) / sizeof (fd->param.array_param.dim.dim[0]); ++i)
+  for (i = 0; i < sizeof (fdp->param.array_param.dim.dim) / sizeof (fdp->param.array_param.dim.dim[0]); ++i)
     {
-      printf("[%d]", (int)fd->param.array_param.dim.dim[i].count);
-      if (fd->param.array_param.dim.dim[i].is_last)
+      printf("[%d]", (int)fdp->param.array_param.dim.dim[i].count);
+      if (fdp->param.array_param.dim.dim[i].is_last)
 	break;
     }
 

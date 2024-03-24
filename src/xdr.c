@@ -302,7 +302,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   ptrs->ra[idx].data.ptr = data;
 
   ptrs->ra[idx].fdp = fdp;
-  ptrs->ra[idx].mr_type = fdp->mr_type;
+  ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->mr_type_aux;
   ptrs->ra[idx].tdp = fdp->stype.tdp;
   ptrs->ra[idx].name = fdp->name.str;
@@ -311,13 +311,13 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   mr_add_child (parent, idx, ptrs->ra);
 
   xdr_handler_t load_handler = NULL;
-  if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST))
-    load_handler = xdr_load_handler[fdp->mr_type];
+  if ((fdp->stype.mr_type >= 0) && (fdp->stype.mr_type < MR_TYPE_LAST))
+    load_handler = xdr_load_handler[fdp->stype.mr_type];
   
   if (load_handler)
     status = load_handler (xdrs, idx, ptrs);
   else
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->mr_type);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->stype.mr_type);
 
   return (status);
 }
@@ -909,7 +909,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
-      fd_.mr_type = fd_.mr_type_aux;
+      fd_.stype.mr_type = fd_.mr_type_aux;
       fd_.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
 
       if (ptrs->ra[idx].fdp->non_persistent)
@@ -988,11 +988,11 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   memset (&fd_, 0, sizeof (fd_));
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.mr_type = ptrs->ra[idx].mr_type_aux;
+  fd_.stype.mr_type = ptrs->ra[idx].mr_type_aux;
   fd_.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
   fd_.stype.tdp = ptrs->ra[idx].tdp;
-  fd_.stype.size = mr_type_size (fd_.mr_type);
+  fd_.stype.size = mr_type_size (fd_.stype.mr_type);
   if (fd_.stype.size == 0)
     fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   

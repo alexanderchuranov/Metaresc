@@ -30,10 +30,10 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
     {
       mr_fd_t * mr_fdp = mr_td->param.struct_param.fields[i];
       
-      if (mr_fdp->mr_type == MR_TYPE_NAMED_ANON_UNION)
+      if (mr_fdp->stype.mr_type == MR_TYPE_NAMED_ANON_UNION)
 	++named_anon_union_count;
       
-      if ((mr_fdp->mr_type == MR_TYPE_ANON_UNION) || (mr_fdp->mr_type == MR_TYPE_NAMED_ANON_UNION))
+      if ((mr_fdp->stype.mr_type == MR_TYPE_ANON_UNION) || (mr_fdp->stype.mr_type == MR_TYPE_NAMED_ANON_UNION))
 	continue;
       
       mr_fd_t * dw_fdp = NULL;
@@ -47,44 +47,44 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       ck_assert_msg (dw_fdp != NULL, "DWARF descriptor for type '%s' mismatched builtin: missed field '%s'",
 		     mr_td->type.str, mr_fdp->name.str);
 
-      mr_type_t mr_type = mr_fdp->mr_type;
+      mr_type_t mr_type = mr_fdp->stype.mr_type;
       if (mr_type == MR_TYPE_FUNC)
 	mr_type = MR_TYPE_FUNC_TYPE;
       else if ((mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_CHAR))
 	mr_type = MR_TYPE_STRING;
-      else if (mr_fdp->mr_type == MR_TYPE_VOID)
+      else if (mr_fdp->stype.mr_type == MR_TYPE_VOID)
 	{
-	  if ((dw_fdp->mr_type == MR_TYPE_BITFIELD) ||
-	      (dw_fdp->mr_type == MR_TYPE_STRUCT) ||
-	      (dw_fdp->mr_type == MR_TYPE_UNION) ||
-	      (dw_fdp->mr_type == MR_TYPE_ARRAY) ||
-	      (dw_fdp->mr_type == MR_TYPE_POINTER))
-	    mr_type = dw_fdp->mr_type;
+	  if ((dw_fdp->stype.mr_type == MR_TYPE_BITFIELD) ||
+	      (dw_fdp->stype.mr_type == MR_TYPE_STRUCT) ||
+	      (dw_fdp->stype.mr_type == MR_TYPE_UNION) ||
+	      (dw_fdp->stype.mr_type == MR_TYPE_ARRAY) ||
+	      (dw_fdp->stype.mr_type == MR_TYPE_POINTER))
+	    mr_type = dw_fdp->stype.mr_type;
 	  else
 	    mr_type = mr_fdp->mr_type_aux;
 	}
 
-      ck_assert_msg (mr_type == dw_fdp->mr_type,
+      ck_assert_msg (mr_type == dw_fdp->stype.mr_type,
 		     "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type %d != %d",
-		     mr_td->type.str, mr_fdp->name.str, mr_type, dw_fdp->mr_type);
+		     mr_td->type.str, mr_fdp->name.str, mr_type, dw_fdp->stype.mr_type);
       
-      if (((mr_fdp->mr_type == MR_TYPE_POINTER) || (mr_fdp->mr_type == MR_TYPE_ARRAY) || (mr_fdp->mr_type == MR_TYPE_BITFIELD)) &&
-	  !((mr_fdp->mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_CHAR)))
+      if (((mr_fdp->stype.mr_type == MR_TYPE_POINTER) || (mr_fdp->stype.mr_type == MR_TYPE_ARRAY) || (mr_fdp->stype.mr_type == MR_TYPE_BITFIELD)) &&
+	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_CHAR)))
 	ck_assert_msg (mr_fdp->mr_type_aux == dw_fdp->mr_type_aux,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' mr_type_aux %d != %d",
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type_aux, dw_fdp->mr_type_aux);
       
-      if (mr_fdp->mr_type != MR_TYPE_VOID)
+      if (mr_fdp->stype.mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->stype.size == dw_fdp->stype.size,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %d != %d",
 		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->stype.size, (int)dw_fdp->stype.size);
 
-      if (mr_fdp->mr_type != MR_TYPE_VOID)
+      if (mr_fdp->stype.mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->offset == dw_fdp->offset,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' offset %d != %d",
 		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->offset, (int)dw_fdp->offset);
       
-      if (mr_fdp->mr_type == MR_TYPE_ARRAY)
+      if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
 	for (j = 0; j < sizeof (mr_fdp->param.array_param.dim.dim) / sizeof (mr_fdp->param.array_param.dim.dim[0]); ++j)
 	  {
 	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].count == dw_fdp->param.array_param.dim.dim[j].count,
@@ -98,7 +98,7 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	      break;
 	  }
       
-      if (mr_fdp->mr_type == MR_TYPE_BITFIELD)
+      if (mr_fdp->stype.mr_type == MR_TYPE_BITFIELD)
 	{
 	  ck_assert_msg (mr_fdp->param.bitfield_param.width == dw_fdp->param.bitfield_param.width,
 			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' width %d != %d",
@@ -110,10 +110,10 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 			 mr_fdp->param.bitfield_param.shift, dw_fdp->param.bitfield_param.shift);
 	}
       
-      if ((mr_fdp->mr_type == MR_TYPE_STRUCT) ||
-	  (mr_fdp->mr_type == MR_TYPE_UNION) ||
-	  (mr_fdp->mr_type == MR_TYPE_ENUM) ||
-	  ((mr_fdp->mr_type == MR_TYPE_BITFIELD) && (mr_fdp->mr_type_aux == MR_TYPE_ENUM)))
+      if ((mr_fdp->stype.mr_type == MR_TYPE_STRUCT) ||
+	  (mr_fdp->stype.mr_type == MR_TYPE_UNION) ||
+	  (mr_fdp->stype.mr_type == MR_TYPE_ENUM) ||
+	  ((mr_fdp->stype.mr_type == MR_TYPE_BITFIELD) && (mr_fdp->mr_type_aux == MR_TYPE_ENUM)))
 	ck_assert_msg (strcmp (mr_fdp->stype.type, dw_fdp->stype.type) == 0,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' type '%s' != '%s'",
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->stype.type, dw_fdp->stype.type);
@@ -197,6 +197,7 @@ check_td (mr_ptr_t key, const void * context)
 
 START_TEST (dw_check_all)
 {
+  mr_type_void_fields ("mr_fd_t", "mr_type");
   mr_type_void_fields ("ieee_half_t", "is_nan");
   mr_type_void_fields ("ieee_float_t", "is_nan");
   mr_type_void_fields ("ieee_double_t", "is_nan");

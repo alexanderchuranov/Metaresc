@@ -579,9 +579,9 @@
       .name = { .str = #NAME, },					\
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
-	.offset = offsetof (MR_TYPE_NAME, NAME),			\
-	.mr_type = MR_TYPE,						\
+	.stype.mr_type = MR_TYPE,					\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -603,12 +603,12 @@
       .name = { .str = #NAME, },					\
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
-	.offset = offsetof (MR_TYPE_NAME, NAME),			\
-	.mr_type = MR_TYPE_DETECT (TYPE),				\
+	.stype.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.is_array = true,						\
 	.param.array_param.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
+	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -617,21 +617,21 @@
       .name = { .str = (char []) { #NAME }, },				\
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (TYPE),					\
-	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
-	.mr_type = MR_TYPE_VOID,					\
+	.stype.mr_type = MR_TYPE_VOID,					\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
 	MR_IF_ELSE (MR_IS_IN_PAREN (NAME))				\
 	(.mr_type_class = MR_FUNCTION_TYPE_CLASS,)			\
 	(.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
+	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	.meta = "" __VA_ARGS__,						\
 	} },
 
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
-	.stype.type = #TYPE,							\
+	.stype.type = #TYPE,						\
 	.stype.size = sizeof (TYPE),					\
-	.mr_type = MR_TYPE_BITFIELD,					\
+	.stype.mr_type = MR_TYPE_BITFIELD,				\
 	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.param = {							\
@@ -654,11 +654,11 @@
 	 #TYPE								\
 	 ),								\
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
-	.offset = offsetof (MR_TYPE_NAME, NAME),			\
-	.mr_type = MR_TYPE_DETECT (TYPE),				\
+	.stype.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.non_persistent = 0 / __builtin_types_compatible_p (TYPE, __typeof__ (((MR_TYPE_NAME*)0)->NAME)), \
+	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -705,16 +705,16 @@
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
 	.stype.type = "",						\
-	.offset = 0,							\
+	.stype.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	.unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false),	\
-	.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
+	.offset = 0,							\
 	.res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, }, } } }, \
 	.res_type = "mr_td_t",						\
 	} },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\
   (mr_fd_t[]){ {							\
       .stype.type = "",							\
-	.mr_type = MR_TYPE_END_ANON_UNION,				\
+	.stype.mr_type = MR_TYPE_END_ANON_UNION,			\
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -959,7 +959,7 @@
       __fd__.name.hash_value = 0;					\
       __fd__.unnamed = true;						\
       __fd__.non_persistent = true;					\
-      __fd__.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));		\
+      __fd__.stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));	\
       __fd__.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*(S_PTR)));	\
       __fd__.stype.size = sizeof (*(S_PTR));				\
       if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)), __typeof__ (S_PTR))) \
@@ -1053,7 +1053,7 @@
 	      .stype.type = MR_TYPE_NAME,				\
 	      .name = { .str = NULL, .hash_value = 0, },		\
 	      .non_persistent = true,					\
-	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
+	      .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
 	      .stype.size = sizeof (*(D_PTR)),				\
 	    };								\
 	  mr_detect_type (&__fd__);					\
@@ -1130,7 +1130,7 @@
 	  .stype.type = MR_TYPE_NAME,					\
 	  .name = { .str = NULL, .hash_value = 0, },			\
 	  .non_persistent = true,					\
-	  .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),		\
+	  .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
 	  .stype.size = sizeof (*(D_PTR)),				\
 	};								\
       xmlNodePtr __xml__ = (XML);					\
@@ -1214,7 +1214,7 @@
 	    {								\
 	      .stype.type = MR_TYPE_NAME,				\
 	      .name = { .str = NULL, .hash_value = 0, },		\
-	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
+	      .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
 	      .stype.size = sizeof (*(D_PTR)),				\
 	    };								\
 	  mr_detect_type (&_fd_);					\

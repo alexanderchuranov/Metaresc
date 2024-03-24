@@ -629,7 +629,7 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
 
   if (fd_.param.array_param.dim.dim[0].is_last)
     {
-      fd_.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
+      fd_.stype.mr_type = fd_.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
       fd_.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
     }
   else
@@ -716,11 +716,11 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   memset (&fd_, 0, sizeof (fd_));
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.mr_type = ptrs->ra[idx].mr_type_aux;
+  fd_.stype.mr_type = ptrs->ra[idx].mr_type_aux;
   fd_.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
   fd_.stype.tdp = ptrs->ra[idx].tdp;
-  fd_.stype.size = mr_type_size (fd_.mr_type);
+  fd_.stype.size = mr_type_size (fd_.stype.mr_type);
   if (fd_.stype.size == 0)
     fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   if (fd_.stype.size == 0)
@@ -858,20 +858,20 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
   ptrs->ra[idx].fdp = fdp;
   ptrs->ra[idx].non_persistent = fdp->non_persistent;
   ptrs->ra[idx].mr_size = fdp->stype.size;
-  ptrs->ra[idx].mr_type = fdp->mr_type;
+  ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->mr_type_aux;
   ptrs->ra[idx].tdp = fdp->stype.tdp;
   ptrs->ra[idx].name = fdp->name.str;
 
   /* route loading */
   mr_load_handler_t load_handler = NULL;
-  if ((fdp->mr_type >= 0) && (fdp->mr_type < MR_TYPE_LAST))
-    load_handler = mr_load_handler[fdp->mr_type];
+  if ((fdp->stype.mr_type >= 0) && (fdp->stype.mr_type < MR_TYPE_LAST))
+    load_handler = mr_load_handler[fdp->stype.mr_type];
 
   if (load_handler != NULL)
     status = load_handler (idx, ptrs);
   else
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->mr_type);
+    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->stype.mr_type);
 
   /* set cross references at the upper level */
   if (0 == idx)

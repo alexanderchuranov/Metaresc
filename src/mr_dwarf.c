@@ -694,18 +694,18 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 static void
 push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
 {
-  if (fdp->mr_type != MR_TYPE_NONE)
+  if (fdp->stype.mr_type != MR_TYPE_NONE)
     {
       /* mr_type definition takes more then 3 levels and is not supported */
-      if (fdp->mr_type != MR_TYPE_VOID)
+      if (fdp->stype.mr_type != MR_TYPE_VOID)
 	{
-	  fdp->mr_type_aux = fdp->mr_type;
-	  fdp->mr_type = MR_TYPE_VOID;
+	  fdp->mr_type_aux = fdp->stype.mr_type;
+	  fdp->stype.mr_type = MR_TYPE_VOID;
 	}
     }
   else
     {
-      fdp->mr_type = fdp->mr_type_aux;
+      fdp->stype.mr_type = fdp->mr_type_aux;
       fdp->mr_type_aux = (int)fdp->mr_type_class;
       fdp->mr_type_class = (int)mr_type;
     }
@@ -851,9 +851,9 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     }
 
   if (fdp->mr_type_class != (int)MR_TYPE_NONE)
-    while (fdp->mr_type == MR_TYPE_NONE)
+    while (fdp->stype.mr_type == MR_TYPE_NONE)
       {
-	fdp->mr_type = fdp->mr_type_aux;
+	fdp->stype.mr_type = fdp->mr_type_aux;
 	fdp->mr_type_aux = (int)fdp->mr_type_class;
 	fdp->mr_type_class = (int)MR_TYPE_NONE;
       }
@@ -1036,7 +1036,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	fd.mr_type_class = (int)MR_TYPE_POINTER;
 	get_mr_type (&fd, mr_die, die_off_ic);
 	MR_FREE_RECURSIVELY (mr_fd_t, &fd);
-	tdp->mr_type = fd.mr_type;
+	tdp->mr_type = fd.stype.mr_type;
 	tdp->size = sizeof (void*);
       }
       break;
@@ -1191,7 +1191,7 @@ process_td (mr_ptr_t key, const void * context)
       {
 	mr_fd_t * fdp = tdp->param.struct_param.fields[i];
 
-	if (MR_TYPE_POINTER == fdp->mr_type)
+	if (MR_TYPE_POINTER == fdp->stype.mr_type)
 	  {
 	    if (fdp->mr_type_aux == MR_TYPE_NONE)
 	      fdp->mr_type_aux = MR_TYPE_VOID;
@@ -1210,7 +1210,7 @@ process_td (mr_ptr_t key, const void * context)
 	      }
 	  }
 
-	if (MR_TYPE_ARRAY == fdp->mr_type)
+	if (MR_TYPE_ARRAY == fdp->stype.mr_type)
 	  {
 	    int j;
 	    for (j = 0; j < sizeof (fdp->param.array_param.dim.dim) / sizeof (fdp->param.array_param.dim.dim[0]); ++j)
@@ -1221,10 +1221,10 @@ process_td (mr_ptr_t key, const void * context)
 	      }
 
 	    if ((MR_TYPE_CHAR == fdp->mr_type_aux) && fdp->param.array_param.dim.dim[0].is_last)
-	      fdp->mr_type = MR_TYPE_CHAR_ARRAY;
+	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
 	  }
 
-	if ((MR_TYPE_UNION == fdp->mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux) || (MR_TYPE_UNION == (int)fdp->mr_type_class))
+	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->mr_type_aux) || (MR_TYPE_UNION == (int)fdp->mr_type_class))
 	  {
 #define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
 	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));

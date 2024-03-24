@@ -178,7 +178,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     }
 
   mr_fd_t * fdp = struct_param->fields[fields_count];
-  fdp->mr_type = mr_type;
+  fdp->stype.mr_type = mr_type;
   fdp->stype.type = type;
   fdp->name.str = name;
   fdp->offset = offset;
@@ -296,10 +296,10 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	    {
 	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
 	      if (fdp != NULL)
-		fdp->mr_type_class = tc[fdp->mr_type];
+		fdp->mr_type_class = tc[fdp->stype.mr_type];
 	      if ((indent_spaces > 2) && (fdp != NULL))
 		{
-		  fdp->mr_type = MR_TYPE_NONE;
+		  fdp->stype.mr_type = MR_TYPE_NONE;
 		  fdp->mr_type_class = MR_RECORD_TYPE_CLASS;
 		}
 	    }
@@ -701,7 +701,7 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
   if (diff)
     return (diff);
 
-  if ((x_fdp->mr_type == MR_TYPE_BITFIELD) && (y_fdp->mr_type == MR_TYPE_BITFIELD))
+  if ((x_fdp->stype.mr_type == MR_TYPE_BITFIELD) && (y_fdp->stype.mr_type == MR_TYPE_BITFIELD))
     {
       diff = ((x_fdp->param.bitfield_param.shift > y_fdp->param.bitfield_param.shift) -
 	      (x_fdp->param.bitfield_param.shift < y_fdp->param.bitfield_param.shift));
@@ -778,7 +778,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      if ((MR_TYPE_ANON_UNION == fdp->mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->mr_type))
+      if ((MR_TYPE_ANON_UNION == fdp->stype.mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->stype.mr_type))
 	{
 	  static int mr_type_anonymous_union_cnt = 0;
 	  mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
@@ -789,10 +789,10 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  for (j = i + 1; j < count; ++j)
 	    {
 	      mr_fd_t * fdp_ = tdp->param.struct_param.fields[j];
-	      if ((MR_TYPE_ANON_UNION == fdp_->mr_type) ||
-		  (MR_TYPE_NAMED_ANON_UNION == fdp_->mr_type))
+	      if ((MR_TYPE_ANON_UNION == fdp_->stype.mr_type) ||
+		  (MR_TYPE_NAMED_ANON_UNION == fdp_->stype.mr_type))
 		++opened;
-	      if (MR_TYPE_END_ANON_UNION == fdp_->mr_type)
+	      if (MR_TYPE_END_ANON_UNION == fdp_->stype.mr_type)
 		if (0 == --opened)
 		  break;
 	    }
@@ -828,7 +828,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
 	    last = tdp->param.struct_param.fields[count];
 	    tdp->param.struct_param.fields[count] = NULL;
-	    tdp_->mr_type = fdp->mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
+	    tdp_->mr_type = fdp->stype.mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    tdp_->td_producer = MR_TDP_ANON_UNION;
 	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
@@ -1147,7 +1147,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   *fdp = *union_tdp->param.struct_param.fields[0];
   fdp->stype.type = tdp->type.str;
   fdp->name = tdp->type;
-  fdp->mr_type = MR_TYPE_POINTER;
+  fdp->stype.mr_type = MR_TYPE_POINTER;
   fdp->mr_type_aux = tdp->mr_type;
   fdp->stype.tdp = tdp;
 
@@ -1369,7 +1369,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   memset (&stype, 0, sizeof (stype));
 
   stype.type = fdp->stype.type;
-  stype.mr_type = fdp->mr_type;
+  stype.mr_type = fdp->stype.mr_type;
   stype.mr_type_aux = fdp->mr_type_aux;
   stype.mr_type_class = fdp->mr_type_class;
   stype.is_array = fdp->is_array;
@@ -1379,7 +1379,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   mr_detect_structured_type (&stype);
 
   fdp->stype.type = stype.type;
-  fdp->mr_type = stype.mr_type;
+  fdp->stype.mr_type = stype.mr_type;
   fdp->mr_type_aux = stype.mr_type_aux;
   fdp->stype.tdp = stype.tdp;
 
@@ -1549,11 +1549,11 @@ mr_detect_struct_fields (mr_td_t * tdp)
 #define INVALID_ARRAY_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_NONE MR_TYPE_VOID MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
 #define INVALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
 
-      switch (fdp->mr_type)
+      switch (fdp->stype.mr_type)
 	{
 	case MR_TYPE_ARRAY:
 	  if ((INVALID_ARRAY_AUX_TYPES >> fdp->mr_type_aux) & 1)
-	    fdp->mr_type = MR_TYPE_VOID;
+	    fdp->stype.mr_type = MR_TYPE_VOID;
 	  break;
 	case MR_TYPE_FUNC:
 	  mr_func_field_detect (fdp);
@@ -1563,7 +1563,7 @@ mr_detect_struct_fields (mr_td_t * tdp)
 	  break;
 	case MR_TYPE_POINTER:
 	  if ((INVALID_POINTER_AUX_TYPES >> fdp->mr_type_aux) & 1)
-	    fdp->mr_type = MR_TYPE_VOID;
+	    fdp->stype.mr_type = MR_TYPE_VOID;
 	  break;
 	default:
 	  break;
@@ -1626,13 +1626,13 @@ mr_type_void_fields_impl (char * type, char * name, ...)
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
       if (NULL == fdp)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_FIELD_NOT_FOUND, name, type);
-      else if (fdp->mr_type != MR_TYPE_VOID)
+      else if (fdp->stype.mr_type != MR_TYPE_VOID)
 	{
-	  if ((fdp->mr_type != MR_TYPE_BITFIELD) &&
-	      (fdp->mr_type != MR_TYPE_ARRAY) &&
-	      (fdp->mr_type != MR_TYPE_POINTER))	  
-	    fdp->mr_type_aux = fdp->mr_type;
-	  fdp->mr_type = MR_TYPE_VOID;
+	  if ((fdp->stype.mr_type != MR_TYPE_BITFIELD) &&
+	      (fdp->stype.mr_type != MR_TYPE_ARRAY) &&
+	      (fdp->stype.mr_type != MR_TYPE_POINTER))
+	    fdp->mr_type_aux = fdp->stype.mr_type;
+	  fdp->stype.mr_type = MR_TYPE_VOID;
 	}
     }
 
@@ -1710,7 +1710,7 @@ mr_validate_fd (mr_fd_t * fdp)
   if (fdp->stype.tdp == NULL)
     fdp->stype.tdp = mr_get_td_by_name_internal (fdp->stype.type);
 
-  switch (fdp->mr_type)
+  switch (fdp->stype.mr_type)
     {
     case MR_TYPE_NONE:
     case MR_TYPE_VOID:
@@ -1745,7 +1745,7 @@ mr_validate_fd (mr_fd_t * fdp)
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
     case MR_TYPE_FUNC_TYPE:
       if (fdp->stype.tdp)
-	if (fdp->mr_type != fdp->stype.tdp->mr_type)
+	if (fdp->stype.mr_type != fdp->stype.tdp->mr_type)
 	  status = MR_FAILURE;
       break;
       
@@ -1784,7 +1784,7 @@ mr_validate_fd (mr_fd_t * fdp)
       if (fdp->stype.tdp == NULL)
 	status = MR_FAILURE;
       else
-	if (fdp->mr_type != fdp->stype.tdp->mr_type)
+	if (fdp->stype.mr_type != fdp->stype.tdp->mr_type)
 	  status = MR_FAILURE;
       break;
     }
@@ -1793,9 +1793,9 @@ mr_validate_fd (mr_fd_t * fdp)
     {
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_MATCHED,
 		  fdp->name.str, fdp->stype.type,
-		  fdp->mr_type, fdp->mr_type_aux, fdp->stype.tdp ? fdp->stype.tdp->mr_type : MR_TYPE_VOID);
-      if (fdp->mr_type != MR_TYPE_POINTER)
-	fdp->mr_type = MR_TYPE_VOID;
+		  fdp->stype.mr_type, fdp->mr_type_aux, fdp->stype.tdp ? fdp->stype.tdp->mr_type : MR_TYPE_VOID);
+      if (fdp->stype.mr_type != MR_TYPE_POINTER)
+	fdp->stype.mr_type = MR_TYPE_VOID;
       fdp->mr_type_aux = MR_TYPE_VOID;
     }
   return (status);

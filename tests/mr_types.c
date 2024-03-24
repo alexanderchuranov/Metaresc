@@ -196,8 +196,8 @@ TYPEDEF_ENUM (enum ext_enum_t, _0, _1);
       ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type " #TYPE "."); \
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, #FIELD);			\
       ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field " #FIELD "."); \
-      ck_assert_msg (fdp->mr_type == MR_TYPE, "Mismatched mr_type for field " #FIELD " (%d != %d).", \
-		     fdp->mr_type, MR_TYPE);				\
+      ck_assert_msg (fdp->stype.mr_type == MR_TYPE, "Mismatched mr_type for field " #FIELD " (%d != %d).", \
+		     fdp->stype.mr_type, MR_TYPE);				\
       ck_assert_msg (fdp->mr_type_aux == MR_TYPE_AUX, "Mismatched mr_type_aux for field " #FIELD " (%d != %d).", \
 		     fdp->mr_type_aux, MR_TYPE_AUX);			\
     })
@@ -522,13 +522,13 @@ START_TEST (dump_struct_types_detection) {
       mr_fd_t * dst_fdp = mr_get_fd_by_name (dst_tdp, mr_fdp->name.str);
       ck_assert_msg (dst_fdp != NULL, "dump_struct have not detected field '%s'", mr_fdp->name.str);
 
-      ck_assert_msg (mr_fdp->mr_type == dst_fdp->mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->mr_type, dst_fdp->mr_type, mr_fdp->name.str);
-      if (!(mr_fdp->mr_type == MR_TYPE_STRING) &&
-	  !((mr_fdp->mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
+      ck_assert_msg (mr_fdp->stype.mr_type == dst_fdp->stype.mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->stype.mr_type, dst_fdp->stype.mr_type, mr_fdp->name.str);
+      if (!(mr_fdp->stype.mr_type == MR_TYPE_STRING) &&
+	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->mr_type_aux == MR_TYPE_VOID)))
 	ck_assert_msg (mr_fdp->mr_type_aux == dst_fdp->mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->mr_type_aux, dst_fdp->mr_type_aux, mr_fdp->name.str);
 
       int j;
-      if (mr_fdp->mr_type == MR_TYPE_ARRAY)
+      if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
 	for (j = 0; j < sizeof (mr_fdp->param.array_param.dim.dim) / sizeof (mr_fdp->param.array_param.dim.dim[0]); ++j)
 	  {
 	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].count == dst_fdp->param.array_param.dim.dim[j].count,
@@ -551,7 +551,7 @@ START_TEST (dump_struct_types_detection) {
     {
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, string_fields[i]);
       ck_assert_msg (fdp != NULL, "Fields descriptor for field '%s' was not found", string_fields[i]);
-      ck_assert_msg (fdp->mr_type == MR_TYPE_STRING, "Field '%s' was registered with a wrong mr_type (%d)", string_fields[i], fdp->mr_type);
+      ck_assert_msg (fdp->stype.mr_type == MR_TYPE_STRING, "Field '%s' was registered with a wrong mr_type (%d)", string_fields[i], fdp->stype.mr_type);
       ck_assert_msg (fdp->stype.tdp != NULL, "Type desicriptor for field '%s' was not registered", string_fields[i]);
     }
 } END_TEST

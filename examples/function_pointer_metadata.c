@@ -11,28 +11,28 @@ TYPEDEF_STRUCT (ops,
 		(double, divide, (float, int))
 		)
 
-int print_func_field_signature (mr_fd_t const * fd)
+int print_func_field_signature (mr_fd_t const * fdp)
 {
   int i;
 
-  if (fd->mr_type != MR_TYPE_FUNC)
+  if (fdp->stype.mr_type != MR_TYPE_FUNC)
     {
       fprintf(stderr,
 	      "error: the field '%s' is not a pointer to function\n",
-	      fd->name.str);
+	      fdp->name.str);
       return (EXIT_FAILURE);
     }
 
-  size_t const num_args = fd->param.func_param.size / sizeof (fd->param.func_param.args[0]);
+  size_t const num_args = fdp->param.func_param.size / sizeof (fdp->param.func_param.args[0]);
 
-  printf ("%s (*) (", fd->param.func_param.args[0]->type);
+  printf ("%s (*) (", fdp->param.func_param.args[0]->type);
 
   for (i = 1; i < num_args; ++i)
     {
       if (i > 1)
 	printf(", ");
 
-      printf ("%s", fd->param.func_param.args[i]->type);
+      printf ("%s", fdp->param.func_param.args[i]->type);
     }
 
   printf (")\n");
@@ -56,9 +56,9 @@ int main ()
       return (EXIT_FAILURE);
     }
 
-  mr_fd_t const * fd = mr_get_fd_by_name (td, field_name);
+  mr_fd_t const * fdp = mr_get_fd_by_name (td, field_name);
 
-  if (NULL == fd)
+  if (NULL == fdp)
     {
       fprintf (stderr,
 	       "error: can't obtain type information for '%s' in '%s'\n",
@@ -66,7 +66,7 @@ int main ()
       return (EXIT_FAILURE);
     }
 
-  printf ("field '%s' has type name '%s'\n", field_name, fd->stype.type);
+  printf ("field '%s' has type name '%s'\n", field_name, fdp->stype.type);
   printf ("the actual type: ");
-  return (print_func_field_signature (fd));
+  return (print_func_field_signature (fdp));
 }
