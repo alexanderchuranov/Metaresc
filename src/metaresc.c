@@ -438,8 +438,8 @@ mr_status_t
 mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
 {
   int i;
-  int shift = ptrdes->fdp->param.bitfield_param.shift;
-  int width = ptrdes->fdp->param.bitfield_param.width;
+  int shift = ptrdes->fdp->bitfield_param.shift;
+  int width = ptrdes->fdp->bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
   typeof (*value) _value = *ptr++ >> shift;
 
@@ -472,8 +472,8 @@ mr_status_t
 mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
 {
   int i;
-  int shift = ptrdes->fdp->param.bitfield_param.shift;
-  int width = ptrdes->fdp->param.bitfield_param.width;
+  int shift = ptrdes->fdp->bitfield_param.shift;
+  int width = ptrdes->fdp->bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
   typeof (*value) _value = *value;
 
@@ -702,13 +702,13 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
 
   if ((x_fdp->stype.mr_type == MR_TYPE_BITFIELD) && (y_fdp->stype.mr_type == MR_TYPE_BITFIELD))
     {
-      diff = ((x_fdp->param.bitfield_param.shift > y_fdp->param.bitfield_param.shift) -
-	      (x_fdp->param.bitfield_param.shift < y_fdp->param.bitfield_param.shift));
+      diff = ((x_fdp->bitfield_param.shift > y_fdp->bitfield_param.shift) -
+	      (x_fdp->bitfield_param.shift < y_fdp->bitfield_param.shift));
       if (diff)
 	return (diff);
 
-      diff = ((x_fdp->param.bitfield_param.width > y_fdp->param.bitfield_param.width) -
-	      (x_fdp->param.bitfield_param.width < y_fdp->param.bitfield_param.width));
+      diff = ((x_fdp->bitfield_param.width > y_fdp->bitfield_param.width) -
+	      (x_fdp->bitfield_param.width < y_fdp->bitfield_param.width));
       if (diff)
 	return (diff);
     }
@@ -1067,32 +1067,32 @@ static void
 mr_fd_init_bitfield_params (mr_fd_t * fdp)
 {
   int i, j;
-  if (fdp->param.bitfield_param.initialized)
+  if (fdp->bitfield_param.initialized)
     return;
   
-  fdp->param.bitfield_param.initialized = true;
+  fdp->bitfield_param.initialized = true;
 
-  if (NULL == fdp->param.bitfield_param.bitfield)
+  if (NULL == fdp->bitfield_param.bitfield)
     return;
   
-  for (i = 0; i < fdp->param.bitfield_param.size; ++i)
-    if (fdp->param.bitfield_param.bitfield[i])
+  for (i = 0; i < fdp->bitfield_param.size; ++i)
+    if (fdp->bitfield_param.bitfield[i])
       break;
   /* if bitmask is clear then there is no need to initialize anything */
-  if (i >= fdp->param.bitfield_param.size)
+  if (i >= fdp->bitfield_param.size)
     return;
 
   fdp->offset = i;
   for (i = 0; i < __CHAR_BIT__; ++i)
-    if (fdp->param.bitfield_param.bitfield[fdp->offset] & (1 << i))
+    if (fdp->bitfield_param.bitfield[fdp->offset] & (1 << i))
       break;
-  fdp->param.bitfield_param.shift = i;
-  fdp->param.bitfield_param.width = 0;
-  for (j = fdp->offset; j < fdp->param.bitfield_param.size; ++j)
+  fdp->bitfield_param.shift = i;
+  fdp->bitfield_param.width = 0;
+  for (j = fdp->offset; j < fdp->bitfield_param.size; ++j)
     {
       for ( ; i < __CHAR_BIT__; ++i)
-	if (fdp->param.bitfield_param.bitfield[j] & (1 << i))
-	  ++fdp->param.bitfield_param.width;
+	if (fdp->bitfield_param.bitfield[j] & (1 << i))
+	  ++fdp->bitfield_param.width;
 	else
 	  break;
       if (i < __CHAR_BIT__)
@@ -1388,9 +1388,9 @@ static void
 mr_func_field_detect (mr_fd_t * fdp)
 {
   int i;
-  for (i = 0; fdp->param.func_param.args[i] != NULL; ++i)
-    mr_detect_structured_type (fdp->param.func_param.args[i]);
-  fdp->param.func_param.size = i * sizeof (fdp->param.func_param.args[0]);
+  for (i = 0; fdp->func_param.args[i] != NULL; ++i)
+    mr_detect_structured_type (fdp->func_param.args[i]);
+  fdp->func_param.size = i * sizeof (fdp->func_param.args[0]);
 }
 
 static mr_status_t

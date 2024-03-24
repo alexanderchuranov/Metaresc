@@ -932,13 +932,13 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
     {
       assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
       fdp->stype.mr_type_class = (int)MR_TYPE_BITFIELD;
-      fdp->param.bitfield_param.width = attr->dw_unsigned;
+      fdp->bitfield_param.width = attr->dw_unsigned;
 
       attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
       if (attr != NULL)
 	{
 	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
-	  fdp->param.bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
+	  fdp->bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
 	  fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
 	}
 
@@ -946,9 +946,9 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
       if (attr != NULL)
 	{
 	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);	  
-	  fdp->param.bitfield_param.shift = fdp->stype.size * __CHAR_BIT__ - fdp->param.bitfield_param.width - attr->dw_unsigned;
-	  fdp->offset += fdp->param.bitfield_param.shift / __CHAR_BIT__;
-	  fdp->param.bitfield_param.shift %= __CHAR_BIT__;
+	  fdp->bitfield_param.shift = fdp->stype.size * __CHAR_BIT__ - fdp->bitfield_param.width - attr->dw_unsigned;
+	  fdp->offset += fdp->bitfield_param.shift / __CHAR_BIT__;
+	  fdp->bitfield_param.shift %= __CHAR_BIT__;
 	}
     }
 
@@ -1261,7 +1261,8 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "meta", "res", "res_type", "mr_size", "next");
   mr_type_void_fields ("mr_struct_param_t", "field_by_name");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
-  mr_type_void_fields ("mr_fd_t", "mr_size", "non_persistent");
+  mr_type_void_fields ("mr_td_param_t", "func_param");
+  mr_type_void_fields ("mr_fd_t", "mr_type_base", "mr_size", "non_persistent");
   mr_type_void_fields ("mr_stype_t", "tdp", "mr_type_class", "is_array");
   mr_type_void_fields ("mr_array_dimensions_t", "size");
   mr_type_void_fields ("mr_ed_t", "mr_type", "meta", "res", "res_type", "mr_size");

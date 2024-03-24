@@ -339,12 +339,6 @@ TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function 
 		(size_t, size, , "size of args array"),
 		)
 
-TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different types"),
-	       VOID (uint8_t, default_serialization, , "default serialization is empty"),
-	       (mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
-	       (mr_func_param_t, func_param, , "types of function arguments"),
-	       )
-
 #define MR_FIELD_PARAM_UNION_UDO				\
   (mr_ud_override_t[]) {					\
       { MR_TYPE_UNION, "union_param" },				\
@@ -368,7 +362,11 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_offset_t, offset, , "offset in structure"),
 
 		ANON_UNION (),
-		(mr_fd_param_t, param, , "mr_type", { MR_FIELD_PARAM_NON_UNION_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_NON_UNION_UDO)),
+		ANON_UNION (),
+		VOID (uint8_t, default_serialization, , "default serialization is empty"),
+		(mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
+		(mr_func_param_t, func_param, , "types of function arguments"),
+		END_ANON_UNION ("mr_type", { MR_FIELD_PARAM_NON_UNION_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_NON_UNION_UDO)),
 		(mr_ic_t, union_param, , "indexed collection with union discriminators overrides"),
 		END_ANON_UNION ("mr_type_base", { MR_FIELD_PARAM_UNION_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_UNION_UDO)),
 
@@ -454,9 +452,9 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_td_producer_t, td_producer, , "producer of type descriptor"),
+		(mr_size_t, size, , "size of type"),
 		(mr_fd_t, mr_ptr_fd, , "field descriptor for mr_ptr_t"),
 		(mr_td_param_t, param, , "mr_type", { MR_TYPE_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_TYPE_PARAM_UDO)),
-		(mr_size_t, size, , "size of type"),
 		(char *, meta, , "type meta info"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),

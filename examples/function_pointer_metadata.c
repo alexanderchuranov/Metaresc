@@ -23,16 +23,16 @@ int print_func_field_signature (mr_fd_t const * fdp)
       return (EXIT_FAILURE);
     }
 
-  size_t const num_args = fdp->param.func_param.size / sizeof (fdp->param.func_param.args[0]);
+  size_t const num_args = fdp->func_param.size / sizeof (fdp->func_param.args[0]);
 
-  printf ("%s (*) (", fdp->param.func_param.args[0]->type);
+  printf ("%s (*) (", fdp->func_param.args[0]->type);
 
   for (i = 1; i < num_args; ++i)
     {
       if (i > 1)
 	printf(", ");
 
-      printf ("%s", fdp->param.func_param.args[i]->type);
+      printf ("%s", fdp->func_param.args[i]->type);
     }
 
   printf (")\n");

@@ -634,11 +634,10 @@
 	.stype.mr_type = MR_TYPE_BITFIELD,				\
 	.stype.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
 	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	.param = {							\
-	  .bitfield_param = {						\
-	    .size = sizeof (MR_TYPE_NAME),				\
-	    .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), \
-	  }, },								\
+	.bitfield_param = {						\
+	  .size = sizeof (MR_TYPE_NAME),				\
+	  .bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }),	\
+	},								\
 	.meta = "" __VA_ARGS__,						\
 	} },
 
@@ -677,7 +676,7 @@
 
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .stype.mr_type_aux = MR_TYPE_DETECT (TYPE))
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, }, })
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .func_param = { .args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, })
 
 /*
   MR_OBJ_OF_TYPE returns an object of specified type. It could be as simple as (TYPE){},

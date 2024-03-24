@@ -100,14 +100,14 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       
       if (mr_fdp->stype.mr_type == MR_TYPE_BITFIELD)
 	{
-	  ck_assert_msg (mr_fdp->param.bitfield_param.width == dw_fdp->param.bitfield_param.width,
+	  ck_assert_msg (mr_fdp->bitfield_param.width == dw_fdp->bitfield_param.width,
 			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' width %d != %d",
 			 mr_td->type.str, mr_fdp->name.str,
-			 mr_fdp->param.bitfield_param.width, dw_fdp->param.bitfield_param.width);
-	  ck_assert_msg (mr_fdp->param.bitfield_param.shift == dw_fdp->param.bitfield_param.shift,
+			 mr_fdp->bitfield_param.width, dw_fdp->bitfield_param.width);
+	  ck_assert_msg (mr_fdp->bitfield_param.shift == dw_fdp->bitfield_param.shift,
 			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' shift %d != %d",
 			 mr_td->type.str, mr_fdp->name.str,
-			 mr_fdp->param.bitfield_param.shift, dw_fdp->param.bitfield_param.shift);
+			 mr_fdp->bitfield_param.shift, dw_fdp->bitfield_param.shift);
 	}
       
       if ((mr_fdp->stype.mr_type == MR_TYPE_STRUCT) ||

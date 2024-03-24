@@ -104,11 +104,12 @@ TYPEDEF_UNION (ieee_half_t, ATTRIBUTES (__attribute__ ((packed))),
 	       END_ANON_UNION ("is_nan"),
 	       BITFIELD (ieee_754_half_nan_enum_t, is_nan, : IEEE_754_HALF_EXPONENT, ,
 			 .offset = IEEE_754_HALF_MANTISSA / __CHAR_BIT__,
-			 .param = { .bitfield_param = {
+			 .bitfield_param = {
 			     .bitfield = NULL, .size = 0,
 			     .width = IEEE_754_HALF_EXPONENT,
 			     .shift = IEEE_754_HALF_MANTISSA % __CHAR_BIT__,
-			     .initialized = true, }, } ),
+			     .initialized = true, }
+			 ),
 	       uint16_t uint16,
 	       )
 
@@ -135,11 +136,12 @@ TYPEDEF_UNION (ieee_float_t,
 	       END_ANON_UNION ("is_nan"),
 	       BITFIELD (ieee_754_float_nan_enum_t, is_nan, : IEEE_754_FLOAT_EXPONENT, ,
 			 .offset = IEEE_754_FLOAT_MANTISSA / __CHAR_BIT__,
-			 .param = { .bitfield_param = {
+			 .bitfield_param = {
 			     .bitfield = NULL, .size = 0,
 			     .width = IEEE_754_FLOAT_EXPONENT,
 			     .shift = IEEE_754_FLOAT_MANTISSA % __CHAR_BIT__,
-			     .initialized = true, }, } ),
+			     .initialized = true, }
+			 ),
 	       float _float,
 	       uint32_t uint32,
 	       )
@@ -167,11 +169,12 @@ TYPEDEF_UNION (ieee_double_t,
 	       END_ANON_UNION ("is_nan"),
 	       BITFIELD (ieee_754_double_nan_enum_t, is_nan, : IEEE_754_DOUBLE_EXPONENT, ,
 			 .offset = IEEE_754_DOUBLE_MANTISSA / __CHAR_BIT__,
-			 .param = { .bitfield_param = {
+			 .bitfield_param = {
 			     .bitfield = NULL, .size = 0,
 			     .width = IEEE_754_DOUBLE_EXPONENT,
 			     .shift = IEEE_754_DOUBLE_MANTISSA % __CHAR_BIT__,
-			     .initialized = true, }, } ),
+			     .initialized = true, }
+			 ),
 	       double _double,
 	       uint64_t uint64,
 	       )
@@ -205,11 +208,12 @@ TYPEDEF_UNION (ieee_long_double_t,
 	       END_ANON_UNION ("is_nan"),
 	       BITFIELD (ieee_854_long_double_nan_enum_t, is_nan, : IEEE_854_LONG_DOUBLE_EXPONENT, ,
 			 .offset = IEEE_854_LONG_DOUBLE_MANTISSA / __CHAR_BIT__,
-			 .param = { .bitfield_param = {
+			 .bitfield_param = {
 			     .bitfield = NULL, .size = 0,
 			     .width = IEEE_854_LONG_DOUBLE_EXPONENT,
 			     .shift = IEEE_854_LONG_DOUBLE_MANTISSA % __CHAR_BIT__,
-			     .initialized = true, }, } ),
+			     .initialized = true, }
+			 ),
 	       long double long_double,
 	       )
 

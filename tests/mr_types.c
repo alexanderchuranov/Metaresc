@@ -428,8 +428,8 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (f, MR_TYPE_FUNC);
   tdp = mr_get_td_by_name ("struct_t");
   mr_fd_t * fdp = mr_get_fd_by_name (tdp, "f");
-  ck_assert_msg (fdp->param.func_param.size == 6 * sizeof (fdp->param.func_param.args[0]), "Wrong number of arguments for 'f' of type struct_t.");
-  mr_stype_t ** args = fdp->param.func_param.args;
+  ck_assert_msg (fdp->func_param.size == 6 * sizeof (fdp->func_param.args[0]), "Wrong number of arguments for 'f' of type struct_t.");
+  mr_stype_t ** args = fdp->func_param.args;
   ck_assert_msg (args[0]->mr_type == MR_TYPE_INT32, "Wrong type of return value for 'f' of type struct_t.");
   ck_assert_msg (args[1]->mr_type == MR_TYPE_POINTER, "Wrong type of first argument for 'f' of type struct_t.");
   ck_assert_msg (args[1]->mr_type_aux == MR_TYPE_INT32, "Wrong auxiliary type of first argument for 'f' of type struct_t.");
