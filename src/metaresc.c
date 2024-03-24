@@ -1190,15 +1190,15 @@ mr_type_is_an_array (mr_stype_t * stype, char * type)
 
       uint32_t count = atoi (open_bracket + 1);
       if (i < sizeof (dim.dim) / sizeof (dim.dim[0]))
-	dim.dim[i++].count = count;
+	dim.dim[i++] = count;
       else
-	dim.dim[i - 1].count *= count;
+	dim.dim[i - 1] *= count;
     }
 
   if ((i > 0) &&
       !((stype->mr_type == MR_TYPE_CHAR_ARRAY) && (i == 1)))
     {
-      dim.dim[i - 1].is_last = true;
+      dim.size = i * sizeof (dim.dim[0]);
       stype->dim = dim;
       stype->is_array = true;
     }
@@ -1355,15 +1355,6 @@ mr_detect_structured_type (mr_stype_t * stype)
     {
       stype->mr_type_aux = stype->mr_type;
       stype->mr_type = MR_TYPE_ARRAY;
-    }
-
-  if (MR_TYPE_ARRAY == stype->mr_type)
-    {
-      int i;
-      for (i = 0; i < sizeof (stype->dim.dim) / sizeof (stype->dim.dim[0]) - 1; ++i)
-	if (stype->dim.dim[i].is_last)
-	  break;
-      stype->dim.size = (i + 1) * sizeof (stype->dim.dim[0]);
     }
 }
 

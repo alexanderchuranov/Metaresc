@@ -85,18 +85,18 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->offset, (int)dw_fdp->offset);
       
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
-	for (j = 0; j < sizeof (mr_fdp->stype.dim.dim) / sizeof (mr_fdp->stype.dim.dim[0]); ++j)
-	  {
-	    ck_assert_msg (mr_fdp->stype.dim.dim[j].count == dw_fdp->stype.dim.dim[j].count,
-			   "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim[%d].count %d != %d",
+	{
+	  ck_assert_msg (mr_fdp->stype.dim.size == dw_fdp->stype.dim.size,
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim.size %d != %d",
+			 mr_td->type.str, mr_fdp->name.str,
+			 (int)mr_fdp->stype.dim.size, (int)dw_fdp->stype.dim.size);
+
+	  for (j = 0; j < mr_fdp->stype.dim.size / sizeof (mr_fdp->stype.dim.dim[0]); ++j)
+	    ck_assert_msg (mr_fdp->stype.dim.dim[j] == dw_fdp->stype.dim.dim[j],
+			   "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim[%d] %d != %d",
 			   mr_td->type.str, mr_fdp->name.str, j,
-			   (int)mr_fdp->stype.dim.dim[j].count, (int)dw_fdp->stype.dim.dim[j].count);
-	    ck_assert_msg (mr_fdp->stype.dim.dim[j].is_last == dw_fdp->stype.dim.dim[j].is_last,
-			   "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim[%d].is_last",
-			   mr_td->type.str, mr_fdp->name.str,j);
-	    if (mr_fdp->stype.dim.dim[j].is_last)
-	      break;
-	  }
+			   (int)mr_fdp->stype.dim.dim[j], (int)dw_fdp->stype.dim.dim[j]);
+	}
       
       if (mr_fdp->stype.mr_type == MR_TYPE_BITFIELD)
 	{

@@ -40,9 +40,8 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
 	    {								\
 	      __fd__.stype.mr_type_aux = __fd__.stype.mr_type;		\
 	      __fd__.stype.mr_type = MR_TYPE_ARRAY;			\
-	      __fd__.stype.dim.dim[0].count =				\
-		size / __fd__.stype.tdp->size;				\
-	      __fd__.stype.dim.dim[0].is_last = true;			\
+	      __fd__.stype.dim.dim[0] =	size / __fd__.stype.tdp->size;	\
+	      __fd__.stype.dim.size = sizeof (__fd__.stype.dim.dim[0]);	\
 	      __fd__.stype.size = size;					\
 	    }								\
 	}								\

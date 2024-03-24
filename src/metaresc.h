@@ -588,12 +588,19 @@
 #define MR_ARRAY_SLICE0(TYPE, ARRAY) (__builtin_choose_expr (__builtin_types_compatible_p (TYPE, __typeof__ (ARRAY[0])), (TYPE[]){}, ARRAY[0]))
 #define MR_ARRAY_SLICE1(TYPE, ARRAY) (__builtin_choose_expr (__builtin_types_compatible_p (TYPE, __typeof__ (ARRAY[0])), (TYPE[]){}, ARRAY[0]))
 
-#define MR_ARRAY_DIMENSION(TYPE, ARRAY, SLICE) { .count = sizeof (ARRAY) / sizeof (SLICE), .is_last = __builtin_types_compatible_p (TYPE, __typeof__ (SLICE)), }
 #define MR_ARRAY_DIMENSIONS_(TYPE, A0, A1, A2, A3) {			\
-    MR_ARRAY_DIMENSION (TYPE, A0, A1),					\
-    MR_ARRAY_DIMENSION (TYPE, A1, A2),					\
-    MR_ARRAY_DIMENSION (TYPE, A2, A3),					\
-    MR_ARRAY_DIMENSION (TYPE, A3, *(TYPE*)0),				\
+    .dim = {								\
+      sizeof (A0) / sizeof (A1),					\
+      sizeof (A1) / sizeof (A2),					\
+      sizeof (A2) / sizeof (A3),					\
+      sizeof (A3) / sizeof (TYPE),					\
+    },									\
+    .size = sizeof (((mr_array_dimensions_t*)0)->dim) -			\
+    sizeof (((mr_array_dimensions_t*)0)->dim[0]) *			\
+    (__builtin_types_compatible_p (TYPE, __typeof__ (A1)) +		\
+     __builtin_types_compatible_p (TYPE, __typeof__ (A2)) +		\
+     __builtin_types_compatible_p (TYPE, __typeof__ (A3))		\
+     ),									\
   }
 
 #define MR_ARRAY_DIMENSIONS(TYPE, ARRAY) MR_ARRAY_DIMENSIONS_ (TYPE, ARRAY, ARRAY[0], MR_ARRAY_SLICE0 (TYPE, ARRAY)[0], MR_ARRAY_SLICE1 (TYPE, MR_ARRAY_SLICE0 (TYPE, ARRAY))[0])
@@ -607,7 +614,7 @@
 	.stype.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.stype.is_array = true,						\
-	.stype.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
+	.stype.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -965,8 +972,8 @@
 	{								\
 	  __fd__.stype.is_array = true;					\
 	  __fd__.stype.size = sizeof (S_PTR);				\
-	  __fd__.stype.dim.dim[0].count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
-	  __fd__.stype.dim.dim[0].is_last = true;			\
+	  __fd__.stype.dim.dim[0] = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
+	  __fd__.stype.dim.size = sizeof (((mr_array_dimensions_t*)0)->dim[0]);	\
 	}								\
       mr_detect_type (&__fd__);						\
       mr_save (__ptr__, &__fd__);					\

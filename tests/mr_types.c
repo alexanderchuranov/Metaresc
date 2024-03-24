@@ -529,17 +529,16 @@ START_TEST (dump_struct_types_detection) {
 
       int j;
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
-	for (j = 0; j < sizeof (mr_fdp->stype.dim.dim) / sizeof (mr_fdp->stype.dim.dim[0]); ++j)
-	  {
-	    ck_assert_msg (mr_fdp->stype.dim.dim[j].count == dst_fdp->stype.dim.dim[j].count,
-			   "dump_struct mismatched array_param.count[%d] (%d != %d) for field '%s'",
-			   j, (int)mr_fdp->stype.dim.dim[j].count, (int)dst_fdp->stype.dim.dim[j].count, mr_fdp->name.str);
-	    ck_assert_msg (mr_fdp->stype.dim.dim[j].is_last == dst_fdp->stype.dim.dim[j].is_last,
-			   "dump_struct mismatched array_param.dim.dim[%d].is_last for field '%s'",
-			   j, mr_fdp->name.str);
-	    if (mr_fdp->stype.dim.dim[j].is_last)
-	      break;
-	  }
+	{
+	  ck_assert_msg (mr_fdp->stype.dim.size == dst_fdp->stype.dim.size,
+			 "dump_struct mismatched array_param.size (%d != %d) for field '%s'",
+			 (int)mr_fdp->stype.dim.size, (int)dst_fdp->stype.dim.size, mr_fdp->name.str);
+
+	  for (j = 0; j < mr_fdp->stype.dim.size / sizeof (mr_fdp->stype.dim.dim[0]); ++j)
+	    ck_assert_msg (mr_fdp->stype.dim.dim[j] == dst_fdp->stype.dim.dim[j],
+			   "dump_struct mismatched dim[%d] (%d != %d) for field '%s'",
+			   j, (int)mr_fdp->stype.dim.dim[j], (int)dst_fdp->stype.dim.dim[j], mr_fdp->name.str);
+	}
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
     }
 

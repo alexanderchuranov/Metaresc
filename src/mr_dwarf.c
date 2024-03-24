@@ -767,11 +767,10 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 	  dimension = attr->dw_unsigned + 1;
 	}
       if (j < sizeof (fdp->stype.dim.dim) / sizeof (fdp->stype.dim.dim[0]))
-	fdp->stype.dim.dim[j++].count = dimension;
+	fdp->stype.dim.dim[j++] = dimension;
       else
-	fdp->stype.dim.dim[j - 1].count *= dimension;
+	fdp->stype.dim.dim[j - 1] *= dimension;
     }
-  fdp->stype.dim.dim[j - 1].is_last = true;
   fdp->stype.dim.size = j * sizeof (fdp->stype.dim.dim[0]);
 }
 
@@ -1214,14 +1213,10 @@ process_td (mr_ptr_t key, const void * context)
 	if (MR_TYPE_ARRAY == fdp->stype.mr_type)
 	  {
 	    int j;
-	    for (j = 0; j < sizeof (fdp->stype.dim.dim) / sizeof (fdp->stype.dim.dim[0]); ++j)
-	      {
-		fdp->stype.size *= fdp->stype.dim.dim[j].count;
-		if (fdp->stype.dim.dim[j].is_last)
-		  break;
-	      }
-
-	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) && fdp->stype.dim.dim[0].is_last)
+	    for (j = 0; j < fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]); ++j)
+	      fdp->stype.size *= fdp->stype.dim.dim[j];
+	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) &&
+		(fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0])))
 	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
 	  }
 
@@ -1264,7 +1259,6 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_td_param_t", "func_param");
   mr_type_void_fields ("mr_fd_t", "mr_type_base", "mr_size", "non_persistent");
   mr_type_void_fields ("mr_stype_t", "tdp", "mr_type_class", "is_array");
-  mr_type_void_fields ("mr_array_dimensions_t", "size");
   mr_type_void_fields ("mr_ed_t", "mr_type", "meta", "res", "res_type", "mr_size");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");

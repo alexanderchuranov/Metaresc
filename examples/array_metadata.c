@@ -34,12 +34,8 @@ int print_array_field_info (mr_td_t * td, char name[])
   printf("field declaration: %s %s", fdp->stype.type, fdp->name.str);
 
   int i;
-  for (i = 0; i < sizeof (fdp->stype.dim.dim) / sizeof (fdp->stype.dim.dim[0]); ++i)
-    {
-      printf("[%d]", (int)fdp->stype.dim.dim[i].count);
-      if (fdp->stype.dim.dim[i].is_last)
-	break;
-    }
+  for (i = 0; i < fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]); ++i)
+    printf("[%d]", (int)fdp->stype.dim.dim[i]);
 
   printf("\n");
 

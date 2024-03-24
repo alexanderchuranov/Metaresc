@@ -295,14 +295,9 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
 		)
 
-TYPEDEF_STRUCT (mr_array_dimension_t, ATTRIBUTES ( , "array dimension"),
-		BITFIELD (uint32_t, count, : sizeof (uint32_t) * __CHAR_BIT__ - 1, "number of elements in slice"),
-		BITFIELD (bool, is_last, : 1, "true for a last dimension"),
-		)
-
 TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
-		(mr_array_dimension_t, dim, [4], "up to 4 dimensions", { .offset = offsetof (mr_array_dimensions_t, size) }, "offset"),
-		(unsigned int, size, , "size of 'dim' array")
+		(uint32_t, dim, [4], "up to 4 dimensions", { .offset = offsetof (mr_array_dimensions_t, size) }, "offset"),
+		(uint32_t, size, , "size of 'dim' array")
 		)
 
 TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),

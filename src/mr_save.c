@@ -1122,7 +1122,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
-  int i, count = fd_.stype.dim.dim[0].count;
+  int i, count = fd_.stype.dim.dim[0];
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
@@ -1133,11 +1133,11 @@ mr_save_array (mr_save_data_t * mr_save_data)
   if (fd_.stype.size == 0)
     return (0);
 
-  if (fd_.stype.dim.dim[0].is_last)
+  if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux;
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
-      if (!mr_save_data->ptrs.ra[idx].fdp->non_persistent)
+      if (!mr_save_data->ptrs.ra[idx].non_persistent)
 	{
 	  mr_ptrdes_t src, dst;
 	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
@@ -1155,13 +1155,15 @@ mr_save_array (mr_save_data_t * mr_save_data)
 	}
     }
   else
-    for (i = 0; i < sizeof (fd_.stype.dim.dim) / sizeof (fd_.stype.dim.dim[0]) - 1; ++i)
-      {
-	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
-	fd_.stype.size *= fd_.stype.dim.dim[i].count;
-	if (fd_.stype.dim.dim[i].is_last)
-	  break;
-      }
+    {
+      fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
+      int dim_count = fd_.stype.dim.size / sizeof (fd_.stype.dim.dim[0]);
+      for (i = 0; i < dim_count; ++i)
+	{
+	  fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
+	  fd_.stype.size *= fd_.stype.dim.dim[i];
+	}
+    }
 
   for (i = 0; i < count; )
     {

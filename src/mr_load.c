@@ -627,26 +627,28 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   if (fd_.stype.size == 0)
     return (MR_FAILURE);
 
-  if (fd_.stype.dim.dim[0].is_last)
+  if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
     }
   else
-    for (i = 0; i < sizeof (fd_.stype.dim.dim) / sizeof (fd_.stype.dim.dim[0]) - 1; ++i)
-      {
-	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
-	fd_.stype.size *= fd_.stype.dim.dim[i].count;
-	if (fd_.stype.dim.dim[i].is_last)
-	  break;
-      }
+    {
+      fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
+      int dim_count = fd_.stype.dim.size / sizeof (fd_.stype.dim.dim[0]);
+      for (i = 0; i < dim_count; ++i)
+	{
+	  fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
+	  fd_.stype.size *= fd_.stype.dim.dim[i];
+	}
+    }
 
   /* loop on subnodes */
   i = 0;
   for (idx = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (idx >= 0); idx = ptrs->ra[idx].next)
     {
       /* check if array index is in range */
-      if (i >= fd_.stype.dim.dim[0].count)
+      if (i >= fd_.stype.dim.dim[0])
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (MR_FAILURE);
