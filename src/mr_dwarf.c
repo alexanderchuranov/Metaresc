@@ -766,12 +766,13 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
 	  dimension = attr->dw_unsigned + 1;
 	}
-      if (j < sizeof (fdp->param.array_param.dim.dim) / sizeof (fdp->param.array_param.dim.dim[0]))
-	fdp->param.array_param.dim.dim[j++].count = dimension;
+      if (j < sizeof (fdp->stype.dim.dim) / sizeof (fdp->stype.dim.dim[0]))
+	fdp->stype.dim.dim[j++].count = dimension;
       else
-	fdp->param.array_param.dim.dim[j - 1].count *= dimension;
+	fdp->stype.dim.dim[j - 1].count *= dimension;
     }
-  fdp->param.array_param.dim.dim[j - 1].is_last = true;
+  fdp->stype.dim.dim[j - 1].is_last = true;
+  fdp->stype.dim.size = j * sizeof (fdp->stype.dim.dim[0]);
 }
 
 static void
@@ -1213,14 +1214,14 @@ process_td (mr_ptr_t key, const void * context)
 	if (MR_TYPE_ARRAY == fdp->stype.mr_type)
 	  {
 	    int j;
-	    for (j = 0; j < sizeof (fdp->param.array_param.dim.dim) / sizeof (fdp->param.array_param.dim.dim[0]); ++j)
+	    for (j = 0; j < sizeof (fdp->stype.dim.dim) / sizeof (fdp->stype.dim.dim[0]); ++j)
 	      {
-		fdp->stype.size *= fdp->param.array_param.dim.dim[j].count;
-		if (fdp->param.array_param.dim.dim[j].is_last)
+		fdp->stype.size *= fdp->stype.dim.dim[j].count;
+		if (fdp->stype.dim.dim[j].is_last)
 		  break;
 	      }
 
-	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) && fdp->param.array_param.dim.dim[0].is_last)
+	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) && fdp->stype.dim.dim[0].is_last)
 	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
 	  }
 
@@ -1260,7 +1261,9 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "meta", "res", "res_type", "mr_size", "next");
   mr_type_void_fields ("mr_struct_param_t", "field_by_name");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
-  mr_type_void_fields ("mr_fd_t", "tdp", "mr_size", "non_persistent", "mr_type_class");
+  mr_type_void_fields ("mr_fd_t", "mr_size", "non_persistent");
+  mr_type_void_fields ("mr_stype_t", "tdp", "mr_type_class", "is_array");
+  mr_type_void_fields ("mr_array_dimensions_t", "size");
   mr_type_void_fields ("mr_ed_t", "mr_type", "meta", "res", "res_type", "mr_size");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");

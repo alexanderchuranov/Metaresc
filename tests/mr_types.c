@@ -429,7 +429,7 @@ START_TEST (check_types_detection) {
   tdp = mr_get_td_by_name ("struct_t");
   mr_fd_t * fdp = mr_get_fd_by_name (tdp, "f");
   ck_assert_msg (fdp->param.func_param.size == 6 * sizeof (fdp->param.func_param.args[0]), "Wrong number of arguments for 'f' of type struct_t.");
-  mr_structured_type_t ** args = fdp->param.func_param.args;
+  mr_stype_t ** args = fdp->param.func_param.args;
   ck_assert_msg (args[0]->mr_type == MR_TYPE_INT32, "Wrong type of return value for 'f' of type struct_t.");
   ck_assert_msg (args[1]->mr_type == MR_TYPE_POINTER, "Wrong type of first argument for 'f' of type struct_t.");
   ck_assert_msg (args[1]->mr_type_aux == MR_TYPE_INT32, "Wrong auxiliary type of first argument for 'f' of type struct_t.");
@@ -529,15 +529,15 @@ START_TEST (dump_struct_types_detection) {
 
       int j;
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
-	for (j = 0; j < sizeof (mr_fdp->param.array_param.dim.dim) / sizeof (mr_fdp->param.array_param.dim.dim[0]); ++j)
+	for (j = 0; j < sizeof (mr_fdp->stype.dim.dim) / sizeof (mr_fdp->stype.dim.dim[0]); ++j)
 	  {
-	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].count == dst_fdp->param.array_param.dim.dim[j].count,
+	    ck_assert_msg (mr_fdp->stype.dim.dim[j].count == dst_fdp->stype.dim.dim[j].count,
 			   "dump_struct mismatched array_param.count[%d] (%d != %d) for field '%s'",
-			   j, (int)mr_fdp->param.array_param.dim.dim[j].count, (int)dst_fdp->param.array_param.dim.dim[j].count, mr_fdp->name.str);
-	    ck_assert_msg (mr_fdp->param.array_param.dim.dim[j].is_last == dst_fdp->param.array_param.dim.dim[j].is_last,
+			   j, (int)mr_fdp->stype.dim.dim[j].count, (int)dst_fdp->stype.dim.dim[j].count, mr_fdp->name.str);
+	    ck_assert_msg (mr_fdp->stype.dim.dim[j].is_last == dst_fdp->stype.dim.dim[j].is_last,
 			   "dump_struct mismatched array_param.dim.dim[%d].is_last for field '%s'",
 			   j, mr_fdp->name.str);
-	    if (mr_fdp->param.array_param.dim.dim[j].is_last)
+	    if (mr_fdp->stype.dim.dim[j].is_last)
 	      break;
 	  }
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);

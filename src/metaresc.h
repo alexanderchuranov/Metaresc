@@ -607,7 +607,7 @@
 	.stype.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
 	.stype.is_array = true,						\
-	.param.array_param.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
+	.stype.dim.dim = MR_ARRAY_DIMENSIONS (TYPE, ((MR_TYPE_NAME*)0)->NAME), \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -677,7 +677,7 @@
 
 #define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
 #define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .stype.mr_type_aux = MR_TYPE_DETECT (TYPE))
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .args = (mr_structured_type_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, }, })
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .param = { .func_param = { .args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, }, })
 
 /*
   MR_OBJ_OF_TYPE returns an object of specified type. It could be as simple as (TYPE){},
@@ -686,7 +686,7 @@
 */
 #define MR_OBJ_OF_TYPE(TYPE) *__builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), "", (__typeof__ (TYPE) *)0)
 
-#define MR_FUNC_ARG(TYPE) (mr_structured_type_t[]){ {			\
+#define MR_FUNC_ARG(TYPE) (mr_stype_t[]){ {				\
       .type = #TYPE,							\
 	.size = sizeof (TYPE),						\
 	.mr_type = MR_TYPE_DETECT (TYPE),				\
@@ -758,7 +758,7 @@
     .size = sizeof (MR_TYPE_NAME),					\
     .param = {								\
       .func_param = {							\
-	.args = (mr_structured_type_t*[]){				\
+	.args = (mr_stype_t*[]){					\
 	  MR_FUNC_ARG (RET_TYPE)					\
 	  MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS))		\
 	  NULL, }, }, },						\
@@ -966,8 +966,8 @@
 	{								\
 	  __fd__.stype.is_array = true;					\
 	  __fd__.stype.size = sizeof (S_PTR);				\
-	  __fd__.param.array_param.dim.dim[0].count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
-	  __fd__.param.array_param.dim.dim[0].is_last = true;		\
+	  __fd__.stype.dim.dim[0].count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
+	  __fd__.stype.dim.dim[0].is_last = true;			\
 	}								\
       mr_detect_type (&__fd__);						\
       mr_save (__ptr__, &__fd__);					\

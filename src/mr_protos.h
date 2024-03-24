@@ -295,6 +295,30 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
 		)
 
+TYPEDEF_STRUCT (mr_array_dimension_t, ATTRIBUTES ( , "array dimension"),
+		BITFIELD (uint32_t, count, : sizeof (uint32_t) * __CHAR_BIT__ - 1, "number of elements in slice"),
+		BITFIELD (bool, is_last, : 1, "true for a last dimension"),
+		)
+
+TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
+		(mr_array_dimension_t, dim, [4], "up to 4 dimensions", { .offset = offsetof (mr_array_dimensions_t, size) }, "offset"),
+		(unsigned int, size, , "size of 'dim' array")
+		)
+
+TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
+		(struct mr_td_t *, tdp, , "type descriptor"),
+		(char *, type, , "stringified type name"),
+		(mr_type_t, mr_type, , "Metaresc type"),
+		(mr_type_t, mr_type_aux, , "Extra mr_type for pointers, arrays and bit fields"),
+		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
+		BITFIELD (bool, is_array, : 1, "true if field is an array"),
+		(mr_size_t, size, , "size of type"),
+		ANON_UNION (),
+		VOID (uint8_t, default_serialization, , "default serialization"),
+		(mr_array_dimensions_t, dim, , "array dimensions"),
+		END_ANON_UNION ("mr_type", { (mr_ud_override_t[]){{ MR_TYPE_ARRAY, "dim" }} }, "mr_ud_override_t"),
+		)
+
 #define MR_UNION_PARAM_UDO					\
   (mr_ud_override_t[]) {					\
     { MR_TYPE_UNION, "union_param" },				\
@@ -313,21 +337,11 @@ TYPEDEF_STRUCT (mr_pointer_param_t, ATTRIBUTES ( , "pointer parameters"),
 		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
 		)
 
-TYPEDEF_STRUCT (mr_array_dimension_t, ATTRIBUTES ( , "array dimension"),
-		BITFIELD (uint32_t, count, : sizeof (uint32_t) * __CHAR_BIT__ - 1, "number of elements in slice"),
-		BITFIELD (bool, is_last, : 1, "true for a last dimension"),
-		)
-
-TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
-		(mr_array_dimension_t, dim, [4]),
-		)
-
 TYPEDEF_STRUCT (mr_array_param_t, ATTRIBUTES ( , "array parameters"),
 		ANON_UNION (),
 		VOID (void *, union_default_serialization),
 		(mr_union_param_t, union_param, , "IC for union discriminator overrides"),
 		END_ANON_UNION ("mr_type_aux", { MR_UNION_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_UNION_PARAM_UDO)),
-		(mr_array_dimensions_t, dim, , "array dimensions"),
 		)
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
@@ -339,19 +353,8 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(bool, initialized, , "flag that width and shift are initialized"),
 		)
 
-TYPEDEF_STRUCT (mr_structured_type_t, ATTRIBUTES ( , "structured type"),
-		(struct mr_td_t *, tdp, , "type descriptor"),
-		(char *, type, , "stringified type name"),
-		(size_t, size, , "type size"),
-		(mr_array_dimensions_t, dim, , "array dimensions"),
-		(mr_type_t, mr_type, , "Metaresc type"),
-		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
-		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
-		BITFIELD (bool, is_array, : 1, "true if field is an array"),
-		)
-
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
-		(mr_structured_type_t **, args, , "function arguments saved as resizable array of pointers on structured types",
+		(mr_stype_t **, args, , "function arguments saved as resizable array of pointers on structured types",
 		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
 		(size_t, size, , "size of args array"),
 		)
@@ -380,16 +383,6 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
       { MR_TYPE_ANON_UNION, "union_param" },			\
       { MR_TYPE_NAMED_ANON_UNION, "union_param" },		\
       }
-
-TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
-		(struct mr_td_t *, tdp, , "type descriptor"),
-		(char *, type, , "stringified type name"),
-		(mr_size_t, size, , "size of type"),
-		(mr_type_t, mr_type, , "Metaresc type"),
-		(mr_type_t, mr_type_aux, , "Extra mr_type for pointers, arrays and bit fields"),
-		(mr_type_class_t, mr_type_class, , "required to distinguish records and unions from scalar types"),
-		BITFIELD (bool, is_array, : 1, "true if field is an array"),
-		)
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_stype_t, stype, , "structured type"),

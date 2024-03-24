@@ -627,17 +627,17 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   if (fd_.stype.size == 0)
     return (MR_FAILURE);
 
-  if (fd_.param.array_param.dim.dim[0].is_last)
+  if (fd_.stype.dim.dim[0].is_last)
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
     }
   else
-    for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
+    for (i = 0; i < sizeof (fd_.stype.dim.dim) / sizeof (fd_.stype.dim.dim[0]) - 1; ++i)
       {
-	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
-	fd_.stype.size *= fd_.param.array_param.dim.dim[i].count;
-	if (fd_.param.array_param.dim.dim[i].is_last)
+	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
+	fd_.stype.size *= fd_.stype.dim.dim[i].count;
+	if (fd_.stype.dim.dim[i].is_last)
 	  break;
       }
 
@@ -646,7 +646,7 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   for (idx = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (idx >= 0); idx = ptrs->ra[idx].next)
     {
       /* check if array index is in range */
-      if (i >= fd_.param.array_param.dim.dim[0].count)
+      if (i >= fd_.stype.dim.dim[0].count)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (MR_FAILURE);

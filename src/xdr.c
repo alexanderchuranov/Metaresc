@@ -880,7 +880,7 @@ static mr_status_t
 xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
   if (!ptrs->ra[idx].non_persistent)
-    if (ptrs->ra[idx].fdp->param.array_param.dim.dim[0].is_last)
+    if (ptrs->ra[idx].fdp->stype.dim.dim[0].is_last)
       if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
@@ -898,7 +898,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
-  int i, count = fd_.param.array_param.dim.dim[0].count;
+  int i, count = fd_.stype.dim.dim[0].count;
 
   fd_.non_persistent = true;
   fd_.stype.size = mr_type_size (fd_.stype.mr_type_aux);
@@ -907,13 +907,13 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   if (fd_.stype.size <= 0)
     return (MR_FAILURE);
 
-  if (fd_.param.array_param.dim.dim[0].is_last)
+  if (fd_.stype.dim.dim[0].is_last)
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux;
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
 
       if (ptrs->ra[idx].fdp->non_persistent)
-	count = fd_.param.array_param.dim.dim[0].count;
+	count = fd_.stype.dim.dim[0].count;
       else
 	{
 	  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
@@ -926,11 +926,11 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	}
     }
   else
-    for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
+    for (i = 0; i < sizeof (fd_.stype.dim.dim) / sizeof (fd_.stype.dim.dim[0]) - 1; ++i)
       {
-	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
-	fd_.stype.size *= fd_.param.array_param.dim.dim[i].count;
-	if (fd_.param.array_param.dim.dim[i].is_last)
+	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
+	fd_.stype.size *= fd_.stype.dim.dim[i].count;
+	if (fd_.stype.dim.dim[i].is_last)
 	  break;
       }
 

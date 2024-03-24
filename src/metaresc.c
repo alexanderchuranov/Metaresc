@@ -1175,7 +1175,7 @@ mr_type_is_a_pointer (char * type)
 }
 
 static bool
-mr_type_is_an_array (mr_structured_type_t * stype, char * type)
+mr_type_is_an_array (mr_stype_t * stype, char * type)
 {
   if ((NULL == type) || (0 == type[0]))
     return (false);
@@ -1272,7 +1272,7 @@ mr_normalize_type (char * type)
 }
 
 static void
-mr_detect_structured_type (mr_structured_type_t * stype)
+mr_detect_structured_type (mr_stype_t * stype)
 {
 #define MR_TYPES_SKIP_RESOLUTION (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_FUNC))
   if (((MR_TYPES_SKIP_RESOLUTION >> stype->mr_type) & 1) || (NULL == stype->type))
@@ -1357,6 +1357,15 @@ mr_detect_structured_type (mr_structured_type_t * stype)
       stype->mr_type_aux = stype->mr_type;
       stype->mr_type = MR_TYPE_ARRAY;
     }
+
+  if (MR_TYPE_ARRAY == stype->mr_type)
+    {
+      int i;
+      for (i = 0; i < sizeof (stype->dim.dim) / sizeof (stype->dim.dim[0]) - 1; ++i)
+	if (stype->dim.dim[i].is_last)
+	  break;
+      stype->dim.size = (i + 1) * sizeof (stype->dim.dim[0]);
+    }
 }
 
 static void
@@ -1365,26 +1374,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
   if (NULL == fdp)
     return;
 
-  mr_structured_type_t stype;
-  memset (&stype, 0, sizeof (stype));
-
-  stype.type = fdp->stype.type;
-  stype.mr_type = fdp->stype.mr_type;
-  stype.mr_type_aux = fdp->stype.mr_type_aux;
-  stype.mr_type_class = fdp->stype.mr_type_class;
-  stype.is_array = fdp->stype.is_array;
-  if (stype.is_array)
-    stype.dim = fdp->param.array_param.dim;
-
-  mr_detect_structured_type (&stype);
-
-  fdp->stype.type = stype.type;
-  fdp->stype.mr_type = stype.mr_type;
-  fdp->stype.mr_type_aux = stype.mr_type_aux;
-  fdp->stype.tdp = stype.tdp;
-
-  if (stype.is_array)
-    fdp->param.array_param.dim = stype.dim;
+  mr_detect_structured_type (&fdp->stype);
 }
 
 /**
