@@ -35,7 +35,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
       if (__fd__.stype.tdp)						\
 	{								\
 	  if (size < 0)							\
-	    __fd__.size = __fd__.stype.tdp->size;			\
+	    __fd__.stype.size = __fd__.stype.tdp->size;			\
 	  else								\
 	    {								\
 	      __fd__.mr_type_aux = __fd__.mr_type;			\
@@ -43,7 +43,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
 	      __fd__.param.array_param.dim.dim[0].count =		\
 		size / __fd__.stype.tdp->size;				\
 	      __fd__.param.array_param.dim.dim[0].is_last = true;	\
-	      __fd__.size = size;					\
+	      __fd__.stype.size = size;					\
 	    }								\
 	}								\
       mr_save (__ptr__, &__fd__);					\

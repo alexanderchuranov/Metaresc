@@ -384,6 +384,7 @@ TYPEDEF_UNION (mr_fd_param_t, ATTRIBUTES ( , "optional parameters for different 
 TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		(struct mr_td_t *, tdp, , "type descriptor"),
 		(char *, type, , "stringified type name"),
+		(mr_size_t, size, , "size of type"),
 		)
 
 TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
@@ -396,7 +397,6 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
 		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
 		(mr_offset_t, offset, , "offset in structure"),
-		(mr_size_t, size, , "size of field"),
 		(mr_fd_param_t, param, , "mr_type", { MR_FIELD_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_UDO)),
 		(char *, meta, , "field meta info"),
 		/*

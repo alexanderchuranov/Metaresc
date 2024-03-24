@@ -148,7 +148,7 @@ mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
       CASE_SET_VALUE_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
       
     case MR_TYPE_ENUM:
-      switch (ptrdes->fdp->size)
+      switch (ptrdes->fdp->stype.size)
 	{
 #define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
 	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
@@ -159,7 +159,7 @@ mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
 	default:
 	  {
 	    __typeof__ (ptrdes->load_params.mr_value.vt_int) vt_int = ptrdes->load_params.mr_value.vt_int;
-	    memcpy (ptrdes->data.ptr, &vt_int, MR_MIN (ptrdes->fdp->size, sizeof (vt_int)));
+	    memcpy (ptrdes->data.ptr, &vt_int, MR_MIN (ptrdes->fdp->stype.size, sizeof (vt_int)));
 	    break;
 	  }
 	}
@@ -469,7 +469,7 @@ mr_get_char_array (char * str, void * dst)
 {
   mr_load_node_context_t * load_node_context = dst;
   mr_ptrdes_t * ptrdes = &load_node_context->ptrs->ra[load_node_context->idx];
-  int max_size = ptrdes->fdp->size;
+  int max_size = ptrdes->fdp->stype.size;
   mr_status_t status = MR_SUCCESS;
 
   if (NULL == str)
@@ -525,7 +525,7 @@ mr_load_char_array (int idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_status_t status = MR_SUCCESS;
 
-  if (ptrdes->fdp->size > 0)
+  if (ptrdes->fdp->stype.size > 0)
     *(char*)ptrdes->data.ptr = 0;
   
   switch (ptrdes->load_params.mr_value.value_type)
@@ -621,10 +621,10 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.offset = 0;
-  fd_.size = mr_type_size (fd_.mr_type_aux);
-  if (fd_.size == 0)
-    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
-  if (fd_.size == 0)
+  fd_.stype.size = mr_type_size (fd_.mr_type_aux);
+  if (fd_.stype.size == 0)
+    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
+  if (fd_.stype.size == 0)
     return (MR_FAILURE);
 
   if (fd_.param.array_param.dim.dim[0].is_last)
@@ -636,7 +636,7 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
     for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
       {
 	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
-	fd_.size *= fd_.param.array_param.dim.dim[i].count;
+	fd_.stype.size *= fd_.param.array_param.dim.dim[i].count;
 	if (fd_.param.array_param.dim.dim[i].is_last)
 	  break;
       }
@@ -652,7 +652,7 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
 	  return (MR_FAILURE);
 	}
       /* load recursively */
-      status = mr_load (&data[i++ * fd_.size], &fd_, idx, ptrs);
+      status = mr_load (&data[i++ * fd_.stype.size], &fd_, idx, ptrs);
     }
   return (status);
 }
@@ -720,14 +720,14 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   fd_.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
   fd_.stype.tdp = ptrs->ra[idx].tdp;
-  fd_.size = mr_type_size (fd_.mr_type);
-  if (fd_.size == 0)
-    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
-  if (fd_.size == 0)
+  fd_.stype.size = mr_type_size (fd_.mr_type);
+  if (fd_.stype.size == 0)
+    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
+  if (fd_.stype.size == 0)
     return (MR_FAILURE);
 
   /* allocate memory */
-  *data = MR_CALLOC (count, fd_.size);
+  *data = MR_CALLOC (count, fd_.stype.size);
   if (NULL == *data)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -737,9 +737,9 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   /* load recursively */
   count = 0;
   for (node = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (node >= 0); node = ptrs->ra[node].next)
-    status = mr_load (*data + count++ * fd_.size, &fd_, node, ptrs);
+    status = mr_load (*data + count++ * fd_.stype.size, &fd_, node, ptrs);
 
-  ptrs->ra[idx].MR_SIZE = count * fd_.size;
+  ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
   mr_pointer_set_size (idx, ptrs);
   
   return (status);
@@ -857,7 +857,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
   ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fdp = fdp;
   ptrs->ra[idx].non_persistent = fdp->non_persistent;
-  ptrs->ra[idx].mr_size = fdp->size;
+  ptrs->ra[idx].mr_size = fdp->stype.size;
   ptrs->ra[idx].mr_type = fdp->mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->mr_type_aux;
   ptrs->ra[idx].tdp = fdp->stype.tdp;

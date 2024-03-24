@@ -562,7 +562,7 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int parent = ptrs->ra[idx].parent;
   bool is_a_dynamic_string = ((parent >= 0) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  typeof (ptrdes->fdp->size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->size;
+  typeof (ptrdes->fdp->stype.size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->stype.size;
 
   if (XDR_ENCODE == xdrs->x_op)
     {
@@ -901,10 +901,10 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int i, count = fd_.param.array_param.dim.dim[0].count;
 
   fd_.non_persistent = true;
-  fd_.size = mr_type_size (fd_.mr_type_aux);
-  if (fd_.size == 0)
-    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
-  if (fd_.size <= 0)
+  fd_.stype.size = mr_type_size (fd_.mr_type_aux);
+  if (fd_.stype.size == 0)
+    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
+  if (fd_.stype.size <= 0)
     return (MR_FAILURE);
 
   if (fd_.param.array_param.dim.dim[0].is_last)
@@ -919,8 +919,8 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	    return (MR_FAILURE);
 
-	  count = ptrs->ra[idx].MR_SIZE / fd_.size;
-	  ptrs->ra[idx].MR_SIZE = count * fd_.size;
+	  count = ptrs->ra[idx].MR_SIZE / fd_.stype.size;
+	  ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
 
 	  mr_pointer_set_size (idx, ptrs);
 	}
@@ -929,13 +929,13 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
     for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
       {
 	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
-	fd_.size *= fd_.param.array_param.dim.dim[i].count;
+	fd_.stype.size *= fd_.param.array_param.dim.dim[i].count;
 	if (fd_.param.array_param.dim.dim[i].is_last)
 	  break;
       }
 
   for (i = 0; i < count; ++i)
-    if (MR_SUCCESS != xdr_load_inner (&data[i * fd_.size], &fd_, xdrs, ptrs, idx))
+    if (MR_SUCCESS != xdr_load_inner (&data[i * fd_.stype.size], &fd_, xdrs, ptrs, idx))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -992,9 +992,9 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   fd_.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
   fd_.stype.tdp = ptrs->ra[idx].tdp;
-  fd_.size = mr_type_size (fd_.mr_type);
-  if (fd_.size == 0)
-    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
+  fd_.stype.size = mr_type_size (fd_.mr_type);
+  if (fd_.stype.size == 0)
+    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   
   *data = NULL;
 
@@ -1016,10 +1016,10 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
       if (!ptrs->ra[idx].flags.is_opaque_data)
 	{
-	  if (fd_.size > 0) /* types with zero size used for dynamics strings allocation */
+	  if (fd_.stype.size > 0) /* types with zero size used for dynamics strings allocation */
 	    {
-	      count = ptrs->ra[idx].MR_SIZE / fd_.size;
-	      ptrs->ra[idx].MR_SIZE = count * fd_.size;
+	      count = ptrs->ra[idx].MR_SIZE / fd_.stype.size;
+	      ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
 	    }
 	  else
 	    {
@@ -1046,7 +1046,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 	{
 	  int i;
 	  for (i = 0; i < count; ++i)
-	    if (MR_SUCCESS != xdr_load_inner (*data + i * fd_.size, &fd_, xdrs, ptrs, idx))
+	    if (MR_SUCCESS != xdr_load_inner (*data + i * fd_.stype.size, &fd_, xdrs, ptrs, idx))
 	      return (MR_FAILURE);
 	}
     }

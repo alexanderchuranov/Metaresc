@@ -578,7 +578,7 @@
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
 	.stype.type = #TYPE,						\
-	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
+	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE,						\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
@@ -602,7 +602,7 @@
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
 	.stype.type = #TYPE,						\
-	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
+	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
@@ -616,7 +616,7 @@
   (mr_fd_t[]){ {							\
       .name = { .str = (char []) { #NAME }, },				\
 	.stype.type = #TYPE,						\
-	.size = sizeof (TYPE),						\
+	.stype.size = sizeof (TYPE),					\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
 	.mr_type = MR_TYPE_VOID,					\
 	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
@@ -630,7 +630,7 @@
   (mr_fd_t[]){ {							\
       .name = { .str = #NAME, },					\
 	.stype.type = #TYPE,							\
-	.size = sizeof (TYPE),						\
+	.stype.size = sizeof (TYPE),					\
 	.mr_type = MR_TYPE_BITFIELD,					\
 	.mr_type_aux = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
@@ -653,7 +653,7 @@
 	 #MR_TYPE_NAME "*",						\
 	 #TYPE								\
 	 ),								\
-	.size = sizeof (((MR_TYPE_NAME*)0)->NAME),			\
+	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
@@ -961,11 +961,11 @@
       __fd__.non_persistent = true;					\
       __fd__.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));		\
       __fd__.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*(S_PTR)));	\
-      __fd__.size = sizeof (*(S_PTR));					\
+      __fd__.stype.size = sizeof (*(S_PTR));				\
       if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)), __typeof__ (S_PTR))) \
 	{								\
 	  __fd__.is_array = true;					\
-	  __fd__.size = sizeof (S_PTR);					\
+	  __fd__.stype.size = sizeof (S_PTR);				\
 	  __fd__.param.array_param.dim.dim[0].count = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
 	  __fd__.param.array_param.dim.dim[0].is_last = true;		\
 	}								\
@@ -1054,7 +1054,7 @@
 	      .name = { .str = NULL, .hash_value = 0, },		\
 	      .non_persistent = true,					\
 	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
-	      .size = sizeof (*(D_PTR)),				\
+	      .stype.size = sizeof (*(D_PTR)),				\
 	    };								\
 	  mr_detect_type (&__fd__);					\
 	  __status__ = mr_xdr_load ((D_PTR), &__fd__, __xdrs__);	\
@@ -1131,7 +1131,7 @@
 	  .name = { .str = NULL, .hash_value = 0, },			\
 	  .non_persistent = true,					\
 	  .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),		\
-	  .size = sizeof (*(D_PTR)),					\
+	  .stype.size = sizeof (*(D_PTR)),				\
 	};								\
       xmlNodePtr __xml__ = (XML);					\
       if (NULL == __xml__)						\
@@ -1215,7 +1215,7 @@
 	      .stype.type = MR_TYPE_NAME,				\
 	      .name = { .str = NULL, .hash_value = 0, },		\
 	      .mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
-	      .size = sizeof (*(D_PTR)),				\
+	      .stype.size = sizeof (*(D_PTR)),				\
 	    };								\
 	  mr_detect_type (&_fd_);					\
 	  _status_ = mr_load ((D_PTR), &_fd_, 0, &_ptrs_);		\

@@ -59,7 +59,7 @@ mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
   ptr_fdp->mr_type = ptr_fdp->mr_type_aux;
   ptr_fdp->mr_type_aux = ptr_fdp->stype.tdp ? ptr_fdp->stype.tdp->mr_type : MR_TYPE_VOID;
   ptr_fdp->mr_type_class = MR_POINTER_TYPE_CLASS;
-  ptr_fdp->size = sizeof (void*);
+  ptr_fdp->stype.size = sizeof (void*);
   ptr_fdp->offset = 0;
   ptr_fdp->unnamed = true;
   *fdp = ptr_fdp;
@@ -914,7 +914,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   ptrdes->name = parent_fdp->name.str;
   ptrdes->unnamed = parent_fdp->unnamed;
   ptrdes->non_persistent = parent_fdp->non_persistent;
-  ptrdes->MR_SIZE = parent_fdp->size;
+  ptrdes->MR_SIZE = parent_fdp->stype.size;
   
   ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
 }
@@ -943,7 +943,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   ra[idx].name = fdp->name.str;
   ra[idx].unnamed = fdp->unnamed;
   ra[idx].non_persistent = fdp->non_persistent;
-  ra[idx].MR_SIZE = fdp->size * count;
+  ra[idx].MR_SIZE = fdp->stype.size * count;
 
   ra[idx].save_params.next.typed = -1;
   ra[idx].save_params.next.untyped = -1;
@@ -1029,7 +1029,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
   fd_.non_persistent = true;
   fd_.mr_type = MR_TYPE_CHAR_ARRAY;
-  fd_.size = sizeof (char);
+  fd_.stype.size = sizeof (char);
   fd_.stype.type = "char";
   return (mr_save_inner (str, &fd_, 1, mr_save_data, idx));
 }
@@ -1127,10 +1127,10 @@ mr_save_array (mr_save_data_t * mr_save_data)
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.offset = 0;
-  fd_.size = mr_type_size (fd_.mr_type_aux);
-  if (fd_.size == 0)
-    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
-  if (fd_.size == 0)
+  fd_.stype.size = mr_type_size (fd_.mr_type_aux);
+  if (fd_.stype.size == 0)
+    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
+  if (fd_.stype.size == 0)
     return (0);
 
   if (fd_.param.array_param.dim.dim[0].is_last)
@@ -1147,25 +1147,25 @@ mr_save_array (mr_save_data_t * mr_save_data)
 	      dst.data.ptr = &size;
 	      dst.mr_type = MR_TYPE_DETECT (typeof (size));
 	      mr_assign_int (&dst, &src);
-	      int count_ = size / fd_.size;
+	      int count_ = size / fd_.stype.size;
 	      if (count > count_)
 		count = count_;
 	    }
-	  mr_save_data->ptrs.ra[idx].MR_SIZE = count * fd_.size;
+	  mr_save_data->ptrs.ra[idx].MR_SIZE = count * fd_.stype.size;
 	}
     }
   else
     for (i = 0; i < sizeof (fd_.param.array_param.dim.dim) / sizeof (fd_.param.array_param.dim.dim[0]) - 1; ++i)
       {
 	fd_.param.array_param.dim.dim[i] = fd_.param.array_param.dim.dim[i + 1];
-	fd_.size *= fd_.param.array_param.dim.dim[i].count;
+	fd_.stype.size *= fd_.param.array_param.dim.dim[i].count;
 	if (fd_.param.array_param.dim.dim[i].is_last)
 	  break;
       }
 
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
+      int nodes_added = mr_save_inner (data + i * fd_.stype.size, &fd_, count - i, mr_save_data, idx);
       if (nodes_added <= 0)
 	return (nodes_added);
       i += nodes_added;
@@ -1196,16 +1196,16 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
-  fd_.size = mr_type_size (fd_.mr_type);
-  if (fd_.size == 0)
-    fd_.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
-  if (fd_.size == 0)
+  fd_.stype.size = mr_type_size (fd_.mr_type);
+  if (fd_.stype.size == 0)
+    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
+  if (fd_.stype.size == 0)
     return (1);
 
-  count = ptrdes->MR_SIZE / fd_.size;
+  count = ptrdes->MR_SIZE / fd_.stype.size;
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (*data + i * fd_.size, &fd_, count - i, mr_save_data, idx);
+      int nodes_added = mr_save_inner (*data + i * fd_.stype.size, &fd_, count - i, mr_save_data, idx);
       if (nodes_added <= 0)
 	return (nodes_added);
       i += nodes_added;

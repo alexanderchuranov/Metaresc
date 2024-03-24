@@ -133,7 +133,7 @@ static mr_status_t
 yaml_save_char_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  typeof (ptrdes->fdp->size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->size;
+  typeof (ptrdes->fdp->stype.size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->stype.size;
   char buffer[size + 1];
   strncpy (buffer, ptrdes->data.ptr, size);
   buffer[size] = 0;

@@ -182,7 +182,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   fdp->stype.type = type;
   fdp->name.str = name;
   fdp->offset = offset;
-  fdp->size = mr_type_size (mr_type);
+  fdp->stype.size = mr_type_size (mr_type);
 
   struct_param->fields_size += sizeof (struct_param->fields[0]);
   return (fdp);
@@ -714,7 +714,7 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
 	return (diff);
     }
 
-  diff = ((x_fdp->size > y_fdp->size) - (x_fdp->size < y_fdp->size));
+  diff = ((x_fdp->stype.size > y_fdp->stype.size) - (x_fdp->stype.size < y_fdp->stype.size));
   if (diff)
     return (diff);
 
@@ -822,8 +822,8 @@ mr_anon_unions_extract (mr_td_t * tdp)
 		if (fields[j]->offset != 0) /* MR_VOID and MR_END_ANON_UNION has zero offset */
 		  fdp->offset = fields[j]->offset;
 		fields[j]->offset = 0; /* reset offset to zero */
-		if (tdp_->size < fields[j]->size)
-		  tdp_->size = fields[j]->size; /* find union max size member */
+		if (tdp_->size < fields[j]->stype.size)
+		  tdp_->size = fields[j]->stype.size; /* find union max size member */
 	      }
 
 	    last = tdp->param.struct_param.fields[count];
@@ -841,7 +841,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    tdp->param.struct_param.fields_size -= fields_count * sizeof (tdp->param.struct_param.fields[0]);
 	    count -= fields_count;
 	    fdp->stype.type = tdp_->type.str;
-	    fdp->size = tdp_->size;
+	    fdp->stype.size = tdp_->size;
 	    
 	    /* set name of anonymous union to temporary type name */
 	    if (NULL == fdp->name.str)

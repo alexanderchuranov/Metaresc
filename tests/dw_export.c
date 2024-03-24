@@ -75,9 +75,9 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->mr_type_aux, dw_fdp->mr_type_aux);
       
       if (mr_fdp->mr_type != MR_TYPE_VOID)
-	ck_assert_msg (mr_fdp->size == dw_fdp->size,
+	ck_assert_msg (mr_fdp->stype.size == dw_fdp->stype.size,
 		       "DWARF descriptor for type '%s' mismatched builtin: field '%s' size %d != %d",
-		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->size, (int)dw_fdp->size);
+		       mr_td->type.str, mr_fdp->name.str, (int)mr_fdp->stype.size, (int)dw_fdp->stype.size);
 
       if (mr_fdp->mr_type != MR_TYPE_VOID)
 	ck_assert_msg (mr_fdp->offset == dw_fdp->offset,

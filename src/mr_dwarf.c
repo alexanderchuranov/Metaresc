@@ -687,7 +687,7 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (attr != NULL)
     {
       assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
-      fdp->size = attr->dw_unsigned;
+      fdp->stype.size = attr->dw_unsigned;
     }
 }
 
@@ -733,7 +733,7 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   assert (find != NULL);
 
   mr_type_sign_t * found_sign = find->ptr;
-  fdp->size = mr_type_sign.size;
+  fdp->stype.size = mr_type_sign.size;
 
   if ((fdp->mr_type_class == (int)MR_TYPE_POINTER) && (found_sign->mr_type == MR_TYPE_CHAR))
     fdp->mr_type_class = (int)MR_TYPE_STRING;
@@ -816,7 +816,7 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 		assert (fdp->stype.type != NULL);
 		memcpy (&fdp->stype.type[length], POINTER_SUFFIX, sizeof (POINTER_SUFFIX));
 	      }
-	    fdp->size = sizeof (void*);
+	    fdp->stype.size = sizeof (void*);
 	    break;
 	  }
 
@@ -916,7 +916,7 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
   if (attr != NULL)
     {
       assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
-      fdp->size = attr->dw_unsigned;
+      fdp->stype.size = attr->dw_unsigned;
     }
   
   attr = die_attribute (mr_die, _DW_AT_data_member_location);
@@ -945,7 +945,7 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
       if (attr != NULL)
 	{
 	  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);	  
-	  fdp->param.bitfield_param.shift = fdp->size * __CHAR_BIT__ - fdp->param.bitfield_param.width - attr->dw_unsigned;
+	  fdp->param.bitfield_param.shift = fdp->stype.size * __CHAR_BIT__ - fdp->param.bitfield_param.width - attr->dw_unsigned;
 	  fdp->offset += fdp->param.bitfield_param.shift / __CHAR_BIT__;
 	  fdp->param.bitfield_param.shift %= __CHAR_BIT__;
 	}
@@ -1215,7 +1215,7 @@ process_td (mr_ptr_t key, const void * context)
 	    int j;
 	    for (j = 0; j < sizeof (fdp->param.array_param.dim.dim) / sizeof (fdp->param.array_param.dim.dim[0]); ++j)
 	      {
-		fdp->size *= fdp->param.array_param.dim.dim[j].count;
+		fdp->stype.size *= fdp->param.array_param.dim.dim[j].count;
 		if (fdp->param.array_param.dim.dim[j].is_last)
 		  break;
 	      }

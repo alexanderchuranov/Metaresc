@@ -18,7 +18,7 @@
       __fd__.stype.tdp = TDP;						\
       __fd__.name = __fd__.stype.tdp->type;				\
       __fd__.stype.type = __fd__.stype.tdp->type.str;			\
-      __fd__.size = __fd__.stype.tdp->size;				\
+      __fd__.stype.size = __fd__.stype.tdp->size;			\
       __fd__.mr_type = __fd__.stype.tdp->mr_type;			\
       mr_save (__ptr__, &__fd__);					\
     })
