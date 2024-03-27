@@ -969,22 +969,21 @@ static int
 mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
 {
   intptr_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
-  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   if (idx < 0)
     return (-1); /* memory allocation error occured */
 
-  ra[idx].data.ptr = data;
+  mr_save_data->ptrs.ra[idx].data.ptr = data;
 
-  ra[idx].fdp = fdp;
-  ra[idx].mr_type = fdp->stype.mr_type;
-  ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  ra[idx].name = fdp->name.str;
-  ra[idx].unnamed = fdp->unnamed;
-  ra[idx].non_persistent = fdp->non_persistent;
-  ra[idx].MR_SIZE = fdp->stype.size * count;
+  mr_save_data->ptrs.ra[idx].fdp = fdp;
+  mr_save_data->ptrs.ra[idx].mr_type = fdp->stype.mr_type;
+  mr_save_data->ptrs.ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
+  mr_save_data->ptrs.ra[idx].name = fdp->name.str;
+  mr_save_data->ptrs.ra[idx].unnamed = fdp->unnamed;
+  mr_save_data->ptrs.ra[idx].non_persistent = fdp->non_persistent;
+  mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
-  ra[idx].save_params.next.typed = -1;
-  ra[idx].save_params.next.untyped = -1;
+  mr_save_data->ptrs.ra[idx].save_params.next.typed = -1;
+  mr_save_data->ptrs.ra[idx].save_params.next.untyped = -1;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
@@ -1007,19 +1006,20 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     return (-1);
   if (search_result->intptr != idx)
     {
-      if (ra[idx].MR_SIZE > ra[search_result->intptr].MR_SIZE)
+      if (mr_save_data->ptrs.ra[idx].MR_SIZE > mr_save_data->ptrs.ra[search_result->intptr].MR_SIZE)
 	{
-	  ra[idx].save_params.next.untyped = search_result->intptr;
+	  mr_save_data->ptrs.ra[idx].save_params.next.untyped = search_result->intptr;
 	  search_result->intptr = idx;
 	}
       else
 	{
-	  ra[idx].save_params.next.untyped = ra[search_result->intptr].save_params.next.untyped;
-	  ra[search_result->intptr].save_params.next.untyped = idx;
+	  mr_save_data->ptrs.ra[idx].save_params.next.untyped =
+	    mr_save_data->ptrs.ra[search_result->intptr].save_params.next.untyped;
+	  mr_save_data->ptrs.ra[search_result->intptr].save_params.next.untyped = idx;
 	}
     }
 
-  mr_add_child (parent, idx, ra);
+  mr_add_child (parent, idx, mr_save_data->ptrs.ra);
 
   /* route saving handler */
   mr_save_handler_t save_handler = NULL;
@@ -1031,7 +1031,17 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
     nodes_added = save_handler (mr_save_data);
 
   if (fdp->non_persistent) /* replace non persistent field descriptor on persistent */
-    mr_save_data->ptrs.ra[idx].fdp = fdp->stype.tdp ? &fdp->stype.tdp->mr_ptr_fd : NULL;
+    {
+      int parent;
+      for (parent = mr_save_data->ptrs.ra[idx].parent; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
+	if (mr_save_data->ptrs.ra[parent].fdp)
+	  if (!mr_save_data->ptrs.ra[parent].fdp->non_persistent)
+	    break;
+      if (parent >= 0)
+	mr_save_data->ptrs.ra[idx].fdp = mr_save_data->ptrs.ra[parent].fdp;
+      else
+	mr_save_data->ptrs.ra[idx].fdp = fdp->stype.tdp ? &fdp->stype.tdp->mr_ptr_fd : NULL;
+    }
 
   if (nodes_added < 0) /* bypass error to upper level */
     return (nodes_added);
