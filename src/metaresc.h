@@ -973,7 +973,7 @@
 	  __fd__.stype.is_array = true;					\
 	  __fd__.stype.size = sizeof (S_PTR);				\
 	  __fd__.stype.dim.dim[0] = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
-	  __fd__.stype.dim.size = sizeof (((mr_array_dimensions_t*)0)->dim[0]);	\
+	  __fd__.stype.dim.size = sizeof (__fd__.stype.dim.dim[0]);	\
 	}								\
       mr_detect_type (&__fd__);						\
       mr_save (__ptr__, &__fd__);					\

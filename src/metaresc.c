@@ -448,8 +448,8 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
   _value &= (((typeof (*value))2) << (width - 1)) - 1;
 
   mr_type_t mr_type = ptrdes->mr_type_aux;
-  if ((MR_TYPE_ENUM == mr_type) && (ptrdes->tdp != NULL))
-    mr_type = ptrdes->tdp->param.enum_param.mr_type_effective;
+  if ((MR_TYPE_ENUM == mr_type) && (ptrdes->fdp != NULL) && (ptrdes->fdp->stype.tdp != NULL))
+    mr_type = ptrdes->fdp->stype.tdp->param.enum_param.mr_type_effective;
 
 #define MR_SIGNED_INT_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_INT8, MR_TYPE_INT16, MR_TYPE_INT32, MR_TYPE_INT64, MR_TYPE_INT128))
 
@@ -1149,6 +1149,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->stype.mr_type = MR_TYPE_POINTER;
   fdp->stype.mr_type_aux = tdp->mr_type;
   fdp->stype.tdp = tdp;
+  fdp->mr_type_base = tdp->mr_type;
 
   mr_ic_add (&mr_conf.fields_names, &tdp->type);
 

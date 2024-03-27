@@ -137,7 +137,7 @@ MR_RA_PRINTF_TYPE_ (uint128_t, MR_TYPE_UINT128);
 
 int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  mr_td_t * tdp = ptrdes->tdp;
+  mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
   mr_type_t mr_type = MR_TYPE_UINT8;
 
   /* check whether type descriptor was found */
@@ -165,7 +165,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
 int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
 {
-  mr_td_t * tdp = ptrdes->tdp;
+  mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
   /* check whether type descriptor was found */
   if (NULL == tdp)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));

@@ -309,7 +309,7 @@ START_TEST (tda_overlapping_2) {
   tda.size1 = 2 * sizeof (array[0]);
   tda.da2 = &array[1];
   tda.size2 = 2 * sizeof (array[0]);
-  
+
   mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
   bool pointer_resolved_correctly = false;
   if (ptrs.ra != NULL)

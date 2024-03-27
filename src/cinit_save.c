@@ -64,7 +64,7 @@ cinit_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
 static int
 cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  typeof (ptrdes->fdp->stype.size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->stype.size;
+  typeof (ptrdes->fdp->stype.size) size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
   char buffer[size + 1];
   strncpy (buffer, ptrdes->data.ptr, size);
   buffer[size] = 0;
@@ -108,8 +108,9 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   else
     {
       char * type = MR_VOIDP_T_STR;
-      if ((MR_TYPE_FUNC != ptrdes->mr_type) && (ptrdes->tdp != NULL))
-	type = ptrdes->tdp->type.str;
+      if ((MR_TYPE_FUNC != ptrdes->mr_type) && (ptrdes->fdp != NULL))
+	if (ptrdes->fdp->stype.tdp != NULL)
+	  type = ptrdes->fdp->stype.tdp->type.str;
       return (mr_ra_printf (mr_ra_str, "(%s)0x%llx", type, (long long unsigned int)*(uintptr_t*)ptrdes->data.ptr));
     }
 }
@@ -120,7 +121,8 @@ cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
   ptrdes->res.MR_SIZE = 0;
-  char * type = ptrdes->tdp ? ptrdes->tdp->type.str : MR_VOIDP_T_STR;
+  mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
+  char * type = tdp ? tdp->type.str : MR_VOIDP_T_STR;
   char * pointer = (MR_TYPE_POINTER == ptrdes->mr_type_aux) ? "*" : "";
   return (mr_ra_printf (mr_ra_str, "(%s%s[]){\n", type, pointer));
 }

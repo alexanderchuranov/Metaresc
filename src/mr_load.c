@@ -572,7 +572,7 @@ mr_load_struct (int idx, mr_ra_ptrdes_t * ptrs)
   mr_fd_t * fdp = NULL;
   char * data = ptrs->ra[idx].data.ptr;
   int first_child = ptrs->ra[idx].first_child;
-  mr_td_t * tdp = ptrs->ra[idx].tdp;
+  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
   mr_status_t status = MR_SUCCESS;
 
   /* get pointer on structure descriptor */
@@ -714,14 +714,15 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   if (0 == count)
     return (MR_SUCCESS);
 
+  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
   mr_fd_t fd_;
   memset (&fd_, 0, sizeof (fd_));
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.stype.mr_type = ptrs->ra[idx].mr_type_aux;
-  fd_.stype.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
+  fd_.stype.mr_type_aux = tdp ? tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
-  fd_.stype.tdp = ptrs->ra[idx].tdp;
+  fd_.stype.tdp = tdp;
   fd_.stype.size = mr_type_size (fd_.stype.mr_type);
   if (fd_.stype.size == 0)
     fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
@@ -849,10 +850,11 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 	return (MR_FAILURE);
       }
 
-  if (ptrs->ra[idx].tdp && fdp->stype.tdp)
-    if (ptrs->ra[idx].tdp != fdp->stype.tdp)
+  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
+  if (tdp && fdp->stype.tdp)
+    if (tdp != fdp->stype.tdp)
       {
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->stype.type, ptrs->ra[idx].tdp->type.str);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->stype.type, tdp ? tdp->type.str : "undefined");
 	return (MR_FAILURE);
       }
 
@@ -862,7 +864,6 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
   ptrs->ra[idx].mr_size = fdp->stype.size;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  ptrs->ra[idx].tdp = fdp->stype.tdp;
   ptrs->ra[idx].name = fdp->name.str;
 
   /* route loading */
@@ -904,6 +905,9 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 	      ptrs->ra[i].load_params.mr_value.vt_string = NULL;
 	    }
     }
+
+  if (fdp->non_persistent)
+    ptrs->ra[idx].fdp = fdp->stype.tdp ? &fdp->stype.tdp->mr_ptr_fd : NULL;
 
   return (status);
 }

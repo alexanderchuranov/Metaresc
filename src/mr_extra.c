@@ -120,8 +120,9 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 
 	    if (ptrs->ra[i].first_child < 0)
 	      {
+		mr_td_t * tdp = ptrs->ra[i].fdp ? ptrs->ra[i].fdp->stype.tdp : NULL;
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			    ptrs->ra[i].tdp ? ptrs->ra[i].tdp->type.str : "unknown", ptrs->ra[i].name);
+			    tdp ? tdp->type.str : "unknown", ptrs->ra[i].name);
 		goto failure;
 	      }
 	    
@@ -304,7 +305,7 @@ node_hash (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void
 	  
     case MR_TYPE_ENUM:
       {
-	mr_td_t * tdp = ptrdes->tdp;
+	mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
 	if (NULL == tdp)
 	  break;
 	if (tdp->mr_type != MR_TYPE_ENUM)

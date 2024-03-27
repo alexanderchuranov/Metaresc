@@ -304,7 +304,6 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   ptrs->ra[idx].fdp = fdp;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  ptrs->ra[idx].tdp = fdp->stype.tdp;
   ptrs->ra[idx].name = fdp->name.str;
   ptrs->ra[idx].non_persistent = fdp->non_persistent;
 
@@ -562,7 +561,7 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int parent = ptrs->ra[idx].parent;
   bool is_a_dynamic_string = ((parent >= 0) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  typeof (ptrdes->fdp->stype.size) size = ptrdes->non_persistent ? (ptrdes->tdp ? ptrdes->tdp->size : 0) : ptrdes->fdp->stype.size;
+  typeof (ptrdes->fdp->stype.size) size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
 
   if (XDR_ENCODE == xdrs->x_op)
     {
@@ -680,7 +679,7 @@ xdr_load_string (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_struct (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_td_t * tdp = ptrs->ra[idx].tdp;
+  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
   char * data = ptrs->ra[idx].data.ptr;
 
   if (NULL == tdp)
@@ -733,7 +732,7 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_td_t * tdp = ptrs->ra[idx].tdp; /* look up for type descriptor */
+  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
   char * data = ptrs->ra[idx].data.ptr;
   char * discriminator = NULL;
   mr_status_t status = MR_FAILURE;
@@ -775,7 +774,7 @@ xdr_load_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 _xdr_enum (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_td_t * tdp = ptrs->ra[idx].tdp;
+  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
 
   if (NULL == tdp)
     return (MR_FAILURE);
@@ -833,7 +832,7 @@ mr_xdr_bool (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_bitfield_value (XDR * xdrs, mr_fd_t * fdp, void * data)
 {
-  mr_ptrdes_t ptrdes = { .tdp = fdp->stype.tdp, .fdp = fdp, .data.ptr = data, };
+  mr_ptrdes_t ptrdes = { .fdp = fdp, .data.ptr = data, };
   mr_ra_ptrdes_t ptrs = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, };
   
   if (XDR_ENCODE == xdrs->x_op)
@@ -983,15 +982,16 @@ static mr_status_t
 xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
   char ** data = ptrs->ra[idx].data.ptr;
+  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
   mr_fd_t fd_;
   
   memset (&fd_, 0, sizeof (fd_));
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.stype.mr_type = ptrs->ra[idx].mr_type_aux;
-  fd_.stype.mr_type_aux = ptrs->ra[idx].tdp ? ptrs->ra[idx].tdp->mr_type : MR_TYPE_VOID;
+  fd_.stype.mr_type_aux = tdp ? tdp->mr_type : MR_TYPE_VOID;
   fd_.name.str = ptrs->ra[idx].name;
-  fd_.stype.tdp = ptrs->ra[idx].tdp;
+  fd_.stype.tdp = tdp;
   fd_.stype.size = mr_type_size (fd_.stype.mr_type);
   if (fd_.stype.size == 0)
     fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;

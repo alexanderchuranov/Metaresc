@@ -107,7 +107,7 @@ START_TEST (pointer_match_another_pointer) {
     {
       int i, count = 0;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	if ((ptrs.ra[i].tdp == string_tdp) && (ptrs.ra[i].ref_idx >= 0))
+	if ((ptrs.ra[i].fdp->stype.tdp == string_tdp) && (ptrs.ra[i].ref_idx >= 0))
 	  ++count;
       
       MR_FREE (ptrs.ra);

@@ -105,8 +105,8 @@ mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_
 		     "[%d] mr_type %d != %d", i, ptrs->ra[i].mr_type, expected[i].mr_type);
 
       if ((MR_TYPED_TYPES >> ptrs->ra[i].mr_type) & 1)
-	ck_assert_msg (strcmp (ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str) == 0,
-		       "[%d] type %s != %s", i, ptrs->ra[i].tdp->type.str, expected[i].tdp->type.str);
+	ck_assert_msg (strcmp (ptrs->ra[i].fdp->stype.tdp->type.str, expected[i].fdp->stype.tdp->type.str) == 0,
+		       "[%d] type %s != %s", i, ptrs->ra[i].fdp->stype.tdp->type.str, expected[i].fdp->stype.tdp->type.str);
       ck_assert_msg (ptrs->ra[i].first_child == expected[i].first_child,
 		     "[%d] first_child %d != %d", i, ptrs->ra[i].first_child, expected[i].first_child);
       ck_assert_msg (ptrs->ra[i].next == expected[i].next,
@@ -127,7 +127,7 @@ START_TEST (int_ptr_array)
   mr_ptrdes_t expected[] =
     {
       {
-	.tdp = (mr_td_t[]){{ .type = { "int_ptr_array_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "int_ptr_array_t" }}}}},
 	.name = "int_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -173,7 +173,7 @@ START_TEST (enum_ptr_array)
   mr_ptrdes_t expected[] =
     {
       {
-	.tdp = (mr_td_t[]){{ .type = { "enum_ptr_array_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "enum_ptr_array_t" }}}}},
 	.name = "enum_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -202,7 +202,7 @@ START_TEST (enum_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "packed_enum_t" }}}}},
 	.name = "x",
 	.mr_type = MR_TYPE_ENUM,
 	.first_child = -1,
@@ -220,7 +220,7 @@ START_TEST (union_ptr_array)
   mr_ptrdes_t expected[] =
     {
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_ptr_array_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "union_ptr_array_t" }}}}},
 	.name = "union_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -249,7 +249,7 @@ START_TEST (union_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "discriminator_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "discriminator_t" }}}}},
 	.name = "discriminator",
 	.mr_type = MR_TYPE_ENUM,
 	.first_child = -1,
@@ -257,7 +257,7 @@ START_TEST (union_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}}}},
 	.name = "x",
 	.mr_type = MR_TYPE_UNION,
 	.first_child = 6,
@@ -282,7 +282,7 @@ START_TEST (ud_overrided_ptr_array)
   mr_ptrdes_t expected[] =
     {
       {
-	.tdp = (mr_td_t[]){{ .type = { "ud_overrided_ptr_array_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "ud_overrided_ptr_array_t" }}}}},
 	.name = "ud_overrided_ptr_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -311,7 +311,7 @@ START_TEST (ud_overrided_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "discriminator_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "discriminator_t" }}}}},
 	.name = "discriminator",
 	.mr_type = MR_TYPE_ENUM,
 	.first_child = -1,
@@ -319,7 +319,7 @@ START_TEST (ud_overrided_ptr_array)
       }
       ,
       {
-	.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "union_int32_float_t" }}}}},
 	.name = "x",
 	.mr_type = MR_TYPE_UNION,
 	.first_child = 6,
@@ -408,7 +408,7 @@ START_TEST (dynamically_limitted_array)
   mr_ptrdes_t expected_0[] =
     {
       {
-	.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}}}},
 	.name = "dynamically_limitted_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -437,7 +437,7 @@ START_TEST (dynamically_limitted_array)
   mr_ptrdes_t expected_1[] =
     {
       {
-	.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}}}},
 	.name = "dynamically_limitted_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
@@ -473,7 +473,7 @@ START_TEST (dynamically_limitted_array)
   mr_ptrdes_t expected_3[] =
     {
       {
-	.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}},
+	.fdp = (mr_fd_t[]){{ .stype.tdp = (mr_td_t[]){{ .type = { "dynamically_limitted_array_t" }}}}},
 	.name = "dynamically_limitted_array_t",
 	.mr_type = MR_TYPE_STRUCT,
 	.first_child = 1,
