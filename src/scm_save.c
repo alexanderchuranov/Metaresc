@@ -57,13 +57,13 @@ scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
   int tokens = 0;
-  int i, fields_count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
+  int i, enums_count = tdp->param.enum_param.enums_size / sizeof (tdp->param.enum_param.enums[0]);
   mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
 
   if (0 == value)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
-  for (i = 0; i < fields_count; ++i)
+  for (i = 0; i < enums_count; ++i)
     if (value & tdp->param.enum_param.enums[i]->value._unsigned)
       {
 	++tokens;
