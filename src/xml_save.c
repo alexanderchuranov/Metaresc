@@ -265,9 +265,10 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
     }
 
   memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
-  
+
+  char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
   if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START,
-		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", ptrs->ra[idx].name) < 0)
+		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", name) < 0)
     return (MR_FAILURE);
   
   if (ptrs->ra[idx].ref_idx >= 0)
@@ -319,7 +320,8 @@ xml1_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
     {
       if (mr_ra_append_string (mr_ra_str, "</") < 0)
 	return (MR_FAILURE);
-      if (mr_ra_append_string (mr_ra_str, ptrs->ra[idx].name) < 0)
+      char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
+      if (mr_ra_append_string (mr_ra_str, name) < 0)
 	return (MR_FAILURE);
       if (mr_ra_append_char (mr_ra_str, '>') < 0)
 	return (MR_FAILURE);
@@ -399,8 +401,9 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
   if ((true != ptrs->ra[idx].flags.is_null) && (ptrs->ra[idx].ref_idx < 0))
     if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
       return (MR_FAILURE);
-  
-  xmlNodePtr node = xmlNewNode (NULL, BAD_CAST ptrs->ra[idx].name);
+
+  char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
+  xmlNodePtr node = xmlNewNode (NULL, BAD_CAST name);
 
   if (NULL == node)
     {

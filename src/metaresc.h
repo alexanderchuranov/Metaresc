@@ -102,6 +102,7 @@
 #define MR_PTR_META "mr_ptr_t magic meta feild"
 
 /* XML attribute for zero length strings */
+#define MR_DEFAULT_NODE_NAME "entity"
 #define MR_ISNULL "isnull"
 #define MR_ISNULL_VALUE "true"
 #define MR_OPAQUE_DATA mr_opaque_data
@@ -961,7 +962,7 @@
       __fd__.stype.type = MR_TYPE_NAME_STR;				\
       if (__fd__.stype.type == NULL)					\
 	__fd__.stype.type = "";						\
-      __fd__.name.str = "entity";					\
+      __fd__.name.str = MR_DEFAULT_NODE_NAME;				\
       __fd__.name.hash_value = 0;					\
       __fd__.unnamed = true;						\
       __fd__.non_persistent = true;					\
