@@ -716,7 +716,11 @@ xdr_save_union (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   };
 
   if (ptrs->ra[idx].first_child >= 0)
-    ptrdes.data.ptr = &ptrs->ra[ptrs->ra[idx].first_child].name;
+    {
+      int first_child = ptrs->ra[idx].first_child;
+      if (ptrs->ra[first_child].fdp)
+	ptrdes.data.ptr = &ptrs->ra[first_child].fdp->name.str;
+    }
   mr_ra_ptrdes_t ptrs_ = { .ra = &ptrdes, .size = sizeof (ptrdes), .alloc_size = -1, }; /* temporary resizeable array */
   return (xdr_save_string (xdrs, 0, &ptrs_));
 }
