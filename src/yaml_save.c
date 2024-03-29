@@ -48,8 +48,9 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
   if (!ptrdes->unnamed)
     {
       yaml_event_t name_event;
+      char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (!yaml_scalar_event_initialize (&name_event, NULL, (yaml_char_t *)YAML_STR_TAG,
-					 (yaml_char_t *)ptrdes->name, strlen (ptrdes->name),
+					 (yaml_char_t*)name, strlen (name),
 					 1, 0, YAML_PLAIN_SCALAR_STYLE))
 	{
 	  yaml_event_delete (event);
