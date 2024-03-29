@@ -332,7 +332,7 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
 		(mr_stype_t **, args, , "function arguments saved as resizable array of pointers on structured types",
 		{ .offset = offsetof (mr_func_param_t, size) }, "offset"), 
-		(size_t, size, , "size of args array"),
+		(ssize_t, size, , "size of args array"),
 		)
 
 #define MR_FIELD_PARAM_UNION_UDO				\
@@ -413,17 +413,17 @@ TYPEDEF_STRUCT (mr_ed_t, ATTRIBUTES ( , "Metaresc enum descriptor"),
 		)
 
 TYPEDEF_STRUCT (mr_enum_param_t,
+		(mr_ed_t **, enums, , "fields or enums descriptors", { .offset = offsetof (mr_enum_param_t, enums_size) }, "offset"),
+		(ssize_t, enums_size, , "size of 'enums' array"),
 		(uint8_t, size_effective, , "effective size"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
-		(mr_ed_t **, enums, , "fields or enums descriptors", { .offset = offsetof (mr_enum_param_t, enums_size) }, "offset"),
-		(ssize_t, enums_size, , "size of 'enums' array"),
 		)
 
 TYPEDEF_STRUCT (mr_struct_param_t,
-		(mr_ic_t, field_by_name, , "lookup by field names"),
 		(mr_fd_t **, fields, , "fields or enums descriptors", { .offset = offsetof (mr_struct_param_t, fields_size) }, "offset"),
 		(ssize_t, fields_size, , "size of 'fields' array"),
+		(mr_ic_t, field_by_name, , "lookup by field names"),
 		)
 
 TYPEDEF_UNION (mr_td_param_t,

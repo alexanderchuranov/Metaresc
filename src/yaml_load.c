@@ -114,7 +114,8 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	      if (parent >= 0)
 		if (!ptrs->ra[parent].unnamed)
 		  {
-		    char * name = mr_get_static_field_name_from_string ((char*)event.data.scalar.value);
+		    mr_fd_t * fdp = mr_get_any_fd_by_name ((char*)event.data.scalar.value);
+		    char * name = fdp ? fdp->name.str : NULL;
 		    if (NULL == name)
 		      {
 			MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, (char*)event.data.scalar.value);

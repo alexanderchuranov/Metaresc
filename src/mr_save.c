@@ -358,7 +358,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
     return (NULL);
 
   /* if union meta field is a valid field name, then traverse thruogh parents and look for union discriminator */
-  if (mr_get_static_field_name_from_string (discriminator) == NULL)
+  if (mr_get_any_fd_by_name (discriminator) == NULL)
     return (mr_union_discriminator_by_name (tdp, NULL));
 
   ud = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_ud,
@@ -914,7 +914,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
       if (0 == strcmp ("offset", fdp->res_type))
 	name = ""; /* detect case if size field defined by offset */
       else if (0 == strcmp ("string", fdp->res_type))
-	if (mr_get_static_field_name_from_string (fdp->res.string) != NULL)
+	if (mr_get_any_fd_by_name (fdp->res.string) != NULL)
 	  name = fdp->res.string; /* detect case if size field defined by name */
     }
   

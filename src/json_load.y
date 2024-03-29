@@ -137,7 +137,8 @@ members: member | member TOK_JSON_COMMA members
 member: TOK_JSON_STRING TOK_JSON_SEMICOLON element {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_load->ptrs->ra[idx].name = mr_get_static_field_name_from_substring (&$1);
+  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&$1);
+  mr_load->ptrs->ra[idx].name = fdp ? fdp->name.str : NULL;
 }
 
 array: TOK_JSON_LBRACKET TOK_JSON_RBRACKET

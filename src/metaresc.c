@@ -352,7 +352,8 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
   mr_substr_t substr;
   substr.str = (char*)fmt;
   substr.length = tail - fmt;
-  ctx->type_name = mr_get_static_field_name_from_substring (&substr);
+  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&substr);
+  ctx->type_name = fdp ? fdp->name.str : NULL;
   longjmp (ctx->_jmp_buf, !0);
   return (0);
 }
@@ -598,10 +599,10 @@ mr_hashed_string_get_hash (const mr_hashed_string_t * x)
 }
 
 mr_hash_value_t
-mr_hashed_string_get_hash_ic (mr_ptr_t x, const void * context)
+mr_field_name_get_hash (mr_ptr_t x, const void * context)
 {
-  mr_hashed_string_t * x_ = x.ptr;
-  return (mr_hashed_string_get_hash (x_));
+  mr_fd_t * x_ = x.ptr;
+  return (mr_hashed_string_get_hash (&x_->name));
 }
 
 /**
@@ -631,11 +632,11 @@ mr_hashed_string_cmp (const mr_hashed_string_t * x, const mr_hashed_string_t * y
 }
 
 int
-mr_hashed_string_cmp_ic (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+mr_field_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  const mr_hashed_string_t * x_ = x.ptr;
-  const mr_hashed_string_t * y_ = y.ptr;
-  return (mr_hashed_string_cmp (x_, y_));
+  const mr_fd_t * x_ = x.ptr;
+  const mr_fd_t * y_ = y.ptr;
+  return (mr_hashed_string_cmp (&x_->name, &y_->name));
 }
 
 mr_hash_value_t
@@ -1151,7 +1152,7 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->stype.tdp = tdp;
   fdp->mr_type_base = tdp->mr_type;
 
-  mr_ic_add (&mr_conf.fields_names, &tdp->type);
+  mr_ic_add (&mr_conf.fields_names, fdp);
 
   return ((NULL == mr_ic_add (&union_tdp->param.struct_param.field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
@@ -1478,7 +1479,7 @@ mr_normalize_field_name (mr_fd_t * fdp)
       if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
 	*name = 0; /* truncate on first invalid charecter */
 
-      mr_ic_add (&mr_conf.fields_names, &fdp->name);
+      mr_ic_add (&mr_conf.fields_names, fdp);
     }
 }
 
@@ -1626,25 +1627,24 @@ mr_type_void_fields_impl (char * type, char * name, ...)
 static mr_status_t
 fields_names_visitor (mr_ptr_t key, const void * context)
 {
-  mr_hashed_string_t * field_name = key.ptr;
-  int field_name_length = strlen (field_name->str);
+  mr_fd_t * fdp = key.ptr;
+  int field_name_length = strlen (fdp->name.str);
   int * max_field_name_length = (int*)context;
   if (field_name_length > *max_field_name_length)
     *max_field_name_length = field_name_length;
   return (MR_SUCCESS);
 }
 
-char *
-mr_get_static_field_name_from_string (char * name)
+mr_fd_t *
+mr_get_any_fd_by_name (char * name)
 {
-  mr_hashed_string_t hashed_string = { .str = name, .hash_value = 0, };
-  mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &hashed_string);
-  mr_hashed_string_t * field_name = find ? find->ptr : NULL;
-  return (field_name ? field_name->str : NULL);
+  mr_fd_t fd_ = { .name.str = name, .name.hash_value = 0, };
+  mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &fd_);
+  return (find ? find->ptr : NULL);
 }
 
-char *
-mr_get_static_field_name_from_substring (mr_substr_t * substr)
+mr_fd_t *
+mr_get_any_fd_by_name_substr (mr_substr_t * substr)
 {
   static int max_field_name_length = 0;
   if (0 == max_field_name_length)
@@ -1657,7 +1657,7 @@ mr_get_static_field_name_from_substring (mr_substr_t * substr)
   char name[substr->length + 1];
   memcpy (name, substr->str, substr->length);
   name[substr->length] = 0;
-  return (mr_get_static_field_name_from_string (name));
+  return (mr_get_any_fd_by_name (name));
 }
 
 /**
@@ -1839,7 +1839,7 @@ mr_conf_init ()
     {
       mr_ic_new (&mr_conf.enum_by_name, mr_ed_name_get_hash, mr_ed_name_cmp, "mr_ed_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
-      mr_ic_new (&mr_conf.fields_names, mr_hashed_string_get_hash_ic, mr_hashed_string_cmp_ic, "mr_hashed_string_t", MR_IC_HASH, NULL);
+      mr_ic_new (&mr_conf.fields_names, mr_field_name_get_hash, mr_field_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
 
       mr_conf.list = mr_sort_td (mr_conf.list);
       
