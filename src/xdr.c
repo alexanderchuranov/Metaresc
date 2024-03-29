@@ -305,7 +305,6 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
   ptrs->ra[idx].name = fdp->name.str;
-  ptrs->ra[idx].non_persistent = fdp->non_persistent;
 
   mr_add_child (parent, idx, ptrs->ra);
 
@@ -878,7 +877,7 @@ xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
-  if (!ptrs->ra[idx].non_persistent)
+  if (!ptrs->ra[idx].fdp->non_persistent)
     if (ptrs->ra[idx].fdp->stype.dim.size == sizeof (ptrs->ra[idx].fdp->stype.dim.dim[0]))
       if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
@@ -911,7 +910,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
       fd_.stype.mr_type = fd_.stype.mr_type_aux;
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
 
-      if (!ptrs->ra[idx].non_persistent)
+      if (!ptrs->ra[idx].fdp->non_persistent)
 	{
 	  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	    return (MR_FAILURE);

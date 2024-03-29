@@ -152,7 +152,7 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 json_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  if (ptrdes->non_persistent)
+  if (NULL == ptrdes->fdp)
     return (mr_ra_append_string (mr_ra_str, JSON_NULL));
 
   switch (ptrdes->fdp->stype.mr_type_class)

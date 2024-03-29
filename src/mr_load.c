@@ -860,7 +860,6 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 
   ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fdp = fdp;
-  ptrs->ra[idx].non_persistent = fdp->non_persistent;
   ptrs->ra[idx].mr_size = fdp->stype.size;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;

@@ -594,7 +594,6 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx, mr_
       ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
       ra[ref_idx].name = ra[idx].name;
       ra[ref_idx].unnamed = ra[idx].unnamed;
-      ra[ref_idx].non_persistent = ra[idx].non_persistent;
 
       ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
       mr_add_child (parent, ref_idx, ra);
@@ -952,7 +951,6 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   ptrdes->mr_type_aux = parent_fdp->stype.mr_type_aux;
   ptrdes->name = parent_fdp->name.str;
   ptrdes->unnamed = parent_fdp->unnamed;
-  ptrdes->non_persistent = parent_fdp->non_persistent;
   ptrdes->MR_SIZE = parent_fdp->stype.size;
   
   ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
@@ -979,7 +977,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_save_data->ptrs.ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
   mr_save_data->ptrs.ra[idx].name = fdp->name.str;
   mr_save_data->ptrs.ra[idx].unnamed = fdp->unnamed;
-  mr_save_data->ptrs.ra[idx].non_persistent = fdp->non_persistent;
   mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
   mr_save_data->ptrs.ra[idx].save_params.next.typed = -1;
@@ -1150,8 +1147,9 @@ mr_save_union (mr_save_data_t * mr_save_data)
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   int parent;
   for (parent = idx; parent > 0; parent = mr_save_data->ptrs.ra[parent].parent)
-    if (!mr_save_data->ptrs.ra[parent].non_persistent)
-      break;
+    if (mr_save_data->ptrs.ra[parent].fdp)
+      if (!mr_save_data->ptrs.ra[parent].fdp->non_persistent)
+	break;
       
   if (parent < 0)
     return (0);
@@ -1188,7 +1186,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux;
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
-      if (!mr_save_data->ptrs.ra[idx].non_persistent)
+      if (!mr_save_data->ptrs.ra[idx].fdp->non_persistent)
 	{
 	  mr_ptrdes_t src, dst;
 	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);

@@ -233,7 +233,7 @@ yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptr
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
-  if (!ptrdes->non_persistent && ptrdes->fdp)
+  if (ptrdes->fdp)
     if (ptrdes->fdp->meta)
       if (0 == strcmp (ptrdes->fdp->meta, MR_PTR_META))
 	ptrdes->unnamed = false;

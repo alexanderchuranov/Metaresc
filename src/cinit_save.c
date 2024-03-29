@@ -139,7 +139,7 @@ cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 cinit_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  if (ptrdes->non_persistent)
+  if (NULL == ptrdes->fdp)
     return (mr_ra_append_string (mr_ra_str, "{}"));
 
   switch (ptrdes->fdp->stype.mr_type_class)
