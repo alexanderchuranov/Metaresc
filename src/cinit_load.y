@@ -142,11 +142,15 @@ value
   memcpy (type, $1.str, $1.length);
   type[$1.length] = 0;
   mr_td_t * tdp = mr_get_td_by_name_internal (type);
-  if (tdp != NULL)
+  if (NULL == tdp)
     {
-      mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd;
-      /* for mr_ptr_t union we get name of union member from type cast */
-      mr_load->ptrs->ra[mr_load->parent].name = tdp->type.str;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
+      YYERROR;
+    }
+  else
+    {
+      mr_load->ptrs->ra[mr_load->parent].typed = true;
+      mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd; /* for mr_ptr_t union we get name of union member from type cast */
     }
  }
 
@@ -175,7 +179,10 @@ compaund
   char c = vt_char_str[0];
 
   if (strlen (vt_char_str) > 1)
-    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, vt_char_str);
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, vt_char_str);
+      YYERROR;
+    }
 
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_char = c;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_CHAR;
@@ -210,8 +217,15 @@ list_element: cinit
 | TOK_CINIT_DOT TOK_CINIT_ID TOK_CINIT_ASSIGN cinit {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&$2);
-  mr_load->ptrs->ra[idx].name = fdp->name.str;
+  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name_substr (&$2, mr_load->ptrs->ra[idx].fdp ? mr_load->ptrs->ra[idx].fdp->stype.tdp : NULL);
+  if (NULL == mr_load->ptrs->ra[idx].fdp)
+    {
+      char name[$2.length + 1];
+      memcpy (name, $2.str, $2.length);
+      name[$2.length] = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      YYERROR;
+    }
 }
 
 %%

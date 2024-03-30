@@ -358,7 +358,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
     return (NULL);
 
   /* if union meta field is a valid field name, then traverse thruogh parents and look for union discriminator */
-  if (mr_get_any_fd_by_name (discriminator) == NULL)
+  if (mr_get_any_fd_by_name (discriminator, NULL) == NULL)
     return (mr_union_discriminator_by_name (tdp, NULL));
 
   ud = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_ud,
@@ -592,7 +592,6 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx, mr_
       ra[ref_idx].fdp = ra[idx].fdp;
       ra[ref_idx].mr_type = ra[idx].mr_type;
       ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
-      ra[ref_idx].name = ra[idx].name;
       ra[ref_idx].unnamed = ra[idx].unnamed;
 
       ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
@@ -620,7 +619,6 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   fd_.stype.tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
   fd_.stype.mr_type = ptrdes->mr_type_aux;
   fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
-  fd_.name.str = ptrdes->name;
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
@@ -913,7 +911,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
       if (0 == strcmp ("offset", fdp->res_type))
 	name = ""; /* detect case if size field defined by offset */
       else if (0 == strcmp ("string", fdp->res_type))
-	if (mr_get_any_fd_by_name (fdp->res.string) != NULL)
+	if (mr_get_any_fd_by_name (fdp->res.string, NULL) != NULL)
 	  name = fdp->res.string; /* detect case if size field defined by name */
     }
   
@@ -949,7 +947,6 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   ptrdes->fdp = parent_fdp;
   ptrdes->mr_type = parent_fdp->stype.mr_type;
   ptrdes->mr_type_aux = parent_fdp->stype.mr_type_aux;
-  ptrdes->name = parent_fdp->name.str;
   ptrdes->unnamed = parent_fdp->unnamed;
   ptrdes->MR_SIZE = parent_fdp->stype.size;
   
@@ -975,7 +972,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_save_data->ptrs.ra[idx].fdp = fdp;
   mr_save_data->ptrs.ra[idx].mr_type = fdp->stype.mr_type;
   mr_save_data->ptrs.ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  mr_save_data->ptrs.ra[idx].name = fdp->name.str;
   mr_save_data->ptrs.ra[idx].unnamed = fdp->unnamed;
   mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
@@ -1492,14 +1488,17 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
 	  mr_assign_int (&dst, &src);
 	}
 
-      if (0 == strcmp (ptrdes->name, MR_OPAQUE_DATA_STR))
-	{
-	  if (ptrdes->MR_SIZE <= 0)
-	    ptrdes->flags.is_null = true;
-	  else
-	    ptrdes->flags.is_opaque_data = true;
-	}
-      else if ((0 == element_size) || (ptrdes->MR_SIZE < element_size))
+      if (ptrdes->fdp->name.str != NULL)
+	if (0 == strcmp (ptrdes->fdp->name.str, MR_OPAQUE_DATA_STR))
+	  {
+	    if (ptrdes->MR_SIZE <= 0)
+	      ptrdes->flags.is_null = true;
+	    else
+	      ptrdes->flags.is_opaque_data = true;
+	  }
+
+      if (!ptrdes->flags.is_opaque_data &&
+	  ((0 == element_size) || (ptrdes->MR_SIZE < element_size)))
 	ptrdes->flags.is_null = true;
     }
   return (1);

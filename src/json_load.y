@@ -137,8 +137,15 @@ members: member | member TOK_JSON_COMMA members
 member: TOK_JSON_STRING TOK_JSON_SEMICOLON element {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&$1);
-  mr_load->ptrs->ra[idx].name = fdp ? fdp->name.str : NULL;
+  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name_substr (&$1, NULL);
+  if (NULL == mr_load->ptrs->ra[idx].fdp)
+    {
+      char name[$1.length + 1];
+      memcpy (name, $1.str, $1.length);
+      name[$1.length] = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      YYERROR;
+    }
 }
 
 array: TOK_JSON_LBRACKET TOK_JSON_RBRACKET

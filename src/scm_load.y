@@ -214,8 +214,15 @@ named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS
   mr_load->ptrs->ra[child].prev = prev;
 
   mr_load->ptrs->ra[child].parent = parent;
-  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&$4);
-  mr_load->ptrs->ra[child].name = fdp ? fdp->name.str : NULL;
+  mr_load->ptrs->ra[child].fdp = mr_get_any_fd_by_name_substr (&$4, NULL);
+  if (NULL == mr_load->ptrs->ra[child].fdp)
+    {
+      char name[$4.length + 1];
+      memcpy (name, $4.str, $4.length);
+      name[$4.length] = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      YYERROR;
+    }
 
   mr_load->parent = child;
 }

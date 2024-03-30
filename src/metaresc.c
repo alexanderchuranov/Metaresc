@@ -352,7 +352,7 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
   mr_substr_t substr;
   substr.str = (char*)fmt;
   substr.length = tail - fmt;
-  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&substr);
+  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&substr, NULL);
   ctx->type_name = fdp ? fdp->name.str : NULL;
   longjmp (ctx->_jmp_buf, !0);
   return (0);
@@ -602,7 +602,7 @@ mr_hash_value_t
 mr_field_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
-  return (mr_hashed_string_get_hash (&x_->name));
+  return (mr_hashed_string_get_hash (&x_->name) << 4);
 }
 
 /**
@@ -636,7 +636,12 @@ mr_field_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_fd_t * x_ = x.ptr;
   const mr_fd_t * y_ = y.ptr;
-  return (mr_hashed_string_cmp (&x_->name, &y_->name));
+  int cmp = mr_hashed_string_cmp (&x_->name, &y_->name);
+  if (cmp)
+    return (cmp);
+  if (x_->stype.tdp && y_->stype.tdp)
+    return ((x_->stype.tdp > y_->stype.tdp) - (x_->stype.tdp < y_->stype.tdp));
+  return (0);
 }
 
 mr_hash_value_t
@@ -1478,8 +1483,6 @@ mr_normalize_field_name (mr_fd_t * fdp)
       for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
       if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
 	*name = 0; /* truncate on first invalid charecter */
-
-      mr_ic_add (&mr_conf.fields_names, fdp);
     }
 }
 
@@ -1530,6 +1533,9 @@ mr_detect_struct_fields (mr_td_t * tdp)
       mr_fd_detect_field_type (fdp);
       mr_fd_detect_res_size (fdp);
       mr_fd_init_ud_overrides (fdp);
+
+      if (fdp->name.str)
+	mr_ic_add (&mr_conf.fields_names, fdp);
 
 #define INVALID_ARRAY_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_NONE MR_TYPE_VOID MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
 #define INVALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
@@ -1636,15 +1642,15 @@ fields_names_visitor (mr_ptr_t key, const void * context)
 }
 
 mr_fd_t *
-mr_get_any_fd_by_name (char * name)
+mr_get_any_fd_by_name (char * name, mr_td_t * tdp)
 {
-  mr_fd_t fd_ = { .name.str = name, .name.hash_value = 0, };
+  mr_fd_t fd_ = { .name.str = name, .name.hash_value = 0, .stype.tdp = tdp, };
   mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &fd_);
   return (find ? find->ptr : NULL);
 }
 
 mr_fd_t *
-mr_get_any_fd_by_name_substr (mr_substr_t * substr)
+mr_get_any_fd_by_name_substr (mr_substr_t * substr, mr_td_t * tdp)
 {
   static int max_field_name_length = 0;
   if (0 == max_field_name_length)
@@ -1657,7 +1663,7 @@ mr_get_any_fd_by_name_substr (mr_substr_t * substr)
   char name[substr->length + 1];
   memcpy (name, substr->str, substr->length);
   name[substr->length] = 0;
-  return (mr_get_any_fd_by_name (name));
+  return (mr_get_any_fd_by_name (name, tdp));
 }
 
 /**

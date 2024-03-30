@@ -41,7 +41,7 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-yaml_add_node (mr_ra_ptrdes_t * ptrs, int * parent, char * name, char * value, char * anchor, char * alias, bool unnamed)
+yaml_add_node (mr_ra_ptrdes_t * ptrs, int * parent, mr_fd_t * name_fd, char * value, char * anchor, char * alias, bool unnamed)
 {
   int idx = mr_add_ptr_to_list (ptrs);
   if (idx < 0)
@@ -49,7 +49,7 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, int * parent, char * name, char * value, c
   mr_add_child (*parent, idx, ptrs->ra);
 
   ptrs->ra[idx].unnamed = unnamed;
-  ptrs->ra[idx].name = name;
+  ptrs->ra[idx].fdp = name_fd;
   
   if (value)
     {
@@ -114,9 +114,8 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	      if (parent >= 0)
 		if (!ptrs->ra[parent].unnamed)
 		  {
-		    mr_fd_t * fdp = mr_get_any_fd_by_name ((char*)event.data.scalar.value);
-		    char * name = fdp ? fdp->name.str : NULL;
-		    if (NULL == name)
+		    mr_fd_t * name_fdp = mr_get_any_fd_by_name ((char*)event.data.scalar.value, NULL);
+		    if (NULL == name_fdp)
 		      {
 			MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, (char*)event.data.scalar.value);
 			status = MR_FAILURE;
@@ -131,16 +130,16 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 		    switch (event.type)
 		      {
 		      case YAML_SCALAR_EVENT:
-			status = yaml_add_node (ptrs, &parent, name, (char*)event.data.scalar.value, (char*)event.data.scalar.anchor, NULL, false);
+			status = yaml_add_node (ptrs, &parent, name_fdp, (char*)event.data.scalar.value, (char*)event.data.scalar.anchor, NULL, false);
 			break;
 		      case YAML_MAPPING_START_EVENT:
-			status = yaml_add_node (ptrs, &parent, name, NULL, (char*)event.data.scalar.anchor, NULL, false);
+			status = yaml_add_node (ptrs, &parent, name_fdp, NULL, (char*)event.data.scalar.anchor, NULL, false);
 			break;
 		      case YAML_SEQUENCE_START_EVENT:
-			status = yaml_add_node (ptrs, &parent, name, NULL, (char*)event.data.scalar.anchor, NULL, true);
+			status = yaml_add_node (ptrs, &parent, name_fdp, NULL, (char*)event.data.scalar.anchor, NULL, true);
 		      break;
 		      case YAML_ALIAS_EVENT:
-			status = yaml_add_node (ptrs, &parent, name, NULL, NULL, (char*)event.data.alias.anchor, false);
+			status = yaml_add_node (ptrs, &parent, name_fdp, NULL, NULL, (char*)event.data.alias.anchor, false);
 			break;
 		      default:
 			status = MR_FAILURE;

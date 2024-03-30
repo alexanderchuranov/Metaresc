@@ -148,7 +148,8 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       if (edp)
 	if (edp->name.str)
 	  return (mr_ra_append_string (mr_ra_str, edp->name.str));
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->name);
+      char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, name);
       mr_type = tdp->param.enum_param.mr_type_effective;
     }
   /* save as integer otherwise */
@@ -196,7 +197,8 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   if (0 != value)
     {
       mr_ptrdes_t _ptrdes = { .data = { &value } };
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, ptrdes->name);
+      char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, name);
       if (!first)
 	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
       

@@ -121,8 +121,9 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    if (ptrs->ra[i].first_child < 0)
 	      {
 		mr_td_t * tdp = ptrs->ra[i].fdp ? ptrs->ra[i].fdp->stype.tdp : NULL;
+		char * name = ptrs->ra[i].fdp ? ptrs->ra[i].fdp->name.str : MR_DEFAULT_NODE_NAME;
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
-			    tdp ? tdp->type.str : "unknown", ptrs->ra[i].name);
+			    tdp ? tdp->type.str : "unknown", name);
 		goto failure;
 	      }
 	    

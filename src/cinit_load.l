@@ -28,7 +28,7 @@ get_type (mr_substr_t * substr, char * start)
     ++start;
   stop = strchr (start, ')');
   if (stop)
-    while (isspace (stop[-1]) || ('[' == stop[-1]) || (']' == stop[-1]))
+    while (isspace (stop[-1]) || ('[' == stop[-1]) || (']' == stop[-1]) || ('*' == stop[-1]))
       --stop;
   else
     stop = strchr (start, 0);

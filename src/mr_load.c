@@ -585,14 +585,13 @@ mr_load_struct (int idx, mr_ra_ptrdes_t * ptrs)
   /* loop on all subnodes */
   for (idx = first_child; (MR_SUCCESS == status) && (idx >= 0); idx = ptrs->ra[idx].next)
     {
-      if (NULL == ptrs->ra[idx].name)
-	fdp = mr_load_struct_next_field (tdp, fdp);
-      else
-	fdp = mr_get_fd_by_name (tdp, ptrs->ra[idx].name);
+      char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : NULL;
+      mr_fd_t * next_fdp = name ? mr_get_fd_by_name (tdp, name) : NULL;
+      fdp = next_fdp ? next_fdp : mr_load_struct_next_field (tdp, fdp);
 
       if (NULL == fdp)
 	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, ptrs->ra[idx].name);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, name);
 	  status = MR_FAILURE;
 	  continue;
 	}
@@ -721,7 +720,6 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   fd_.unnamed = true;
   fd_.stype.mr_type = ptrs->ra[idx].mr_type_aux;
   fd_.stype.mr_type_aux = tdp ? tdp->mr_type : MR_TYPE_VOID;
-  fd_.name.str = ptrs->ra[idx].name;
   fd_.stype.tdp = tdp;
   fd_.stype.size = mr_type_size (fd_.stype.mr_type);
   if (fd_.stype.size == 0)
@@ -769,11 +767,11 @@ mr_load_anon_union (int idx, mr_ra_ptrdes_t * ptrs)
   if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
       (MR_VT_QUOTED_SUBSTR == ptrdes->load_params.mr_value.value_type)
       && (0 == ptrdes->load_params.mr_value.vt_quoted_substr.substr.length) && /* content must be an empty string */
-      (ptrdes->name != NULL) && /* node must have a name */
+      (ptrdes->fdp != NULL) && /* node must have a name */
       (ptrdes->next >= 0))
-    if (NULL == ptrs->ra[ptrdes->next].name) /* there should be a next node without name */
+    if (NULL == ptrs->ra[ptrdes->next].fdp) /* there should be a next node without name */
       {
-	ptrs->ra[ptrdes->next].name = ptrdes->name;
+	ptrs->ra[ptrdes->next].fdp = ptrdes->fdp;
 	return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
       }
   return (mr_load_struct (idx, ptrs));
@@ -843,27 +841,28 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].name && fdp->name.str && !fdp->unnamed)
-    if (0 != strcmp (fdp->name.str, ptrs->ra[idx].name))
+  if (!fdp->non_persistent && (MR_TYPE_POINTER == fdp->stype.mr_type) && ptrs->ra[idx].fdp)
+    if (ptrs->ra[idx].typed && (fdp->stype.tdp != ptrs->ra[idx].fdp->stype.tdp))
       {
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, ptrs->ra[idx].name);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str,
+		    fdp->stype.tdp ? fdp->stype.tdp->type.str : "undefined",
+		    ptrs->ra[idx].fdp->stype.tdp ? ptrs->ra[idx].fdp->stype.tdp->type.str : "undefined");
 	return (MR_FAILURE);
       }
 
-  mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
-  if (tdp && fdp->stype.tdp)
-    if (tdp != fdp->stype.tdp)
-      {
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str, fdp->stype.type, tdp ? tdp->type.str : "undefined");
-	return (MR_FAILURE);
-      }
+  if (!fdp->unnamed && ptrs->ra[idx].fdp && fdp->name.str)
+    if (ptrs->ra[idx].fdp->name.str)
+      if (0 != strcmp (fdp->name.str, ptrs->ra[idx].fdp->name.str))
+	{
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, ptrs->ra[idx].fdp->name.str);
+	  return (MR_FAILURE);
+	}
 
   ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fdp = fdp;
   ptrs->ra[idx].mr_size = fdp->stype.size;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  ptrs->ra[idx].name = fdp->name.str;
 
   /* route loading */
   mr_load_handler_t load_handler = NULL;

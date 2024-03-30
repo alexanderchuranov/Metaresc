@@ -158,11 +158,13 @@ START_TEST (union_resolution_correctness) {
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  if ((ptrs.ra[i].name != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].name, "uif")) &&
+	  if (ptrs.ra[i].fdp &&
+	      (ptrs.ra[i].fdp->name.str != NULL) &&
+	      (0 == strcmp (ptrs.ra[i].fdp->name.str, "uif")) &&
 	      (ptrs.ra[i].first_child >= 0) &&
-	      (ptrs.ra[ptrs.ra[i].first_child].name != NULL) &&
-	      (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].name, union_resolution.typed_union->type)))
+	      ptrs.ra[ptrs.ra[i].first_child].fdp &&
+	      (ptrs.ra[ptrs.ra[i].first_child].fdp->name.str != NULL) &&
+	      (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].fdp->name.str, union_resolution.typed_union->type)))
 	    {
 	      union_resolved_correctly = true;
 	      break;

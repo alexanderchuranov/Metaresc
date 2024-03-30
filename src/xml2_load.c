@@ -54,8 +54,12 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   if (NULL == content)
     content = "";
 
-  mr_fd_t * fdp = mr_get_any_fd_by_name ((char*)node->name);
-  ptrs->ra[idx].name = fdp ? fdp->name.str : NULL;
+  ptrs->ra[idx].fdp = mr_get_any_fd_by_name ((char*)node->name, NULL);
+  if (NULL == ptrs->ra[idx].fdp)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, (char*)node->name);
+      return (-1);
+    }
   
   ptrs->ra[idx].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
   ptrs->ra[idx].load_params.mr_value.vt_quoted_substr.substr.str = content;

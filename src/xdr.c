@@ -304,7 +304,6 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, i
   ptrs->ra[idx].fdp = fdp;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  ptrs->ra[idx].name = fdp->name.str;
 
   mr_add_child (parent, idx, ptrs->ra);
 
@@ -993,7 +992,6 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   fd_.unnamed = true;
   fd_.stype.mr_type = ptrs->ra[idx].mr_type_aux;
   fd_.stype.mr_type_aux = tdp ? tdp->mr_type : MR_TYPE_VOID;
-  fd_.name.str = ptrs->ra[idx].name;
   fd_.stype.tdp = tdp;
   fd_.stype.size = mr_type_size (fd_.stype.mr_type);
   if (fd_.stype.size == 0)

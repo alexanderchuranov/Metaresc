@@ -65,7 +65,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $4.length)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
       YYERROR;
     }
 
@@ -77,8 +77,16 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.length -= i + 1;
       $2.str += i + 1;
     }
-  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&$2);
-  mr_load->ptrs->ra[mr_load->parent].name = fdp ? fdp->name.str : NULL;
+
+  mr_load->ptrs->ra[mr_load->parent].fdp = mr_get_any_fd_by_name_substr (&$2, NULL);
+  if (NULL == mr_load->ptrs->ra[mr_load->parent].fdp)
+    {
+      char name[$2.length + 1];
+      memcpy (name, $2.str, $2.length);
+      name[$2.length] = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      YYERROR;
+    }
 
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = "";
@@ -93,7 +101,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
 
   if (($2.length != $6.length) || (0 != strncmp ($2.str, $6.str, $2.length)))
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TAGS_DONT_MATCH);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TAGS_DONT_MATCH);
       YYERROR;
     }
 
@@ -102,7 +110,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       break;
   if (i < $7.length)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_CHARS_AFTER_CLOSING_TAG);
       YYERROR;
     }
 
@@ -115,8 +123,15 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.str += i + 1;
     }
 
-  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&$2);
-  mr_load->ptrs->ra[mr_load->parent].name = fdp ? fdp->name.str : NULL;
+  mr_load->ptrs->ra[mr_load->parent].fdp = mr_get_any_fd_by_name_substr (&$2, NULL);
+  if (NULL == mr_load->ptrs->ra[mr_load->parent].fdp)
+    {
+      char name[$2.length + 1];
+      memcpy (name, $2.str, $2.length);
+      name[$2.length] = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      YYERROR;
+    }
   
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$4.str - mr_load->buf];
@@ -166,7 +181,7 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
 
   if (error)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CANT_READ_PROPERTY, error);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_CANT_READ_PROPERTY, error);
       YYERROR;
     }
  }

@@ -569,11 +569,11 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_fd_t *, fdp, , "serializable field descriptor"),
-		(char *, name, , "name of the field"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
-		(bool, unnamed, , "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
+		BITFIELD (bool, unnamed, : 1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
+		BITFIELD (bool, typed, : 1, "for CINIT deserialization pointer nodes has type"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),
@@ -667,8 +667,8 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_td_t *, list, , "linked list of all type descriptors"),
 		(mr_msg_handler_t, msg_handler),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
-		(mr_ic_t, fields_names, , "index of all fields names"),
 		(mr_ic_t, type_by_name, , "index over types descriptors"),
+		(mr_ic_t, fields_names, , "index of all fields names"),
 		(mr_ra_printf_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)
 
