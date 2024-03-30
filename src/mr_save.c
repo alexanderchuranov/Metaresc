@@ -592,7 +592,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx, mr_
       ra[ref_idx].fdp = ra[idx].fdp;
       ra[ref_idx].mr_type = ra[idx].mr_type;
       ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
-      ra[ref_idx].unnamed = ra[idx].unnamed;
+      ra[ref_idx].flags.unnamed = ra[idx].flags.unnamed;
 
       ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
       mr_add_child (parent, ref_idx, ra);
@@ -947,7 +947,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   ptrdes->fdp = parent_fdp;
   ptrdes->mr_type = parent_fdp->stype.mr_type;
   ptrdes->mr_type_aux = parent_fdp->stype.mr_type_aux;
-  ptrdes->unnamed = parent_fdp->unnamed;
+  ptrdes->flags.unnamed = parent_fdp->unnamed;
   ptrdes->MR_SIZE = parent_fdp->stype.size;
   
   ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
@@ -972,7 +972,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_save_data->ptrs.ra[idx].fdp = fdp;
   mr_save_data->ptrs.ra[idx].mr_type = fdp->stype.mr_type;
   mr_save_data->ptrs.ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  mr_save_data->ptrs.ra[idx].unnamed = fdp->unnamed;
+  mr_save_data->ptrs.ra[idx].flags.unnamed = fdp->unnamed;
   mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
   mr_save_data->ptrs.ra[idx].save_params.next.typed = -1;

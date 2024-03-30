@@ -149,7 +149,7 @@ value
     }
   else
     {
-      mr_load->ptrs->ra[mr_load->parent].typed = true;
+      mr_load->ptrs->ra[mr_load->parent].flags.typed = true;
       mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd; /* for mr_ptr_t union we get name of union member from type cast */
     }
  }

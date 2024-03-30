@@ -222,7 +222,7 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
   if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
   
-  bool unnamed = ptrs->ra[idx].unnamed;
+  bool unnamed = ptrs->ra[idx].flags.unnamed;
   int parent = ptrs->ra[idx].parent;
   if (unnamed && (parent >= 0))
     if ((MR_STRUCT_TYPES >> ptrs->ra[parent].mr_type) & 1)

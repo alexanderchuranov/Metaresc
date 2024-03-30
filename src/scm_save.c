@@ -232,7 +232,7 @@ scm_is_unnamed (mr_ra_ptrdes_t * ptrs, int idx)
   if ((MR_TYPE_POINTER == ptrs->ra[idx].mr_type) && (parent >= 0))
     if (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type)
       return (false);
-  return (ptrs->ra[idx].unnamed);
+  return (ptrs->ra[idx].flags.unnamed);
 }
 
 static mr_status_t

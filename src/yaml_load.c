@@ -48,7 +48,7 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, int * parent, mr_fd_t * name_fd, char * va
     return (MR_FAILURE);
   mr_add_child (*parent, idx, ptrs->ra);
 
-  ptrs->ra[idx].unnamed = unnamed;
+  ptrs->ra[idx].flags.unnamed = unnamed;
   ptrs->ra[idx].fdp = name_fd;
   
   if (value)
@@ -112,7 +112,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	    {
 	    case YAML_SCALAR_EVENT:
 	      if (parent >= 0)
-		if (!ptrs->ra[parent].unnamed)
+		if (!ptrs->ra[parent].flags.unnamed)
 		  {
 		    mr_fd_t * name_fdp = mr_get_any_fd_by_name ((char*)event.data.scalar.value, NULL);
 		    if (NULL == name_fdp)
@@ -164,7 +164,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 		status = MR_FAILURE;
 	      else
 		{
-		  status = ptrs->ra[parent].unnamed ? MR_FAILURE : MR_SUCCESS;
+		  status = ptrs->ra[parent].flags.unnamed ? MR_FAILURE : MR_SUCCESS;
 		  parent = ptrs->ra[parent].parent;
 		}
 	      break;
@@ -178,7 +178,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 		status = MR_FAILURE;
 	      else
 		{
-		  status = !ptrs->ra[parent].unnamed ? MR_FAILURE : MR_SUCCESS;
+		  status = !ptrs->ra[parent].flags.unnamed ? MR_FAILURE : MR_SUCCESS;
 		  parent = ptrs->ra[parent].parent;
 		}
 	      break;

@@ -469,6 +469,8 @@ TYPEDEF_STRUCT (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter
 		BITFIELD (bool, is_referenced, : 1, "pointer is already serialized somewhere else"),
 		BITFIELD (bool, is_content_reference, : 1, "pointers on string content may reffer only on string pointer"),
 		BITFIELD (bool, is_opaque_data, : 1, "opaque serialization of resizeable pointer to XDR"),
+		BITFIELD (bool, unnamed, : 1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
+		BITFIELD (bool, typed, : 1, "for CINIT deserialization pointer nodes has type"),
 		)
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
@@ -572,8 +574,6 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
-		BITFIELD (bool, unnamed, : 1, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
-		BITFIELD (bool, typed, : 1, "for CINIT deserialization pointer nodes has type"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int, parent, , "parent index"),

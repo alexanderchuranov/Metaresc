@@ -45,7 +45,7 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
-  if (!ptrdes->unnamed)
+  if (!ptrdes->flags.unnamed)
     {
       yaml_event_t name_event;
       char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
@@ -237,7 +237,7 @@ yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptr
   if (ptrdes->fdp)
     if (ptrdes->fdp->meta)
       if (0 == strcmp (ptrdes->fdp->meta, MR_PTR_META))
-	ptrdes->unnamed = false;
+	ptrdes->flags.unnamed = false;
   
   if (ptrdes->flags.is_null || (ptrdes->ref_idx >= 0))
     return (yaml_emit_string (&mr_yaml_context->emitter, "", ptrs, idx));
@@ -258,7 +258,7 @@ yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * pt
 static mr_status_t
 yaml_pre_save_anon_union (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
 {
-  ptrs->ra[idx].unnamed = false;
+  ptrs->ra[idx].flags.unnamed = false;
   return (yaml_pre_save_struct (mr_yaml_context, ptrs, idx));
 }
 

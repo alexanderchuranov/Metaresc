@@ -842,7 +842,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
     }
 
   if (!fdp->non_persistent && (MR_TYPE_POINTER == fdp->stype.mr_type) && ptrs->ra[idx].fdp)
-    if (ptrs->ra[idx].typed && (fdp->stype.tdp != ptrs->ra[idx].fdp->stype.tdp))
+    if (ptrs->ra[idx].flags.typed && (fdp->stype.tdp != ptrs->ra[idx].fdp->stype.tdp))
       {
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str,
 		    fdp->stype.tdp ? fdp->stype.tdp->type.str : "undefined",

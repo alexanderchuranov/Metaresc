@@ -209,7 +209,7 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
   if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
 
-  if (!ptrs->ra[idx].unnamed)
+  if (!ptrs->ra[idx].flags.unnamed)
     {
       if (mr_ra_append_char (mr_ra_str, '.') < 0)
 	return (MR_FAILURE);
