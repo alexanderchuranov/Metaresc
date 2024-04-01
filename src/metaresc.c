@@ -554,7 +554,6 @@ mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
   ptrdes->parent = -1;
   ptrdes->first_child = -1;
   ptrdes->last_child = -1;
-  ptrdes->prev = -1;
   ptrdes->next = -1;
   return (ptrs->size / sizeof (ptrs->ra[0]) - 1);
 }
@@ -583,7 +582,6 @@ mr_add_child (int parent, int child, mr_ptrdes_t * ra)
   else
     {
       ra[last_child].next = child;
-      ra[child].prev = last_child;
       ra[child].next = -1;
     }
   ra[parent].last_child = child;

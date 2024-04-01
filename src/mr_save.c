@@ -569,6 +569,14 @@ mr_check_ud (mr_ptr_t key, const void * context)
 }
 
 static bool
+is_first_child (mr_ptrdes_t * ra, int node)
+{
+  if (ra[node].parent < 0)
+    return (false);
+  return (ra[ra[node].parent].first_child == node);
+}
+
+static bool
 ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
 {
   while ((node >= 0) && (node != ref_idx))
@@ -668,7 +676,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
       /* otherwise we can handle only match with another resizable pointer */
       if (MR_TYPE_POINTER == mr_save_data->ptrs.ra[ref_parent].mr_type)
 	{
-	  if (mr_save_data->ptrs.ra[ref_idx].prev < 0)
+	  if (is_first_child (mr_save_data->ptrs.ra, ref_idx))
 	    /*
 	      previously saved resizable pointer was pointing to the same address, but was shorter.
 	      we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
@@ -766,7 +774,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	    if (ref_parent >= 0)
 	      if (((MR_TYPE_STRING == ra[ref_parent].mr_type)
 		   || ((MR_TYPE_POINTER == ra[ref_parent].mr_type)
-		       && (ra[ref_idx].prev < 0)
+		       && is_first_child (ra, ref_idx)
 		       && (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
 		  && !ref_is_parent (ra, parent, ref_idx))
 	      return (move_nodes_to_parent (ra, ref_parent, parent, idx, element_size));
@@ -1305,27 +1313,19 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
   if (MR_DFS_POST_ORDER != order)
     return (MR_SUCCESS);
 
-  if (0 == level)
-    return (MR_SUCCESS);
-
-  if ((ptrs->ra[idx].first_child < 0) && (ptrs->ra[idx].ref_idx < 0)
-      && !ptrs->ra[idx].flags.is_null && !ptrs->ra[idx].flags.is_referenced
-      && ((REMOVE_IF_EMPTY >> ptrs->ra[idx].mr_type) & 1))
-    {
-      bool * need_reindex = context;
-
-      *need_reindex = true;
-      /* empty node found - unchain it from parent node */
-      if (ptrs->ra[idx].prev < 0) /* node was a first child at parent node */
-	ptrs->ra[ptrs->ra[idx].parent].first_child = ptrs->ra[idx].next;
-      else
-	ptrs->ra[ptrs->ra[idx].prev].next = ptrs->ra[idx].next;
-
-      if (ptrs->ra[idx].next < 0) /* node was a last child at parent node */
-	ptrs->ra[ptrs->ra[idx].parent].last_child = ptrs->ra[idx].prev;
-      else
-	ptrs->ra[ptrs->ra[idx].next].prev = ptrs->ra[idx].prev;
-    }
+  int * next = &ptrs->ra[idx].first_child;
+  while (*next >= 0)
+    if ((ptrs->ra[*next].first_child < 0) && (ptrs->ra[*next].ref_idx < 0)
+	&& !ptrs->ra[*next].flags.is_null && !ptrs->ra[*next].flags.is_referenced
+	&& ((REMOVE_IF_EMPTY >> ptrs->ra[*next].mr_type) & 1))
+      {
+	bool * need_reindex = context;
+	*need_reindex = true;
+	/* empty node found - unchain it from parent node */
+	*next = ptrs->ra[*next].next;
+      }
+    else
+      next = &ptrs->ra[*next].next;
 
   return (MR_SUCCESS);
 }

@@ -168,6 +168,14 @@ scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 }
 
 static int
+scm_printf_compaund (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+{
+  if (ptrdes->first_child < 0)
+    return (mr_ra_append_string (mr_ra_str, "()"));
+  return (0);
+}
+
+static int
 scm_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (0);
@@ -202,14 +210,14 @@ static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_CHAR] = scm_save_char,
     [MR_TYPE_CHAR_ARRAY] = scm_save_char_array,
     [MR_TYPE_STRING] = scm_save_string,
-    [MR_TYPE_STRUCT] = mr_ra_printf_void,
+    [MR_TYPE_STRUCT] = scm_printf_compaund,
     [MR_TYPE_FUNC] = scm_save_func,
     [MR_TYPE_FUNC_TYPE] = scm_save_func,
-    [MR_TYPE_ARRAY] = mr_ra_printf_void,
+    [MR_TYPE_ARRAY] = scm_printf_compaund,
     [MR_TYPE_POINTER] = scm_save_pointer,
-    [MR_TYPE_UNION] = mr_ra_printf_void,
-    [MR_TYPE_ANON_UNION] = mr_ra_printf_void,
-    [MR_TYPE_NAMED_ANON_UNION] = mr_ra_printf_void,
+    [MR_TYPE_UNION] = scm_printf_compaund,
+    [MR_TYPE_ANON_UNION] = scm_printf_compaund,
+    [MR_TYPE_NAMED_ANON_UNION] = scm_printf_compaund,
   };
 
 static mr_status_t
@@ -241,12 +249,14 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_
 	return (MR_FAILURE);
     }
 
-  if ((ptrs->ra[idx].prev >= 0) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] != '\n'))
-    {
-      count = mr_ra_append_char (mr_ra_str, ' ');
-      if (count < 0)
-	return (MR_FAILURE);
-    }
+  if (ptrs->ra[idx].parent >= 0)
+    if ((ptrs->ra[ptrs->ra[idx].parent].first_child != idx) &&
+	(mr_ra_str->data.string[mr_ra_str->mr_size - 2] != '\n'))
+      {
+	count = mr_ra_append_char (mr_ra_str, ' ');
+	if (count < 0)
+	  return (MR_FAILURE);
+      }
 
   if (ptrs->ra[idx].fdp)
     if (ptrs->ra[idx].fdp->meta)

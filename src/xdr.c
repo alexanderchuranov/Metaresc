@@ -414,25 +414,6 @@ xdr_uint64_t (XDR * xdrs, uint64_t * uint64)
   return (xdr_int64_t (xdrs, (int64_t*) uint64));
 }
 
-/**
- * Handler for type ssize_t.
- * @param xdrs XDR stream descriptor
- * @param cp pointer on ssize_t
- * @return status
- */
-static bool_t
-xdr_ssize_t (XDR * xdrs, ssize_t * cp)
-{
-  int64_t x = 0;
-  if (XDR_ENCODE == xdrs->x_op)
-    x = *cp;
-  if (!xdr_int64_t (xdrs, &x))
-    return (false);
-  if (XDR_DECODE == xdrs->x_op)
-    *cp = x;
-  return (true);
-}
-
 #ifndef HAVE_XDR_UINT16_T
 #  ifdef HAVE_XDR_U_INT16_T
 #    define xdr_uint16_t xdr_u_int16_t
@@ -882,7 +863,7 @@ xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
   if (!ptrs->ra[idx].fdp->non_persistent)
     if (ptrs->ra[idx].fdp->stype.dim.size == sizeof (ptrs->ra[idx].fdp->stype.dim.dim[0]))
-      if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
+      if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -915,7 +896,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
       if (!ptrs->ra[idx].fdp->non_persistent)
 	{
-	  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
+	  if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	    return (MR_FAILURE);
 
 	  count = ptrs->ra[idx].MR_SIZE / fd_.stype.size;
@@ -964,7 +945,7 @@ xdr_save_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   if (true == ptrs->ra[idx].flags.is_null)
     return (MR_SUCCESS);
 
-  if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
+  if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
     return (MR_FAILURE);
   
   if (ptrs->ra[idx].flags.is_opaque_data && (ptrs->ra[idx].MR_SIZE > 0))
@@ -1012,7 +993,7 @@ xdr_load_pointer (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
     {
       int count = 0;
       
-      if (!xdr_ssize_t (xdrs, &ptrs->ra[idx].MR_SIZE))
+      if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
 
       if (!ptrs->ra[idx].flags.is_opaque_data)
