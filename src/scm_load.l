@@ -21,7 +21,7 @@
 
 %}
 
-WS	[[:space:]]*
+WS	[[:space:]]+
 ID	[_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER [+-]?#(x|X)[[:xdigit:]]+
@@ -29,10 +29,9 @@ OCT_NUMBER [+-]?#(o|O)[[0-7]]+
 FLOAT_NAN [+-]?[Nn][Aa][Nn]
 FLOAT_INF [+-]?[Ii][Nn][Ff]
 FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?
-IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 %%
 
-[[:space:]]+  { return (TOK_SCM_WS); }
+{WS}  { return (TOK_SCM_WS); }
 
 {INT_NUMBER} {
   yylval->value.value_type = MR_VT_INT;
@@ -69,19 +68,12 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
   return (TOK_SCM_NUMBER);
 }
 
-{IMAGENARY_NUMBER} {
-  yylval->value.value_type = MR_VT_COMPLEX;
-  yylval->value.vt_complex = MR_CLD_PACK (I * strtold (yytext, NULL));
+"nil" { return (TOK_SCM_FALSE); }
+"t" {
+  yylval->value.value_type = MR_VT_INT;
+  yylval->value.vt_int = true;
   return (TOK_SCM_NUMBER);
 }
-[Ii] {
-  yylval->value.value_type = MR_VT_COMPLEX;
-  yylval->value.vt_complex = MR_CLD_PACK (I);
-  return (TOK_SCM_NUMBER);
-}
-
-#f { return (TOK_SCM_FALSE); }
-#t { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_SCM_NUMBER); }
 
 "\""([^\"\\]|\\.)*"\"" {
   yylval->string.str = yytext;
@@ -103,27 +95,16 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
   return (TOK_SCM_CHAR);
 }
 
-";"+{WS}"("{WS}{ID}[[:space:]]+[[:digit:]]+{WS}")"{WS} {
+";"+{WS}*"("{WS}*{ID}{WS}*\.{WS}*[[:digit:]]+{WS}*")"{WS}* {
   mr_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
-  sscanf (&yylval->id_ivalue.id.str[yylval->id_ivalue.id.length], "%d", &yylval->id_ivalue.ivalue);
+  sscanf (strchr (yytext, '.') + 1, "%d", &yylval->id_ivalue.ivalue);
   return (TOK_SCM_ID_IVALUE);
-					       }
+}
 
-";"[^\n]*{WS} { }
+";"[^\n]*{WS}* { }
 
-"("{WS}       { return (TOK_SCM_LPARENTHESIS); }
-
-{WS}")"       { return (TOK_SCM_RPARENTHESIS); }
-
-"#"           { return (TOK_SCM_HASH); }
-"+"           { return (TOK_SCM_PLUS); }
-"-"           { return (TOK_SCM_MINUS); }
-"*"           { return (TOK_SCM_MUL); }
-"/"           { return (TOK_SCM_DIV); } 
-"%"           { return (TOK_SCM_MOD); } 
-"logior"      { return (TOK_SCM_BIT_OR); } 
-"logand"      { return (TOK_SCM_BIT_AND); }
-"logxor"      { return (TOK_SCM_BIT_XOR); } 
+"("{WS}*       { return (TOK_SCM_LPARENTHESIS); }
+{WS}*")"       { return (TOK_SCM_RPARENTHESIS); }
 
 {ID} {
   yylval->string.str = yytext;
@@ -131,7 +112,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
   return (TOK_SCM_ID);
 }
 
-[[:space:]]+"."[[:space:]]+         { return (TOK_SCM_DOT); }
+{WS}+"."{WS}+         { return (TOK_SCM_DOT); }
 
 .             { return (TOK_SCM_ERROR); }
 

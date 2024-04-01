@@ -22,6 +22,9 @@
 
 #define SIZEOF_QUOTE_CHAR (sizeof ("\"") - sizeof (""))
 
+#if MR_SCM_DEBUG
+  __attribute__ ((constructor)) void init_scm_debug (void) { mr_scm_debug = 1; }
+#endif /* MR_SCM_DEBUG */
 }
 
 %code {
@@ -90,9 +93,7 @@
 %token <string> TOK_SCM_VALUE TOK_SCM_ID TOK_SCM_STRING
 %token <value> TOK_SCM_CHAR TOK_SCM_NUMBER
 %token <id_ivalue> TOK_SCM_ID_IVALUE
-%token TOK_SCM_FALSE TOK_SCM_WS TOK_SCM_LPARENTHESIS TOK_SCM_RPARENTHESIS TOK_SCM_DOT TOK_SCM_HASH TOK_SCM_ERROR TOK_SCM_PLUS TOK_SCM_MINUS TOK_SCM_MUL TOK_SCM_DIV TOK_SCM_MOD TOK_SCM_BIT_OR TOK_SCM_BIT_AND TOK_SCM_BIT_XOR
-
-%type <value> expr plus_list minus_list mul_list div_list bit_or_list bit_and_list bit_xor_list
+%token TOK_SCM_FALSE TOK_SCM_WS TOK_SCM_LPARENTHESIS TOK_SCM_RPARENTHESIS TOK_SCM_LBRACKETS TOK_SCM_RBRACKETS TOK_SCM_DOT TOK_SCM_ERROR
 
 %start ws_scm_ws
 
@@ -100,7 +101,10 @@
 
 ws_scm_ws: ws scm ws
 
-scm: start_node scm_stmt { mr_load_t * mr_load = MR_LOAD; mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent; }
+scm: start_node scm_stmt {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
+}
 
 start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
@@ -132,9 +136,8 @@ value
 value:
 compaund
 | named_node
-| TOK_SCM_HASH compaund
 | TOK_SCM_CHAR { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
-| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
+| TOK_SCM_NUMBER { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
@@ -149,87 +152,22 @@ compaund
   mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_int = false;
   }
 
-expr:
-TOK_SCM_NUMBER { $$ = $1; }
-| TOK_SCM_ID {
-  mr_load_t * mr_load = MR_LOAD;
-  $$.value_type = MR_VT_ID;
-  $$.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
-  $$.vt_quoted_substr.substr.length = $1.length;
-  $$.vt_quoted_substr.unquote = NULL;
-  }
-| TOK_SCM_LPARENTHESIS TOK_SCM_PLUS ws plus_list TOK_SCM_RPARENTHESIS { $$ = $4; }
-| TOK_SCM_LPARENTHESIS TOK_SCM_MINUS ws minus_list TOK_SCM_RPARENTHESIS { $$ = $4; }
-| TOK_SCM_LPARENTHESIS TOK_SCM_MUL ws mul_list TOK_SCM_RPARENTHESIS { $$ = $4; }
-| TOK_SCM_LPARENTHESIS TOK_SCM_DIV ws expr TOK_SCM_WS div_list TOK_SCM_RPARENTHESIS { mr_value_div (&$$, &$4, &$6); }
-| TOK_SCM_LPARENTHESIS TOK_SCM_MOD ws expr TOK_SCM_WS expr TOK_SCM_RPARENTHESIS { mr_value_mod (&$$, &$4, &$6); }
-| TOK_SCM_LPARENTHESIS TOK_SCM_BIT_OR ws bit_or_list TOK_SCM_RPARENTHESIS { $$ = $4; }
-| TOK_SCM_LPARENTHESIS TOK_SCM_BIT_AND ws bit_and_list TOK_SCM_RPARENTHESIS { $$ = $4; }
-| TOK_SCM_LPARENTHESIS TOK_SCM_BIT_XOR ws bit_xor_list TOK_SCM_RPARENTHESIS { $$ = $4; }
-
-plus_list: { $$.value_type = MR_VT_INT; $$.vt_int = 0; }
-| expr TOK_SCM_WS plus_list { mr_value_add (&$$, &$1, &$3); }
-| expr { $$ = $1; }
-
-minus_list: { $$.value_type = MR_VT_INT; $$.vt_int = 0; }
-| expr TOK_SCM_WS plus_list { mr_value_sub (&$$, &$1, &$3); }
-| expr { $$ = $1; mr_value_neg (&$$); }
-
-mul_list: { $$.value_type = MR_VT_INT; $$.vt_int = 1; }
-| expr TOK_SCM_WS mul_list { mr_value_mul (&$$, &$1, &$3); }
-| expr { $$ = $1; }
-
-div_list: expr { $$ = $1; }
-| expr TOK_SCM_WS mul_list { mr_value_mul (&$$, &$1, &$3); }
-
-bit_or_list: { $$.value_type = MR_VT_INT; $$.vt_int = 0; }
-| expr TOK_SCM_WS bit_or_list { mr_value_bit_or (&$$, &$1, &$3); }
-| expr { $$ = $1; }
-
-bit_and_list: { $$.value_type = MR_VT_INT; $$.vt_int = 0; }
-| expr TOK_SCM_WS bit_and_list { mr_value_bit_and (&$$, &$1, &$3); }
-| expr { $$ = $1; }
-
-bit_xor_list: { $$.value_type = MR_VT_INT; $$.vt_int = 0; }
-| expr TOK_SCM_WS bit_xor_list { mr_value_bit_xor (&$$, &$1, &$3); }
-| expr { $$ = $1; }
-
 compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS
 
-named_node: TOK_SCM_LPARENTHESIS scm TOK_SCM_DOT TOK_SCM_ID TOK_SCM_RPARENTHESIS {
-  mr_load_t * mr_load = MR_LOAD;
-  int self = mr_load->parent;
-  int parent = mr_load->ptrs->ra[self].parent;
-  int prev = mr_load->ptrs->ra[self].prev;
-  int child = mr_load->ptrs->ra[self].first_child;
-  if (parent >= 0)
-    {
-      if (mr_load->ptrs->ra[parent].first_child == self)
-	mr_load->ptrs->ra[parent].first_child = child;
-      if (mr_load->ptrs->ra[parent].last_child == self)
-	mr_load->ptrs->ra[parent].last_child = child;
-    }
-  if (prev >= 0)
-    mr_load->ptrs->ra[prev].next = child;
-  mr_load->ptrs->ra[child].prev = prev;
+list: | scm ws list
 
-  mr_load->ptrs->ra[child].parent = parent;
-  mr_load->ptrs->ra[child].fdp = mr_get_any_fd_by_name_substr (&$4, NULL);
-  if (NULL == mr_load->ptrs->ra[child].fdp)
+named_node: TOK_SCM_LPARENTHESIS TOK_SCM_ID TOK_SCM_DOT value TOK_SCM_RPARENTHESIS {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_load->ptrs->ra[mr_load->parent].fdp = mr_get_any_fd_by_name_substr (&$2, NULL);
+  if (NULL == mr_load->ptrs->ra[mr_load->parent].fdp)
     {
-      char name[$4.length + 1];
-      memcpy (name, $4.str, $4.length);
-      name[$4.length] = 0;
+      char name[$2.length + 1];
+      memcpy (name, $2.str, $2.length);
+      name[$2.length] = 0;
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
       YYERROR;
     }
-
-  mr_load->parent = child;
 }
-
-list: | nonempty_list
-
-nonempty_list: scm | nonempty_list TOK_SCM_WS scm
 
 ws: | TOK_SCM_WS
 

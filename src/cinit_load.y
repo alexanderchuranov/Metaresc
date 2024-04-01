@@ -217,7 +217,9 @@ list_element: cinit
 | TOK_CINIT_DOT TOK_CINIT_ID TOK_CINIT_ASSIGN cinit {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name_substr (&$2, mr_load->ptrs->ra[idx].fdp ? mr_load->ptrs->ra[idx].fdp->stype.tdp : NULL);
+  mr_td_t * tdp = mr_load->ptrs->ra[idx].fdp ? mr_load->ptrs->ra[idx].fdp->stype.tdp : NULL;
+
+  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name_substr (&$2, tdp);
   if (NULL == mr_load->ptrs->ra[idx].fdp)
     {
       char name[$2.length + 1];

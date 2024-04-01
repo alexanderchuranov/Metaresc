@@ -10,28 +10,24 @@
 #include <mr_save.h>
 #include <mr_stringify.h>
 
-#define MR_SCM_FALSE "#f"
-#define MR_SCM_TRUE "#t"
+#define MR_SCM_FALSE "nil"
+#define MR_SCM_TRUE "t"
 
 #define MR_SCM_INDENT_SPACES (2)
 #define MR_SCM_INDENT_TEMPLATE "\n%*s"
 
-#define MR_SCM_NAMED_FIELD_START "("
-#define MR_SCM_COMPAUND_START "("
-#define MR_SCM_COMPAUND_END ")"
-#define MR_SCM_ARRAY_PREFIX "#"
-#define MR_SCM_ATTR_INT ";(%s %d)"
+#define MR_SCM_NAMED_FIELD "(%s . "
+#define MR_SCM_ATTR_INT ";(%s . %d)\n"
 
-#define MR_SCM_BITMASK_OR_DELIMITER " "
-#define MR_SCM_BITMASK_PREFIX "(logior "
+#define MR_SCM_BITMASK_OR_DELIMITER " | "
 
 #define SCM_SAVE_COMPLEX(TYPE)						\
   static int scm_save_complex_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) \
   {									\
     int count = 0;							\
-    count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, "(+ "));	\
-    count += TRY_CATCH_THROW (mr_ra_printf_complex_ ## TYPE (mr_ra_str, ptrdes, " ")); \
-    count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, ')'));	\
+    count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));	\
+    count += TRY_CATCH_THROW (mr_ra_printf_complex_ ## TYPE (mr_ra_str, ptrdes, " + ")); \
+    count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));	\
     return (count);							\
   }
 
@@ -50,38 +46,10 @@ scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
-  if (NULL == tdp)
-    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
-  if ((MR_TYPE_ENUM != tdp->mr_type) || (!tdp->param.enum_param.is_bitmask))
-    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
-
-  int tokens = 0;
-  int i, enums_count = tdp->param.enum_param.enums_size / sizeof (tdp->param.enum_param.enums[0]);
-  mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
-
-  if (0 == value)
-    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
-
-  for (i = 0; i < enums_count; ++i)
-    if (value & tdp->param.enum_param.enums[i]->value._unsigned)
-      {
-	++tokens;
-	value ^= tdp->param.enum_param.enums[i]->value._unsigned;
-	if (0 == value)
-	  break;
-      }
-
-  if (0 != value)
-    ++tokens;
-
-  if (1 == tokens)
-    return (mr_ra_printf_enum (mr_ra_str, ptrdes));
-
   int count = 0;
-  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, MR_SCM_BITMASK_PREFIX));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   count += TRY_CATCH_THROW (mr_ra_printf_bitmask (mr_ra_str, ptrdes, MR_SCM_BITMASK_OR_DELIMITER));
-  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, ')'));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   return (count);
 }
 
@@ -98,8 +66,20 @@ scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     {
     case MR_TYPE_BOOL: return (scm_printf_bool (mr_ra_str, &_ptrdes));
     case MR_TYPE_ENUM: return (scm_printf_bitmask (mr_ra_str, &_ptrdes));
-    default: return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, MR_SCM_BITMASK_OR_DELIMITER));
+    case MR_TYPE_INT8: return (mr_ra_printf_int8_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT8: return (mr_ra_printf_uint8_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT16: return (mr_ra_printf_int16_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT16: return (mr_ra_printf_uint16_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT32: return (mr_ra_printf_int32_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT32: return (mr_ra_printf_uint32_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT64: return (mr_ra_printf_int64_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT64: return (mr_ra_printf_uint64_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_INT128: return (mr_ra_printf_int128_t (mr_ra_str, &_ptrdes));
+    case MR_TYPE_UINT128: return (mr_ra_printf_uint128_t (mr_ra_str, &_ptrdes));
+    default:
+      break;
     }
+  return (0);
 }  
 
 /**
@@ -113,11 +93,16 @@ scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   if (true == ptrdes->flags.is_null)
     return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
+
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
-  if (func_str)
-    return (mr_ra_append_string (mr_ra_str, (char*)func_str));
-  else
+  if (NULL == func_str)
     return (mr_ra_printf (mr_ra_str, "#x%llx", (long long unsigned int)*(uintptr_t*)ptrdes->data.ptr));
+
+  int count = 0;
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, (char*)func_str));
+  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
+  return (count);
 }
 
 /**
@@ -177,13 +162,15 @@ scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
+  if (ptrdes->flags.is_null || (ptrdes->ref_idx >= 0))
+    return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
+  return (0);
 }
 
 static int
 scm_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
+  return (0);
 }
 
 /**
@@ -225,127 +212,115 @@ static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = mr_ra_printf_void,
   };
 
-static inline bool
-scm_is_unnamed (mr_ra_ptrdes_t * ptrs, int idx)
-{
-  int parent = ptrs->ra[idx].parent;
-  if ((MR_TYPE_POINTER == ptrs->ra[idx].mr_type) && (parent >= 0))
-    if (MR_TYPE_ARRAY != ptrs->ra[parent].mr_type)
-      return (false);
-  return (ptrs->ra[idx].flags.unnamed);
-}
-
 static mr_status_t
 scm_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
-  int in_comment = false;
   int limit_level = MR_LIMIT_LEVEL (level);
+  int count;
 
-  memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
-  
   if (ptrs->ra[idx].ref_idx >= 0)
     {
-      if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			limit_level * MR_SCM_INDENT_SPACES, "",
-			(ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-			ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+      if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
+	mr_ra_str->mr_size--;
+      count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
+			    limit_level * MR_SCM_INDENT_SPACES, "",
+			    (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+			    ptrs->ra[ptrs->ra[idx].ref_idx].idx);
+      if (count < 0)
 	return (MR_FAILURE);
-
-      in_comment = true;
     }
+
   if (ptrs->ra[idx].flags.is_referenced)
     {
-      if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			limit_level * MR_SCM_INDENT_SPACES, "", MR_REF_IDX, ptrs->ra[idx].idx) < 0)
-	return (MR_FAILURE);
-
-      in_comment = true;
-    }
-
-  if (ptrs->ra[idx].first_child < 0)
-    {
-      mr_ra_printf_t save_handler = NULL;
-      /* route saving handler */
-      if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
-	save_handler = scm_save_handler[ptrs->ra[idx].mr_type];
-      
-      if (NULL == save_handler)
-	{
-	  save_handler = mr_ra_printf_void;
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
-	}
-
-      if (!scm_is_unnamed (ptrs, idx))
-	{
-	  if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD_START,
-			    limit_level * MR_SCM_INDENT_SPACES, "") < 0)
-	    return (MR_FAILURE);
-	  if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
-	    return (MR_FAILURE);
-	  if (mr_ra_append_string (mr_ra_str, " . ") < 0)
-	    return (MR_FAILURE);
-	  char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
-	  if (mr_ra_append_string (mr_ra_str, name) < 0)
-	    return (MR_FAILURE);
-	  if (mr_ra_append_char (mr_ra_str, ')') < 0)
-	    return (MR_FAILURE);
-	}
-      else
-	{
-	  if (in_comment)
-	    {
-	      if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE,
-				limit_level * MR_SCM_INDENT_SPACES, "") < 0)
-		return (MR_FAILURE);
-	    }
-	  else
-	    {
-	      if (mr_ra_append_char (mr_ra_str, ' ') < 0)
-		return (MR_FAILURE);
-	    }
-	  if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
-	    return (MR_FAILURE);
-	}
-    }
-  else
-    {
-      if ((idx != 0) || in_comment)
-	if (mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE,
-			  limit_level * MR_SCM_INDENT_SPACES, "") < 0)
-	  return (MR_FAILURE);
-
-      if (!scm_is_unnamed (ptrs, idx))
-	if (mr_ra_append_string (mr_ra_str, MR_SCM_NAMED_FIELD_START) < 0)
-	  return (MR_FAILURE);
-
-      if (MR_TYPE_ARRAY == ptrs->ra[idx].mr_type)
-	if (mr_ra_append_string (mr_ra_str, MR_SCM_ARRAY_PREFIX) < 0)
-	  return (MR_FAILURE);
-
-      if (mr_ra_append_string (mr_ra_str, MR_SCM_COMPAUND_START) < 0)
+      if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
+	mr_ra_str->mr_size--;
+      count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
+			    limit_level * MR_SCM_INDENT_SPACES, "",
+			    MR_REF_IDX, ptrs->ra[idx].idx);
+      if (count < 0)
 	return (MR_FAILURE);
     }
 
-  return (MR_SUCCESS);
+  if ((ptrs->ra[idx].prev >= 0) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] != '\n'))
+    {
+      count = mr_ra_append_char (mr_ra_str, ' ');
+      if (count < 0)
+	return (MR_FAILURE);
+    }
+
+  if (ptrs->ra[idx].fdp)
+    if (ptrs->ra[idx].fdp->meta)
+      if (0 == strcmp (ptrs->ra[idx].fdp->meta, MR_PTR_META))
+	ptrs->ra[idx].flags.unnamed = false;
+
+  if (!ptrs->ra[idx].flags.unnamed)
+    {
+      if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
+	mr_ra_str->mr_size--;
+      count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD,
+			    limit_level * MR_SCM_INDENT_SPACES, "", ptrs->ra[idx].fdp->name.str);
+      if (count < 0)
+	return (MR_FAILURE);
+    }
+
+  if (ptrs->ra[idx].first_child >= 0)
+    {
+      if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
+	{
+	  mr_ra_str->mr_size--;
+	  count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
+	  if (count < 0)
+	    return (MR_FAILURE);
+	}
+      count = mr_ra_append_char (mr_ra_str, '(');
+      if (count < 0)
+	return (MR_FAILURE);
+    }
+
+  if (ptrs->ra[idx].flags.unnamed && !(ptrs->ra[idx].first_child >= 0) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n'))
+    {
+      mr_ra_str->mr_size--;
+      count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
+      if (count < 0)
+	return (MR_FAILURE);
+    }
+
+  mr_ra_printf_t save_handler = NULL;
+  /* route saving handler */
+  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
+    save_handler = scm_save_handler[ptrs->ra[idx].mr_type];
+
+  if (NULL == save_handler)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+      return (MR_FAILURE);
+    }
+
+  count = save_handler (mr_ra_str, &ptrs->ra[idx]);
+
+  return ((count >= 0) ? MR_SUCCESS : MR_FAILURE);
 }
 
 static mr_status_t
 scm_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
 {
-  if (ptrs->ra[idx].first_child >= 0)
-    if (mr_ra_append_string (mr_ra_str, MR_SCM_COMPAUND_END) < 0)
-      return (MR_FAILURE);
-  
-  if (!scm_is_unnamed (ptrs, idx) && (ptrs->ra[idx].first_child >= 0))
+  int limit_level = MR_LIMIT_LEVEL (level);
+  int count;
+
+  if (!ptrs->ra[idx].flags.unnamed || (ptrs->ra[idx].first_child >= 0))
     {
-      if (mr_ra_append_string (mr_ra_str, " . ") < 0)
+      if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
+	{
+	  mr_ra_str->mr_size--;
+	  count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
+	  if (count < 0)
+	    return (MR_FAILURE);
+	}
+      count = mr_ra_printf (mr_ra_str, ")%s\n",
+			    (!ptrs->ra[idx].flags.unnamed && (ptrs->ra[idx].first_child >= 0)) ? ")" : "");
+      if (count < 0)
 	return (MR_FAILURE);
-      char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
-      if (mr_ra_append_string (mr_ra_str, name) < 0)
-	return (MR_FAILURE);
-      if (mr_ra_append_char (mr_ra_str, ')') < 0)
-	return (MR_FAILURE);
-    }      
+    }
 
   return (MR_SUCCESS);
 }
@@ -375,16 +350,18 @@ char *
 mr_scm_save (mr_ra_ptrdes_t * ptrs)
 {
   mr_rarray_t mr_ra_str = {
-    .data = { mr_strdup ("") },
-    .MR_SIZE = sizeof (""),
+    .data.string = mr_strdup ("\n"),
+    .MR_SIZE = sizeof ("\n"),
     .type = "string",
-    .alloc_size = sizeof (""),
+    .alloc_size = sizeof ("\n"),
   };
 
-  if (NULL == mr_ra_str.data.ptr)
+  if (NULL == mr_ra_str.data.string)
     return (NULL);
 
   mr_ptrs_dfs (ptrs, scm_print_node, &mr_ra_str);
 
-  return (mr_ra_str.data.ptr);
+  if (NULL != mr_ra_str.data.string)
+    memmove (mr_ra_str.data.string, &mr_ra_str.data.string[1], mr_ra_str.mr_size - 1);
+  return (mr_ra_str.data.string);
 }
