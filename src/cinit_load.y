@@ -111,9 +111,7 @@ start_node: {
   mr_load_t * mr_load = MR_LOAD; 
   mr_load->parent = mr_parse_add_node (mr_load); 
   if (mr_load->parent < 0)
-    {
-      YYERROR;
-    }
+    { YYERROR; }
 }
 
 cinit_stmt:
@@ -156,19 +154,24 @@ value
 
 value:
 compaund
-| expr { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
+| expr {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1);
+  if (MR_SUCCESS != status)
+    { YYERROR; }
+}
 | TOK_CINIT_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = cinit_unquote_str;
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_QUOTED_SUBSTR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.length = $1.length;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.unquote = cinit_unquote_str;
   }
 | TOK_CINIT_NULL {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_INT;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_int = 0;
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_int = 0;
   }
 | TOK_CINIT_CHAR {
   mr_load_t * mr_load = MR_LOAD;
@@ -184,9 +187,9 @@ compaund
       YYERROR;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_char = c;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_CHAR;
-  }
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_char = c;
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_CHAR;
+}
 
 expr:
   expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }

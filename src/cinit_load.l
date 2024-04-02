@@ -42,14 +42,14 @@ get_type (mr_substr_t * substr, char * start)
 
 WS	[[:space:]]*
 ID	[_[:alpha:]][_[:alnum:]]*
-INT_NUMBER [+-]?[[:digit:]]+
-HEX_NUMBER [+-]?(0x|0X)[[:xdigit:]]+
-OCT_NUMBER [+-]?0[[0-7]]+
+INT_NUMBER [[:digit:]]+
+HEX_NUMBER (0x|0X)[[:xdigit:]]+
+OCT_NUMBER 0[[0-7]]+
 NUMBER {INT_NUMBER}|{HEX_NUMBER}|{OCT_NUMBER}
 FLOAT_NAN [+-]?[Nn][Aa][Nn]
 FLOAT_INF [+-]?[Ii][Nn][Ff]
-FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?
-IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?[Ii]
+FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?
+IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 %%
 
 {WS}  { /* eat up whitespace */ }
@@ -59,7 +59,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?[Ii]
 "FALSE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_CINIT_NUMBER); }
 "true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
 "TRUE" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_CINIT_NUMBER); }
-[Ii] { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = MR_CLD_PACK (I); return (TOK_CINIT_NUMBER); }
+[Ii] { yylval->value.value_type = MR_VT_COMPLEX; yylval->value.vt_complex = I; return (TOK_CINIT_NUMBER); }
 
 {NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 0); return (TOK_CINIT_NUMBER); }
 
@@ -67,7 +67,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUMBER})?[Ii]
 
 {IMAGENARY_NUMBER} {
   yylval->value.value_type = MR_VT_COMPLEX;
-  yylval->value.vt_complex = MR_CLD_PACK ( I * strtold (yytext, NULL) );
+  yylval->value.vt_complex = I * strtold (yytext, NULL);
   return (TOK_CINIT_NUMBER);
 }
 

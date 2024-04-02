@@ -136,13 +136,17 @@ mr_status_t
 mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
+  mr_value_t mr_value;
+
+  if (MR_SUCCESS != mr_ptrdes_to_mr_value (&mr_value, ptrdes))
+    return (MR_FAILURE);
+  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &mr_value))
     return (MR_FAILURE);
 
   switch (ptrdes->mr_type)
     {
 #define CASE_SET_VALUE_BY_TYPE(TYPE) CASE_SET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
-#define CASE_SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
+#define CASE_SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: *(TYPE*)ptrdes->data.ptr = mr_value.vt_int; break;
       MR_FOREACH (CASE_SET_VALUE_BY_TYPE, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
       CASE_SET_VALUE_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
       CASE_SET_VALUE_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
@@ -150,18 +154,16 @@ mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
     case MR_TYPE_ENUM:
       switch (ptrdes->fdp->stype.size)
 	{
-#define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int; break;
+#define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = mr_value.vt_int; break;
 	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 #ifdef HAVE_INT128
 	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, mr_uint128_t);
 #endif /* HAVE_INT128 */
 
 	default:
-	  {
-	    __typeof__ (ptrdes->load_params.mr_value.vt_int) vt_int = ptrdes->load_params.mr_value.vt_int;
-	    memcpy (ptrdes->data.ptr, &vt_int, MR_MIN (ptrdes->fdp->stype.size, sizeof (vt_int)));
-	    break;
-	  }
+	  if (ptrdes->fdp)
+	    memcpy (ptrdes->data.ptr, &mr_value.vt_int, MR_MIN (ptrdes->fdp->stype.size, sizeof (mr_value.vt_int)));
+	  break;
 	}
       break;
     default:
@@ -267,20 +269,20 @@ mr_load_func (int idx, mr_ra_ptrdes_t * ptrs)
 
   *(void**)ptrdes->data.ptr = NULL;
   if (!ptrdes->flags.is_null)
-    switch (ptrdes->load_params.mr_value.value_type)
+    switch (ptrdes->value_type)
       {
       case MR_VT_INT:
-	*(void**)ptrdes->data.ptr = (void*)(uintptr_t)ptrdes->load_params.mr_value.vt_int;
+	*(void**)ptrdes->data.ptr = (void*)(uintptr_t)ptrdes->load_params.vt_int;
 	break;
       case MR_VT_ID:
       case MR_VT_QUOTED_SUBSTR:
-	status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_func_wrapper, ptrdes->data.ptr);
+	status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_func_wrapper, ptrdes->data.ptr);
 	break;
       case MR_VT_STRING:
-	status = mr_get_func_wrapper (ptrdes->load_params.mr_value.vt_string, ptrdes->data.ptr);
+	status = mr_get_func_wrapper (ptrdes->load_params.vt_string, ptrdes->data.ptr);
 	break;
       default:
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
 	status = MR_FAILURE;
 	break;
       }
@@ -299,11 +301,14 @@ mr_load_bitfield (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_uintmax_t value;
+  mr_value_t mr_value;
 
-  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
+  if (MR_SUCCESS != mr_ptrdes_to_mr_value (&mr_value, ptrdes))
+    return (MR_FAILURE);
+  if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &mr_value))
     return (MR_FAILURE);
 
-  value = ptrdes->load_params.mr_value.vt_int;
+  value = mr_value.vt_int;
   return (mr_load_bitfield_value (ptrdes, &value));
 }
 
@@ -311,16 +316,20 @@ static mr_status_t
 mr_load_float (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  if (MR_SUCCESS != mr_value_cast (MR_VT_FLOAT, &ptrdes->load_params.mr_value))
+  mr_value_t mr_value;
+
+  if (MR_SUCCESS != mr_ptrdes_to_mr_value (&mr_value, ptrdes))
+    return (MR_FAILURE);
+  if (MR_SUCCESS != mr_value_cast (MR_VT_FLOAT, &mr_value))
     return (MR_FAILURE);
 
   switch (ptrdes->mr_type)
     {
-#define CASE_SET_FLOAT_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_float; break;
+#define CASE_SET_FLOAT_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = mr_value.vt_float; break;
       MR_FOREACH (CASE_SET_FLOAT_BY_TYPE, float, double, long double);
 
     default:
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, mr_value.value_type);
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);
@@ -330,17 +339,20 @@ static mr_status_t
 mr_load_complex (int idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  if (MR_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &ptrdes->load_params.mr_value))
+  mr_value_t mr_value;
+
+  if (MR_SUCCESS != mr_ptrdes_to_mr_value (&mr_value, ptrdes))
+    return (MR_FAILURE);
+  if (MR_SUCCESS != mr_value_cast (MR_VT_COMPLEX, &mr_value))
     return (MR_FAILURE);
 
-  complex_long_double_t cld = MR_CLD_UNPACK (ptrdes->load_params.mr_value.vt_complex);
   switch (ptrdes->mr_type)
     {
-#define CASE_SET_COMPLEX_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = cld; break;
+#define CASE_SET_COMPLEX_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): *(TYPE*)ptrdes->data.ptr = mr_value.vt_complex; break;
       MR_FOREACH (CASE_SET_COMPLEX_BY_TYPE, complex_float_t, complex_double_t, complex_long_double_t);
 
     default:
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, mr_value.value_type);
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);
@@ -376,37 +388,41 @@ mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
   mr_status_t status = MR_SUCCESS;
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
-  switch (ptrdes->load_params.mr_value.value_type)
+  switch (ptrdes->value_type)
     {
     case MR_VT_QUOTED_SUBSTR:
-      status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_char, ptrdes->data.ptr);
+      status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_char, ptrdes->data.ptr);
       break;
 
     case MR_VT_CHAR:
-      *(char*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_char;
+      *(char*)ptrdes->data.ptr = ptrdes->load_params.vt_char;
       break;
       
     case MR_VT_STRING:
-      if (NULL == ptrdes->load_params.mr_value.vt_string)
+      if (NULL == ptrdes->load_params.vt_string)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
 	  status = MR_FAILURE;
 	  break;
 	}
 
-      if (strlen (ptrdes->load_params.mr_value.vt_string) == sizeof (char))
+      if (strlen (ptrdes->load_params.vt_string) == sizeof (char))
 	{
-	  *(char*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_string[0];
+	  *(char*)ptrdes->data.ptr = ptrdes->load_params.vt_string[0];
 	  break;
 	}
       __attribute__ ((fallthrough));
 
     default:
-      if (MR_SUCCESS == mr_value_cast (MR_VT_INT, &ptrdes->load_params.mr_value))
-	*(char*)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_int;
-      else
-	status = MR_FAILURE;
-      break;
+      {
+	mr_value_t mr_value;
+	if (MR_SUCCESS != mr_ptrdes_to_mr_value (&mr_value, ptrdes))
+	  return (MR_FAILURE);
+	if (MR_SUCCESS != mr_value_cast (MR_VT_INT, &mr_value))
+	  return (MR_FAILURE);
+	*(char*)ptrdes->data.ptr = mr_value.vt_int;
+	break;
+      }
     }
 
   return (status);
@@ -434,29 +450,29 @@ mr_load_string (int idx, mr_ra_ptrdes_t * ptrs)
   *(char**)ptrdes->data.ptr = NULL;
   if (!ptrdes->flags.is_null && (ptrdes->ref_idx < 0))
     {
-      switch (ptrdes->load_params.mr_value.value_type)
+      switch (ptrdes->value_type)
 	{
 	case MR_VT_QUOTED_SUBSTR:
-	  status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_str, ptrdes->data.ptr);
+	  status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_str, ptrdes->data.ptr);
 	  break;
 	  
 	case MR_VT_STRING:
-	  *(char**)ptrdes->data.ptr = ptrdes->load_params.mr_value.vt_string;
-	  ptrdes->load_params.mr_value.vt_string = NULL;
+	  *(char**)ptrdes->data.ptr = ptrdes->load_params.vt_string;
+	  ptrdes->load_params.vt_string = NULL;
 	  break;
 
 	case MR_VT_INT:
-	  if (ptrdes->load_params.mr_value.vt_int >= 0)
-	    ptrdes->ref_idx = ptrdes->load_params.mr_value.vt_int;
+	  if (ptrdes->load_params.vt_int >= 0)
+	    ptrdes->ref_idx = ptrdes->load_params.vt_int;
 	  else
 	    {
-	      ptrdes->ref_idx = -ptrdes->load_params.mr_value.vt_int;
+	      ptrdes->ref_idx = -ptrdes->load_params.vt_int;
 	      ptrdes->flags.is_content_reference = true;
 	    }
 	  break;
 	  
 	default:
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
 	  status = MR_FAILURE;
 	  break;
 	}
@@ -525,19 +541,20 @@ mr_load_char_array (int idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_status_t status = MR_SUCCESS;
 
-  if (ptrdes->fdp->stype.size > 0)
-    *(char*)ptrdes->data.ptr = 0;
+  if (ptrdes->fdp)
+    if (ptrdes->fdp->stype.size > 0)
+      *(char*)ptrdes->data.ptr = 0;
   
-  switch (ptrdes->load_params.mr_value.value_type)
+  switch (ptrdes->value_type)
     {
     case MR_VT_QUOTED_SUBSTR:
-      status = mr_process_quoted_str (&ptrdes->load_params.mr_value.vt_quoted_substr, mr_get_char_array, &load_node_context);
+      status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_char_array, &load_node_context);
       break;
     case MR_VT_STRING:
-      status = mr_get_char_array (ptrdes->load_params.mr_value.vt_string, &load_node_context);
+      status = mr_get_char_array (ptrdes->load_params.vt_string, &load_node_context);
       break;
     default:
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->load_params.mr_value.value_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
       status = MR_FAILURE;
       break;
     }
@@ -694,13 +711,13 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   if (ptrdes->flags.is_null)
     return (MR_SUCCESS);
   
-  if (MR_VT_INT == ptrdes->load_params.mr_value.value_type)
+  if (MR_VT_INT == ptrdes->value_type)
     {
-      if (ptrdes->load_params.mr_value.vt_int >= 0)
-	ptrdes->ref_idx = ptrdes->load_params.mr_value.vt_int;
+      if (ptrdes->load_params.vt_int >= 0)
+	ptrdes->ref_idx = ptrdes->load_params.vt_int;
       else
 	{
-	  ptrdes->ref_idx = -ptrdes->load_params.mr_value.vt_int;
+	  ptrdes->ref_idx = -ptrdes->load_params.vt_int;
 	  ptrdes->flags.is_content_reference = true;
 	}
     }
@@ -765,8 +782,8 @@ mr_load_anon_union (int idx, mr_ra_ptrdes_t * ptrs)
     },
   */
   if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
-      (MR_VT_QUOTED_SUBSTR == ptrdes->load_params.mr_value.value_type)
-      && (0 == ptrdes->load_params.mr_value.vt_quoted_substr.substr.length) && /* content must be an empty string */
+      (MR_VT_QUOTED_SUBSTR == ptrdes->value_type)
+      && (0 == ptrdes->load_params.vt_quoted_substr.substr.length) && /* content must be an empty string */
       (ptrdes->fdp != NULL) && /* node must have a name */
       (ptrdes->next >= 0))
     if (NULL == ptrs->ra[ptrdes->next].fdp) /* there should be a next node without name */
@@ -896,12 +913,25 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 	    }
 
       for (i = 0; i < count; ++i)
-	if (MR_VT_STRING == ptrs->ra[i].load_params.mr_value.value_type)
-	  if (ptrs->ra[i].load_params.mr_value.vt_string)
-	    {
-	      MR_FREE (ptrs->ra[i].load_params.mr_value.vt_string);
-	      ptrs->ra[i].load_params.mr_value.vt_string = NULL;
-	    }
+	switch (ptrs->ra[i].value_type)
+	  {
+	  case MR_VT_STRING:
+	    if (ptrs->ra[i].load_params.vt_string)
+	      {
+		MR_FREE (ptrs->ra[i].load_params.vt_string);
+		ptrs->ra[i].load_params.vt_string = NULL;
+	      }
+	    break;
+	  case MR_VT_COMPLEX:
+	    if (ptrs->ra[i].load_params.vt_complex)
+	      {
+		MR_FREE (ptrs->ra[i].load_params.vt_complex);
+		ptrs->ra[i].load_params.vt_complex = NULL;
+	      }
+	    break;
+	  default:
+	    break;
+	  }
     }
 
   if (fdp->non_persistent)

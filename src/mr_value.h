@@ -5,6 +5,9 @@
 
 #include <metaresc.h>
 
+extern mr_status_t mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value);
+extern mr_status_t mr_ptrdes_to_mr_value (mr_value_t * mr_value, mr_ptrdes_t * ptrdes);
+
 extern mr_status_t mr_value_cast (mr_value_type_t value_type, mr_value_t * value);
 extern mr_status_t mr_value_neg (mr_value_t * value);
 extern bool mr_value_is_zero (mr_value_t * value);

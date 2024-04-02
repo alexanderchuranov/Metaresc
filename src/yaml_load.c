@@ -53,9 +53,9 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, int * parent, mr_fd_t * name_fd, char * va
   
   if (value)
     {
-      ptrs->ra[idx].load_params.mr_value.value_type = MR_VT_STRING;
-      ptrs->ra[idx].load_params.mr_value.vt_string = mr_strdup (value);
-      if (NULL == ptrs->ra[idx].load_params.mr_value.vt_string)
+      ptrs->ra[idx].value_type = MR_VT_STRING;
+      ptrs->ra[idx].load_params.vt_string = mr_strdup (value);
+      if (NULL == ptrs->ra[idx].load_params.vt_string)
 	return (MR_FAILURE);
     }
 
@@ -216,9 +216,9 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	{
 	  int i;
 	  for (i = ptrs->size / sizeof (ptrs->ra[0]) - 1; i >= 0; --i)
-	    if (MR_VT_STRING == ptrs->ra[i].load_params.mr_value.value_type)
-	      if (ptrs->ra[i].load_params.mr_value.vt_string)
-		MR_FREE (ptrs->ra[i].load_params.mr_value.vt_string);
+	    if (MR_VT_STRING == ptrs->ra[i].value_type)
+	      if (ptrs->ra[i].load_params.vt_string)
+		MR_FREE (ptrs->ra[i].load_params.vt_string);
 	  MR_FREE (ptrs->ra);
 	}
       memset (ptrs, 0, sizeof (*ptrs));

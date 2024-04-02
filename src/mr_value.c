@@ -11,6 +11,52 @@
 #include <mr_ic.h>
 #include <flt_values.h>
 
+mr_status_t
+mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value)
+{
+  ptrdes->value_type = mr_value->value_type;
+  switch (mr_value->value_type)
+    {
+    case MR_VT_CHAR: ptrdes->load_params.vt_char = mr_value->vt_char; break;
+    case MR_VT_STRING: ptrdes->load_params.vt_string = mr_value->vt_string; break;
+    case MR_VT_QUOTED_SUBSTR:
+    case MR_VT_ID:
+      ptrdes->load_params.vt_quoted_substr = mr_value->vt_quoted_substr; break;
+    case MR_VT_INT: ptrdes->load_params.vt_int = mr_value->vt_int; break;
+    case MR_VT_FLOAT: ptrdes->load_params.vt_float = mr_value->vt_float; break;
+    case MR_VT_COMPLEX:
+      ptrdes->load_params.vt_complex = MR_CALLOC (1, sizeof (*ptrdes->load_params.vt_complex));
+      if (NULL == ptrdes->load_params.vt_complex)
+	return (MR_FAILURE);
+      *ptrdes->load_params.vt_complex = mr_value->vt_complex;
+      break;
+    default:
+      return (MR_FAILURE);
+    }
+  return (MR_SUCCESS);
+}
+
+mr_status_t
+mr_ptrdes_to_mr_value (mr_value_t * mr_value, mr_ptrdes_t * ptrdes)
+{
+  memset (mr_value, 0, sizeof (*mr_value));
+  mr_value->value_type = ptrdes->value_type;
+  switch (mr_value->value_type)
+    {
+    case MR_VT_CHAR: mr_value->vt_char = ptrdes->load_params.vt_char; break;
+    case MR_VT_STRING: mr_value->vt_string = ptrdes->load_params.vt_string; break;
+    case MR_VT_QUOTED_SUBSTR:
+    case MR_VT_ID:
+      mr_value->vt_quoted_substr = ptrdes->load_params.vt_quoted_substr; break;
+    case MR_VT_INT: mr_value->vt_int = ptrdes->load_params.vt_int; break;
+    case MR_VT_FLOAT: mr_value->vt_float = ptrdes->load_params.vt_float; break;
+    case MR_VT_COMPLEX: mr_value->vt_complex = *ptrdes->load_params.vt_complex; break;
+    default:
+      return (MR_FAILURE);
+    }
+  return (MR_SUCCESS);
+}
+
 static mr_status_t
 enum_names_visitor (mr_ptr_t key, const void * context)
 {
@@ -134,7 +180,7 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   if (*str == 'I')
     {
       __imag__ cld = 1;
-      mr_value->vt_complex = MR_CLD_PACK (cld);
+      mr_value->vt_complex = cld;
       return (str + 1);
     }
 
@@ -149,7 +195,7 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   if (*str == 'I')
     {
       __imag__ cld = real;
-      mr_value->vt_complex = MR_CLD_PACK (cld);
+      mr_value->vt_complex = cld;
       return (str + 1);
     }
 
@@ -160,7 +206,7 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   
   if (*str != '+')
     {
-      mr_value->vt_complex = MR_CLD_PACK (cld);
+      mr_value->vt_complex = cld;
       return (str);
     }
 
@@ -171,7 +217,7 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   if (*str == 'I')
     {
       __imag__ cld = 1;
-      mr_value->vt_complex = MR_CLD_PACK (cld);
+      mr_value->vt_complex = cld;
       return (str + 1);
     }
 
@@ -183,7 +229,7 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
     }
   str = next;
   __imag__ cld = imag;
-  mr_value->vt_complex = MR_CLD_PACK (cld);
+  mr_value->vt_complex = cld;
   
   while (isspace (*str))
     ++str;
@@ -311,7 +357,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	{
 	case MR_VT_INT: break;
 	case MR_VT_FLOAT: mr_value->vt_float = mr_value->vt_int; break;
-	case MR_VT_COMPLEX: mr_value->vt_complex = MR_CLD_PACK (mr_value->vt_int); break;
+	case MR_VT_COMPLEX: mr_value->vt_complex = mr_value->vt_int; break;
 	default: status = MR_FAILURE; break;
 	}
       break;
@@ -321,7 +367,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	{
 	case MR_VT_INT: mr_value->vt_int = mr_value->vt_float; break;
 	case MR_VT_FLOAT: break;
-	case MR_VT_COMPLEX: mr_value->vt_complex = MR_CLD_PACK (mr_value->vt_float); break;
+	case MR_VT_COMPLEX: mr_value->vt_complex = mr_value->vt_float; break;
 	default: status = MR_FAILURE; break;
 	}
       break;
@@ -329,8 +375,8 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
     case MR_VT_COMPLEX:
       switch (value_type)
 	{
-	case MR_VT_INT: mr_value->vt_int = MR_CLD_UNPACK (mr_value->vt_complex); break;
-	case MR_VT_FLOAT: mr_value->vt_float = MR_CLD_UNPACK (mr_value->vt_complex); break;
+	case MR_VT_INT: mr_value->vt_int = mr_value->vt_complex; break;
+	case MR_VT_FLOAT: mr_value->vt_float = mr_value->vt_complex; break;
 	case MR_VT_COMPLEX: break;
 	default: status = MR_FAILURE; break;
 	}
@@ -352,10 +398,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	  return (MR_FAILURE);
 	status = mr_load_var (mr_value->vt_string, &result);
 	if (MR_SUCCESS == status)
-	  {
-	    MR_FREE (mr_value->vt_string);
-	    *mr_value = result;
-	  }
+	  *mr_value = result;
 	break;
       }
       
@@ -390,11 +433,7 @@ mr_value_neg (mr_value_t * value)
       break;
       
     case MR_VT_COMPLEX:
-      {
-	complex_long_double_t vt_complex = MR_CLD_UNPACK (value->vt_complex);
-	vt_complex = -vt_complex;
-	value->vt_complex = MR_CLD_PACK (vt_complex);
-      }
+      value->vt_complex = -value->vt_complex;
       break;
       
     default:
@@ -423,15 +462,7 @@ mr_value_neg (mr_value_t * value)
       {									\
       case MR_VT_INT: result->vt_int = left->vt_int OP right->vt_int; break; \
       case MR_VT_FLOAT: result->vt_float = left->vt_float OP right->vt_float; break; \
-      case MR_VT_COMPLEX:						\
-	{								\
-	  complex_long_double_t _left, _right, _result;			\
-	  _left = MR_CLD_UNPACK (left->vt_complex);			\
-	  _right = MR_CLD_UNPACK (right->vt_complex);			\
-	  _result = _left OP _right;					\
-	  result->vt_complex = MR_CLD_PACK (_result);			\
-	}								\
-	break;								\
+      case MR_VT_COMPLEX: result->vt_complex = left->vt_complex OP right->vt_complex; break; \
       default:								\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);		\
 	return (MR_FAILURE);						\
@@ -465,7 +496,7 @@ mr_value_is_zero (mr_value_t * value)
     {
     case MR_VT_INT: return (0 == value->vt_int);
     case MR_VT_FLOAT: return (0 == value->vt_float);
-    case MR_VT_COMPLEX: return (0 == MR_CLD_UNPACK (value->vt_complex));
+    case MR_VT_COMPLEX: return (0 == value->vt_complex);
     default: MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);
     }
   return (false);

@@ -490,12 +490,7 @@ TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES (__attribute__ ((packed)), "quote
 
 TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
 
-TYPEDEF_STRUCT (mr_complex_long_double_t, ATTRIBUTES ( , "complex long double packed to 20 bytes"),
-		(uint8_t, real, [MR_SIZEOF_LONG_DOUBLE], "__real__ complex long double"),
-		(uint8_t, imag, [MR_SIZEOF_LONG_DOUBLE], "__imag__ complex long double"),
-		)
-
-TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
+TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of values from lexer"),
 	      (MR_VT_VOID, = 0, "vt_void"),
 	      (MR_VT_CHAR, , "vt_char"),
 	      (MR_VT_STRING, , "vt_string"),
@@ -507,21 +502,27 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES ( , "type of values from lexer"),
 	      )
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
-		(mr_value_type_t, value_type),
-		ANON_UNION ( , __attribute__ ((packed))),
+		ANON_UNION (),
 		VOID (uint8_t, default_serialization, , "no serialization by default"),
-		(mr_complex_long_double_t, vt_complex),
+		(complex_long_double_t, vt_complex),
 		(mr_quoted_substr_t, vt_quoted_substr),
 		(mr_intmax_t, vt_int),
 		long double vt_float,
 		string_t vt_string,
 		char vt_char,
 		END_ANON_UNION ("value_type"),
+		(mr_value_type_t, value_type),
 		)
 
-TYPEDEF_STRUCT (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
-		(mr_value_t, mr_value, , "loaded value"),
-		)
+TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
+	       VOID (uint8_t, default_serialization, , "no serialization by default"),
+	       VOID (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
+	       (mr_quoted_substr_t, vt_quoted_substr),
+	       (mr_intmax_t, vt_int),
+	       long double vt_float,
+	       string_t vt_string,
+	       char vt_char,
+	       )
 
 TYPEDEF_STRUCT (mr_sp_ll_next_t, ATTRIBUTES ( , "save parameters linked list next fields"),
 		(int32_t, typed, , "linked list of nodes with same type and pointer"),
@@ -574,6 +575,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
+		(mr_value_type_t, value_type, , "value type for load_params"),
 		(int32_t, idx, , "public index"),
 		(int32_t, ref_idx, , "reference index (internal enumeration)"),
 		(int32_t, parent, , "parent index"),
@@ -588,7 +590,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		ANON_UNION (),
 		VOID (uint8_t, default_serialization),
 		(mr_save_params_t, save_params, , "attributes specific for saving"),
-		(mr_load_params_t, load_params, , "attributes specific for loading"),
+		(mr_load_params_t, load_params, , "value_type"),
 		(mr_res_t, res, , "extra pointer for user data"),
 		END_ANON_UNION ("ptrdes_type"),
 		)

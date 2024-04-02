@@ -110,9 +110,7 @@ start_node: {
   mr_load_t * mr_load = MR_LOAD; 
   mr_load->parent = mr_parse_add_node (mr_load); 
   if (mr_load->parent < 0)
-    {
-      YYERROR;
-    }
+    { YYERROR; }
 }
 
 scm_stmt:
@@ -136,20 +134,30 @@ value
 value:
 compaund
 | named_node
-| TOK_SCM_CHAR { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
-| TOK_SCM_NUMBER { mr_load_t * mr_load = MR_LOAD; mr_load->ptrs->ra[mr_load->parent].load_params.mr_value = $1; }
+| TOK_SCM_CHAR {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1);
+  if (MR_SUCCESS != status)
+    { YYERROR; }
+}
+| TOK_SCM_NUMBER {
+  mr_load_t * mr_load = MR_LOAD;
+  mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1);
+  if (MR_SUCCESS != status)
+    { YYERROR; }
+}
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.substr.length = $1.length - 2 * SIZEOF_QUOTE_CHAR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_quoted_substr.unquote = scm_unquote_str;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_QUOTED_SUBSTR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.length = $1.length - 2 * SIZEOF_QUOTE_CHAR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.unquote = scm_unquote_str;
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_QUOTED_SUBSTR;
 }
 | TOK_SCM_FALSE {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.value_type = MR_VT_INT;
-  mr_load->ptrs->ra[mr_load->parent].load_params.mr_value.vt_int = false;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_int = false;
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
   }
 
 compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS

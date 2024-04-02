@@ -217,24 +217,4 @@ TYPEDEF_UNION (ieee_long_double_t,
 	       long double long_double,
 	       )
 
-#define MR_CLD_PACK(CLD) ({						\
-      mr_complex_long_double_t _mr_cld_;				\
-      complex_long_double_t _cld_ = (CLD);				\
-      uint8_t * _real_ = (uint8_t*)&__real__ _cld_;			\
-      uint8_t * _imag_ = (uint8_t*)&__imag__ _cld_;			\
-      memcpy (_mr_cld_.real, _real_, sizeof (_mr_cld_.real));		\
-      memcpy (_mr_cld_.imag, _imag_, sizeof (_mr_cld_.imag));		\
-      _mr_cld_;								\
-    })
-
-#define MR_CLD_UNPACK(MR_CLD) ({					\
-      mr_complex_long_double_t _mr_cld_ = (MR_CLD);			\
-      complex_long_double_t _cld_ = 0;					\
-      uint8_t * _real_ = (uint8_t*)&__real__ _cld_;			\
-      uint8_t * _imag_ = (uint8_t*)&__imag__ _cld_;			\
-      memcpy (_real_, _mr_cld_.real, sizeof (_mr_cld_.real));		\
-      memcpy (_imag_, _mr_cld_.imag, sizeof (_mr_cld_.imag));		\
-      _cld_;								\
-    })
-  
 #endif /* _FLT_VALUES_H_ */
