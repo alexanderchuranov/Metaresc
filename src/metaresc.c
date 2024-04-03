@@ -1801,6 +1801,24 @@ mr_validate_td (mr_td_t * tdp)
     mr_validate_fd (tdp->param.struct_param.fields[i]);
 }
 
+static void
+mr_type_is_union_discriminator (mr_td_t * tdp)
+{
+  mr_td_t * visit;
+  for (visit = tdp; visit && !visit->is_union_discriminator_set; visit = visit->param.struct_param.fields[0]->stype.tdp)
+    {
+      visit->is_union_discriminator_set = true;
+      if (((MR_STRUCT_TYPES >> visit->mr_type) & 1) &&
+	  (visit->param.struct_param.fields_size >= sizeof (visit->param.struct_param.fields[0])))
+	continue;
+      visit->is_union_discriminator = true;
+      break;
+    }
+  if ((NULL == visit) || visit->is_union_discriminator)
+    for (visit = tdp; visit && !visit->is_union_discriminator; visit = visit->param.struct_param.fields[0]->stype.tdp)
+      visit->is_union_discriminator = true;
+}
+
 static mr_td_t *
 mr_sort_td (mr_td_t * tdp)
 {
@@ -1875,6 +1893,9 @@ mr_conf_init ()
 	  mr_register_type_pointer (tdp);
 	  mr_validate_td (tdp);
 	}
+
+      for (tdp = mr_conf.list; tdp; tdp = tdp->next)
+	mr_type_is_union_discriminator (tdp);
 
       mr_udo_init ();
 

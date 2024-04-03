@@ -148,6 +148,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    }
 
 	  mr_init_pointer_fd (&parent_fdp, &fd);
+	  __attribute__ ((fallthrough));
 	  /* NB! proceed to pointer branch */
 	case MR_TYPE_POINTER:
 	  /* if discriminator is a pointer then we need address of the content */
@@ -161,6 +162,9 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    
 	case MR_TYPE_VOID:
 	  mr_type = parent_fdp->stype.mr_type_aux;
+#define NONRESOLVABLE (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_ARRAY, MR_TYPE_POINTER))
+	  if ((NONRESOLVABLE >> mr_type) & 1)
+	    mr_type = MR_TYPE_NONE;
 	  break;
 
 	case MR_TYPE_STRUCT:
@@ -168,21 +172,23 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
 	  if (parent_fdp->stype.tdp)
-	    if (parent_fdp->stype.tdp->param.struct_param.fields_size >= sizeof (parent_fdp->stype.tdp->param.struct_param.fields[0]))
+	    if ((parent_fdp->stype.tdp->param.struct_param.fields_size >= sizeof (parent_fdp->stype.tdp->param.struct_param.fields[0])) &&
+		parent_fdp->stype.tdp->is_union_discriminator)
 	      {
 		discriminator = (char*)discriminator + parent_fdp->stype.tdp->param.struct_param.fields[0]->offset;
 		parent_fdp = parent_fdp->stype.tdp->param.struct_param.fields[0];
 		mr_type = parent_fdp->stype.mr_type;
 		break;
 	      }
+	  __attribute__ ((fallthrough));
 	  /* NB! proceed to default branch */
 	default:
-	  return (mr_union_discriminator_by_name (tdp, NULL));
+	  mr_type = MR_TYPE_NONE;
+	  break;
 	}
       
-#define REDIRECT_TYPE (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_ARRAY))
       /* prevent from infinit redirect loop */
-      if ((REDIRECT_TYPE >> mr_type) & 1)
+      if (MR_TYPE_NONE == mr_type)
 	break;
     }
   
