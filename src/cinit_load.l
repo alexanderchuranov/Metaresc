@@ -23,17 +23,20 @@
 static void
 get_type (mr_substr_t * substr, char * start)
 {
-  char * stop;
   while (isspace (*start))
     ++start;
-  stop = strchr (start, ')');
-  if (stop)
-    while (isspace (stop[-1]) || ('[' == stop[-1]) || (']' == stop[-1]) || ('*' == stop[-1]))
-      --stop;
-  else
-    stop = strchr (start, 0);
+
   substr->str = start;
-  substr->length = stop - start;
+  substr->length = strlen (start);
+
+  char * stop = memchr (substr->str, ')', substr->length);
+  if (stop)
+    {
+      while (--stop > start)
+	if (!((isspace (*stop) || ('[' == *stop) || (']' == *stop) || ('*' == *stop))))
+	  break;
+      substr->length = stop - start + 1;
+    }
 }
 
 %}
@@ -91,7 +94,11 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 
 "("{WS}({ID}{WS})*{ID}{WS}\*?{WS}("["{WS}"]")?{WS}")" { get_type (&yylval->string, &yytext[1]); return (TOK_CINIT_FIELD_CAST); }
 
-"/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" { mr_get_id (&yylval->id_ivalue.id, &yytext[2]); sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue); return (TOK_CINIT_ID_IVALUE); }
+"/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" {
+  mr_get_id (&yylval->id_ivalue.id, &yytext[2]);
+  sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue);
+  return (TOK_CINIT_ID_IVALUE);
+}
 
 "/*"			  { BEGIN(in_comment); }
 <in_comment>[^*\n]*        /* eat anything that's not a '*' */

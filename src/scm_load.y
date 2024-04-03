@@ -28,7 +28,8 @@
 }
 
 %code {
-  void scm_unquote_str (mr_substr_t * substr, char * dst)
+  static void
+    scm_unquote_str (mr_substr_t * substr, char * dst)
   {
     int size, length;
     int i;
@@ -70,7 +71,7 @@
     dst[length] = 0;
   }
  
-}
+ }
 
 %define api.prefix {mr_scm_}
 %define api.pure full
@@ -148,10 +149,24 @@ compaund
 }
 | TOK_SCM_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf + SIZEOF_QUOTE_CHAR];
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.length = $1.length - 2 * SIZEOF_QUOTE_CHAR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.unquote = scm_unquote_str;
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_QUOTED_SUBSTR;
+  if (memchr ($1.str, '\\', $1.length))
+    {
+      char * buf = MR_CALLOC (1, $1.length + sizeof (char));
+      if (NULL == buf)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  YYERROR;
+	}
+      scm_unquote_str (&$1, buf);
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_string = buf;
+    }
+  else
+    {
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = &mr_load->str[$1.str - mr_load->buf];
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = $1.length;
+    }
 }
 | TOK_SCM_FALSE {
   mr_load_t * mr_load = MR_LOAD;

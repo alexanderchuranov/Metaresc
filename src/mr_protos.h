@@ -480,22 +480,15 @@ TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discri
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES (__attribute__ ((packed)), "substring"),
 		POINTER (char, str, "pointer on substring", { .offset = offsetof (mr_substr_t, length) }, "offset"),
-		(unsigned int, length, , "length of the substring"),
+		(size_t, length, , "length of the substring"),
 		)
-
-TYPEDEF_STRUCT (mr_quoted_substr_t, ATTRIBUTES (__attribute__ ((packed)), "quoted substring"),
-		(void, unquote, (mr_substr_t *, char *), "unquote function"),
-		(mr_substr_t, substr, , "substring pointer and length"),
-		)
-
-TYPEDEF_FUNC (mr_status_t, mr_process_quoted_str_t, (char * /* src */, void * /* arg */))
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of values from lexer"),
 	      (MR_VT_VOID, = 0, "vt_void"),
 	      (MR_VT_CHAR, , "vt_char"),
 	      (MR_VT_STRING, , "vt_string"),
-	      (MR_VT_QUOTED_SUBSTR, , "vt_quoted_substr"),
-	      (MR_VT_ID, , "vt_quoted_substr"),
+	      (MR_VT_SUBSTR, , "vt_substr"),
+	      (MR_VT_ID, , "vt_substr"),
 	      (MR_VT_INT, , "vt_int"),
 	      (MR_VT_FLOAT, , "vt_float"),
 	      (MR_VT_COMPLEX, , "vt_complex"),
@@ -505,7 +498,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		ANON_UNION (),
 		VOID (uint8_t, default_serialization, , "no serialization by default"),
 		(complex_long_double_t, vt_complex),
-		(mr_quoted_substr_t, vt_quoted_substr),
+		(mr_substr_t, vt_substr),
 		(mr_intmax_t, vt_int),
 		long double vt_float,
 		string_t vt_string,
@@ -517,7 +510,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
 	       VOID (uint8_t, default_serialization, , "no serialization by default"),
 	       VOID (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
-	       (mr_quoted_substr_t, vt_quoted_substr),
+	       (mr_substr_t, vt_substr),
 	       (mr_intmax_t, vt_int),
 	       long double vt_float,
 	       string_t vt_string,

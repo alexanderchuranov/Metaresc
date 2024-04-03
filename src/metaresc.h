@@ -1478,7 +1478,6 @@ extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, 
 extern mr_fd_t * mr_get_any_fd_by_name (char * name, mr_td_t * tdp);
 extern mr_fd_t * mr_get_any_fd_by_name_substr (mr_substr_t * substr, mr_td_t * tdp);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
-extern mr_status_t mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg);
 #define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, __VA_ARGS__ - 0)
 extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);

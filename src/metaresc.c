@@ -345,13 +345,14 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
 
   fmt = mr_skip_keywords ((char*)fmt);
 
-  char * tail = strchr (fmt, ' ');
-  if (NULL == tail)
-    tail = strchr (fmt, 0);
-
   mr_substr_t substr;
   substr.str = (char*)fmt;
-  substr.length = tail - fmt;
+  substr.length = strlen (fmt);
+
+  char * tail = memchr (substr.str, ' ', substr.length);
+  if (tail)
+    substr.length = tail - substr.str;
+
   mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&substr, NULL);
   ctx->type_name = fdp ? fdp->name.str : NULL;
   longjmp (ctx->_jmp_buf, !0);

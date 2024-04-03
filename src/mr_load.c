@@ -20,11 +20,6 @@
 #include <flt_values.h>
 #include <lexer.h>
 
-TYPEDEF_STRUCT (mr_load_node_context_t,
-		int idx,
-		(mr_ra_ptrdes_t *, ptrs)
-		);
-
 TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_ra_ptrdes_t * /* ptrs */));
 
 /**
@@ -174,17 +169,14 @@ mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-mr_get_func_wrapper (char * func_name, void * dst)
+mr_get_func (void ** dst, char * func_name)
 {
-  if (NULL == func_name)
-    return (MR_SUCCESS);
-
   void * func_addr = NULL;
 #ifdef HAVE_LIBDL
   func_addr = dlsym (RTLD_DEFAULT, func_name);
 #endif /* HAVE_LIBDL */
   if (func_addr != NULL)
-    *(void**)dst = func_addr;
+    *dst = func_addr;
   else
     {
       char * end = NULL;
@@ -194,65 +186,14 @@ mr_get_func_wrapper (char * func_name, void * dst)
 	++end;
       if (*end != 0)
 	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_FUNC, func_name);
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_FUNC, func_name);
 	  return (MR_FAILURE);
 	}
 
-      *(void**)dst = (void*)(uintptr_t)ptr;
+      *dst = (void*)(uintptr_t)ptr;
     }
 
   return (MR_SUCCESS);
-}
-
-#ifndef BUF_SIZE_ON_STACK
-#define BUF_SIZE_ON_STACK (1 << 12)
-#endif /* BUF_SIZE_ON_STACK */
-
-mr_status_t
-mr_process_quoted_str (mr_quoted_substr_t * quoted_substr, mr_process_quoted_str_t process_quoted_str, void * arg)
-{
-  if (NULL == quoted_substr->substr.str)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (MR_FAILURE);
-    }
-
-  mr_status_t status;
-
-  if ((NULL == quoted_substr->unquote) &&
-      (0 == quoted_substr->substr.str[quoted_substr->substr.length]))
-    status = process_quoted_str (quoted_substr->substr.str, arg);
-  else
-    {
-      char * dst = NULL;
-      int size = quoted_substr->substr.length + 1;
-      char buf[BUF_SIZE_ON_STACK];
-      
-      if (size >= BUF_SIZE_ON_STACK)
-	dst = MR_CALLOC (size, sizeof (*dst));
-      else
-	dst = buf;
-
-      if (NULL == dst)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (MR_FAILURE);
-	}
-      
-      if (NULL == quoted_substr->unquote)
-	{
-	  memcpy (dst, quoted_substr->substr.str, quoted_substr->substr.length);
-	  dst[quoted_substr->substr.length] = 0;
-	}
-      else
-	quoted_substr->unquote (&quoted_substr->substr, dst);
-      status = process_quoted_str (dst, arg);
-
-      if (size >= BUF_SIZE_ON_STACK)
-	MR_FREE (dst);
-    }
-
-  return (status);
 }
 
 /**
@@ -275,11 +216,33 @@ mr_load_func (int idx, mr_ra_ptrdes_t * ptrs)
 	*(void**)ptrdes->data.ptr = (void*)(uintptr_t)ptrdes->load_params.vt_int;
 	break;
       case MR_VT_ID:
-      case MR_VT_QUOTED_SUBSTR:
-	status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_func_wrapper, ptrdes->data.ptr);
+      case MR_VT_SUBSTR:
+	{
+	  char buf[1 << 6];
+	  int length = MR_MIN (ptrdes->load_params.vt_substr.length, sizeof (buf) - 1);
+
+	  buf[0] = 0;
+	  buf[length] = 0;
+	  if (ptrdes->load_params.vt_substr.str)
+	    memcpy (buf, ptrdes->load_params.vt_substr.str, length);
+
+	  if (ptrdes->load_params.vt_substr.length <= sizeof (buf) - 1)
+	    status = mr_get_func (ptrdes->data.ptr, buf);
+	  else
+	    {
+	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_FUNC, buf);
+	      status = MR_FAILURE;
+	    }
+	}
 	break;
       case MR_VT_STRING:
-	status = mr_get_func_wrapper (ptrdes->load_params.vt_string, ptrdes->data.ptr);
+	if (NULL == ptrdes->load_params.vt_string)
+	  {
+	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	    status = MR_FAILURE;
+	  }
+	else
+	  status = mr_get_func (ptrdes->data.ptr, ptrdes->load_params.vt_string);
 	break;
       default:
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
@@ -358,24 +321,6 @@ mr_load_complex (int idx, mr_ra_ptrdes_t * ptrs)
   return (MR_SUCCESS);
 }
 
-static mr_status_t
-mr_get_char (char * src, void * dst)
-{
-  if (NULL == src)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (MR_FAILURE);
-    }
-  if (src[0] && src[1])
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, src);
-      return (MR_FAILURE);
-    }    
-  
-  *(char*)dst = *src;
-  return (MR_SUCCESS);
-}
-
 /**
  * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
@@ -390,8 +335,21 @@ mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
   
   switch (ptrdes->value_type)
     {
-    case MR_VT_QUOTED_SUBSTR:
-      status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_char, ptrdes->data.ptr);
+    case MR_VT_SUBSTR:
+      if (ptrdes->load_params.vt_substr.length == sizeof (char))
+	*(char*)ptrdes->data.ptr = ptrdes->load_params.vt_substr.str[0];
+      else
+	{
+	  char buf[1 << 8];
+	  int length = MR_MIN (ptrdes->load_params.vt_substr.length, sizeof (buf) - 1);
+
+	  buf[0] = 0;
+	  buf[length] = 0;
+	  if (ptrdes->load_params.vt_substr.str)
+	    memcpy (buf, ptrdes->load_params.vt_substr.str, length);
+
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, buf);
+	}
       break;
 
     case MR_VT_CHAR:
@@ -428,13 +386,6 @@ mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
   return (status);
 }
 
-static mr_status_t
-mr_get_str (char * src, void * dst)
-{
-  *(char**)dst = mr_strdup (src);
-  return ((NULL == *(char**)dst) ? MR_FAILURE : MR_SUCCESS);
-}
-
 /**
  * MR_STRING load handler. Allocate memory for a string.
  * @param idx node index
@@ -452,8 +403,15 @@ mr_load_string (int idx, mr_ra_ptrdes_t * ptrs)
     {
       switch (ptrdes->value_type)
 	{
-	case MR_VT_QUOTED_SUBSTR:
-	  status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_str, ptrdes->data.ptr);
+	case MR_VT_SUBSTR:
+	  *(char**)ptrdes->data.ptr = MR_CALLOC (1, ptrdes->load_params.vt_substr.length + sizeof (char));
+	  if (*(char**)ptrdes->data.ptr)
+	    memcpy (*(char**)ptrdes->data.ptr, ptrdes->load_params.vt_substr.str, ptrdes->load_params.vt_substr.length);
+	  else
+	    {
+	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	      status = MR_FAILURE;
+	    }
 	  break;
 	  
 	case MR_VT_STRING:
@@ -481,19 +439,14 @@ mr_load_string (int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-mr_get_char_array (char * str, void * dst)
+mr_get_char_array (int idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_len)
 {
-  mr_load_node_context_t * load_node_context = dst;
-  mr_ptrdes_t * ptrdes = &load_node_context->ptrs->ra[load_node_context->idx];
-  int max_size = ptrdes->fdp->stype.size;
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+  int max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
   mr_status_t status = MR_SUCCESS;
 
-  if (NULL == str)
-    return (MR_FAILURE);
-  
-  int str_len = strlen (str);
   if ((str_len >= max_size) && (ptrdes->parent >= 0))
-    if (MR_TYPE_POINTER == load_node_context->ptrs->ra[ptrdes->parent].mr_type)
+    if (MR_TYPE_POINTER == ptrs->ra[ptrdes->parent].mr_type)
       {
 	void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
 	if (NULL == data)
@@ -504,7 +457,7 @@ mr_get_char_array (char * str, void * dst)
 	    status = MR_FAILURE;
 	  }
 		  
-	*(void**)load_node_context->ptrs->ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
+	*(void**)ptrs->ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
 	max_size = str_len + 1;
       }
 
@@ -534,10 +487,6 @@ mr_get_char_array (char * str, void * dst)
 static mr_status_t
 mr_load_char_array (int idx, mr_ra_ptrdes_t * ptrs)
 {
-  mr_load_node_context_t load_node_context = {
-    .idx = idx,
-    .ptrs = ptrs,
-  };
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_status_t status = MR_SUCCESS;
 
@@ -547,11 +496,17 @@ mr_load_char_array (int idx, mr_ra_ptrdes_t * ptrs)
   
   switch (ptrdes->value_type)
     {
-    case MR_VT_QUOTED_SUBSTR:
-      status = mr_process_quoted_str (&ptrdes->load_params.vt_quoted_substr, mr_get_char_array, &load_node_context);
+    case MR_VT_SUBSTR:
+      status = mr_get_char_array (idx, ptrs, ptrdes->load_params.vt_substr.str, ptrdes->load_params.vt_substr.length);
       break;
     case MR_VT_STRING:
-      status = mr_get_char_array (ptrdes->load_params.vt_string, &load_node_context);
+      if (NULL == ptrdes->load_params.vt_string)
+	{
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+	  status = MR_FAILURE;
+	}
+      else
+	status = mr_get_char_array (idx, ptrs, ptrdes->load_params.vt_string, strlen (ptrdes->load_params.vt_string));
       break;
     default:
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
@@ -782,8 +737,8 @@ mr_load_anon_union (int idx, mr_ra_ptrdes_t * ptrs)
     },
   */
   if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
-      (MR_VT_QUOTED_SUBSTR == ptrdes->value_type)
-      && (0 == ptrdes->load_params.vt_quoted_substr.substr.length) && /* content must be an empty string */
+      (MR_VT_SUBSTR == ptrdes->value_type)
+      && (0 == ptrdes->load_params.vt_substr.length) && /* content must be an empty string */
       (ptrdes->fdp != NULL) && /* node must have a name */
       (ptrdes->next >= 0))
     if (NULL == ptrs->ra[ptrdes->next].fdp) /* there should be a next node without name */

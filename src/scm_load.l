@@ -40,10 +40,7 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 }
 
 {HEX_NUMBER} {
-  char * hash = strchr (yytext, '#');
-  if (NULL == hash)
-    return (TOK_SCM_ERROR);
-
+  char * hash = ('#' == *yytext) ? yytext : &yytext[1];
   hash[0] = '0';
   yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 16);
   yylval->value.value_type = MR_VT_INT;
@@ -51,10 +48,7 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 }
 
 {OCT_NUMBER} {
-  char * hash = strchr (yytext, '#');
-  if (NULL == hash)
-    return (TOK_SCM_ERROR);
-
+  char * hash = ('#' == *yytext) ? yytext : &yytext[1];
   hash[0] = '0';
   hash[1] = '0';
   yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 8);
@@ -76,8 +70,8 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 }
 
 "\""([^\"\\]|\\.)*"\"" {
-  yylval->string.str = yytext;
-  yylval->string.length = strlen (yytext);
+  yylval->string.str = &yytext[1];
+  yylval->string.length = strlen (yytext) - 2 * sizeof (yytext[0]);
   return (TOK_SCM_STRING);
 }
 

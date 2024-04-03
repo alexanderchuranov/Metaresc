@@ -61,10 +61,9 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       return (-1);
     }
   
-  ptrs->ra[idx].value_type = MR_VT_QUOTED_SUBSTR;
-  ptrs->ra[idx].load_params.vt_quoted_substr.substr.str = content;
-  ptrs->ra[idx].load_params.vt_quoted_substr.substr.length = strlen (content);
-  ptrs->ra[idx].load_params.vt_quoted_substr.unquote = NULL;
+  ptrs->ra[idx].value_type = MR_VT_SUBSTR;
+  ptrs->ra[idx].load_params.vt_substr.str = content;
+  ptrs->ra[idx].load_params.vt_substr.length = strlen (content);
 
   /* loop on subnodes */
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)

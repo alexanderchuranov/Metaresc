@@ -19,9 +19,8 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value)
     {
     case MR_VT_CHAR: ptrdes->load_params.vt_char = mr_value->vt_char; break;
     case MR_VT_STRING: ptrdes->load_params.vt_string = mr_value->vt_string; break;
-    case MR_VT_QUOTED_SUBSTR:
-    case MR_VT_ID:
-      ptrdes->load_params.vt_quoted_substr = mr_value->vt_quoted_substr; break;
+    case MR_VT_SUBSTR: ptrdes->load_params.vt_substr = mr_value->vt_substr; break;
+    case MR_VT_ID: ptrdes->load_params.vt_substr = mr_value->vt_substr; break;
     case MR_VT_INT: ptrdes->load_params.vt_int = mr_value->vt_int; break;
     case MR_VT_FLOAT: ptrdes->load_params.vt_float = mr_value->vt_float; break;
     case MR_VT_COMPLEX:
@@ -45,9 +44,8 @@ mr_ptrdes_to_mr_value (mr_value_t * mr_value, mr_ptrdes_t * ptrdes)
     {
     case MR_VT_CHAR: mr_value->vt_char = ptrdes->load_params.vt_char; break;
     case MR_VT_STRING: mr_value->vt_string = ptrdes->load_params.vt_string; break;
-    case MR_VT_QUOTED_SUBSTR:
-    case MR_VT_ID:
-      mr_value->vt_quoted_substr = ptrdes->load_params.vt_quoted_substr; break;
+    case MR_VT_SUBSTR: mr_value->vt_substr = ptrdes->load_params.vt_substr; break;
+    case MR_VT_ID: mr_value->vt_substr = ptrdes->load_params.vt_substr; break;
     case MR_VT_INT: mr_value->vt_int = ptrdes->load_params.vt_int; break;
     case MR_VT_FLOAT: mr_value->vt_float = ptrdes->load_params.vt_float; break;
     case MR_VT_COMPLEX: mr_value->vt_complex = *ptrdes->load_params.vt_complex; break;
@@ -83,7 +81,7 @@ mr_get_enum (char * str, mr_uintmax_t * data)
   
   char * name = str;
 
-  while (isalnum (*str) || (*str == '_'))
+  while (isalnum (*str) || ('_' == *str))
     ++str;
   
   size_t size = str - name;
@@ -105,12 +103,32 @@ mr_get_enum (char * str, mr_uintmax_t * data)
   else
     {
       mr_ed_t * edp = mr_get_enum_by_name (name_);
+
       if (NULL == edp)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name_);
 	  return (NULL);
 	}
-      *data = edp->value._unsigned;
+
+      switch (edp->mr_type)
+	{
+	case MR_TYPE_INT8:
+	case MR_TYPE_INT16:
+	case MR_TYPE_INT32:
+	case MR_TYPE_INT64:
+	  *data = edp->value._signed;
+	  break;
+
+	case MR_TYPE_UINT8:
+	case MR_TYPE_UINT16:
+	case MR_TYPE_UINT32:
+	case MR_TYPE_UINT64:
+	  *data = edp->value._unsigned;
+	  break;
+
+	default:
+	  return (NULL);
+	}
     }
   return (str);
 }
@@ -126,7 +144,7 @@ mr_get_int (char * str, mr_uintmax_t * data)
 {
   while (isspace (*str))
     ++str;
-  if (isalpha (*str))
+  if (isalpha (*str) || ('_' == *str))
     str = mr_get_enum (str, data);
   else
     *data = mr_strtouintmax (str, &str, 0);
@@ -241,15 +259,13 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   return (NULL);
 }
 
-static mr_status_t
-mr_load_var (char * str, void * arg)
+static char *
+mr_load_var (mr_value_t * mr_value, char * str)
 {
-  mr_value_t * mr_value = arg;
-  
   if ((NULL == str) || (NULL == mr_value))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-      return (MR_FAILURE);
+      return (NULL);
     }
   
   switch (mr_value->value_type)
@@ -268,75 +284,32 @@ mr_load_var (char * str, void * arg)
     }
   
   if (NULL == str)
-    return (MR_FAILURE);
+    return (NULL);
   while (isspace (*str))
     ++str;
-  if (*str != 0)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, str);
-      return (MR_FAILURE);
-    }
-  return (MR_SUCCESS);
-}
-
-static mr_status_t
-mr_value_id_to_int (char * str, void * arg)
-{
-  mr_value_t * mr_value = arg;
-  mr_ed_t * edp = mr_get_enum_by_name (str);
-    
-  if (NULL == edp)
-    {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, str);
-      return (MR_FAILURE);
-    }
-  
-  mr_value->value_type = MR_VT_INT;
-
-  switch (edp->mr_type)
-    {
-    case MR_TYPE_INT8:
-    case MR_TYPE_INT16:
-    case MR_TYPE_INT32:
-    case MR_TYPE_INT64:
-      mr_value->vt_int = edp->value._signed;
-      break;
-
-    case MR_TYPE_UINT8:
-    case MR_TYPE_UINT16:
-    case MR_TYPE_UINT32:
-    case MR_TYPE_UINT64:
-      mr_value->vt_int = edp->value._unsigned;
-      break;
-
-    default:
-      mr_value->vt_int = edp->value._unsigned;
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_BAD_ENUM_TYPE, edp->mr_type);
-      return (MR_FAILURE);
-    }
-
-  return (MR_SUCCESS);
+  return (str);
 }
 
 static mr_status_t
 mr_value_id (mr_value_t * mr_value)
 {
-  switch (mr_value->value_type)
+  if (NULL == mr_value->vt_substr.str)
+    return (MR_FAILURE);
+  mr_uintmax_t value;
+  char * tail = mr_get_enum (mr_value->vt_substr.str, &value);
+  if ((NULL == tail) || (tail - mr_value->vt_substr.str != mr_value->vt_substr.length))
     {
-    case MR_VT_ID:
-      return (mr_process_quoted_str (&mr_value->vt_quoted_substr, mr_value_id_to_int, mr_value));
-    case MR_VT_STRING:
-      {
-	char * value = mr_value->vt_string;
-	if (NULL == value)
-	  return (MR_FAILURE);
-	mr_status_t status = mr_value_id_to_int (value, mr_value);
-	MR_FREE (value);
-	return (status);
-      }
-    default:
-      return (MR_SUCCESS);
+      int length = tail ? (tail - mr_value->vt_substr.str) : mr_value->vt_substr.length;
+      length = MR_MIN (length, (1 << 6));
+      char buf[length + sizeof (char)];
+      memcpy (buf, mr_value->vt_substr.str, length);
+      buf[length] = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, buf);
+      return (MR_FAILURE);
     }
+  mr_value->value_type = MR_VT_INT;
+  mr_value->vt_int = value;
+  return (MR_SUCCESS);
 }
 
 mr_status_t
@@ -382,12 +355,23 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	}
       break;
       
-    case MR_VT_QUOTED_SUBSTR:
+    case MR_VT_SUBSTR:
       {
 	mr_value_t result = { .value_type = value_type };
-	status = mr_process_quoted_str (&mr_value->vt_quoted_substr, mr_load_var, &result);
-	if (MR_SUCCESS == status)
-	  *mr_value = result;
+	if (NULL == mr_value->vt_substr.str)
+	  return (MR_FAILURE);
+	char * tail = mr_load_var (&result, mr_value->vt_substr.str);
+	if ((NULL == tail) || (tail - mr_value->vt_substr.str != mr_value->vt_substr.length))
+	  {
+	    int length = tail ? (tail - mr_value->vt_substr.str) : mr_value->vt_substr.length;
+	    length = MR_MIN (length, (1 << 6));
+	    char buf[length + sizeof (char)];
+	    memcpy (buf, mr_value->vt_substr.str, length);
+	    buf[length] = 0;
+	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, buf);
+	    return (MR_FAILURE);
+	  }
+	*mr_value = result;
 	break;
       }
 
@@ -396,9 +380,13 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 	mr_value_t result = { .value_type = value_type };
 	if (NULL == mr_value->vt_string)
 	  return (MR_FAILURE);
-	status = mr_load_var (mr_value->vt_string, &result);
-	if (MR_SUCCESS == status)
-	  *mr_value = result;
+	char * tail = mr_load_var (&result, mr_value->vt_string);
+	if ((NULL == tail) || (*tail))
+	  {
+	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_DATA_AT_THE_END, mr_value->vt_string);
+	    return (MR_FAILURE);
+	  }
+	*mr_value = result;
 	break;
       }
       
@@ -474,10 +462,12 @@ mr_value_neg (mr_value_t * value)
   mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
     memset (result, 0, sizeof (*result));				\
-    if (MR_SUCCESS != mr_value_id (left))				\
-      return (MR_FAILURE);						\
-    if (MR_SUCCESS != mr_value_id (right))				\
-      return (MR_FAILURE);						\
+    if (MR_VT_ID == left->value_type)					\
+      if (MR_SUCCESS != mr_value_id (left))				\
+	return (MR_FAILURE);						\
+    if (MR_VT_ID == right->value_type)					\
+      if (MR_SUCCESS != mr_value_id (right))				\
+	return (MR_FAILURE);						\
     if ((left->value_type != MR_VT_INT) || (right->value_type != MR_VT_INT)) \
       {									\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_RESULT_TYPE);		\

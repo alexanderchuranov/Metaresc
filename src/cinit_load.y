@@ -25,7 +25,7 @@
 
 %code {
 
-void
+static void
 cinit_unquote_str (mr_substr_t * substr, char * dst)
 {
   int i, size, length;
@@ -162,10 +162,24 @@ compaund
 }
 | TOK_CINIT_STRING {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_QUOTED_SUBSTR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.length = $1.length;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.unquote = cinit_unquote_str;
+  if (memchr ($1.str, '\\', $1.length))
+    {
+      char * buf = MR_CALLOC (1, $1.length + sizeof (char));
+      if (NULL == buf)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  YYERROR;
+	}
+      cinit_unquote_str (&$1, buf);
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_string = buf;
+    }
+  else
+    {
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = &mr_load->str[$1.str - mr_load->buf];
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = $1.length;
+    }
   }
 | TOK_CINIT_NULL {
   mr_load_t * mr_load = MR_LOAD;
@@ -206,9 +220,8 @@ expr:
 | TOK_CINIT_ID {
   mr_load_t * mr_load = MR_LOAD;
   $$.value_type = MR_VT_ID;
-  $$.vt_quoted_substr.substr.str = &mr_load->str[$1.str - mr_load->buf];
-  $$.vt_quoted_substr.substr.length = $1.length;
-  $$.vt_quoted_substr.unquote = NULL;
+  $$.vt_substr.str = &mr_load->str[$1.str - mr_load->buf];
+  $$.vt_substr.length = $1.length;
   }
 | TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
 

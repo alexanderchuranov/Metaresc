@@ -88,10 +88,9 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       YYERROR;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_QUOTED_SUBSTR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.str = "";
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.length = 0;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.unquote = NULL;
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = "";
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = 0;
   
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
 }
@@ -132,11 +131,25 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
       YYERROR;
     }
-  
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_QUOTED_SUBSTR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.str = &mr_load->str[$4.str - mr_load->buf];
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.substr.length = $4.length;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_quoted_substr.unquote = xml_unquote_string;
+
+  if (memchr ($4.str, '&', $4.length))
+    {
+      char * buf = MR_CALLOC (1, $4.length + sizeof (char));
+      if (NULL == buf)
+	{
+	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+	  YYERROR;
+	}
+      xml_unquote_string (&$4, buf);
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_string = buf;
+    }
+  else
+    {
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = &mr_load->str[$4.str - mr_load->buf];
+      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = $4.length;
+    }
 
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
  }
