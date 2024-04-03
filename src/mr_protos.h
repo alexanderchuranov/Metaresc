@@ -156,13 +156,6 @@ TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type des
 	      MR_TDP_LAST,
 	      )
 
-TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
-		(mr_ptr_t, data, , "type"),
-		(ssize_t, MR_SIZE, , "used space in bytes"),
-		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
-		(char *, type, , "type of 'data' pointer"),
-		)
-
 TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      MR_SUCCESS,
 	      MR_FAILURE,
@@ -183,6 +176,13 @@ TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /
 TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
 TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+
+TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
+		(mr_ptr_t, data, , "type"),
+		(ssize_t, MR_SIZE, , "used space in bytes"),
+		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
+		(char *, type, , "type of 'data' pointer"),
+		)
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
 		(mr_ptr_t *, ra, , "key_type", { .offset = offsetof (mr_ic_rarray_t, size) }, "offset"), 
@@ -489,7 +489,7 @@ TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES (__attribute__ ((packed)), "substring"),
 		)
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of values from lexer"),
-	      (MR_VT_VOID, = 0, "vt_void"),
+	      (MR_VT_VOID, = 0),
 	      (MR_VT_CHAR, , "vt_char"),
 	      (MR_VT_STRING, , "vt_string"),
 	      (MR_VT_SUBSTR, , "vt_substr"),
@@ -514,7 +514,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 
 TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
 	       VOID (uint8_t, default_serialization, , "no serialization by default"),
-	       VOID (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
+	       (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
 	       (mr_substr_t, vt_substr),
 	       (mr_intmax_t, vt_int),
 	       long double vt_float,
