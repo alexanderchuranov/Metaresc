@@ -522,15 +522,10 @@ TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading
 	       char vt_char,
 	       )
 
-TYPEDEF_STRUCT (mr_sp_ll_next_t, ATTRIBUTES ( , "save parameters linked list next fields"),
-		(int32_t, typed, , "linked list of nodes with same type and pointer"),
-		(int32_t, untyped, , "linked list of nodes with same pointer"),
-		)
-
 TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
 		ANON_UNION ( , __attribute__ ((packed))),
 		/* to make mr_ptrdes_t more compact we need to align size of mr_save_params_t with size of mr_load_params_t */
-		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (mr_sp_ll_next_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
+		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (uint32_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
 		 "in place list of union discriminators", { "size" }, "string"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
 		END_ANON_UNION ("ud_is_ic"),
@@ -539,8 +534,8 @@ TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
 		)
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
-		(mr_sp_ll_next_t, next, , "linked list indexes"),
 		(mr_ud_set_t, ud_set, , "set union discriminator indexes"),
+		(int32_t, next_untyped, , "linked list of nodes with same pointer"),
 		)
 
 #define MR_DATA_UDO						\
@@ -618,7 +613,6 @@ TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, 
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
-		(mr_ic_t, typed_ptrs, , "index over typed nodes"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
 		(mr_ic_t, union_discriminators, , "index over all union discriminators"),
 		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),

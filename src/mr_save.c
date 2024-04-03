@@ -515,13 +515,6 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 }
 
 int
-mr_typed_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
-{
-  const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (mr_cmp_ptrdes (&ra_ptrdes->ra[x.intptr], &ra_ptrdes->ra[y.intptr]));
-}
-
-int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
@@ -749,8 +742,11 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
   if (element_size == 0)
     return (-1);
   
-  for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next.typed)
+  for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_untyped)
     {
+      if (mr_cmp_ptrdes (&ra[ref_idx], &ra[idx]) != 0) /* skip pointers that typed differently */
+	continue;
+
       int ref_parent = ra[ref_idx].parent;
 
       mr_check_ud_ctx.node = ref_idx;
@@ -761,8 +757,8 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	  case MR_TYPE_STRING:
 	    ra[parent].ref_idx = ref_idx;
 	    ra[ref_idx].flags.is_referenced = true;
-	    ra[parent].save_params.next.typed = ra[ref_parent].save_params.next.typed;
-	    ra[ref_parent].save_params.next.typed = parent;
+	    ra[parent].save_params.next_untyped = ra[ref_parent].save_params.next_untyped;
+	    ra[ref_parent].save_params.next_untyped = parent;
 	    return (0);
 
 	  case MR_TYPE_POINTER:
@@ -983,11 +979,10 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_save_data->ptrs.ra[idx].flags.unnamed = fdp->unnamed;
   mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
-  mr_save_data->ptrs.ra[idx].save_params.next.typed = -1;
-  mr_save_data->ptrs.ra[idx].save_params.next.untyped = -1;
+  mr_save_data->ptrs.ra[idx].save_params.next_untyped = -1;
 
   /* forward reference resolving */
-  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->typed_ptrs, idx);
+  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx);
   if (NULL == search_result)
     return (-1);
   if (search_result->intptr != idx)
@@ -998,25 +993,16 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
 	return (nodes_matched);
 
       mr_save_data->ptrs.size += sizeof (mr_save_data->ptrs.ra[0]);
-      mr_save_data->ptrs.ra[idx].save_params.next.typed = search_result->intptr;
-      search_result->intptr = idx;
-    }
-
-  search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx);
-  if (NULL == search_result)
-    return (-1);
-  if (search_result->intptr != idx)
-    {
       if (mr_save_data->ptrs.ra[idx].MR_SIZE > mr_save_data->ptrs.ra[search_result->intptr].MR_SIZE)
 	{
-	  mr_save_data->ptrs.ra[idx].save_params.next.untyped = search_result->intptr;
+	  mr_save_data->ptrs.ra[idx].save_params.next_untyped = search_result->intptr;
 	  search_result->intptr = idx;
 	}
       else
 	{
-	  mr_save_data->ptrs.ra[idx].save_params.next.untyped =
-	    mr_save_data->ptrs.ra[search_result->intptr].save_params.next.untyped;
-	  mr_save_data->ptrs.ra[search_result->intptr].save_params.next.untyped = idx;
+	  mr_save_data->ptrs.ra[idx].save_params.next_untyped =
+	    mr_save_data->ptrs.ra[search_result->intptr].save_params.next_untyped;
+	  mr_save_data->ptrs.ra[search_result->intptr].save_params.next_untyped = idx;
 	}
     }
 
@@ -1283,14 +1269,14 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
       {
 	int min_idx = i;
 	/* iterate over other references on this string and find the one with minimal DFS index */
-	for (idx = ptrs->ra[i].save_params.next.typed; idx >= 0; idx = ptrs->ra[idx].save_params.next.typed)
+	for (idx = ptrs->ra[i].save_params.next_untyped; idx >= 0; idx = ptrs->ra[idx].save_params.next_untyped)
 	  if (ptrs->ra[idx].idx < ptrs->ra[min_idx].idx)
 	    min_idx = idx;
 	
 	if (min_idx != i) /* check if reindexing is required */
 	  {
 	    /* point other references on new primary entry */
-	    for (idx = ptrs->ra[i].save_params.next.typed; idx >= 0; idx = ptrs->ra[idx].save_params.next.typed)
+	    for (idx = ptrs->ra[i].save_params.next_untyped; idx >= 0; idx = ptrs->ra[idx].save_params.next_untyped)
 	      ptrs->ra[idx].ref_idx = min_idx;
 
 	    /* change old primary entry to be a reference on a new one */
@@ -1527,7 +1513,6 @@ mr_save (void * data, mr_fd_t * fdp)
 
   mr_save_data.ptrs.ptrdes_type = MR_PD_SAVE;
 #define MR_IC_METHOD MR_IC_HASH
-  mr_ic_new (&mr_save_data.typed_ptrs, mr_typed_ptrdes_get_hash, mr_typed_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
   mr_ic_new (&mr_save_data.untyped_ptrs, mr_typed_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
   mr_ic_new (&mr_save_data.union_discriminators, mr_uds_get_hash, mr_uds_cmp, "intptr", MR_IC_METHOD, &context);
 
@@ -1563,7 +1548,6 @@ mr_save (void * data, mr_fd_t * fdp)
     MR_FREE (mr_save_data.mr_ra_ud);
   
   mr_ic_free (&mr_save_data.union_discriminators);
-  mr_ic_free (&mr_save_data.typed_ptrs);
   mr_ic_free (&mr_save_data.untyped_ptrs);
 
   return (mr_save_data.ptrs);
