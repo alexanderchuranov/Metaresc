@@ -413,7 +413,6 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
 
   ptrs->ra[idx].res.data.ptr = node;
   ptrs->ra[idx].res.type = "xmlNode";
-  ptrs->ra[idx].res.MR_SIZE = sizeof (xmlNode);
   node->_private = (void*)(intptr_t)idx;
 
   if (mr_ra_str->data.string[0])
@@ -469,7 +468,6 @@ mr_xml2_save (mr_ra_ptrdes_t * ptrs)
       ptrs->ptrdes_type = MR_PD_CUSTOM;
       ptrs->res.data.ptr = doc;
       ptrs->res.type = NULL;
-      ptrs->res.MR_SIZE = 0;
 
       mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       

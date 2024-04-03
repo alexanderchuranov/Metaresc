@@ -94,7 +94,6 @@ cinit_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
-  ptrdes->res.MR_SIZE = 0;
   return (mr_ra_append_string (mr_ra_str, "{\n"));
 }
 
@@ -120,7 +119,6 @@ cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
-  ptrdes->res.MR_SIZE = 0;
   mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
   char * type = tdp ? tdp->type.str : MR_VOIDP_T_STR;
   char * pointer = (MR_TYPE_POINTER == ptrdes->mr_type_aux) ? "*" : "";
@@ -132,7 +130,6 @@ cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
-  ptrdes->res.MR_SIZE = 0;
   return (mr_ra_append_string (mr_ra_str, "\"\", {\n"));
 }
 

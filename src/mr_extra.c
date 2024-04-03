@@ -26,7 +26,6 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
       mr_ptrdes_t * ptrdes = &ptrs->ra[i];
       ptrdes->res.data.ptr = NULL;
       ptrdes->res.type = NULL;
-      ptrdes->res.MR_SIZE = 0;
 
       if ((ptrdes->ref_idx < 0) && (ptrdes->idx >= 0) && !ptrdes->flags.is_null &&
 	  ((MR_TYPE_POINTER == ptrdes->mr_type) || (MR_TYPE_STRING == ptrdes->mr_type)))
@@ -90,7 +89,6 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
     {
       ptrs->ra[i].res.data.ptr = NULL;
       ptrs->ra[i].res.type = NULL;
-      ptrs->ra[i].res.MR_SIZE = 0;
     }
 
   /* NB index 0 is excluded */

@@ -253,6 +253,11 @@ TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag 
 		(mr_tree_path_t, path, [(sizeof (mr_tree_node_idx_t) * __CHAR_BIT__ << 1) - 1], "tree traverse path", { .offset = offsetof (mr_tree_traverse_t, size) }, "offset"),
 		)
 
+TYPEDEF_STRUCT (mr_typed_ptr_t,
+		(mr_ptr_t, data, , "type"),
+		(char *, type, , "union discriminator"),
+		)
+
 TYPEDEF_STRUCT (mr_res_t,
 		(mr_ptr_t, data, , "type"), 
 		(char *, type, , "union discriminator"),
@@ -584,7 +589,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		VOID (uint8_t, default_serialization),
 		(mr_save_params_t, save_params, , "attributes specific for saving"),
 		(mr_load_params_t, load_params, , "value_type"),
-		(mr_res_t, res, , "extra pointer for user data"),
+		(mr_typed_ptr_t, res, , "extra pointer for user data"),
 		END_ANON_UNION ("ptrdes_type"),
 		)
 

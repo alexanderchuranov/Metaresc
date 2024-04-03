@@ -125,7 +125,6 @@ json_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "}";
   ptrdes->res.type = "string";
-  ptrdes->res.MR_SIZE = 0;
   return (mr_ra_append_string (mr_ra_str, "{\n"));
 }
 
@@ -145,7 +144,6 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   ptrdes->res.data.string = "]";
   ptrdes->res.type = "string";
-  ptrdes->res.MR_SIZE = 0;
   return (mr_ra_append_string (mr_ra_str, "[\n"));
 }
 
