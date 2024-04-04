@@ -94,11 +94,9 @@ jobs:
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
-        run: |
-          make check
-          EXIT_CODE=$?
-          cat tests/test-suite.log
-          exit ${EXIT_CODE}
+        run: make check
+      - name: show test results
+        run: cat tests/test-suite.log
       - name: archive build artifacts
         uses: actions/upload-artifact@v3
         with:
