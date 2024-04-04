@@ -1475,8 +1475,7 @@ extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t 
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
 extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, ssize_t size, char * method, ...);
 
-extern mr_fd_t * mr_get_any_fd_by_name (char * name, mr_td_t * tdp);
-extern mr_fd_t * mr_get_any_fd_by_name_substr (mr_substr_t * substr, mr_td_t * tdp);
+extern mr_fd_t * mr_get_any_fd_by_name (const char * name, mr_td_t * tdp);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 #define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, __VA_ARGS__ - 0)
 extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start);

@@ -78,13 +78,11 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.str += i + 1;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].fdp = mr_get_any_fd_by_name_substr (&$2, NULL);
+  $2.str[$2.length] = 0;
+  mr_load->ptrs->ra[mr_load->parent].fdp = mr_get_any_fd_by_name ($2.str, NULL);
   if (NULL == mr_load->ptrs->ra[mr_load->parent].fdp)
     {
-      char name[$2.length + 1];
-      memcpy (name, $2.str, $2.length);
-      name[$2.length] = 0;
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, $2.str);
       YYERROR;
     }
 
@@ -122,13 +120,11 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       $2.str += i + 1;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].fdp = mr_get_any_fd_by_name_substr (&$2, NULL);
+  $2.str[$2.length] = 0;
+  mr_load->ptrs->ra[mr_load->parent].fdp = mr_get_any_fd_by_name ($2.str, NULL);
   if (NULL == mr_load->ptrs->ra[mr_load->parent].fdp)
     {
-      char name[$2.length + 1];
-      memcpy (name, $2.str, $2.length);
-      name[$2.length] = 0;
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, $2.str);
       YYERROR;
     }
 

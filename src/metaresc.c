@@ -345,15 +345,20 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
 
   fmt = mr_skip_keywords ((char*)fmt);
 
-  mr_substr_t substr;
-  substr.str = (char*)fmt;
-  substr.length = strlen (fmt);
+  mr_fd_t * fdp = mr_get_any_fd_by_name (fmt, NULL);
+  if (NULL == fdp)
+    {
+      char * tail = strchr (fmt, ' ');
+      if (tail)
+	{
+	  int length = tail - fmt;
+	  char name[length + 1];
+	  memcpy (name, fmt, length);
+	  name[length] = 0;
+	  fdp = mr_get_any_fd_by_name (name, NULL);
+	}
+    }
 
-  char * tail = memchr (substr.str, ' ', substr.length);
-  if (tail)
-    substr.length = tail - substr.str;
-
-  mr_fd_t * fdp = mr_get_any_fd_by_name_substr (&substr, NULL);
   ctx->type_name = fdp ? fdp->name.str : NULL;
   longjmp (ctx->_jmp_buf, !0);
   return (0);
@@ -1629,40 +1634,12 @@ mr_type_void_fields_impl (char * type, char * name, ...)
   va_end (args);
 }
 
-static mr_status_t
-fields_names_visitor (mr_ptr_t key, const void * context)
-{
-  mr_fd_t * fdp = key.ptr;
-  int field_name_length = strlen (fdp->name.str);
-  int * max_field_name_length = (int*)context;
-  if (field_name_length > *max_field_name_length)
-    *max_field_name_length = field_name_length;
-  return (MR_SUCCESS);
-}
-
 mr_fd_t *
-mr_get_any_fd_by_name (char * name, mr_td_t * tdp)
+mr_get_any_fd_by_name (const char * name, mr_td_t * tdp)
 {
-  mr_fd_t fd_ = { .name.str = name, .name.hash_value = 0, .stype.tdp = tdp, };
+  mr_fd_t fd_ = { .name.str = (char*)name, .name.hash_value = 0, .stype.tdp = tdp, };
   mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &fd_);
   return (find ? find->ptr : NULL);
-}
-
-mr_fd_t *
-mr_get_any_fd_by_name_substr (mr_substr_t * substr, mr_td_t * tdp)
-{
-  static int max_field_name_length = 0;
-  if (0 == max_field_name_length)
-    mr_ic_foreach (&mr_conf.fields_names, fields_names_visitor, &max_field_name_length);
-  
-  /* protection for buffer overrun attack */
-  if (substr->length > max_field_name_length)
-    return (NULL);
-  
-  char name[substr->length + 1];
-  memcpy (name, substr->str, substr->length);
-  name[substr->length] = 0;
-  return (mr_get_any_fd_by_name (name, tdp));
 }
 
 /**

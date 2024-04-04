@@ -68,17 +68,6 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
   dst[length] = 0;
 }
 
-static mr_status_t
-types_visitor (mr_ptr_t key, const void * context)
-{
-  mr_td_t * tdp = key.ptr;
-  int type_name_length = strlen (tdp->type.str);
-  int * type_name_max_length = (int*)context;
-  if (*type_name_max_length < type_name_length)
-    *type_name_max_length = type_name_length;
-  return (MR_SUCCESS);
-}
-
 }
 
 %define api.prefix {mr_cinit_}
@@ -147,20 +136,10 @@ casted_value
 casted_value:
 value
 | TOK_CINIT_FIELD_CAST value {
-  static int type_name_max_length = 0;
-  if (0 == type_name_max_length)
-    mr_ic_foreach (&mr_conf.type_by_name, types_visitor, &type_name_max_length);
-
   mr_load_t * mr_load = MR_LOAD;
-  if ($1.length > type_name_max_length)
-    {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, "type name is too long");
-      YYERROR;
-    }
-
-  char type[$1.length + 1];
-  memcpy (type, $1.str, $1.length);
+  char * type = $1.str;
   type[$1.length] = 0;
+
   if (strcmp (type, "void") != 0)
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (type);
@@ -214,19 +193,23 @@ compaund
   }
 | TOK_CINIT_CHAR {
   mr_load_t * mr_load = MR_LOAD;
-  char vt_char_str[$1.length + sizeof (char)];
+  $1.str[$1.length] = 0;
+  if ($1.length > sizeof ("\\000"))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, $1.str);
+      YYERROR;
+    }
 
+  char vt_char_str[$1.length + sizeof (char)];
   vt_char_str[0] = 0;
   cinit_unquote_str (&$1, vt_char_str);
-  char c = vt_char_str[0];
-
   if (strlen (vt_char_str) > 1)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, vt_char_str);
       YYERROR;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_char = c;
+  mr_load->ptrs->ra[mr_load->parent].load_params.vt_char = vt_char_str[0];
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_CHAR;
 }
 
@@ -259,14 +242,11 @@ list_element: cinit
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
   mr_td_t * tdp = mr_load->ptrs->ra[idx].fdp ? mr_load->ptrs->ra[idx].fdp->stype.tdp : NULL;
-
-  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name_substr (&$2, tdp);
+  $2.str[$2.length] = 0;
+  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($2.str, tdp);
   if (NULL == mr_load->ptrs->ra[idx].fdp)
     {
-      char name[$2.length + 1];
-      memcpy (name, $2.str, $2.length);
-      name[$2.length] = 0;
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, $2.str);
       YYERROR;
     }
 }

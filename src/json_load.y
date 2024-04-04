@@ -151,13 +151,11 @@ members: member | member TOK_JSON_COMMA members
 member: TOK_JSON_STRING TOK_JSON_SEMICOLON element {
   mr_load_t * mr_load = MR_LOAD;
   int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
-  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name_substr (&$1, NULL);
+  $1.str[$1.length] = 0;
+  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($1.str, NULL);
   if (NULL == mr_load->ptrs->ra[idx].fdp)
     {
-      char name[$1.length + 1];
-      memcpy (name, $1.str, $1.length);
-      name[$1.length] = 0;
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, name);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, $1.str);
       YYERROR;
     }
 }
