@@ -1306,6 +1306,7 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
     return (MR_SUCCESS);
 
   int * next = &ptrs->ra[idx].first_child;
+  int last_child = -1;
   while (*next >= 0)
     if ((ptrs->ra[*next].first_child < 0) && (ptrs->ra[*next].ref_idx < 0)
 	&& !ptrs->ra[*next].flags.is_null && !ptrs->ra[*next].flags.is_referenced
@@ -1313,11 +1314,15 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
       {
 	bool * need_reindex = context;
 	*need_reindex = true;
-	/* empty node found - unchain it from parent node */
+	/* empty node found - unchain it from previous node */
 	*next = ptrs->ra[*next].next;
       }
     else
-      next = &ptrs->ra[*next].next;
+      {
+	last_child = *next;
+	next = &ptrs->ra[*next].next;
+      }
+  ptrs->ra[idx].last_child = last_child;
 
   return (MR_SUCCESS);
 }
