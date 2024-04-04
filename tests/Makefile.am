@@ -10,7 +10,7 @@ CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
 
-  check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic btree generic_ic mr_types mem_allocations mr_copy mr_hash_cmp dw_types
+  check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic btree generic_ic mr_types mem_allocations mr_copy mr_hash_cmp
 
 if HAVE_INT128
   check_PROGRAMS += int128
@@ -59,7 +59,7 @@ endif
 endif
 
 if HAVE_LIBDWARF
-  check_PROGRAMS += dw_export
+  check_PROGRAMS += dw_export dw_types
 endif
 
 endif
