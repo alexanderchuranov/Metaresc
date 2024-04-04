@@ -1804,19 +1804,20 @@ mr_validate_td (mr_td_t * tdp)
 static void
 mr_type_is_union_discriminator (mr_td_t * tdp)
 {
-  mr_td_t * visit;
-  for (visit = tdp; visit && !visit->is_union_discriminator_set; visit = visit->param.struct_param.fields[0]->stype.tdp)
+  mr_td_t * resolve_to;
+  for (resolve_to = tdp; resolve_to && !resolve_to->is_union_discriminator_set; resolve_to = resolve_to->param.struct_param.fields[0]->stype.tdp)
     {
-      visit->is_union_discriminator_set = true;
-      if (((MR_STRUCT_TYPES >> visit->mr_type) & 1) &&
-	  (visit->param.struct_param.fields_size >= sizeof (visit->param.struct_param.fields[0])))
+      resolve_to->is_union_discriminator_set = true;
+      if (((MR_STRUCT_TYPES >> resolve_to->mr_type) & 1) &&
+	  (resolve_to->param.struct_param.fields_size >= sizeof (resolve_to->param.struct_param.fields[0])))
 	continue;
-      visit->is_union_discriminator = true;
+#define MR_UNION_RESOLVABLE_TYPES (MR_INT_TYPES MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_BITFIELD, MR_TYPE_ARRAY, MR_TYPE_POINTER))
+      resolve_to->is_union_discriminator = (MR_UNION_RESOLVABLE_TYPES >> resolve_to->mr_type) & 1;
       break;
     }
-  if ((NULL == visit) || visit->is_union_discriminator)
-    for (visit = tdp; visit && !visit->is_union_discriminator; visit = visit->param.struct_param.fields[0]->stype.tdp)
-      visit->is_union_discriminator = true;
+  if (resolve_to && resolve_to->is_union_discriminator)
+    for (resolve_to = tdp; resolve_to && !resolve_to->is_union_discriminator; resolve_to = resolve_to->param.struct_param.fields[0]->stype.tdp)
+      resolve_to->is_union_discriminator = true;
 }
 
 static mr_td_t *
