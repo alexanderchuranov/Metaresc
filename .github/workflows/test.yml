@@ -96,9 +96,9 @@ jobs:
       - name: make check
         run: |
           make check
-	  EXIT_CODE=$?
-	  cat tests/test-suite.log
-	  exit ${EXIT_CODE}
+          EXIT_CODE=$?
+          cat tests/test-suite.log
+          exit ${EXIT_CODE}
       - name: archive build artifacts
         uses: actions/upload-artifact@v3
         with:
