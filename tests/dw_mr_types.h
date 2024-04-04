@@ -7,6 +7,12 @@ TYPEDEF_STRUCT (mr_pointer_t,
 		(mr_type_t * *, enum_dptr_),
 		);
 
+#define MAKE_FIELD(TYPE) (TYPE, MR_PASTE2 (_, __COUNTER__)), (TYPE *, MR_PASTE2 (_, __COUNTER__)),
+
+TYPEDEF_STRUCT (mr_builtin_types_t,
+		MR_FOREACH (MAKE_FIELD, MR_BUILTIN_TYPES)
+		);
+
 typedef char * my_string_t;
 
 TYPEDEF_STRUCT (mr_array_t,
