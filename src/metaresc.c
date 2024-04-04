@@ -601,8 +601,6 @@ mr_hash_value_t
 mr_field_name_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
-  if (0 == strcmp (x_->name.str, "del"))
-    fprintf (stderr, "Hash del %d\n", (mr_hashed_string_get_hash (&x_->name) << 4));
   return (mr_hashed_string_get_hash (&x_->name) << 4);
 }
 
@@ -638,9 +636,6 @@ mr_field_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   const mr_fd_t * x_ = x.ptr;
   const mr_fd_t * y_ = y.ptr;
   int cmp = mr_hashed_string_cmp (&x_->name, &y_->name);
-  if ((0 == strcmp (x_->name.str, "del")) || (0 == strcmp (y_->name.str, "del")))
-    fprintf (stderr, "Cmp '%s' vs '%s' cmp %d x.tdp %p y.tdp %p\n", x_->name.str, y_->name.str, cmp, x_->stype.tdp, y_->stype.tdp);
-
   if (cmp)
     return (cmp);
   if (x_->stype.tdp && y_->stype.tdp)

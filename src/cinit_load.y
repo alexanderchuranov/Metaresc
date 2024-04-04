@@ -13,6 +13,7 @@
 #define mr_cinit_error MR_PARSE_ERROR
 
 #include <metaresc.h>
+#include <mr_ic.h>
 #include <mr_stringify.h>
 #include <lexer.h>
 #include <mr_value.h>
@@ -65,6 +66,17 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
 	dst[length++] = substr->str[i];
     }
   dst[length] = 0;
+}
+
+static mr_status_t
+types_visitor (mr_ptr_t key, const void * context)
+{
+  mr_td_t * tdp = key.ptr;
+  int type_name_length = strlen (tdp->type.str);
+  int * type_name_max_length = (int*)context;
+  if (*type_name_max_length < type_name_length)
+    *type_name_max_length = type_name_length;
+  return (MR_SUCCESS);
 }
 
 }
@@ -135,20 +147,33 @@ casted_value
 casted_value:
 value
 | TOK_CINIT_FIELD_CAST value {
+  static int type_name_max_length = 0;
+  if (0 == type_name_max_length)
+    mr_ic_foreach (&mr_conf.type_by_name, types_visitor, &type_name_max_length);
+
   mr_load_t * mr_load = MR_LOAD;
+  if ($1.length > type_name_max_length)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, "type name is too long");
+      YYERROR;
+    }
+
   char type[$1.length + 1];
   memcpy (type, $1.str, $1.length);
   type[$1.length] = 0;
-  mr_td_t * tdp = mr_get_td_by_name_internal (type);
-  if (NULL == tdp)
+  if (strcmp (type, "void") != 0)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
-      YYERROR;
-    }
-  else
-    {
-      mr_load->ptrs->ra[mr_load->parent].flags.typed = true;
-      mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd; /* for mr_ptr_t union we get name of union member from type cast */
+      mr_td_t * tdp = mr_get_td_by_name_internal (type);
+      if (NULL == tdp)
+	{
+	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
+	  YYERROR;
+	}
+      else
+	{
+	  mr_load->ptrs->ra[mr_load->parent].flags.typed = true;
+	  mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd; /* for mr_ptr_t union we get name of union member from type cast */
+	}
     }
  }
 
