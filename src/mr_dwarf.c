@@ -1113,6 +1113,9 @@ static mr_type_sign_t * mr_type_sign[] =
   MR_BI_SIGN (complex float, "complex")
   MR_BI_SIGN (complex double, "complex")
   MR_BI_SIGN (complex long double, "complex")
+  MR_BI_SIGN (complex float)
+  MR_BI_SIGN (complex double)
+  MR_BI_SIGN (complex long double)
   MR_FOREACH (MR_BI_SIGN, MR_BUILTIN_TYPES)
 };
 
