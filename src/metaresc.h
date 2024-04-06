@@ -1352,7 +1352,7 @@
 #define MR_FPRINT(FD, ...) (MR_FOR (FD, MR_NARG (__VA_ARGS__), MR_ADD, MR_PRINT_ONE_ELEMENT, __VA_ARGS__))
 
 typedef char * string_t;
-typedef char mr_empty_string_t[0];
+typedef char mr_static_string_t[1];
 typedef long int long_int_t;
 typedef long long int long_long_int_t;
 typedef long double long_double_t;

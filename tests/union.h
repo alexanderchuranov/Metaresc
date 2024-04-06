@@ -228,7 +228,7 @@ TYPEDEF_STRUCT (struct_union_string_zero_array_t,
 		(union_int32_float_t, xy, , "discriminator"),
 		(string_struct_t, real_discriminator),
 		(string_t, discriminator, [0], ,
-		 .offset = (mr_offset_t)&(((struct_union_string_zero_array_t*)0)->real_discriminator.discriminator2)),
+		 .offset = offsetof (struct_union_string_zero_array_t, real_discriminator.discriminator2)),
 		)
 
 TYPEDEF_STRUCT (struct_union_string_struct_ptr_array_t,

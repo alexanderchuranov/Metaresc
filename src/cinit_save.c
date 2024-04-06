@@ -64,7 +64,7 @@ cinit_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
 static int
 cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  typeof (ptrdes->fdp->stype.size) size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
+  size_t size = ptrdes->MR_SIZE;
   char buffer[size + 1];
   strncpy (buffer, ptrdes->data.ptr, size);
   buffer[size] = 0;

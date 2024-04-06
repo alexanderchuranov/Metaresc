@@ -587,16 +587,15 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   mr_status_t status = MR_SUCCESS;
-  int i;
+  int i, count = fd_.stype.dim.dim[0];
+
+  if (fd_.stype.size == 0)
+    return (MR_FAILURE);
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.offset = 0;
-  fd_.stype.size = mr_type_size (fd_.stype.mr_type_aux);
-  if (fd_.stype.size == 0)
-    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
-  if (fd_.stype.size == 0)
-    return (MR_FAILURE);
+  fd_.stype.size /= count ? count : 1;
 
   if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
     {
@@ -608,10 +607,7 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
       fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
       int dim_count = fd_.stype.dim.size / sizeof (fd_.stype.dim.dim[0]);
       for (i = 0; i < dim_count; ++i)
-	{
-	  fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
-	  fd_.stype.size *= fd_.stype.dim.dim[i];
-	}
+	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
     }
 
   /* loop on subnodes */
@@ -619,7 +615,7 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   for (idx = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (idx >= 0); idx = ptrs->ra[idx].next)
     {
       /* check if array index is in range */
-      if (i >= fd_.stype.dim.dim[0])
+      if (i >= count)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (MR_FAILURE);
@@ -813,8 +809,8 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
-  if (!fdp->non_persistent && (MR_TYPE_POINTER == fdp->stype.mr_type) && ptrs->ra[idx].fdp)
-    if (ptrs->ra[idx].flags.typed && (fdp->stype.tdp != ptrs->ra[idx].fdp->stype.tdp))
+  if (ptrs->ra[idx].flags.typed && ptrs->ra[idx].fdp)
+    if (fdp->stype.tdp != ptrs->ra[idx].fdp->stype.tdp)
       {
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str,
 		    fdp->stype.tdp ? fdp->stype.tdp->type.str : "undefined",

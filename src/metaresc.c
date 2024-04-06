@@ -29,7 +29,7 @@ MR_FOREACH (MR_TYPEDEF_DESC_BI,
 	    MR_BUILTIN_TYPES,
 	    char *, char*, va_list, void,
 	    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t,
-	    mr_uintmax_t, mr_intmax_t, mr_empty_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
+	    mr_uintmax_t, mr_intmax_t, mr_static_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
 	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, mr_enum_value_type_t, long_double_t,
 	    complex_float_t, complex_double_t, complex_long_double_t);
 
@@ -1345,7 +1345,7 @@ mr_detect_structured_type (mr_stype_t * stype)
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = #TYPE,
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
-		void, string_t, char, bool,
+		void, string_t, char, bool, mr_static_string_t,
 		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
 		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };

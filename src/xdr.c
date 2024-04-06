@@ -540,10 +540,10 @@ xdr_char_array_ (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int parent = ptrs->ra[idx].parent;
   bool is_a_dynamic_string = ((parent >= 0) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  typeof (ptrdes->fdp->stype.size) size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
 
   if (XDR_ENCODE == xdrs->x_op)
     {
+      size_t size = ptrdes->MR_SIZE;
       char * string = ptrs->ra[idx].data.string;
       if (is_a_dynamic_string)
 	str_len = strlen (string) + 1;
@@ -861,6 +861,7 @@ xdr_load_bitfield (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_save_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 {
+  /* only for single dimensional arrays store actual size */
   if (!ptrs->ra[idx].fdp->non_persistent)
     if (ptrs->ra[idx].fdp->stype.dim.size == sizeof (ptrs->ra[idx].fdp->stype.dim.dim[0]))
       if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
@@ -883,11 +884,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
   int i, count = fd_.stype.dim.dim[0];
 
   fd_.non_persistent = true;
-  fd_.stype.size = mr_type_size (fd_.stype.mr_type_aux);
-  if (fd_.stype.size == 0)
-    fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
-  if (fd_.stype.size <= 0)
-    return (MR_FAILURE);
+  fd_.stype.size /= count ? count : 1;
 
   if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
     {
@@ -896,8 +893,12 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
 
       if (!ptrs->ra[idx].fdp->non_persistent)
 	{
+	  /* only for single dimensional array dynamic sizing is supported */
 	  if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	    return (MR_FAILURE);
+
+	  if (fd_.stype.size == 0)
+	    return (MR_SUCCESS);
 
 	  count = ptrs->ra[idx].MR_SIZE / fd_.stype.size;
 	  ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
@@ -910,10 +911,7 @@ xdr_load_array (XDR * xdrs, int idx, mr_ra_ptrdes_t * ptrs)
       fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
       int dim_count = fd_.stype.dim.size / sizeof (fd_.stype.dim.dim[0]);
       for (i = 0; i < dim_count; ++i)
-	{
-	  fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
-	  fd_.stype.size *= fd_.stype.dim.dim[i];
-	}
+	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
     }
 
   for (i = 0; i < count; ++i)
