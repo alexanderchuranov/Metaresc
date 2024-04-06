@@ -532,7 +532,6 @@ mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,
 		(mr_save_data_t *, mr_save_data),
 		int node,
-		int parent,
 		)
 /**
  * We have a previously saved node that was a pointer,
@@ -549,6 +548,9 @@ mr_check_ud (mr_ptr_t key, const void * context)
 {
   const mr_check_ud_ctx_t * mr_check_ud_ctx = context;
   mr_save_data_t * mr_save_data = mr_check_ud_ctx->mr_save_data;
+  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
+  int idx = ptrs->size / sizeof (ptrs->ra[0]);
+  int parent = ptrs->ra[idx].parent;
   mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr];
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
   char * discriminator = ud->union_fdp->meta;
@@ -562,7 +564,7 @@ mr_check_ud (mr_ptr_t key, const void * context)
       return (MR_SUCCESS);
   
   /* otherwise we need to find union resolution in the context of new parent */
-  fdp = mr_union_discriminator (mr_save_data, mr_check_ud_ctx->parent, ud->union_fdp);
+  fdp = mr_union_discriminator (mr_save_data, parent, ud->union_fdp);
   
   return ((fdp == ud->discriminated_fdp) ? MR_SUCCESS : MR_FAILURE);
 }
@@ -603,14 +605,14 @@ mr_get_persistent_fd (mr_ptrdes_t * ra, int idx)
 }
 
 static int
-move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int parent, int idx)
+move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int idx)
 {
   int count, ref_idx = ra[ref_parent].first_child;
   mr_size_t element_size = ra[idx].fdp->stype.size;
+  int parent = ra[idx].parent;
   if (element_size == 0)
     return (0);
     
-  ra[idx].parent = parent; /* link to parent for access to statically allocated field descriptor */
   ra[ref_parent].ref_idx = ref_idx;
   ra[ref_parent].first_child = -1;
   ra[ref_parent].last_child = -1;
@@ -682,10 +684,13 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 }
 
 static int
-resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx)
+resolve_pointer (mr_save_data_t * mr_save_data, int ref_idx)
 {
-  int ref_parent = mr_save_data->ptrs.ra[ref_idx].parent;
-  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
+  mr_ptrdes_t * ra = ptrs->ra;
+  int idx = ptrs->size / sizeof (ptrs->ra[0]);
+  int parent = ra[idx].parent;
+  int ref_parent = ra[ref_idx].parent;
   mr_size_t element_size = ra[idx].fdp->stype.size;
   if (element_size == 0)
     return (0);
@@ -707,7 +712,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      previously saved resizable pointer was pointing to the same address, but was shorter.
 	      we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
 	    */
-	    return (move_nodes_to_parent (ra, ref_parent, parent, idx));
+	    return (move_nodes_to_parent (ra, ref_parent, idx));
 	  else
 	    {
 	      ssize_t size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
@@ -722,7 +727,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      int nodes_added = mr_save_pointer_content (ref_parent, mr_save_data);
 	      if (nodes_added < 0)
 		return (nodes_added);
-	      return (size_delta / element_size + 1);
+	      return (ra[idx].MR_SIZE / element_size);
 	    }
 	}
     }
@@ -751,7 +756,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	      ra[parent].MR_SIZE += size_delta; /* increase size of resizable array on detected delta */
 	    }
 
-	  return (move_nodes_to_parent (ra, ref_parent, parent, idx));
+	  return (move_nodes_to_parent (ra, ref_parent, idx));
 	}
     }
   
@@ -759,12 +764,14 @@ resolve_pointer (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 }
 
 static int
-resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx)
+resolve_matched (mr_save_data_t * mr_save_data, int ref_idx)
 {
-  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
+  mr_ptrdes_t * ra = ptrs->ra;
+  int idx = ptrs->size / sizeof (ptrs->ra[0]);
+  int parent = ra[idx].parent;
   mr_check_ud_ctx_t mr_check_ud_ctx = {
     .mr_save_data = mr_save_data,
-    .parent = parent,
   };
   int nodes_added;
   
@@ -787,8 +794,8 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 	    return (1);
 
 	  case MR_TYPE_POINTER:
-	    nodes_added = resolve_pointer (mr_save_data, idx, parent, ref_idx);
-	    if (nodes_added != 0) /* non-zero value is a allocation error or number of added nodes. Zero means - not able to resolve the pointer. */
+	    nodes_added = resolve_pointer (mr_save_data, ref_idx);
+	    if (nodes_added != 0) /* non-zero value is an allocation error or number of added nodes. Zero means - not able to resolve the pointer. */
 	      return (nodes_added);
 	    break;
 	    
@@ -799,7 +806,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int idx, int parent, int ref_idx
 		       && is_first_child (ra, ref_idx)
 		       && (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
 		  && !ref_is_parent (ra, parent, ref_idx))
-		return (move_nodes_to_parent (ra, ref_parent, parent, idx));
+		return (move_nodes_to_parent (ra, ref_parent, idx));
 	    break;
 	  }
     }
@@ -1006,6 +1013,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_save_data->ptrs.ra[idx].flags.unnamed = fdp->unnamed;
   mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
+  mr_save_data->ptrs.ra[idx].parent = parent;
   mr_save_data->ptrs.ra[idx].save_params.next_untyped = -1;
 
   /* forward reference resolving */
@@ -1015,7 +1023,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   if (search_result->intptr != idx)
     {
       mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-      int nodes_matched = resolve_matched (mr_save_data, idx, parent, search_result->intptr);
+      int nodes_matched = resolve_matched (mr_save_data, search_result->intptr);
       if (nodes_matched != 0)
 	return (nodes_matched);
 
