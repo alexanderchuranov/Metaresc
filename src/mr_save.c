@@ -1424,10 +1424,11 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
       ptrdes->first_child = ptrdes->last_child = -1;
       break;
     case MR_TYPE_CHAR_ARRAY:
+#define MR_VECTOR_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_ARRAY, MR_TYPE_POINTER))
       if (ptrdes->parent >= 0) /* in array of MR_TYPE_CHAR_ARRAY adjust MR_SIZE to a size of individual element */
-	if (ptrs->ra[ptrdes->parent].fdp)
-	  if (ptrs->ra[ptrdes->parent].fdp->stype.mr_type == MR_TYPE_ARRAY)
-	    ptrdes->MR_SIZE -= ptrs->ra[ptrdes->next].MR_SIZE;
+	if (((MR_VECTOR_TYPES >> ptrs->ra[ptrdes->parent].mr_type) & 1) &&
+	    (ptrdes->next >= 0))
+	  ptrdes->MR_SIZE -= ptrs->ra[ptrdes->next].MR_SIZE;
       break;
     default:
       break;
