@@ -1345,7 +1345,7 @@ mr_detect_structured_type (mr_stype_t * stype)
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = #TYPE,
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
-		void, string_t, char, bool, mr_static_string_t,
+		void, string_t, char, bool,
 		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
 		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };

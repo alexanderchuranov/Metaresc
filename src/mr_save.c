@@ -553,28 +553,29 @@ mr_check_ud (mr_ptr_t key, const void * context)
   int parent = ptrs->ra[idx].parent;
   mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr];
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
-  char * discriminator = ud->union_fdp->meta;
-  mr_fd_t * fdp = mr_save_data->ptrs.ra[mr_check_ud_ctx->node].fdp;
+  mr_fd_t * discriminated_fdp = ud->discriminated_fdp;
+  mr_fd_t * fdp = ptrs->ra[mr_check_ud_ctx->node].fdp;
   mr_td_t * tdp = fdp ? fdp->stype.tdp : NULL;
 
   /* here we check that union discriminator was resolved at the level of saved node.
      This means that resolution is not dependant on upper tree */
   if (NULL != tdp)
-    if (NULL != mr_get_fd_by_name (tdp, discriminator))
+    if (NULL != mr_get_fd_by_name (tdp, ud->union_fdp->meta /* discriminator */))
       return (MR_SUCCESS);
   
   /* otherwise we need to find union resolution in the context of new parent */
   fdp = mr_union_discriminator (mr_save_data, parent, ud->union_fdp);
   
-  return ((fdp == ud->discriminated_fdp) ? MR_SUCCESS : MR_FAILURE);
+  return ((fdp == discriminated_fdp) ? MR_SUCCESS : MR_FAILURE);
 }
 
 static bool
 is_first_child (mr_ptrdes_t * ra, int node)
 {
-  if (ra[node].parent < 0)
+  int parent = ra[node].parent;
+  if (parent < 0)
     return (false);
-  return (ra[ra[node].parent].first_child == node);
+  return (ra[parent].first_child == node);
 }
 
 static bool
@@ -1421,6 +1422,12 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
       /* unlink string content, but keep links from content on a parent node */
     case MR_TYPE_STRING:
       ptrdes->first_child = ptrdes->last_child = -1;
+      break;
+    case MR_TYPE_CHAR_ARRAY:
+      if (ptrdes->parent >= 0) /* in array of MR_TYPE_CHAR_ARRAY adjust MR_SIZE to a size of individual element */
+	if (ptrs->ra[ptrdes->parent].fdp)
+	  if (ptrs->ra[ptrdes->parent].fdp->stype.mr_type == MR_TYPE_ARRAY)
+	    ptrdes->MR_SIZE -= ptrs->ra[ptrdes->next].MR_SIZE;
       break;
     default:
       break;
