@@ -1396,12 +1396,13 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
       if (((MR_TYPE_NONE == ptrdes->mr_type_aux) || (MR_TYPE_VOID == ptrdes->mr_type_aux)) &&
 	  !ptrdes->flags.is_null)
 	{
-	  intptr_t alloc_idx = mr_add_ptr_to_list (ptrs);
 	  void * data_ptr = *(void**)ptrdes->data.ptr;
+	  intptr_t alloc_idx = mr_add_ptr_to_list (ptrs);
 
 	  if (alloc_idx < 0)
 	    return (MR_FAILURE); /* memory allocation error occured */
 	  ptrdes = &ptrs->ra[idx]; /* ptrs->ra might be reallocated in mr_add_ptr_to_list */
+	  ptrdes->flags.is_null = true; /* void pointers are saved as NULL */
 
 	  /* populate attributes of new node */
 	  ptrs->ra[alloc_idx].data.ptr = data_ptr;
@@ -1421,23 +1422,22 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
 		  /* as we put multiple addresses into one bucket,
 		     we need to traverse through the list in this bucket and
 		     filter out only entries with matching address */
-		  int idx = -1;
+		  int ref_idx_real = -1;
 		  for ( ; ref_idx >= 0; ref_idx = ptrs->ra[ref_idx].save_params.next_untyped)
 		    if (ptrs->ra[ref_idx].data.ptr == data_ptr)
 		      {
-			if (-1 == idx)
-			  idx = ref_idx; /* first entry with the matched address */
+			if (-1 == ref_idx_real)
+			  ref_idx_real = ref_idx; /* first entry with the matched address */
 			else if (ptrs->ra[ref_idx].MR_SIZE > ptrs->ra[idx].MR_SIZE)
-			  idx = ref_idx; /* another entry, but bigger in size */
+			  ref_idx_real = ref_idx; /* another entry, but bigger in size */
 		      }
-		  if (-1 == idx)
+		  if (-1 == ref_idx_real)
 		    break;
-		  ref_idx = idx;
+		  ref_idx = ref_idx_real;
 		}
 	      ptrdes->ref_idx = ref_idx;
 	      ptrs->ra[ref_idx].flags.is_referenced = true;
 	    }
-	  ptrdes->flags.is_null = true; /* void pointers are saved as NULL */
 	}
       break;
       /* unlink string content, but keep links from content on a parent node */
