@@ -513,19 +513,21 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
   return (0);
 }
 
+#define MR_PTR_HASH_MASK (~3)
+
 mr_hash_value_t
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (ra_ptrdes->ra[x.intptr].data.uintptr);
+  return (ra_ptrdes->ra[x.intptr].data.uintptr & MR_PTR_HASH_MASK);
 }
 
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  void * x_ptr = ra_ptrdes->ra[x.intptr].data.ptr;
-  void * y_ptr = ra_ptrdes->ra[y.intptr].data.ptr;
+  uintptr_t x_ptr = ra_ptrdes->ra[x.intptr].data.uintptr & MR_PTR_HASH_MASK;
+  uintptr_t y_ptr = ra_ptrdes->ra[y.intptr].data.uintptr & MR_PTR_HASH_MASK;
   return ((x_ptr > y_ptr) - (x_ptr < y_ptr));
 }
 
@@ -1395,13 +1397,14 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
 	  !ptrdes->flags.is_null)
 	{
 	  intptr_t alloc_idx = mr_add_ptr_to_list (ptrs);
+	  void * data_ptr = *(void**)ptrdes->data.ptr;
 
 	  if (alloc_idx < 0)
 	    return (MR_FAILURE); /* memory allocation error occured */
 	  ptrdes = &ptrs->ra[idx]; /* ptrs->ra might be reallocated in mr_add_ptr_to_list */
 
 	  /* populate attributes of new node */
-	  ptrs->ra[alloc_idx].data.ptr = *(void**)ptrdes->data.ptr;
+	  ptrs->ra[alloc_idx].data.ptr = data_ptr;
 
 	  /* this element is required only for a search so we need to adjust back size of collection */
 	  ptrs->size -= sizeof (ptrs->ra[0]);
@@ -1413,6 +1416,24 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
 	    {
 	      /* typed entry was found and here we configure reference on it */
 	      int ref_idx = find_result->intptr;
+	      if (ptrs->ra[ref_idx].data.ptr != data_ptr)
+		{
+		  /* as we put multiple addresses into one bucket,
+		     we need to traverse through the list in this bucket and
+		     filter out only entries with matching address */
+		  int idx = -1;
+		  for ( ; ref_idx >= 0; ref_idx = ptrs->ra[ref_idx].save_params.next_untyped)
+		    if (ptrs->ra[ref_idx].data.ptr == data_ptr)
+		      {
+			if (-1 == idx)
+			  idx = ref_idx; /* first entry with the matched address */
+			else if (ptrs->ra[ref_idx].MR_SIZE > ptrs->ra[idx].MR_SIZE)
+			  idx = ref_idx; /* another entry, but bigger in size */
+		      }
+		  if (-1 == idx)
+		    break;
+		  ref_idx = idx;
+		}
 	      ptrdes->ref_idx = ref_idx;
 	      ptrs->ra[ref_idx].flags.is_referenced = true;
 	    }
