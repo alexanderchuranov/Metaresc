@@ -1788,7 +1788,7 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
       if (((MR_STRUCT_TYPES >> resolve_to->mr_type) & 1) &&
 	  (resolve_to->param.struct_param.fields_size >= sizeof (resolve_to->param.struct_param.fields[0])))
 	continue;
-#define MR_UNION_RESOLVABLE_TYPES (MR_INT_TYPES MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_BITFIELD, MR_TYPE_ARRAY, MR_TYPE_POINTER))
+#define MR_UNION_RESOLVABLE_TYPES (MR_INT_TYPES MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY))
       resolve_to->is_union_discriminator = (MR_UNION_RESOLVABLE_TYPES >> resolve_to->mr_type) & 1;
       break;
     }
