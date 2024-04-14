@@ -1214,6 +1214,7 @@
       mr_ra_ptrdes_t _ptrs_ =						\
 	{ .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }; \
       memset ((D_PTR), 0, sizeof (*(D_PTR)));				\
+      mr_conf_init ();							\
       mr_status_t _status_ = METHOD ((STR), &_ptrs_);			\
       if (MR_SUCCESS == _status_)					\
 	{								\

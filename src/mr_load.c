@@ -336,7 +336,9 @@ mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
   switch (ptrdes->value_type)
     {
     case MR_VT_SUBSTR:
-      if (ptrdes->load_params.vt_substr.length == sizeof (char))
+      if (ptrdes->load_params.vt_substr.length == 0)
+	*(char*)ptrdes->data.ptr = 0;
+      else if (ptrdes->load_params.vt_substr.length == sizeof (char))
 	*(char*)ptrdes->data.ptr = ptrdes->load_params.vt_substr.str[0];
       else
 	{
@@ -348,7 +350,7 @@ mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
 	  if (ptrdes->load_params.vt_substr.str)
 	    memcpy (buf, ptrdes->load_params.vt_substr.str, length);
 
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, buf);
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, buf);
 	}
       break;
 
