@@ -69,7 +69,9 @@ static int MR_TYPE_CMP_FUNC_NAME (string_t) (const mr_ptr_t x, const mr_ptr_t y,
 {
   string_t * _x = x.ptr;
   string_t * _y = y.ptr;
-  return (strcmp (*_x, *_y));
+  if (*_x && *_y)
+    return (strcmp (*_x, *_y));
+  return ((*_x > *_y) - (*_x < *_y));
 }
 
 static int MR_TYPE_CMP_FUNC_NAME (char_array) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
