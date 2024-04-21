@@ -587,7 +587,8 @@ xdr_save_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   if (ptrs->ra[idx].ref_idx > 0)
     {
-      if (!xdr_uint32_t (xdrs, &ptrs->ra[ptrs->ra[idx].ref_idx].idx))
+      uint32_t ref_idx = ptrs->ra[ptrs->ra[idx].ref_idx].idx;
+      if (!xdr_uint32_t (xdrs, &ref_idx))
 	return (MR_FAILURE);
       if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
 	return (MR_FAILURE);
@@ -597,7 +598,9 @@ xdr_save_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     {
       void ** str = ptrs->ra[idx].data.ptr;
       int32_t size = -1;
-      if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].ref_idx))
+      uint32_t ref_idx = ptrs->ra[idx].ref_idx;
+
+      if (!xdr_uint32_t (xdrs, &ref_idx))
 	return (MR_FAILURE);
       if (NULL != *str)
 	size = strlen (*str);
@@ -621,9 +624,13 @@ xdr_save_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
-  if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].ref_idx))
+  uint32_t ref_idx = 0;
+
+  if (!xdr_uint32_t (xdrs, &ref_idx))
     return (MR_FAILURE);
-  if (ptrs->ra[idx].ref_idx > 0)
+
+  ptrs->ra[idx].ref_idx = ref_idx;
+  if (ref_idx > 0)
     {
       if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
 	return (MR_FAILURE);
@@ -938,10 +945,12 @@ xdr_save_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);
 
+  uint32_t ref_idx = ptrs->ra[ptrs->ra[idx].ref_idx].idx;
   if (ptrs->ra[idx].ref_idx > 0)
-    return (xdr_uint32_t (xdrs, &ptrs->ra[ptrs->ra[idx].ref_idx].idx) ? MR_SUCCESS : MR_FAILURE);
+    return (xdr_uint32_t (xdrs, &ref_idx) ? MR_SUCCESS : MR_FAILURE);
 
-  if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].ref_idx))
+  ref_idx = 0;
+  if (!xdr_uint32_t (xdrs, &ref_idx))
     return (MR_FAILURE);
   
   if (true == ptrs->ra[idx].flags.is_null)
@@ -985,8 +994,10 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);
 
-  if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].ref_idx))
+  uint32_t ref_idx = 0;
+  if (!xdr_uint32_t (xdrs, &ref_idx))
     return (MR_FAILURE);
+  ptrs->ra[idx].ref_idx = ref_idx;
   
   if (true == ptrs->ra[idx].flags.is_null)
     return (MR_SUCCESS);

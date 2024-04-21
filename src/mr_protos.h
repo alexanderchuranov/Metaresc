@@ -525,7 +525,7 @@ TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading
 	       char vt_char,
 	       )
 
-TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
+TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES (__attribute__ ((packed)), "set union discriminator indexes"),
 		ANON_UNION ( , __attribute__ ((packed))),
 		/* to make mr_ptrdes_t more compact we need to align size of mr_save_params_t with size of mr_load_params_t */
 		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (mr_idx_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
