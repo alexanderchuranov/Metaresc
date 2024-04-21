@@ -8,7 +8,7 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
   mr_idx_t max_idx = 0;
   mr_idx_t * table;
 
-  for (i = 0; i < count; ++i)
+  for (i = 1; i < count; ++i)
     if (ptrs->ra[i].idx > max_idx)
       max_idx = ptrs->ra[i].idx;
 
@@ -16,15 +16,15 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
   if (NULL == table)
     return;
 
-  for (i = 0; i < count; ++i)
+  for (i = 1; i < count; ++i)
     if (ptrs->ra[i].idx > 0)
       table[ptrs->ra[i].idx] = i;
 
-  for (i = 0; i < count; ++i)
+  for (i = 1; i < count; ++i)
     {
       int ref_idx = ptrs->ra[i].ref_idx;
       if (ref_idx > 0)
-	if ((ref_idx > max_idx) || (table[ref_idx] < 0))
+	if ((ref_idx > max_idx) || (table[ref_idx] == 0))
 	  if ((ref_idx < count) && (ptrs->ra[ref_idx].idx == 0))
 	    {
 	      ptrs->ra[ref_idx].idx = ref_idx;

@@ -1011,7 +1011,7 @@ static mr_idx_t
 mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent)
 {
   mr_idx_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
-  if (idx == 0)
+  if (0 == idx)
     return (0); /* memory allocation error occured */
 
   mr_save_data->ptrs.ra[idx].data.ptr = data;
@@ -1408,7 +1408,7 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
 	  void * data_ptr = *(void**)ptrdes->data.ptr;
 	  mr_idx_t alloc_idx = mr_add_ptr_to_list (ptrs);
 
-	  if (alloc_idx == 0)
+	  if (0 == alloc_idx)
 	    return (MR_FAILURE); /* memory allocation error occured */
 	  ptrdes = &ptrs->ra[idx]; /* ptrs->ra might be reallocated in mr_add_ptr_to_list */
 	  ptrdes->flags.is_null = true; /* void pointers are saved as NULL */

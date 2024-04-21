@@ -294,7 +294,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, m
 {
   mr_status_t status = MR_FAILURE;
   mr_idx_t idx = mr_add_ptr_to_list (ptrs);
-  if (idx == 0)
+  if (0 == idx)
     return (MR_FAILURE);
   
   ptrs->ra[idx].data.ptr = data;
