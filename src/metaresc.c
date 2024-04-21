@@ -110,10 +110,9 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 			       mr_type_t mr_type,
 			       mr_dump_struct_types_union_t * value)
 {
-  int i;
   mr_offset_t offset = 0;
   mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
-  mr_size_t fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
+  int i, fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
   
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
 #error Support for non little endian architectures to be implemented
@@ -408,7 +407,8 @@ char *
 mr_strndup (const char * str, size_t size)
 {
   char * _str = (char*)str;
-  int _size;
+  typeof (size) _size;
+
   for (_size = 0; (_size < size) && *_str++; ++_size);
   _str = MR_CALLOC (_size + 1, sizeof (*_str));
   if (NULL == _str)
@@ -515,8 +515,8 @@ mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, 
     return (NULL);
   
   char * _data = *data;
-  ssize_t _size = *size;
-  ssize_t new_size = _size + element_size;
+  typeof (*size) _size = *size;
+  typeof (*size) new_size = _size + element_size;
   if (new_size > *alloc_size)
     {
       ssize_t realloc_size = new_size * 2;
@@ -548,19 +548,13 @@ mr_rarray_append (mr_rarray_t * rarray, ssize_t size)
  * On higher level we need index because array is always reallocating and
  * pointer on element is changing (index remains constant).
  */
-int
+mr_idx_t
 mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = mr_rarray_allocate_element ((void*)&ptrs->ra, &ptrs->size, &ptrs->alloc_size, sizeof (ptrs->ra[0]));
   if (NULL == ptrdes)
-    return (-1);
+    return (0);
   memset (ptrdes, 0, sizeof (*ptrdes));
-  ptrdes->idx = -1; /* NB! To be initialized in depth search in mr_save */
-  ptrdes->ref_idx = -1;
-  ptrdes->parent = -1;
-  ptrdes->first_child = -1;
-  ptrdes->last_child = -1;
-  ptrdes->next = -1;
   return (ptrs->size / sizeof (ptrs->ra[0]) - 1);
 }
 
@@ -571,24 +565,22 @@ mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizable array with pointers descriptors
  */
 void
-mr_add_child (int parent, int child, mr_ptrdes_t * ra)
+mr_add_child (mr_idx_t parent, mr_idx_t child, mr_ptrdes_t * ra)
 {
-  int last_child;
-
   if (child < 0)
     return;
 
   ra[child].parent = parent;
-  if (parent < 0)
+  if (parent == 0)
     return;
 
-  last_child = ra[parent].last_child;
-  if (last_child < 0)
+  mr_idx_t last_child = ra[parent].last_child;
+  if (last_child == 0)
     ra[parent].first_child = child;
   else
     {
       ra[last_child].next = child;
-      ra[child].next = -1;
+      ra[child].next = 0;
     }
   ra[parent].last_child = child;
 }
@@ -1115,7 +1107,7 @@ mr_size_t
 mr_type_size (mr_type_t mr_type)
 {
 #define MR_TYPE_SIZE(TYPE) [MR_TYPE_DETECT (TYPE)] = sizeof (TYPE),
-  static size_t types_sizes[MR_TYPE_LAST] =
+  static mr_size_t types_sizes[MR_TYPE_LAST] =
     {
       [MR_TYPE_VOID] = sizeof (void*),
       [MR_TYPE_POINTER] = sizeof (void*),
@@ -1518,8 +1510,8 @@ mr_detect_func_args_types (mr_td_t * tdp)
   if (tdp->mr_type != MR_TYPE_FUNC_TYPE)
     return;
 
-  int i;
-  for (i = tdp->param.func_param.size / sizeof (tdp->param.func_param.args[0]) - 1; i >= 0; --i)
+  int i, count = tdp->param.func_param.size / sizeof (tdp->param.func_param.args[0]);
+  for (i = 0; i < count; ++i)
     mr_detect_structured_type (tdp->param.func_param.args[i]);
 }
 

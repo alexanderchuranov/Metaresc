@@ -31,9 +31,7 @@
   static void
     scm_unquote_str (mr_substr_t * substr, char * dst)
   {
-    int size, length;
-    int i;
-
+    typeof (substr->length) i, length;
     static bool initialized = false;
     static char map[MR_ESC_CHAR_MAP_SIZE];
 
@@ -55,6 +53,7 @@
 	if ('\\' == substr->str[i])
 	  {
 	    int c = map[(unsigned char)substr->str[++i]];
+	    int size;
 	    if (c)
 	      dst[length++] = c;
 	    else if (1 == sscanf (&substr->str[i], "x%x%n;", &c, &size))
@@ -109,9 +108,11 @@ scm: start_node scm_stmt {
 
 start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
-  mr_load->parent = mr_parse_add_node (mr_load); 
-  if (mr_load->parent < 0)
+  mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
+  if (idx == 0)
     { YYERROR; }
+  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
+  mr_load->parent = idx;
 }
 
 scm_stmt:

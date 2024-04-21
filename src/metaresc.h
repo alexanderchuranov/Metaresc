@@ -94,9 +94,9 @@
 #define MR_REF "ref"
 #define MR_REF_CONTENT "ref_content"
 
-#define MR_YAML_ANCHOR_TMPLT MR_REF_IDX "_%" SCNd32
+#define MR_YAML_ANCHOR_TMPLT MR_REF_IDX "_%" SCNu32
 #define MR_YAML_REF_ANCHOR_TMPLT MR_YAML_ANCHOR_TMPLT
-#define MR_YAML_REF_ANCHOR_CONTENT_TMPLT MR_REF_CONTENT "_%" SCNd32
+#define MR_YAML_REF_ANCHOR_CONTENT_TMPLT MR_REF_CONTENT "_%" SCNu32
 
 #define MR_TYPE_ANONYMOUS_UNION_TEMPLATE "mr_type_anonymous_union_%d_t"
 #define MR_PTR_META "mr_ptr_t magic meta feild"
@@ -1146,11 +1146,15 @@
       else								\
 	{								\
 	  mr_detect_type (&__fd__);					\
-	  int __idx__ = mr_xml2_load (__xml__, &__ptrs__);		\
-	  if (__idx__ >= 0)						\
-	    __status__ = mr_load ((D_PTR), &__fd__, __idx__, &__ptrs__); \
+	  mr_add_ptr_to_list (&__ptrs__);				\
 	  if (__ptrs__.ra)						\
-	    MR_FREE (__ptrs__.ra);					\
+	    {								\
+	      mr_idx_t __idx__ = mr_xml2_load (__xml__, &__ptrs__);	\
+	      if (__idx__ > 0)						\
+		__status__ = mr_load ((D_PTR), &__fd__, __idx__, &__ptrs__); \
+	      if (__ptrs__.ra)						\
+		MR_FREE (__ptrs__.ra);					\
+	    }								\
 	}								\
       __status__;							\
     })
@@ -1215,21 +1219,26 @@
 	{ .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }; \
       memset ((D_PTR), 0, sizeof (*(D_PTR)));				\
       mr_conf_init ();							\
-      mr_status_t _status_ = METHOD ((STR), &_ptrs_);			\
-      if (MR_SUCCESS == _status_)					\
-	{								\
-	  mr_fd_t _fd_ =						\
-	    {								\
-	      .stype.type = MR_TYPE_NAME,				\
-	      .name = { .str = NULL, .hash_value = 0, },		\
-	      .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
-	      .stype.size = sizeof (*(D_PTR)),				\
-	    };								\
-	  mr_detect_type (&_fd_);					\
-	  _status_ = mr_load ((D_PTR), &_fd_, 0, &_ptrs_);		\
-	}								\
+      mr_add_ptr_to_list (&_ptrs_);					\
+      mr_status_t _status_ = MR_FAILURE;				\
       if (_ptrs_.ra)							\
-	MR_FREE (_ptrs_.ra);						\
+	{								\
+	  _status_ = METHOD ((STR), &_ptrs_);				\
+	  if (MR_SUCCESS == _status_)					\
+	    {								\
+	      mr_fd_t _fd_ =						\
+		{							\
+		  .stype.type = MR_TYPE_NAME,				\
+		  .name = { .str = NULL, .hash_value = 0, },		\
+		  .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))), \
+		  .stype.size = sizeof (*(D_PTR)),			\
+		};							\
+	      mr_detect_type (&_fd_);					\
+	      _status_ = mr_load ((D_PTR), &_fd_, 1, &_ptrs_);		\
+	    }								\
+	  if (_ptrs_.ra)						\
+	    MR_FREE (_ptrs_.ra);					\
+	}								\
       _status_;								\
     })
 
@@ -1354,6 +1363,7 @@
 
 typedef char * string_t;
 typedef char mr_static_string_t[1];
+typedef uint32_t mr_idx_t;
 typedef long int long_int_t;
 typedef long long int long_long_int_t;
 typedef long double long_double_t;
@@ -1414,10 +1424,10 @@ extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
 extern mr_ra_ptrdes_t mr_save (void * data, mr_fd_t * fdp);
-extern mr_status_t mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs);
 #ifdef HAVE_LIBXML2
 extern xmlDocPtr mr_xml2_save (mr_ra_ptrdes_t * ptrs);
-extern int mr_xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
+extern mr_idx_t mr_xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBXML2 */
 #ifdef HAVE_LIBYAML
 extern char * mr_yaml_save (mr_ra_ptrdes_t * ptrs);
@@ -1447,8 +1457,8 @@ extern void mr_free (const char * filename, const char * function, int line, voi
 extern char * mr_strdup (const char * str);
 extern char * mr_strndup (const char * str, size_t size);
 
-extern int mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
-extern void mr_add_child (int parent, int child, mr_ptrdes_t * ra);
+extern mr_idx_t mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
+extern void mr_add_child (mr_idx_t parent, mr_idx_t child, mr_ptrdes_t * ra);
 extern void mr_detect_type (mr_fd_t * fdp);
 #define MR_IS_STRING(X) __builtin_types_compatible_p (char, __typeof__ (*__builtin_choose_expr ((__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS) || (__builtin_classify_type (X) == MR_ARRAY_TYPE_CLASS), X, NULL)))
 #define MR_AND_IS_STRING(X) && MR_IS_STRING (X)
@@ -1478,8 +1488,8 @@ extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, 
 
 extern mr_fd_t * mr_get_any_fd_by_name (const char * name, mr_td_t * tdp);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
-#define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, __VA_ARGS__ - 0)
-extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start);
+#define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (1) (__VA_ARGS__))
+extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start);
 extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_generic_sort (void * data, size_t count, char * key_type);
 extern mr_hash_value_t mr_generic_hash (const mr_ptr_t x, const void * context);

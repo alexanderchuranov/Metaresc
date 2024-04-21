@@ -29,8 +29,7 @@
 static void
 cinit_unquote_str (mr_substr_t * substr, char * dst)
 {
-  int i, size, length;
-
+  typeof (substr->length) i, length;
   static bool initialized = false;
   static char map[MR_ESC_CHAR_MAP_SIZE];
 
@@ -52,6 +51,7 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
       if ('\\' == substr->str[i])
 	{
 	  int c = map[(unsigned char)substr->str[++i]];
+	  int size;
 	  if (c > 0)
 	    dst[length++] = c;
 	  else if (1 == sscanf (&substr->str[i], "%o%n", &c, &size))
@@ -110,9 +110,11 @@ cinit: start_node cinit_stmt {
 
 start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
-  mr_load->parent = mr_parse_add_node (mr_load); 
-  if (mr_load->parent < 0)
+  mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
+  if (idx == 0)
     { YYERROR; }
+  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
+  mr_load->parent = idx;
 }
 
 cinit_stmt:
@@ -240,7 +242,7 @@ list: | list_element | list_element TOK_CINIT_COMMA list
 list_element: cinit
 | TOK_CINIT_DOT TOK_CINIT_ID TOK_CINIT_ASSIGN cinit {
   mr_load_t * mr_load = MR_LOAD;
-  int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
+  mr_idx_t idx = mr_load->ptrs->ra[mr_load->parent].last_child;
   mr_td_t * tdp = mr_load->ptrs->ra[idx].fdp ? mr_load->ptrs->ra[idx].fdp->stype.tdp : NULL;
   $2.str[$2.length] = 0;
   mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($2.str, tdp);

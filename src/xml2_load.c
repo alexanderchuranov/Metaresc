@@ -4,22 +4,24 @@
 
 #include <metaresc.h>
 
-int
+mr_idx_t
 mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
 {
-  int idx = mr_add_ptr_to_list (ptrs);
   xmlNodePtr node_;
   char * content = NULL;
   char * property = NULL;
-
-  if (idx < 0)
-    return (idx);
+  uint32_t prop_value = 0;
+  mr_idx_t idx = mr_add_ptr_to_list (ptrs);
+  if (0 == idx)
+    return (0);
 
   /* handle REF_IDX property */
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF_IDX);
   if (property)
     {
-      if (1 != sscanf (property, "%" SCNd32, &ptrs->ra[idx].idx))
+      if (1 == sscanf (property, "%" SCNu32, &prop_value))
+	ptrs->ra[idx].idx = prop_value;
+      else
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       ptrs->ra[idx].flags.is_referenced = true;
       xmlFree (property);
@@ -28,7 +30,9 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF);
   if (property)
     {
-      if (1 != sscanf (property, "%" SCNd32, &ptrs->ra[idx].ref_idx))
+      if (1 == sscanf (property, "%" SCNu32, &prop_value))
+	ptrs->ra[idx].ref_idx = prop_value;
+      else
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       xmlFree (property);
     }
@@ -36,7 +40,9 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF_CONTENT);
   if (property)
     {
-      if (1 != sscanf (property, "%" SCNd32, &ptrs->ra[idx].ref_idx))
+      if (1 == sscanf (property, "%" SCNu32, &prop_value))
+	ptrs->ra[idx].ref_idx = prop_value;
+      else
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       ptrs->ra[idx].flags.is_content_reference = true;
       xmlFree (property);
@@ -69,9 +75,9 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)
     if (XML_ELEMENT_NODE == node_->type)
       {
-	int child = mr_xml2_load (node_, ptrs);
-	if (child < 0)
-	  return (child);
+	mr_idx_t child = mr_xml2_load (node_, ptrs);
+	if (child == 0)
+	  return (0);
 	mr_add_child (idx, child, ptrs->ra);
       }
   

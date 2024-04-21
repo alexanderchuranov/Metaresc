@@ -14,7 +14,7 @@
 #define CINIT_INDENT_SPACES (2)
 #define CINIT_INDENT_TEMPLATE "%*s"
 
-#define CINIT_ATTR_INT "/* %s = %" SCNd32 " */ "
+#define CINIT_ATTR_INT "/* %s = %" SCNu32 " */ "
 
 #define CINIT_QUOTE_CHAR_PATTERN "\\%03o"
 #define CINIT_BITMASK_DELIMITER " | "
@@ -64,10 +64,9 @@ cinit_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
 static int
 cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  size_t size = ptrdes->MR_SIZE;
-  char buffer[size + 1];
-  strncpy (buffer, ptrdes->data.ptr, size);
-  buffer[size] = 0;
+  char buffer[ptrdes->MR_SIZE + 1];
+  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
+  buffer[ptrdes->MR_SIZE] = 0;
   return (mr_ra_printf_quote_string (mr_ra_str, buffer, CINIT_QUOTE_CHAR_PATTERN));
 }
 
@@ -188,7 +187,7 @@ static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
 };
 
 static mr_status_t
-cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
   mr_ra_printf_t save_handler = NULL;
 
@@ -217,17 +216,17 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].ref_idx >= 0)
+  if (ptrs->ra[idx].ref_idx > 0)
     if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT,
 		      (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-		      ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+		      (uint32_t)ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
       return (MR_FAILURE);
 
   if (ptrs->ra[idx].flags.is_referenced)
-    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
+    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_IDX, (uint32_t)ptrs->ra[idx].idx) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags.is_null || (ptrs->ra[idx].ref_idx >= 0))
+  if (ptrs->ra[idx].flags.is_null || (ptrs->ra[idx].ref_idx > 0))
     {
       if (mr_ra_append_string (mr_ra_str, CINIT_NULL) < 0)
 	return (MR_FAILURE);
@@ -239,13 +238,13 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
 }
 
 static mr_status_t
-cinit_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+cinit_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
   if (ptrs->ra[idx].res.data.string)
     if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].next >= 0)
+  if (ptrs->ra[idx].next > 0)
     if (mr_ra_append_char (mr_ra_str, ',') < 0)
       return (MR_FAILURE);
 
@@ -256,7 +255,7 @@ cinit_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * 
 }
 
 static mr_status_t
-cinit_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+cinit_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   mr_rarray_t * mr_ra_str = context;
 

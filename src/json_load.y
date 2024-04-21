@@ -28,8 +28,7 @@
 static void
 json_unquote_str (mr_substr_t * substr, char * dst)
 {
-  int i, size, length;
-
+  typeof (substr->length) i, length = 0;
   static bool initialized = false;
   static char map[MR_ESC_CHAR_MAP_SIZE];
 
@@ -45,12 +44,12 @@ json_unquote_str (mr_substr_t * substr, char * dst)
   if (NULL == substr->str)
     return;
 
-  length = 0;
   for (i = 0; i < substr->length; ++i)
     {
       if ('\\' == substr->str[i])
 	{
 	  int c = map[(unsigned char)substr->str[++i]];
+	  int size;
 	  if (c > 0)
 	    dst[length++] = c;
 	  else if (1 == sscanf (&substr->str[i], "u%04x%n", &c, &size))
@@ -102,10 +101,12 @@ pop_node: {
 
 push_node: { 
   mr_load_t * mr_load = MR_LOAD; 
-  mr_load->parent = mr_parse_add_node (mr_load); 
-  if (mr_load->parent < 0)
+  mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
+  if (idx == 0)
     { YYERROR; }
-  mr_load->ptrs->ra[mr_load->parent].idx = mr_load->parent;
+  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
+  mr_load->parent = idx;
+  mr_load->ptrs->ra[idx].idx = idx;
 }
 
 value: object | array
@@ -150,7 +151,7 @@ members: member | member TOK_JSON_COMMA members
 
 member: TOK_JSON_STRING TOK_JSON_SEMICOLON element {
   mr_load_t * mr_load = MR_LOAD;
-  int idx = mr_load->ptrs->ra[mr_load->parent].last_child;
+  mr_idx_t idx = mr_load->ptrs->ra[mr_load->parent].last_child;
   $1.str[$1.length] = 0;
   mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($1.str, NULL);
   if (NULL == mr_load->ptrs->ra[idx].fdp)

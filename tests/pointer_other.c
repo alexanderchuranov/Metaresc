@@ -198,8 +198,8 @@ START_TEST (backward_ref_is_a_field) {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx >= 0) &&
-	      (ptrs.ra[ref_idx].idx < 0))
+	  if ((ref_idx > 0) &&
+	      (ptrs.ra[ref_idx].idx == 0))
 	    {
 	      pointer_resolved_correctly = false;
 	      break;
@@ -234,8 +234,8 @@ START_TEST (tda_same_ptr_and_size) {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx >= 0) &&
-	      (ptrs.ra[ref_idx].parent >= 0) &&
+	  if ((ref_idx > 0) &&
+	      (ptrs.ra[ref_idx].parent > 0) &&
 	      (ptrs.ra[ptrs.ra[ref_idx].parent].first_child != ref_idx))
 	    {
 	      pointer_resolved_correctly = false;
@@ -264,7 +264,7 @@ START_TEST (tda_same_ptr_and_bigger) {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx >= 0) &&
+	  if ((ref_idx > 0) &&
 	      (ptrs.ra[ref_idx].next < 0))
 	    {
 	      pointer_resolved_correctly = false;
@@ -293,7 +293,7 @@ START_TEST (tda_overlapping_1) {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if (ref_idx >= 0)
+	  if (ref_idx > 0)
 	    {
 	      pointer_resolved_correctly = true;
 	      break;
@@ -321,7 +321,7 @@ START_TEST (tda_overlapping_2) {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if (ref_idx >= 0)
+	  if (ref_idx > 0)
 	    {
 	      pointer_resolved_correctly = true;
 	      break;
@@ -347,7 +347,7 @@ START_TEST (tda_overlapping_3) {
     {
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	if (ptrs.ra[i].ref_idx >= 0)
+	if (ptrs.ra[i].ref_idx > 0)
 	  {
 	    pointer_resolved_correctly = true;
 	    break;
@@ -382,8 +382,8 @@ START_TEST (pointer_to_array) {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
 	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx >= 0) &&
-	      (ptrs.ra[ref_idx].parent >= 0) &&
+	  if ((ref_idx > 0) &&
+	      (ptrs.ra[ref_idx].parent > 0) &&
 	      (ptrs.ra[ptrs.ra[ref_idx].parent].first_child != ref_idx))
 	    {
 	      pointer_resolved_correctly = true;

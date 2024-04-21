@@ -63,12 +63,12 @@ START_TEST (pointer_match_content_known) {
     {
       bool string_is_a_reference = false;
       int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
 	{
 	  if (ptrs.ra[i].fdp &&
 	      (ptrs.ra[i].fdp->name.str != NULL) &&
 	      (0 == strcmp (ptrs.ra[i].fdp->name.str, "y")) &&
-	      (ptrs.ra[i].ref_idx >= 0))
+	      (ptrs.ra[i].ref_idx > 0))
 	    string_is_a_reference = true;
 	}
       MR_FREE (ptrs.ra);
@@ -85,12 +85,12 @@ START_TEST (pointer_match_content_unknown) {
     {
       bool string_is_a_reference = false;
       int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
 	{
 	  if (ptrs.ra[i].fdp &&
 	      (ptrs.ra[i].fdp->name.str != NULL) &&
 	      (0 == strcmp (ptrs.ra[i].fdp->name.str, "y")) &&
-	      (ptrs.ra[i].ref_idx >= 0))
+	      (ptrs.ra[i].ref_idx > 0))
 	    string_is_a_reference = true;
 	}
       MR_FREE (ptrs.ra);
@@ -108,8 +108,8 @@ START_TEST (pointer_match_another_pointer) {
   if (ptrs.ra != NULL)
     {
       int i, count = 0;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	if ((ptrs.ra[i].fdp->stype.tdp == string_tdp) && (ptrs.ra[i].ref_idx >= 0))
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
+	if ((ptrs.ra[i].fdp->stype.tdp == string_tdp) && (ptrs.ra[i].ref_idx > 0))
 	  ++count;
       
       MR_FREE (ptrs.ra);

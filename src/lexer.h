@@ -16,20 +16,6 @@ TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
   MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
 	      (LLOCP)->start.lineno, (LLOCP)->start.column, (LLOCP)->end.lineno, (LLOCP)->end.column)
 
-/**
- * Helper function for building tree within parsing.
- * @param mr_load structure with current parsing context
- * @return index of newly allocated element in mr_load->ptrs resizeable array
- */
-static inline int mr_parse_add_node (mr_load_t * mr_load)
-{
-  int idx = mr_add_ptr_to_list (mr_load->ptrs);
-  if (idx < 0)
-    return (idx);
-  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
-  return (idx);
-}
-
 static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
 {
   if (NULL == mr_load->buf)
@@ -47,7 +33,7 @@ static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
 
 static inline int mr_substrcmp (char * str, mr_substr_t * substr)
 {
-  int str_len = strlen (str);
+  typeof (substr->length) str_len = strlen (str);
   if (str_len != substr->length)
     return (str_len - substr->length);
   return (strncmp (str, substr->str, str_len));
@@ -100,7 +86,7 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
   mr_status_t mr_ ## METHOD ## _load (char * str, mr_ra_ptrdes_t * ptrs) { \
     mr_status_t status = MR_FAILURE;					\
     yyscan_t scanner;							\
-    mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = -1, .ptrs = ptrs }; \
+    mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = 0, .ptrs = ptrs }; \
     if (NULL == str)							\
       {									\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\

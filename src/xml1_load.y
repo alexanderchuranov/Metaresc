@@ -152,9 +152,11 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
 
 start_tag: { 
   mr_load_t * mr_load = MR_LOAD; 
-  mr_load->parent = mr_parse_add_node (mr_load); 
-  if (mr_load->parent < 0)
+  mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
+  if (idx == 0)
     { YYERROR; }
+  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
+  mr_load->parent = idx;
 }
 
 nested_tags: | nested_tags tag
@@ -162,24 +164,32 @@ nested_tags: | nested_tags tag
 properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE {
   mr_load_t * mr_load = MR_LOAD;
   char * error = NULL;
+  uint32_t attr = 0;
   int offset = 0;
 
   if (0 == mr_substrcmp (MR_REF_IDX, &$3))
     {
-      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra[mr_load->parent].idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
+	mr_load->ptrs->ra[mr_load->parent].idx = attr;
+      else
 	error = MR_REF_IDX;
     }
   else if (0 == mr_substrcmp (MR_REF, &$3))
     {
-      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
+      if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
+	mr_load->ptrs->ra[mr_load->parent].ref_idx = attr;
+      else
 	error = MR_REF;
     }
   else if (0 == mr_substrcmp (MR_REF_CONTENT, &$3))
     {
-      if ((1 != sscanf ($5.str, "%" SCNd32 "%n", &mr_load->ptrs->ra[mr_load->parent].ref_idx, &offset)) || tail_is_not_blank (&$5, offset))
-	error = MR_REF;
+      if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
+	{
+	  mr_load->ptrs->ra[mr_load->parent].ref_idx = attr;
+	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
+	}
       else
-	mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
+	error = MR_REF;
     }
   else if (0 == mr_substrcmp (MR_ISNULL, &$3))
     {

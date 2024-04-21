@@ -146,7 +146,7 @@ int
 mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
 {
   va_list args;
-  int length, _length;
+  typeof (mr_ra_str->MR_SIZE) length, _length;
 
   va_start (args, format);
   length = mr_vscprintf (format, args);
@@ -157,7 +157,7 @@ mr_ra_printf (mr_rarray_t * mr_ra_str, const char * format, ...)
   if ((0 == mr_ra_str->MR_SIZE) || (NULL == mr_ra_str->data.ptr))
     goto free_mr_ra;
 
-  size_t size = mr_ra_str->MR_SIZE;
+  typeof (mr_ra_str->MR_SIZE) size = mr_ra_str->MR_SIZE;
   char * tail = mr_rarray_append (mr_ra_str, length);
 
   if (NULL == tail)

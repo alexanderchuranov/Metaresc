@@ -7,7 +7,7 @@ TYPEDEF_STRUCT (mr_yaml_context_t,
 		VOID (yaml_emitter_t, emitter),
 		(mr_rarray_t, buffer));
 
-TYPEDEF_FUNC (mr_status_t, mr_yaml_save_handler_t, (mr_yaml_context_t * /* context */, mr_ra_ptrdes_t * /* ptrs */, int /* idx */));
+TYPEDEF_FUNC (mr_status_t, mr_yaml_save_handler_t, (mr_yaml_context_t * /* context */, mr_ra_ptrdes_t * /* ptrs */, mr_idx_t /* idx */));
 
 static int
 yaml_ra_string_writer (void * data, unsigned char * buffer, size_t size)
@@ -36,12 +36,12 @@ yaml_get_anchor (char * anchor, mr_ptrdes_t * ptrdes)
   if (!ptrdes->flags.is_referenced)
     return (NULL);
   
-  sprintf (anchor, MR_YAML_ANCHOR_TMPLT, ptrdes->idx);
+  sprintf (anchor, MR_YAML_ANCHOR_TMPLT, (uint32_t)ptrdes->idx);
   return ((yaml_char_t*)anchor);
 }
 
 static inline mr_status_t
-yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
@@ -64,13 +64,13 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
 	}
     }
 
-  if ((0 <= ptrdes->ref_idx) && (ptrdes->ref_idx < ptrs->size / sizeof (ptrs->ra[0])))
+  if ((ptrdes->ref_idx > 0) && (ptrdes->ref_idx < ptrs->size / sizeof (ptrs->ra[0])))
     {
       char anchor[MR_MAX (sizeof (MR_YAML_REF_ANCHOR_TMPLT), sizeof (MR_YAML_REF_ANCHOR_CONTENT_TMPLT)) + (sizeof (ptrdes->idx) * 12 + 4) / 5];
       if (ptrdes->flags.is_content_reference)
-	sprintf (anchor, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, ptrs->ra[ptrdes->ref_idx].idx);
+	sprintf (anchor, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs->ra[ptrdes->ref_idx].idx);
       else
-	sprintf (anchor, MR_YAML_REF_ANCHOR_TMPLT, ptrs->ra[ptrdes->ref_idx].idx);
+	sprintf (anchor, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs->ra[ptrdes->ref_idx].idx);
 
       yaml_event_delete (event);
       if (!yaml_alias_event_initialize (event, (yaml_char_t *)anchor))
@@ -90,7 +90,7 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
 }
 
 static inline mr_status_t
-yaml_emit_string (yaml_emitter_t * emitter, const char * value, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_emit_string (yaml_emitter_t * emitter, const char * value, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   yaml_event_t event;
   char anchor[ANCHOR_SIZE];
@@ -108,14 +108,14 @@ yaml_emit_string (yaml_emitter_t * emitter, const char * value, mr_ra_ptrdes_t *
 }
 
 static mr_status_t
-yaml_save_string (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_save_string (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   char * value = *(char **)ptrs->ra[idx].data.ptr;
   return (yaml_emit_string (&mr_yaml_context->emitter, value, ptrs, idx));
 }
 
 static mr_status_t
-yaml_save_char (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_save_char (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   char buffer[] = "0x00";
   unsigned char c = *(unsigned char*)ptrs->ra[idx].data.ptr;
@@ -131,31 +131,30 @@ yaml_save_char (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int 
 }
 
 static mr_status_t
-yaml_save_char_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_save_char_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  size_t size = ptrdes->MR_SIZE;
-  char buffer[size + 1];
-  strncpy (buffer, ptrdes->data.ptr, size);
-  buffer[size] = 0;
+  char buffer[ptrdes->MR_SIZE + 1];
+  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
+  buffer[ptrdes->MR_SIZE] = 0;
   return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
 }
 
 static mr_status_t
-yaml_save_void (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_save_void (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   return (MR_SUCCESS);
 }
 
 static mr_status_t
-yaml_save_bool (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_save_bool (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   char * value = *(bool*)ptrs->ra[idx].data.ptr ? "true" : "false";
   return (yaml_emit_string (&mr_yaml_context->emitter, value, ptrs, idx));
 }
 
 static mr_status_t
-yaml_save_func (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_save_func (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
@@ -168,7 +167,7 @@ yaml_save_func (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int 
 }
 
 static mr_status_t
-yaml_pre_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_pre_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   yaml_event_t event;
   char anchor[ANCHOR_SIZE];
@@ -182,7 +181,7 @@ yaml_pre_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs
 }
 
 static mr_status_t
-yaml_post_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_post_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   yaml_event_t event;
 
@@ -196,12 +195,12 @@ yaml_post_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptr
 }
 
 static mr_status_t
-yaml_pre_save_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_pre_save_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   yaml_event_t event;
   char anchor[ANCHOR_SIZE];
   yaml_sequence_style_t sequence_style = YAML_ANY_SEQUENCE_STYLE;
-  int first_child = ptrs->ra[idx].first_child;
+  mr_idx_t first_child = ptrs->ra[idx].first_child;
   
 #define NON_SCALAR_TYPE (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_POINTER, MR_TYPE_ARRAY))
   if ((first_child >= 0) && !((NON_SCALAR_TYPE >> ptrs->ra[first_child].mr_type) & 1))
@@ -216,7 +215,7 @@ yaml_pre_save_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs,
 }
 
 static mr_status_t
-yaml_post_save_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_post_save_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   yaml_event_t event;
 
@@ -230,7 +229,7 @@ yaml_post_save_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs
 }
 
 static mr_status_t
-yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
@@ -239,24 +238,24 @@ yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptr
       if (0 == strcmp (ptrdes->fdp->meta, MR_PTR_META))
 	ptrdes->flags.unnamed = false;
   
-  if (ptrdes->flags.is_null || (ptrdes->ref_idx >= 0))
+  if (ptrdes->flags.is_null || (ptrdes->ref_idx > 0))
     return (yaml_emit_string (&mr_yaml_context->emitter, "", ptrs, idx));
 
   return (yaml_pre_save_array (mr_yaml_context, ptrs, idx));
 }
 
 static mr_status_t
-yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  if (ptrdes->flags.is_null || (ptrdes->ref_idx >= 0))
+  if (ptrdes->flags.is_null || (ptrdes->ref_idx > 0))
     return (MR_SUCCESS);
   
   return (yaml_post_save_array (mr_yaml_context, ptrs, idx));
 }
 
 static mr_status_t
-yaml_pre_save_anon_union (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx)
+yaml_pre_save_anon_union (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   ptrs->ra[idx].flags.unnamed = false;
   return (yaml_pre_save_struct (mr_yaml_context, ptrs, idx));
@@ -279,7 +278,7 @@ yaml_allocate_ra_str (mr_rarray_t * mr_ra_str)
 
 #define YAML_SAVE_HANDLER(TYPE, ...)					\
   static mr_status_t							\
-  yaml_save_ ## TYPE (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, int idx) \
+  yaml_save_ ## TYPE (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx) \
   {									\
     if (MR_SUCCESS != yaml_allocate_ra_str (&mr_yaml_context->buffer))	\
       return (MR_FAILURE);						\
@@ -379,7 +378,7 @@ static mr_yaml_save_handler_t yaml_post_save_tbl[MR_TYPE_LAST] =
   };
 
 static mr_status_t
-yaml_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+yaml_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   mr_yaml_context_t * mr_yaml_context = context;
   mr_yaml_save_handler_t save_handler = NULL;

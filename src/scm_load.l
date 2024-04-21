@@ -91,7 +91,7 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 
 ";"+{WS}*"("{WS}*{ID}{WS}*\.{WS}*[[:digit:]]+{WS}*")"{WS}* {
   mr_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
-  sscanf (strchr (yytext, '.') + 1, "%d", &yylval->id_ivalue.ivalue);
+  sscanf (strchr (yytext, '.') + 1, "%" SCNu32, &yylval->id_ivalue.ivalue);
   return (TOK_SCM_ID_IVALUE);
 }
 

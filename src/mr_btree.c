@@ -55,7 +55,7 @@ mr_tree_node_new (mr_tree_t * tree)
     ((void**)&tree->pool, &tree->size, &tree->alloc_size, sizeof (tree->pool[0]));
 
   if (NULL == node)
-    return (-1);
+    return (NONE_IDX);
 
   memset (node, 0, sizeof (*node));
   return (tree->size / sizeof (tree->pool[0]) - 1);
@@ -149,8 +149,11 @@ static inline mr_ptr_t *
 mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_traverse_t *))
 {
   if (tree->size <= 0)
-    if (mr_tree_node_new (tree) == -1)
-      return (NULL);
+    {
+      mr_tree_node_new (tree);
+      if (NULL == tree->pool)
+	return (NULL);
+    }
 
   mr_tree_traverse_t traverse;
   mr_tree_find (key, tree, compar_fn, context, &traverse);
@@ -159,7 +162,7 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
     return (&tree->pool[traverse.path[traverse_size - 1].idx].key);
 
   unsigned idx = mr_tree_node_new (tree);
-  if (-1 == idx)
+  if (NONE_IDX == idx)
     return (NULL);
 
   traverse.path[traverse_size].idx = idx;

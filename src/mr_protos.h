@@ -84,6 +84,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_FIELD_NOT_FOUND, , "Field '%s' is not found in type '%s'."),
 	      (MR_MESSAGE_YAML_ERROR, , "YAML error '%s'."),
 	      (MR_MESSAGE_UNKNOWN_FIELD_NAME, , "Field name '%s' is not valid."),
+	      (MR_MESSAGE_ZERO_SIZE_FIELD, , "Field '%s' has zero size."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
 
@@ -527,7 +528,7 @@ TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading
 TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
 		ANON_UNION ( , __attribute__ ((packed))),
 		/* to make mr_ptrdes_t more compact we need to align size of mr_save_params_t with size of mr_load_params_t */
-		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (uint32_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
+		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (mr_idx_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
 		 "in place list of union discriminators", { "size" }, "string"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
 		END_ANON_UNION ("ud_is_ic"),
@@ -537,7 +538,7 @@ TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
 		(mr_ud_set_t, ud_set, , "set union discriminator indexes"),
-		(int32_t, next_untyped, , "linked list of nodes with same pointer"),
+		(mr_idx_t, next_untyped, , "linked list of nodes with same pointer"),
 		)
 
 #define MR_DATA_UDO						\
@@ -571,12 +572,12 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
 		(mr_value_type_t, value_type, , "value type for load_params"),
-		(int32_t, idx, , "public index"),
-		(int32_t, ref_idx, , "reference index (internal enumeration)"),
-		(int32_t, parent, , "parent index"),
-		(int32_t, first_child, , "first child index"),
-		(int32_t, last_child, , "last child index"),
-		(int32_t, next, , "next sibling index"),
+		(mr_idx_t, idx, , "public index"),
+		(mr_idx_t, ref_idx, , "reference index (internal enumeration)"),
+		(mr_idx_t, parent, , "parent index"),
+		(mr_idx_t, first_child, , "first child index"),
+		(mr_idx_t, last_child, , "last child index"),
+		(mr_idx_t, next, , "next sibling index"),
 		(uint32_t, MR_SIZE, , "size of 'data' resizable array"),
 		ANON_UNION (),
 		(void *, _data_, , "by default try to resolve pointer as void *"),
@@ -611,7 +612,7 @@ TYPEDEF_ENUM (mr_dfs_order_t,
 	      MR_DFS_POST_ORDER,
 	      )
 
-TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, int /* idx */, int /* level */, mr_dfs_order_t /* order */, mr_ptr_t /* context */))
+TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, mr_idx_t /* idx */, int /* level */, mr_dfs_order_t /* order */, mr_ptr_t /* context */))
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
@@ -637,7 +638,7 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_lloc_t, lloc, , "current location of parser"),
 		(char *, str, , "string to parse"),
 		(char *, buf, , "parser internal buffer"),
-		(int, parent, , "index of current parent"),
+		(mr_idx_t, parent, , "index of current parent"),
 		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 

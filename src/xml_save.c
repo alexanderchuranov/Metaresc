@@ -19,7 +19,7 @@
 #define MR_XML1_INDENT_TEMPLATE "\n%*s"
 
 #define MR_XML1_ATTR_CHARP " %s=\"%s\""
-#define MR_XML1_ATTR_INT " %s=\"%" SCNd32 "\""
+#define MR_XML1_ATTR_INT " %s=\"%" SCNu32 "\""
 
 #define MR_XML1_OPEN_TAG_START "<%s"
 #define MR_XML1_OPEN_EMPTY_TAG_END "/>"
@@ -49,9 +49,9 @@ TYPEDEF_STRUCT (mr_xml_esc_t,
 void
 xml_unquote_string (mr_substr_t * substr, char * dst)
 {
+  typeof (substr->length) i, length = 0;
   static bool inited = false;
   static mr_xml_esc_t esc_seq_hash[MR_ESC_CHAR_MAP_SIZE];
-  int i;
   
   if (!inited)
     {
@@ -68,11 +68,9 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
       inited = true;
     }
 
-  int length_ = 0;
-
   for (i = 0; i < substr->length; ++i)
     if (substr->str[i] != '&')
-      dst[length_++] = substr->str[i];
+      dst[length++] = substr->str[i];
     else
       {
 	char esc[ESC_SIZE + 1];
@@ -92,7 +90,7 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
 	    else
 	      {
 		i += size - 1; /* one more +1 in the loop */
-		dst[length_++] = code;
+		dst[length++] = code;
 	      }
 	  }
 	else
@@ -104,7 +102,7 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
 				    &esc_seq_hash[hash].esc_seq[2],
 				    esc_seq_hash[hash].length - 2))
 		{
-		  dst[length_++] = esc_seq_hash[hash].symbol;
+		  dst[length++] = esc_seq_hash[hash].symbol;
 		  i += esc_seq_hash[hash].length - 1; /* one more increase in the loop */
 		  found = true;
 		}
@@ -112,11 +110,11 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
 	    if (!found)
 	      {
 		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_XML_ESC, esc);
-		dst[length_++] = substr->str[i];
+		dst[length++] = substr->str[i];
 	      }
 	  }
       }
-  dst[length_] = 0;
+  dst[length] = 0;
 }
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
@@ -186,10 +184,9 @@ xml_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 xml_ra_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  size_t size = ptrdes->MR_SIZE;
-  char buffer[size + 1];
-  strncpy (buffer, ptrdes->data.ptr, size);
-  buffer[size] = 0;
+  char buffer[ptrdes->MR_SIZE + 1];
+  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
+  buffer[ptrdes->MR_SIZE] = 0;
   return (xml_ra_printf_quote_string (mr_ra_str, buffer));
 }
 
@@ -249,7 +246,7 @@ static mr_ra_printf_t xml_ra_printf_tbl[MR_TYPE_LAST] =
   };
 
 static mr_status_t
-xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
   bool empty_tag = true;
 
@@ -271,28 +268,28 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
 		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", name) < 0)
     return (MR_FAILURE);
   
-  if (ptrs->ra[idx].ref_idx >= 0)
+  if (ptrs->ra[idx].ref_idx > 0)
     if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT,
 		      (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
-		      ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+		      (uint32_t)ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
       return (MR_FAILURE);
   
   if (ptrs->ra[idx].flags.is_referenced)
-    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, ptrs->ra[idx].idx) < 0)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, (uint32_t)ptrs->ra[idx].idx) < 0)
       return (MR_FAILURE);
   
   if (ptrs->ra[idx].flags.is_null)
     if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags.is_null || (ptrs->ra[idx].ref_idx >= 0))
+  if (ptrs->ra[idx].flags.is_null || (ptrs->ra[idx].ref_idx > 0))
     empty_tag = true;
   else
     {
       if (mr_ra_append_char (mr_ra_str, '>') < 0)
 	return (MR_FAILURE);
       int count = save_handler (mr_ra_str, &ptrs->ra[idx]);
-      empty_tag = (ptrs->ra[idx].first_child < 0) && (0 == count);
+      empty_tag = (ptrs->ra[idx].first_child == 0) && (0 == count);
       if (empty_tag)
 	mr_ra_str->data.string[--mr_ra_str->MR_SIZE] = 0;
     }
@@ -310,9 +307,9 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr
 }
 
 static mr_status_t
-xml1_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * mr_ra_str)
+xml1_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
-  if (ptrs->ra[idx].first_child >= 0)
+  if (ptrs->ra[idx].first_child > 0)
     if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "") < 0)
       return (MR_FAILURE);
 
@@ -331,7 +328,7 @@ xml1_post_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_rarray_t * m
 }
 
 static mr_status_t
-xml1_print_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+xml1_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   mr_rarray_t * mr_ra_str = context;
 
@@ -375,13 +372,13 @@ mr_xml1_save (mr_ra_ptrdes_t * ptrs)
 #ifdef HAVE_LIBXML2
 
 static mr_status_t
-xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+xml2_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_PRE_ORDER != order)
     return (MR_SUCCESS);
 
   mr_rarray_t * mr_ra_str = context;
-  int parent = ptrs->ra[idx].parent;
+  mr_idx_t parent = ptrs->ra[idx].parent;
   char number[MR_INT_TO_STRING_BUF_SIZE];
 
   /* route saving handler */
@@ -398,7 +395,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
   mr_ra_str->MR_SIZE = sizeof ("");
   mr_ra_str->data.string[0] = 0;
   
-  if ((true != ptrs->ra[idx].flags.is_null) && (ptrs->ra[idx].ref_idx < 0))
+  if ((true != ptrs->ra[idx].flags.is_null) && (ptrs->ra[idx].ref_idx == 0))
     if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
       return (MR_FAILURE);
 
@@ -418,7 +415,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
   if (mr_ra_str->data.string[0])
     xmlNodeSetContent (node, BAD_CAST mr_ra_str->data.string);
   
-  if (ptrs->ra[idx].ref_idx >= 0)
+  if (ptrs->ra[idx].ref_idx > 0)
     {
       /* set REF_IDX property */
       sprintf (number, "%" SCNd32, ptrs->ra[ptrs->ra[idx].ref_idx].idx);
@@ -435,7 +432,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order,
   if (true == ptrs->ra[idx].flags.is_null)
     xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
-  if (parent >= 0)
+  if (parent > 0)
     xmlAddChild (ptrs->ra[parent].res.data.ptr, node);
 
   return (MR_SUCCESS);
@@ -471,9 +468,9 @@ mr_xml2_save (mr_ra_ptrdes_t * ptrs)
 
       mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       
-      if (ptrs->size >= sizeof (ptrs->ra[0]))
-	if (NULL != ptrs->ra[0].res.data.ptr)
-	  xmlDocSetRootElement (doc, ptrs->ra[0].res.data.ptr);
+      if (ptrs->size >= 2 * sizeof (ptrs->ra[0]))
+	if (NULL != ptrs->ra[1].res.data.ptr)
+	  xmlDocSetRootElement (doc, ptrs->ra[1].res.data.ptr);
     }
 
   if (mr_ra_str.data.ptr)

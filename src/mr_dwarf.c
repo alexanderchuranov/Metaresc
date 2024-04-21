@@ -649,8 +649,8 @@ walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray)
 static inline mr_dw_attribute_t *
 die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
 {
-  int i;
-  for (i = mr_die->attributes_size / sizeof (mr_die->attributes[0]) - 1; i >= 0; --i)
+  int i, count = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
+  for (i = 0; i < count; ++i)
     if (mr_die->attributes[i].code == code)
       return (&mr_die->attributes[i]);
   return (NULL);
@@ -749,7 +749,8 @@ static void
 get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 {
   int i, j = 0;
-  for (i = 0; i < mr_die->children_size / sizeof (mr_die->children[0]); ++i)
+  int count = mr_die->children_size / sizeof (mr_die->children[0]);
+  for (i = 0; i < count; ++i)
     {
       assert (mr_die->children[i].tag == _DW_TAG_subrange_type);
       uint32_t dimension = 1;
@@ -1134,9 +1135,9 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
   status = mr_ic_index (&die_off_ic, ra_die_ptr.ra, ra_die_ptr.size);
   assert (status == MR_SUCCESS);
   
-  int i, j;
+  int i, j, count = ra_die_ptr.size / sizeof (ra_die_ptr.ra[0]);
   for (j = 0; j < 2; ++j) /* required anonymous types identified on a first iteration and extracted on a second */
-    for (i = ra_die_ptr.size / sizeof (ra_die_ptr.ra[0]) - 1; i >= 0; --i)
+    for (i = 0; i < count; ++i)
       {
 	mr_die_t * mr_die = ra_die_ptr.ra[i].ptr;
       
@@ -1215,8 +1216,8 @@ process_td (mr_ptr_t key, const void * context)
 
 	if (MR_TYPE_ARRAY == fdp->stype.mr_type)
 	  {
-	    int j;
-	    for (j = 0; j < fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]); ++j)
+	    int j, count = fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]);
+	    for (j = 0; j < count; ++j)
 	      fdp->stype.size *= fdp->stype.dim.dim[j];
 	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) &&
 		(fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0])))
@@ -1272,7 +1273,7 @@ free_die (mr_die_t * mr_die)
 {
   int i;
 
-  for (i = 0; i < mr_die->attributes_size / sizeof (mr_die->attributes[0]); ++i)
+  for (i = mr_die->attributes_size / sizeof (mr_die->attributes[0]) - 1; i >= 0; --i)
     if ((DW_FORM_STRING >> mr_die->attributes[i].form) & 1)
       {
 	if (mr_die->attributes[i].dw_str)
@@ -1282,7 +1283,7 @@ free_die (mr_die_t * mr_die)
   if (mr_die->attributes)
     MR_FREE (mr_die->attributes);
 
-  for (i = 0; i < mr_die->children_size / sizeof (mr_die->children[0]); ++i)
+  for (i = mr_die->children_size / sizeof (mr_die->children[0]) - 1; i >= 0; --i)
     free_die (&mr_die->children[i]);
   
   if (mr_die->children)

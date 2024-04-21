@@ -96,7 +96,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 
 "/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" {
   mr_get_id (&yylval->id_ivalue.id, &yytext[2]);
-  sscanf (strchr (yytext, '=') + 1, "%d", &yylval->id_ivalue.ivalue);
+  sscanf (strchr (yytext, '=') + 1, "%" SCNu32, &yylval->id_ivalue.ivalue);
   return (TOK_CINIT_ID_IVALUE);
 }
 

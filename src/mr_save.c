@@ -7,7 +7,7 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-TYPEDEF_FUNC (int, mr_save_handler_t, (mr_save_data_t *))
+TYPEDEF_FUNC (mr_idx_t, mr_save_handler_t, (mr_save_data_t *))
 
 static mr_save_handler_t mr_save_handler[];
 
@@ -199,8 +199,8 @@ int
 mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
-  const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.intptr];
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.uintptr];
+  const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.uintptr];
   int diff = (x_ud->union_fdp > y_ud->union_fdp) - (x_ud->union_fdp < y_ud->union_fdp);
   if (diff)
     return (diff);
@@ -212,7 +212,7 @@ mr_hash_value_t
 mr_uds_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.uintptr];
   return ((uintptr_t)x_ud->union_fdp + (uintptr_t)x_ud->discriminated_fdp);
 }
 
@@ -226,8 +226,8 @@ int
 mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
-  const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.intptr];
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.uintptr];
+  const mr_union_discriminator_t * y_ud = &mr_save_data->mr_ra_ud[y.uintptr];
   return ((x_ud->union_fdp > y_ud->union_fdp) - (x_ud->union_fdp < y_ud->union_fdp));
 }
 
@@ -235,7 +235,7 @@ mr_hash_value_t
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
   const mr_save_data_t * mr_save_data = context;
-  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.intptr];
+  const mr_union_discriminator_t * x_ud = &mr_save_data->mr_ra_ud[x.uintptr];
   return ((uintptr_t)x_ud->union_fdp);
 }
 
@@ -245,7 +245,7 @@ mr_ud_find (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
   if (uds->is_ic)
     {
       mr_ptr_t * find = mr_ic_find (uds->union_discriminator, key);
-      return (find ? find->intptr : -1);
+      return (find ? find->uintptr : -1);
     }
 
   int i, count = uds->size / sizeof (uds->idx[0]);
@@ -261,7 +261,7 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
   if (uds->is_ic)
     {
       mr_ptr_t * add = mr_ic_add (uds->union_discriminator, key);
-      return (add ? add->intptr : -1);
+      return (add ? add->uintptr : -1);
     }
 
   int find = mr_ud_find (uds, key, mr_save_data);
@@ -298,7 +298,7 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
       mr_ptr_t idx[sizeof (uds->idx) / sizeof (uds->idx[0])];
 
       for (i = 0; i < sizeof (idx) / sizeof (idx[0]); ++i)
-	idx[i].intptr = uds->idx[i];
+	idx[i].uintptr = uds->idx[i];
 
       status = mr_ic_index (dst_ic, idx, sizeof (idx));
       if (MR_SUCCESS != status)
@@ -310,14 +310,14 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
       uds->union_discriminator = dst_ic;
       uds->is_ic = true;
       mr_ptr_t * add = mr_ic_add (dst_ic, key);
-      return (add ? add->intptr : -1);
+      return (add ? add->uintptr : -1);
     }
 
   int idx = uds->size / sizeof (uds->idx[0]);
-  uds->idx[idx] = key.intptr;
+  uds->idx[idx] = key.uintptr;
   uds->size += sizeof (uds->idx[0]);
 
-  return (key.intptr);
+  return (key.uintptr);
 }
 
 static mr_status_t
@@ -351,10 +351,10 @@ mr_ud_free (mr_ud_set_t * uds)
  * @param mr_save_data save routines data and lookup structures
  */
 static mr_fd_t *
-mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union_fdp)
+mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * union_fdp)
 {
   mr_fd_t * fdp = NULL; /* marker that no valid discriminator was found */
-  int parent, idx;
+  mr_idx_t parent, idx;
   intptr_t ud_idx, ud_find = -1;
   mr_union_discriminator_t * ud;
   char * discriminator = union_fdp->meta;
@@ -386,7 +386,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
   ud->union_fdp = union_fdp; /* union field descriptor */
 
   /* traverse through parents up to root node */
-  for (parent = node; parent >= 0; parent = mr_save_data->ptrs.ra[parent].parent)
+  for (parent = node; parent > 0; parent = mr_save_data->ptrs.ra[parent].parent)
     {
       mr_ptrdes_t * parent_ptrdes = &mr_save_data->ptrs.ra[parent];
       /* checks if this parent already have union resolution info */
@@ -428,14 +428,14 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, int node, mr_fd_t * union
       mr_ptr_t * add = mr_ic_add (&mr_save_data->union_discriminators, ud_idx);
       if (NULL == add)
 	return (NULL);
-      if (add->intptr == ud_idx)
+      if (add->uintptr == ud_idx)
 	/* union discriminator info was not found in the set so we add new record */
 	mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
 
       /* set 'parent' on one level up to include actual parent node into traversal below */
-      if (parent >= 0)
+      if (parent > 0)
 	parent = mr_save_data->ptrs.ra[parent].parent;
-      ud_find = add->intptr;
+      ud_find = add->uintptr;
     }
 
   /* add union discriminator information to all parents which doesn't have it yet */
@@ -519,21 +519,21 @@ mr_hash_value_t
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  return (ra_ptrdes->ra[x.intptr].data.uintptr & MR_PTR_HASH_MASK);
+  return (ra_ptrdes->ra[x.uintptr].data.uintptr & MR_PTR_HASH_MASK);
 }
 
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_ra_ptrdes_t * ra_ptrdes = context;
-  uintptr_t x_ptr = ra_ptrdes->ra[x.intptr].data.uintptr & MR_PTR_HASH_MASK;
-  uintptr_t y_ptr = ra_ptrdes->ra[y.intptr].data.uintptr & MR_PTR_HASH_MASK;
+  uintptr_t x_ptr = ra_ptrdes->ra[x.uintptr].data.uintptr & MR_PTR_HASH_MASK;
+  uintptr_t y_ptr = ra_ptrdes->ra[y.uintptr].data.uintptr & MR_PTR_HASH_MASK;
   return ((x_ptr > y_ptr) - (x_ptr < y_ptr));
 }
 
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,
 		(mr_save_data_t *, mr_save_data),
-		int node,
+		(mr_idx_t, node),
 		)
 /**
  * We have a previously saved node that was a pointer,
@@ -551,9 +551,9 @@ mr_check_ud (mr_ptr_t key, const void * context)
   const mr_check_ud_ctx_t * mr_check_ud_ctx = context;
   mr_save_data_t * mr_save_data = mr_check_ud_ctx->mr_save_data;
   mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
-  int idx = ptrs->size / sizeof (ptrs->ra[0]);
-  int parent = ptrs->ra[idx].parent;
-  mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.intptr];
+  mr_idx_t idx = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_idx_t parent = ptrs->ra[idx].parent;
+  mr_union_discriminator_t * ud = &mr_save_data->mr_ra_ud[key.uintptr];
   /* mr_ra_ud would be reallocaed within this function, so we need to get values from this node */
   mr_fd_t * discriminated_fdp = ud->discriminated_fdp;
   mr_fd_t * fdp = ptrs->ra[mr_check_ud_ctx->node].fdp;
@@ -572,34 +572,34 @@ mr_check_ud (mr_ptr_t key, const void * context)
 }
 
 static bool
-is_first_child (mr_ptrdes_t * ra, int node)
+is_first_child (mr_ptrdes_t * ra, mr_idx_t node)
 {
-  int parent = ra[node].parent;
-  if (parent < 0)
+  mr_idx_t parent = ra[node].parent;
+  if (parent == 0)
     return (false);
   return (ra[parent].first_child == node);
 }
 
 static bool
-ref_is_parent (mr_ptrdes_t * ra, int node, int ref_idx)
+ref_is_parent (mr_ptrdes_t * ra, mr_idx_t node, mr_idx_t ref_idx)
 {
-  while ((node >= 0) && (node != ref_idx))
+  while ((node > 0) && (node != ref_idx))
     node = ra[node].parent;
   return (node == ref_idx);
 }
 
 static mr_fd_t *
-mr_get_persistent_fd (mr_ptrdes_t * ra, int idx)
+mr_get_persistent_fd (mr_ptrdes_t * ra, mr_idx_t idx)
 {
   mr_fd_t * fdp = ra[idx].fdp;
   if (fdp->non_persistent) /* replace non persistent field descriptor on persistent */
     {
-      int parent;
-      for (parent = ra[idx].parent; parent >= 0; parent = ra[parent].parent)
+      mr_idx_t parent;
+      for (parent = ra[idx].parent; parent > 0; parent = ra[parent].parent)
 	if (ra[parent].fdp)
 	  if (!ra[parent].fdp->non_persistent)
 	    break;
-      if (parent >= 0)
+      if (parent > 0)
 	fdp = ra[parent].fdp;
       else
 	fdp = fdp->stype.tdp ? &fdp->stype.tdp->mr_ptr_fd : NULL;
@@ -607,23 +607,23 @@ mr_get_persistent_fd (mr_ptrdes_t * ra, int idx)
   return (fdp);
 }
 
-static int
-move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int idx)
+static mr_idx_t
+move_nodes_to_parent (mr_ptrdes_t * ra, mr_idx_t ref_parent, mr_idx_t idx)
 {
-  int count, ref_idx = ra[ref_parent].first_child;
+  mr_idx_t count, ref_idx = ra[ref_parent].first_child;
   mr_size_t element_size = ra[idx].fdp->stype.size;
-  int parent = ra[idx].parent;
+  mr_idx_t parent = ra[idx].parent;
   if (element_size == 0)
     return (0);
     
   ra[ref_parent].ref_idx = ref_idx;
-  ra[ref_parent].first_child = -1;
-  ra[ref_parent].last_child = -1;
+  ra[ref_parent].first_child = 0;
+  ra[ref_parent].last_child = 0;
   ra[ref_idx].flags.is_referenced = true;
 			  
-  for (count = 0; ref_idx >= 0; ++count)
+  for (count = 0; ref_idx > 0; ++count)
     {
-      int next = ra[ref_idx].next;
+      mr_idx_t next = ra[ref_idx].next;
       ra[ref_idx].fdp = mr_get_persistent_fd (ra, idx);
       ra[ref_idx].mr_type = ra[idx].mr_type;
       ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
@@ -636,15 +636,15 @@ move_nodes_to_parent (mr_ptrdes_t * ra, int ref_parent, int idx)
   return (count);
 }
   
-static int mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent);
+static mr_idx_t mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent);
 
 /**
  * Saves pointer into internal representation.
  * @param idx node index
  * @param mr_save_data save routines data and lookup structures
  */
-static int
-mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
+static mr_idx_t
+mr_save_pointer_content (mr_idx_t idx, mr_save_data_t * mr_save_data)
 {
   mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
   char ** data = ptrdes->data.ptr;
@@ -661,13 +661,13 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
   if (fd_.stype.size == 0)
     fd_.stype.size = fd_.stype.tdp ? fd_.stype.tdp->size : 0;
   if (fd_.stype.size == 0)
-    return (1);
+    return (0);
 
-  int i = 0;
-  int count = ptrdes->MR_SIZE / fd_.stype.size;
-  int node;
+  mr_idx_t i = 0;
+  mr_idx_t count = ptrdes->MR_SIZE / fd_.stype.size;
+  mr_idx_t node;
 
-  for (node = mr_save_data->ptrs.ra[idx].first_child; node >= 0; node = mr_save_data->ptrs.ra[node].next)
+  for (node = mr_save_data->ptrs.ra[idx].first_child; node > 0; node = mr_save_data->ptrs.ra[node].next)
     {
       mr_size_t mr_size = (count - i) * fd_.stype.size;
       if (mr_save_data->ptrs.ra[node].MR_SIZE < mr_size)
@@ -678,30 +678,33 @@ mr_save_pointer_content (int idx, mr_save_data_t * mr_save_data)
 
   while (i < count)
     {
-      int nodes_added = mr_save_inner (*data + i * fd_.stype.size, &fd_, count - i, mr_save_data, idx);
-      if (nodes_added <= 0)
-	return (nodes_added);
+      mr_idx_t nodes_added = mr_save_inner (*data + i * fd_.stype.size, &fd_, count - i, mr_save_data, idx);
+      if (nodes_added == 0)
+	return (0);
       i += nodes_added;
     }
   return (i);
 }
 
-static int
-resolve_pointer (mr_save_data_t * mr_save_data, int ref_idx)
+static mr_idx_t
+resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolved)
 {
   mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   mr_ptrdes_t * ra = ptrs->ra;
-  int idx = ptrs->size / sizeof (ptrs->ra[0]);
-  int parent = ra[idx].parent;
-  int ref_parent = ra[ref_idx].parent;
+  mr_idx_t idx = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_idx_t parent = ra[idx].parent;
+  mr_idx_t ref_parent = ra[ref_idx].parent;
   mr_size_t element_size = ra[idx].fdp->stype.size;
+
+  *resolved = false;
   if (element_size == 0)
     return (0);
   
-  if (ra[parent].first_child < 0) /* this is the first element in resizable array */
+  if (ra[parent].first_child == 0) /* this is the first element in resizable array */
     {
       if (ra[idx].MR_SIZE <= ra[ref_idx].MR_SIZE)
 	{
+	  *resolved = true;
 	  /* new resizable pointer is a part of already saved */
 	  ra[parent].ref_idx = ref_idx;
 	  ra[ref_idx].flags.is_referenced = true;
@@ -710,6 +713,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int ref_idx)
       /* otherwise we can handle only match with another resizable pointer */
       if (MR_TYPE_POINTER == ra[ref_parent].mr_type)
 	{
+	  *resolved = true;
 	  if (is_first_child (ra, ref_idx))
 	    /*
 	      previously saved resizable pointer was pointing to the same address, but was shorter.
@@ -718,7 +722,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, int ref_idx)
 	    return (move_nodes_to_parent (ra, ref_parent, idx));
 	  else
 	    {
-	      ssize_t size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
+	      typeof (ra[idx].MR_SIZE) size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
 	      /*
 		Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
 		but previously saved pointer is shorter then we need for new one.
@@ -727,9 +731,9 @@ resolve_pointer (mr_save_data_t * mr_save_data, int ref_idx)
 	      ra[ref_parent].MR_SIZE += size_delta;
 	      ra[parent].ref_idx = ref_idx;
 	      ra[ref_idx].flags.is_referenced = true;
-	      int nodes_added = mr_save_pointer_content (ref_parent, mr_save_data);
-	      if (nodes_added < 0)
-		return (nodes_added);
+	      mr_idx_t nodes_added = mr_save_pointer_content (ref_parent, mr_save_data);
+	      if (nodes_added == 0)
+		return (0);
 	      return (ra[idx].MR_SIZE / element_size);
 	    }
 	}
@@ -744,16 +748,16 @@ resolve_pointer (mr_save_data_t * mr_save_data, int ref_idx)
 	    we need to append all nodes from found resizable pointer to new one and
 	    adjust counters if total length of sequence increased
 	  */
-
+	  *resolved = true;
 	  if (ra[ref_idx].MR_SIZE > ra[idx].MR_SIZE)
 	    {
-	      int i;
-	      ssize_t size_delta = ra[ref_idx].MR_SIZE - ra[idx].MR_SIZE;
+	      mr_idx_t i;
+	      typeof (ra[idx].MR_SIZE) size_delta = ra[ref_idx].MR_SIZE - ra[idx].MR_SIZE;
 	      
 	      /* this is required for proper reindexing of nodes that will be moved by move_nodes_to_parent */
 	      ra[idx].MR_SIZE = ra[ref_idx].MR_SIZE;
 			  
-	      for (i = ra[parent].first_child; i >= 0; i = ra[i].next)
+	      for (i = ra[parent].first_child; i > 0; i = ra[i].next)
 		ra[i].MR_SIZE += size_delta; /* increase size for forward saved elements in resizable array */
 
 	      ra[parent].MR_SIZE += size_delta; /* increase size of resizable array on detected delta */
@@ -766,24 +770,25 @@ resolve_pointer (mr_save_data_t * mr_save_data, int ref_idx)
   return (0);
 }
 
-static int
-resolve_matched (mr_save_data_t * mr_save_data, int ref_idx)
+static mr_idx_t
+resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolved)
 {
   mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   mr_ptrdes_t * ra = ptrs->ra;
-  int idx = ptrs->size / sizeof (ptrs->ra[0]);
-  int parent = ra[idx].parent;
+  mr_idx_t idx = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_idx_t parent = ra[idx].parent;
   mr_check_ud_ctx_t mr_check_ud_ctx = {
     .mr_save_data = mr_save_data,
   };
   int nodes_added;
-  
-  for ( ; ref_idx >= 0; ref_idx = ra[ref_idx].save_params.next_untyped)
+
+  *resolved = true;
+  for ( ; ref_idx > 0; ref_idx = ra[ref_idx].save_params.next_untyped)
     {
       if (mr_cmp_ptrdes (&ra[ref_idx], &ra[idx]) != 0) /* skip pointers that typed differently */
 	continue;
 
-      int ref_parent = ra[ref_idx].parent;
+      mr_idx_t ref_parent = ra[ref_idx].parent;
 
       mr_check_ud_ctx.node = ref_idx;
       mr_status_t status = mr_ud_foreach (&ra[ref_idx].save_params.ud_set, mr_check_ud, &mr_check_ud_ctx);
@@ -797,13 +802,13 @@ resolve_matched (mr_save_data_t * mr_save_data, int ref_idx)
 	    return (1);
 
 	  case MR_TYPE_POINTER:
-	    nodes_added = resolve_pointer (mr_save_data, ref_idx);
-	    if (nodes_added != 0) /* non-zero value is an allocation error or number of added nodes. Zero means - not able to resolve the pointer. */
+	    nodes_added = resolve_pointer (mr_save_data, ref_idx, resolved);
+	    if (resolved) /* non-zero value is an allocation error or number of added nodes. Zero means - not able to resolve the pointer. */
 	      return (nodes_added);
 	    break;
 	    
 	  default:
-	    if (ref_parent >= 0)
+	    if (ref_parent > 0)
 	      if (((MR_TYPE_STRING == ra[ref_parent].mr_type)
 		   || ((MR_TYPE_POINTER == ra[ref_parent].mr_type)
 		       && is_first_child (ra, ref_idx)
@@ -813,6 +818,7 @@ resolve_matched (mr_save_data_t * mr_save_data, int ref_idx)
 	    break;
 	  }
     }
+  *resolved = false;
   return (0);
 }
 
@@ -941,7 +947,7 @@ mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->offset) offset)
 }
 
 void
-mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs)
+mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   char * name = NULL;
   memset (ptrdes, 0, sizeof (*ptrdes));
@@ -960,14 +966,14 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
   if (name == NULL)
     return;
 
-  int parent;
+  mr_idx_t parent;
   /* traverse through parents up to first structure */
-  for (parent = ptrs->ra[idx].parent; parent >= 0; parent = ptrs->ra[parent].parent)
+  for (parent = ptrs->ra[idx].parent; parent > 0; parent = ptrs->ra[parent].parent)
     if (MR_TYPE_STRUCT == ptrs->ra[parent].mr_type)
       break;
   
   /* quit if parent structure was not found */    
-  if (parent < 0)
+  if (parent == 0)
     return;
 
   mr_fd_t * parent_fdp;
@@ -1001,12 +1007,12 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, int idx, mr_ra_ptrdes_t * ptrs
  * @param mr_save_data save routines data and lookup structures
  * @param parent index of parent node
  */
-static int
-mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_data, int parent)
+static mr_idx_t
+mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent)
 {
-  intptr_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
-  if (idx < 0)
-    return (-1); /* memory allocation error occured */
+  mr_idx_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
+  if (idx == 0)
+    return (0); /* memory allocation error occured */
 
   mr_save_data->ptrs.ra[idx].data.ptr = data;
 
@@ -1017,30 +1023,31 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
   mr_save_data->ptrs.ra[idx].parent = parent;
-  mr_save_data->ptrs.ra[idx].save_params.next_untyped = -1;
+  mr_save_data->ptrs.ra[idx].save_params.next_untyped = 0;
 
   /* forward reference resolving */
-  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->untyped_ptrs, idx);
+  mr_ptr_t * search_result = mr_ic_add (&mr_save_data->untyped_ptrs, (uintptr_t)idx);
   if (NULL == search_result)
-    return (-1);
-  if (search_result->intptr != idx)
+    return (0);
+  if (search_result->uintptr != idx)
     {
       mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-      int nodes_matched = resolve_matched (mr_save_data, search_result->intptr);
-      if (nodes_matched != 0)
+      bool resolved;
+      mr_idx_t nodes_matched = resolve_matched (mr_save_data, search_result->uintptr, &resolved);
+      if (resolved)
 	return (nodes_matched);
 
       mr_save_data->ptrs.size += sizeof (mr_save_data->ptrs.ra[0]);
-      if (mr_save_data->ptrs.ra[idx].MR_SIZE > mr_save_data->ptrs.ra[search_result->intptr].MR_SIZE)
+      if (mr_save_data->ptrs.ra[idx].MR_SIZE > mr_save_data->ptrs.ra[search_result->uintptr].MR_SIZE)
 	{
-	  mr_save_data->ptrs.ra[idx].save_params.next_untyped = search_result->intptr;
-	  search_result->intptr = idx;
+	  mr_save_data->ptrs.ra[idx].save_params.next_untyped = search_result->uintptr;
+	  search_result->uintptr = idx;
 	}
       else
 	{
 	  mr_save_data->ptrs.ra[idx].save_params.next_untyped =
-	    mr_save_data->ptrs.ra[search_result->intptr].save_params.next_untyped;
-	  mr_save_data->ptrs.ra[search_result->intptr].save_params.next_untyped = idx;
+	    mr_save_data->ptrs.ra[search_result->uintptr].save_params.next_untyped;
+	  mr_save_data->ptrs.ra[search_result->uintptr].save_params.next_untyped = idx;
 	}
     }
 
@@ -1051,23 +1058,20 @@ mr_save_inner (void * data, mr_fd_t * fdp, int count, mr_save_data_t * mr_save_d
   if ((fdp->stype.mr_type >= 0) && (fdp->stype.mr_type < MR_TYPE_LAST))
     save_handler = mr_save_handler[fdp->stype.mr_type];
   
-  int nodes_added = 1;
+  mr_idx_t nodes_added = 1;
   if (save_handler)
     nodes_added = save_handler (mr_save_data);
 
   mr_save_data->ptrs.ra[idx].fdp = mr_get_persistent_fd (mr_save_data->ptrs.ra, idx);
 
-  if (nodes_added < 0) /* bypass error to upper level */
-    return (nodes_added);
-
-  return (1);
+  return (nodes_added);
 }
 
 /**
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler. Detects NULL pointers.
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_idx_t
 mr_save_func (mr_save_data_t * mr_save_data)
 {
   int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
@@ -1081,10 +1085,10 @@ mr_save_func (mr_save_data_t * mr_save_data)
  * Detects if string content was already saved.
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_idx_t
 mr_save_string (mr_save_data_t * mr_save_data)
 {
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * str = *(char**)mr_save_data->ptrs.ra[idx].data.ptr;
   if (NULL == str)
     {
@@ -1103,10 +1107,10 @@ mr_save_string (mr_save_data_t * mr_save_data)
  * MR_TYPE_ENUM saving handler. Set mr_type_aux to mr_type from type descriptor.
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_idx_t
 mr_save_enum (mr_save_data_t * mr_save_data)
 {
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
 
   switch (ptrdes->mr_type_aux)
@@ -1136,67 +1140,69 @@ mr_save_enum (mr_save_data_t * mr_save_data)
  * MR_STRUCT type saving handler. Saves structure as internal representation tree node.
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_idx_t
 mr_save_struct (mr_save_data_t * mr_save_data)
 {
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   mr_td_t * tdp = mr_save_data->ptrs.ra[idx].fdp->stype.tdp;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
-  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
+  mr_idx_t i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      int nodes_added = mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
-      if (nodes_added < 0)
-	return (nodes_added);
+      mr_idx_t nodes_added = mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
+      if (nodes_added == 0)
+	return (0);
     }
-  return (i);
+  return (1);
 }
 
 /**
  * MR_UNION type saving handler. Saves structure as internal representation tree node.
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_idx_t
 mr_save_union (mr_save_data_t * mr_save_data)
 {
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_idx_t parent, idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
-  int parent;
+
   for (parent = idx; parent > 0; parent = mr_save_data->ptrs.ra[parent].parent)
     if (mr_save_data->ptrs.ra[parent].fdp)
       if (!mr_save_data->ptrs.ra[parent].fdp->non_persistent)
 	break;
       
-  if (parent < 0)
+  if (parent == 0)
     return (0);
 
   mr_fd_t * discriminated_fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[parent].fdp);
 
   if (NULL != discriminated_fdp)
     return (mr_save_inner (&data[discriminated_fdp->offset], discriminated_fdp, 1, mr_save_data, idx));
-  return (0);
+  return (1);
 }
 
 /**
  * MR_ARRAY type saving handler. Saves array into internal representation.
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_idx_t
 mr_save_array (mr_save_data_t * mr_save_data)
 {
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
-  int i, count = fd_.stype.dim.dim[0];
+  mr_idx_t i, count = fd_.stype.dim.dim[0];
 
-  if (fd_.stype.size == 0)
+  if (0 == count)
+    return (1);
+  if (0 == fd_.stype.size)
     return (0);
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.offset = 0;
-  fd_.stype.size /= (count ? count : 1);
+  fd_.stype.size /= count;
 
   if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
     {
@@ -1212,9 +1218,14 @@ mr_save_array (mr_save_data_t * mr_save_data)
 	      dst.data.ptr = &size;
 	      dst.mr_type = MR_TYPE_DETECT (typeof (size));
 	      mr_assign_int (&dst, &src);
-	      int count_ = size / fd_.stype.size;
-	      if (count > count_)
-		count = count_;
+	      if (size <= 0)
+		count = 0;
+	      else
+		{
+		  mr_idx_t count_ = size / fd_.stype.size;
+		  if (count > count_)
+		    count = count_;
+		}
 	    }
 	  mr_save_data->ptrs.ra[idx].MR_SIZE = count * fd_.stype.size;
 	}
@@ -1222,19 +1233,17 @@ mr_save_array (mr_save_data_t * mr_save_data)
   else
     {
       fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
-      int dim_count = fd_.stype.dim.size / sizeof (fd_.stype.dim.dim[0]);
-      for (i = 0; i < dim_count; ++i)
-	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
+      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[0], fd_.stype.dim.size);
     }
 
   for (i = 0; i < count; )
     {
-      int nodes_added = mr_save_inner (data + i * fd_.stype.size, &fd_, count - i, mr_save_data, idx);
-      if (nodes_added <= 0)
-	return (nodes_added);
+      mr_idx_t nodes_added = mr_save_inner (data + i * fd_.stype.size, &fd_, count - i, mr_save_data, idx);
+      if (nodes_added == 0)
+	return (0);
       i += nodes_added;
     }
-  return (i);
+  return (1);
 }
 
 /**
@@ -1244,16 +1253,16 @@ mr_save_array (mr_save_data_t * mr_save_data)
  * @param context untyped pointer on context passed through DFS traverse
  */
 mr_status_t
-mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, int start)
+mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start)
 {
   int level = 0;
-  int idx = start;
-  while (idx >= 0)
+  mr_idx_t idx = start;
+  while (idx > 0)
     {
       if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_PRE_ORDER, context))
 	return (MR_FAILURE);
 
-      if (ptrs->ra[idx].first_child >= 0)
+      if (ptrs->ra[idx].first_child > 0)
 	{
 	  idx = ptrs->ra[idx].first_child;
 	  ++level;
@@ -1262,7 +1271,7 @@ mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr
 	{
 	  if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
 	    return (MR_FAILURE);
-	  while ((ptrs->ra[idx].next < 0) && (ptrs->ra[idx].parent >= 0))
+	  while ((ptrs->ra[idx].next == 0) && (ptrs->ra[idx].parent > 0))
 	    {
 	      idx = ptrs->ra[idx].parent;
 	      --level;
@@ -1286,20 +1295,20 @@ mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr
 void
 mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 {
-  int idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_idx_t idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
   for (i = 0; i < count; ++i)
-    if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].ref_idx < 0)) /* primary entry for the string */
+    if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].ref_idx == 0)) /* primary entry for the string */
       {
-	int min_idx = i;
+	mr_idx_t min_idx = i;
 	/* iterate over other references on this string and find the one with minimal DFS index */
-	for (idx = ptrs->ra[i].save_params.next_untyped; idx >= 0; idx = ptrs->ra[idx].save_params.next_untyped)
+	for (idx = ptrs->ra[i].save_params.next_untyped; idx > 0; idx = ptrs->ra[idx].save_params.next_untyped)
 	  if (ptrs->ra[idx].idx < ptrs->ra[min_idx].idx)
 	    min_idx = idx;
 	
 	if (min_idx != i) /* check if reindexing is required */
 	  {
 	    /* point other references on new primary entry */
-	    for (idx = ptrs->ra[i].save_params.next_untyped; idx >= 0; idx = ptrs->ra[idx].save_params.next_untyped)
+	    for (idx = ptrs->ra[i].save_params.next_untyped; idx > 0; idx = ptrs->ra[idx].save_params.next_untyped)
 	      ptrs->ra[idx].ref_idx = min_idx;
 
 	    /* change old primary entry to be a reference on a new one */
@@ -1307,7 +1316,7 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 	    ptrs->ra[i].flags.is_referenced = false;
 	    ptrs->ra[i].flags.is_content_reference = true;
 	    /* configure new primary entry */
-	    ptrs->ra[min_idx].ref_idx = -1;
+	    ptrs->ra[min_idx].ref_idx = 0;
 	    ptrs->ra[min_idx].flags.is_referenced = true;
 	    ptrs->ra[min_idx].flags.is_content_reference = false;
 	  }
@@ -1317,15 +1326,15 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
 
 static mr_status_t
-mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
+mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_POST_ORDER != order)
     return (MR_SUCCESS);
 
-  int * next = &ptrs->ra[idx].first_child;
-  int last_child = -1;
-  while (*next >= 0)
-    if ((ptrs->ra[*next].first_child < 0) && (ptrs->ra[*next].ref_idx < 0)
+  mr_idx_t * next = &ptrs->ra[idx].first_child;
+  mr_idx_t last_child = 0;
+  while (*next > 0)
+    if ((ptrs->ra[*next].first_child == 0) && (ptrs->ra[*next].ref_idx == 0)
 	&& !ptrs->ra[*next].flags.is_null && !ptrs->ra[*next].flags.is_referenced
 	&& ((REMOVE_IF_EMPTY >> ptrs->ra[*next].mr_type) & 1))
       {
@@ -1345,6 +1354,22 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t 
 }
 
 /**
+ * DFS visitor for nodes renumbering
+ * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param idx index of processed node
+ * @param context untyped pointer on context passed through DFS traverse
+ */
+mr_status_t
+mr_renumber_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+{
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
+  mr_idx_t * idx_ = context;
+  ptrs->ra[idx].idx = (*idx_)++;
+  return (MR_SUCCESS);
+}
+
+/**
  * There is no need to save empty nodes and possibly their parent structures 
  * @param mr_ra_ptrdes_t resizable array with pointers descriptors
  */
@@ -1356,25 +1381,9 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
   /* re-enumerate nodes after empty nodes removal */
   if (need_reindex_empty)
     {
-      int idx_ = 0;
+      mr_idx_t idx_ = 1;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
     }
-}
-
-/**
- * DFS visitor for nodes renumbering
- * @param mr_ra_ptrdes_t resizable array with pointers descriptors
- * @param idx index of processed node
- * @param context untyped pointer on context passed through DFS traverse
- */
-mr_status_t
-mr_renumber_node (mr_ra_ptrdes_t * ptrs, int idx, int level, mr_dfs_order_t order, void * context)
-{
-  if (MR_DFS_PRE_ORDER != order)
-    return (MR_SUCCESS);
-  int * idx_ = context;
-  ptrs->ra[idx].idx = (*idx_)++;
-  return (MR_SUCCESS);
 }
 
 /**
@@ -1397,9 +1406,9 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
 	  !ptrdes->flags.is_null)
 	{
 	  void * data_ptr = *(void**)ptrdes->data.ptr;
-	  intptr_t alloc_idx = mr_add_ptr_to_list (ptrs);
+	  mr_idx_t alloc_idx = mr_add_ptr_to_list (ptrs);
 
-	  if (alloc_idx < 0)
+	  if (alloc_idx == 0)
 	    return (MR_FAILURE); /* memory allocation error occured */
 	  ptrdes = &ptrs->ra[idx]; /* ptrs->ra might be reallocated in mr_add_ptr_to_list */
 	  ptrdes->flags.is_null = true; /* void pointers are saved as NULL */
@@ -1411,27 +1420,27 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
 	  ptrs->size -= sizeof (ptrs->ra[0]);
 
 	  /* search in index of typed references */
-	  mr_ptr_t * find_result = mr_ic_find (&mr_save_data->untyped_ptrs, alloc_idx);
+	  mr_ptr_t * find_result = mr_ic_find (&mr_save_data->untyped_ptrs, (uintptr_t)alloc_idx);
   
 	  if (find_result != NULL)
 	    {
 	      /* typed entry was found and here we configure reference on it */
-	      int ref_idx = find_result->intptr;
+	      mr_idx_t ref_idx = find_result->uintptr;
 	      if (ptrs->ra[ref_idx].data.ptr != data_ptr)
 		{
 		  /* as we put multiple addresses into one bucket,
 		     we need to traverse through the list in this bucket and
 		     filter out only entries with matching address */
-		  int ref_idx_real = -1;
-		  for ( ; ref_idx >= 0; ref_idx = ptrs->ra[ref_idx].save_params.next_untyped)
+		  mr_idx_t ref_idx_real = 0;
+		  for ( ; ref_idx > 0; ref_idx = ptrs->ra[ref_idx].save_params.next_untyped)
 		    if (ptrs->ra[ref_idx].data.ptr == data_ptr)
 		      {
-			if (-1 == ref_idx_real)
+			if (0 == ref_idx_real)
 			  ref_idx_real = ref_idx; /* first entry with the matched address */
 			else if (ptrs->ra[ref_idx].MR_SIZE > ptrs->ra[idx].MR_SIZE)
 			  ref_idx_real = ref_idx; /* another entry, but bigger in size */
 		      }
-		  if (-1 == ref_idx_real)
+		  if (0 == ref_idx_real)
 		    break;
 		  ref_idx = ref_idx_real;
 		}
@@ -1442,13 +1451,13 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
       break;
       /* unlink string content, but keep links from content on a parent node */
     case MR_TYPE_STRING:
-      ptrdes->first_child = ptrdes->last_child = -1;
+      ptrdes->first_child = ptrdes->last_child = 0;
       break;
     case MR_TYPE_CHAR_ARRAY:
 #define MR_VECTOR_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_ARRAY, MR_TYPE_POINTER))
-      if (ptrdes->parent >= 0) /* in array of MR_TYPE_CHAR_ARRAY adjust MR_SIZE to a size of individual element */
+      if (ptrdes->parent > 0) /* in array of MR_TYPE_CHAR_ARRAY adjust MR_SIZE to a size of individual element */
 	if (((MR_VECTOR_TYPES >> ptrs->ra[ptrdes->parent].mr_type) & 1) &&
-	    (ptrdes->next >= 0))
+	    (ptrdes->next > 0))
 	  ptrdes->MR_SIZE -= ptrs->ra[ptrdes->next].MR_SIZE;
       break;
     default:
@@ -1459,10 +1468,10 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
      Those additional entries are not required for serialization process and we remove them here, but
      before that we need to update all references on string content.
    */
-  if (ptrdes->ref_idx >= 0)
+  if (ptrdes->ref_idx > 0)
     {
-      int ref_parent = ptrs->ra[ptrdes->ref_idx].parent;
-      if (ref_parent >= 0)
+      mr_idx_t ref_parent = ptrs->ra[ptrdes->ref_idx].parent;
+      if (ref_parent > 0)
 	if (MR_TYPE_STRING == ptrs->ra[ref_parent].mr_type)
 	  {
 	    /* move ref_idx on a parent node (of type MR_TYPE_STRING) */
@@ -1486,10 +1495,10 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
 static void
 mr_post_process (mr_save_data_t * mr_save_data)
 {
-  int i, count = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]);
-  for (i = 0; i < count; ++i)
+  mr_idx_t i, count = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]);
+  for (i = 1; i < count; ++i)
     resolve_void_ptr_and_strings (mr_save_data, i);
-  i = 0;
+  i = 1;
   mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &i); /* enumeration of nodes should be done only after strings processing */
 }
 
@@ -1497,10 +1506,11 @@ mr_post_process (mr_save_data_t * mr_save_data)
  * MR_POINTER_STRUCT type saving handler. Save referenced structure into internal representation.
  * @param mr_save_data save routines data and lookup structures
  */
-static int
+static mr_idx_t
 mr_save_pointer (mr_save_data_t * mr_save_data)
 {
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+
+  mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   void ** data = mr_save_data->ptrs.ra[idx].data.ptr;
 
   if (NULL == *data)
@@ -1553,8 +1563,8 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
 mr_ra_ptrdes_t
 mr_save (void * data, mr_fd_t * fdp)
 {
-  int i;
   mr_save_data_t mr_save_data;
+  typeof (mr_save_data.ptrs.size) i;
   mr_res_t context = {
     .data = { &mr_save_data.ptrs },
     .type = "mr_ra_ptrdes_t",
@@ -1565,16 +1575,20 @@ mr_save (void * data, mr_fd_t * fdp)
   if (NULL == data)
     return (mr_save_data.ptrs);
 
+  mr_add_ptr_to_list (&mr_save_data.ptrs); /* add first descriptor that plays a role of NULL pointer */
+  if (NULL == mr_save_data.ptrs.ra)
+    return (mr_save_data.ptrs);
+
   mr_save_data.ptrs.ptrdes_type = MR_PD_SAVE;
 #define MR_IC_METHOD MR_IC_HASH
   mr_ic_new (&mr_save_data.untyped_ptrs, mr_typed_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
   mr_ic_new (&mr_save_data.union_discriminators, mr_uds_get_hash, mr_uds_cmp, "intptr", MR_IC_METHOD, &context);
 
   fdp->unnamed = true;
-  int nodes_added = mr_save_inner (data, fdp, 1, &mr_save_data, -1);
+  mr_idx_t nodes_added = mr_save_inner (data, fdp, 1, &mr_save_data, 0);
   if (nodes_added > 0)
     {
-      for (i = 0; i < mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]); ++i)
+      for (i = 1; i < mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]); ++i)
 	if ((MR_TYPE_POINTER == mr_save_data.ptrs.ra[i].mr_type) &&
 	    (MR_TYPE_VOID != mr_save_data.ptrs.ra[i].mr_type_aux) &&
 	    (MR_TYPE_NONE != mr_save_data.ptrs.ra[i].mr_type_aux) &&
@@ -1582,17 +1596,17 @@ mr_save (void * data, mr_fd_t * fdp)
 	    !mr_save_data.ptrs.ra[i].flags.is_null)
 	  {
 	    nodes_added = mr_save_pointer_content (i, &mr_save_data);
-	    if (nodes_added < 0)
+	    if (nodes_added == 0)
 	      break;
 	  }
-      if (nodes_added >= 0)
+      if (nodes_added > 0)
 	mr_post_process (&mr_save_data);
     }
 
-  for (i = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]) - 1; i >= 0; --i)
+  for (i = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]) - 1; i > 0; --i)
     mr_ud_free (&mr_save_data.ptrs.ra[i].save_params.ud_set);
 
-  if ((nodes_added < 0) && (mr_save_data.ptrs.ra != NULL))
+  if ((nodes_added == 0) && (mr_save_data.ptrs.ra != NULL))
     {
       MR_FREE (mr_save_data.ptrs.ra);
       mr_save_data.ptrs.ra = NULL;

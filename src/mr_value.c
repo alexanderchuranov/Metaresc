@@ -80,16 +80,16 @@ mr_get_enum (char * str, mr_uintmax_t * data)
     mr_ic_foreach (&mr_conf.enum_by_name, enum_names_visitor, &enum_max_length);
   
   char * name = str;
+  int size = 0;
 
   while (isalnum (*str) || ('_' == *str))
-    ++str;
-  
-  size_t size = str - name;
-
-  if (size > enum_max_length)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name);
-      return (NULL);
+      ++str;
+      if (++size > enum_max_length)
+	{
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name);
+	  return (NULL);
+	}
     }
   
   char name_[size + 1];

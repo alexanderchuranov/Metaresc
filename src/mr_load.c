@@ -20,7 +20,7 @@
 #include <flt_values.h>
 #include <lexer.h>
 
-TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_ra_ptrdes_t * /* ptrs */));
+TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (mr_idx_t /* idx */, mr_ra_ptrdes_t * /* ptrs */));
 
 /**
  * Post load references setting. If node was marked as references
@@ -32,10 +32,9 @@ TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (int /* idx */, mr_ra_ptrdes_t * /
 static mr_status_t
 mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 {
-  int i;
-  int count = ptrs->size / sizeof (ptrs->ra[0]);
-  int max_idx = 0;
-  int * table;
+  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_idx_t max_idx = 0;
+  mr_idx_t * table;
 
   for (i = 0; i < count; ++i)
     if (ptrs->ra[i].idx > max_idx)
@@ -48,20 +47,18 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
-  for (i = 0; i <= max_idx; ++i)
-    table[i] = -1;
   for (i = 0; i < count; ++i)
-    if (ptrs->ra[i].idx >= 0)
+    if (ptrs->ra[i].idx > 0)
       {
 	/* checking indexes collision */
-	if (table[ptrs->ra[i].idx] >= 0)
+	if (table[ptrs->ra[i].idx] > 0)
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, ptrs->ra[i].idx);
 	table[ptrs->ra[i].idx] = i;
       }
 
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
-    if (ptrs->ra[i].ref_idx >= 0)
+    if (ptrs->ra[i].ref_idx > 0)
       {
 	if (ptrs->ra[i].ref_idx > max_idx)
 	  {
@@ -69,8 +66,8 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 	    continue;
 	  }
 	
-	int idx = table[ptrs->ra[i].ref_idx];
-	if (idx < 0)
+	mr_idx_t idx = table[ptrs->ra[i].ref_idx];
+	if (idx == 0)
 	  {
 	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].ref_idx);
 	    continue;
@@ -116,7 +113,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
  * @return Status of read
  */
 static mr_status_t
-mr_load_none (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_none (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   return (MR_SUCCESS);
 }
@@ -128,7 +125,7 @@ mr_load_none (int idx, mr_ra_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 mr_status_t
-mr_load_integer (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_integer (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_value_t mr_value;
@@ -203,7 +200,7 @@ mr_get_func (void ** dst, char * func_name)
  * @return Status of read (0 - failure, !0 - success)
  */
 mr_status_t
-mr_load_func (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_func (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
@@ -219,7 +216,7 @@ mr_load_func (int idx, mr_ra_ptrdes_t * ptrs)
       case MR_VT_SUBSTR:
 	{
 	  char buf[1 << 6];
-	  int length = MR_MIN (ptrdes->load_params.vt_substr.length, sizeof (buf) - 1);
+	  typeof (ptrdes->load_params.vt_substr.length) length = MR_MIN (ptrdes->load_params.vt_substr.length, sizeof (buf) - 1);
 
 	  buf[0] = 0;
 	  buf[length] = 0;
@@ -260,7 +257,7 @@ mr_load_func (int idx, mr_ra_ptrdes_t * ptrs)
  * @return Status of read
  */
 static mr_status_t
-mr_load_bitfield (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_bitfield (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_uintmax_t value;
@@ -276,7 +273,7 @@ mr_load_bitfield (int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-mr_load_float (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_float (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_value_t mr_value;
@@ -299,7 +296,7 @@ mr_load_float (int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-mr_load_complex (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_complex (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_value_t mr_value;
@@ -328,7 +325,7 @@ mr_load_complex (int idx, mr_ra_ptrdes_t * ptrs)
  * @return Status of read
  */
 static mr_status_t
-mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_char (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
@@ -343,7 +340,7 @@ mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
       else
 	{
 	  char buf[1 << 8];
-	  int length = MR_MIN (ptrdes->load_params.vt_substr.length, sizeof (buf) - 1);
+	  typeof (ptrdes->load_params.vt_substr.length) length = MR_MIN (ptrdes->load_params.vt_substr.length, sizeof (buf) - 1);
 
 	  buf[0] = 0;
 	  buf[length] = 0;
@@ -395,13 +392,13 @@ mr_load_char (int idx, mr_ra_ptrdes_t * ptrs)
  * @return Status of read
  */
 static mr_status_t
-mr_load_string (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
   *(char**)ptrdes->data.ptr = NULL;
-  if (!ptrdes->flags.is_null && (ptrdes->ref_idx < 0))
+  if (!ptrdes->flags.is_null && (ptrdes->ref_idx == 0))
     {
       switch (ptrdes->value_type)
 	{
@@ -441,13 +438,13 @@ mr_load_string (int idx, mr_ra_ptrdes_t * ptrs)
 }
 
 static mr_status_t
-mr_get_char_array (int idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_len)
+mr_get_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_len)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  int max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
+  typeof (str_len) max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
   mr_status_t status = MR_SUCCESS;
 
-  if ((str_len >= max_size) && (ptrdes->parent >= 0))
+  if ((str_len >= max_size) && (ptrdes->parent > 0))
     if (MR_TYPE_POINTER == ptrs->ra[ptrdes->parent].mr_type)
       {
 	void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
@@ -487,7 +484,7 @@ mr_get_char_array (int idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_len)
  * @return Status of read
  */
 static mr_status_t
-mr_load_char_array (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_status_t status = MR_SUCCESS;
@@ -541,11 +538,11 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
  * @return Status of read
  */
 static mr_status_t
-mr_load_struct (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_struct (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_fd_t * fdp = NULL;
   char * data = ptrs->ra[idx].data.ptr;
-  int first_child = ptrs->ra[idx].first_child;
+  mr_idx_t first_child = ptrs->ra[idx].first_child;
   mr_td_t * tdp = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->stype.tdp : NULL;
   mr_status_t status = MR_SUCCESS;
 
@@ -557,7 +554,7 @@ mr_load_struct (int idx, mr_ra_ptrdes_t * ptrs)
     }
 
   /* loop on all subnodes */
-  for (idx = first_child; (MR_SUCCESS == status) && (idx >= 0); idx = ptrs->ra[idx].next)
+  for (idx = first_child; (MR_SUCCESS == status) && (idx > 0); idx = ptrs->ra[idx].next)
     {
       char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : NULL;
       mr_fd_t * next_fdp = name ? mr_get_fd_by_name (tdp, name) : NULL;
@@ -584,20 +581,33 @@ mr_load_struct (int idx, mr_ra_ptrdes_t * ptrs)
  * @return Status of read
  */
 static mr_status_t
-mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   mr_status_t status = MR_SUCCESS;
-  int i, count = fd_.stype.dim.dim[0];
+  mr_idx_t i, count = fd_.stype.dim.dim[0];
 
-  if (fd_.stype.size == 0)
-    return (MR_FAILURE);
+  if (0 == count)
+    {
+      if (ptrs->ra[idx].first_child > 0)
+	{
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
+	  return (MR_FAILURE);
+	}
+      return (MR_SUCCESS);
+    }
+
+  if (0 == fd_.stype.size)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_ZERO_SIZE_FIELD, fd_.name.str);
+      return (MR_FAILURE);
+    }
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
   fd_.offset = 0;
-  fd_.stype.size /= count ? count : 1;
+  fd_.stype.size /= count;
 
   if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
     {
@@ -607,14 +617,12 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
   else
     {
       fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
-      int dim_count = fd_.stype.dim.size / sizeof (fd_.stype.dim.dim[0]);
-      for (i = 0; i < dim_count; ++i)
-	fd_.stype.dim.dim[i] = fd_.stype.dim.dim[i + 1];
+      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[1], fd_.stype.dim.size);
     }
 
   /* loop on subnodes */
   i = 0;
-  for (idx = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (idx >= 0); idx = ptrs->ra[idx].next)
+  for (idx = ptrs->ra[idx].first_child; idx > 0; idx = ptrs->ra[idx].next)
     {
       /* check if array index is in range */
       if (i >= count)
@@ -624,12 +632,14 @@ mr_load_array (int idx, mr_ra_ptrdes_t * ptrs)
 	}
       /* load recursively */
       status = mr_load (&data[i++ * fd_.stype.size], &fd_, idx, ptrs);
+      if (status != MR_SUCCESS)
+	break;
     }
   return (status);
 }
 
 void
-mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
+mr_pointer_set_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t src, dst;
   mr_pointer_get_size_ptrdes (&dst, idx, ptrs);
@@ -649,13 +659,13 @@ mr_pointer_set_size (int idx, mr_ra_ptrdes_t * ptrs)
  * @return Status of read (0 - failure, !0 - success)
  */
 static mr_status_t
-mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_SUCCESS;
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   char ** data = ptrs->ra[idx].data.ptr;
-  int count = 0;
-  int node;
+  mr_idx_t count = 0;
+  mr_idx_t node;
 
   if (NULL == data)
     return (MR_FAILURE);
@@ -675,10 +685,10 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
 	}
     }
 
-  if (ptrdes->ref_idx >= 0)
+  if (ptrdes->ref_idx > 0)
     return (MR_SUCCESS);
 
-  for (node = ptrs->ra[idx].first_child; node >= 0; node = ptrs->ra[node].next)
+  for (node = ptrs->ra[idx].first_child; node > 0; node = ptrs->ra[node].next)
     ++count;
   if (0 == count)
     return (MR_SUCCESS);
@@ -707,7 +717,7 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
   
   /* load recursively */
   count = 0;
-  for (node = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (node >= 0); node = ptrs->ra[node].next)
+  for (node = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (node > 0); node = ptrs->ra[node].next)
     status = mr_load (*data + count++ * fd_.stype.size, &fd_, node, ptrs);
 
   ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
@@ -724,7 +734,7 @@ mr_load_pointer_postponed (int idx, mr_ra_ptrdes_t * ptrs)
  * @return Status of read
  */
 static mr_status_t
-mr_load_anon_union (int idx, mr_ra_ptrdes_t * ptrs)
+mr_load_anon_union (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
 
@@ -734,11 +744,11 @@ mr_load_anon_union (int idx, mr_ra_ptrdes_t * ptrs)
     .union_float = 3.1415927410,
     },
   */
-  if ((ptrdes->first_child < 0) && /* if node has no childs, then it is C init style anonumous union */
+  if ((ptrdes->first_child == 0) && /* if node has no childs, then it is C init style anonumous union */
       (MR_VT_SUBSTR == ptrdes->value_type)
       && (0 == ptrdes->load_params.vt_substr.length) && /* content must be an empty string */
       (ptrdes->fdp != NULL) && /* node must have a name */
-      (ptrdes->next >= 0))
+      (ptrdes->next > 0))
     if (NULL == ptrs->ra[ptrdes->next].fdp) /* there should be a next node without name */
       {
 	ptrs->ra[ptrdes->next].fdp = ptrdes->fdp;
@@ -795,7 +805,7 @@ static mr_load_handler_t mr_load_handler[MR_TYPE_LAST] =
  * @return Status of read
  */
 mr_status_t
-mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
+mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_status_t status = MR_FAILURE;
 
@@ -805,7 +815,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
-  if ((idx < 0) || (idx >= ptrs->size / sizeof (ptrs->ra[0])))
+  if ((idx <= 0) || (idx >= ptrs->size / sizeof (ptrs->ra[0])))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_SAVE_IDX_RANGE_CHECK);
       return (MR_FAILURE);
@@ -845,9 +855,9 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->stype.mr_type);
 
   /* set cross references at the upper level */
-  if (0 == idx)
+  if (1 == idx)
     {
-      int i, count = ptrs->size / sizeof (ptrs->ra[0]);
+      mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
 
       for (i = 0; (MR_SUCCESS == status) && (i < count); ++i)
 	if (MR_TYPE_POINTER == ptrs->ra[i].mr_type)
@@ -857,7 +867,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 	status = mr_set_crossrefs (ptrs);
 
       if (MR_SUCCESS != status)
-	for (i = count - 1; i >= 0; --i)
+	for (i = count - 1; i > 0; --i)
 	  if (((MR_TYPE_POINTER == ptrs->ra[i].mr_type) || (MR_TYPE_STRING == ptrs->ra[i].mr_type))
 	      && *(void**)ptrs->ra[i].data.ptr)
 	    {
@@ -865,7 +875,7 @@ mr_load (void * data, mr_fd_t * fdp, int idx, mr_ra_ptrdes_t * ptrs)
 	      *(void**)ptrs->ra[i].data.ptr = NULL;
 	    }
 
-      for (i = 0; i < count; ++i)
+      for (i = 1; i < count; ++i)
 	switch (ptrs->ra[i].value_type)
 	  {
 	  case MR_VT_STRING:
