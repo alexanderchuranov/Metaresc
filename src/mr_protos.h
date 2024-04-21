@@ -566,7 +566,11 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
     { MR_TYPE_ENUM, "data" },					\
   }
 
-TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
+TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES (__attribute__ ((packed)), "pointer descriptor type"),
+		ANON_UNION (),
+		(void *, _data_, , "by default try to resolve pointer as void *"),
+		(mr_ptr_t, data, , "fdp"), /* serialize for subset of mr_type */
+		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
 		(mr_fd_t *, fdp, , "serializable field descriptor"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
@@ -579,10 +583,6 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_idx_t, last_child, , "last child index"),
 		(mr_idx_t, next, , "next sibling index"),
 		(uint32_t, MR_SIZE, , "size of 'data' resizable array"),
-		ANON_UNION (),
-		(void *, _data_, , "by default try to resolve pointer as void *"),
-		(mr_ptr_t, data, , "fdp"), /* serialize for subset of mr_type */
-		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
 		ANON_UNION (),
 		VOID (uint8_t, default_serialization),
 		(mr_save_params_t, save_params, , "attributes specific for saving"),
