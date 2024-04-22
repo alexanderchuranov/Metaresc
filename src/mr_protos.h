@@ -463,7 +463,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
-		(mr_td_t *, next, , "single linked list"),
+		VOID (mr_td_t *, next, , "single linked list"),
 		) /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
@@ -639,11 +639,11 @@ TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
 		)
 
 TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
-		(mr_lloc_t, lloc, , "current location of parser"),
+		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		(char *, str, , "string to parse"),
 		(char *, buf, , "parser internal buffer"),
+		(mr_lloc_t, lloc, , "current location of parser"),
 		(mr_idx_t, parent, , "index of current parent"),
-		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
 		)
 
 TYPEDEF_STRUCT (mr_get_struct_type_name_t, ATTRIBUTES ( , "long jump buffer and type name"),

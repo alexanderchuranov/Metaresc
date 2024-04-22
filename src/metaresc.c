@@ -1309,8 +1309,6 @@ mr_detect_structured_type (mr_stype_t * stype)
 
   if (tdp)
     {
-      stype->type = tdp->type.str;
-
       if (MR_TYPE_BITFIELD == stype->mr_type)
 	stype->mr_type_aux = tdp->mr_type; /* enums case */
       else if (MR_TYPE_POINTER == stype->mr_type)
@@ -1343,7 +1341,8 @@ mr_detect_structured_type (mr_stype_t * stype)
   };
   static mr_td_t * type_tdp[sizeof (type_name) / sizeof (type_name[0])] = {0};
 
-  mr_type_t mr_type = (MR_TYPE_POINTER == stype->mr_type) ? stype->mr_type_aux : stype->mr_type;
+  mr_type_t mr_type = (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_POINTER)) >> stype->mr_type) & 1)
+    ? stype->mr_type_aux : stype->mr_type;
   if ((mr_type > 0) && (mr_type < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[mr_type])
       {
