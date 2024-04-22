@@ -1369,8 +1369,7 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 
   mr_detect_structured_type (&fdp->stype);
 
-  if (fdp->stype.tdp)
-    fdp->mr_type_base = fdp->stype.tdp->mr_type;
+  fdp->mr_type_base = fdp->stype.tdp ? fdp->stype.tdp->mr_type : MR_TYPE_VOID;
 }
 
 /**

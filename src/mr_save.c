@@ -57,7 +57,7 @@ mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
 {
   *ptr_fdp = **fdp;
   ptr_fdp->stype.mr_type = ptr_fdp->stype.mr_type_aux;
-  ptr_fdp->stype.mr_type_aux = ptr_fdp->stype.tdp ? ptr_fdp->stype.tdp->mr_type : MR_TYPE_VOID;
+  ptr_fdp->stype.mr_type_aux = ptr_fdp->mr_type_base;
   ptr_fdp->stype.mr_type_class = MR_POINTER_TYPE_CLASS;
   ptr_fdp->stype.size = sizeof (void*);
   ptr_fdp->offset = 0;
@@ -780,9 +780,7 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
   mr_check_ud_ctx_t mr_check_ud_ctx = {
     .mr_save_data = mr_save_data,
   };
-  int nodes_added;
 
-  *resolved = true;
   for ( ; ref_idx > 0; ref_idx = ra[ref_idx].save_params.next_untyped)
     {
       if (mr_cmp_ptrdes (&ra[ref_idx], &ra[idx]) != 0) /* skip pointers that typed differently */
@@ -797,15 +795,18 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	switch (ra[parent].mr_type)
 	  {
 	  case MR_TYPE_STRING:
+	    *resolved = true;
 	    ra[parent].ref_idx = ref_idx;
 	    ra[ref_idx].flags.is_referenced = true;
 	    return (1);
 
 	  case MR_TYPE_POINTER:
-	    nodes_added = resolve_pointer (mr_save_data, ref_idx, resolved);
-	    if (resolved) /* non-zero value is an allocation error or number of added nodes. Zero means - not able to resolve the pointer. */
-	      return (nodes_added);
-	    break;
+	    {
+	      mr_idx_t nodes_added = resolve_pointer (mr_save_data, ref_idx, resolved);
+	      if (resolved) /* non-zero value is an allocation error or number of added nodes. Zero means - not able to resolve the pointer. */
+		return (nodes_added);
+	      break;
+	    }
 	    
 	  default:
 	    if (ref_parent > 0)
@@ -814,7 +815,10 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 		       && is_first_child (ra, ref_idx)
 		       && (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
 		  && !ref_is_parent (ra, parent, ref_idx))
-		return (move_nodes_to_parent (ra, ref_parent, idx));
+		{
+		  *resolved = true;
+		  return (move_nodes_to_parent (ra, ref_parent, idx));
+		}
 	    break;
 	  }
     }
@@ -1032,7 +1036,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
   if (search_result->uintptr != idx)
     {
       mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-      bool resolved;
+      bool resolved = false;
       mr_idx_t nodes_matched = resolve_matched (mr_save_data, search_result->uintptr, &resolved);
       if (resolved)
 	return (nodes_matched);
@@ -1074,7 +1078,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
 static mr_idx_t
 mr_save_func (mr_save_data_t * mr_save_data)
 {
-  int idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   if (NULL == *(void**)mr_save_data->ptrs.ra[idx].data.ptr)
     mr_save_data->ptrs.ra[idx].flags.is_null = true;
   return (1);
@@ -1392,7 +1396,7 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
  * @param idx index of processed node
  */
 static inline mr_status_t
-resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, int idx)
+resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, mr_idx_t idx)
 {
   mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
