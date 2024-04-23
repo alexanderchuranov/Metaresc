@@ -255,14 +255,14 @@ TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag 
 		)
 
 TYPEDEF_STRUCT (mr_typed_ptr_t,
-		(mr_ptr_t, data, , "type"),
 		(char *, type, , "union discriminator"),
+		(mr_ptr_t, data, , "type"),
 		)
 
 TYPEDEF_STRUCT (mr_res_t,
-		(mr_ptr_t, data, , "type"), 
 		(char *, type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of data"),
+		(mr_ptr_t, data, , "type"),
 		)
 
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
@@ -463,7 +463,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
-		VOID (mr_td_t *, next, , "single linked list"),
+		(mr_td_t *, next, , "single linked list"),
 		) /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
@@ -567,19 +567,7 @@ TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving
   }
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
-		ANON_UNION (),
-		(void *, _data_, , "by default try to resolve pointer as void *"),
-		(mr_ptr_t, data, , "fdp"), /* serialize for subset of mr_type */
-		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
-
 		(mr_fd_t *, fdp, , "serializable field descriptor"),
-
-		ANON_UNION (),
-		VOID (uint8_t, default_serialization),
-		(mr_save_params_t, save_params, , "attributes specific for saving"),
-		(mr_load_params_t, load_params, , "value_type"),
-		(mr_typed_ptr_t, res, , "extra pointer for user data"),
-		END_ANON_UNION ("ptrdes_type"),
 
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
@@ -593,6 +581,18 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_idx_t, first_child, , "first child index"),
 		(mr_idx_t, last_child, , "last child index"),
 		(mr_idx_t, next, , "next sibling index"),
+
+		ANON_UNION (),
+		(void *, _data_, , "by default try to resolve pointer as void *"),
+		(mr_ptr_t, data, , "fdp"), /* serialize for subset of mr_type */
+		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
+
+		ANON_UNION (),
+		VOID (uint8_t, default_serialization),
+		(mr_save_params_t, save_params, , "attributes specific for saving"),
+		(mr_load_params_t, load_params, , "value_type"),
+		(mr_typed_ptr_t, res, , "extra pointer for user data"),
+		END_ANON_UNION ("ptrdes_type"),
 		)
 
 TYPEDEF_ENUM (mr_ptrdes_type_t,
