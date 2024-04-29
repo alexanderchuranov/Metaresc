@@ -10,42 +10,54 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   xmlNodePtr node_;
   char * content = NULL;
   char * property = NULL;
-  uint32_t prop_value = 0;
+  char * tail = NULL;
   mr_idx_t idx = mr_add_ptr_to_list (ptrs);
   if (0 == idx)
-    return (0);
+    goto failure;
 
   /* handle REF_IDX property */
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF_IDX);
   if (property)
     {
-      if (1 == sscanf (property, "%" SCNu32, &prop_value))
-	ptrs->ra[idx].idx = prop_value;
-      else
+      ptrs->ra[idx].idx = strtoll (property, &tail, 0);
+      if (tail)
+	while (isspace (*tail))
+	  ++tail;
+      if ((NULL == tail) || *tail)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
-      ptrs->ra[idx].flags.is_referenced = true;
       xmlFree (property);
+      if ((NULL == tail) || *tail)
+	goto failure;
+      ptrs->ra[idx].flags.is_referenced = true;
     }
   /* handle REF property */
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF);
   if (property)
     {
-      if (1 == sscanf (property, "%" SCNu32, &prop_value))
-	ptrs->ra[idx].ref_idx = prop_value;
-      else
+      ptrs->ra[idx].ref_idx = strtoll (property, &tail, 0);
+      if (tail)
+	while (isspace (*tail))
+	  ++tail;
+      if ((NULL == tail) || *tail)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       xmlFree (property);
+      if ((NULL == tail) || *tail)
+	goto failure;
     }
   /* handle REF_CONTENT property */
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF_CONTENT);
   if (property)
     {
-      if (1 == sscanf (property, "%" SCNu32, &prop_value))
-	ptrs->ra[idx].ref_idx = prop_value;
-      else
+      ptrs->ra[idx].ref_idx = strtoll (property, &tail, 0);
+      if (tail)
+	while (isspace (*tail))
+	  ++tail;
+      if ((NULL == tail) || *tail)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
-      ptrs->ra[idx].flags.is_content_reference = true;
       xmlFree (property);
+      if ((NULL == tail) || *tail)
+	goto failure;
+      ptrs->ra[idx].flags.is_content_reference = true;
     }
   property = (char*)xmlGetProp (node, (unsigned char*)MR_ISNULL);
   if (property)
@@ -64,7 +76,7 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   if (NULL == ptrs->ra[idx].fdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, (char*)node->name);
-      return (-1);
+      goto failure;
     }
   
   ptrs->ra[idx].value_type = MR_VT_SUBSTR;
@@ -76,10 +88,16 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
     if (XML_ELEMENT_NODE == node_->type)
       {
 	mr_idx_t child = mr_xml2_load (node_, ptrs);
-	if (child == 0)
-	  return (0);
+	if (0 == child)
+	  goto failure;
 	mr_add_child (idx, child, ptrs->ra);
       }
   
   return (idx);
+
+ failure:
+  if (ptrs->ra)
+    MR_FREE (ptrs->ra);
+  ptrs->ra = NULL;
+  return (0);
 }

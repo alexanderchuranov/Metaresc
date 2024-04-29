@@ -1152,8 +1152,7 @@
 	      mr_idx_t __idx__ = mr_xml2_load (__xml__, &__ptrs__);	\
 	      if (__idx__ > 0)						\
 		__status__ = mr_load ((D_PTR), &__fd__, __idx__, &__ptrs__); \
-	      if (__ptrs__.ra)						\
-		MR_FREE (__ptrs__.ra);					\
+	      mr_free_load_values (&__ptrs__);				\
 	    }								\
 	}								\
       __status__;							\
@@ -1236,8 +1235,7 @@
 	      mr_detect_type (&_fd_);					\
 	      _status_ = mr_load ((D_PTR), &_fd_, 1, &_ptrs_);		\
 	    }								\
-	  if (_ptrs_.ra)						\
-	    MR_FREE (_ptrs_.ra);					\
+	  mr_free_load_values (&_ptrs_);				\
 	}								\
       _status_;								\
     })
@@ -1424,6 +1422,8 @@ extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
 extern mr_ra_ptrdes_t mr_save (void * data, mr_fd_t * fdp);
+extern void mr_reorder_strings (mr_ra_ptrdes_t * ptrs);
+extern void mr_free_load_values (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs);
 #ifdef HAVE_LIBXML2
 extern xmlDocPtr mr_xml2_save (mr_ra_ptrdes_t * ptrs);

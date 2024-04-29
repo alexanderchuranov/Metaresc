@@ -95,7 +95,10 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
     if (mr_ ## METHOD ## _lex_init_extra (&mr_load, &scanner))		\
       return (MR_FAILURE);						\
     if (NULL != mr_ ## METHOD ## __scan_string (str, scanner))		\
-      status = (0 == mr_ ## METHOD ## _parse (scanner)) ? MR_SUCCESS : MR_FAILURE; \
+      if (0 == mr_ ## METHOD ## _parse (scanner))			\
+	status = MR_SUCCESS;						\
+    if (status != MR_SUCCESS)						\
+      mr_free_load_values (ptrs);					\
     mr_ ## METHOD ## _lex_destroy (scanner);				\
     return (status);							\
   }

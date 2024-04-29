@@ -106,6 +106,33 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   return (MR_SUCCESS);
 }
 
+void
+mr_free_load_values (mr_ra_ptrdes_t * ptrs)
+{
+  if (NULL == ptrs)
+    return;
+  if (NULL == ptrs->ra)
+    return;
+
+  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  for (i = 1; i < count; ++i)
+    switch (ptrs->ra[i].value_type)
+      {
+      case MR_VT_STRING:
+	if (ptrs->ra[i].load_params.vt_string)
+	  MR_FREE (ptrs->ra[i].load_params.vt_string);
+	break;
+      case MR_VT_COMPLEX:
+	if (ptrs->ra[i].load_params.vt_complex)
+	  MR_FREE (ptrs->ra[i].load_params.vt_complex);
+	break;
+      default:
+	break;
+      }
+  MR_FREE (ptrs->ra);
+  memset (ptrs, 0, sizeof (*ptrs));
+}
+
 /**
  * MR_NONE load handler (dummy)
  * @param idx node index
@@ -874,27 +901,6 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 	      MR_FREE (*(void**)ptrs->ra[i].data.ptr);
 	      *(void**)ptrs->ra[i].data.ptr = NULL;
 	    }
-
-      for (i = 1; i < count; ++i)
-	switch (ptrs->ra[i].value_type)
-	  {
-	  case MR_VT_STRING:
-	    if (ptrs->ra[i].load_params.vt_string)
-	      {
-		MR_FREE (ptrs->ra[i].load_params.vt_string);
-		ptrs->ra[i].load_params.vt_string = NULL;
-	      }
-	    break;
-	  case MR_VT_COMPLEX:
-	    if (ptrs->ra[i].load_params.vt_complex)
-	      {
-		MR_FREE (ptrs->ra[i].load_params.vt_complex);
-		ptrs->ra[i].load_params.vt_complex = NULL;
-	      }
-	    break;
-	  default:
-	    break;
-	  }
     }
 
   if (fdp->non_persistent)

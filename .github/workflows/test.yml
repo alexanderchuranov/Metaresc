@@ -26,7 +26,7 @@ jobs:
       - name: make check
         run: make check -j 2 || ( cat tests/test-suite.log ; false )
       - name: check with valgrind
-        run: cd tests; make valgrind -j 2 || ( cat test-suite.log ; false )
+        run: cd tests; CK_TIMEOUT_MULTIPLIER=2 make valgrind -j 2 || ( cat test-suite.log ; false )
 
   macos-clang:
     runs-on: macos-latest

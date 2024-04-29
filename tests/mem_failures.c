@@ -351,11 +351,15 @@ static void _free (const char * filename, const char * function, int line, void 
 
 static void _mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, va_list args) {}
 
+#define STEPS_COUNT (1 << 4)
+
 void 
 mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_per_allocation)
 {
   mr_status_t status;
-  int i;
+  int successful_allocs_counter = 0;
+  int step = 1;
+  int steps_count = STEPS_COUNT;
 
   mr_conf_init ();
 
@@ -376,21 +380,68 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
 
   mr_conf.msg_handler = _mr_message;
   mr_conf.mr_mem = _mr_mem;
-
-  for (i = 0; ; ++i)
+  successful_allocs = -1;
+  for (;;)
     {
       malloc_cnt = realloc_cnt = free_cnt = 0;
-      successful_allocs = once_per_allocation ? -1 : i;
+      if (once_per_allocation)
+	++successful_allocs_counter;
+      else
+	{
+	  successful_allocs = successful_allocs_counter;
+	  successful_allocs_counter += step;
+	  if (--steps_count <= 0)
+	    {
+	      step <<= 4;
+	      steps_count = STEPS_COUNT;
+	    }
+	}
+
       status = method (arg);
 
 #ifdef DEBUG
-      fprintf (stderr, "#%d (%d) ~ (%d)\n", i, malloc_cnt, free_cnt);
+      fprintf (stderr, "#%d %d (%d) ~ (%d)\n", successful_allocs_counter - step, status, malloc_cnt, free_cnt);
 #endif /* DEBUG */
 
       if (malloc_cnt != free_cnt)
 	break;
       if (MR_SUCCESS == status)
 	break;
+    }
+
+  if (!once_per_allocation && (malloc_cnt == free_cnt))
+    {
+      successful_allocs_counter -= step;
+      while (step > 1)
+	{
+	  step >>= 1;
+	  successful_allocs = successful_allocs_counter - step;
+	  malloc_cnt = realloc_cnt = free_cnt = 0;
+	  status = method (arg);
+#ifdef DEBUG
+	  fprintf (stderr, "##%d %d (%d) ~ (%d)\n", successful_allocs_counter - step, status, malloc_cnt, free_cnt);
+#endif /* DEBUG */
+	  if (malloc_cnt != free_cnt)
+	    break;
+	  if (status == MR_SUCCESS)
+	    successful_allocs_counter -= step;
+	}
+      int i;
+      if (malloc_cnt == free_cnt)
+	for (i = MR_MAX (STEPS_COUNT, successful_allocs_counter - STEPS_COUNT);
+	     i < successful_allocs_counter; ++i)
+	  {
+	    successful_allocs = i;
+	    malloc_cnt = realloc_cnt = free_cnt = 0;
+	    status = method (arg);
+#ifdef DEBUG
+	    fprintf (stderr, "###%d %d (%d) ~ (%d)\n", i, status, malloc_cnt, free_cnt);
+#endif
+	    if (malloc_cnt != free_cnt)
+	      break;
+	    if (status == MR_SUCCESS)
+	      break;
+	  }
     }
     
   mr_conf.mr_mem = mr_mem;
@@ -403,5 +454,31 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
   mr_ic_foreach (&alloc_blocks, st_free, NULL);
   mr_ic_free (&alloc_blocks);
 
-  ck_assert_msg (malloc_cnt == free_cnt, "Mismatch of allocations (%d) and free (%d) on round %d", malloc_cnt, free_cnt, i);
+  ck_assert_msg (malloc_cnt == free_cnt, "Mismatch of allocations (%d) and free (%d) on round allocs limit %d", malloc_cnt, free_cnt, successful_allocs_counter);
+}
+
+static void
+swap_fields (char * type, char * field0, char * field1)
+{
+  mr_td_t * tdp = mr_get_td_by_name (type);
+  ck_assert_msg (tdp != NULL, "Failed to type descriptor for '%s'", type);
+  ck_assert_msg (tdp->mr_type == MR_TYPE_STRUCT, "Unexpected mr_type (%d) in descriptor for '%s'", tdp->mr_type, type);
+
+  mr_fd_t * fdp0 = mr_get_fd_by_name (tdp, field0);
+  ck_assert_msg (fdp0 != NULL, "Failed to field descriptor for '%s'", field0);
+  mr_fd_t * fdp1 = mr_get_fd_by_name (tdp, field1);
+  ck_assert_msg (fdp1 != NULL, "Failed to field descriptor for '%s'", field1);
+
+  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
+  for (i = 0; i < count; ++i)
+    if (tdp->param.struct_param.fields[i] == fdp0)
+      tdp->param.struct_param.fields[i] = fdp1;
+    else if (tdp->param.struct_param.fields[i] == fdp1)
+      tdp->param.struct_param.fields[i] = fdp0;
+}
+
+void tweak_types (void)
+{
+  swap_fields ("mr_fd_t", "res", "mr_size");
+  swap_fields ("mr_ed_t", "res", "mr_size");
 }

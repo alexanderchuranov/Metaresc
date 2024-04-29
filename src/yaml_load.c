@@ -217,18 +217,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
   if (MR_SUCCESS == status)
     add_missed_crossrefs (ptrs);
   else
-    {
-      if (ptrs->ra)
-	{
-	  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
-	  for (i = 1; i < count; ++i)
-	    if (MR_VT_STRING == ptrs->ra[i].value_type)
-	      if (ptrs->ra[i].load_params.vt_string)
-		MR_FREE (ptrs->ra[i].load_params.vt_string);
-	  MR_FREE (ptrs->ra);
-	}
-      memset (ptrs, 0, sizeof (*ptrs));
-    }
+    mr_free_load_values (ptrs);
 
   return (status);
 }

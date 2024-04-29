@@ -303,22 +303,22 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 
 TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
 		(uint32_t, dim, [4], "up to 4 dimensions", { .offset = offsetof (mr_array_dimensions_t, size) }, "offset"),
-		(uint32_t, size, , "size of 'dim' array")
+		(uint32_t, size, , "size of 'dim' array"),
 		)
 
 TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		(struct mr_td_t *, tdp, , "type descriptor"),
 		(char *, type, , "stringified type name"),
-		(mr_size_t, size, , "size of type"),
-		ANON_UNION (),
-		VOID (uint8_t, default_serialization, , "default serialization"),
-		(mr_array_dimensions_t, dim, , "array dimensions"),
-		END_ANON_UNION ("mr_type", { (mr_ud_override_t[]){{ MR_TYPE_ARRAY, "dim" }} }, "mr_ud_override_t"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Extra mr_type for pointers, arrays and bit fields"),
 		(mr_type_t, mr_type_ptr, , "Extra mr_type for pointers and arrays"),
 		BITFIELD (mr_type_class_t, mr_type_class, : __CHAR_BIT__ - 1, "required to distinguish records and unions from scalar types"),
 		BITFIELD (bool, is_array, : 1, "true if field is an array"),
+		(mr_size_t, size, , "size of type"),
+		ANON_UNION (),
+		VOID (uint8_t, default_serialization, , "default serialization"),
+		(mr_array_dimensions_t, dim, , "array dimensions"),
+		END_ANON_UNION ("mr_type", { (mr_ud_override_t[]){{ MR_TYPE_ARRAY, "dim" }} }, "mr_ud_override_t"),
 		)
 
 TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES (__attribute__ ((packed)) , "hashed string"),
@@ -463,7 +463,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
-		(mr_td_t *, next, , "single linked list"),
+		VOID (mr_td_t *, next, , "single linked list"),
 		) /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
@@ -503,6 +503,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of va
 	      )
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
+		(mr_value_type_t, value_type),
 		ANON_UNION (),
 		VOID (uint8_t, default_serialization, , "no serialization by default"),
 		(complex_long_double_t, vt_complex),
@@ -512,7 +513,6 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		string_t vt_string,
 		char vt_char,
 		END_ANON_UNION ("value_type"),
-		(mr_value_type_t, value_type),
 		)
 
 TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),

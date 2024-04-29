@@ -1290,6 +1290,30 @@ mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr
   return (MR_SUCCESS);
 }
 
+static mr_status_t
+mr_reorder_strings_visitor (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+{
+  if (MR_DFS_POST_ORDER != order)
+    return (MR_SUCCESS);
+
+  mr_idx_t ref_idx = ptrs->ra[idx].ref_idx;
+  if ((MR_TYPE_STRING == ptrs->ra[idx].mr_type) && (ref_idx > 0))
+    {
+      if (ptrs->ra[ref_idx].ref_idx > 0)
+	ptrs->ra[idx].ref_idx = ptrs->ra[ref_idx].ref_idx;
+      else if (ptrs->ra[idx].idx < ptrs->ra[ref_idx].idx)
+	{
+	  ptrs->ra[idx].ref_idx = 0;
+	  ptrs->ra[idx].flags.is_referenced = true;
+	  ptrs->ra[idx].flags.is_content_reference = false;
+	  ptrs->ra[ref_idx].ref_idx = idx;
+	  ptrs->ra[ref_idx].flags.is_referenced = false;
+	  ptrs->ra[ref_idx].flags.is_content_reference = true;
+	}
+    }
+  return (MR_SUCCESS);
+}
+
 /**
  * Memory allocation failure test for XDR can't properly deallocate strings if it is saved as forward reference.
  * This function makes first reference on a string in DFS traverse as a primary entry and point other references
@@ -1299,32 +1323,16 @@ mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr
 void
 mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 {
-  mr_idx_t idx, i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  for (i = 0; i < count; ++i)
-    if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].ref_idx == 0)) /* primary entry for the string */
-      {
-	mr_idx_t min_idx = i;
-	/* iterate over other references on this string and find the one with minimal DFS index */
-	for (idx = ptrs->ra[i].save_params.next_untyped; idx > 0; idx = ptrs->ra[idx].save_params.next_untyped)
-	  if (ptrs->ra[idx].idx < ptrs->ra[min_idx].idx)
-	    min_idx = idx;
-	
-	if (min_idx != i) /* check if reindexing is required */
-	  {
-	    /* point other references on new primary entry */
-	    for (idx = ptrs->ra[i].save_params.next_untyped; idx > 0; idx = ptrs->ra[idx].save_params.next_untyped)
-	      ptrs->ra[idx].ref_idx = min_idx;
-
-	    /* change old primary entry to be a reference on a new one */
-	    ptrs->ra[i].ref_idx = min_idx;
-	    ptrs->ra[i].flags.is_referenced = false;
-	    ptrs->ra[i].flags.is_content_reference = true;
-	    /* configure new primary entry */
-	    ptrs->ra[min_idx].ref_idx = 0;
-	    ptrs->ra[min_idx].flags.is_referenced = true;
-	    ptrs->ra[min_idx].flags.is_content_reference = false;
-	  }
-      }
+  if ((NULL == ptrs) || (NULL == ptrs->ra))
+    return;
+  mr_ptrs_dfs (ptrs, mr_reorder_strings_visitor, NULL);
+  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  for (i = 1; i < count; ++i)
+    {
+      mr_idx_t ref_idx = ptrs->ra[i].ref_idx;
+      if ((MR_TYPE_POINTER == ptrs->ra[i].mr_type) && (ref_idx > 0) && (ptrs->ra[ref_idx].ref_idx > 0))
+	ptrs->ra[i].ref_idx = ptrs->ra[ref_idx].ref_idx;
+    }
 }
 
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
