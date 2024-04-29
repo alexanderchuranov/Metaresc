@@ -23,10 +23,11 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       if (tail)
 	while (isspace (*tail))
 	  ++tail;
-      if ((NULL == tail) || *tail)
+      bool fail = (NULL == tail) || *tail;
+      if (fail)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       xmlFree (property);
-      if ((NULL == tail) || *tail)
+      if (fail)
 	goto failure;
       ptrs->ra[idx].flags.is_referenced = true;
     }
@@ -38,10 +39,11 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       if (tail)
 	while (isspace (*tail))
 	  ++tail;
-      if ((NULL == tail) || *tail)
+      bool fail = (NULL == tail) || *tail;
+      if (fail)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       xmlFree (property);
-      if ((NULL == tail) || *tail)
+      if (fail)
 	goto failure;
     }
   /* handle REF_CONTENT property */
@@ -52,10 +54,11 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       if (tail)
 	while (isspace (*tail))
 	  ++tail;
-      if ((NULL == tail) || *tail)
+      bool fail = (NULL == tail) || *tail;
+      if (fail)
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
       xmlFree (property);
-      if ((NULL == tail) || *tail)
+      if (fail)
 	goto failure;
       ptrs->ra[idx].flags.is_content_reference = true;
     }
