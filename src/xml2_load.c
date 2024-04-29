@@ -19,7 +19,7 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF_IDX);
   if (property)
     {
-      ptrs->ra[idx].idx = strtoll (property, &tail, 0);
+      ptrs->ra[idx].idx = mr_strtouintmax (property, &tail, 0);
       if (tail)
 	while (isspace (*tail))
 	  ++tail;
@@ -34,7 +34,7 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF);
   if (property)
     {
-      ptrs->ra[idx].ref_idx = strtoll (property, &tail, 0);
+      ptrs->ra[idx].ref_idx = mr_strtouintmax (property, &tail, 0);
       if (tail)
 	while (isspace (*tail))
 	  ++tail;
@@ -48,7 +48,7 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF_CONTENT);
   if (property)
     {
-      ptrs->ra[idx].ref_idx = strtoll (property, &tail, 0);
+      ptrs->ra[idx].ref_idx = mr_strtouintmax (property, &tail, 0);
       if (tail)
 	while (isspace (*tail))
 	  ++tail;
