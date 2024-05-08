@@ -44,7 +44,7 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
   mr_idx_t idx = mr_add_ptr_to_list (ptrs);
   if (0 == idx)
     return (MR_FAILURE);
-  mr_add_child (*parent, idx, ptrs->ra);
+  mr_add_child (ptrs, *parent, idx);
 
   ptrs->ra[idx].flags = unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
   ptrs->ra[idx].fdp = name_fd;

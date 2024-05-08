@@ -30,6 +30,7 @@
 #endif /* HAVE_RPC_TYPES_H */
 
 /* Library exports */
+#define MR_NULL_IDX (0)
 #define MR_MAX_STRING_LENGTH ((unsigned int)-1)
 
 #define MR_INT_TO_STRING_BUF_SIZE (32)
@@ -1458,7 +1459,8 @@ extern char * mr_strdup (const char * str);
 extern char * mr_strndup (const char * str, size_t size);
 
 extern mr_idx_t mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
-extern void mr_add_child (mr_idx_t parent, mr_idx_t child, mr_ptrdes_t * ra);
+extern mr_idx_t mr_last_child_for_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t parent);
+extern void mr_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child);
 extern void mr_detect_type (mr_fd_t * fdp);
 #define MR_IS_STRING(X) __builtin_types_compatible_p (char, __typeof__ (*__builtin_choose_expr ((__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS) || (__builtin_classify_type (X) == MR_ARRAY_TYPE_CLASS), X, NULL)))
 #define MR_AND_IS_STRING(X) && MR_IS_STRING (X)

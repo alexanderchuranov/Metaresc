@@ -113,7 +113,7 @@ start_node: {
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (0 == idx)
     { YYERROR; }
-  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
+  mr_add_child (mr_load->ptrs, mr_load->parent, idx);
   mr_load->parent = idx;
 }
 
@@ -242,7 +242,13 @@ list: | list_element | list_element TOK_CINIT_COMMA list
 list_element: cinit
 | TOK_CINIT_DOT TOK_CINIT_ID TOK_CINIT_ASSIGN cinit {
   mr_load_t * mr_load = MR_LOAD;
-  mr_idx_t idx = mr_load->ptrs->ra[mr_load->parent].last_child;
+  mr_idx_t idx = mr_last_child_for_parent (mr_load->ptrs, mr_load->parent);
+  if (MR_NULL_IDX == idx)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INTERNAL_PARSER_ERROR);
+      YYERROR;
+    }
+
   mr_td_t * tdp = mr_load->ptrs->ra[idx].fdp ? mr_load->ptrs->ra[idx].fdp->stype.tdp : NULL;
   $2.str[$2.length] = 0;
   mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($2.str, tdp);

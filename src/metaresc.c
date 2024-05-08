@@ -558,6 +558,27 @@ mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
   return (ptrs->size / sizeof (ptrs->ra[0]) - 1);
 }
 
+mr_idx_t
+mr_last_child_for_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t parent)
+{
+  if (MR_NULL_IDX == parent)
+    return (MR_NULL_IDX);
+
+  mr_idx_t last_child = ptrs->last_child;
+  mr_ptrdes_t * ra = ptrs->ra;
+  if (MR_NULL_IDX == ra[parent].first_child)
+    return (MR_NULL_IDX);
+
+  while ((last_child != MR_NULL_IDX) && (ra[last_child].parent != parent))
+    last_child = ra[last_child].parent;
+  if (MR_NULL_IDX == last_child)
+    for (last_child = ra[parent].first_child;
+	 ra[last_child].next != MR_NULL_IDX;
+	 last_child = ra[last_child].next);
+  ptrs->last_child = last_child;
+  return (last_child);
+}
+
 /**
  * Setup referencies between parent and child node in serialization tree
  * @param parent index of parent node
@@ -565,24 +586,23 @@ mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
  * @param ptrs resizable array with pointers descriptors
  */
 void
-mr_add_child (mr_idx_t parent, mr_idx_t child, mr_ptrdes_t * ra)
+mr_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child)
 {
-  if (child < 0)
-    return;
+  mr_ptrdes_t * ra = ptrs->ra;
+  mr_idx_t last_child = mr_last_child_for_parent (ptrs, parent);
 
+  ptrs->last_child = child;
   ra[child].parent = parent;
-  if (parent == 0)
+  if (MR_NULL_IDX == parent)
     return;
 
-  mr_idx_t last_child = ra[parent].last_child;
-  if (last_child == 0)
+  if (MR_NULL_IDX == ra[parent].first_child)
     ra[parent].first_child = child;
   else
     {
-      ra[last_child].next = child;
-      ra[child].next = 0;
+      if (last_child != MR_NULL_IDX)
+	ra[last_child].next = child;
     }
-  ra[parent].last_child = child;
 }
 
 mr_hash_value_t

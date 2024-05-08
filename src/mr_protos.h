@@ -84,6 +84,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_FIELD_NOT_FOUND, , "Field '%s' is not found in type '%s'."),
 	      (MR_MESSAGE_YAML_ERROR, , "YAML error '%s'."),
 	      (MR_MESSAGE_UNKNOWN_FIELD_NAME, , "Field name '%s' is not valid."),
+	      (MR_MESSAGE_INTERNAL_PARSER_ERROR, , "Internal parser error: load structure is corrupted."),
 	      (MR_MESSAGE_ZERO_SIZE_FIELD, , "Field '%s' has zero size."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
 	      )
@@ -581,7 +582,6 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_idx_t, parent, , "parent index"),
 		(mr_idx_t, next, , "next sibling index"),
 		(mr_idx_t, first_child, , "first child index"),
-		(mr_idx_t, last_child, , "last child index"),
 
 		ANON_UNION (),
 		(void *, _data_, , "by default try to resolve pointer as void *"),
@@ -608,6 +608,7 @@ TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		{ .offset = offsetof (mr_ra_ptrdes_t, size) }, "offset"),
 		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
+		(mr_idx_t, last_child, , "last added child index"),
 		(mr_ptrdes_type_t, ptrdes_type, , "discriminator for anonymous union in mr_ptrdes_t"),
 		(mr_res_t, res, , "extra pointer for user data"),
 		)

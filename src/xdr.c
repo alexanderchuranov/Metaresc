@@ -303,7 +303,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, m
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
 
-  mr_add_child (parent, idx, ptrs->ra);
+  mr_add_child (ptrs, parent, idx);
 
   xdr_handler_t load_handler = NULL;
   if ((fdp->stype.mr_type >= 0) && (fdp->stype.mr_type < MR_TYPE_LAST))

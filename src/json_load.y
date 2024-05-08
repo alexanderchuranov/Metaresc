@@ -104,7 +104,7 @@ push_node: {
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (0 == idx)
     { YYERROR; }
-  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
+  mr_add_child (mr_load->ptrs, mr_load->parent, idx);
   mr_load->parent = idx;
   mr_load->ptrs->ra[idx].idx = idx;
 }
@@ -151,7 +151,13 @@ members: member | member TOK_JSON_COMMA members
 
 member: TOK_JSON_STRING TOK_JSON_SEMICOLON element {
   mr_load_t * mr_load = MR_LOAD;
-  mr_idx_t idx = mr_load->ptrs->ra[mr_load->parent].last_child;
+  mr_idx_t idx = mr_last_child_for_parent (mr_load->ptrs, mr_load->parent);
+  if (MR_NULL_IDX == idx)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INTERNAL_PARSER_ERROR);
+      YYERROR;
+    }
+
   $1.str[$1.length] = 0;
   mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($1.str, NULL);
   if (NULL == mr_load->ptrs->ra[idx].fdp)

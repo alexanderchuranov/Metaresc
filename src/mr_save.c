@@ -608,8 +608,9 @@ mr_get_persistent_fd (mr_ptrdes_t * ra, mr_idx_t idx)
 }
 
 static mr_idx_t
-move_nodes_to_parent (mr_ptrdes_t * ra, mr_idx_t ref_parent, mr_idx_t idx)
+move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
 {
+  mr_ptrdes_t * ra = ptrs->ra;
   mr_idx_t count, ref_idx = ra[ref_parent].first_child;
   mr_size_t element_size = ra[idx].fdp->stype.size;
   mr_idx_t parent = ra[idx].parent;
@@ -618,10 +619,9 @@ move_nodes_to_parent (mr_ptrdes_t * ra, mr_idx_t ref_parent, mr_idx_t idx)
     
   ra[ref_parent].ref_idx = ref_idx;
   ra[ref_parent].first_child = 0;
-  ra[ref_parent].last_child = 0;
   ra[ref_idx].flags |= MR_IS_REFERENCED;
 			  
-  for (count = 0; ref_idx > 0; ++count)
+  for (count = 0; ref_idx != MR_NULL_IDX; ++count)
     {
       mr_idx_t next = ra[ref_idx].next;
       ra[ref_idx].fdp = mr_get_persistent_fd (ra, idx);
@@ -631,7 +631,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, mr_idx_t ref_parent, mr_idx_t idx)
       ra[ref_idx].flags |= ra[idx].flags & MR_IS_UNNAMED;
 
       ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
-      mr_add_child (parent, ref_idx, ra);
+      mr_add_child (ptrs, parent, ref_idx);
       ref_idx = next;
     }
   return (count);
@@ -720,7 +720,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	      previously saved resizable pointer was pointing to the same address, but was shorter.
 	      we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
 	    */
-	    return (move_nodes_to_parent (ra, ref_parent, idx));
+	    return (move_nodes_to_parent (ptrs, ref_parent, idx));
 	  else
 	    {
 	      typeof (ra[idx].MR_SIZE) size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
@@ -764,7 +764,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	      ra[parent].MR_SIZE += size_delta; /* increase size of resizable array on detected delta */
 	    }
 
-	  return (move_nodes_to_parent (ra, ref_parent, idx));
+	  return (move_nodes_to_parent (ptrs, ref_parent, idx));
 	}
     }
   
@@ -818,7 +818,7 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 		  && !ref_is_parent (ra, parent, ref_idx))
 		{
 		  *resolved = true;
-		  return (move_nodes_to_parent (ra, ref_parent, idx));
+		  return (move_nodes_to_parent (ptrs, ref_parent, idx));
 		}
 	    break;
 	  }
@@ -1057,7 +1057,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
 	}
     }
 
-  mr_add_child (parent, idx, mr_save_data->ptrs.ra);
+  mr_add_child (&mr_save_data->ptrs, parent, idx);
 
   /* route saving handler */
   mr_save_handler_t save_handler = NULL;
@@ -1346,7 +1346,6 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_ord
     return (MR_SUCCESS);
 
   mr_idx_t * next = &ptrs->ra[idx].first_child;
-  mr_idx_t last_child = 0;
   while (*next > 0)
     if ((ptrs->ra[*next].first_child == 0) && (ptrs->ra[*next].ref_idx == 0)
 	&& !(ptrs->ra[*next].flags & MR_IS_NULL) && !(ptrs->ra[*next].flags & MR_IS_REFERENCED)
@@ -1358,11 +1357,7 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_ord
 	*next = ptrs->ra[*next].next;
       }
     else
-      {
-	last_child = *next;
-	next = &ptrs->ra[*next].next;
-      }
-  ptrs->ra[idx].last_child = last_child;
+      next = &ptrs->ra[*next].next;
 
   return (MR_SUCCESS);
 }
@@ -1465,7 +1460,7 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, mr_idx_t idx)
       break;
       /* unlink string content, but keep links from content on a parent node */
     case MR_TYPE_STRING:
-      ptrdes->first_child = ptrdes->last_child = 0;
+      ptrdes->first_child = 0;
       break;
     case MR_TYPE_CHAR_ARRAY:
 #define MR_VECTOR_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_ARRAY, MR_TYPE_POINTER))

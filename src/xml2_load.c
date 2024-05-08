@@ -93,7 +93,7 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
 	mr_idx_t child = mr_xml2_load (node_, ptrs);
 	if (0 == child)
 	  goto failure;
-	mr_add_child (idx, child, ptrs->ra);
+	mr_add_child (ptrs, idx, child);
       }
   
   return (idx);

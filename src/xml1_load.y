@@ -155,7 +155,7 @@ start_tag: {
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (0 == idx)
     { YYERROR; }
-  mr_add_child (mr_load->parent, idx, mr_load->ptrs->ra);
+  mr_add_child (mr_load->ptrs, mr_load->parent, idx);
   mr_load->parent = idx;
 }
 
