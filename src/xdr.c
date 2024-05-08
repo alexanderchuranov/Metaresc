@@ -266,7 +266,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 		continue;
 	      }
 
-	    if (ptrs->ra[i].flags.is_content_reference)
+	    if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
 	      {
 		if (NULL == data)
 		  {
@@ -701,7 +701,7 @@ xdr_save_union (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t ptrdes = { /* temporary pointer descriptor for this string */
     .data.ptr = &dummy_str,
     .ref_idx = 0,
-    .flags = { .is_null = false, .is_referenced = false, .is_content_reference = false, },
+    .flags = 0,
   };
 
   if (ptrs->ra[idx].first_child > 0)
@@ -953,13 +953,13 @@ xdr_save_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_uint32_t (xdrs, &ref_idx))
     return (MR_FAILURE);
   
-  if (true == ptrs->ra[idx].flags.is_null)
+  if (ptrs->ra[idx].flags & MR_IS_NULL)
     return (MR_SUCCESS);
 
   if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
     return (MR_FAILURE);
   
-  if (ptrs->ra[idx].flags.is_opaque_data && (ptrs->ra[idx].MR_SIZE > 0))
+  if ((ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA) && (ptrs->ra[idx].MR_SIZE > 0))
     return (xdr_opaque (xdrs, *(void**)ptrs->ra[idx].data.ptr, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);
 
   return (MR_SUCCESS);
@@ -999,7 +999,7 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     return (MR_FAILURE);
   ptrs->ra[idx].ref_idx = ref_idx;
   
-  if (true == ptrs->ra[idx].flags.is_null)
+  if (ptrs->ra[idx].flags & MR_IS_NULL)
     return (MR_SUCCESS);
       
   if (ptrs->ra[idx].ref_idx == 0)
@@ -1009,7 +1009,7 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
 
-      if (!ptrs->ra[idx].flags.is_opaque_data)
+      if (!(ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA))
 	{
 	  if (fd_.stype.size > 0) /* types with zero size used for dynamics strings allocation */
 	    {
@@ -1035,7 +1035,7 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 	  return (MR_FAILURE);
 	}
 
-      if (ptrs->ra[idx].flags.is_opaque_data)
+      if (ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA)
 	return (xdr_opaque (xdrs, *data, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);
       else
 	{

@@ -82,7 +82,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 	    continue;
 	  }
 
-	if (ptrs->ra[i].flags.is_content_reference)
+	if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
 	  {
 	    if (NULL == data)
 	      {
@@ -233,7 +233,7 @@ mr_load_func (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
 
   *(void**)ptrdes->data.ptr = NULL;
-  if (!ptrdes->flags.is_null)
+  if (!(ptrdes->flags & MR_IS_NULL))
     switch (ptrdes->value_type)
       {
       case MR_VT_INT:
@@ -425,7 +425,7 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
   *(char**)ptrdes->data.ptr = NULL;
-  if (!ptrdes->flags.is_null && (ptrdes->ref_idx == 0))
+  if (!(ptrdes->flags & MR_IS_NULL) && (ptrdes->ref_idx == 0))
     {
       switch (ptrdes->value_type)
 	{
@@ -451,7 +451,7 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 	  else
 	    {
 	      ptrdes->ref_idx = -ptrdes->load_params.vt_int;
-	      ptrdes->flags.is_content_reference = true;
+	      ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
 	    }
 	  break;
 	  
@@ -698,7 +698,7 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     return (MR_FAILURE);
 
   *data = NULL; /* default initializer */
-  if (ptrdes->flags.is_null)
+  if (ptrdes->flags & MR_IS_NULL)
     return (MR_SUCCESS);
   
   if (MR_VT_INT == ptrdes->value_type)
@@ -708,7 +708,7 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       else
 	{
 	  ptrdes->ref_idx = -ptrdes->load_params.vt_int;
-	  ptrdes->flags.is_content_reference = true;
+	  ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
 	}
     }
 
@@ -848,7 +848,7 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].flags.typed && ptrs->ra[idx].fdp)
+  if ((ptrs->ra[idx].flags & MR_IS_TYPED) && ptrs->ra[idx].fdp)
     if (fdp->stype.tdp != ptrs->ra[idx].fdp->stype.tdp)
       {
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str,

@@ -28,7 +28,7 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
 	  if ((ref_idx < count) && (ptrs->ra[ref_idx].idx == 0))
 	    {
 	      ptrs->ra[ref_idx].idx = ref_idx;
-	      ptrs->ra[ref_idx].flags.is_referenced = true;
+	      ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
 	      if (ref_idx <= max_idx)
 		table[ref_idx] = ref_idx;
 	    }
@@ -46,7 +46,7 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
     return (MR_FAILURE);
   mr_add_child (*parent, idx, ptrs->ra);
 
-  ptrs->ra[idx].flags.unnamed = unnamed;
+  ptrs->ra[idx].flags = unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
   ptrs->ra[idx].fdp = name_fd;
   
   if (value)
@@ -62,14 +62,14 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
       if (1 == sscanf (alias, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, &prop_value))
 	{
 	  ptrs->ra[idx].ref_idx = prop_value;
-	  ptrs->ra[idx].flags.is_content_reference = true;
+	  ptrs->ra[idx].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else if (1 == sscanf (alias, MR_YAML_REF_ANCHOR_TMPLT, &prop_value))
 	ptrs->ra[idx].ref_idx = prop_value;
       else
 	{
 	  if (strcmp (alias, MR_ISNULL) == 0)
-	    ptrs->ra[idx].flags.is_null = true;
+	    ptrs->ra[idx].flags |= MR_IS_NULL;
 	  else
 	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, alias);
 	}
@@ -80,7 +80,7 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
       if (1 == sscanf (anchor, MR_YAML_ANCHOR_TMPLT, &prop_value))
 	{
 	  ptrs->ra[idx].idx = prop_value;
-	  ptrs->ra[idx].flags.is_referenced = true;
+	  ptrs->ra[idx].flags |= MR_IS_REFERENCED;
 	}
       else
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, anchor);
@@ -118,7 +118,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	    {
 	    case YAML_SCALAR_EVENT:
 	      if (parent > 0)
-		if (!ptrs->ra[parent].flags.unnamed)
+		if (!(ptrs->ra[parent].flags & MR_IS_UNNAMED))
 		  {
 		    mr_fd_t * name_fdp = mr_get_any_fd_by_name ((char*)event.data.scalar.value, NULL);
 		    if (NULL == name_fdp)
@@ -170,7 +170,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 		status = MR_FAILURE;
 	      else
 		{
-		  status = ptrs->ra[parent].flags.unnamed ? MR_FAILURE : MR_SUCCESS;
+		  status = (ptrs->ra[parent].flags & MR_IS_UNNAMED) ? MR_FAILURE : MR_SUCCESS;
 		  parent = ptrs->ra[parent].parent;
 		}
 	      break;
@@ -184,7 +184,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 		status = MR_FAILURE;
 	      else
 		{
-		  status = !ptrs->ra[parent].flags.unnamed ? MR_FAILURE : MR_SUCCESS;
+		  status = !(ptrs->ra[parent].flags & MR_IS_UNNAMED) ? MR_FAILURE : MR_SUCCESS;
 		  parent = ptrs->ra[parent].parent;
 		}
 	      break;

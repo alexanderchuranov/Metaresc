@@ -91,7 +91,7 @@ scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  if (true == ptrdes->flags.is_null)
+  if (ptrdes->flags & MR_IS_NULL)
     return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
 
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
@@ -161,7 +161,7 @@ scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  if (ptrdes->flags.is_null || (ptrdes->ref_idx > 0))
+  if ((ptrdes->flags & MR_IS_NULL) || (ptrdes->ref_idx > 0))
     return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
   return (0);
 }
@@ -231,13 +231,13 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
 	mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
 			    limit_level * MR_SCM_INDENT_SPACES, "",
-			    (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+			    (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
 			    (uint32_t)ptrs->ra[ptrs->ra[idx].ref_idx].idx);
       if (count < 0)
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].flags.is_referenced)
+  if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
 	mr_ra_str->mr_size--;
@@ -260,9 +260,9 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
   if (ptrs->ra[idx].fdp)
     if (ptrs->ra[idx].fdp->meta)
       if (0 == strcmp (ptrs->ra[idx].fdp->meta, MR_PTR_META))
-	ptrs->ra[idx].flags.unnamed = false;
+	ptrs->ra[idx].flags &= ~MR_IS_UNNAMED;
 
-  if (!ptrs->ra[idx].flags.unnamed)
+  if (!(ptrs->ra[idx].flags & MR_IS_UNNAMED))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
 	mr_ra_str->mr_size--;
@@ -286,7 +286,7 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].flags.unnamed && !(ptrs->ra[idx].first_child > 0) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n'))
+  if ((ptrs->ra[idx].flags & MR_IS_UNNAMED) && !(ptrs->ra[idx].first_child > 0) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n'))
     {
       mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
@@ -316,7 +316,7 @@ scm_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
   int limit_level = MR_LIMIT_LEVEL (level);
   int count;
 
-  if (!ptrs->ra[idx].flags.unnamed || (ptrs->ra[idx].first_child > 0))
+  if (!(ptrs->ra[idx].flags & MR_IS_UNNAMED) || (ptrs->ra[idx].first_child > 0))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
 	{
@@ -326,7 +326,7 @@ scm_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
 	    return (MR_FAILURE);
 	}
       count = mr_ra_printf (mr_ra_str, ")%s\n",
-			    (!ptrs->ra[idx].flags.unnamed && (ptrs->ra[idx].first_child > 0)) ? ")" : "");
+			    (!(ptrs->ra[idx].flags & MR_IS_UNNAMED) && (ptrs->ra[idx].first_child > 0)) ? ")" : "");
       if (count < 0)
 	return (MR_FAILURE);
     }

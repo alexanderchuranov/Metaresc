@@ -128,7 +128,7 @@ casted_value
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
 	{
 	  mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
 	mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
@@ -152,7 +152,7 @@ value
 	}
       else
 	{
-	  mr_load->ptrs->ra[mr_load->parent].flags.typed = true;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_TYPED;
 	  mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd; /* for mr_ptr_t union we get name of union member from type cast */
 	}
     }
@@ -189,7 +189,7 @@ compaund
   }
 | TOK_CINIT_NULL {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
+  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
   mr_load->ptrs->ra[mr_load->parent].load_params.vt_int = 0;
   }

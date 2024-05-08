@@ -33,7 +33,7 @@ yaml_ra_string_writer (void * data, unsigned char * buffer, size_t size)
 static inline yaml_char_t *
 yaml_get_anchor (char * anchor, mr_ptrdes_t * ptrdes)
 {
-  if (!ptrdes->flags.is_referenced)
+  if (!(ptrdes->flags & MR_IS_REFERENCED))
     return (NULL);
   
   sprintf (anchor, MR_YAML_ANCHOR_TMPLT, (uint32_t)ptrdes->idx);
@@ -45,7 +45,7 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
-  if (!ptrdes->flags.unnamed)
+  if (!(ptrdes->flags & MR_IS_UNNAMED))
     {
       yaml_event_t name_event;
       char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
@@ -67,7 +67,7 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
   if ((ptrdes->ref_idx > 0) && (ptrdes->ref_idx < ptrs->size / sizeof (ptrs->ra[0])))
     {
       char anchor[MR_MAX (sizeof (MR_YAML_REF_ANCHOR_TMPLT), sizeof (MR_YAML_REF_ANCHOR_CONTENT_TMPLT)) + (sizeof (ptrdes->idx) * 12 + 4) / 5];
-      if (ptrdes->flags.is_content_reference)
+      if (ptrdes->flags & MR_IS_CONTENT_REFERENCE)
 	sprintf (anchor, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs->ra[ptrdes->ref_idx].idx);
       else
 	sprintf (anchor, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs->ra[ptrdes->ref_idx].idx);
@@ -76,7 +76,7 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
       if (!yaml_alias_event_initialize (event, (yaml_char_t *)anchor))
 	return (MR_FAILURE);
     }
-  else if (ptrdes->flags.is_null)
+  else if (ptrdes->flags & MR_IS_NULL)
     {
       yaml_event_delete (event);
       if (!yaml_alias_event_initialize (event, (yaml_char_t *)MR_ISNULL))
@@ -236,9 +236,9 @@ yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptr
   if (ptrdes->fdp)
     if (ptrdes->fdp->meta)
       if (0 == strcmp (ptrdes->fdp->meta, MR_PTR_META))
-	ptrdes->flags.unnamed = false;
+	ptrdes->flags &= ~MR_IS_UNNAMED;
   
-  if (ptrdes->flags.is_null || (ptrdes->ref_idx > 0))
+  if ((ptrdes->flags & MR_IS_NULL) || (ptrdes->ref_idx > 0))
     return (yaml_emit_string (&mr_yaml_context->emitter, "", ptrs, idx));
 
   return (yaml_pre_save_array (mr_yaml_context, ptrs, idx));
@@ -248,7 +248,7 @@ static mr_status_t
 yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  if (ptrdes->flags.is_null || (ptrdes->ref_idx > 0))
+  if ((ptrdes->flags & MR_IS_NULL) || (ptrdes->ref_idx > 0))
     return (MR_SUCCESS);
   
   return (yaml_post_save_array (mr_yaml_context, ptrs, idx));
@@ -257,7 +257,7 @@ yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * pt
 static mr_status_t
 yaml_pre_save_anon_union (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
-  ptrs->ra[idx].flags.unnamed = false;
+  ptrs->ra[idx].flags &= ~MR_IS_UNNAMED;
   return (yaml_pre_save_struct (mr_yaml_context, ptrs, idx));
 }
 

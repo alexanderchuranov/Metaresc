@@ -186,14 +186,14 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
       if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
 	{
 	  mr_load->ptrs->ra[mr_load->parent].ref_idx = attr;
-	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else
 	error = MR_REF;
     }
   else if (0 == mr_substrcmp (MR_ISNULL, &$3))
     {
-      mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
+      mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
     }
 
   if (error)

@@ -205,7 +205,7 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_
   if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
 
-  if (!ptrs->ra[idx].flags.unnamed)
+  if (!(ptrs->ra[idx].flags & MR_IS_UNNAMED))
     {
       if (mr_ra_append_char (mr_ra_str, '.') < 0)
 	return (MR_FAILURE);
@@ -218,15 +218,15 @@ cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_
 
   if (ptrs->ra[idx].ref_idx > 0)
     if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT,
-		      (ptrs->ra[idx].flags.is_content_reference) ? MR_REF_CONTENT : MR_REF,
+		      (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
 		      (uint32_t)ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags.is_referenced)
+  if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
     if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_IDX, (uint32_t)ptrs->ra[idx].idx) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags.is_null || (ptrs->ra[idx].ref_idx > 0))
+  if ((ptrs->ra[idx].flags & MR_IS_NULL) || (ptrs->ra[idx].ref_idx > 0))
     {
       if (mr_ra_append_string (mr_ra_str, CINIT_NULL) < 0)
 	return (MR_FAILURE);

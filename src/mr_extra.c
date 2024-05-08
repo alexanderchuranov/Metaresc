@@ -27,7 +27,7 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
       ptrdes->res.data.ptr = NULL;
       ptrdes->res.type = NULL;
 
-      if ((ptrdes->ref_idx == 0) && (ptrdes->idx > 0) && !ptrdes->flags.is_null &&
+      if ((ptrdes->ref_idx == 0) && (ptrdes->idx > 0) && !(ptrdes->flags & MR_IS_NULL) &&
 	  ((MR_TYPE_POINTER == ptrdes->mr_type) || (MR_TYPE_STRING == ptrdes->mr_type)))
 	{
 	  if (NULL == ptrdes->data.ptr)
@@ -98,7 +98,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
       and are not references on other nodes (ptrs->ra[i].ref_idx < 0)
       and not a NULL pointer
     */
-    if ((ptrs->ra[i].idx > 0) && (ptrs->ra[i].ref_idx == 0) && (true != ptrs->ra[i].flags.is_null))
+    if ((ptrs->ra[i].idx > 0) && (ptrs->ra[i].ref_idx == 0) && !(ptrs->ra[i].flags & MR_IS_NULL))
       switch (ptrs->ra[i].mr_type)
 	{
 	case MR_TYPE_STRING:
@@ -159,11 +159,11 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	{
 	case MR_TYPE_STRING:
 	  /* update pointer in the copy */
-	  if (!ptrs->ra[i].flags.is_null)
+	  if (!(ptrs->ra[i].flags & MR_IS_NULL))
 	    {
 	      if (ptrs->ra[i].ref_idx == 0)
 		*(char**)ptrs->ra[i].res.data.ptr = ptrs->ra[i].res.type;
-	      else if (ptrs->ra[i].flags.is_content_reference)
+	      else if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
 		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.type;
 	      else
 		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.data.ptr;

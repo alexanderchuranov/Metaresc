@@ -29,7 +29,7 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       xmlFree (property);
       if (fail)
 	goto failure;
-      ptrs->ra[idx].flags.is_referenced = true;
+      ptrs->ra[idx].flags |= MR_IS_REFERENCED;
     }
   /* handle REF property */
   property = (char*)xmlGetProp (node, (unsigned char*)MR_REF);
@@ -60,12 +60,12 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       xmlFree (property);
       if (fail)
 	goto failure;
-      ptrs->ra[idx].flags.is_content_reference = true;
+      ptrs->ra[idx].flags |= MR_IS_CONTENT_REFERENCE;
     }
   property = (char*)xmlGetProp (node, (unsigned char*)MR_ISNULL);
   if (property)
     {
-      ptrs->ra[idx].flags.is_null = true;
+      ptrs->ra[idx].flags |= MR_IS_NULL;
       xmlFree (property);
     }
 

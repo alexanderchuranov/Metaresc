@@ -126,7 +126,7 @@ value
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
 	{
 	  mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags.is_content_reference = true;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
 	mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
@@ -171,7 +171,7 @@ compaund
 }
 | TOK_SCM_FALSE {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
+  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
   mr_load->ptrs->ra[mr_load->parent].load_params.vt_int = false;
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
   }

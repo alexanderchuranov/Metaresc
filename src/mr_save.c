@@ -619,7 +619,7 @@ move_nodes_to_parent (mr_ptrdes_t * ra, mr_idx_t ref_parent, mr_idx_t idx)
   ra[ref_parent].ref_idx = ref_idx;
   ra[ref_parent].first_child = 0;
   ra[ref_parent].last_child = 0;
-  ra[ref_idx].flags.is_referenced = true;
+  ra[ref_idx].flags |= MR_IS_REFERENCED;
 			  
   for (count = 0; ref_idx > 0; ++count)
     {
@@ -627,7 +627,8 @@ move_nodes_to_parent (mr_ptrdes_t * ra, mr_idx_t ref_parent, mr_idx_t idx)
       ra[ref_idx].fdp = mr_get_persistent_fd (ra, idx);
       ra[ref_idx].mr_type = ra[idx].mr_type;
       ra[ref_idx].mr_type_aux = ra[idx].mr_type_aux;
-      ra[ref_idx].flags.unnamed = ra[idx].flags.unnamed;
+      ra[ref_idx].flags &= ~MR_IS_UNNAMED;
+      ra[ref_idx].flags |= ra[idx].flags & MR_IS_UNNAMED;
 
       ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
       mr_add_child (parent, ref_idx, ra);
@@ -651,9 +652,9 @@ mr_save_pointer_content (mr_idx_t idx, mr_save_data_t * mr_save_data)
   mr_fd_t fd_;
 
   memset (&fd_, 0, sizeof (fd_));
-  fd_.stype.tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
   fd_.stype.mr_type = ptrdes->mr_type_aux;
-  fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
+  fd_.stype.tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
+  fd_.stype.mr_type_aux = ptrdes->fdp ? ptrdes->fdp->mr_type_base : MR_TYPE_VOID;
 
   fd_.non_persistent = true;
   fd_.unnamed = true;
@@ -707,7 +708,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	  *resolved = true;
 	  /* new resizable pointer is a part of already saved */
 	  ra[parent].ref_idx = ref_idx;
-	  ra[ref_idx].flags.is_referenced = true;
+	  ra[ref_idx].flags |= MR_IS_REFERENCED;
 	  return (ra[idx].MR_SIZE / element_size);
 	}
       /* otherwise we can handle only match with another resizable pointer */
@@ -730,7 +731,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	      */
 	      ra[ref_parent].MR_SIZE += size_delta;
 	      ra[parent].ref_idx = ref_idx;
-	      ra[ref_idx].flags.is_referenced = true;
+	      ra[ref_idx].flags |= MR_IS_REFERENCED;
 	      mr_idx_t nodes_added = mr_save_pointer_content (ref_parent, mr_save_data);
 	      if (nodes_added == 0)
 		return (0);
@@ -797,7 +798,7 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	  case MR_TYPE_STRING:
 	    *resolved = true;
 	    ra[parent].ref_idx = ref_idx;
-	    ra[ref_idx].flags.is_referenced = true;
+	    ra[ref_idx].flags |= MR_IS_REFERENCED;
 	    return (1);
 
 	  case MR_TYPE_POINTER:
@@ -998,7 +999,8 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
   ptrdes->fdp = parent_fdp;
   ptrdes->mr_type = parent_fdp->stype.mr_type;
   ptrdes->mr_type_aux = parent_fdp->stype.mr_type_aux;
-  ptrdes->flags.unnamed = parent_fdp->unnamed;
+  ptrdes->flags &= ~MR_IS_UNNAMED;
+  ptrdes->flags |= parent_fdp->unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
   ptrdes->MR_SIZE = parent_fdp->stype.size;
   
   ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
@@ -1023,7 +1025,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
   mr_save_data->ptrs.ra[idx].fdp = fdp;
   mr_save_data->ptrs.ra[idx].mr_type = fdp->stype.mr_type;
   mr_save_data->ptrs.ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  mr_save_data->ptrs.ra[idx].flags.unnamed = fdp->unnamed;
+  mr_save_data->ptrs.ra[idx].flags = fdp->unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
   mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
 
   mr_save_data->ptrs.ra[idx].parent = parent;
@@ -1080,7 +1082,7 @@ mr_save_func (mr_save_data_t * mr_save_data)
 {
   mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   if (NULL == *(void**)mr_save_data->ptrs.ra[idx].data.ptr)
-    mr_save_data->ptrs.ra[idx].flags.is_null = true;
+    mr_save_data->ptrs.ra[idx].flags |= MR_IS_NULL;
   return (1);
 }
 
@@ -1096,7 +1098,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
   char * str = *(char**)mr_save_data->ptrs.ra[idx].data.ptr;
   if (NULL == str)
     {
-      mr_save_data->ptrs.ra[idx].flags.is_null = true;
+      mr_save_data->ptrs.ra[idx].flags |= MR_IS_NULL;
       return (1);
     }
   mr_fd_t fd_ = *mr_save_data->ptrs.ra[idx].fdp;
@@ -1211,7 +1213,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux;
-      fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
+      fd_.stype.mr_type_aux = fd_.mr_type_base;
       if (!mr_save_data->ptrs.ra[idx].fdp->non_persistent)
 	{
 	  mr_ptrdes_t src, dst;
@@ -1304,11 +1306,11 @@ mr_reorder_strings_visitor (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_d
       else if (ptrs->ra[idx].idx < ptrs->ra[ref_idx].idx)
 	{
 	  ptrs->ra[idx].ref_idx = 0;
-	  ptrs->ra[idx].flags.is_referenced = true;
-	  ptrs->ra[idx].flags.is_content_reference = false;
+	  ptrs->ra[idx].flags |= MR_IS_REFERENCED;
+	  ptrs->ra[idx].flags &= ~MR_IS_CONTENT_REFERENCE;
 	  ptrs->ra[ref_idx].ref_idx = idx;
-	  ptrs->ra[ref_idx].flags.is_referenced = false;
-	  ptrs->ra[ref_idx].flags.is_content_reference = true;
+	  ptrs->ra[ref_idx].flags &= ~MR_IS_REFERENCED;
+	  ptrs->ra[ref_idx].flags |= MR_IS_CONTENT_REFERENCE;
 	}
     }
   return (MR_SUCCESS);
@@ -1347,7 +1349,7 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_ord
   mr_idx_t last_child = 0;
   while (*next > 0)
     if ((ptrs->ra[*next].first_child == 0) && (ptrs->ra[*next].ref_idx == 0)
-	&& !ptrs->ra[*next].flags.is_null && !ptrs->ra[*next].flags.is_referenced
+	&& !(ptrs->ra[*next].flags & MR_IS_NULL) && !(ptrs->ra[*next].flags & MR_IS_REFERENCED)
 	&& ((REMOVE_IF_EMPTY >> ptrs->ra[*next].mr_type) & 1))
       {
 	bool * need_reindex = context;
@@ -1415,7 +1417,7 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, mr_idx_t idx)
     {
     case MR_TYPE_POINTER:
       if (((MR_TYPE_NONE == ptrdes->mr_type_aux) || (MR_TYPE_VOID == ptrdes->mr_type_aux)) &&
-	  !ptrdes->flags.is_null)
+	  !(ptrdes->flags & MR_IS_NULL))
 	{
 	  void * data_ptr = *(void**)ptrdes->data.ptr;
 	  mr_idx_t alloc_idx = mr_add_ptr_to_list (ptrs);
@@ -1423,7 +1425,7 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, mr_idx_t idx)
 	  if (0 == alloc_idx)
 	    return (MR_FAILURE); /* memory allocation error occured */
 	  ptrdes = &ptrs->ra[idx]; /* ptrs->ra might be reallocated in mr_add_ptr_to_list */
-	  ptrdes->flags.is_null = true; /* void pointers are saved as NULL */
+	  ptrdes->flags |= MR_IS_NULL; /* void pointers are saved as NULL */
 
 	  /* populate attributes of new node */
 	  ptrs->ra[alloc_idx].data.ptr = data_ptr;
@@ -1457,7 +1459,7 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, mr_idx_t idx)
 		  ref_idx = ref_idx_real;
 		}
 	      ptrdes->ref_idx = ref_idx;
-	      ptrs->ra[ref_idx].flags.is_referenced = true;
+	      ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
 	    }
 	}
       break;
@@ -1489,9 +1491,9 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, mr_idx_t idx)
 	    /* move ref_idx on a parent node (of type MR_TYPE_STRING) */
 	    ptrdes->ref_idx = ref_parent;
 	    /* mark that this is a reference on content, but not on an entry itself */
-	    ptrdes->flags.is_content_reference = true;
+	    ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
 	    /* mark parent entry as referenced */
-	    ptrs->ra[ref_parent].flags.is_referenced = true;
+	    ptrs->ra[ref_parent].flags |= MR_IS_REFERENCED;
 	  }
     }
 
@@ -1526,7 +1528,7 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
   void ** data = mr_save_data->ptrs.ra[idx].data.ptr;
 
   if (NULL == *data)
-    mr_save_data->ptrs.ra[idx].flags.is_null = true; /* return empty node if pointer is NULL */
+    mr_save_data->ptrs.ra[idx].flags |= MR_IS_NULL; /* return empty node if pointer is NULL */
   else
     {
       mr_ptrdes_t src, dst;
@@ -1553,15 +1555,15 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       if (ptrdes->fdp->name.str != NULL)
 	if (0 == strcmp (ptrdes->fdp->name.str, MR_OPAQUE_DATA_STR))
 	  {
-	    if (ptrdes->MR_SIZE <= 0)
-	      ptrdes->flags.is_null = true;
+	    if (ptrdes->MR_SIZE == 0)
+	      ptrdes->flags |= MR_IS_NULL;
 	    else
-	      ptrdes->flags.is_opaque_data = true;
+	      ptrdes->flags |= MR_IS_OPAQUE_DATA;
 	  }
 
-      if (!ptrdes->flags.is_opaque_data &&
+      if (!(ptrdes->flags & MR_IS_OPAQUE_DATA) &&
 	  ((0 == element_size) || (ptrdes->MR_SIZE < element_size)))
-	ptrdes->flags.is_null = true;
+	ptrdes->flags |= MR_IS_NULL;
     }
   return (1);
 }  
@@ -1604,8 +1606,8 @@ mr_save (void * data, mr_fd_t * fdp)
 	if ((MR_TYPE_POINTER == mr_save_data.ptrs.ra[i].mr_type) &&
 	    (MR_TYPE_VOID != mr_save_data.ptrs.ra[i].mr_type_aux) &&
 	    (MR_TYPE_NONE != mr_save_data.ptrs.ra[i].mr_type_aux) &&
-	    !mr_save_data.ptrs.ra[i].flags.is_opaque_data &&
-	    !mr_save_data.ptrs.ra[i].flags.is_null)
+	    !(mr_save_data.ptrs.ra[i].flags & MR_IS_OPAQUE_DATA) &&
+	    !(mr_save_data.ptrs.ra[i].flags & MR_IS_NULL))
 	  {
 	    nodes_added = mr_save_pointer_content (i, &mr_save_data);
 	    if (nodes_added == 0)

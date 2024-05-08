@@ -139,7 +139,7 @@ value: object | array
  }
 | TOK_JSON_NULL {
   mr_load_t * mr_load = MR_LOAD;
-  mr_load->ptrs->ra[mr_load->parent].flags.is_null = true;
+  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
   mr_load->ptrs->ra[mr_load->parent].load_params.vt_int = 0;
   }
