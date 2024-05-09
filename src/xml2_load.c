@@ -17,7 +17,7 @@ mr_load_xml_property (xmlNodePtr node, char * property_name, mr_idx_t * idx, mr_
 	  ++tail;
       bool fail = (NULL == tail) || *tail;
       if (fail)
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, property);
+	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, property);
       xmlFree (property);
       if (fail)
 	return (MR_FAILURE);

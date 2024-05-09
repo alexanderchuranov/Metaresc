@@ -134,7 +134,10 @@ casted_value
 	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
-	mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
+	{
+	  mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCED;
+	}
     }
 }
 

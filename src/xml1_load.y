@@ -20,14 +20,22 @@
 }
 
 %code {
-  static inline bool tail_is_not_blank (mr_substr_t * substr, int offset)
+  static inline mr_status_t load_idx (mr_substr_t * substr, mr_idx_t * idx, mr_ptrdes_flags_t * flags, mr_ptrdes_flags_t flag)
   {
+    uint32_t attr;
+    int offset;
+    if (1 != sscanf (substr->str, "%" SCNu32 "%n", &attr, &offset))
+      return (MR_FAILURE);
     if (offset > substr->length)
-      return (true);
+      return (MR_FAILURE);
     for ( ; offset < substr->length; ++offset)
       if (!isspace (substr->str[offset]))
 	break;
-    return (offset < substr->length);
+    if (offset < substr->length)
+      return (MR_FAILURE);
+    *idx = attr;
+    *flags |= flag;
+    return (MR_SUCCESS);
   }
 }
 
@@ -163,46 +171,24 @@ nested_tags: | nested_tags tag
 
 properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE {
   mr_load_t * mr_load = MR_LOAD;
-  char * error = NULL;
-  uint32_t attr = 0;
-  int offset = 0;
+  mr_status_t status = MR_SUCCESS;
 
   if (0 == mr_substrcmp (MR_REF_IDX, &$3))
-    {
-      if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].idx = attr;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCED;
-	}
-      else
-	error = MR_REF_IDX;
-    }
+    status = load_idx (&$5, &mr_load->ptrs->ra[mr_load->parent].idx, &mr_load->ptrs->ra[mr_load->parent].flags, MR_IS_REFERENCED);
   else if (0 == mr_substrcmp (MR_REF, &$3))
-    {
-      if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].first_child = attr;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
-	}
-      else
-	error = MR_REF;
-    }
+    status = load_idx (&$5, &mr_load->ptrs->ra[mr_load->parent].first_child, &mr_load->ptrs->ra[mr_load->parent].flags, MR_IS_REFERENCE);
   else if (0 == mr_substrcmp (MR_REF_CONTENT, &$3))
-    {
-      if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].first_child = attr;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
-	}
-      else
-	error = MR_REF_CONTENT;
-    }
+    status = load_idx (&$5, &mr_load->ptrs->ra[mr_load->parent].first_child, &mr_load->ptrs->ra[mr_load->parent].flags, MR_IS_CONTENT_REFERENCE);
   else if (0 == mr_substrcmp (MR_ISNULL, &$3))
     mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
 
-  if (error)
+  if (status != MR_SUCCESS)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_CANT_READ_PROPERTY, error);
+      char property[1 << 6];
+      int length = MR_MIN ($3.length, sizeof (property) - 1);
+      memcpy (property, $3.str, length);
+      property[length] = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, property);
       YYERROR;
     }
  }
