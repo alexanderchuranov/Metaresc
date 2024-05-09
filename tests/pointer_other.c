@@ -197,8 +197,8 @@ START_TEST (backward_ref_is_a_field) {
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx > 0) &&
+	  int ref_idx = ptrs.ra[i].first_child;
+	  if ((ptrs.ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
 	      (ptrs.ra[ref_idx].idx == 0))
 	    {
 	      pointer_resolved_correctly = false;
@@ -233,8 +233,8 @@ START_TEST (tda_same_ptr_and_size) {
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx > 0) &&
+	  int ref_idx = ptrs.ra[i].first_child;
+	  if ((ptrs.ra[i].flags & MR_IS_REFERENCE) &&
 	      (ptrs.ra[ref_idx].parent > 0) &&
 	      (ptrs.ra[ptrs.ra[ref_idx].parent].first_child != ref_idx))
 	    {
@@ -263,8 +263,8 @@ START_TEST (tda_same_ptr_and_bigger) {
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx > 0) &&
+	  int ref_idx = ptrs.ra[i].first_child;
+	  if ((ptrs.ra[i].flags & MR_IS_REFERENCE) &&
 	      (ptrs.ra[ref_idx].next < 0))
 	    {
 	      pointer_resolved_correctly = false;
@@ -284,7 +284,7 @@ START_TEST (tda_overlapping_1) {
   tda.size1 = 2 * sizeof (array[0]);
   tda.da2 = &array[0];
   tda.size2 = 2 * sizeof (array[0]);
-  
+
   mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
   bool pointer_resolved_correctly = false;
   if (ptrs.ra != NULL)
@@ -292,8 +292,7 @@ START_TEST (tda_overlapping_1) {
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if (ref_idx > 0)
+	  if (ptrs.ra[i].flags & MR_IS_REFERENCE)
 	    {
 	      pointer_resolved_correctly = true;
 	      break;
@@ -318,10 +317,9 @@ START_TEST (tda_overlapping_2) {
   if (ptrs.ra != NULL)
     {
       int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
+      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
 	{
-	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if (ref_idx > 0)
+	  if (ptrs.ra[i].flags & MR_IS_REFERENCE)
 	    {
 	      pointer_resolved_correctly = true;
 	      break;
@@ -347,7 +345,7 @@ START_TEST (tda_overlapping_3) {
     {
       int i;
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	if (ptrs.ra[i].ref_idx > 0)
+	if (ptrs.ra[i].flags & MR_IS_REFERENCE)
 	  {
 	    pointer_resolved_correctly = true;
 	    break;
@@ -381,8 +379,8 @@ START_TEST (pointer_to_array) {
     {
       for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
 	{
-	  int ref_idx = ptrs.ra[i].ref_idx;
-	  if ((ref_idx > 0) &&
+	  int ref_idx = ptrs.ra[i].first_child;
+	  if ((ptrs.ra[i].flags & MR_IS_REFERENCE) &&
 	      (ptrs.ra[ref_idx].parent > 0) &&
 	      (ptrs.ra[ptrs.ra[ref_idx].parent].first_child != ref_idx))
 	    {

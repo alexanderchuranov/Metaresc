@@ -17,7 +17,7 @@ if HAVE_INT128
 endif
 
 if HAVE_PERFTEST
-  check_PROGRAMS += union_resolution_complexity
+  check_PROGRAMS += union_resolution_complexity perf_save
 endif
 
 if HAVE_EXECINFO

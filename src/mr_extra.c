@@ -27,7 +27,7 @@ mr_free_recursively (mr_ra_ptrdes_t * ptrs)
       ptrdes->res.data.ptr = NULL;
       ptrdes->res.type = NULL;
 
-      if ((ptrdes->ref_idx == 0) && (ptrdes->idx > 0) && !(ptrdes->flags & MR_IS_NULL) &&
+      if ((ptrdes->idx != MR_NULL_IDX) && !(ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
 	  ((MR_TYPE_POINTER == ptrdes->mr_type) || (MR_TYPE_STRING == ptrdes->mr_type)))
 	{
 	  if (NULL == ptrdes->data.ptr)
@@ -94,11 +94,10 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
   /* NB index 1 is excluded */
   for (i = 2; i < count; ++i)
     /*
-      process nodes that are in final save graph (ptrs->ra[i].idx > 0)
-      and are not references on other nodes (ptrs->ra[i].ref_idx < 0)
-      and not a NULL pointer
+      process nodes that are in final save graph (ptrs->ra[i].idx != MR_NULL_IDX)
+      and are not references on other nodes and not a NULL pointer
     */
-    if ((ptrs->ra[i].idx > 0) && (ptrs->ra[i].ref_idx == 0) && !(ptrs->ra[i].flags & MR_IS_NULL))
+    if ((ptrs->ra[i].idx != MR_NULL_IDX) && !(ptrs->ra[i].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
       switch (ptrs->ra[i].mr_type)
 	{
 	case MR_TYPE_STRING:
@@ -116,7 +115,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    char * copy;
 	    typeof (ptrs->ra[i].MR_SIZE) size = ptrs->ra[i].MR_SIZE;
 
-	    if (ptrs->ra[i].first_child == 0)
+	    if (ptrs->ra[i].first_child == MR_NULL_IDX)
 	      {
 		mr_td_t * tdp = ptrs->ra[i].fdp ? ptrs->ra[i].fdp->stype.tdp : NULL;
 		char * name = ptrs->ra[i].fdp ? ptrs->ra[i].fdp->name.str : MR_DEFAULT_NODE_NAME;
@@ -141,7 +140,7 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	    /* copy data from source */
 	    memcpy (copy, *(void**)ptrs->ra[i].data.ptr, size);
 	    /* go thru all childs and calculate their addresses in newly allocated chunk */
-	    for (idx = ptrs->ra[i].first_child; idx > 0; idx = ptrs->ra[idx].next)
+	    for (idx = ptrs->ra[i].first_child; idx != MR_NULL_IDX; idx = ptrs->ra[idx].next)
 	      ptrs->ra[idx].res.data.ptr = &copy[(char*)ptrs->ra[idx].data.ptr - *(char**)ptrs->ra[i].data.ptr];
 	  }
 	  break;
@@ -154,31 +153,26 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 
   /* now we should update pointers in a copy */
   for (i = 2; i < count; ++i)
-    if ((ptrs->ra[i].idx > 0)) /* skip invalid nodes */
+    if ((ptrs->ra[i].idx != MR_NULL_IDX)) /* skip invalid nodes */
       switch (ptrs->ra[i].mr_type)
 	{
 	case MR_TYPE_STRING:
 	  /* update pointer in the copy */
 	  if (!(ptrs->ra[i].flags & MR_IS_NULL))
 	    {
-	      if (ptrs->ra[i].ref_idx == 0)
-		*(char**)ptrs->ra[i].res.data.ptr = ptrs->ra[i].res.type;
+	      if (ptrs->ra[i].flags & MR_IS_REFERENCE)
+		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.data.ptr;
 	      else if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
-		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.type;
+		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.type;
 	      else
-		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.data.ptr;
+		*(char**)ptrs->ra[i].res.data.ptr = ptrs->ra[i].res.type;
 	    }
 	  break;
 
 	case MR_TYPE_POINTER:
 	  /* update pointer in the copy */
-	  if (ptrs->ra[i].ref_idx == 0)
-	    {
-	      if (ptrs->ra[i].first_child > 0)
-		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.data.ptr;
-	    }
-	  else
-	    *(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].ref_idx].res.data.ptr;
+	  if (ptrs->ra[i].first_child != MR_NULL_IDX)
+	    *(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.data.ptr;
 	  break;
 
 	default:
@@ -192,9 +186,12 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
     if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].res.type != NULL))
       MR_FREE (ptrs->ra[i].res.type);
     else if ((MR_TYPE_POINTER == ptrs->ra[i].mr_type) &&
-	     (ptrs->ra[i].first_child > 0))
+	     (ptrs->ra[i].first_child != MR_NULL_IDX))
       if (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr != NULL)
-	MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
+	{
+	  MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
+	  ptrs->ra[ptrs->ra[i].first_child].res.data.ptr = NULL;
+	}
 
   return (MR_FAILURE);
 }
@@ -296,7 +293,7 @@ node_hash (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order,
       {
 	mr_idx_t child;
 	mr_hash_value_t hash_value = 0;
-	for (child = ptrdes->first_child; child > 0; child = ptrs->ra[child].next)
+	for (child = ptrdes->first_child; child != MR_NULL_IDX; child = ptrs->ra[child].next)
 	  hash_value = hash_value * 3 + ptrs->ra[child].res.data.uintptr + 1;
 	ptrdes->res.data.uintptr = hash_value;
 	break;
@@ -384,7 +381,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
       if (diff)
 	return (diff);
 
-      if (x_i->idx == 0)
+      if (x_i->idx == MR_NULL_IDX)
 	continue;
       
       diff = memcmp (x_i, y_i, offsetof (mr_ptrdes_t, data));

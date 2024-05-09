@@ -268,10 +268,12 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
 		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", name) < 0)
     return (MR_FAILURE);
   
-  if (ptrs->ra[idx].ref_idx > 0)
-    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT,
-		      (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
-		      (uint32_t)ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+  if (ptrs->ra[idx].flags & MR_IS_REFERENCE)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
+      return (MR_FAILURE);
+
+  if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_CONTENT, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
       return (MR_FAILURE);
   
   if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
@@ -282,14 +284,14 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
     if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
       return (MR_FAILURE);
 
-  if ((ptrs->ra[idx].flags & MR_IS_NULL) || (ptrs->ra[idx].ref_idx > 0))
+  if (ptrs->ra[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     empty_tag = true;
   else
     {
       if (mr_ra_append_char (mr_ra_str, '>') < 0)
 	return (MR_FAILURE);
       int count = save_handler (mr_ra_str, &ptrs->ra[idx]);
-      empty_tag = (ptrs->ra[idx].first_child == 0) && (0 == count);
+      empty_tag = (ptrs->ra[idx].first_child == MR_NULL_IDX) && (0 == count);
       if (empty_tag)
 	mr_ra_str->data.string[--mr_ra_str->MR_SIZE] = 0;
     }
@@ -309,7 +311,7 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
 static mr_status_t
 xml1_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
-  if (ptrs->ra[idx].first_child > 0)
+  if ((ptrs->ra[idx].first_child != MR_NULL_IDX) && !(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "") < 0)
       return (MR_FAILURE);
 
@@ -395,7 +397,7 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t o
   mr_ra_str->MR_SIZE = sizeof ("");
   mr_ra_str->data.string[0] = 0;
   
-  if (!(ptrs->ra[idx].flags & MR_IS_NULL) && (ptrs->ra[idx].ref_idx == 0))
+  if (!(ptrs->ra[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
       return (MR_FAILURE);
 
@@ -415,24 +417,28 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t o
   if (mr_ra_str->data.string[0])
     xmlNodeSetContent (node, BAD_CAST mr_ra_str->data.string);
   
-  if (ptrs->ra[idx].ref_idx > 0)
+  if (ptrs->ra[idx].flags & MR_IS_REFERENCE)
     {
       /* set REF_IDX property */
-      sprintf (number, "%" SCNd32, ptrs->ra[ptrs->ra[idx].ref_idx].idx);
-      xmlSetProp (node,
-		  BAD_CAST ((ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF),
-		  BAD_CAST number);
+      sprintf (number, "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
+      xmlSetProp (node, BAD_CAST MR_REF, BAD_CAST number);
+    }
+  if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
+    {
+      /* set REF_CONTENT property */
+      sprintf (number, "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
+      xmlSetProp (node, BAD_CAST MR_REF_CONTENT, BAD_CAST number);
     }
   if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
     {
       /* set IDX property */
-      sprintf (number, "%" SCNd32, ptrs->ra[idx].idx);
+      sprintf (number, "%" SCNd32, (uint32_t)ptrs->ra[idx].idx);
       xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
     }
   if (ptrs->ra[idx].flags & MR_IS_NULL)
     xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
-  if (parent > 0)
+  if (parent != MR_NULL_IDX)
     xmlAddChild (ptrs->ra[parent].res.data.ptr, node);
 
   return (MR_SUCCESS);

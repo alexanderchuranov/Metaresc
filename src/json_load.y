@@ -102,7 +102,7 @@ pop_node: {
 push_node: { 
   mr_load_t * mr_load = MR_LOAD; 
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
-  if (0 == idx)
+  if (MR_NULL_IDX == idx)
     { YYERROR; }
   mr_add_child (mr_load->ptrs, mr_load->parent, idx);
   mr_load->parent = idx;

@@ -553,7 +553,7 @@ mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = mr_rarray_allocate_element ((void*)&ptrs->ra, &ptrs->size, &ptrs->alloc_size, sizeof (ptrs->ra[0]));
   if (NULL == ptrdes)
-    return (0);
+    return (MR_NULL_IDX);
   memset (ptrdes, 0, sizeof (*ptrdes));
   return (ptrs->size / sizeof (ptrs->ra[0]) - 1);
 }
@@ -571,10 +571,10 @@ mr_last_child_for_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t parent)
 
   while ((last_child != MR_NULL_IDX) && (ra[last_child].parent != parent))
     last_child = ra[last_child].parent;
+
   if (MR_NULL_IDX == last_child)
-    for (last_child = ra[parent].first_child;
-	 ra[last_child].next != MR_NULL_IDX;
-	 last_child = ra[last_child].next);
+    for (last_child = ra[parent].first_child; ra[last_child].next != MR_NULL_IDX; last_child = ra[last_child].next);
+
   ptrs->last_child = last_child;
   return (last_child);
 }

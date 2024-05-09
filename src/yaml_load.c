@@ -17,15 +17,15 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
     return;
 
   for (i = 1; i < count; ++i)
-    if (ptrs->ra[i].idx > 0)
+    if (ptrs->ra[i].idx != MR_NULL_IDX)
       table[ptrs->ra[i].idx] = i;
 
   for (i = 1; i < count; ++i)
     {
-      int ref_idx = ptrs->ra[i].ref_idx;
-      if (ref_idx > 0)
+      int ref_idx = ptrs->ra[i].first_child;
+      if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
 	if ((ref_idx > max_idx) || (table[ref_idx] == 0))
-	  if ((ref_idx < count) && (ptrs->ra[ref_idx].idx == 0))
+	  if ((ref_idx < count) && (ptrs->ra[ref_idx].idx == MR_NULL_IDX))
 	    {
 	      ptrs->ra[ref_idx].idx = ref_idx;
 	      ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
@@ -42,7 +42,7 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
 {
   uint32_t prop_value = 0;
   mr_idx_t idx = mr_add_ptr_to_list (ptrs);
-  if (0 == idx)
+  if (MR_NULL_IDX == idx)
     return (MR_FAILURE);
   mr_add_child (ptrs, *parent, idx);
 
@@ -61,11 +61,14 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
     {
       if (1 == sscanf (alias, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, &prop_value))
 	{
-	  ptrs->ra[idx].ref_idx = prop_value;
+	  ptrs->ra[idx].first_child = prop_value;
 	  ptrs->ra[idx].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else if (1 == sscanf (alias, MR_YAML_REF_ANCHOR_TMPLT, &prop_value))
-	ptrs->ra[idx].ref_idx = prop_value;
+	{
+	  ptrs->ra[idx].first_child = prop_value;
+	  ptrs->ra[idx].flags |= MR_IS_REFERENCE;
+	}
       else
 	{
 	  if (strcmp (alias, MR_ISNULL) == 0)
@@ -96,7 +99,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 {
   yaml_parser_t parser;
   mr_status_t status;
-  mr_idx_t parent = 0;
+  mr_idx_t parent = MR_NULL_IDX;
 
   if (NULL == str)
     return (MR_FAILURE);
@@ -117,7 +120,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	  switch (event.type)
 	    {
 	    case YAML_SCALAR_EVENT:
-	      if (parent > 0)
+	      if (parent != MR_NULL_IDX)
 		if (!(ptrs->ra[parent].flags & MR_IS_UNNAMED))
 		  {
 		    mr_fd_t * name_fdp = mr_get_any_fd_by_name ((char*)event.data.scalar.value, NULL);
@@ -166,7 +169,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	      break;
 	      
 	    case YAML_MAPPING_END_EVENT:
-	      if (parent == 0)
+	      if (parent == MR_NULL_IDX)
 		status = MR_FAILURE;
 	      else
 		{
@@ -180,7 +183,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	      break;
 	      
 	    case YAML_SEQUENCE_END_EVENT:
-	      if (parent == 0)
+	      if (parent == MR_NULL_IDX)
 		status = MR_FAILURE;
 	      else
 		{
@@ -195,7 +198,7 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 	    case YAML_STREAM_START_EVENT:
 	    case YAML_DOCUMENT_START_EVENT:
 	    case YAML_DOCUMENT_END_EVENT:
-	      status = (0 == parent) ? MR_SUCCESS : MR_FAILURE;
+	      status = (MR_NULL_IDX == parent) ? MR_SUCCESS : MR_FAILURE;
 	      break;
 	      
 	    case YAML_NO_EVENT:

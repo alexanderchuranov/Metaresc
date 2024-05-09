@@ -109,7 +109,7 @@ scm: start_node scm_stmt {
 start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
-  if (0 == idx)
+  if (MR_NULL_IDX == idx)
     { YYERROR; }
   mr_add_child (mr_load->ptrs, mr_load->parent, idx);
   mr_load->parent = idx;
@@ -122,10 +122,13 @@ value
   if ($1.id.str && $1.id.length)
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
-	mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
+	{
+	  mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
+	}
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
 	{
-	  mr_load->ptrs->ra[mr_load->parent].ref_idx = $1.ivalue;
+	  mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
 	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))

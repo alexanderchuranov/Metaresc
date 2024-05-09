@@ -30,7 +30,7 @@
     array.ra[count - 1].next = &array.ra[0];				\
     array.ra[count - 1].mr_ptr.ptr = "string";				\
     typed_list.root = &array.ra[0];					\
-    clock_t _time = clock ();						\
+    clock_t _start = clock ();						\
     ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);		\
       ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\
 		     "Serialization for method " #METHOD " failed.");	\
@@ -48,7 +48,8 @@
 	MR_FREE_RECURSIVELY (array_t, &array_);				\
 	MR_FREE (ra.data.ptr);						\
 	MR_FREE (array.ra);						\
-	return (clock () - _time);					\
+	clock_t _finish = clock ();					\
+	return (_finish - _start);					\
   }									\
 									\
   START_TEST (test_performance) {					\

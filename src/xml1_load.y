@@ -153,7 +153,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
 start_tag: { 
   mr_load_t * mr_load = MR_LOAD; 
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
-  if (0 == idx)
+  if (MR_NULL_IDX == idx)
     { YYERROR; }
   mr_add_child (mr_load->ptrs, mr_load->parent, idx);
   mr_load->parent = idx;
@@ -170,14 +170,20 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
   if (0 == mr_substrcmp (MR_REF_IDX, &$3))
     {
       if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
-	mr_load->ptrs->ra[mr_load->parent].idx = attr;
+	{
+	  mr_load->ptrs->ra[mr_load->parent].idx = attr;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCED;
+	}
       else
 	error = MR_REF_IDX;
     }
   else if (0 == mr_substrcmp (MR_REF, &$3))
     {
       if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
-	mr_load->ptrs->ra[mr_load->parent].ref_idx = attr;
+	{
+	  mr_load->ptrs->ra[mr_load->parent].first_child = attr;
+	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
+	}
       else
 	error = MR_REF;
     }
@@ -185,16 +191,14 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
     {
       if ((1 == sscanf ($5.str, "%" SCNu32 "%n", &attr, &offset)) || tail_is_not_blank (&$5, offset))
 	{
-	  mr_load->ptrs->ra[mr_load->parent].ref_idx = attr;
+	  mr_load->ptrs->ra[mr_load->parent].first_child = attr;
 	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
 	}
       else
-	error = MR_REF;
+	error = MR_REF_CONTENT;
     }
   else if (0 == mr_substrcmp (MR_ISNULL, &$3))
-    {
-      mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
-    }
+    mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
 
   if (error)
     {

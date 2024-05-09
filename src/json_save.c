@@ -221,7 +221,7 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
   
   bool unnamed = !!(ptrs->ra[idx].flags & MR_IS_UNNAMED);
   mr_idx_t parent = ptrs->ra[idx].parent;
-  if (unnamed && (parent > 0))
+  if (unnamed && (parent != MR_NULL_IDX))
     if ((MR_STRUCT_TYPES >> ptrs->ra[parent].mr_type) & 1)
       unnamed = false;
   
@@ -236,12 +236,12 @@ json_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].ref_idx > 0)
+  if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
       if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
 	if (mr_ra_append_char (mr_ra_str, '-') < 0)
 	  return (MR_FAILURE);
-      if (mr_ra_printf (mr_ra_str, "%" SCNu32, (uint32_t)ptrs->ra[ptrs->ra[idx].ref_idx].idx) < 0)
+      if (mr_ra_printf (mr_ra_str, "%" SCNu32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
 	return (MR_FAILURE);
     }
   else if (ptrs->ra[idx].flags & MR_IS_NULL)
@@ -262,7 +262,7 @@ json_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_
     if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].next > 0)
+  if (ptrs->ra[idx].next != MR_NULL_IDX)
     if (mr_ra_append_char (mr_ra_str, ',') < 0)
       return (MR_FAILURE);
 

@@ -146,7 +146,7 @@ static int
 scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   char * str = *(char**)ptrdes->data.ptr;
-  if ((NULL == str) || (ptrdes->ref_idx > 0))
+  if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
   else
     return (mr_ra_printf_quote_string (mr_ra_str, str, "\\x%02x;"));
@@ -161,7 +161,7 @@ scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  if ((ptrdes->flags & MR_IS_NULL) || (ptrdes->ref_idx > 0))
+  if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
   return (0);
 }
@@ -169,7 +169,7 @@ scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_printf_compaund (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  if (ptrdes->first_child == 0)
+  if (ptrdes->first_child == MR_NULL_IDX)
     return (mr_ra_append_string (mr_ra_str, "()"));
   return (0);
 }
@@ -225,14 +225,14 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
   int limit_level = MR_LIMIT_LEVEL (level);
   int count;
 
-  if (ptrs->ra[idx].ref_idx > 0)
+  if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
 	mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
 			    limit_level * MR_SCM_INDENT_SPACES, "",
 			    (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
-			    (uint32_t)ptrs->ra[ptrs->ra[idx].ref_idx].idx);
+			    (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
       if (count < 0)
 	return (MR_FAILURE);
     }
@@ -248,7 +248,7 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].parent > 0)
+  if (ptrs->ra[idx].parent != MR_NULL_IDX)
     if ((ptrs->ra[ptrs->ra[idx].parent].first_child != idx) &&
 	(mr_ra_str->data.string[mr_ra_str->mr_size - 2] != '\n'))
       {
@@ -272,7 +272,7 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].first_child > 0)
+  if ((ptrs->ra[idx].first_child != MR_NULL_IDX) && !(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
 	{
@@ -286,7 +286,7 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
 	return (MR_FAILURE);
     }
 
-  if ((ptrs->ra[idx].flags & MR_IS_UNNAMED) && !(ptrs->ra[idx].first_child > 0) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n'))
+  if ((ptrs->ra[idx].flags & MR_IS_UNNAMED) && (ptrs->ra[idx].first_child == MR_NULL_IDX) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n'))
     {
       mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
@@ -316,7 +316,8 @@ scm_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
   int limit_level = MR_LIMIT_LEVEL (level);
   int count;
 
-  if (!(ptrs->ra[idx].flags & MR_IS_UNNAMED) || (ptrs->ra[idx].first_child > 0))
+  if (!(ptrs->ra[idx].flags & MR_IS_UNNAMED) ||
+      ((ptrs->ra[idx].first_child != MR_NULL_IDX) && !(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
 	{
@@ -326,7 +327,8 @@ scm_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
 	    return (MR_FAILURE);
 	}
       count = mr_ra_printf (mr_ra_str, ")%s\n",
-			    (!(ptrs->ra[idx].flags & MR_IS_UNNAMED) && (ptrs->ra[idx].first_child > 0)) ? ")" : "");
+			    (!(ptrs->ra[idx].flags & (MR_IS_UNNAMED | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+			     && (ptrs->ra[idx].first_child != MR_NULL_IDX)) ? ")" : "");
       if (count < 0)
 	return (MR_FAILURE);
     }

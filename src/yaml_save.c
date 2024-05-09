@@ -64,13 +64,14 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
 	}
     }
 
-  if ((ptrdes->ref_idx > 0) && (ptrdes->ref_idx < ptrs->size / sizeof (ptrs->ra[0])))
+  if ((ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
+      (ptrdes->first_child < ptrs->size / sizeof (ptrs->ra[0])))
     {
       char anchor[MR_MAX (sizeof (MR_YAML_REF_ANCHOR_TMPLT), sizeof (MR_YAML_REF_ANCHOR_CONTENT_TMPLT)) + (sizeof (ptrdes->idx) * 12 + 4) / 5];
       if (ptrdes->flags & MR_IS_CONTENT_REFERENCE)
-	sprintf (anchor, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs->ra[ptrdes->ref_idx].idx);
+	sprintf (anchor, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs->ra[ptrdes->first_child].idx);
       else
-	sprintf (anchor, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs->ra[ptrdes->ref_idx].idx);
+	sprintf (anchor, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs->ra[ptrdes->first_child].idx);
 
       yaml_event_delete (event);
       if (!yaml_alias_event_initialize (event, (yaml_char_t *)anchor))
@@ -238,7 +239,7 @@ yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptr
       if (0 == strcmp (ptrdes->fdp->meta, MR_PTR_META))
 	ptrdes->flags &= ~MR_IS_UNNAMED;
   
-  if ((ptrdes->flags & MR_IS_NULL) || (ptrdes->ref_idx > 0))
+  if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     return (yaml_emit_string (&mr_yaml_context->emitter, "", ptrs, idx));
 
   return (yaml_pre_save_array (mr_yaml_context, ptrs, idx));
@@ -248,7 +249,7 @@ static mr_status_t
 yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  if ((ptrdes->flags & MR_IS_NULL) || (ptrdes->ref_idx > 0))
+  if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     return (MR_SUCCESS);
   
   return (yaml_post_save_array (mr_yaml_context, ptrs, idx));

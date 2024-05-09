@@ -48,28 +48,28 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
     }
 
   for (i = 0; i < count; ++i)
-    if (ptrs->ra[i].idx > 0)
+    if (ptrs->ra[i].idx != MR_NULL_IDX)
       {
 	/* checking indexes collision */
-	if (table[ptrs->ra[i].idx] > 0)
+	if (table[ptrs->ra[i].idx] != 0)
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, ptrs->ra[i].idx);
 	table[ptrs->ra[i].idx] = i;
       }
 
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
-    if (ptrs->ra[i].ref_idx > 0)
+    if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
       {
-	if (ptrs->ra[i].ref_idx > max_idx)
+	if (ptrs->ra[i].first_child > max_idx)
 	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].ref_idx);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
 	    continue;
 	  }
 	
-	mr_idx_t idx = table[ptrs->ra[i].ref_idx];
+	mr_idx_t idx = table[ptrs->ra[i].first_child];
 	if (idx == 0)
 	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].ref_idx);
+	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
 	    continue;
 	  }
 
@@ -87,6 +87,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 	    if (NULL == data)
 	      {
 		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+		continue;
 	      }
 	    else
 	      data = *(void**)data;
@@ -425,7 +426,7 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   
   *(char**)ptrdes->data.ptr = NULL;
-  if (!(ptrdes->flags & MR_IS_NULL) && (ptrdes->ref_idx == 0))
+  if (!(ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     {
       switch (ptrdes->value_type)
 	{
@@ -447,10 +448,13 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 
 	case MR_VT_INT:
 	  if (ptrdes->load_params.vt_int >= 0)
-	    ptrdes->ref_idx = ptrdes->load_params.vt_int;
+	    {
+	      ptrdes->first_child = ptrdes->load_params.vt_int;
+	      ptrdes->flags |= MR_IS_REFERENCE;
+	    }
 	  else
 	    {
-	      ptrdes->ref_idx = -ptrdes->load_params.vt_int;
+	      ptrdes->first_child = -ptrdes->load_params.vt_int;
 	      ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
 	    }
 	  break;
@@ -471,7 +475,7 @@ mr_get_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_l
   typeof (str_len) max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
   mr_status_t status = MR_SUCCESS;
 
-  if ((str_len >= max_size) && (ptrdes->parent > 0))
+  if ((str_len >= max_size) && (ptrdes->parent != MR_NULL_IDX))
     if (MR_TYPE_POINTER == ptrs->ra[ptrdes->parent].mr_type)
       {
 	void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
@@ -581,7 +585,7 @@ mr_load_struct (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     }
 
   /* loop on all subnodes */
-  for (idx = first_child; (MR_SUCCESS == status) && (idx > 0); idx = ptrs->ra[idx].next)
+  for (idx = first_child; (MR_SUCCESS == status) && (idx != MR_NULL_IDX); idx = ptrs->ra[idx].next)
     {
       char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : NULL;
       mr_fd_t * next_fdp = name ? mr_get_fd_by_name (tdp, name) : NULL;
@@ -617,7 +621,7 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 
   if (0 == count)
     {
-      if (ptrs->ra[idx].first_child > 0)
+      if (ptrs->ra[idx].first_child != MR_NULL_IDX)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
 	  return (MR_FAILURE);
@@ -649,7 +653,7 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 
   /* loop on subnodes */
   i = 0;
-  for (idx = ptrs->ra[idx].first_child; idx > 0; idx = ptrs->ra[idx].next)
+  for (idx = ptrs->ra[idx].first_child; idx != MR_NULL_IDX; idx = ptrs->ra[idx].next)
     {
       /* check if array index is in range */
       if (i >= count)
@@ -704,18 +708,21 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (MR_VT_INT == ptrdes->value_type)
     {
       if (ptrdes->load_params.vt_int >= 0)
-	ptrdes->ref_idx = ptrdes->load_params.vt_int;
+	{
+	  ptrdes->first_child = ptrdes->load_params.vt_int;
+	  ptrdes->flags |= MR_IS_REFERENCE;
+	}
       else
 	{
-	  ptrdes->ref_idx = -ptrdes->load_params.vt_int;
+	  ptrdes->first_child = -ptrdes->load_params.vt_int;
 	  ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
 	}
     }
 
-  if (ptrdes->ref_idx > 0)
+  if (ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     return (MR_SUCCESS);
 
-  for (node = ptrs->ra[idx].first_child; node > 0; node = ptrs->ra[node].next)
+  for (node = ptrs->ra[idx].first_child; node != MR_NULL_IDX; node = ptrs->ra[node].next)
     ++count;
   if (0 == count)
     return (MR_SUCCESS);
@@ -744,7 +751,7 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   
   /* load recursively */
   count = 0;
-  for (node = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (node > 0); node = ptrs->ra[node].next)
+  for (node = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (node != MR_NULL_IDX); node = ptrs->ra[node].next)
     status = mr_load (*data + count++ * fd_.stype.size, &fd_, node, ptrs);
 
   ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
@@ -775,7 +782,7 @@ mr_load_anon_union (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       (MR_VT_SUBSTR == ptrdes->value_type)
       && (0 == ptrdes->load_params.vt_substr.length) && /* content must be an empty string */
       (ptrdes->fdp != NULL) && /* node must have a name */
-      (ptrdes->next > 0))
+      (ptrdes->next != MR_NULL_IDX))
     if (NULL == ptrs->ra[ptrdes->next].fdp) /* there should be a next node without name */
       {
 	ptrs->ra[ptrdes->next].fdp = ptrdes->fdp;
