@@ -28,6 +28,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_OUT_OF_MEMORY, , "Out of memory."),
 	      (MR_MESSAGE_UNEXPECTED_END, , "Unexpected end of file or end of string."),
 	      (MR_MESSAGE_UNEXPECTED_DATA, , "Unexpected data in stream."),
+	      (MR_MESSAGE_UNEXPECTED_SUBNODES, , "Unexpected subnodes for pointer marked as a reference."),
 	      (MR_MESSAGE_UNBALANCED_TAGS, , "Unbalanced tags."),
 	      (MR_MESSAGE_XDR_WRONG_ENCODING_MODE, , "XDR wrong encoding mode."),
 	      (MR_MESSAGE_XDR_SAVE_FAILED, , "XDR save to resizable array failed."),
