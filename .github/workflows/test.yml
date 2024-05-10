@@ -40,7 +40,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure HAVE_BISON=yes YACC=$(brew --prefix)/opt/bison/bin/bison CFLAGS="-Wno-unused-but-set-variable" --without-perftest
+        run: ./configure HAVE_BISON=yes YACC=$(brew --prefix)/opt/bison/bin/bison CFLAGS="-Wno-unused-but-set-variable"
       - name: make check
         run: make check -j 2 || ( cat tests/test-suite.log ; false )
 
