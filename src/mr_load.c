@@ -238,7 +238,11 @@ mr_load_func (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     switch (ptrdes->value_type)
       {
       case MR_VT_INT:
-	*(void**)ptrdes->data.ptr = (void*)(uintptr_t)ptrdes->load_params.vt_int;
+	{
+	  mr_intmax_t vt_int;
+	  memcpy (&vt_int, &ptrdes->load_params.vt_int, sizeof (vt_int));
+	  *(void**)ptrdes->data.ptr = (void*)(uintptr_t)vt_int;
+	}
 	break;
       case MR_VT_ID:
       case MR_VT_SUBSTR:
