@@ -1194,24 +1194,14 @@ process_td (mr_ptr_t key, const void * context)
     for (i = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]) - 2; i >= 0; --i)
       {
 	mr_fd_t * fdp = tdp->param.struct_param.fields[i];
+	bool need_size_specification = false;
 
 	if (MR_TYPE_POINTER == fdp->stype.mr_type)
 	  {
 	    if (fdp->stype.mr_type_aux == MR_TYPE_NONE)
 	      fdp->stype.mr_type_aux = MR_TYPE_VOID;
 
-	    if (fdp->stype.mr_type_aux != MR_TYPE_VOID)
-	      {
-#define POINTER_SIZE_SUFFIX "_size"
-		assert (fdp->name.str != NULL);
-		char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));
-		assert (size != NULL);
-		strcpy (size, fdp->name.str);
-		strcat (size, POINTER_SIZE_SUFFIX);
-		fdp->res.ptr = size;
-		fdp->res_type = mr_strdup ("string");
-		assert (fdp->res_type != NULL);
-	      }
+	    need_size_specification = (fdp->stype.mr_type_aux != MR_TYPE_VOID);
 	  }
 
 	if (MR_TYPE_ARRAY == fdp->stype.mr_type)
@@ -1222,6 +1212,20 @@ process_td (mr_ptr_t key, const void * context)
 	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) &&
 		(fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0])))
 	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
+	    need_size_specification = true;
+	  }
+
+	if (need_size_specification)
+	  {
+#define POINTER_SIZE_SUFFIX "_size"
+	    assert (fdp->name.str != NULL);
+	    char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));
+	    assert (size != NULL);
+	    strcpy (size, fdp->name.str);
+	    strcat (size, POINTER_SIZE_SUFFIX);
+	    fdp->res.ptr = size;
+	    fdp->res_type = mr_strdup ("string");
+	    assert (fdp->res_type != NULL);
 	  }
 
 	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == fdp->stype.mr_type_ptr))
@@ -1257,7 +1261,7 @@ free_td (mr_ptr_t key, const void * context)
 static void
 tweak_mr_conf ()
 {
-  mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "meta", "res", "res_type", "mr_size", "next");
+  mr_type_void_fields ("mr_td_t", "mr_ptr_fd", "meta", "res", "res_type", "mr_size", "is_union_discriminator", "is_union_discriminator_set");
   mr_type_void_fields ("mr_struct_param_t", "field_by_name");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
   mr_type_void_fields ("mr_td_param_t", "func_param");
