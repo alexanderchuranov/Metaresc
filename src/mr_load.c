@@ -447,16 +447,20 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 	  break;
 
 	case MR_VT_INT:
-	  if (ptrdes->load_params.vt_int >= 0)
-	    {
-	      ptrdes->first_child = ptrdes->load_params.vt_int;
-	      ptrdes->flags |= MR_IS_REFERENCE;
-	    }
-	  else
-	    {
-	      ptrdes->first_child = -ptrdes->load_params.vt_int;
-	      ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
-	    }
+	  {
+	    mr_intmax_t vt_int;
+	    memcpy (&vt_int, &ptrdes->load_params.vt_int, sizeof (vt_int));
+	    if (vt_int >= 0)
+	      {
+		ptrdes->first_child = vt_int;
+		ptrdes->flags |= MR_IS_REFERENCE;
+	      }
+	    else
+	      {
+		ptrdes->first_child = -vt_int;
+		ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
+	      }
+	  }
 	  break;
 	  
 	default:
@@ -707,14 +711,16 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   
   if (MR_VT_INT == ptrdes->value_type)
     {
-      if (ptrdes->load_params.vt_int >= 0)
+      mr_intmax_t vt_int;
+      memcpy (&vt_int, &ptrdes->load_params.vt_int, sizeof (vt_int));
+      if (vt_int >= 0)
 	{
-	  ptrdes->first_child = ptrdes->load_params.vt_int;
+	  ptrdes->first_child = vt_int;
 	  ptrdes->flags |= MR_IS_REFERENCE;
 	}
       else
 	{
-	  ptrdes->first_child = -ptrdes->load_params.vt_int;
+	  ptrdes->first_child = -vt_int;
 	  ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
 	}
     }

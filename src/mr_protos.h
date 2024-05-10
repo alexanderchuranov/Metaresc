@@ -522,8 +522,8 @@ TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading
 	       VOID (uint8_t, default_serialization, , "no serialization by default"),
 	       (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
 	       (mr_substr_t, vt_substr),
-	       (mr_intmax_t, vt_int),
-	       long double vt_float,
+	       (uint8_t, vt_int, [sizeof (mr_intmax_t)]),
+	       (uint8_t, vt_float, [sizeof (long double)]),
 	       string_t vt_string,
 	       char vt_char,
 	       )

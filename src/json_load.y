@@ -141,7 +141,7 @@ value: object | array
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_int = 0;
+  memset (&mr_load->ptrs->ra[mr_load->parent].load_params.vt_int, 0, sizeof (mr_load->ptrs->ra[mr_load->parent].load_params.vt_int));
   }
 
 object: TOK_JSON_LBRACE TOK_JSON_RBRACE

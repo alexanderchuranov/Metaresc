@@ -21,8 +21,8 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value)
     case MR_VT_STRING: ptrdes->load_params.vt_string = mr_value->vt_string; break;
     case MR_VT_SUBSTR: ptrdes->load_params.vt_substr = mr_value->vt_substr; break;
     case MR_VT_ID: ptrdes->load_params.vt_substr = mr_value->vt_substr; break;
-    case MR_VT_INT: ptrdes->load_params.vt_int = mr_value->vt_int; break;
-    case MR_VT_FLOAT: ptrdes->load_params.vt_float = mr_value->vt_float; break;
+    case MR_VT_INT: memcpy (&ptrdes->load_params.vt_int, &mr_value->vt_int, sizeof (mr_value->vt_int)); break;
+    case MR_VT_FLOAT: memcpy (&ptrdes->load_params.vt_float, &mr_value->vt_float, sizeof (mr_value->vt_float)); break;
     case MR_VT_COMPLEX:
       ptrdes->load_params.vt_complex = MR_CALLOC (1, sizeof (*ptrdes->load_params.vt_complex));
       if (NULL == ptrdes->load_params.vt_complex)
@@ -46,8 +46,8 @@ mr_ptrdes_to_mr_value (mr_value_t * mr_value, mr_ptrdes_t * ptrdes)
     case MR_VT_STRING: mr_value->vt_string = ptrdes->load_params.vt_string; break;
     case MR_VT_SUBSTR: mr_value->vt_substr = ptrdes->load_params.vt_substr; break;
     case MR_VT_ID: mr_value->vt_substr = ptrdes->load_params.vt_substr; break;
-    case MR_VT_INT: mr_value->vt_int = ptrdes->load_params.vt_int; break;
-    case MR_VT_FLOAT: mr_value->vt_float = ptrdes->load_params.vt_float; break;
+    case MR_VT_INT: memcpy (&mr_value->vt_int, &ptrdes->load_params.vt_int, sizeof (mr_value->vt_int)); break;
+    case MR_VT_FLOAT: memcpy (&mr_value->vt_float, &ptrdes->load_params.vt_float, sizeof (mr_value->vt_float)); break;
     case MR_VT_COMPLEX: mr_value->vt_complex = *ptrdes->load_params.vt_complex; break;
     default:
       return (MR_FAILURE);
