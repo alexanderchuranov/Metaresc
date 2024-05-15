@@ -1209,10 +1209,13 @@ process_td (mr_ptr_t key, const void * context)
 	    int j, count = fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]);
 	    for (j = 0; j < count; ++j)
 	      fdp->stype.size *= fdp->stype.dim.dim[j];
-	    if ((MR_TYPE_CHAR == fdp->stype.mr_type_aux) &&
-		(fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0])))
-	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
-	    need_size_specification = true;
+	    if (fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0]))
+	      {
+		if (MR_TYPE_CHAR == fdp->stype.mr_type_aux)
+		  fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
+		else
+		  need_size_specification = true;
+	      }
 	  }
 
 	if (need_size_specification)

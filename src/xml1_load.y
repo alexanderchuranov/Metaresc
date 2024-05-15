@@ -22,18 +22,15 @@
 %code {
   static inline mr_status_t load_idx (mr_substr_t * substr, mr_idx_t * idx, mr_ptrdes_flags_t * flags, mr_ptrdes_flags_t flag)
   {
-    uint32_t attr;
-    int offset;
-    if (1 != sscanf (substr->str, "%" SCNu32 "%n", &attr, &offset))
+    char * end = &substr->str[substr->length];
+    char * tail = NULL;
+    *idx = strtoull (substr->str, &tail, 0);
+    if (NULL == tail)
       return (MR_FAILURE);
-    if (offset > substr->length)
+    while ((tail < end) && isspace (*tail))
+      ++tail;
+    if (tail < end)
       return (MR_FAILURE);
-    for ( ; offset < substr->length; ++offset)
-      if (!isspace (substr->str[offset]))
-	break;
-    if (offset < substr->length)
-      return (MR_FAILURE);
-    *idx = attr;
     *flags |= flag;
     return (MR_SUCCESS);
   }

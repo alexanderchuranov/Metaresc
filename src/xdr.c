@@ -295,7 +295,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, m
 {
   mr_status_t status = MR_FAILURE;
   mr_idx_t idx = mr_add_ptr_to_list (ptrs);
-  if (0 == idx)
+  if (MR_NULL_IDX == idx)
     return (MR_FAILURE);
   
   ptrs->ra[idx].data.ptr = data;
@@ -540,7 +540,7 @@ static mr_status_t
 xdr_char_array_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_idx_t parent = ptrs->ra[idx].parent;
-  bool is_a_dynamic_string = ((parent > 0) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
+  bool is_a_dynamic_string = ((parent != MR_NULL_IDX) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   typeof (ptrdes->MR_SIZE) str_len;
 
@@ -623,7 +623,7 @@ xdr_load_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 
   if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
-      uint32_t ref_idx = 0;
+      uint32_t ref_idx = MR_NULL_IDX;
       if (!xdr_uint32_t (xdrs, &ref_idx))
 	return (MR_FAILURE);
       ptrs->ra[idx].first_child = ref_idx;
@@ -700,7 +700,7 @@ xdr_save_union (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     .flags = MR_NO_FLAGS,
   };
 
-  if (ptrs->ra[idx].first_child > 0)
+  if (ptrs->ra[idx].first_child != MR_NULL_IDX)
     {
       mr_idx_t first_child = ptrs->ra[idx].first_child;
       if (ptrs->ra[first_child].fdp)
@@ -990,7 +990,7 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 
   if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
-      uint32_t ref_idx = 0;
+      uint32_t ref_idx = MR_NULL_IDX;
       if (!xdr_uint32_t (xdrs, &ref_idx))
 	return (MR_FAILURE);
       ptrs->ra[idx].first_child = ref_idx;

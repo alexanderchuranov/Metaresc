@@ -1151,7 +1151,7 @@
 	  if (__ptrs__.ra)						\
 	    {								\
 	      mr_idx_t __idx__ = mr_xml2_load (__xml__, &__ptrs__);	\
-	      if (__idx__ > 0)						\
+	      if (__idx__ != MR_NULL_IDX)				\
 		__status__ = mr_load ((D_PTR), &__fd__, __idx__, &__ptrs__); \
 	      mr_free_load_values (&__ptrs__);				\
 	    }								\

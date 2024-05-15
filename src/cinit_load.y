@@ -83,7 +83,7 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
   mr_substr_t string;
   struct {
     mr_substr_t id;
-    int ivalue;
+    mr_idx_t ivalue;
   } id_ivalue;
 }
 

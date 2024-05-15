@@ -879,11 +879,11 @@ TYPEDEF_STRUCT (array_4d_t,
 		(int, array, [2][2][2][2]));
 TYPEDEF_STRUCT (array_5d_t,
 		(array_1d_t, array, [2][2][2][2]));
-TYPEDEF_STRUCT (_array_8d_t,
+TYPEDEF_STRUCT (array_8d_t,
 		(array_4d_t, array, [2][2][2][2]));
 ```
 
-Each dimension is limitted to 2^31 elements. If you need more than
+Each dimension is limitted to 2^32 elements. If you need more than
 that most probably you're doing something wrong.
 
 Zero-size arrays are also supported. Type descriptor will have all

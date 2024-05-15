@@ -1624,7 +1624,7 @@ mr_save (void * data, mr_fd_t * fdp)
 
   if (mr_save_data.mr_ra_ud != NULL)
     MR_FREE (mr_save_data.mr_ra_ud);
-  
+
   mr_ic_free (&mr_save_data.union_discriminators);
   mr_ic_free (&mr_save_data.untyped_ptrs);
 

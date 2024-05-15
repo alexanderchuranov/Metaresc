@@ -12,13 +12,10 @@
 #endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
-#include <mr_stringify.h>
 #include <mr_ic.h>
 #include <mr_save.h>
 #include <mr_load.h>
 #include <mr_value.h>
-#include <flt_values.h>
-#include <lexer.h>
 
 TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (mr_idx_t /* idx */, mr_ra_ptrdes_t * /* ptrs */));
 

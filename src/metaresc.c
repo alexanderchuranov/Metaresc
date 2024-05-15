@@ -598,11 +598,8 @@ mr_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child)
 
   if (MR_NULL_IDX == ra[parent].first_child)
     ra[parent].first_child = child;
-  else
-    {
-      if (last_child != MR_NULL_IDX)
-	ra[last_child].next = child;
-    }
+  else if (last_child != MR_NULL_IDX)
+    ra[last_child].next = child;
 }
 
 mr_hash_value_t

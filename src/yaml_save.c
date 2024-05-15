@@ -204,7 +204,7 @@ yaml_pre_save_array (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs,
   mr_idx_t first_child = ptrs->ra[idx].first_child;
   
 #define NON_SCALAR_TYPE (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRUCT, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_POINTER, MR_TYPE_ARRAY))
-  if ((first_child >= 0) && !((NON_SCALAR_TYPE >> ptrs->ra[first_child].mr_type) & 1))
+  if ((first_child != MR_NULL_IDX) && !((NON_SCALAR_TYPE >> ptrs->ra[first_child].mr_type) & 1))
     sequence_style = YAML_FLOW_SEQUENCE_STYLE;
 
   if (!yaml_sequence_start_event_initialize (&event, yaml_get_anchor (anchor, &ptrs->ra[idx]),
