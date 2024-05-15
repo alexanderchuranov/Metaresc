@@ -612,10 +612,8 @@ move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
 {
   mr_ptrdes_t * ra = ptrs->ra;
   mr_idx_t count, ref_idx = ra[ref_parent].first_child;
-  mr_size_t element_size = ra[idx].fdp->stype.size;
   mr_idx_t parent = ra[idx].parent;
-  if (element_size == 0)
-    return (0);
+  mr_size_t element_size = ra[idx].fdp ? ra[idx].fdp->stype.size : 0;
     
   ra[ref_parent].first_child = ref_idx;
   ra[ref_parent].flags |= MR_IS_REFERENCE;
@@ -701,7 +699,7 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
   if (element_size == 0)
     return (0);
   
-  if (ra[parent].first_child == MR_NULL_IDX) /* this is the first element in resizable array */
+  if (MR_NULL_IDX == ra[parent].first_child) /* this is the first element in resizable array */
     {
       if (ra[idx].MR_SIZE <= ra[ref_idx].MR_SIZE)
 	{
@@ -755,14 +753,14 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	  *resolved = true;
 	  if (ra[ref_idx].MR_SIZE > ra[idx].MR_SIZE)
 	    {
-	      mr_idx_t i;
+	      mr_idx_t node;
 	      typeof (ra[idx].MR_SIZE) size_delta = ra[ref_idx].MR_SIZE - ra[idx].MR_SIZE;
 	      
 	      /* this is required for proper reindexing of nodes that will be moved by move_nodes_to_parent */
 	      ra[idx].MR_SIZE = ra[ref_idx].MR_SIZE;
 			  
-	      for (i = ra[parent].first_child; i != MR_NULL_IDX; i = ra[i].next)
-		ra[i].MR_SIZE += size_delta; /* increase size for forward saved elements in resizable array */
+	      for (node = ra[parent].first_child; node != MR_NULL_IDX; node = ra[node].next)
+		ra[node].MR_SIZE += size_delta; /* increase size for forward saved elements in resizable array */
 
 	      ra[parent].MR_SIZE += size_delta; /* increase size of resizable array on detected delta */
 	    }
@@ -781,16 +779,14 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
   mr_ptrdes_t * ra = ptrs->ra;
   mr_idx_t idx = ptrs->size / sizeof (ptrs->ra[0]);
   mr_idx_t parent = ra[idx].parent;
-  mr_check_ud_ctx_t mr_check_ud_ctx = {
-    .mr_save_data = mr_save_data,
-  };
+  mr_check_ud_ctx_t mr_check_ud_ctx = { .mr_save_data = mr_save_data, };
 
   for ( ; ref_idx != MR_NULL_IDX; ref_idx = ra[ref_idx].save_params.next_untyped)
     {
+      mr_idx_t ref_parent = ra[ref_idx].parent;
+
       if (mr_cmp_ptrdes (&ra[ref_idx], &ra[idx]) != 0) /* skip pointers that typed differently */
 	continue;
-
-      mr_idx_t ref_parent = ra[ref_idx].parent;
 
       mr_check_ud_ctx.node = ref_idx;
       mr_status_t status = mr_ud_foreach (&ra[ref_idx].save_params.ud_set, mr_check_ud, &mr_check_ud_ctx);
@@ -962,7 +958,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
   memset (ptrdes, 0, sizeof (*ptrdes));
 
   mr_fd_t * fdp = ptrs->ra[idx].fdp;
-  if (NULL != fdp->res_type)
+  if (fdp->res_type != NULL)
     {
       if (0 == strcmp ("offset", fdp->res_type))
 	name = ""; /* detect case if size field defined by offset */
@@ -972,7 +968,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
     }
   
   /* quit if size field is not defined */  
-  if (name == NULL)
+  if (NULL == name)
     return;
 
   mr_idx_t parent;
@@ -982,7 +978,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
       break;
   
   /* quit if parent structure was not found */    
-  if (parent == MR_NULL_IDX)
+  if (MR_NULL_IDX == parent)
     return;
 
   mr_fd_t * parent_fdp;
@@ -1003,10 +999,6 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
   ptrdes->fdp = parent_fdp;
   ptrdes->mr_type = parent_fdp->stype.mr_type;
   ptrdes->mr_type_aux = parent_fdp->stype.mr_type_aux;
-  ptrdes->flags &= ~MR_IS_UNNAMED;
-  ptrdes->flags |= parent_fdp->unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
-  ptrdes->MR_SIZE = parent_fdp->stype.size;
-  
   ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
 }
 
@@ -1023,17 +1015,20 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
   mr_idx_t idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* add pointer on saving structure to list ptrs */
   if (MR_NULL_IDX == idx)
     return (0); /* memory allocation error occured */
+  mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
 
-  mr_save_data->ptrs.ra[idx].data.ptr = data;
-
-  mr_save_data->ptrs.ra[idx].fdp = fdp;
-  mr_save_data->ptrs.ra[idx].mr_type = fdp->stype.mr_type;
-  mr_save_data->ptrs.ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
-  mr_save_data->ptrs.ra[idx].flags = fdp->unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
-  mr_save_data->ptrs.ra[idx].MR_SIZE = fdp->stype.size * count;
-
-  mr_save_data->ptrs.ra[idx].parent = parent;
-  mr_save_data->ptrs.ra[idx].save_params.next_untyped = MR_NULL_IDX;
+  ptrdes->data.ptr = data;
+  ptrdes->fdp = fdp;
+  ptrdes->mr_type = fdp->stype.mr_type;
+  ptrdes->mr_type_aux = fdp->stype.mr_type_aux;
+  ptrdes->flags = fdp->unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
+  ptrdes->MR_SIZE = fdp->stype.size * count;
+  ptrdes->parent = parent;
+  ptrdes->first_child = MR_NULL_IDX;
+  ptrdes->next = MR_NULL_IDX;
+  ptrdes->save_params.next_untyped = MR_NULL_IDX;
+  ptrdes->save_params.ud_set.size = 0;
+  ptrdes->save_params.ud_set.is_ic = false;
 
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->untyped_ptrs, (uintptr_t)idx);
@@ -1114,27 +1109,11 @@ mr_save_enum (mr_save_data_t * mr_save_data)
 {
   mr_idx_t idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
   mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
+  mr_td_t * tdp = ptrdes->fdp->stype.tdp;
 
-  switch (ptrdes->mr_type_aux)
-    {
-    case MR_TYPE_UINT8:
-    case MR_TYPE_INT8:
-    case MR_TYPE_UINT16:
-    case MR_TYPE_INT16:
-    case MR_TYPE_UINT32:
-    case MR_TYPE_INT32:
-    case MR_TYPE_UINT64:
-    case MR_TYPE_INT64:
-    case MR_TYPE_UINT128:
-    case MR_TYPE_INT128:
-      break;
-    default:
-      {
-	mr_td_t * tdp = ptrdes->fdp->stype.tdp;
-	ptrdes->mr_type_aux = tdp ? tdp->param.enum_param.mr_type_effective : MR_TYPE_UINT8;
-	break;
-      }
-    }
+#define MR_INT_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_UINT8, MR_TYPE_INT8, MR_TYPE_UINT16, MR_TYPE_INT16, MR_TYPE_UINT32, MR_TYPE_INT32, MR_TYPE_UINT64, MR_TYPE_INT64, MR_TYPE_UINT128, MR_TYPE_INT128))
+  if (!((MR_INT_TYPES >> ptrdes->mr_type_aux) & 1))
+    ptrdes->mr_type_aux = tdp ? tdp->param.enum_param.mr_type_effective : MR_TYPE_UINT8;
   return (1);
 }
 
@@ -1392,8 +1371,8 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
   /* re-enumerate nodes after empty nodes removal */
   if (need_reindex_empty)
     {
-      mr_idx_t idx_ = 1;
-      mr_ptrs_dfs (ptrs, mr_renumber_node, &idx_);
+      mr_idx_t idx = 1;
+      mr_ptrs_dfs (ptrs, mr_renumber_node, &idx);
     }
 }
 
@@ -1432,30 +1411,28 @@ resolve_void_ptr_and_strings (mr_save_data_t * mr_save_data, mr_idx_t idx)
 
 	  /* search in index of typed references */
 	  mr_ptr_t * find_result = mr_ic_find (&mr_save_data->untyped_ptrs, (uintptr_t)alloc_idx);
-  
-	  if (find_result != NULL)
-	    {
-	      /* typed entry was found and here we configure reference on it */
-	      mr_idx_t bucket = find_result->uintptr;
-	      /* as we put multiple addresses into one bucket,
-		 we need to traverse through the list in this bucket and
-		 filter out only entries with matching address */
-	      mr_idx_t ref_idx = MR_NULL_IDX;
-	      for ( ; bucket != MR_NULL_IDX; bucket = ptrs->ra[bucket].save_params.next_untyped)
-		if (ptrs->ra[bucket].data.ptr == data_ptr)
-		  {
-		    if (MR_NULL_IDX == ref_idx)
-		      ref_idx = bucket; /* first entry with the matched address */
-		    else if (ptrs->ra[bucket].MR_SIZE > ptrs->ra[ref_idx].MR_SIZE)
-		      ref_idx = bucket; /* another entry, but bigger in size */
-		  }
-	      if (MR_NULL_IDX == ref_idx)
-		break;
+	  if (NULL == find_result)
+	    break;
 
-	      ptrdes->first_child = ref_idx;
-	      ptrdes->flags |= MR_IS_REFERENCE;
-	      ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
-	    }
+	  /* typed entry was found and here we configure reference on it */
+	  /* as we put multiple addresses into one bucket,
+	     we need to traverse through the list in this bucket and
+	     filter out only entries with matching address */
+	  mr_idx_t bucket, ref_idx = MR_NULL_IDX;
+	  for (bucket = find_result->uintptr; bucket != MR_NULL_IDX; bucket = ptrs->ra[bucket].save_params.next_untyped)
+	    if (ptrs->ra[bucket].data.ptr == data_ptr)
+	      {
+		if (MR_NULL_IDX == ref_idx)
+		  ref_idx = bucket; /* first entry with the matched address */
+		else if (ptrs->ra[bucket].MR_SIZE > ptrs->ra[ref_idx].MR_SIZE)
+		  ref_idx = bucket; /* another entry, but bigger in size */
+	      }
+	  if (MR_NULL_IDX == ref_idx)
+	    break;
+
+	  ptrdes->first_child = ref_idx;
+	  ptrdes->flags |= MR_IS_REFERENCE;
+	  ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
 	}
       break;
       /* unlink string content, but keep links from content on a parent node */
@@ -1592,8 +1569,8 @@ mr_save (void * data, mr_fd_t * fdp)
 
   mr_save_data.ptrs.ptrdes_type = MR_PD_SAVE;
 #define MR_IC_METHOD MR_IC_HASH
-  mr_ic_new (&mr_save_data.untyped_ptrs, mr_typed_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "intptr", MR_IC_METHOD, &context);
-  mr_ic_new (&mr_save_data.union_discriminators, mr_uds_get_hash, mr_uds_cmp, "intptr", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data.untyped_ptrs, mr_typed_ptrdes_get_hash, mr_untyped_ptrdes_cmp, "uintptr", MR_IC_METHOD, &context);
+  mr_ic_new (&mr_save_data.union_discriminators, mr_uds_get_hash, mr_uds_cmp, "uintptr", MR_IC_METHOD, &context);
 
   fdp->unnamed = true;
   mr_idx_t nodes_added = mr_save_inner (data, fdp, 1, &mr_save_data, MR_NULL_IDX);
