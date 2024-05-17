@@ -27,7 +27,7 @@ int main ()
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      printf("\t%d: name = %s, type = %s, size = %zu bytes\n",
+      printf("\t%d: name = %s, type = %s, size = %u bytes\n",
 	     i, fdp->name.str, fdp->stype.type, fdp->stype.size);
     }
 

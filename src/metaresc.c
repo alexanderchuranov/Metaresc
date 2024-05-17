@@ -43,6 +43,11 @@ void mr_free (const char * filename, const char * function, int line, void * ptr
 
 #define MR_UNION_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
 
+MR_COMPILETIME_ASSERT (offsetof (mr_fd_t, stype) == 0, "'stype' must be a first field in mr_fd_t for proper serialization of mr_ptrdes_t");
+MR_COMPILETIME_ASSERT (offsetof (mr_stype_t, tdp) == 0, "'tdp' must be a first field in mr_stype_t for proper serialization of mr_ptrdes_t");
+MR_COMPILETIME_ASSERT (offsetof (mr_td_t, type) == 0, "'type' must be a first field in mr_td_t for proper serialization of mr_ptrdes_t");
+MR_COMPILETIME_ASSERT (offsetof (mr_hashed_string_t, str) == 0, "'str' must be a first field in mr_hashed_string_t for proper serialization of mr_ptrdes_t");
+
 /** Metaresc configuration structure */
 mr_conf_t mr_conf = {
   .mr_mem = { /**< all memory functions may be replaced on user defined */

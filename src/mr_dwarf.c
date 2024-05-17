@@ -440,8 +440,8 @@ TYPEDEF_STRUCT (mr_die_t,
 
 TYPEDEF_STRUCT (mr_type_sign_t,
 		(mr_hashed_string_t, type),
-		(mr_size_t, size),
 		(mr_type_t, mr_type),
+		(size_t, size),
 		)
 
 static mr_ic_t mr_type_sign_ic;
@@ -812,7 +812,7 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	    if (type_not_defined && (fdp->stype.type != NULL))
 	      {
 #define POINTER_SUFFIX " *"
-		mr_size_t length = strlen (fdp->stype.type);
+		int length = strlen (fdp->stype.type);
 		fdp->stype.type = MR_REALLOC (fdp->stype.type, length + sizeof (POINTER_SUFFIX));
 		assert (fdp->stype.type != NULL);
 		memcpy (&fdp->stype.type[length], POINTER_SUFFIX, sizeof (POINTER_SUFFIX));

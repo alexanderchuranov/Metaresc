@@ -492,8 +492,8 @@
 #define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
 #define MR_UNIQ_NAME(ID) name_ ## ID
-#define MR_COMPILETIME_ASSERT(X) MR_COMPILETIME_ASSERT_ (X, __COUNTER__)
-#define MR_COMPILETIME_ASSERT_(X, ID) __attribute__ ((unused)) struct { int:-!(X); } MR_UNIQ_NAME (ID)
+#define MR_COMPILETIME_ASSERT(CONDITION, ...) MR_COMPILETIME_ASSERT_ (__COUNTER__, CONDITION, __VA_ARGS__)
+#define MR_COMPILETIME_ASSERT_(ID, CONDITION, ...) __attribute__ ((unused)) static char * MR_UNIQ_NAME (ID) = &"Assert: " __VA_ARGS__ [0 / (CONDITION)];
 /*
   For types defined using standard language approach you will need to create analog types with metaresc.
   For double checking of types costincency you will need the following macro. It compares size and offset of fields in two types.
@@ -831,7 +831,7 @@
 	memset (__ptr, __i, sizeof (__value) & (__block_size - 1));	\
       }									\
     mr_struct_param_t * struct_param = &dst_ctx.tdp->param.struct_param; \
-    mr_size_t count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
+    int count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
     struct_param->fields[MR_PP_DEPTH] = struct_param->fields[count];	\
     struct_param->fields[count] = NULL;					\
     mr_add_type (dst_ctx.tdp);						\
@@ -1363,6 +1363,7 @@
 typedef char * string_t;
 typedef char mr_static_string_t[1];
 typedef uint32_t mr_idx_t;
+typedef uint32_t mr_size_t;
 typedef long int long_int_t;
 typedef long long int long_long_int_t;
 typedef long double long_double_t;
@@ -1375,7 +1376,6 @@ typedef struct mr_dummy_struct_t {
   char dummy_field[0];
 } mr_dummy_struct_t;
 typedef __typeof__ (offsetof (mr_dummy_struct_t, dummy_field)) mr_offset_t;
-typedef __typeof__ (sizeof (0)) mr_size_t;
 
 #ifdef MR_HAVE_INT128
 

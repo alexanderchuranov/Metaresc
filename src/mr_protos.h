@@ -576,7 +576,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
 		(mr_value_type_t, value_type, , "value type for load_params"),
-		(uint32_t, MR_SIZE, , "size of 'data' resizable array"),
+		(mr_size_t, MR_SIZE, , "size of 'data' resizable array"),
 
 		(mr_idx_t, idx, , "public index"),
 		(mr_idx_t, parent, , "parent index"),
