@@ -1380,6 +1380,11 @@ mr_detect_structured_type (mr_stype_t * stype)
       stype->mr_type_aux = stype->mr_type;
       stype->mr_type = MR_TYPE_ARRAY;
     }
+  if (stype->is_bitfield)
+    {
+      stype->mr_type_aux = stype->mr_type;
+      stype->mr_type = MR_TYPE_BITFIELD;
+    }
 }
 
 static void

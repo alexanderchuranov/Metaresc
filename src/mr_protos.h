@@ -196,8 +196,8 @@ TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collect
 		(mr_hash_fn_t, hash_fn),
 		/* resizable array for hash table sized by field 'size' mr_ptr_t typed by 'key_type' in mr_ic_t */
 		(mr_ptr_t *, hash_table, , "key_type", { "size" }, "string"),
-		BITFIELD (size_t, size, : sizeof (size_t) * __CHAR_BIT__ - 1, "size of hash table"),
-		BITFIELD (bool, zero_key, : 1),
+		(size_t, size, : sizeof (size_t) * __CHAR_BIT__ - 1, "size of hash table"),
+		(bool, zero_key, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),
@@ -210,22 +210,22 @@ TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed)), "tree traver
 	      )
 
 TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
-		BITFIELD (unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		(unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		VOID (bool, unused, : 1),
-		BITFIELD (unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
-		BITFIELD (bool, red, : 1),
+		(unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		(bool, red, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_avltree_node_t, ATTRIBUTES ( , "node of the avl tree"),
-		BITFIELD (unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
-		BITFIELD (bool, balanced, : 1),
-		BITFIELD (unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
-		BITFIELD (mr_child_idx_t, longer, : 1),
+		(unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		(bool, balanced, : 1),
+		(unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		(mr_child_idx_t, longer, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_tree_node_idx_t, ATTRIBUTES ( , "index of the binary tree with 1 bit extra property"),
-		BITFIELD (unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
-		BITFIELD (bool, bit, : 1),
+		(unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		(bool, bit, : 1),
 		)
 
 TYPEDEF_STRUCT (mr_tree_node_t, ATTRIBUTES ( , "node of the red/black or avl tree"),
@@ -245,8 +245,8 @@ TYPEDEF_STRUCT (mr_tree_t, ATTRIBUTES ( , "indexed collection for binary tree"),
 		)
 
 TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "element of traverse index and discent direction"), 
-		BITFIELD (unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
-		BITFIELD (mr_child_idx_t, child_idx, : 1, "descent direction"),
+		(unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
+		(mr_child_idx_t, child_idx, : 1, "descent direction"),
 		)
 
 TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag for the last comparison"),
@@ -275,7 +275,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(struct mr_ic_virt_func_t *, virt_func),
 		
 		ANON_UNION (),
-		VOID (void *, void_ptr, , "default serialization"),
+		(void *, void_ptr, [0], "default serialization"),
 		(mr_ic_rarray_t, rarray),
 		(mr_ic_hash_t, hash),
 		(mr_ic_static_array_t, static_array),
@@ -313,11 +313,12 @@ TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Extra mr_type for pointers, arrays and bit fields"),
 		(mr_type_t, mr_type_ptr, , "Extra mr_type for pointers and arrays"),
-		BITFIELD (mr_type_class_t, mr_type_class, : __CHAR_BIT__ - 1, "required to distinguish records and unions from scalar types"),
-		BITFIELD (bool, is_array, : 1, "true if field is an array"),
+		(mr_type_class_t, mr_type_class, : __CHAR_BIT__ - 2, "required to distinguish records and unions from scalar types"),
+		(bool, is_array, : 1, "true if field is an array"),
+		(bool, is_bitfield, : 1, "true if field is a bitfield"),
 		(mr_size_t, size, , "size of type"),
 		ANON_UNION (),
-		VOID (uint8_t, default_serialization, , "default serialization"),
+		(uint8_t, default_serialization, [0], "default serialization"),
 		(mr_array_dimensions_t, dim, , "array dimensions"),
 		END_ANON_UNION ("mr_type", { (mr_ud_override_t[]){{ MR_TYPE_ARRAY, "dim" }} }, "mr_ud_override_t"),
 		)
@@ -360,13 +361,13 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
 		(mr_type_t, mr_type, [0], "alias of mr_type for union resolution", .offset = offsetof (mr_fd_t, stype.mr_type)),
 		(mr_type_t, mr_type_base, , "copy of mr_type form base type"),
-		BITFIELD (bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
-		BITFIELD (bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
+		(bool, unnamed, : 1, "by default all fields are named, but anonymous unions and fields in mr_ptr_t should be unnamed"),
+		(bool, non_persistent, : 1, "true if field descriptor is allocated on stack"),
 		(mr_offset_t, offset, , "offset in structure"),
 
 		ANON_UNION (),
 		ANON_UNION (),
-		VOID (uint8_t, default_serialization, , "default serialization is empty"),
+		(uint8_t, default_serialization, [0], "default serialization is empty"),
 		(mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 		(mr_func_param_t, func_param, , "types of function arguments"),
 		END_ANON_UNION ("mr_type", { MR_FIELD_PARAM_NON_UNION_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_NON_UNION_UDO)),
@@ -404,7 +405,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
       }
 
 TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enum"),
-	       VOID (uint64_t, default_serialization),
+	       (uint64_t, default_serialization, [0]),
 	       (uint64_t, _unsigned),
 	       (int64_t, _signed),
 	       )
@@ -434,7 +435,7 @@ TYPEDEF_STRUCT (mr_struct_param_t,
 		)
 
 TYPEDEF_UNION (mr_td_param_t,
-	       VOID (uint8_t, default_serialization, , "default serialization"),
+	       (uint8_t, default_serialization, [0], "default serialization"),
 	       (mr_enum_param_t, enum_param, , "parameters specific for enums"),
 	       (mr_struct_param_t, struct_param, , "parameters specific for structures/unions"),
 	       (mr_struct_param_t, union_param, , "parameters specific for structures/unions"),
@@ -455,8 +456,8 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(mr_hashed_string_t, type, , "hashed name of the type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_td_producer_t, td_producer, , "producer of type descriptor"),
-		BITFIELD (bool, is_union_discriminator, : 1, "type could be a union disriminator"),
-		BITFIELD (bool, is_union_discriminator_set, : 1, "flags that is_union_discriminator is set"),
+		(bool, is_union_discriminator, : 1, "type could be a union disriminator"),
+		(bool, is_union_discriminator_set, : 1, "flags that is_union_discriminator is set"),
 		(mr_size_t, size, , "size of type"),
 		(mr_fd_t, mr_ptr_fd, , "field descriptor for mr_ptr_t"),
 		(mr_td_param_t, param, , "mr_type", { MR_TYPE_PARAM_UDO }, "mr_ud_override_t", sizeof (MR_TYPE_PARAM_UDO)),
@@ -508,7 +509,7 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of va
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
 		ANON_UNION (),
-		VOID (uint8_t, default_serialization, , "no serialization by default"),
+		(uint8_t, default_serialization, [0], "no serialization by default"),
 		(complex_long_double_t, vt_complex),
 		(mr_substr_t, vt_substr),
 		(mr_intmax_t, vt_int),
@@ -519,7 +520,7 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		)
 
 TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
-	       VOID (uint8_t, default_serialization, , "no serialization by default"),
+	       (uint8_t, default_serialization, [0], "no serialization by default"),
 	       (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
 	       (mr_substr_t, vt_substr),
 	       (uint8_t, vt_int, [sizeof (mr_intmax_t)]),
@@ -535,8 +536,8 @@ TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES (__attribute__ ((packed)), "set union di
 		 "in place list of union discriminators", { "size" }, "string"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
 		END_ANON_UNION ("ud_is_ic"),
-		BITFIELD (unsigned, size, : __CHAR_BIT__ - 1, "size of union discriminator in place list"),
-		BITFIELD (bool, is_ic, : 1, "true if union discriminator is an indexed collection"),
+		(unsigned, size, : __CHAR_BIT__ - 1, "size of union discriminator in place list"),
+		(bool, is_ic, : 1, "true if union discriminator is an indexed collection"),
 		)
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
@@ -589,7 +590,7 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
 
 		ANON_UNION (),
-		VOID (uint8_t, default_serialization),
+		(uint8_t, default_serialization, [0]),
 		(mr_save_params_t, save_params, , "attributes specific for saving"),
 		(mr_load_params_t, load_params, , "value_type"),
 		(mr_typed_ptr_t, res, , "extra pointer for user data"),
