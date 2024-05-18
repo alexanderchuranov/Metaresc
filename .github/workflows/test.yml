@@ -87,7 +87,7 @@ jobs:
       - name: exclude 'union', it fails with 'out of memory' on mingw32
         if: ${{ matrix.sys == 'mingw32' }}
         run: |
-          sed -i.bak -e "s/union //" -e "s/enum //" -e "s/pointer_int //" -e "s/double //" -e "s/float //" tests/Makefile.am
+          sed -i.bak -e "s/union //" -e "s/enum //" -e "s/pointer_int //" -e "s/double //" -e "s/float //" -e "s/mr_ptr //" tests/Makefile.am
           sed -i.bak -e "s/MR_BUILTIN_TYPES/int/" tests/dw_mr_types.h
       - name: autoconf/automake
         run: ./autogen.sh
