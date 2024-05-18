@@ -650,34 +650,32 @@
 #define MR_ARRAY_OR_BITFIELD_PROTO MR_FIELD_PROTO
 #define MR_ARRAY_OR_BITFIELD_STUB MR_FIELD_STUB
 
-#define MR_AOB_OBJECT(MR_TYPE_NAME, TYPE, NAME)				\
-  __builtin_choose_expr (__builtin_classify_type (((MR_TYPE_NAME*)0)->NAME) == MR_POINTER_TYPE_CLASS, \
-			 ((MR_TYPE_NAME*)0)->NAME, (TYPE[]){0})
+#define MR_IS_AN_ARRAY(X) (__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS)
 
-#define MR_AOB_TYPE_OBJECT(MR_TYPE_NAME, NAME)				\
-  __builtin_choose_expr (__builtin_classify_type (((MR_TYPE_NAME*)0)->NAME) == MR_POINTER_TYPE_CLASS, \
-			 *(MR_TYPE_NAME*)0, *(MR_TYPEDEF_STUB_PREFIX (MR_TYPE_NAME)*)0)
+#define MR_AOB_OBJECT(MR_TYPE_NAME, NAME, BITFIELD_OBJ)			\
+  __builtin_choose_expr (MR_IS_AN_ARRAY (((MR_TYPE_NAME*)0)->NAME),	\
+			 ((MR_TYPE_NAME*)0)->NAME, BITFIELD_OBJ)
 
-#define MR_AOB_TYPE_OBJECT_(MR_TYPE_NAME, NAME)				\
-  __builtin_choose_expr (__builtin_classify_type (((MR_TYPE_NAME*)0)->NAME) == MR_POINTER_TYPE_CLASS, \
-			 *(MR_TYPEDEF_STUB_PREFIX (MR_TYPE_NAME)*)0, *(MR_TYPE_NAME*)0)
+#define MR_AOB_TYPE(MR_TYPE_NAME, NAME, SWAP)				\
+  __typeof__ (__builtin_choose_expr (SWAP ^ MR_IS_AN_ARRAY (((MR_TYPE_NAME*)0)->NAME), \
+				     *(MR_TYPE_NAME*)0, *(MR_TYPEDEF_STUB_PREFIX (MR_TYPE_NAME)*)0))
 
 #define MR_AOB_BITFIELD(MR_TYPE_NAME, NAME)				\
-  __builtin_choose_expr (__builtin_classify_type (((MR_TYPE_NAME*)0)->NAME) == MR_POINTER_TYPE_CLASS, \
-			 NULL, (uint8_t*)((__typeof__ (MR_AOB_TYPE_OBJECT_ (MR_TYPE_NAME, NAME))[]){ { .NAME = -1 } }))
+  __builtin_choose_expr (MR_IS_AN_ARRAY (((MR_TYPE_NAME*)0)->NAME),	\
+			 NULL, (uint8_t*)((MR_AOB_TYPE (MR_TYPE_NAME, NAME, true)[]){ { .NAME = -1 } }))
 
 #define MR_ARRAY_OR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name.str = #NAME,						\
 	.stype.type = #TYPE,						\
-	.stype.size = sizeof (MR_AOB_OBJECT (MR_TYPE_NAME, TYPE, NAME)), \
+	.stype.size = sizeof (MR_AOB_OBJECT (MR_TYPE_NAME, NAME, *(TYPE*)0)), \
 	.stype.mr_type = MR_TYPE_DETECT (TYPE),				\
 	.stype.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
 	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	.stype.is_array = (MR_POINTER_TYPE_CLASS == __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME)), \
-	.stype.is_bitfield = (MR_POINTER_TYPE_CLASS != __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME)), \
-	.stype.dim = MR_ARRAY_DIMENSIONS (TYPE, MR_AOB_OBJECT (MR_TYPE_NAME, TYPE, NAME)), \
-	.offset = offsetof (__typeof__ (MR_AOB_TYPE_OBJECT (MR_TYPE_NAME, NAME)), NAME), \
+	.stype.is_array = MR_IS_AN_ARRAY (((MR_TYPE_NAME*)0)->NAME),	\
+	.stype.is_bitfield = !MR_IS_AN_ARRAY (((MR_TYPE_NAME*)0)->NAME), \
+	.stype.dim = MR_ARRAY_DIMENSIONS (TYPE, MR_AOB_OBJECT (MR_TYPE_NAME, NAME, (TYPE[]){})), \
+	.offset = offsetof (MR_AOB_TYPE (MR_TYPE_NAME, NAME, false), NAME), \
 	.bitfield_param.size = sizeof (MR_TYPE_NAME),			\
 	.bitfield_param.bitfield = MR_AOB_BITFIELD (MR_TYPE_NAME, NAME), \
 	.meta = "" __VA_ARGS__,						\
