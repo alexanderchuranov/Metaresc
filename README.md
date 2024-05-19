@@ -186,7 +186,7 @@ we should add `-I../Metaresc/src` as a compilation flag. Minimal
 ```make
 all: sample
 
-CFLAGS += -I../Metaresc/src `xml2-config --cflags`
+CFLAGS += -I../Metaresc/src `xml2-config --cflags` -lyaml
 ```
 
 As a next step we will add some custom structure type definition,
@@ -761,7 +761,7 @@ parentheses:
 Only the first two parameters are mandatory, the rest are optional.
 1. **type** is a field type
 2. **name** is a field name
-3. **_suffix_** is used for declaration of arrays and function pointers
+3. **_suffix_** is used for declaration of arrays, function pointers and bitfields
 4. **_text\_metadata_** is a user defined string
 5. **_pointer\_on\_resources\_array_** is a `void*` pointer that user can \
 initialize with a pointer on array of structured resources
@@ -777,8 +777,15 @@ Example below demonstrates extended semantics:
 TYPEDEF_STRUCT (sample_t,
 		(int, field),
 		(int *, pointer),
-		(int, array, [2]),
+		(int **, double_pointer),
+		(int, array1d, [2]),
+		(int, array2d, [2][2]),
+		(int, array3d, [2][2][2]),
+		(int, array4d, [2][2][2][2]),
+		(int *, pointers_array, [2]),
 		(int, function, (int)),
+		(int, int_bitfield, : sizeof (int) * __CHAR_BIT__ - 1),
+		(bool, bool_bitfield, : 1),
 		(int, metadata, /* suffix */, "text metadata"),
 		(int, void_resource, /* suffix */, /* text metadata */, { "string as a void pointer" }),
 		(int, structured_resource, /* suffix */, /* text metadata */, { (sample_t[]){{0}} }, "sample_t"),
@@ -819,7 +826,7 @@ type, but Metaresc also supports representation of pointers as arrays
 of variable size. Size of the array in this case should provided as
 another field of the same structure. User may specify name of
 this field via structured resource of the pointer field. There are two
-options how to do this.
+options how this could be done.
 1. User may specify name of the `size` field as a string and denote 
 that type of the resource is a `"string"`. Sample declaration as 
 follows:
@@ -865,7 +872,7 @@ method. I.e. `size` field configured as a string identifier and formed
 from the name of the field with `_size` suffix.
 
 #### Array declaration
-Third argument `suffix` in the field's declaration denotes dimensions
+Third argument `_suffix_` in the field's declaration denotes dimensions
 of the array. Metaresc is capable to distinguish multi-dimensional
 arrays up to 4 diminsions. Higher orders of dimensions are treated as
 four-dimensional arrays with aggregated lower dimension. You could
@@ -947,7 +954,7 @@ TYPEDEF_STRUCT (array_t,
 ```
 
 #### Function pointer declaration
-If `suffix` is an expression in parentheses, then this field is
+If `_suffix_` is an expression in parentheses, then this field is
 treated as a function pointer declaration. I.e. declaration is
 equivalent of `type (*name) suffix;` as a standard type
 declaration. List of function arguments is processed and Metaresc type
@@ -970,19 +977,18 @@ TYPEDEF_STRUCT (functions_t,
 ```
 
 #### Bitfields declaration
-For bitfields use the keyword `BITFIELD` as a prefix for declaration.
-
-BITFIELD (type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
-
-**type** must be one of integer types including `bool`. `enums` are
-  also represented as integer types by language design.
+Bitfields could be declared with the same semantics as arrays and
+function pointers. Specify `_suffix_` as semicolon and bitfield width
+and Metaresc will automatically detect ditfield declaration. **type**
+must be one of integer types including `bool`. `enums` are  also
+represented as integer types by language design.
 
 Sample declaration as follows:
 
 ```c
 TYPEDEF_STRUCT (bitfields_t,
-		BITFIELD (int, size, : sizeof (int) * __CHAR_BIT__ - 1),
-		BITFIELD (bool, used, : 1));
+		(int, size, : sizeof (int) * __CHAR_BIT__ - 1),
+		(bool, used, : 1));
 ```
 
 #### Union declaration
