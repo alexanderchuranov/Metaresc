@@ -21,7 +21,6 @@
 #endif /* HAVE_DLFCN_H */
 
 #include <metaresc.h>
-#include <flt_values.h>
 #include <mr_stringify.h>
 #include <mr_ic.h>
 
@@ -97,7 +96,7 @@ int mr_ra_printf_uint128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
     mr_ptrdes_t _ptrdes = *ptrdes;					\
     TYPE real = __real__ *(complex TYPE *)ptrdes->data.ptr;		\
     TYPE imag = __imag__ *(complex TYPE *)ptrdes->data.ptr;		\
-    if (MR_ISNAN (real) || MR_ISNAN (imag))				\
+    if (__builtin_isnan (real) || __builtin_isnan (imag))		\
       return (TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, "NAN"))); \
     if (real != 0)							\
       {									\

@@ -9,7 +9,6 @@
 #include <metaresc.h>
 #include <mr_value.h>
 #include <mr_ic.h>
-#include <flt_values.h>
 
 mr_status_t
 mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value)

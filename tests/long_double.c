@@ -6,8 +6,8 @@
 #define SCALAR_DOUBLE(TYPE, X, Y, ...) ({	\
       long_double_t _x = *(long_double_t*)(X);	\
       long_double_t _y = *(long_double_t*)(Y);	\
-      bool x_non_nan = !MR_ISNAN (_x);		\
-      bool y_non_nan = !MR_ISNAN (_y);		\
+      bool x_non_nan = !__builtin_isnan (_x);	\
+      bool y_non_nan = !__builtin_isnan (_y);	\
       bool cmp = (x_non_nan != y_non_nan);	\
       if (x_non_nan && y_non_nan)		\
 	cmp = (_x != _y);			\
@@ -18,7 +18,6 @@
       ASSERT_SAVE_LOAD_TYPE (METHOD, long double, VALUE, SCALAR_DOUBLE); \
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_long_double_t, VALUE, SCALAR_DOUBLE); \
     })
-
 
 TYPEDEF_STRUCT (struct_long_double_t, long_double_t x)
 

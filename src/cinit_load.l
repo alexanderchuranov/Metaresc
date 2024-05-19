@@ -13,7 +13,6 @@
 #include <ctype.h>
 
 #include <metaresc.h>
-#include <flt_values.h>
 #include <lexer.h>
 #define MR_CINIT_LTYPE mr_token_lloc_t
 #include <cinit_load.tab.h>

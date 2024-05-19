@@ -13,7 +13,6 @@
 #include <ctype.h>
 
 #include <metaresc.h>
-#include <flt_values.h>
 #include <lexer.h>
 #define MR_JSON_LTYPE mr_token_lloc_t
 #include <json_load.tab.h>

@@ -55,8 +55,6 @@
 #define LD_LDBL_MAX __builtin_huge_vall ()
 #define LD_LDBL_MIN LDBL_MIN
 
-#define MR_ISNAN(X) __builtin_isnan (X)
-
 TYPEDEF_ENUM (mr_sign_t, (MR_PLUS, = 0), (MR_MINUS, = 1))
 
 #define IEEE_754_HALF_MANTISSA (10)

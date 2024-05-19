@@ -12,7 +12,6 @@
 #include <ctype.h>
 
 #include <metaresc.h>
-#include <flt_values.h>
 #include <lexer.h>
 #define MR_SCM_LTYPE mr_token_lloc_t
 #include <scm_load.tab.h>

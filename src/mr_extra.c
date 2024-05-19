@@ -1,5 +1,4 @@
 #include <metaresc.h>
-#include <flt_values.h>
 
 /**
  * Recursively free all allocated memory. Needs to be done from bottom to top.
@@ -258,12 +257,12 @@ node_hash (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order,
 
 #define CASE_MR_FLOAT_TYPE_HASH(TYPE)					\
       case MR_TYPE_DETECT (TYPE):					\
-	ptrdes->res.data.uintptr = MR_ISNAN (*(TYPE*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, sizeof (TYPE)); \
+	ptrdes->res.data.uintptr = __builtin_isnan (*(TYPE*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, sizeof (TYPE)); \
 	break;
 
 #define CASE_MR_COMPLEX_FLOAT_TYPE_HASH(TYPE)				\
       case MR_TYPE_DETECT (TYPE):					\
-	ptrdes->res.data.uintptr = (MR_ISNAN (__real__ *(TYPE*)ptrdes->data.ptr) || MR_ISNAN (__imag__ *(TYPE*)ptrdes->data.ptr)) ? -1 : mr_hash_block (ptrdes->data.ptr, sizeof (TYPE)); \
+	ptrdes->res.data.uintptr = (__builtin_isnan (__real__ *(TYPE*)ptrdes->data.ptr) || __builtin_isnan (__imag__ *(TYPE*)ptrdes->data.ptr)) ? -1 : mr_hash_block (ptrdes->data.ptr, sizeof (TYPE)); \
 	break;
 
       MR_FOREACH (CASE_MR_TYPE_HASH, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t);
@@ -271,7 +270,7 @@ node_hash (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order,
       MR_FOREACH (CASE_MR_COMPLEX_FLOAT_TYPE_HASH, complex_float_t, complex_double_t);
 	  
     case MR_TYPE_LONG_DOUBLE:
-      ptrdes->res.data.uintptr = MR_ISNAN (*(long_double_t*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
+      ptrdes->res.data.uintptr = __builtin_isnan (*(long_double_t*)ptrdes->data.ptr) ? -1 : mr_hash_block (ptrdes->data.ptr, MR_SIZEOF_LONG_DOUBLE);
       break;
 
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
@@ -279,7 +278,7 @@ node_hash (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order,
 	long double * real = &__real__ *(complex long double *)ptrdes->data.ptr;
 	long double * imag = &__imag__ *(complex long double *)ptrdes->data.ptr;
 	ptrdes->res.data.uintptr =
-	  (MR_ISNAN (*real) || MR_ISNAN (*imag)) ? -1 :
+	  (__builtin_isnan (*real) || __builtin_isnan (*imag)) ? -1 :
 	  mr_hash_block (real, MR_SIZEOF_LONG_DOUBLE) + mr_hash_block (imag, MR_SIZEOF_LONG_DOUBLE);
       }
       break;
@@ -423,13 +422,13 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    {								\
 	      TYPE _x = *(TYPE*)x_i->data.ptr;				\
 	      TYPE _y = *(TYPE*)y_i->data.ptr;				\
-	      if (!MR_ISNAN (_x) && !MR_ISNAN (_y))			\
+	      if (!__builtin_isnan (_x) && !__builtin_isnan (_y))	\
 		{							\
 		  diff = (_x > _y) - (_x < _y);				\
 		  if (diff)						\
 		    return (diff);					\
 		}							\
-	      diff = !MR_ISNAN (_x) - !MR_ISNAN (_y);			\
+	      diff = !__builtin_isnan (_x) - !__builtin_isnan (_y);	\
 	      if (diff)							\
 		return (diff);						\
 	    }								\
@@ -440,10 +439,10 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    {								\
 	      TYPE _x = *(TYPE*)x_i->data.ptr;				\
 	      TYPE _y = *(TYPE*)y_i->data.ptr;				\
-	      bool rx_isnan = MR_ISNAN (__real__ _x);			\
-	      bool ix_isnan = MR_ISNAN (__imag__ _x);			\
-	      bool ry_isnan = MR_ISNAN (__real__ _y);			\
-	      bool iy_isnan = MR_ISNAN (__imag__ _y);			\
+	      bool rx_isnan = __builtin_isnan (__real__ _x);		\
+	      bool ix_isnan = __builtin_isnan (__imag__ _x);		\
+	      bool ry_isnan = __builtin_isnan (__real__ _y);		\
+	      bool iy_isnan = __builtin_isnan (__imag__ _y);		\
 	      if (((rx_isnan || ix_isnan)) && ((ry_isnan || iy_isnan)))	\
 		continue;						\
 	      if (!rx_isnan && !ry_isnan)				\
@@ -485,7 +484,7 @@ mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
 	    default:
 	      break;
 	    }
-	    break;
+	  break;
 	  
 	case MR_TYPE_BITFIELD:
 	  {
