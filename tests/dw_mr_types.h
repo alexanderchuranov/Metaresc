@@ -35,6 +35,6 @@ TYPEDEF_STRUCT (mr_void_fields_t,
 		);
 
 TYPEDEF_STRUCT (mr_bitfields_t,
-		BITFIELD (int, _8bits, : __CHAR_BIT__),
-		BITFIELD (int, _7bits, : __CHAR_BIT__ - 1),
+		(int, _8bits, : __CHAR_BIT__),
+		(int, _7bits, : __CHAR_BIT__ - 1),
 		);

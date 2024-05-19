@@ -181,7 +181,7 @@ TYPEDEF_STRUCT (struct_union_bitfield_t,
 		(empty_struct_t, empty_struct),
 		int dummy,
 		(union_int32_float_t, xy, , "discriminator"),
-		BITFIELD (enum_discriminator_t, discriminator, :1),
+		(enum_discriminator_t, discriminator, :1),
 		)
 
 TYPEDEF_STRUCT (struct_union_string_t,
@@ -306,6 +306,6 @@ TYPEDEF_STRUCT (struct_union_bitfield_overtided_t,
 		(empty_struct_t, empty_struct),
 		int dummy,
 		(union_int32_float_t, xy, , "discriminator", { IDX_OVERRIDE }, "mr_ud_override_t", sizeof (IDX_OVERRIDE)),
-		BITFIELD (int, discriminator, : 1),
+		(int, discriminator, : 1),
 		)
 

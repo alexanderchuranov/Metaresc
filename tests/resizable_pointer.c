@@ -104,7 +104,7 @@ START_TEST (resizable_array_size_as_int64) {
 
 TYPEDEF_STRUCT (resizable_array_size_as_bitfield_t,
 		(int8_t *, data, , , { "size" }, "string"),
-		BITFIELD (int8_t, size, :3),
+		(int8_t, size, :3),
 		);
 
 START_TEST (resizable_array_size_as_bitfield) {

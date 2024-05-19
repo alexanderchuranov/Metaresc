@@ -4,18 +4,18 @@
 
 TYPEDEF_ENUM (_enum_t, (MINUS_ONE, = -1), ZERO, ONE, (TWO, = 2), (THREE, = 3));
 
-TYPEDEF_STRUCT (struct_bitfield_int8_t, BITFIELD (int8_t, x, : sizeof (int8_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_uint8_t, BITFIELD (uint8_t, x, : sizeof (uint8_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_int16_t, BITFIELD (int16_t, x, : sizeof (int16_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_uint16_t, BITFIELD (uint16_t, x, : sizeof (uint16_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_int32_t, BITFIELD (int32_t, x, : sizeof (int32_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_uint32_t, BITFIELD (uint32_t, x, : sizeof (uint32_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_int64_t, BITFIELD (int64_t, x, : sizeof (int64_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_uint64_t, BITFIELD (uint64_t, x, : sizeof (uint64_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_intmax_t, BITFIELD (mr_intmax_t, x, : sizeof (mr_intmax_t) * __CHAR_BIT__ - 1));
-TYPEDEF_STRUCT (struct_bitfield_uintmax_t, BITFIELD (mr_uintmax_t, x, : sizeof (mr_uintmax_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_int8_t, (int8_t, x, : sizeof (int8_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_uint8_t, (uint8_t, x, : sizeof (uint8_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_int16_t, (int16_t, x, : sizeof (int16_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_uint16_t, (uint16_t, x, : sizeof (uint16_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_int32_t, (int32_t, x, : sizeof (int32_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_uint32_t, (uint32_t, x, : sizeof (uint32_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_int64_t, (int64_t, x, : sizeof (int64_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_uint64_t, (uint64_t, x, : sizeof (uint64_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_intmax_t, (mr_intmax_t, x, : sizeof (mr_intmax_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_uintmax_t, (mr_uintmax_t, x, : sizeof (mr_uintmax_t) * __CHAR_BIT__ - 1));
 
-TYPEDEF_STRUCT (struct_bitfield_enum_t, BITFIELD (_enum_t, x, : sizeof (_enum_t) * __CHAR_BIT__ - 1));
+TYPEDEF_STRUCT (struct_bitfield_enum_t, (_enum_t, x, : sizeof (_enum_t) * __CHAR_BIT__ - 1));
 
 #define CMP_SCALAR(TYPE, X, Y, ...) ((X)->x != (Y)->x)
 

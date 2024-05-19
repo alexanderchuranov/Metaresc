@@ -7,7 +7,7 @@
 
 TYPEDEF_CHAR_ARRAY (char_array_t, 2);
 TYPEDEF_STRUCT (struct_func_t, (void, func, (void)));
-TYPEDEF_STRUCT (struct_bit_field_t, BITFIELD (unsigned int, bf, :2));
+TYPEDEF_STRUCT (struct_bit_field_t, (unsigned int, bf, :2));
 TYPEDEF_STRUCT (struct_array_t, (int, array, [1]));
 TYPEDEF_ENUM (mr_enum_t, ZERO, ONE, TWO);
 TYPEDEF_FUNC (void, void_func_t, (void));
