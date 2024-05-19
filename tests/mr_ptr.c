@@ -5,6 +5,8 @@
 
 #include <union.h>
 
+MR_TYPEDEF_DESC_BI (ca2_t);
+
 #define ASSERT_SAVE_LOAD_MR_PTR(METHOD, TYPE, VALUE, ...) ({		\
       struct_mr_ptr_t x = { .dummy = 0, { (TYPE[]){ { .dummy = 0, { MR_PI }, VALUE } } }, #TYPE }; \
       ASSERT_SAVE_LOAD (METHOD, struct_mr_ptr_t, &x, __VA_ARGS__);	\

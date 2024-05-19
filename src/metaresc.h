@@ -268,7 +268,6 @@
 #define TYPEDEF_STRUCT(...) P00_TYPEDEF (STUB, __VA_ARGS__) P00_TYPEDEF (STRUCT, __VA_ARGS__)
 #define TYPEDEF_UNION(...) P00_TYPEDEF (STUB, __VA_ARGS__) P00_TYPEDEF (UNION, __VA_ARGS__)
 #define TYPEDEF_ENUM(...) P00_TYPEDEF (ENUM, __VA_ARGS__)
-#define TYPEDEF_CHAR_ARRAY(...) P00_TYPEDEF (CHAR_ARRAY, __VA_ARGS__)
 #define TYPEDEF_FUNC(...) P00_TYPEDEF (FUNC, __VA_ARGS__)
 
 /* Macroses for builtin types meta data registration */
@@ -303,7 +302,7 @@
 #define P00_GET_NON_ATTRIBUTES(...) MR_FOREACH (P00_EXTRACT_NON_ATTRIBUTES, __VA_ARGS__)
 
 /*
-  TYPEDEF_{STRUCT|UNION|ENUM|CHAR_ARRAY|FUNC} might have one of arguments with prefix ATTRIBUTES (...).
+  TYPEDEF_{STRUCT|UNION|ENUM|FUNC} might have one of arguments with prefix ATTRIBUTES (...).
   This key word denotes type attributes and meta information.
   Next macro moves ATTRIBUTES argument to first position in arguments list.
 */
@@ -317,7 +316,9 @@
 
 /*
   Here is switch on definition type.
-  CHAR_ARRAY and FUNC should be directly expanded to MR_TYPEDEF_CHAR_ARRAY and MR_TYPEDEF_FUNC respectively.
+  FUNC should be directly expanded to MR_TYPEDEF_FUNC respectively.
+  STUB applies only for DESC mode. It declares a stub union type with fields of type int8_t and names as in original structure/union.
+  This type is required for bitfield/array descriptor definition.
 */
 #define P00_TYPEDEF_ATTR_STRUCT TYPEDEF_ATTR
 #define P00_TYPEDEF_ATTR_UNION TYPEDEF_ATTR
@@ -326,7 +327,6 @@
 #define MR_DESC_EQ_DESC 0
 #define P00_TYPEDEF_ATTR_STUB(P00_MODE, ...) MR_IF_ELSE (MR_PASTE2 (MR_DESC_EQ_, P00_MODE)) () (TYPEDEF_ATTR (STUB, __VA_ARGS__))
 
-#define P00_TYPEDEF_ATTR_CHAR_ARRAY(P00_MODE, P00_ID, P00_TYPE, ATTR_META_RES, P00_TYPE_NAME, SIZE, ...) MR_PASTE2 (MR_TYPEDEF_CHAR_ARRAY_, P00_MODE) (P00_ID, P00_TYPE_NAME, SIZE, MR_PASTE2 (P00_REMOVE_, ATTR_META_RES), __VA_ARGS__)
 #define P00_TYPEDEF_ATTR_FUNC(P00_MODE, P00_ID, P00_TYPE, ATTR_META_RES, RET_TYPE, P00_TYPE_NAME, ARGS, ...) MR_PASTE2 (MR_TYPEDEF_FUNC_, P00_MODE) (P00_ID, RET_TYPE, P00_TYPE_NAME, ARGS, MR_PASTE2 (P00_REMOVE_, ATTR_META_RES), __VA_ARGS__)
 
 #define P00_UNFOLD(PREFIX, P00_TYPE, P00_MODE, ...) MR_PASTE4 (PREFIX, P00_TYPE, _, P00_MODE) (__VA_ARGS__)
@@ -532,6 +532,15 @@
 #define MR_UNFOLD(NODE, ...) MR_PASTE3 (NODE, _, MR_MODE) (MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_TYPEDEF_STRUCT(...) MR_UNFOLD (MR_TYPEDEF_STRUCT, __VA_ARGS__)
+#define MR_END_STRUCT(...) MR_UNFOLD (MR_END_STRUCT, __VA_ARGS__)
+
+#define MR_TYPEDEF_UNION(...) MR_UNFOLD (MR_TYPEDEF_UNION, __VA_ARGS__)
+#define MR_END_UNION(...) MR_UNFOLD (MR_END_UNION, __VA_ARGS__)
+
+#define MR_TYPEDEF_ENUM(...) MR_UNFOLD (MR_TYPEDEF_ENUM, __VA_ARGS__)
+#define MR_END_ENUM(...) MR_UNFOLD (MR_END_ENUM, __VA_ARGS__)
+
+#define MR_TYPEDEF_FUNC(...) MR_UNFOLD (MR_TYPEDEF_FUNC, __VA_ARGS__)
 
 #define MR_AUTO(...) MR_UNFOLD (MR_AUTO, __VA_ARGS__)
 #define MR_VOID(...) MR_UNFOLD (MR_VOID, __VA_ARGS__)
@@ -539,18 +548,8 @@
 #define MR_ARRAY(...) MR_UNFOLD (MR_ARRAY, __VA_ARGS__)
 #define MR_ARRAY_OR_BITFIELD(...) MR_UNFOLD (MR_ARRAY_OR_BITFIELD, __VA_ARGS__)
 #define MR_FUNC(...) MR_UNFOLD (MR_FUNC, __VA_ARGS__)
-#define MR_END_STRUCT(...) MR_UNFOLD (MR_END_STRUCT, __VA_ARGS__)
-
-#define MR_TYPEDEF_UNION(...) MR_UNFOLD (MR_TYPEDEF_UNION, __VA_ARGS__)
-#define MR_END_UNION(...) MR_UNFOLD (MR_END_UNION, __VA_ARGS__)
 #define MR_ANON_UNION(...) MR_UNFOLD (MR_ANON_UNION, __VA_ARGS__)
 #define MR_END_ANON_UNION(...) MR_UNFOLD (MR_END_ANON_UNION, __VA_ARGS__)
-
-#define MR_TYPEDEF_ENUM(...) MR_UNFOLD (MR_TYPEDEF_ENUM, __VA_ARGS__)
-#define MR_END_ENUM(...) MR_UNFOLD (MR_END_ENUM, __VA_ARGS__)
-
-#define MR_TYPEDEF_CHAR_ARRAY(...) MR_UNFOLD (MR_TYPEDEF_CHAR_ARRAY, __VA_ARGS__)
-#define MR_TYPEDEF_FUNC(...) MR_UNFOLD (MR_TYPEDEF_FUNC, __VA_ARGS__)
 
 /* Macroses for prototypes generation mode */
 #define MR_TYPEDEF_STRUCT_PROTO(ID, MR_TYPE_NAME) typedef struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) MR_TYPE_NAME; struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
@@ -575,9 +574,6 @@
 
 #define MR_ENUM_DEF_PROTO(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_PROTO_ (MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_PROTO_(MR_TYPE_NAME, NAME, RHS, ...) NAME RHS,
-
-#define MR_TYPEDEF_CHAR_ARRAY_PROTO(ID, MR_TYPE_NAME, SIZE, /* ATTR */...) MR_TYPEDEF_CHAR_ARRAY_PROTO_ (MR_TYPE_NAME, SIZE, __VA_ARGS__)
-#define MR_TYPEDEF_CHAR_ARRAY_PROTO_(MR_TYPE_NAME, SIZE, ATTR, /* META */ ...) typedef ATTR char MR_TYPE_NAME[SIZE];
 
 #define MR_TYPEDEF_FUNC_PROTO(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_PROTO_ (RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
 #define MR_TYPEDEF_FUNC_PROTO_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) typedef ATTR RET_TYPE (*MR_TYPE_NAME) ARGS;
@@ -799,10 +795,6 @@
 	.value = { ._unsigned = NAME, },			     \
 	.meta = "" __VA_ARGS__,					     \
 	} },
-
-#define MR_TYPEDEF_CHAR_ARRAY_DESC(ID, MR_TYPE_NAME, SIZE, /* ATTR */ ...) \
-  MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_CHAR_ARRAY)		\
-    MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
 
 #define MR_TYPEDEF_FUNC_DESC(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (ID, RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
 #define MR_TYPEDEF_FUNC_DESC_(ID, RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) \

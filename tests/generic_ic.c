@@ -5,7 +5,8 @@
 #include <mr_ic.h>
 #include <regression.h>
 
-TYPEDEF_CHAR_ARRAY (char_array_t, 2);
+typedef char char_array_t[2];
+MR_TYPEDEF_DESC_BI (char_array_t);
 TYPEDEF_STRUCT (struct_func_t, (void, func, (void)));
 TYPEDEF_STRUCT (struct_bit_field_t, (unsigned int, bf, :2));
 TYPEDEF_STRUCT (struct_array_t, (int, array, [1]));

@@ -3,7 +3,7 @@
 #include <metaresc.h>
 #include <regression.h>
 
-TYPEDEF_CHAR_ARRAY (char_array_t, 256);
+typedef char char_array_t[256];
 TYPEDEF_STRUCT (struct_string_t, string_t x);
 TYPEDEF_STRUCT (struct_charp_t, (char *, x));
 TYPEDEF_STRUCT (struct_char_array_t, (char, x, [256])); /* saved as an array of characters */

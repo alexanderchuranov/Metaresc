@@ -239,7 +239,7 @@ TYPEDEF_STRUCT (struct_union_string_struct_ptr_array_t,
 		(string_struct_t *, discriminator, [1]),
 		)
 
-TYPEDEF_CHAR_ARRAY (ca2_t, 2)
+typedef char ca2_t[2];
 
 TYPEDEF_STRUCT (struct_union_ca_t,
 		(empty_union_t, empty_union),
