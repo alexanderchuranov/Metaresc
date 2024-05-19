@@ -756,7 +756,7 @@ resources at runtime via reflection API provided by Metaresc. Field
 declaration is presented as positional set of parameters in
 parentheses:
 
-(type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
+`(type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)`
 
 Only the first two parameters are mandatory, the rest are optional.
 1. **type** is a field type
@@ -872,7 +872,7 @@ method. I.e. `size` field configured as a string identifier and formed
 from the name of the field with `_size` suffix.
 
 #### Array declaration
-Third argument `_suffix_` in the field's declaration denotes dimensions
+Third argument `**_suffix_**` in the field's declaration denotes dimensions
 of the array. Metaresc is capable to distinguish multi-dimensional
 arrays up to 4 diminsions. Higher orders of dimensions are treated as
 four-dimensional arrays with aggregated lower dimension. You could
@@ -954,7 +954,7 @@ TYPEDEF_STRUCT (array_t,
 ```
 
 #### Function pointer declaration
-If `_suffix_` is an expression in parentheses, then this field is
+If `**_suffix_**` is an expression in parentheses, then this field is
 treated as a function pointer declaration. I.e. declaration is
 equivalent of `type (*name) suffix;` as a standard type
 declaration. List of function arguments is processed and Metaresc type
@@ -978,8 +978,8 @@ TYPEDEF_STRUCT (functions_t,
 
 #### Bitfields declaration
 Bitfields could be declared with the same semantics as arrays and
-function pointers. Specify `_suffix_` as semicolon and bitfield width
-and Metaresc will automatically detect ditfield declaration. **type**
+function pointers. Specify `**_suffix_**` as semicolon and bitfield width
+and Metaresc will automatically detect bitfield declaration. **type**
 must be one of integer types including `bool`. `enums` are  also
 represented as integer types by language design.
 
@@ -1147,19 +1147,13 @@ character.
 on an array or characters of a certain length.
 
 By default `char *` is classified by Metaresc as a NULL-terminated
-string. For declaration of a pointer on a single character or an array
-the user should use the keyword `POINTER`.
-
-POINTER (type, name, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
-
-It is similar to standard declaration, but doesn't have **_suffix_**
-argument. Pointer on an array could be declared in the same fashion
-as for any other pointer. Here is a sample declaration of substring
-type.
+string. For declaration of a pointer on a single character add
+`.stype.mr_type = MR_TYPE_POINTER` at the end of field declaration
+(separated by comma after any argument after _text\_metadata_).
 
 ```c
 TYPEDEF_STRUCT (substr_t,
-		POINTER (char, str, , { .offset = offsetof (substr_t, length) }, "offset"),
+	        (char *, str, , { .offset = offsetof (substr_t, length) }, "offset", .stype.mr_type = MR_TYPE_POINTER),
 		VOID (size_t, length));
 ```
 
@@ -1168,15 +1162,17 @@ array. In most cases this declaration implies limited length
 NULL-terminated static string, but in some cases user might want to
 serialize this field as an array of characters. Standard declaration
 of the array will be considered as a second case. For limited length
-NULL-terminated static strings user should use either keyword
-CHAR_ARRAY or declare custom type. Example as follows:
+NULL-terminated static strings add `.stype.mr_type =
+MR_TYPE_CHAR_ARRAY, .stype.is_array = false` at the end of field
+declaration. Example as follows:
 
 ```c
 typedef char static_string_t[sizeof ("Metaresc")];
 
 TYPEDEF_STRUCT (char_array_t,
 		(char, array, [sizeof ("Metaresc")], "array of characters"),
-		CHAR_ARRAY (char, inline_static_string, [sizeof ("Metaresc")], "inline static NULL-terminated string"),
+		(char, inline_static_string, [sizeof ("Metaresc")],
+		"inline static NULL-terminated string", .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false),
 		(static_string_t, static_string, , "static NULL-terminated string"));
 ```
 
@@ -1212,9 +1208,7 @@ argument of the macro is a type name and the rest are enumeration
 values. For enumeration values you can use either simplified semantics
 or extended variant.
 
-(name, _value\_assignment_, _text\_metadata_,
-{ _pointer\_on\_resources\_array_ }, _resource\_type_,
-_resource\_array\_size_)
+`(name, _value\_assignment_, _text\_metadata_, { _pointer\_on\_resources\_array_ }, _resource\_type_, _resource\_array\_size_)`
 
 All arguments except the first one are optional. Example below
 demonstrates the use of the macro:

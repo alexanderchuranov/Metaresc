@@ -50,7 +50,7 @@ START_TEST (invalid_enum_ptr) {
 
 #undef SKIP_METHOD_XDR
 
-TYPEDEF_STRUCT (char_ptr_t, POINTER (char, x));
+TYPEDEF_STRUCT (char_ptr_t, (char *, x, , , .stype.mr_type = MR_TYPE_POINTER));
 
 START_TEST (char_ptr) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char_ptr_t, NULL);
@@ -87,7 +87,7 @@ START_TEST (self_ref_ptr) {
 } END_TEST
 
 TYPEDEF_STRUCT (self_ref_string_t,
-		CHAR_ARRAY (char, x, [sizeof ("x")]),
+		(char, x, [sizeof ("x")], , .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false),
 		string_t y,
 		(string_t *, z),
 		mr_ptr_t v);

@@ -380,7 +380,7 @@
 #define P00_GET_TYPE_NAME(P00_MODE, P00_TYPE_NAME) P00_TYPE_NAME
 /*
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted MR_ type prefix.
-  The 3rd macro unfolds to MR_{VOID|BITFIELD|POINTER|...}_{PROTO|DESC} (P00_TYPE_NAME, ARGS...)
+  The 3rd macro unfolds to MR_{VOID|BITFIELD|...}_{PROTO|DESC} (P00_TYPE_NAME, ARGS...)
   Last one detects unknown field qualifiers.
 */
 #define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, MR_PASTE2 (P00_COMMA_, FIELD))
@@ -412,9 +412,8 @@
 #define P00_COMMA__ AUTO,
 #define P00_COMMA_VOID VOID,
 #define P00_COMMA_BITFIELD BITFIELD,
-#define P00_COMMA_CHAR_ARRAY CHAR_ARRAY,
 #define P00_COMMA_ARRAY ARRAY,
-#define P00_COMMA_POINTER POINTER,
+#define P00_COMMA_ARRAY_OR_BITFIELD ARRAY_OR_BITFIELD,
 #define P00_COMMA_FUNC FUNC,
 
 #define P00_COMMA_char AUTO_BI, char,
@@ -537,9 +536,8 @@
 #define MR_AUTO(...) MR_UNFOLD (MR_AUTO, __VA_ARGS__)
 #define MR_VOID(...) MR_UNFOLD (MR_VOID, __VA_ARGS__)
 #define MR_BITFIELD(...) MR_UNFOLD (MR_BITFIELD, __VA_ARGS__)
-#define MR_CHAR_ARRAY(...) MR_UNFOLD (MR_CHAR_ARRAY, __VA_ARGS__)
 #define MR_ARRAY(...) MR_UNFOLD (MR_ARRAY, __VA_ARGS__)
-#define MR_POINTER(...) MR_UNFOLD (MR_POINTER, __VA_ARGS__)
+#define MR_ARRAY_OR_BITFIELD(...) MR_UNFOLD (MR_ARRAY_OR_BITFIELD, __VA_ARGS__)
 #define MR_FUNC(...) MR_UNFOLD (MR_FUNC, __VA_ARGS__)
 #define MR_END_STRUCT(...) MR_UNFOLD (MR_END_STRUCT, __VA_ARGS__)
 
@@ -562,15 +560,14 @@
 #define MR_TYPEDEF_ENUM_PROTO(ID, MR_TYPE_NAME) typedef enum MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
 #define MR_END_ENUM_PROTO(ID, MR_TYPE_NAME, ATTR, ...) } ATTR MR_TYPE_NAME;
 
-/* next macro adds empty argument. Required for MR_AUTO, MR_VOID, MR_CHAR_ARRAY with two parameters. It adds 3rd parameter (suffix) for them. */
+/* next macro adds empty argument. Required for MR_AUTO, MR_VOID with two parameters. It adds 3rd parameter (suffix) for them. */
 #define MR_AUTO_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
 #define MR_VOID_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
-#define MR_CHAR_ARRAY_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
 
 #define MR_FIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) TYPE NAME SUFFIX;
 #define MR_BITFIELD_PROTO MR_FIELD_PROTO
 #define MR_ARRAY_PROTO MR_FIELD_PROTO
-#define MR_POINTER_PROTO(MR_TYPE_NAME, TYPE, NAME, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE *, NAME, )
+#define MR_ARRAY_OR_BITFIELD_PROTO MR_FIELD_PROTO
 #define MR_FUNC_PROTO(MR_TYPE_NAME, TYPE, NAME, ARGS, ...) MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, (*NAME), ARGS)
 
 #define MR_ANON_UNION_PROTO(MR_TYPE_NAME, NAME, ... /* ATTR */) MR_IF_ELSE (MR_IS_EMPTY (NAME)) () (char NAME[0];) union __VA_ARGS__ {
@@ -644,11 +641,6 @@
 	.bitfield_param.bitfield = (uint8_t*)((MR_TYPE_NAME[]){ { .NAME = -1 } }), \
 	.meta = "" __VA_ARGS__,						\
 	} },
-
-#define P00_COMMA_ARRAY_OR_BITFIELD ARRAY_OR_BITFIELD,
-#define MR_ARRAY_OR_BITFIELD(...) MR_UNFOLD (MR_ARRAY_OR_BITFIELD, __VA_ARGS__)
-#define MR_ARRAY_OR_BITFIELD_PROTO MR_FIELD_PROTO
-#define MR_ARRAY_OR_BITFIELD_STUB MR_FIELD_STUB
 
 #define MR_IS_AN_ARRAY(X) (__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS)
 
@@ -726,10 +718,6 @@
     (MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__))
 
 #define MR_VOID_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-#define MR_CHAR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_CHAR_ARRAY_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-
-#define MR_CHAR_ARRAY_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE_CHAR_ARRAY, __VA_ARGS__)
-#define MR_POINTER_DESC(MR_TYPE_NAME, TYPE, NAME, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_POINTER, __VA_ARGS__, .stype.mr_type_aux = MR_TYPE_DETECT (TYPE))
 #define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .func_param = { .args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, })
 
 /*
@@ -758,9 +746,8 @@
 #define MR_AUTO_STUB MR_FIELD_STUB
 #define MR_ARRAY_STUB MR_FIELD_STUB
 #define MR_BITFIELD_STUB MR_FIELD_STUB
+#define MR_ARRAY_OR_BITFIELD_STUB MR_FIELD_STUB
 #define MR_VOID_STUB MR_FIELD_STUB
-#define MR_CHAR_ARRAY_STUB MR_FIELD_STUB
-#define MR_POINTER_STUB MR_FIELD_STUB
 #define MR_FUNC_STUB MR_FIELD_STUB
 
 #define MR_TYPEDEF_STRUCT_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_STRUCT)

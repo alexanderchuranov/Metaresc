@@ -7,14 +7,16 @@ TYPEDEF_CHAR_ARRAY (char_array_t, 256);
 TYPEDEF_STRUCT (struct_string_t, string_t x);
 TYPEDEF_STRUCT (struct_charp_t, (char *, x));
 TYPEDEF_STRUCT (struct_char_array_t, (char, x, [256])); /* saved as an array of characters */
-TYPEDEF_STRUCT (struct_ca_t, CHAR_ARRAY (char, x, [256])); /* saved as a quoted string */
+TYPEDEF_STRUCT (struct_ca_t, (char, x, [256], , .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false)); /* saved as a quoted string */
 TYPEDEF_STRUCT (struct_ca_type_t, (char_array_t, x));
 
 TYPEDEF_STRUCT (struct_ca_str_t, (char_array_t, x), string_t y);
 TYPEDEF_STRUCT (struct_str_ca_t, string_t y, (char_array_t, x));
 TYPEDEF_STRUCT (struct_str_str_t, string_t x, string_t y);
 
-TYPEDEF_STRUCT (struct_ca_int_t, ATTRIBUTES (__attribute__ ((packed))), CHAR_ARRAY (char, x, [1]), int y);
+TYPEDEF_STRUCT (struct_ca_int_t, ATTRIBUTES (__attribute__ ((packed))),
+		(char, x, [1], , .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false),
+		int y);
 
 #define ASSERT_SAVE_LOAD_CHAR_POINTER(METHOD, ...) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, string_t,  __VA_ARGS__);		\

@@ -1310,15 +1310,22 @@ mr_detect_structured_type (mr_stype_t * stype)
   mr_normalize_type (type);
 
   mr_td_t * tdp = mr_get_td_by_name_internal (type);
-  if ((NULL == tdp)
-      && (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_POINTER)) >> stype->mr_type) & 1)
-      && mr_type_is_a_pointer (type))
+  if (tdp)
+    {
+      if (MR_TYPE_BITFIELD == stype->mr_type)
+	stype->mr_type_aux = tdp->mr_type; /* enums case */
+      else if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128)) >> stype->mr_type) & 1)
+	stype->mr_type = tdp->mr_type; /* enums case */
+    }
+  else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_POINTER)) >> stype->mr_type) & 1)
+	   && mr_type_is_a_pointer (type))
     {
       stype->mr_type = MR_TYPE_POINTER;
       tdp = mr_get_td_by_name_internal (type);
-      if ((NULL == tdp)
-	  && (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_POINTER)) >> stype->mr_type_aux) & 1)
-	  && mr_type_is_a_pointer (type))
+      if (tdp)
+	stype->mr_type_aux = tdp->mr_type;
+      else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_POINTER)) >> stype->mr_type_aux) & 1)
+	       && mr_type_is_a_pointer (type))
 	{
 	  stype->mr_type_aux = MR_TYPE_POINTER;
 	  tdp = mr_get_td_by_name_internal (type);
@@ -1326,21 +1333,8 @@ mr_detect_structured_type (mr_stype_t * stype)
     }
 
   /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
-  if ((stype->mr_type == MR_TYPE_NONE) && (stype->mr_type_aux != MR_TYPE_NONE))
+  if ((MR_TYPE_NONE == stype->mr_type) && (stype->mr_type_aux != MR_TYPE_NONE))
     stype->mr_type = MR_TYPE_POINTER;
-
-  if (tdp)
-    {
-      if (MR_TYPE_BITFIELD == stype->mr_type)
-	stype->mr_type_aux = tdp->mr_type; /* enums case */
-      else if (MR_TYPE_POINTER == stype->mr_type)
-	{
-	  if (stype->mr_type_aux != MR_TYPE_POINTER)
-	    stype->mr_type_aux = tdp->mr_type;
-	}
-      else if (MR_TYPE_CHAR_ARRAY != stype->mr_type)
-	stype->mr_type = tdp->mr_type;
-    }
 
   /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
   if ((MR_TYPE_NONE == stype->mr_type) && (MR_POINTER_TYPE_CLASS == stype->mr_type_class))
