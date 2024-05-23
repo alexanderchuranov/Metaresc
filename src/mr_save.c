@@ -15,9 +15,9 @@ static inline mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
   /* check that field index in union is valid and reset to default otherwise */
-  if ((idx < 0) || (idx >= tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0])))
+  if ((idx < 0) || (idx >= tdp->param.union_param.fields_size / sizeof (tdp->param.union_param.fields[0])))
     idx = 0;
-  if (tdp->param.struct_param.fields_size > 0) /* check for an empty union */
+  if (tdp->param.union_param.fields_size > 0) /* check for an empty union */
     return (tdp->param.struct_param.fields[idx]);
   else
     return (NULL);
@@ -34,8 +34,8 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
 	  return (fdp);
       }
   
-  if (tdp->param.struct_param.fields_size > 0) /* check for an empty union */
-    return (tdp->param.struct_param.fields[0]);
+  if (tdp->param.union_param.fields_size > 0) /* check for an empty union */
+    return (tdp->param.union_param.fields[0]);
   else
     return (NULL);
 }
@@ -172,11 +172,11 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	case MR_TYPE_ANON_UNION:
 	case MR_TYPE_NAMED_ANON_UNION:
 	  if (parent_fdp->stype.tdp)
-	    if ((parent_fdp->stype.tdp->param.struct_param.fields_size >= sizeof (parent_fdp->stype.tdp->param.struct_param.fields[0])) &&
+	    if ((parent_fdp->stype.tdp->param.union_param.fields_size >= sizeof (parent_fdp->stype.tdp->param.union_param.fields[0])) &&
 		parent_fdp->stype.tdp->is_union_discriminator)
 	      {
-		discriminator = (char*)discriminator + parent_fdp->stype.tdp->param.struct_param.fields[0]->offset;
-		parent_fdp = parent_fdp->stype.tdp->param.struct_param.fields[0];
+		discriminator = (char*)discriminator + parent_fdp->stype.tdp->param.union_param.fields[0]->offset;
+		parent_fdp = parent_fdp->stype.tdp->param.union_param.fields[0];
 		mr_type = parent_fdp->stype.mr_type;
 		break;
 	      }
@@ -1054,7 +1054,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
   mr_save_handler_t save_handler = NULL;
   if ((fdp->stype.mr_type >= 0) && (fdp->stype.mr_type < MR_TYPE_LAST))
     save_handler = mr_save_handler[fdp->stype.mr_type];
-  
+
   mr_idx_t nodes_added = 1;
   if (save_handler)
     nodes_added = save_handler (mr_save_data);
@@ -1146,6 +1146,7 @@ static mr_idx_t
 mr_save_union (mr_save_data_t * mr_save_data)
 {
   mr_idx_t parent, idx = mr_save_data->ptrs.size / sizeof (mr_save_data->ptrs.ra[0]) - 1;
+  mr_td_t * union_tdp = mr_save_data->ptrs.ra[idx].fdp->stype.tdp;
   char * data = mr_save_data->ptrs.ra[idx].data.ptr;
 
   for (parent = idx; parent != MR_NULL_IDX; parent = mr_save_data->ptrs.ra[parent].parent)
@@ -1153,10 +1154,11 @@ mr_save_union (mr_save_data_t * mr_save_data)
       if (!mr_save_data->ptrs.ra[parent].fdp->non_persistent)
 	break;
       
-  if (parent == MR_NULL_IDX)
-    return (0);
-
-  mr_fd_t * discriminated_fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[parent].fdp);
+  mr_fd_t * discriminated_fdp = NULL;
+  if (parent != MR_NULL_IDX)
+    discriminated_fdp = mr_union_discriminator (mr_save_data, idx, mr_save_data->ptrs.ra[parent].fdp);
+  else if (union_tdp != NULL)
+    discriminated_fdp = mr_union_discriminator_by_idx (union_tdp, 0);
 
   if (NULL != discriminated_fdp)
     return (mr_save_inner (&data[discriminated_fdp->offset], discriminated_fdp, 1, mr_save_data, idx));
@@ -1574,6 +1576,7 @@ mr_save (void * data, mr_fd_t * fdp)
 
   fdp->unnamed = true;
   mr_idx_t nodes_added = mr_save_inner (data, fdp, 1, &mr_save_data, MR_NULL_IDX);
+
   if (nodes_added > 0)
     {
       for (i = 1; i < mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]); ++i)
