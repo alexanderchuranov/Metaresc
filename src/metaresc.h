@@ -847,31 +847,73 @@
   static inline void __attribute__((constructor))			\
   MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
     mr_dump_struct_type_ctx_t dst_ctx;					\
-    MR_TYPE_NAME __value;						\
-    uint8_t * __ptr = (uint8_t*)&__value;				\
-    mr_size_t __block_size, __i;					\
-    for (__i = 0; __i < sizeof (__value); ++__i)			\
-      *__ptr++ = __i;							\
+    MR_TYPE_NAME value;							\
+    uint8_t * ptr = (uint8_t*)&value;					\
+    size_t block_size, i;						\
+    for (i = 0; i < sizeof (value); ++i)				\
+      *ptr++ = i;							\
     memset (&dst_ctx, 0, sizeof (dst_ctx));				\
-    dst_ctx.struct_ptr = &__value;					\
+    dst_ctx.struct_ptr = &value;					\
     dst_ctx.tdp = &MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME);		\
     for (dst_ctx.offset_byte = 0; ; ++dst_ctx.offset_byte)		\
       {									\
 	dst_ctx.field_idx = 0;						\
 	if (0 == setjmp (dst_ctx._jmp_buf))				\
-	  __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
-	__block_size = 1 << (__CHAR_BIT__ * (1 + dst_ctx.offset_byte));	\
-	if (sizeof (__value) < __block_size)				\
+	  __builtin_dump_struct (&value, mr_dump_struct_type_detection, &dst_ctx); \
+	block_size = 1 << (__CHAR_BIT__ * (1 + dst_ctx.offset_byte));	\
+	if (sizeof (value) < block_size)				\
 	  break;							\
-	__i = 0;							\
-	for (__ptr = (uint8_t*)&__value;				\
-	     __ptr - (uint8_t*)&__value < sizeof (__value) - (__block_size - 1); \
-	     __ptr += __block_size)					\
-	  memset (__ptr, __i++, __block_size);				\
-	memset (__ptr, __i, sizeof (__value) & (__block_size - 1));	\
+	i = 0;								\
+	for (ptr = (uint8_t*)&value;					\
+	     ptr - (uint8_t*)&value < sizeof (value) - (block_size - 1); \
+	     ptr += block_size)						\
+	  memset (ptr, i++, block_size);				\
+	memset (ptr, i, sizeof (value) & (block_size - 1));		\
       }									\
     mr_struct_param_t * struct_param = &dst_ctx.tdp->param.struct_param; \
-    int count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
+    size_t count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
+    int size = sizeof (value) - 1;					\
+    block_size = 1 << (sizeof (int) * __CHAR_BIT__ -			\
+		       __builtin_clz ((size <= 0) ? 1 : size) - 1);	\
+    while (block_size != 0)						\
+      {									\
+	i = 0;								\
+	for (ptr = (uint8_t*)&value;					\
+	     ptr - (uint8_t*)&value < sizeof (value) - (block_size - 1); \
+	     ptr += block_size)						\
+	  memset (ptr, -(i++ & 1), block_size);				\
+	memset (ptr, -(i++ & 1), sizeof (value) & (block_size - 1));	\
+	dst_ctx.field_idx = count;					\
+	if (0 == setjmp (dst_ctx._jmp_buf))				\
+	  __builtin_dump_struct (&value, mr_dump_struct_bitfield_detection, &dst_ctx); \
+	if (dst_ctx.field_idx == count)					\
+	  break;							\
+	block_size >>= 1;						\
+      }									\
+    if (dst_ctx.field_idx != count)					\
+      {									\
+	memset (&value, 0b11110000, sizeof (value));			\
+	dst_ctx.field_idx = count;					\
+	if (0 == setjmp (dst_ctx._jmp_buf))				\
+	  __builtin_dump_struct (&value, mr_dump_struct_bitfield_detection, &dst_ctx); \
+	memset (&value, 0b11001100, sizeof (value));			\
+	dst_ctx.field_idx = count;					\
+	if (0 == setjmp (dst_ctx._jmp_buf))				\
+	  __builtin_dump_struct (&value, mr_dump_struct_bitfield_detection, &dst_ctx); \
+	memset (&value, 0b10101010, sizeof (value));			\
+	dst_ctx.field_idx = count;					\
+	if (0 == setjmp (dst_ctx._jmp_buf))				\
+	  __builtin_dump_struct (&value, mr_dump_struct_bitfield_detection, &dst_ctx); \
+	i = count;							\
+	count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
+	for ( ; i < count; ++i)						\
+	  {								\
+	    struct_param->fields[i]->bitfield_param.initialized = true;	\
+	    struct_param->fields[i]->bitfield_param.shift =		\
+	      struct_param->fields[i]->offset % __CHAR_BIT__;		\
+	    struct_param->fields[i]->offset /= __CHAR_BIT__;		\
+	  }								\
+      }									\
     struct_param->fields[MR_PP_DEPTH] = struct_param->fields[count];	\
     struct_param->fields[count] = NULL;					\
     mr_add_type (dst_ctx.tdp);						\
@@ -1454,6 +1496,7 @@ extern __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
 extern int mr_get_struct_type_name (const char * fmt, ...);
 #else /* ! HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 extern int mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...);
+extern int mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...);
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
 extern int mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...);

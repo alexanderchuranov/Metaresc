@@ -330,10 +330,9 @@ int main (int argc, char * argv[])
 For happy users of clang15+ library provides one more option to
 discover type descriptors. Use macro `MR_ADD_TYPE` for structs and
 unions. This macro will automatically discover fields of most basic
-types, inline structures and unions, arrays and pointers of known
-types. Fields of the following types are not supported: inline
-strings, enums, function pointers, bitfields and arrays of
-pointers. Example above will look as follows:
+types, inline structures and unions, bitfields, arrays and pointers of
+known types. Fields of the following types are not supported: inline
+strings, enums, function pointers. Example above will look as follows:
 
 ```c
 #include <metaresc.h>

@@ -476,7 +476,20 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (uint64_t, _uint64),
 		     (mr_int128_t, _int128),
 		     (mr_uint128_t, _uint128),
-		     (long_double_t, _long_double),
+		     (bool, x1, : 1),
+		     (char, x2, : 2),
+		     (signed char, x3, : 3),
+		     (unsigned char, x4, : 4),
+		     (signed short, x5, : 5),
+		     (unsigned short, x6, : 6),
+		     (signed int, x7, : 7),
+		     (unsigned int, x9, : 9),
+		     (signed long, x10, : 10),
+		     (unsigned long, x11, : 11),
+		     (signed long long, x12, : 12),
+		     (unsigned long long, x13, : 13),
+		     (mr_type_t, x14, : 7, "unsigned enum"),
+		     (mr_type_class_t, x15, : 7, "signed enum"),
 		     (mr_empty_t *, _struct_ptr),
 		     (void *, void_ptr),
 		     (int *, int_ptr),
@@ -485,12 +498,16 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (int32_alias_t, int32_alias5),
 		     (const int32_alias_t, int32_alias6),
 		     (int32_alias_t volatile, int32_alias7),
-		     (double, _double),
-		     (float, _float),
 		     (embeded_struct_t, embeded_struct),
 		     (embeded_union_t, embeded_union),
 		     (wrap_embeded_struct_t, wrap_embeded_struct),
 		     (wrap_embeded_union_t, wrap_embeded_union),
+		     (float, _float),
+		     (double, _double),
+		     (long double, long_double),
+		     (complex float, cf),
+		     (complex double, cd),
+		     (complex long double, cld),
 		     );
 
 typedef char * alias_string_t;
@@ -527,9 +544,9 @@ START_TEST (dump_struct_types_detection) {
 	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_VOID)))
 	ck_assert_msg (mr_fdp->stype.mr_type_aux == dst_fdp->stype.mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->stype.mr_type_aux, dst_fdp->stype.mr_type_aux, mr_fdp->name.str);
 
-      int j;
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
 	{
+	  int j;
 	  ck_assert_msg (mr_fdp->stype.dim.size == dst_fdp->stype.dim.size,
 			 "dump_struct mismatched array_param.size (%d != %d) for field '%s'",
 			 (int)mr_fdp->stype.dim.size, (int)dst_fdp->stype.dim.size, mr_fdp->name.str);
@@ -538,6 +555,15 @@ START_TEST (dump_struct_types_detection) {
 	    ck_assert_msg (mr_fdp->stype.dim.dim[j] == dst_fdp->stype.dim.dim[j],
 			   "dump_struct mismatched dim[%d] (%d != %d) for field '%s'",
 			   j, (int)mr_fdp->stype.dim.dim[j], (int)dst_fdp->stype.dim.dim[j], mr_fdp->name.str);
+	}
+      if (mr_fdp->stype.mr_type == MR_TYPE_BITFIELD)
+	{
+	  ck_assert_msg (mr_fdp->bitfield_param.shift == dst_fdp->bitfield_param.shift,
+			 "dump_struct mismatched bitfield_param.shift (%d != %d) for field '%s'",
+			 (int)mr_fdp->bitfield_param.shift, (int)dst_fdp->bitfield_param.shift, mr_fdp->name.str);
+	  ck_assert_msg (mr_fdp->bitfield_param.width == dst_fdp->bitfield_param.width,
+			 "dump_struct mismatched bitfield_param.width (%d != %d) for field '%s'",
+			 (int)mr_fdp->bitfield_param.width, (int)dst_fdp->bitfield_param.width, mr_fdp->name.str);
 	}
       ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
     }
