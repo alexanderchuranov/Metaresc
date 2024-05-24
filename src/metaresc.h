@@ -857,6 +857,7 @@
     dst_ctx.tdp = &MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME);		\
     for (dst_ctx.offset_byte = 0; ; ++dst_ctx.offset_byte)		\
       {									\
+	dst_ctx.field_idx = 0;						\
 	if (0 == setjmp (dst_ctx._jmp_buf))				\
 	  __builtin_dump_struct (&__value, mr_dump_struct_type_detection, &dst_ctx); \
 	__block_size = 1 << (__CHAR_BIT__ * (1 + dst_ctx.offset_byte));	\

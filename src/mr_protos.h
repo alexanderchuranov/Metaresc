@@ -661,6 +661,7 @@ TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type dete
 		(char *, type, , "embeded struct/union type"),
 		(char *, name, , "embeded struct/union name"),
 		(int, offset_byte, , "which byte of offset is set in struct"),
+		(int, field_idx, , "index of the next detected field for structures bigger then (1 << __CHAR_BIT__)"),
 		)
 
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),

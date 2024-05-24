@@ -117,7 +117,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 {
   mr_offset_t offset = 0;
   mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
-  int i, fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
+  int fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
   
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
 #error Support for non little endian architectures to be implemented
@@ -143,9 +143,9 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     case MR_TYPE_UINT32:
     case MR_TYPE_INT64:
     case MR_TYPE_UINT64:
-    case MR_TYPE_LONG_DOUBLE:
     case MR_TYPE_STRING:
     case MR_TYPE_POINTER:
+    case MR_TYPE_LONG_DOUBLE:
       offset = value->_uint8;
       break;
 
@@ -168,17 +168,14 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 
   if (ctx->offset_byte != 0)
     {
-      if (MR_TYPE_NONE == mr_type)
-	return (NULL);
-
-      for (i = 0; i < fields_count; ++i)
-	if (0 == strcmp (struct_param->fields[i]->name.str, name))
-	  break;
-      if (i >= fields_count)
-	longjmp (ctx->_jmp_buf, !0);
-
-      struct_param->fields[i]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
-      return (struct_param->fields[i]);
+      int field_idx = ctx->field_idx++;
+      if (mr_type != MR_TYPE_NONE)
+	{
+	  if (strcmp (struct_param->fields[field_idx]->name.str, name))
+	    longjmp (ctx->_jmp_buf, !0);
+	  struct_param->fields[field_idx]->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
+	}
+      return (NULL);
     }
 
   mr_fd_t * fdp = struct_param->fields[fields_count];
@@ -300,11 +297,13 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	    {
 	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
 	      if (fdp != NULL)
-		fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
-	      if ((indent_spaces > 2) && (fdp != NULL))
 		{
-		  fdp->stype.mr_type = MR_TYPE_NONE;
-		  fdp->stype.mr_type_class = MR_RECORD_TYPE_CLASS;
+		  fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
+		  if (indent_spaces > 2)
+		    {
+		      fdp->stype.mr_type = MR_TYPE_NONE;
+		      fdp->stype.mr_type_class = MR_RECORD_TYPE_CLASS;
+		    }
 		}
 	    }
 	}
