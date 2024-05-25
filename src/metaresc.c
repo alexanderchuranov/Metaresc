@@ -74,6 +74,59 @@ mr_conf_t mr_conf = {
   .list = NULL,
 };
 
+static char *
+mr_skip_keywords (char * type)
+{
+#define MR_STRUCT_KEYWORD "struct"
+#define MR_UNION_KEYWORD "union"
+#define MR_ENUM_KEYWORD "enum"
+
+  if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
+    type += sizeof (MR_STRUCT_KEYWORD);
+
+  if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0)
+    type += sizeof (MR_UNION_KEYWORD);
+
+  if (strncmp (type, MR_ENUM_KEYWORD " ", sizeof (MR_ENUM_KEYWORD)) == 0)
+    type += sizeof (MR_ENUM_KEYWORD);
+
+  return (type);
+}
+
+int
+mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...)
+{
+  ctx->type_name = NULL;
+
+  if (0 == strcmp (fmt, "%s"))
+    {
+      va_list args;
+      va_start (args, fmt);
+      fmt = va_arg (args, char *);
+      va_end (args);
+    }
+
+  fmt = mr_skip_keywords ((char*)fmt);
+
+  mr_fd_t * fdp = mr_get_any_fd_by_name (fmt, NULL);
+  if (NULL == fdp)
+    {
+      char * tail = strchr (fmt, ' ');
+      if (tail)
+	{
+	  int length = tail - fmt;
+	  char name[length + 1];
+	  memcpy (name, fmt, length);
+	  name[length] = 0;
+	  fdp = mr_get_any_fd_by_name (name, NULL);
+	}
+    }
+
+  ctx->type_name = fdp ? fdp->name.str : NULL;
+  longjmp (ctx->_jmp_buf, !0);
+  return (0);
+}
+
 #ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
 
@@ -370,63 +423,13 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
 }
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
-static char *
-mr_skip_keywords (char * type)
-{
-#define MR_STRUCT_KEYWORD "struct"
-#define MR_UNION_KEYWORD "union"
-#define MR_ENUM_KEYWORD "enum"
-
-  if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
-    type += sizeof (MR_STRUCT_KEYWORD);
-
-  if (strncmp (type, MR_UNION_KEYWORD " ", sizeof (MR_UNION_KEYWORD)) == 0)
-    type += sizeof (MR_UNION_KEYWORD);
-
-  if (strncmp (type, MR_ENUM_KEYWORD " ", sizeof (MR_ENUM_KEYWORD)) == 0)
-    type += sizeof (MR_ENUM_KEYWORD);
-
-  return (type);
-}
-
-int
-mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...)
-{
-  ctx->type_name = NULL;
-  
-  if (0 == strcmp (fmt, "%s"))
-    {
-      va_list args;
-      va_start (args, fmt);
-      fmt = va_arg (args, char *);
-      va_end (args);
-    }
-
-  fmt = mr_skip_keywords ((char*)fmt);
-
-  mr_fd_t * fdp = mr_get_any_fd_by_name (fmt, NULL);
-  if (NULL == fdp)
-    {
-      char * tail = strchr (fmt, ' ');
-      if (tail)
-	{
-	  int length = tail - fmt;
-	  char name[length + 1];
-	  memcpy (name, fmt, length);
-	  name[length] = 0;
-	  fdp = mr_get_any_fd_by_name (name, NULL);
-	}
-    }
-
-  ctx->type_name = fdp ? fdp->name.str : NULL;
-  longjmp (ctx->_jmp_buf, !0);
-  return (0);
-}
-
 static mr_status_t
 mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
 {
   mr_td_t * tdp = key.ptr;
+  if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
+    return (MR_SUCCESS);
+
   mr_ic_free (&tdp->param.struct_param.field_by_name);
 
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);

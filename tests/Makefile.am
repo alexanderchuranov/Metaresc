@@ -5,7 +5,7 @@ AM_CFLAGS = @AM_CFLAGS@ $(CHECK_CFLAGS)
 AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src
 LIBS += ../src/libmetaresc.la $(CHECK_LIBS)
-VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes --quiet
+VALGRIND = valgrind --leak-check=full --error-exitcode=1 --trace-children=yes
 CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
