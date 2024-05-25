@@ -44,7 +44,7 @@ void mr_free (const char * filename, const char * function, int line, void * ptr
 
 #define MR_BASIC_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_CHAR, MR_TYPE_BOOL, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128, MR_TYPE_FLOAT, MR_TYPE_COMPLEX_FLOAT, MR_TYPE_DOUBLE, MR_TYPE_COMPLEX_DOUBLE, MR_TYPE_LONG_DOUBLE, MR_TYPE_COMPLEX_LONG_DOUBLE))
 
-#define MR_UNION_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
+#define MR_UNION_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_UNION))
 
 MR_COMPILETIME_ASSERT (offsetof (mr_fd_t, stype) == 0, "'stype' must be a first field in mr_fd_t for proper serialization of mr_ptrdes_t");
 MR_COMPILETIME_ASSERT (offsetof (mr_stype_t, tdp) == 0, "'tdp' must be a first field in mr_stype_t for proper serialization of mr_ptrdes_t");
@@ -1510,10 +1510,7 @@ mr_ud_override_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 static mr_status_t
 mr_fd_init_ud_overrides (mr_fd_t * fdp)
 {
-  if (NULL == fdp->stype.tdp)
-    return (MR_SUCCESS);
-
-  if ((MR_UNION_TYPES >> fdp->stype.tdp->mr_type) & 1)
+  if (!((MR_UNION_TYPES >> fdp->mr_type_base) & 1))
     return (MR_SUCCESS);
 
   if ((NULL == fdp->res.ptr) || (NULL == fdp->res_type) || (0 == fdp->MR_SIZE))
@@ -1521,7 +1518,7 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
 
   if (strcmp (fdp->res_type, "mr_ud_override_t") != 0)
     return (MR_SUCCESS);
-  
+
   mr_ic_new (&fdp->union_param, mr_ud_override_hash, mr_ud_override_cmp, "mr_ud_override_t", MR_IC_HASH, NULL);
 
   mr_status_t status = MR_SUCCESS;
@@ -1626,8 +1623,8 @@ mr_detect_struct_fields (mr_td_t * tdp)
       if (fdp->name.str)
 	mr_ic_add (&mr_conf.fields_names, fdp);
 
-#define INVALID_ARRAY_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_NONE MR_TYPE_VOID MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
-#define INVALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT MR_TYPE_BITFIELD MR_TYPE_ARRAY MR_TYPE_ANON_UNION MR_TYPE_NAMED_ANON_UNION MR_TYPE_END_ANON_UNION))
+#define INVALID_ARRAY_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_VOID, MR_TYPE_BITFIELD, MR_TYPE_ARRAY, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_END_ANON_UNION))
+#define INVALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_ARRAY, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_END_ANON_UNION))
 
       switch (fdp->stype.mr_type)
 	{
