@@ -1491,15 +1491,14 @@ typedef __typeof__ (((mr_enum_value_t*)0)->_unsigned) mr_enum_value_type_t;
 
 extern mr_conf_t mr_conf;
 
-#ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
-extern __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
-extern int mr_get_struct_type_name (const char * fmt, ...);
-#else /* ! HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+#ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+extern int mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...);
 extern int mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...);
 extern int mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...);
+#else /* ! HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+extern __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
+extern int mr_get_struct_type_name (const char * fmt, ...);
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
-
-extern int mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...);
 
 extern void mr_add_type (mr_td_t * tdp);
 extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
