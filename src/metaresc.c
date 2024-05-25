@@ -179,7 +179,6 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       fdp->stype.type = type;
       fdp->name.str = name;
       fdp->offset = offset;
-      fdp->stype.size = 0;
 
       struct_param->fields_size += sizeof (struct_param->fields[0]);
     }
@@ -337,31 +336,6 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
       size_t width = va_arg (args, size_t);
       int value = va_arg (args, int);
       int indent_spaces = strlen (indent);
-      mr_type_t mr_type = MR_TYPE_BOOL;
-
-      fmt += sizeof (BITFIELD_FMT) - sizeof ("");
-      if (strcmp (fmt, "hhd\n") == 0)
-	mr_type = MR_TYPE_DETECT (signed char);
-      else if (strcmp (fmt, "hhu\n") == 0)
-	mr_type = MR_TYPE_DETECT (unsigned char);
-      else if (strcmp (fmt, "hd\n") == 0)
-	mr_type = MR_TYPE_DETECT (signed short);
-      else if (strcmp (fmt, "hu\n") == 0)
-	mr_type = MR_TYPE_DETECT (unsigned short);
-      else if (strcmp (fmt, "d\n") == 0)
-	mr_type = MR_TYPE_DETECT (signed int);
-      else if (strcmp (fmt, "u\n") == 0)
-	mr_type = MR_TYPE_DETECT (unsigned int);
-      else if (strcmp (fmt, "ld\n") == 0)
-	mr_type = MR_TYPE_DETECT (signed long);
-      else if (strcmp (fmt, "lu\n") == 0)
-	mr_type = MR_TYPE_DETECT (unsigned long);
-      else if (strcmp (fmt, "lld\n") == 0)
-	mr_type = MR_TYPE_DETECT (signed long long);
-      else if (strcmp (fmt, "llu\n") == 0)
-	mr_type = MR_TYPE_DETECT (unsigned long long);
-      else if (strcmp (fmt, "c\n") == 0)
-	mr_type = MR_TYPE_ENUM;
 
       if (2 == indent_spaces)
 	{
@@ -380,17 +354,14 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
 		  longjmp (ctx->_jmp_buf, !0);
 		}
 	      fdp->stype.mr_type = MR_TYPE_BITFIELD;
-	      fdp->stype.mr_type_aux = mr_type;
 	      fdp->stype.type = type;
 	      fdp->name.str = name;
 	      fdp->bitfield_param.width = width;
-	      fdp->offset = 0;
-	      fdp->stype.size = 0;
 
 	      struct_param->fields_size += sizeof (struct_param->fields[0]);
 	    }
-	  fdp->offset <<= 1;
-	  fdp->offset |= value & 1;
+
+	  fdp->offset = (fdp->offset << 1) | (value & 1);
 	}
     }
 
