@@ -1392,7 +1392,7 @@ mr_detect_structured_type (mr_stype_t * stype)
     stype->mr_type = MR_TYPE_POINTER;
 
   /* if field type was not detected, but it's mr_type_class is a MR_POINTER_TYPE_CLASS, then we will treat it as void pointer */
-  if ((MR_TYPE_NONE == stype->mr_type) && (MR_POINTER_TYPE_CLASS == stype->mr_type_class))
+  if ((MR_TYPE_NONE == stype->mr_type) && (MR_POINTER_TYPE_CLASS == stype->mr_type_class) && !stype->is_array)
     stype->mr_type = MR_TYPE_POINTER;
 
   if (MR_TYPE_POINTER == stype->mr_type)
