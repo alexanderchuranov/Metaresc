@@ -179,7 +179,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       fdp->stype.type = type;
       fdp->name.str = name;
       fdp->offset = offset;
-      fdp->stype.size = mr_type_size (mr_type);
+      fdp->stype.size = 0;
 
       struct_param->fields_size += sizeof (struct_param->fields[0]);
     }
@@ -385,7 +385,7 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
 	      fdp->name.str = name;
 	      fdp->bitfield_param.width = width;
 	      fdp->offset = 0;
-	      fdp->stype.size = mr_type_size (fdp->stype.mr_type_aux);
+	      fdp->stype.size = 0;
 
 	      struct_param->fields_size += sizeof (struct_param->fields[0]);
 	    }
@@ -1462,6 +1462,25 @@ mr_detect_structured_type (mr_stype_t * stype)
     {
       stype->mr_type_aux = stype->mr_type;
       stype->mr_type = MR_TYPE_BITFIELD;
+    }
+
+  if (stype->size != 0)
+    return;
+
+  stype->size = mr_type_size (stype->mr_type);
+  if (stype->size != 0)
+    return;
+
+  if (stype->tdp)
+    stype->size = stype->tdp->size;
+
+  if (MR_TYPE_ARRAY == stype->mr_type)
+    {
+      int i;
+      if (MR_TYPE_POINTER == stype->mr_type_aux)
+	stype->size = sizeof (void*);
+      for (i = stype->dim.size / sizeof (stype->dim.dim[0]) - 1; i >= 0; --i)
+	stype->size *= stype->dim.dim[i];
     }
 }
 

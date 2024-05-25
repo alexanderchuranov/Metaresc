@@ -539,9 +539,11 @@ START_TEST (dump_struct_types_detection) {
       mr_fd_t * dst_fdp = mr_get_fd_by_name (dst_tdp, mr_fdp->name.str);
       ck_assert_msg (dst_fdp != NULL, "dump_struct have not detected field '%s'", mr_fdp->name.str);
 
+      ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
+      ck_assert_msg (mr_fdp->stype.size == dst_fdp->stype.size, "dump_struct mismatched size (%d != %d) for field '%s'", (int)mr_fdp->stype.size, (int)dst_fdp->stype.size, mr_fdp->name.str);
+      ck_assert_msg (mr_fdp->stype.tdp == dst_fdp->stype.tdp, "dump_struct mismatched types (%s != %s) for field '%s'", mr_fdp->stype.tdp->type.str, dst_fdp->stype.tdp->type.str, mr_fdp->name.str);
       ck_assert_msg (mr_fdp->stype.mr_type == dst_fdp->stype.mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->stype.mr_type, dst_fdp->stype.mr_type, mr_fdp->name.str);
-      if (!(mr_fdp->stype.mr_type == MR_TYPE_STRING) &&
-	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_VOID)))
+      if ((mr_fdp->stype.mr_type == MR_TYPE_ARRAY) || (mr_fdp->stype.mr_type == MR_TYPE_POINTER))
 	ck_assert_msg (mr_fdp->stype.mr_type_aux == dst_fdp->stype.mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->stype.mr_type_aux, dst_fdp->stype.mr_type_aux, mr_fdp->name.str);
 
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
@@ -565,7 +567,6 @@ START_TEST (dump_struct_types_detection) {
 			 "dump_struct mismatched bitfield_param.width (%d != %d) for field '%s'",
 			 (int)mr_fdp->bitfield_param.width, (int)dst_fdp->bitfield_param.width, mr_fdp->name.str);
 	}
-      ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
     }
 
   mr_td_t * tdp = mr_get_td_by_name ("aliases_t");
