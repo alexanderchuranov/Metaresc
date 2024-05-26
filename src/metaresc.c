@@ -61,15 +61,10 @@ mr_conf_t mr_conf = {
   .log_level = MR_LL_ERROR, /**< default log level ERROR */
   .msg_handler = NULL, /**< pointer on user defined message handler */
   .cache_func_resolve = true,
-  .type_by_name = {
-    .ic_type = MR_IC_UNINITIALIZED,
-  },
-  .enum_by_name = {
-    .ic_type = MR_IC_UNINITIALIZED,
-  },
-  .fields_names = {
-    .ic_type = MR_IC_UNINITIALIZED,
-  },
+  .type_by_name.ic_type = MR_IC_UNINITIALIZED,
+  .enum_by_name.ic_type = MR_IC_UNINITIALIZED,
+  .field_by_name.ic_type = MR_IC_UNINITIALIZED,
+  .field_by_name_and_type.ic_type = MR_IC_UNINITIALIZED,
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
   .list = NULL,
 };
@@ -452,7 +447,8 @@ mr_cleanup (void)
   mr_ic_foreach (&mr_conf.type_by_name, mr_conf_cleanup_visitor, NULL);
   mr_ic_free (&mr_conf.enum_by_name);
   mr_ic_free (&mr_conf.type_by_name);
-  mr_ic_free (&mr_conf.fields_names);
+  mr_ic_free (&mr_conf.field_by_name);
+  mr_ic_free (&mr_conf.field_by_name_and_type);
 #ifdef HAVE_LIBXML2
   xmlCleanupParser ();
 #endif /* HAVE_LIBXML2 */
@@ -674,13 +670,6 @@ mr_hashed_string_get_hash (const mr_hashed_string_t * x)
   return (x_->hash_value);
 }
 
-mr_hash_value_t
-mr_field_name_get_hash (mr_ptr_t x, const void * context)
-{
-  mr_fd_t * x_ = x.ptr;
-  return (mr_hashed_string_get_hash (&x_->name) << 4);
-}
-
 /**
  * Comparator for mr_hashed_string_t
  * @param x pointer on one mr_hashed_string_t
@@ -707,17 +696,22 @@ mr_hashed_string_cmp (const mr_hashed_string_t * x, const mr_hashed_string_t * y
   return (strcmp (x->str, y->str));
 }
 
+mr_hash_value_t
+mr_fd_name_and_type_get_hash (mr_ptr_t x, const void * context)
+{
+  mr_fd_t * x_ = x.ptr;
+  return (mr_hashed_string_get_hash (&x_->name) ^ (uintptr_t)x_->stype.tdp);
+}
+
 int
-mr_field_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+mr_fd_name_and_type_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const mr_fd_t * x_ = x.ptr;
   const mr_fd_t * y_ = y.ptr;
   int cmp = mr_hashed_string_cmp (&x_->name, &y_->name);
   if (cmp)
     return (cmp);
-  if (x_->stype.tdp)
-    return ((x_->stype.tdp > y_->stype.tdp) - (x_->stype.tdp < y_->stype.tdp));
-  return (0);
+  return ((x_->stype.tdp > y_->stype.tdp) - (x_->stype.tdp < y_->stype.tdp));
 }
 
 mr_hash_value_t
@@ -1236,7 +1230,8 @@ mr_register_type_pointer (mr_td_t * tdp)
   fdp->stype.tdp = tdp;
   fdp->mr_type_base = tdp->mr_type;
 
-  mr_ic_add (&mr_conf.fields_names, fdp);
+  mr_ic_add (&mr_conf.field_by_name, fdp);
+  mr_ic_add (&mr_conf.field_by_name_and_type, fdp);
 
   return ((NULL == mr_ic_add (&union_tdp->param.struct_param.field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
@@ -1632,7 +1627,10 @@ mr_detect_struct_fields (mr_td_t * tdp)
       mr_fd_init_bitfield_params (fdp);
 
       if (fdp->name.str)
-	mr_ic_add (&mr_conf.fields_names, fdp);
+	{
+	  mr_ic_add (&mr_conf.field_by_name, fdp);
+	  mr_ic_add (&mr_conf.field_by_name_and_type, fdp);
+	}
     }
 
   /*
@@ -1708,7 +1706,8 @@ mr_fd_t *
 mr_get_any_fd_by_name (const char * name, mr_td_t * tdp)
 {
   mr_fd_t fd_ = { .name.str = (char*)name, .name.hash_value = 0, .stype.tdp = tdp, };
-  mr_ptr_t * find = mr_ic_find (&mr_conf.fields_names, &fd_);
+  mr_ic_t * ic = tdp ? &mr_conf.field_by_name_and_type : &mr_conf.field_by_name;
+  mr_ptr_t * find = mr_ic_find (ic, &fd_);
   return (find ? find->ptr : NULL);
 }
 
@@ -1746,10 +1745,14 @@ mr_validate_stype (mr_stype_t * stype)
 
   switch (stype->mr_type)
     {
-    case MR_TYPE_NONE:
     case MR_TYPE_VOID:
     case MR_TYPE_FUNC:
+      break;
+
+    case MR_TYPE_NONE:
+    case MR_TYPE_END_ANON_UNION:
     case MR_TYPE_LAST:
+      stype->mr_type = MR_TYPE_VOID;
       break;
       
     case MR_TYPE_CHAR_ARRAY:
@@ -1821,7 +1824,6 @@ mr_validate_stype (mr_stype_t * stype)
     case MR_TYPE_UNION:
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
-    case MR_TYPE_END_ANON_UNION:
       if (stype->tdp == NULL)
 	status = MR_FAILURE;
       else if (stype->mr_type != stype->tdp->mr_type)
@@ -1911,7 +1913,8 @@ mr_conf_init ()
     {
       mr_ic_new (&mr_conf.enum_by_name, mr_ed_name_get_hash, mr_ed_name_cmp, "mr_ed_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
-      mr_ic_new (&mr_conf.fields_names, mr_field_name_get_hash, mr_field_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
+      mr_ic_new (&mr_conf.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
+      mr_ic_new (&mr_conf.field_by_name_and_type, mr_fd_name_and_type_get_hash, mr_fd_name_and_type_cmp, "mr_fd_t", MR_IC_HASH, NULL);
 
       mr_conf.list = mr_sort_td (mr_conf.list);
       

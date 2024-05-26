@@ -671,7 +671,8 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_msg_handler_t, msg_handler),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
 		(mr_ic_t, type_by_name, , "index over types descriptors"),
-		(mr_ic_t, fields_names, , "index of all fields names"),
+		(mr_ic_t, field_by_name, , "index of all fields names"),
+		(mr_ic_t, field_by_name_and_type, , "index of all fields by name and type"),
 		(mr_ra_printf_t, output_format, [MR_TYPE_LAST], "formaters"),
 		)
 
