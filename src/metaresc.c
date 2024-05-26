@@ -1148,6 +1148,9 @@ mr_get_enum_by_name (char * name)
 static void
 mr_fd_init_bitfield_params (mr_fd_t * fdp)
 {
+  if (fdp->stype.mr_type != MR_TYPE_BITFIELD)
+    return;
+
   int i, j;
   if (fdp->bitfield_param.initialized)
     return;
@@ -1477,6 +1480,9 @@ mr_fd_detect_field_type (mr_fd_t * fdp)
 static void
 mr_func_field_detect (mr_fd_t * fdp)
 {
+  if (fdp->stype.mr_type != MR_TYPE_FUNC)
+    return;
+
   int i;
   for (i = 0; fdp->func_param.args[i] != NULL; ++i)
     mr_detect_structured_type (fdp->func_param.args[i]);
@@ -1622,32 +1628,11 @@ mr_detect_struct_fields (mr_td_t * tdp)
       mr_fd_detect_field_type (fdp);
       mr_fd_detect_res_size (fdp);
       mr_fd_init_ud_overrides (fdp);
+      mr_func_field_detect (fdp);
+      mr_fd_init_bitfield_params (fdp);
 
       if (fdp->name.str)
 	mr_ic_add (&mr_conf.fields_names, fdp);
-
-#define INVALID_ARRAY_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_VOID, MR_TYPE_BITFIELD, MR_TYPE_ARRAY, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_END_ANON_UNION))
-#define INVALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_BITFIELD, MR_TYPE_ARRAY, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_END_ANON_UNION))
-
-      switch (fdp->stype.mr_type)
-	{
-	case MR_TYPE_ARRAY:
-	  if ((INVALID_ARRAY_AUX_TYPES >> fdp->stype.mr_type_aux) & 1)
-	    fdp->stype.mr_type = MR_TYPE_VOID;
-	  break;
-	case MR_TYPE_FUNC:
-	  mr_func_field_detect (fdp);
-	  break;
-	case MR_TYPE_BITFIELD:
-	  mr_fd_init_bitfield_params (fdp);
-	  break;
-	case MR_TYPE_POINTER:
-	  if ((INVALID_POINTER_AUX_TYPES >> fdp->stype.mr_type_aux) & 1)
-	    fdp->stype.mr_type = MR_TYPE_VOID;
-	  break;
-	default:
-	  break;
-	}
     }
 
   /*
@@ -1810,15 +1795,22 @@ mr_validate_fd (mr_fd_t * fdp)
 	  status = MR_FAILURE;
       break;
       
+#define VALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_CHAR, MR_TYPE_VOID, MR_TYPE_BOOL, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128, MR_TYPE_FLOAT, MR_TYPE_COMPLEX_FLOAT, MR_TYPE_DOUBLE, MR_TYPE_COMPLEX_DOUBLE, MR_TYPE_LONG_DOUBLE, MR_TYPE_COMPLEX_LONG_DOUBLE, MR_TYPE_STRUCT, MR_TYPE_ENUM, MR_TYPE_FUNC_TYPE, MR_TYPE_POINTER, MR_TYPE_UNION))
+
     case MR_TYPE_ARRAY:
+      if (MR_TYPE_VOID == fdp->stype.mr_type_aux)
+	status = MR_FAILURE;
+      __attribute__ ((fallthrough));
+
     case MR_TYPE_POINTER:
+      if (!((VALID_POINTER_AUX_TYPES >> fdp->stype.mr_type_aux) & 1))
+	status = MR_FAILURE;
       if (MR_TYPE_POINTER == fdp->stype.mr_type_aux)
 	{
 	  if (fdp->stype.tdp == NULL)
 	    status = MR_FAILURE;
 	  break;
 	}
-      
       if (fdp->stype.tdp)
 	if (fdp->stype.mr_type_aux != fdp->stype.tdp->mr_type)
 	  status = MR_FAILURE;
