@@ -715,7 +715,7 @@ mr_field_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   int cmp = mr_hashed_string_cmp (&x_->name, &y_->name);
   if (cmp)
     return (cmp);
-  if (x_->stype.tdp && y_->stype.tdp)
+  if (x_->stype.tdp)
     return ((x_->stype.tdp > y_->stype.tdp) - (x_->stype.tdp < y_->stype.tdp));
   return (0);
 }
@@ -1740,13 +1740,11 @@ mr_td_detect_res_size (mr_td_t * tdp)
 }
 
 static mr_status_t
-mr_validate_fd (mr_fd_t * fdp)
+mr_validate_stype (mr_stype_t * stype)
 {
   mr_status_t status = MR_SUCCESS;
-  if (fdp->stype.tdp == NULL)
-    fdp->stype.tdp = mr_get_td_by_name_internal (fdp->stype.type);
 
-  switch (fdp->stype.mr_type)
+  switch (stype->mr_type)
     {
     case MR_TYPE_NONE:
     case MR_TYPE_VOID:
@@ -1755,8 +1753,8 @@ mr_validate_fd (mr_fd_t * fdp)
       break;
       
     case MR_TYPE_CHAR_ARRAY:
-      if (fdp->stype.tdp)
-	if (fdp->stype.tdp->mr_type == MR_TYPE_CHAR)
+      if (stype->tdp)
+	if (stype->tdp->mr_type == MR_TYPE_CHAR)
 	  break;
       __attribute__ ((fallthrough));
       
@@ -1780,41 +1778,41 @@ mr_validate_fd (mr_fd_t * fdp)
     case MR_TYPE_LONG_DOUBLE:
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
     case MR_TYPE_FUNC_TYPE:
-      if (fdp->stype.tdp)
-	if (fdp->stype.mr_type != fdp->stype.tdp->mr_type)
+      if (stype->tdp)
+	if (stype->mr_type != stype->tdp->mr_type)
 	  status = MR_FAILURE;
       break;
       
     case MR_TYPE_BITFIELD:
-      if (!((MR_INT_TYPES >> fdp->stype.mr_type_aux) & 1))
+      if (!((MR_INT_TYPES >> stype->mr_type_aux) & 1))
 	status = MR_FAILURE;
-      if (((MR_TYPED_TYPES >> fdp->stype.mr_type_aux) & 1) && (fdp->stype.tdp == NULL))
+      if (((MR_TYPED_TYPES >> stype->mr_type_aux) & 1) && (stype->tdp == NULL))
 	status = MR_FAILURE;
-      if (((MR_TYPED_TYPES >> fdp->stype.mr_type_aux) & 1) && fdp->stype.tdp)
-	if (fdp->stype.mr_type_aux != fdp->stype.tdp->mr_type)
+      if (((MR_TYPED_TYPES >> stype->mr_type_aux) & 1) && stype->tdp)
+	if (stype->mr_type_aux != stype->tdp->mr_type)
 	  status = MR_FAILURE;
       break;
       
 #define VALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_CHAR, MR_TYPE_VOID, MR_TYPE_BOOL, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128, MR_TYPE_FLOAT, MR_TYPE_COMPLEX_FLOAT, MR_TYPE_DOUBLE, MR_TYPE_COMPLEX_DOUBLE, MR_TYPE_LONG_DOUBLE, MR_TYPE_COMPLEX_LONG_DOUBLE, MR_TYPE_STRUCT, MR_TYPE_ENUM, MR_TYPE_FUNC_TYPE, MR_TYPE_POINTER, MR_TYPE_UNION))
 
     case MR_TYPE_ARRAY:
-      if (MR_TYPE_VOID == fdp->stype.mr_type_aux)
+      if (MR_TYPE_VOID == stype->mr_type_aux)
 	status = MR_FAILURE;
       __attribute__ ((fallthrough));
 
     case MR_TYPE_POINTER:
-      if (!((VALID_POINTER_AUX_TYPES >> fdp->stype.mr_type_aux) & 1))
-	status = MR_FAILURE;
-      if (MR_TYPE_POINTER == fdp->stype.mr_type_aux)
+      if (MR_TYPE_POINTER == stype->mr_type_aux)
 	{
-	  if (fdp->stype.tdp == NULL)
+	  if (stype->tdp == NULL)
 	    status = MR_FAILURE;
 	  break;
 	}
-      if (fdp->stype.tdp)
-	if (fdp->stype.mr_type_aux != fdp->stype.tdp->mr_type)
+      if (!((VALID_POINTER_AUX_TYPES >> stype->mr_type_aux) & 1))
+	status = MR_FAILURE;
+      if (stype->tdp)
+	if (stype->mr_type_aux != stype->tdp->mr_type)
 	  status = MR_FAILURE;
-      if (((MR_TYPED_TYPES >> fdp->stype.mr_type_aux) & 1) && (fdp->stype.tdp == NULL))
+      if (((MR_TYPED_TYPES >> stype->mr_type_aux) & 1) && (stype->tdp == NULL))
 	  status = MR_FAILURE;
       break;
       
@@ -1824,22 +1822,18 @@ mr_validate_fd (mr_fd_t * fdp)
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
     case MR_TYPE_END_ANON_UNION:
-      if (fdp->stype.tdp == NULL)
+      if (stype->tdp == NULL)
 	status = MR_FAILURE;
-      else
-	if (fdp->stype.mr_type != fdp->stype.tdp->mr_type)
-	  status = MR_FAILURE;
+      else if (stype->mr_type != stype->tdp->mr_type)
+	status = MR_FAILURE;
       break;
     }
 
   if (status != MR_SUCCESS)
     {
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TYPE_NOT_MATCHED,
-		  fdp->name.str, fdp->stype.type,
-		  fdp->stype.mr_type, fdp->stype.mr_type_aux, fdp->stype.tdp ? fdp->stype.tdp->mr_type : MR_TYPE_VOID);
-      if (fdp->stype.mr_type != MR_TYPE_POINTER)
-	fdp->stype.mr_type = MR_TYPE_VOID;
-      fdp->stype.mr_type_aux = MR_TYPE_VOID;
+      if (stype->mr_type != MR_TYPE_POINTER)
+	stype->mr_type = MR_TYPE_VOID;
+      stype->mr_type_aux = MR_TYPE_VOID;
     }
   return (status);
 }
@@ -1852,7 +1846,7 @@ mr_validate_td (mr_td_t * tdp)
 
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
-    mr_validate_fd (tdp->param.struct_param.fields[i]);
+    mr_validate_stype (&tdp->param.struct_param.fields[i]->stype);
 }
 
 static void
@@ -1974,7 +1968,7 @@ mr_detect_type (mr_fd_t * fdp)
   if (fdp->stype.tdp)
     fdp->name.str = fdp->stype.tdp->type.str;
   
-  mr_validate_fd (fdp);
+  mr_validate_stype (&fdp->stype);
 }
 
 mr_uintmax_t

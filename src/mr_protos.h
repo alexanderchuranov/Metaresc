@@ -37,7 +37,6 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_LOAD_METHOD_MISSED, , "Load method missed."),
 	      (MR_MESSAGE_XDR_LOAD_FAILED, , "XDR load failed."),
 	      (MR_MESSAGE_NO_TYPE_DESCRIPTOR, , "Can't find type descriptor for '%s'."),
-	      (MR_MESSAGE_TYPE_NOT_MATCHED, , "Field '%s' of type '%s' mismatched mr_type %d:%d != %d."),
 	      (MR_MESSAGE_TYPE_NOT_STRUCT, , "Type '%s' is not a struct."),
 	      (MR_MESSAGE_TYPE_NOT_UNION, , "Type '%s' is not a union."),
 	      (MR_MESSAGE_TYPE_NOT_ENUM, , "Type '%s' is not a enum."),
