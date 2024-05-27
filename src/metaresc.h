@@ -1582,6 +1582,8 @@ extern mr_status_t mr_basic_types_sort (void * data, size_t count, char * key_ty
 
 extern mr_hash_value_t mr_hash_block (void * block, mr_size_t size);
 extern mr_hash_value_t mr_hash_str (char * str);
+extern int mr_fd_name_and_type_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern mr_hash_value_t mr_fd_name_and_type_get_hash (mr_ptr_t x, const void * context);
 extern int mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_hash_value_t mr_fd_name_get_hash (const mr_ptr_t x, const void * context);
 extern int mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
