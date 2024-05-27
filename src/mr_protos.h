@@ -478,10 +478,10 @@ TYPEDEF_ENUM (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter d
 	      (MR_IS_NULL, = 1 << 0, "is a null pointer"),
 	      (MR_IS_REFERENCE, = 1 << 1, "first_child is an index of a referenced node"),
 	      (MR_IS_REFERENCED, = 1 << 2, "there is a reference on this node"),
-	      (MR_IS_CONTENT_REFERENCE, = 1 << 3, "pointers on string content may reffer only on string pointer"),
-	      (MR_IS_OPAQUE_DATA, = 1 << 4, "opaque serialization of resizeable pointer to XDR"),
-	      (MR_IS_UNNAMED, = 1 << 5, "for CINIT serialization all fields are named, but anonymous union and arrays elements don't need name"),
-	      (MR_IS_TYPED, = 1 << 6, "for CINIT deserialization pointer nodes has type"),
+	      (MR_IS_CONTENT_REFERENCE, = 1 << 3, "pointers on string content (may reffer only on string nodes)"),
+	      (MR_IS_OPAQUE_DATA, = 1 << 4, "opaque serialization of resizeable pointer for XDR"),
+	      (MR_IS_UNNAMED, = 1 << 5, "for CINIT serialization some nodes are unnamed (anonymous union and arrays elements)"),
+	      (MR_IS_TYPED, = 1 << 6, "for CINIT deserialization pointer node has a type"),
 	      )
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),

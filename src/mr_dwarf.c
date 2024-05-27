@@ -1244,6 +1244,37 @@ process_td (mr_ptr_t key, const void * context)
   return (MR_SUCCESS);
 }
 
+/* copy/paste from mr_save.c */
+#define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_POINTER))
+
+static mr_status_t
+mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+{
+  if (MR_DFS_POST_ORDER != order)
+    return (MR_SUCCESS);
+
+  if (!(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+    {
+      mr_idx_t * next = &ptrs->ra[idx].first_child;
+
+      while (*next != MR_NULL_IDX)
+	if (((ptrs->ra[*next].first_child == MR_NULL_IDX) && ((REMOVE_IF_EMPTY >> ptrs->ra[*next].mr_type) & 1))
+	    || ((MR_TYPE_STRING == ptrs->ra[*next].mr_type) && (ptrs->ra[*next].flags & MR_IS_NULL)))
+	  *next = ptrs->ra[*next].next; /* empty node found - unchain it from previous node */
+	else
+	  next = &ptrs->ra[*next].next;
+    }
+
+  return (MR_SUCCESS);
+}
+
+#undef MR_SAVE
+#define MR_SAVE(...) ({						\
+      mr_ra_ptrdes_t ptrs_ = MR_SAVE_TYPED (__VA_ARGS__);	\
+      mr_ptrs_dfs (&ptrs_, mr_remove_empty_node, NULL);		\
+      ptrs_;							\
+    })
+
 static mr_status_t
 print_td (mr_ptr_t key, const void * context)
 {

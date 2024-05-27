@@ -1330,7 +1330,7 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_ord
 
       while (*next != MR_NULL_IDX)
 	if ((ptrs->ra[*next].first_child == MR_NULL_IDX)
-	    && !(ptrs->ra[*next].flags & (MR_IS_NULL | MR_IS_REFERENCED))
+	    && !(ptrs->ra[*next].flags & MR_IS_REFERENCED)
 	    && ((REMOVE_IF_EMPTY >> ptrs->ra[*next].mr_type) & 1))
 	  {
 	    bool * need_reindex = context;
