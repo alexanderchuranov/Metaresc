@@ -418,7 +418,7 @@ TYPEDEF_STRUCT (mr_dw_attribute_t,
 		(mr_dw_attribute_code_t, code),
 		(mr_dw_form_t, form),
 		ANON_UNION (),
-		VOID (int, dw_default),
+		(int, dw_default, [0]),
 		(Dwarf_Bool, dw_flag),
 		(Dwarf_Signed, dw_signed),
 		(Dwarf_Unsigned, dw_unsigned),
@@ -1248,7 +1248,7 @@ process_td (mr_ptr_t key, const void * context)
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_POINTER))
 
 static mr_status_t
-mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+mr_remove_empty_node_visitor (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_POST_ORDER != order)
     return (MR_SUCCESS);
@@ -1268,12 +1268,7 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_ord
   return (MR_SUCCESS);
 }
 
-#undef MR_SAVE
-#define MR_SAVE(...) ({						\
-      mr_ra_ptrdes_t ptrs_ = MR_SAVE_TYPED (__VA_ARGS__);	\
-      mr_ptrs_dfs (&ptrs_, mr_remove_empty_node, NULL);		\
-      ptrs_;							\
-    })
+#define mr_remove_empty_nodes(ptrs) mr_ptrs_dfs (ptrs, mr_remove_empty_node_visitor, NULL)
 
 static mr_status_t
 print_td (mr_ptr_t key, const void * context)
