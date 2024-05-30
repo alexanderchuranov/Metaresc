@@ -359,6 +359,7 @@ TYPEDEF_ENUM (mr_dw_attribute_code_t,
 	      (_DW_AT_APPLE_objc_direct, = DW_AT_APPLE_objc_direct),
 	      (_DW_AT_APPLE_sdk, = DW_AT_APPLE_sdk),
 	      (_DW_AT_hi_user, = DW_AT_hi_user),	      
+	      (_DW_AT_anonymous, , "new attribute to flag anonymous types"),
 	      )
 
 TYPEDEF_ENUM (mr_dw_form_t,
@@ -659,31 +660,42 @@ die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
 static void
 get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
+  if (attr == NULL)
+    {
+#define ANONYMOUS_TYPE_TEMPLATE "mr_type_anonymous_%" SCNu64 "_t"
+      char type_name_buffer[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof (mr_die->off) * 3];
+      char * type_name = fdp->stype.type ? fdp->stype.type : type_name_buffer;
+      if (NULL == fdp->stype.type)
+	sprintf (type_name_buffer, ANONYMOUS_TYPE_TEMPLATE, (uint64_t)mr_die->off);
+
+      mr_die->attributes = MR_REALLOC (mr_die->attributes, mr_die->attributes_size + 2 * sizeof (mr_die->attributes[0]));
+      assert (mr_die->attributes != NULL);
+      int idx = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
+      mr_die->attributes_size += 2 * sizeof (mr_die->attributes[0]);
+      attr = &mr_die->attributes[idx];
+
+      attr->code = _DW_AT_anonymous;
+      attr->form = _DW_FORM_flag;
+      attr->dw_flag = true;
+
+      ++attr;
+
+      attr->code = _DW_AT_name;
+      attr->form = _DW_FORM_strp;
+      attr->dw_str = mr_strdup (type_name);
+      assert (attr->dw_str != NULL);
+    }
+
   if (fdp->stype.type == NULL)
     {
-      mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
-      if (attr == NULL)
-	{
-#define ANONYMOUS_TYPE_TEMPLATE "mr_type_anonymous_%" SCNu64 "_t"
-	  char type_name[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof (mr_die->off) * 3];
-	  sprintf (type_name, ANONYMOUS_TYPE_TEMPLATE, (uint64_t)mr_die->off);
-	  mr_die->attributes = MR_REALLOC (mr_die->attributes, mr_die->attributes_size + sizeof (mr_die->attributes[0]));
-	  assert (mr_die->attributes != NULL);
-	  int idx = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
-	  mr_die->attributes_size += sizeof (mr_die->attributes[0]);
-	  mr_die->attributes[idx].code = _DW_AT_name;
-	  mr_die->attributes[idx].form = _DW_FORM_strp;
-	  mr_die->attributes[idx].dw_str = mr_strdup (type_name);
-	  assert (mr_die->attributes[idx].dw_str != NULL);
-	  attr = &mr_die->attributes[idx];
-	}
       assert ((DW_FORM_STRING >> attr->form) & 1);
       assert (attr->dw_str != NULL);
       fdp->stype.type = mr_strdup (attr->dw_str);
       assert (fdp->stype.type != NULL);
     }
 
-  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_byte_size);
+  attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
       assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
@@ -903,12 +915,16 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
 
   if (fdp->name.str == NULL)
     {
-#define ANONYMOUS_FIELD_TEMPLATE "%s_field_%d"
       int strlen_type = strlen (type);
-      char field_name[sizeof (ANONYMOUS_FIELD_TEMPLATE) + sizeof (idx) * 3 + strlen_type];
-      sprintf (field_name, ANONYMOUS_FIELD_TEMPLATE, type, idx);
+      char field_name[sizeof (MR_ANONYMOUS_FIELD_NAME_TEMPLATE) + sizeof (idx) * 3 + strlen_type];
+      sprintf (field_name, MR_ANONYMOUS_FIELD_NAME_TEMPLATE, type, (int)idx);
       fdp->name.str = mr_strdup (field_name);
       assert (fdp->name.str != NULL);
+
+      char field_type[sizeof (MR_ANONYMOUS_FIELD_TYPE_TEMPLATE) + sizeof (idx) * 3 + strlen_type];
+      sprintf (field_type, MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, type, (int)idx);
+      fdp->stype.type = mr_strdup (field_type);
+      assert (fdp->stype.type != NULL);
 
       fdp->unnamed = true;
     }
@@ -1014,8 +1030,15 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   switch (mr_die->tag)
     {
     case _DW_TAG_structure_type:
+      tdp->mr_type = MR_TYPE_STRUCT;
+      __attribute__ ((fallthrough));
+
     case _DW_TAG_union_type:
-      tdp->mr_type = (mr_die->tag == _DW_TAG_structure_type) ? MR_TYPE_STRUCT : MR_TYPE_UNION;
+      if (mr_die->tag == _DW_TAG_union_type)
+	{
+	  attr = die_attribute (mr_die, _DW_AT_anonymous);
+	  tdp->mr_type = attr ? MR_TYPE_ANON_UNION : MR_TYPE_UNION;
+	}
       children_tag = _DW_TAG_member;
       load_child = load_member;
       rarray = (void*)&tdp->param.struct_param.fields;
@@ -1055,7 +1078,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   ssize_t alloc_size = 0;
   if (load_child != NULL)
     {
-      int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
+      int i, i_ = 0, count = mr_die->children_size / sizeof (mr_die->children[0]);
       for (i = 0; i < count; ++i)
 	if (mr_die->children[i].tag == children_tag)
 	  {
@@ -1063,7 +1086,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	    assert (elem != NULL);
 	    *elem = MR_CALLOC (1, elem_size);
 	    assert (*elem != NULL);
-	    load_child (tdp->type.str, i, *elem, &mr_die->children[i], die_off_ic);
+	    load_child (tdp->type.str, i_++, *elem, &mr_die->children[i], die_off_ic);
 	  }
 
       void ** elem = mr_rarray_allocate_element (rarray, rarray_size, &alloc_size, sizeof (*elem));

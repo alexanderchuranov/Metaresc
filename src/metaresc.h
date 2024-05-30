@@ -99,7 +99,8 @@
 #define MR_YAML_REF_ANCHOR_TMPLT MR_YAML_ANCHOR_TMPLT
 #define MR_YAML_REF_ANCHOR_CONTENT_TMPLT MR_REF_CONTENT "_%" SCNu32
 
-#define MR_TYPE_ANONYMOUS_UNION_TEMPLATE "mr_type_anonymous_union_%d_t"
+#define MR_ANONYMOUS_FIELD_NAME_TEMPLATE "%s_field_%d"
+#define MR_ANONYMOUS_FIELD_TYPE_TEMPLATE MR_ANONYMOUS_FIELD_NAME_TEMPLATE "_t"
 #define MR_PTR_META "mr_ptr_t magic meta feild"
 
 /* XML attribute for zero length strings */
@@ -752,14 +753,16 @@
 #define MR_TYPEDEF_UNION_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_UNION)
 #define MR_END_UNION_DESC(ID, MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
 
+#define MR_ANON_UNION_MAX_EMBEDED_LEVELS (3)
 #define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...)		\
   (mr_fd_t[]){ {							\
-      .name = { .str = #NAME, },					\
+      .name.str = (char [sizeof (#MR_TYPE_NAME) + MR_ANON_UNION_MAX_EMBEDED_LEVELS * sizeof (MR_ANONYMOUS_FIELD_NAME_TEMPLATE)]) { #NAME }, \
 	.stype.type = "",						\
 	.stype.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	.unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false),	\
 	.offset = 0,							\
-	.res = { (mr_td_t[]){ { .type = { .str = (char []) {MR_TYPE_ANONYMOUS_UNION_TEMPLATE "9999"}, }, } } }, \
+	.res = { (mr_td_t[]){ { .type.str =				\
+	    (char [sizeof (#MR_TYPE_NAME) + MR_ANON_UNION_MAX_EMBEDED_LEVELS * sizeof (MR_ANONYMOUS_FIELD_TYPE_TEMPLATE)]) {}, } } }, \
 	.res_type = "mr_td_t",						\
 	} },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\

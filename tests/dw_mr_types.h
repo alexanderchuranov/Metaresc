@@ -34,6 +34,37 @@ TYPEDEF_STRUCT (mr_void_fields_t,
 		VOID (mr_array_t, void_struct),
 		);
 
+typedef struct mr_inline_enum_t {
+  enum {_0} inline_enum;
+} mr_inline_enum_t;
+
+TYPEDEF_STRUCT (mr_anon_union_t,
+		/* three embeded anonymous unions */
+		ANON_UNION (),
+		int _0,
+		ANON_UNION (),
+		int _1,
+		ANON_UNION (),
+		int _2,
+		END_ANON_UNION (),
+		END_ANON_UNION (),
+		END_ANON_UNION (),
+		int _3,
+		/* one more anonymous union - should be named identically my macro and DWARF */
+		ANON_UNION (),
+		int _4,
+		END_ANON_UNION (),
+		/* named anonymous union. adds one more field and indexing of fields in macro and DWARF after this field mismatching */ 
+		ANON_UNION (name),
+		int _5,
+		END_ANON_UNION (),
+		int _6,
+		/* one more anonymous union to check that test skip anonymous unions after named anonymous unions */
+		ANON_UNION (),
+		int _7,
+		END_ANON_UNION (),
+		);
+
 TYPEDEF_STRUCT (mr_bitfields_t,
 		(int, _8bits, : __CHAR_BIT__),
 		(int, _7bits, : __CHAR_BIT__ - 1),

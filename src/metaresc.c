@@ -855,7 +855,6 @@ mr_anon_unions_extract (mr_td_t * tdp)
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if ((MR_TYPE_ANON_UNION == fdp->stype.mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->stype.mr_type))
 	{
-	  static int mr_type_anonymous_union_cnt = 0;
 	  mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
 	  mr_fd_t ** first = &tdp->param.struct_param.fields[i + 1];
 	  mr_fd_t * last;
@@ -905,8 +904,15 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    tdp->param.struct_param.fields[count] = NULL;
 	    tdp_->mr_type = fdp->stype.mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
 	    tdp_->td_producer = MR_TDP_ANON_UNION;
-	    sprintf (tdp_->type.str, MR_TYPE_ANONYMOUS_UNION_TEMPLATE, mr_type_anonymous_union_cnt++);
+
+	    sprintf (tdp_->type.str, MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, tdp->type.str, i);
 	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
+
+	    /* set name of anonymous union to temporary templatized name */
+	    if (0 == fdp->name.str[0])
+	      sprintf (fdp->name.str, MR_ANONYMOUS_FIELD_NAME_TEMPLATE, tdp->type.str, i);
+	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
+
 	    tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
 
 	    fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
@@ -918,14 +924,6 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	    fdp->stype.type = tdp_->type.str;
 	    fdp->stype.size = tdp_->size;
 	    
-	    /* set name of anonymous union to temporary type name */
-	    if (NULL == fdp->name.str)
-	      fdp->name.str = fdp->stype.type;
-	    else if (0 == fdp->name.str[0])
-	      fdp->name.str = fdp->stype.type;
-	      
-	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
-
 	    mr_init_struct (tdp_);
 	    mr_ic_add (&mr_conf.type_by_name, tdp_);
 	    mr_add_type (tdp_);

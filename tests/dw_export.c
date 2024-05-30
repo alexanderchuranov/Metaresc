@@ -24,18 +24,21 @@ static void
 compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
   int i, j, named_anon_union_count = 0;
+  int count = mr_td->param.struct_param.fields_size / sizeof (mr_td->param.struct_param.fields[0]);
   dw_td->param.struct_param.fields_size -= sizeof (dw_td->param.struct_param.fields[0]);
 
-  for (i = mr_td->param.struct_param.fields_size / sizeof (mr_td->param.struct_param.fields[0]) - 1; i >= 0; --i)
+  for (i = 0; i < count; ++i)
     {
       mr_fd_t * mr_fdp = mr_td->param.struct_param.fields[i];
       
       if (mr_fdp->stype.mr_type == MR_TYPE_NAMED_ANON_UNION)
-	++named_anon_union_count;
-      
-      if ((mr_fdp->stype.mr_type == MR_TYPE_ANON_UNION) || (mr_fdp->stype.mr_type == MR_TYPE_NAMED_ANON_UNION))
+	{
+	  ++named_anon_union_count;
+	  continue;
+	}
+      else if ((mr_fdp->stype.mr_type == MR_TYPE_ANON_UNION) && (named_anon_union_count > 0))
 	continue;
-      
+
       mr_fd_t * dw_fdp = NULL;
       for (j = dw_td->param.struct_param.fields_size / sizeof (dw_td->param.struct_param.fields[0]) - 1; j >= 0; --j)
 	if (mr_hashed_string_cmp (&dw_td->param.struct_param.fields[j]->name, &mr_fdp->name) == 0)
@@ -52,6 +55,8 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	mr_type = MR_TYPE_FUNC_TYPE;
       else if ((mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_CHAR))
 	mr_type = MR_TYPE_STRING;
+      if (mr_type == MR_TYPE_ANON_UNION)
+	mr_type = MR_TYPE_UNION;
       else if (mr_fdp->stype.mr_type == MR_TYPE_VOID)
 	{
 	  if ((dw_fdp->stype.mr_type == MR_TYPE_BITFIELD) ||
