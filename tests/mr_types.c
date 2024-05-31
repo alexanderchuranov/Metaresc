@@ -6,6 +6,7 @@ typedef char char_array_t[1];
 typedef char * char_ptr_t;
 typedef int32_t int32_alias_t;
 typedef int32_t * int32_ptr_t;
+typedef struct nonmr_struct_t { int x; } nonmr_struct_t;
 
 TYPEDEF_STRUCT (mr_empty_t);
 
@@ -136,6 +137,8 @@ TYPEDEF_STRUCT (struct_t,
 		(mr_type_t, bf_enum, : 6),
 		(const volatile enum mr_type_t, bf_const_volatile_enum_enum, : 6),
 		(int32_alias_t, f, (volatile int32_alias_t const *, int32_t [2] [3], int32_t * [2] [3], char [2], char [2] [3])),
+		(nonmr_struct_t, nonmr_struct),
+		(nonmr_struct_t, nonmr_struct_array, [1]),
 		);
 
 TYPEDEF_STRUCT (void_function_field_t,
@@ -442,6 +445,9 @@ START_TEST (check_types_detection) {
   ck_assert_msg (args[4]->mr_type == MR_TYPE_CHAR_ARRAY, "Wrong type of fourth argument for 'f' of type struct_t.");
   ck_assert_msg (args[5]->mr_type == MR_TYPE_ARRAY, "Wrong type of fifth argument for 'f' of type struct_t.");
   ck_assert_msg (args[5]->mr_type_aux == MR_TYPE_CHAR, "Wrong auxiliary type of fifth argument for 'f' of type struct_t.");
+
+  ASSERT_STRUCT_FIELD_TYPE (nonmr_struct, MR_TYPE_VOID);
+  ASSERT_STRUCT_FIELD_TYPE (nonmr_struct_array, MR_TYPE_VOID, MR_TYPE_VOID);
 } END_TEST
 
 #ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
