@@ -221,6 +221,30 @@ START_TEST (union_bitfield_overrided) {
   ALL_METHODS (ASSERT_SAVE_LOAD_UNION, struct_union_enum_t, UD_INT32, STRUCT_XY_X_CMP);
 } END_TEST
 
+START_TEST (union_top_level) {
+  union_int32_float_t u = { MR_PI };
+  mr_ptrdes_t expected[] =
+    {
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "union_int32_float_t", .name.str = "union_int32_float_t" }},
+	.mr_type = MR_TYPE_UNION,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "float", .name.str = "x" }},
+	.mr_type = MR_TYPE_FLOAT,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 0,
+      },
+    };
+ ASSERT_MR_SAVE (union_int32_float_t, &u, expected);
+} END_TEST
+
+
 MAIN_TEST_SUITE ((embed_anon_union, "embeded anonymous union"),
 		 (anon_union, "anonymous union"),
 		 (named_anon_union, "named anonymous union"),
@@ -250,5 +274,6 @@ MAIN_TEST_SUITE ((embed_anon_union, "embeded anonymous union"),
 		 (union_enum_overrided, "union discriminated by enum, but resolution is swapped by override"),
 		 (union_int_overrided, "union discriminated by int, but resolution is swapped by override"),
 		 (union_bool_overrided, "union discriminated by bool, but resolution is swapped by override"),
-		 (union_bitfield_overrided, "union discriminated by bitfield, but resolution is swapped by override")
+		 (union_bitfield_overrided, "union discriminated by bitfield, but resolution is swapped by override"),
+		 (union_top_level, "union is a top level saved object")
 		 );

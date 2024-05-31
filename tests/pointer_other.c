@@ -151,28 +151,96 @@ START_TEST (union_resolution_correctness) {
   };
   union_resolution.uifp = &union_resolution.typed_union->uif;
   
-  mr_ra_ptrdes_t ptrs = MR_SAVE (union_resolution_t, &union_resolution);
-  int i;
-  bool union_resolved_correctly = false;
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t expected[] =
     {
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  if (ptrs.ra[i].fdp &&
-	      (ptrs.ra[i].fdp->name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].fdp->name.str, "uif")) &&
-	      (ptrs.ra[i].first_child >= 0) &&
-	      ptrs.ra[ptrs.ra[i].first_child].fdp &&
-	      (ptrs.ra[ptrs.ra[i].first_child].fdp->name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[ptrs.ra[i].first_child].fdp->name.str, union_resolution.typed_union->type)))
-	    {
-	      union_resolved_correctly = true;
-	      break;
-	    }
-	}
-      MR_FREE (ptrs.ra);
-    }
-  ck_assert_msg (union_resolved_correctly, "Union resolved incorrectly");
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "union_resolution_t", .name.str = "union_resolution_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "typed_union_t *", .name.str = "typed_union" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_NO_FLAGS,
+	.next = 3,
+	.first_child = 6,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "type" }},
+	.mr_type = MR_TYPE_STRING,
+	.flags = MR_NO_FLAGS,
+	.next = 5,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "type" }},
+	.mr_type = MR_TYPE_CHAR_ARRAY,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int_float_t *", .name.str = "uifp" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 11,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "typed_union_t *", .name.str = "typed_union" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 7,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "type" }},
+	.mr_type = MR_TYPE_STRING,
+	.flags = MR_NO_FLAGS,
+	.next = 9,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "type" }},
+	.mr_type = MR_TYPE_CHAR_ARRAY,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int_float_t", .name.str = "uif" }},
+	.mr_type = MR_TYPE_UNION,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 10,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "_int" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int_float_t *", .name.str = "uifp" }},
+	.mr_type = MR_TYPE_UNION,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 12,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "float", .name.str = "_float" }},
+	.mr_type = MR_TYPE_FLOAT,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 0,
+      },
+    };
+
+  ASSERT_MR_SAVE (union_resolution_t, &union_resolution, expected);
 } END_TEST
 
 TYPEDEF_STRUCT (linked_list_ptr_t,
@@ -190,24 +258,58 @@ START_TEST (backward_ref_is_a_field) {
   ll.next.ptr = &ll;
   root_struct.ll_ptr = &ll.next;
 
-  mr_ra_ptrdes_t ptrs = MR_SAVE (root_struct_t, &root_struct);
-  int i;
-  bool pointer_resolved_correctly = true;
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t expected[] =
     {
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  int ref_idx = ptrs.ra[i].first_child;
-	  if ((ptrs.ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
-	      (ptrs.ra[ref_idx].idx == 0))
-	    {
-	      pointer_resolved_correctly = false;
-	      break;
-	    }
-	}
-      MR_FREE (ptrs.ra);
-    }
-  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "root_struct_t", .name.str = "root_struct_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "linked_list_ptr_t *", .name.str = "ll_ptr" }},
+	.mr_type = MR_TYPE_POINTER,
+	.next = 0,
+	.first_child = 3
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "linked_list_ptr_t *", .name.str = "ll_ptr" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 4
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "struct linked_list_t *", .name.str = "ptr" }},
+	.mr_type = MR_TYPE_POINTER,
+	.next = 0,
+	.first_child = 5
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "struct linked_list_t *", .name.str = "ptr" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 6
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "linked_list_ptr_t", .name.str = "next" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.next = 0,
+	.first_child = 7
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "struct linked_list_t *", .name.str = "ptr" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 0,
+	.first_child = 5
+      }
+    };
+
+  ASSERT_MR_SAVE (root_struct_t, &root_struct, expected);
 } END_TEST
 
 TYPEDEF_STRUCT (two_dynamic_arrays_t,
@@ -225,26 +327,59 @@ START_TEST (tda_same_ptr_and_size) {
   tda.size1 = sizeof (array);
   tda.da2 = array;
   tda.size2 = sizeof (array);
-  
-  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  int i;
-  bool pointer_resolved_correctly = true;
-  if (ptrs.ra != NULL)
+
+  mr_ptrdes_t expected[] =
+  {
+    {},
     {
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  int ref_idx = ptrs.ra[i].first_child;
-	  if ((ptrs.ra[i].flags & MR_IS_REFERENCE) &&
-	      (ptrs.ra[ref_idx].parent > 0) &&
-	      (ptrs.ra[ptrs.ra[ref_idx].parent].first_child != ref_idx))
-	    {
-	      pointer_resolved_correctly = false;
-	      break;
-	    }
-	}
-      MR_FREE (ptrs.ra);
+      .fdp = (mr_fd_t[]){{ .stype.type = "two_dynamic_arrays_t", .name.str = "two_dynamic_arrays_t" }},
+      .mr_type = MR_TYPE_STRUCT,
+      .flags = MR_IS_UNNAMED,
+      .next = 0,
+      .first_child = 2
+    },
+    {
+      .fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+      .mr_type = MR_TYPE_POINTER,
+      .next = 3,
+      .first_child = 6
+    },
+    {
+      .fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
+      .mr_type = MR_TYPE_DETECT (ssize_t),
+      .next = 4,
+      .first_child = 0
+    },
+    {
+      .fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+      .mr_type = MR_TYPE_POINTER,
+      .flags = MR_IS_REFERENCE,
+      .next = 5,
+      .first_child = 6
+    },
+    {
+      .fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
+      .mr_type = MR_TYPE_DETECT (ssize_t),
+      .next = 0,
+      .first_child = 0
+    },
+    {
+      .fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+      .mr_type = MR_TYPE_DETECT (int),
+      .flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+      .next = 7,
+      .first_child = 0
+    },
+    {
+      .fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+      .mr_type = MR_TYPE_DETECT (int),
+      .flags = MR_IS_UNNAMED,
+      .next = 0,
+      .first_child = 0
     }
-  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+  };
+
+  ASSERT_MR_SAVE (two_dynamic_arrays_t, &tda, expected);
 } END_TEST
 
 START_TEST (tda_same_ptr_and_bigger) {
@@ -256,24 +391,58 @@ START_TEST (tda_same_ptr_and_bigger) {
   tda.da2 = array;
   tda.size2 = sizeof (array[0]);
   
-  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  bool pointer_resolved_correctly = true;
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t expected[] =
     {
-      int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  int ref_idx = ptrs.ra[i].first_child;
-	  if ((ptrs.ra[i].flags & MR_IS_REFERENCE) &&
-	      (ptrs.ra[ref_idx].next < 0))
-	    {
-	      pointer_resolved_correctly = false;
-	      break;
-	    }
-	}
-      MR_FREE (ptrs.ra);
-    }
-  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "two_dynamic_arrays_t", .name.str = "two_dynamic_arrays_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_POINTER,
+	.next = 3,
+	.first_child = 6
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.next = 4,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 5,
+	.first_child = 6
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
+	.mr_type = MR_TYPE_INT64,
+	.next = 0,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+	.next = 7,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 0
+      }
+    };
+
+  ASSERT_MR_SAVE (two_dynamic_arrays_t, &tda, expected);
 } END_TEST
 
 START_TEST (tda_overlapping_1) {
@@ -285,22 +454,66 @@ START_TEST (tda_overlapping_1) {
   tda.da2 = &array[0];
   tda.size2 = 2 * sizeof (array[0]);
 
-  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  bool pointer_resolved_correctly = false;
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t expected[] =
     {
-      int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  if (ptrs.ra[i].flags & MR_IS_REFERENCE)
-	    {
-	      pointer_resolved_correctly = true;
-	      break;
-	    }
-	}
-      MR_FREE (ptrs.ra);
-    }
-  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "two_dynamic_arrays_t", .name.str = "two_dynamic_arrays_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 3,
+	.first_child = 6
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.next = 4,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_NO_FLAGS,
+	.next = 5,
+	.first_child = 8
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.next = 0,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+	.next = 7,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 6,
+	.first_child = 0
+      }
+    };
+
+  ASSERT_MR_SAVE (two_dynamic_arrays_t, &tda, expected);
 } END_TEST
 
 START_TEST (tda_overlapping_2) {
@@ -312,22 +525,65 @@ START_TEST (tda_overlapping_2) {
   tda.da2 = &array[1];
   tda.size2 = 2 * sizeof (array[0]);
 
-  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  bool pointer_resolved_correctly = false;
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t expected[] =
     {
-      int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
-	{
-	  if (ptrs.ra[i].flags & MR_IS_REFERENCE)
-	    {
-	      pointer_resolved_correctly = true;
-	      break;
-	    }
-	}
-      MR_FREE (ptrs.ra);
-    }
-  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "two_dynamic_arrays_t", .name.str = "two_dynamic_arrays_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_POINTER,
+	.next = 3,
+	.first_child = 6
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.next = 4,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 5,
+	.first_child = 7
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.next = 0,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 7,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+	.next = 8,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 0
+      }
+    };
+
+  ASSERT_MR_SAVE (two_dynamic_arrays_t, &tda, expected);
 } END_TEST
 
 START_TEST (tda_overlapping_3) {
@@ -339,20 +595,72 @@ START_TEST (tda_overlapping_3) {
   tda.da2 = &array[1];
   tda.size2 = 2 * sizeof (array[0]);
   
-  mr_ra_ptrdes_t ptrs = MR_SAVE (two_dynamic_arrays_t, &tda);
-  bool pointer_resolved_correctly = false;
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t expected[] =
     {
-      int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	if (ptrs.ra[i].flags & MR_IS_REFERENCE)
-	  {
-	    pointer_resolved_correctly = true;
-	    break;
-	  }
-      MR_FREE (ptrs.ra);
-    }
-  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "two_dynamic_arrays_t", .name.str = "two_dynamic_arrays_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_POINTER,
+	.next = 3,
+	.first_child = 6
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
+	.mr_type = MR_TYPE_INT64,
+	.next = 4,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 5,
+	.first_child = 7
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.next = 0,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 7,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+	.next = 8,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 9,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 0
+      }
+    };
+
+  ASSERT_MR_SAVE (two_dynamic_arrays_t, &tda, expected);
 } END_TEST
 
 TYPEDEF_STRUCT (int_array_t,
@@ -371,36 +679,145 @@ START_TEST (pointer_to_array) {
   pointer_to_array.array_ptr = &array;
   pointer_to_array.da = &array.array[1];
   pointer_to_array.size = 2 * sizeof (pointer_to_array.da[0]);
-  
-  mr_ra_ptrdes_t ptrs = MR_SAVE (pointer_to_array_t, &pointer_to_array);
-  int i;
-  bool pointer_resolved_correctly = false;
-  if (ptrs.ra != NULL)
+
+  mr_ptrdes_t expected[] =
     {
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)
-	{
-	  int ref_idx = ptrs.ra[i].first_child;
-	  if ((ptrs.ra[i].flags & MR_IS_REFERENCE) &&
-	      (ptrs.ra[ref_idx].parent > 0) &&
-	      (ptrs.ra[ptrs.ra[ref_idx].parent].first_child != ref_idx))
-	    {
-	      pointer_resolved_correctly = true;
-	      break;
-	    }
-	}
-      MR_FREE (ptrs.ra);
-    }
-  ck_assert_msg (pointer_resolved_correctly, "Pointer resolved incorrectly");
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "pointer_to_array_t", .name.str = "pointer_to_array_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int_array_t *", .name.str = "array_ptr" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_NO_FLAGS,
+	.next = 3,
+	.first_child = 5,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 4,
+	.first_child = 8,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int_array_t *", .name.str = "array_ptr" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 6,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "array" }},
+	.mr_type = MR_TYPE_ARRAY,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 7,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "array" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 8,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "array" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+	.next = 9,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "array" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 0,
+      },
+    };
+  ASSERT_MR_SAVE (pointer_to_array_t, &pointer_to_array, expected);
 } END_TEST
 
 START_TEST (mr_ptr_resolution) {
-  int res_array[] = {1, 2, 3};
+  int res_array[] = {1, 2};
   mr_res_t res = { 
     .data = { res_array },
     .type = "int",
     .mr_size = sizeof (res_array),
   };
-  ALL_METHODS (ASSERT_SAVE_LOAD, mr_res_t, &res);
+  mr_ptrdes_t expected[] =
+    {
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "mr_res_t", .name.str = "mr_res_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 2,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "char *", .name.str = "type" }},
+	.mr_type = MR_TYPE_STRING,
+	.flags = MR_NO_FLAGS,
+	.next = 4,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "char *", .name.str = "type" }},
+	.mr_type = MR_TYPE_CHAR_ARRAY,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "mr_size" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.flags = MR_NO_FLAGS,
+	.next = 5,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "mr_ptr_t", .name.str = "data" }},
+	.mr_type = MR_TYPE_UNION,
+	.flags = MR_NO_FLAGS,
+	.next = 0,
+	.first_child = 6,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "int" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 7,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "int" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 8,
+	.first_child = 0,
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int", .name.str = "int" }},
+	.mr_type = MR_TYPE_DETECT (int),
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 0,
+      },
+    };
+  ASSERT_MR_SAVE (mr_res_t, &res, expected);
 } END_TEST
 
 MAIN_TEST_SUITE ((ld_ptr, "pointer on a long double (type name with spaces)"),

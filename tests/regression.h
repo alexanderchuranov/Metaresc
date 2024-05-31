@@ -6,6 +6,7 @@
 
 #include <check.h>
 #include <metaresc.h>
+#include <mr_save.h> /* MR_TYPED_TYPES */
 
 #ifdef HAVE_BISON_FLEX
 #define BISON_FLEX_METHODS XML1, SCM, CINIT, JSON,
@@ -100,5 +101,36 @@
     srunner_free (srunner);						\
     return ((number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE);	\
   }									\
+
+static inline void
+mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_size)
+{
+  ck_assert_msg (ptrs->size == expected_size, "size mismatch %d != %d", (int)ptrs->size, (int)expected_size);
+  int i, count = expected_size / sizeof (*expected);
+  for (i = 1; i < count; ++i)
+    {
+      ck_assert_msg (strcmp (ptrs->ra[i].fdp->name.str, expected[i].fdp->name.str) == 0,
+		     "[%d] name %s != %s", i, ptrs->ra[i].fdp->name.str, expected[i].fdp->name.str);
+      ck_assert_msg (ptrs->ra[i].mr_type == expected[i].mr_type,
+		     "[%d] mr_type %d != %d", i, ptrs->ra[i].mr_type, expected[i].mr_type);
+
+      if ((MR_TYPED_TYPES >> ptrs->ra[i].mr_type) & 1)
+	ck_assert_msg (strcmp (ptrs->ra[i].fdp->stype.type, expected[i].fdp->stype.type) == 0,
+		       "[%d] type %s != %s", i, ptrs->ra[i].fdp->stype.type, expected[i].fdp->stype.type);
+      ck_assert_msg (ptrs->ra[i].flags == expected[i].flags,
+		     "[%d] flags %d != %d", i, ptrs->ra[i].flags, expected[i].flags);
+      ck_assert_msg (ptrs->ra[i].first_child == expected[i].first_child,
+		     "[%d] first_child %d != %d", i, ptrs->ra[i].first_child, expected[i].first_child);
+      ck_assert_msg (ptrs->ra[i].next == expected[i].next,
+		     "[%d] next %d != %d", i, ptrs->ra[i].next, expected[i].next);
+    }
+}
+
+#define ASSERT_MR_SAVE(TYPE, S_PTR, EXPECTED) ({			\
+      mr_ra_ptrdes_t ptrs = MR_SAVE (TYPE, S_PTR);			\
+      ck_assert_msg (ptrs.ra != NULL, "Failed to MR_SAVE");		\
+      mr_ra_ptrdes_eq (&ptrs, EXPECTED, sizeof (EXPECTED));		\
+      MR_FREE (ptrs.ra);						\
+    })
 
 #endif /* _REGRESSION_H_ */
