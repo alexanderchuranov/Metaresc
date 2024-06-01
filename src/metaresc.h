@@ -677,11 +677,13 @@
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (TYPE),					\
 	.stype.mr_type = MR_TYPE_VOID,					\
-	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.stype.mr_type_aux = MR_TYPE_DETECT (TYPE),) () \
-	MR_IF_ELSE (MR_IS_IN_PAREN (NAME))				\
-	(.stype.mr_type_class = MR_FUNCTION_TYPE_CLASS,)		\
-	(.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME),) \
-	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) () \
+	MR_IF_ELSE (MR_IS_IN_PAREN (SUFFIX))				\
+	(.stype.mr_type_class = MR_FUNCTION_TYPE_CLASS,			\
+	 .stype.mr_type_aux = MR_TYPE_FUNC,)				\
+	(.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	 .stype.mr_type_aux = MR_TYPE_DETECT (TYPE),			\
+	 .offset = offsetof (MR_AOB_TYPE (MR_TYPE_NAME, NAME, false), NAME),) \
+	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX)) (.offset = offsetof (MR_TYPE_NAME, NAME),) ()	\
 	.meta = "" __VA_ARGS__,						\
 	} },
 

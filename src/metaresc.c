@@ -1564,7 +1564,7 @@ mr_normalize_field_name (mr_fd_t * fdp)
     MR_VOID definitions may contain brackets (for arrays) or braces (for function pointers) or collon (for bitfields).
   */
   char * name = fdp->name.str;
-  if (name)
+  if (name && name[0] && (MR_TYPE_VOID == fdp->stype.mr_type))
     {
       for (; !(isalnum (*name) || (*name == '_')); ++name); /* skip invalid characters */
       fdp->name.str = name;
@@ -1587,7 +1587,8 @@ mr_init_struct (mr_td_t * tdp)
     return;
 
   int count;
-  for (count = 0; tdp->param.struct_param.fields[count] != NULL; ++count);
+  for (count = 0; tdp->param.struct_param.fields[count] != NULL; ++count)
+    mr_normalize_field_name (tdp->param.struct_param.fields[count]);
   tdp->param.struct_param.fields_size = count * sizeof (tdp->param.struct_param.fields[0]);
 
   mr_anon_unions_extract (tdp); /* important to extract unions before building index over fields */
@@ -1617,7 +1618,6 @@ mr_detect_struct_fields (mr_td_t * tdp)
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      mr_normalize_field_name (fdp);
       mr_fd_detect_field_type (fdp);
       mr_fd_detect_res_size (fdp);
       mr_fd_init_ud_overrides (fdp);

@@ -141,18 +141,28 @@ TYPEDEF_STRUCT (struct_t,
 		(nonmr_struct_t, nonmr_struct_array, [1]),
 		);
 
-TYPEDEF_STRUCT (void_function_field_t,
-		VOID (void, (*func), (void)));
+TYPEDEF_STRUCT (void_fields_t,
+		VOID (int, _int),
+		VOID (void, (*func), (void)),
+		VOID (int, array, [1]),
+		VOID (int, bf, : 1),
+		);
 
 TYPEDEF_FUNC (int32_alias_t, func_t, (volatile int32_alias_t const *));
 
 START_TEST (check_void_function_field) {
   mr_conf_init ();
 
-  mr_td_t * tdp = mr_get_td_by_name ("void_function_field_t");
-  ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type void_function_field_t.");
+  mr_td_t * tdp = mr_get_td_by_name ("void_fields_t");
+  ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type void_fields_t.");
   mr_fd_t * fdp = mr_get_fd_by_name (tdp, "func");
   ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field 'func'.");
+  ck_assert_msg (fdp->stype.mr_type == MR_TYPE_VOID, "Incorrect mr_type for field 'func'.");
+  ck_assert_msg (fdp->stype.mr_type_aux == MR_TYPE_FUNC, "Incorrect mr_type_aux for field 'func'.");
+  fdp = mr_get_fd_by_name (tdp, "array");
+  ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field 'array'.");
+  ck_assert_msg (fdp->stype.mr_type == MR_TYPE_VOID, "Incorrect mr_type for field 'array'.");
+  ck_assert_msg (fdp->offset == offsetof (void_fields_t, array), "Incorrect offset for field 'array'.");
 } END_TEST
 
 typedef struct ext_struct_t {
