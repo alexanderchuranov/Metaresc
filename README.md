@@ -796,6 +796,9 @@ TYPEDEF_STRUCT (sample_t,
 For the fields that should not be serialized use keyword `VOID` as a
 prefix for declaration. Metaresc still detect type of those fields, but
 skip them at the serialization/deserialization process.
+Note that function pointers needs to be declared without braces and
+asterisk, and asterisk for pointers should be a part of type, but not
+a field name.
 Sample declaration as follows:
 
 ```c
@@ -803,9 +806,8 @@ TYPEDEF_STRUCT (non_serializable_t,
 		VOID (int, field),
 		VOID (int *, pointer),
 		VOID (int, array, [2]),
-		VOID (int, _array[2]),
-		VOID (int, (*function), (int)),
-		VOID (int, bitfield, :4),
+		VOID (int, function, (int)),
+		VOID (int, bitfield, : 4),
 		);
 ```
 

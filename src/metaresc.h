@@ -563,7 +563,11 @@
 
 /* next macro adds empty argument. Required for MR_AUTO, MR_VOID with two parameters. It adds 3rd parameter (suffix) for them. */
 #define MR_AUTO_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
-#define MR_VOID_PROTO(...) MR_FIELD_PROTO (__VA_ARGS__, )
+#define MR_VOID_PROTO(...) MR_VOID_PROTO_ (__VA_ARGS__, )
+#define MR_VOID_PROTO_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...)		\
+  MR_IF_ELSE (MR_IS_IN_PAREN (SUFFIX))					\
+    (MR_FUNC_PROTO (MR_TYPE_NAME, TYPE, NAME, SUFFIX, __VA_ARGS__))	\
+    (MR_FIELD_PROTO (MR_TYPE_NAME, TYPE, NAME, SUFFIX, __VA_ARGS__))
 
 #define MR_FIELD_PROTO(MR_TYPE_NAME, TYPE, NAME, SUFFIX, ...) TYPE NAME SUFFIX;
 #define MR_BITFIELD_PROTO MR_FIELD_PROTO
@@ -680,17 +684,19 @@
 	 .stype.size = sizeof (void*),					\
 	 .stype.mr_type_aux = MR_TYPE_FUNC,				\
 	 .stype.mr_type_class = MR_FUNCTION_TYPE_CLASS,			\
+	 .offset = offsetof (MR_TYPE_NAME, NAME),			\
 	 )								\
 	(.stype.type = #TYPE,						\
-	 .stype.size = sizeof (TYPE),					\
 	 .stype.mr_type_aux = MR_TYPE_DETECT (TYPE),			\
 	 .stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	 .offset = offsetof (MR_AOB_TYPE (MR_TYPE_NAME, NAME, false), NAME),\
+	 MR_IF_ELSE (MR_IS_EMPTY (SUFFIX))				\
+	 (.offset = offsetof (MR_TYPE_NAME, NAME),			\
+	  .stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
+	  )								\
+	 (.offset = offsetof (MR_AOB_TYPE (MR_TYPE_NAME, NAME, false), NAME), \
+	  .stype.size = sizeof (TYPE),					\
+	  )								\
 	 )								\
-	MR_IF_ELSE (MR_IS_EMPTY (SUFFIX))				\
-	(.offset = offsetof (MR_TYPE_NAME, NAME),			\
-	 .stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
-	 ) ()								\
 	.meta = "" __VA_ARGS__,						\
 	} },
 

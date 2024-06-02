@@ -143,7 +143,7 @@ TYPEDEF_STRUCT (struct_t,
 
 TYPEDEF_STRUCT (void_fields_t,
 		VOID (int, _int),
-		VOID (void, (*func), (void)),
+		VOID (void, func, (void)),
 		VOID (int, array, [1]),
 		VOID (int, bf, : 1),
 		);
