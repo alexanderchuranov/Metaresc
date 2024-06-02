@@ -177,6 +177,8 @@ check_td (mr_ptr_t key, const void * context)
   mr_td_t * mr_td = key.ptr;
   mr_td_t * dw_td = get_td_by_name (&mr_td->type);
 
+  if (mr_td == dw_td)
+    return (MR_SUCCESS);
   /*
     Metaresc has type descriptors for most of builin types like int, long, float.
     This list also include va_args which on x86 Linux is an alias for char*.
@@ -208,6 +210,10 @@ check_td (mr_ptr_t key, const void * context)
 
 START_TEST (dw_check_all)
 {
+  int i;
+  for (i = 0; i < sizeof (ra_td) / sizeof (ra_td[0]); ++i)
+    mr_add_type (&ra_td[i]);
+
   mr_type_void_fields ("mr_fd_t", "mr_type");
   mr_ic_foreach (&mr_conf.type_by_name, check_td, NULL);
 } END_TEST

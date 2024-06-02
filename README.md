@@ -99,7 +99,7 @@ $ make -j 4 check
 ```
 ### MacOs
 
-On Big Sur install developer tools first:
+On MacOs install developer tools first:
 
 ```console
 $ xcode-select --install
@@ -873,7 +873,7 @@ method. I.e. `size` field configured as a string identifier and formed
 from the name of the field with `_size` suffix.
 
 #### Array declaration
-Third argument `**_suffix_**` in the field's declaration denotes dimensions
+Third argument **_suffix_** in the field's declaration denotes dimensions
 of the array. Metaresc is capable to distinguish multi-dimensional
 arrays up to 4 diminsions. Higher orders of dimensions are treated as
 four-dimensional arrays with aggregated lower dimension. You could
