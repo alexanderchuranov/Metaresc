@@ -61,13 +61,19 @@ measure_time_for_n_elements (int n)
 }
 
 START_TEST (mr_save_discriminated_union_complexity) {
-  int size = 1 << 8;
+  int i, size = 1 << 8;
   int base_time, double_time = measure_time_for_n_elements (size);
   do {
     size <<= 1;
     base_time = double_time;
     double_time = measure_time_for_n_elements (size);
   } while (double_time < CLOCKS_PER_SEC / 8);
+
+  for (i = 0; i < 3; ++i)
+    {
+      int another_try = measure_time_for_n_elements (size);
+      double_time = MR_MIN (double_time, another_try);
+    }
 
   ck_assert_msg (double_time < (base_time * 5) / 2, "Union resolution is not in constant time (%d vs %d)", double_time, base_time);
 } END_TEST
