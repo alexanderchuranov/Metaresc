@@ -1321,7 +1321,7 @@ mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
-  if (MR_DFS_POST_ORDER != order)
+  if ((MR_DFS_POST_ORDER != order) || !((MR_STRUCT_TYPES >> ptrs->ra[idx].mr_type) & 1))
     return (MR_SUCCESS);
 
   if (!(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
