@@ -97,6 +97,7 @@ element: push_node value pop_node
 pop_node: {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
+  (void)mr_json_nerrs; /* workaround compiler warning: variable 'mr_json_nerrs' set but not used */
 }
 
 push_node: { 

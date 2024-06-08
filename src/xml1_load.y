@@ -162,6 +162,7 @@ start_tag: {
     { YYERROR; }
   mr_add_child (mr_load->ptrs, mr_load->parent, idx);
   mr_load->parent = idx;
+  (void)mr_xml1_nerrs; /* workaround compiler warning: variable 'mr_xml1_nerrs' set but not used */
 }
 
 nested_tags: | nested_tags tag

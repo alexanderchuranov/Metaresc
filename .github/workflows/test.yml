@@ -22,7 +22,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{matrix.cc}}
+        run: ./configure CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}}
       - name: make check
         run: make check -j 2 || ( cat tests/test-suite.log ; false )
       - name: check with valgrind
@@ -40,7 +40,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure HAVE_BISON=yes YACC=$(brew --prefix)/opt/bison/bin/bison CFLAGS="-Wno-unused-but-set-variable"
+        run: ./configure CFLAGS=-Werror HAVE_BISON=yes YACC=$(brew --prefix)/opt/bison/bin/bison
       - name: make check
         run: make check -j 2 || ( cat tests/test-suite.log ; false )
 
@@ -59,7 +59,7 @@ jobs:
           git config --global --add safe.directory `pwd`
           git submodule update --init --recursive --remote
           ./autogen.sh
-          ./configure CFLAGS="-I/usr/local/include/ -Wno-unused-but-set-variable" --without-perftest
+          ./configure CFLAGS="-I/usr/local/include/ -Werror" --without-perftest
           make check -j 2 || ( cat tests/test-suite.log ; false )
 
   windows:
@@ -92,7 +92,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure --disable-static --enable-shared --without-perftest
+        run: ./configure CFLAGS=-Werror --disable-static --enable-shared --without-perftest
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
@@ -141,6 +141,6 @@ jobs:
   #           git config --global --add safe.directory '*'
   #           git submodule update --init --recursive --remote
   #           ./autogen.sh
-  #           ./configure CFLAGS=-I/usr/include/tirpc LIBS=-ltirpc CC=${{matrix.cc}} --without-perftest
+  #           ./configure CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}} --without-perftest
   #           make check || ( cat tests/test-suite.log ; false )
 

@@ -106,6 +106,7 @@ cinit_unquote_str (mr_substr_t * substr, char * dst)
 cinit: start_node cinit_stmt {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
+  (void)mr_cinit_nerrs; /* workaround compiler warning variable: 'mr_cinit_nerrs' set but not used */
  }
 
 start_node: { 

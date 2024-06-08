@@ -104,7 +104,8 @@ ws_scm_ws: ws scm ws
 scm: start_node scm_stmt {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
-}
+  (void)mr_scm_nerrs; /* workaround compiler warning: variable 'mr_scm_nerrs' set but not used */
+ }
 
 start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
