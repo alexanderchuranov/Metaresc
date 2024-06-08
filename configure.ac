@@ -152,8 +152,8 @@ do
   do
     AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (void)sizeof (struct { int:-!(${TYPE_SIZE} / __CHAR_BIT__ == sizeof (${TYPE})); }); ]])], [ SIZEOF_TYPE=${TYPE_SIZE} ])
   done
-  [MR_VARIABLE_NAME=$(tr "[:lower:] " "[:upper:]_" <<< "MR_SIZEOF ${TYPE}")]
   AC_MSG_RESULT(${SIZEOF_TYPE})
+  [MR_VARIABLE_NAME=$(echo "MR_SIZEOF ${TYPE}" | tr "[:lower:] " "[:upper:]_")]
   AC_DEFINE_UNQUOTED(${MR_VARIABLE_NAME}, ${SIZEOF_TYPE})
 done
 
