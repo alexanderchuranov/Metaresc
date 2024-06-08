@@ -32,7 +32,7 @@ AC_PROG_YACC
 AC_PROG_LEX
 
 AM_CFLAGS=""
-for aux_CFLAGS in -Wall -Werror -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion
+for aux_CFLAGS in -Wall -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion
 do
   save_CFLAGS=${CFLAGS}
   CFLAGS="${CFLAGS} ${aux_CFLAGS}"
@@ -144,26 +144,18 @@ AC_MSG_CHECKING(type of union discriminators indexes)
 AC_MSG_RESULT(${RA_UD_IDX})
 AC_DEFINE_UNQUOTED(MR_RA_UD_IDX_TYPE, ${RA_UD_IDX}, [type of union discriminators indexes])
 
-UNCOVERED_TYPE="long long"
-SIZEOF_UNCOVERED_TYPE=64
-
 for TYPE in char short int long "long long"
 do
-  AC_MSG_CHECKING([unsigned ${TYPE} compatibility with uint8_t, uint16_t, uint32_t, uint64_t ])
-  AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[#include <stdint.h>]], [[ (int)sizeof (struct { int:-!!(__builtin_types_compatible_p (unsigned ${TYPE}, uint8_t) | __builtin_types_compatible_p (unsigned ${TYPE}, uint16_t) | __builtin_types_compatible_p (unsigned ${TYPE}, uint32_t) | __builtin_types_compatible_p (unsigned ${TYPE}, uint64_t)); }); ]])], [ UNCOVERED_TYPE=${TYPE}; AC_MSG_RESULT([no])], [AC_MSG_RESULT([yes])])
+  AC_MSG_CHECKING([size of type ${TYPE}])
+  SIZEOF_TYPE=8
+  for TYPE_SIZE in 8 16 32 64
+  do
+    AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[ (void)sizeof (struct { int:-!(${TYPE_SIZE} / __CHAR_BIT__ == sizeof (${TYPE})); }); ]])], [ SIZEOF_TYPE=${TYPE_SIZE} ])
+  done
+  [MR_VARIABLE_NAME=$(tr "[:lower:] " "[:upper:]_" <<< "MR_SIZEOF ${TYPE}")]
+  AC_MSG_RESULT(${SIZEOF_TYPE})
+  AC_DEFINE_UNQUOTED(${MR_VARIABLE_NAME}, ${SIZEOF_TYPE})
 done
-AC_MSG_CHECKING(uncovered int type)
-AC_MSG_RESULT(${UNCOVERED_TYPE})
-
-AC_MSG_CHECKING(size of uncovered int type)
-for TYPE_SIZE in 8 16 32 64
-do
-  AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[#include <stdint.h>]], [[ (int)sizeof (struct { int:-!!(sizeof (uint${TYPE_SIZE}_t) != sizeof (${UNCOVERED_TYPE})); }); ]])], [ SIZEOF_UNCOVERED_TYPE=${TYPE_SIZE} ])
-done
-AC_MSG_RESULT(${SIZEOF_UNCOVERED_TYPE})
-
-AC_DEFINE_UNQUOTED(MR_UNCOVERED_TYPE, ${UNCOVERED_TYPE}, [int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
-AC_DEFINE_UNQUOTED(MR_SIZEOF_UNCOVERED_TYPE, ${SIZEOF_UNCOVERED_TYPE}, [sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t])
 
 AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([double])

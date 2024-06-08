@@ -23,16 +23,23 @@
 /* type of union discriminators indexes */
 #undef MR_RA_UD_IDX_TYPE
 
-/* sizeof int type which is not compatible with uint8_t, uint16_t, uint32_t,
-   uint64_t */
-#undef MR_SIZEOF_UNCOVERED_TYPE
-
-/* int type which is not compatible with uint8_t, uint16_t, uint32_t, uint64_t
-   */
-#undef MR_UNCOVERED_TYPE
-
 /* define if __int128 is supported */
 #undef MR_HAVE_INT128
 
 /* long double significant bytes */
 #undef MR_SIZEOF_LONG_DOUBLE
+
+/* sizeof char in bits */
+#undef MR_SIZEOF_CHAR
+
+/* sizeof short in bits */
+#undef MR_SIZEOF_SHORT
+
+/* sizeof int in bits */
+#undef MR_SIZEOF_INT
+
+/* sizeof long in bits */
+#undef MR_SIZEOF_LONG
+
+/* sizeof long long in bits */
+#undef MR_SIZEOF_LONG_LONG
