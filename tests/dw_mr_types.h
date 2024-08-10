@@ -50,11 +50,11 @@ TYPEDEF_STRUCT (mr_anon_union_t,
 		END_ANON_UNION (),
 		END_ANON_UNION (),
 		int _3,
-		/* one more anonymous union - should be named identically my macro and DWARF */
+		/* one more anonymous union - should be named identically by MACRO and DWARF */
 		ANON_UNION (),
 		int _4,
 		END_ANON_UNION (),
-		/* named anonymous union. adds one more field and indexing of fields in macro and DWARF after this field mismatching */ 
+		/* named anonymous union. adds one more field and indexing of fields in MACRO and DWARF after this field mismatching */ 
 		ANON_UNION (name),
 		int _5,
 		END_ANON_UNION (),

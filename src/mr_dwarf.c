@@ -1191,8 +1191,13 @@ process_td (mr_ptr_t key, const void * context)
 
   if (tdp->mr_type == MR_TYPE_ENUM)
     {
-      bool _signed = ((tdp->param.enum_param.enums_size >= sizeof (tdp->param.enum_param.enums[0])) &&
-		      (tdp->param.enum_param.enums[0]->mr_type == MR_TYPE_INT64));
+      bool _signed = false;
+      int enums_count = tdp->param.enum_param.enums_size / sizeof (tdp->param.enum_param.enums[0]) - 1;
+
+      for (i = 0; i < enums_count; ++i)
+	if (tdp->param.enum_param.enums[i]->mr_type == MR_TYPE_DETECT (typeof (((mr_dw_attribute_t*)0)->dw_signed)))
+	  _signed = true;
+
       tdp->param.enum_param.size_effective = tdp->size;
       switch (tdp->size)
 	{
@@ -1210,7 +1215,7 @@ process_td (mr_ptr_t key, const void * context)
 	  break;
 	}
 
-      for (i = tdp->param.enum_param.enums_size / sizeof (tdp->param.enum_param.enums[0]) - 2; i >= 0; --i)
+      for (i = 0; i < enums_count; ++i)
 	tdp->param.enum_param.enums[i]->mr_type = tdp->param.enum_param.mr_type_effective;
     }
   else
