@@ -432,6 +432,7 @@ TYPEDEF_STRUCT (mr_dw_attribute_t,
 TYPEDEF_STRUCT (mr_die_t,
 		(Dwarf_Off, off),
 		(mr_dw_tag_t, tag),
+		(char *, filename),
 		(mr_dw_attribute_t *, attributes, , "", { "attributes_size" }, "string"),
 		VOID (ssize_t, attributes_size),
 		(mr_die_t *, children, , "", { "children_size" }, "string"),
@@ -548,7 +549,7 @@ dump_die_tree (Dwarf_Debug debug, Dwarf_Die die, mr_die_t * mr_parent_die)
   assert (mr_die != NULL);
 
   memset (mr_die, 0, sizeof (*mr_die));
-      
+
   Dwarf_Half tagval;
   int rv = dwarf_tag (die, &tagval, NULL);
   assert (rv == DW_DLV_OK);
@@ -617,13 +618,25 @@ dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
     }
 }
 
+static inline mr_dw_attribute_t *
+die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
+{
+  int i, count = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
+  for (i = 0; i < count; ++i)
+    if (mr_die->attributes[i].code == code)
+      return (&mr_die->attributes[i]);
+  return (NULL);
+}
+
 static void
-walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray)
+walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray, char * filename)
 {
   mr_ptr_t * die_ptr;
+  mr_dw_attribute_t * attr;
   
   switch (mr_die->tag)
     {
+    case _DW_TAG_variable:
     case _DW_TAG_base_type:
     case _DW_TAG_typedef:
     case _DW_TAG_structure_type:
@@ -638,23 +651,21 @@ walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray)
       assert (die_ptr != NULL);
       die_ptr->ptr = mr_die;
       break;
+    case _DW_TAG_compile_unit:
+      attr = die_attribute (mr_die, _DW_AT_name);
+      assert (attr != NULL);
+      assert ((DW_FORM_STRING >> attr->form) & 1);
+      assert (attr->dw_str != NULL);
+      filename = attr->dw_str;
+      break;
     default:
       break;
     }
-  
+  mr_die->filename = filename;
+
   int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
   for (i = 0; i < count; ++i)
-    walk_dies (&mr_die->children[i], ic_rarray);
-}
-
-static inline mr_dw_attribute_t *
-die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
-{
-  int i, count = mr_die->attributes_size / sizeof (mr_die->attributes[0]);
-  for (i = 0; i < count; ++i)
-    if (mr_die->attributes[i].code == code)
-      return (&mr_die->attributes[i]);
-  return (NULL);
+    walk_dies (&mr_die->children[i], ic_rarray, filename);
 }
 
 static void
@@ -848,8 +859,9 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	  break;
 	
 	case _DW_TAG_union_type:
-	  push_mr_type (fdp, MR_TYPE_UNION);
 	  get_type_name (fdp, mr_die, die_off_ic);
+	  attr = die_attribute (mr_die, _DW_AT_anonymous);
+	  push_mr_type (fdp, attr ? MR_TYPE_ANON_UNION : MR_TYPE_UNION);
 	  break;
 	
 	case _DW_TAG_enumeration_type:
@@ -1095,6 +1107,77 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     }
 }
 
+static void
+create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
+{
+  mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
+  if (attr == NULL)
+    return;
+  assert ((DW_FORM_STRING >> attr->form) & 1);
+  assert (attr->dw_str != NULL);
+
+  char * varname = attr->dw_str;
+#define MR_PTR_DETECT_TYPE_VAR_STR MR_STRINGIFY_READONLY (MR_PTR_DETECT_TYPE_VAR)
+  if (strncmp (varname, MR_PTR_DETECT_TYPE_VAR_STR, sizeof (MR_PTR_DETECT_TYPE_VAR_STR) - sizeof ("")))
+    return;
+
+  char * filename = mr_die->filename;
+  mr_ptr_t * find = mr_ic_find (var_ic, (mr_var_t[]){ { .filename = filename, .varname = varname } });
+  if (find != NULL)
+    return;
+
+  attr = die_attribute (mr_die, _DW_AT_type);
+  assert (attr != NULL);
+  assert (_DW_FORM_ref4 == attr->form);
+
+  find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
+  assert (find != NULL);
+  mr_die_t * mr_die_type = find->ptr;
+
+  if ((mr_die_type->tag != _DW_TAG_pointer_type) && (mr_die_type->tag != _DW_TAG_array_type))
+    return;
+
+  attr = die_attribute (mr_die_type, _DW_AT_type);
+  assert (attr != NULL);
+  assert (_DW_FORM_ref4 == attr->form);
+
+  find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
+  assert (find != NULL);
+  mr_die_type = find->ptr;
+
+  attr = die_attribute (mr_die_type, _DW_AT_name);
+  if (attr == NULL)
+    return;
+  assert ((DW_FORM_STRING >> attr->form) & 1);
+  char * type = attr->dw_str;
+
+  attr = die_attribute (mr_die_type, _DW_AT_byte_size);
+  if (attr)
+    {
+      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+
+      mr_type_sign_t mr_type_sign;
+      memset (&mr_type_sign, 0, sizeof (mr_type_sign));
+      mr_type_sign.size = attr->dw_unsigned;
+      mr_type_sign.type.str = type;
+      find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
+      if (find != NULL)
+	return;
+    }
+
+  mr_var_t * mr_var = MR_CALLOC (1, sizeof (*mr_var));
+  assert (mr_var != NULL);
+  mr_var->filename = mr_strdup (filename);
+  assert (mr_var->filename != NULL);
+  mr_var->varname = mr_strdup (varname);
+  assert (mr_var->varname != NULL);
+  mr_var->type = mr_strdup (type);
+  assert (mr_var->type != NULL);
+
+  find = mr_ic_add (var_ic, mr_var);
+  assert (find != NULL);
+}
+
 static mr_hash_value_t
 die_off_hash (mr_ptr_t x, const void * context)
 {
@@ -1144,14 +1227,14 @@ static mr_type_sign_t * mr_type_sign[] =
 };
 
 static void
-extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
+extract_metadata (mr_ic_t * td_ic, mr_ic_t * var_ic, mr_die_t * mr_die)
 {
   mr_ic_rarray_t ra_die_ptr;
   mr_ic_t die_off_ic;
   mr_status_t status;
   
   memset (&ra_die_ptr, 0, sizeof (ra_die_ptr));
-  walk_dies (mr_die, &ra_die_ptr);
+  walk_dies (mr_die, &ra_die_ptr, NULL);
 
   status = mr_ic_new (&die_off_ic, die_off_hash, die_off_cmp, "mr_die_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
@@ -1172,6 +1255,9 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 	  case _DW_TAG_enumeration_type:
 	    create_td (td_ic, mr_die, &die_off_ic);
 	    break;
+	  case _DW_TAG_variable:
+	    create_var (var_ic, mr_die, &die_off_ic);
+	    break;
 	  default:
 	    break;
 	  }
@@ -1184,7 +1270,7 @@ extract_type_descriptors (mr_ic_t * td_ic, mr_die_t * mr_die)
 }
 
 static mr_status_t
-process_td (mr_ptr_t key, const void * context)
+process_td (mr_ptr_t key, void * context)
 {
   mr_td_t * tdp = key.ptr;
   int i;
@@ -1259,7 +1345,8 @@ process_td (mr_ptr_t key, const void * context)
 	    assert (fdp->res_type != NULL);
 	  }
 
-	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == fdp->stype.mr_type_ptr))
+	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == fdp->stype.mr_type_ptr) ||
+	    (MR_TYPE_ANON_UNION == fdp->stype.mr_type))
 	  {
 #define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
 	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
@@ -1298,19 +1385,40 @@ mr_remove_empty_node_visitor (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr
 #define mr_remove_empty_nodes(ptrs) mr_ptrs_dfs (ptrs, mr_remove_empty_node_visitor, NULL)
 
 static mr_status_t
-print_td (mr_ptr_t key, const void * context)
+append_td (mr_ptr_t key, void * context)
 {
-  mr_td_t * tdp = key.ptr;
-  MR_PRINT ((mr_td_t, tdp), ",\n");
+  mr_dwarf_t * mr_dwarf = context;
+  mr_dwarf->tdps[mr_dwarf->tdps_size / sizeof (mr_dwarf->tdps[0])] = key.ptr;
+  mr_dwarf->tdps_size += sizeof (mr_dwarf->tdps[0]);
   return (MR_SUCCESS);
 }
 
 static mr_status_t
-free_td (mr_ptr_t key, const void * context)
+append_var (mr_ptr_t key, void * context)
+{
+  mr_dwarf_t * mr_dwarf = context;
+  mr_dwarf->vars[mr_dwarf->vars_size / sizeof (mr_dwarf->vars[0])] = key.ptr;
+  mr_dwarf->vars_size += sizeof (mr_dwarf->vars[0]);
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+free_td (mr_ptr_t key, void * context)
 {
   mr_td_t * tdp = key.ptr;
   MR_FREE_RECURSIVELY (mr_td_t, tdp);
   MR_FREE (tdp);
+  return (MR_SUCCESS);
+}
+
+static mr_status_t
+free_var (mr_ptr_t key, void * context)
+{
+  mr_var_t * var = key.ptr;
+  MR_FREE (var->filename);
+  MR_FREE (var->varname);
+  MR_FREE (var->type);
+  MR_FREE (var);
   return (MR_SUCCESS);
 }
 
@@ -1368,6 +1476,10 @@ main (int argc, char * argv [])
   status = mr_ic_new (&td_ic, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
   assert (status == MR_SUCCESS);
 
+  mr_ic_t var_ic;
+  status = mr_ic_new (&var_ic, mr_var_get_hash, mr_var_cmp, "mr_var_t", MR_IC_HASH, NULL);
+  assert (status == MR_SUCCESS);
+
   int i;
   for (i = 1; i < argc; ++i)
     {
@@ -1385,18 +1497,35 @@ main (int argc, char * argv [])
       memset (&mr_die, 0, sizeof (mr_die));
       dump_cu_list (debug, &mr_die);
 
-      extract_type_descriptors (&td_ic, &mr_die);
+      extract_metadata (&td_ic, &var_ic, &mr_die);
       free_die (&mr_die);
 
       rv = dwarf_finish (debug);
       assert (rv == DW_DLV_OK);
     }
 
+  mr_dwarf_t mr_dwarf;
+  memset (&mr_dwarf, 0, sizeof (mr_dwarf));
+  mr_dwarf.tdps = MR_CALLOC (td_ic.items_count, sizeof (mr_dwarf.tdps[0]));
+  assert (mr_dwarf.tdps != NULL);
+  mr_dwarf.vars = MR_CALLOC (var_ic.items_count, sizeof (mr_dwarf.vars[0]));
+  assert (mr_dwarf.vars != NULL);
+
   tweak_mr_conf ();
   mr_ic_foreach (&td_ic, process_td, NULL);
-  mr_ic_foreach (&td_ic, print_td, NULL);
+  mr_ic_foreach (&td_ic, append_td, &mr_dwarf);
+  mr_ic_foreach (&var_ic, append_var, &mr_dwarf);
+
+  MR_PRINT ((mr_dwarf_t, &mr_dwarf));
+
+  MR_FREE (mr_dwarf.tdps);
+  MR_FREE (mr_dwarf.vars);
+
   mr_ic_foreach (&td_ic, free_td, NULL);
   mr_ic_free (&td_ic);
+
+  mr_ic_foreach (&var_ic, free_var, NULL);
+  mr_ic_free (&var_ic);
 
   mr_ic_free (&mr_type_sign_ic);
 

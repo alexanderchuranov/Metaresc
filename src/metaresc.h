@@ -636,6 +636,7 @@
   __builtin_choose_expr (MR_IS_AN_ARRAY (((MR_TYPE_NAME*)0)->NAME),	\
 			 NULL, (uint8_t*)((MR_AOB_TYPE (MR_TYPE_NAME, NAME, true)[]){ { .NAME = -1 } }))
 
+
 #define MR_ARRAY_OR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name.str = #NAME,						\
@@ -702,7 +703,7 @@
    with type provided in macro. This is possible for descriptors
    generated for external types */
 
-/* ensure that name is a token without parentheses of braces at the end */
+/* ensure that name is a token without parentheses or braces at the end */
 #define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC__ (NAME ## _, MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
 #define MR_AUTO_DESC__(VALIDATED_NAME, MR_TYPE_NAME, TYPE, NAME, ...) MR_IF_ELSE (MR_IS_EMPTY (TYPE)) \
     (MR_AUTO_DESC_ (MR_TYPE_NAME, __typeof__ (((MR_TYPE_NAME*)0)->NAME), NAME, __VA_ARGS__)) \
@@ -1020,7 +1021,13 @@
 
 #else /* HAVE_BUILTIN_DUMP_STRUCT */
 
-# define MR_PTR_DETECT_TYPE(S_PTR) NULL
+# define MR_PTR_DETECT_TYPE_VAR mr_ptr_detect_type_var_
+# define MR_PTR_DETECT_TYPE(S_PTR) MR_PTR_DETECT_TYPE_ (S_PTR, MR_PASTE2 (MR_PTR_DETECT_TYPE_VAR, __COUNTER__))
+# define MR_PTR_DETECT_TYPE_(...) MR_PTR_DETECT_TYPE__ (__VA_ARGS__)
+# define MR_PTR_DETECT_TYPE__(S_PTR, VAR) ({	\
+      { __typeof__ (S_PTR) VAR; (void)VAR; }	\
+      mr_ptr_detect_type (__FILE__, #VAR);	\
+    })
 
 #endif /* HAVE_BUILTIN_DUMP_STRUCT */
 
@@ -1497,6 +1504,7 @@ extern int mr_get_struct_type_name (const char * fmt, ...);
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
 extern void mr_add_type (mr_td_t * tdp);
+extern void mr_add_dwarf (mr_dwarf_t * mr_dwarf);
 extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
@@ -1540,6 +1548,10 @@ extern mr_idx_t mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern mr_idx_t mr_last_child_for_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t parent);
 extern void mr_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child);
 extern void mr_detect_type (mr_fd_t * fdp);
+extern char * mr_ptr_detect_type (char * filename, char * varname);
+extern mr_hash_value_t mr_var_get_hash (mr_ptr_t x, const void * context);
+extern int mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+
 #define MR_IS_STRING(X) __builtin_types_compatible_p (char, __typeof__ (*__builtin_choose_expr ((__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS) || (__builtin_classify_type (X) == MR_ARRAY_TYPE_CLASS), X, NULL)))
 #define MR_AND_IS_STRING(X) && MR_IS_STRING (X)
 #define MR_VALIDATE_ALL_ARGS_ARE_STRINGS(...) (void*) (0 / (true MR_FOREACH (MR_AND_IS_STRING, __VA_ARGS__)))

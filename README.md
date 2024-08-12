@@ -384,7 +384,7 @@ int main (int argc, char * argv[])
     (tree_node_t[]){ { "right" } },
   };
   
-  MR_PRINT ("tree = ", (tree_node_t, &root));
+  MR_PRINT ("tree = ", &root, "\n");
   return (EXIT_SUCCESS);
 }
 ```
@@ -393,16 +393,11 @@ You need to add one more file to the project `sample_types.c`:
 ```c
 #include <metaresc.h>
 
-mr_td_t mr_td[] = {
+static mr_dwarf_t mr_dwarf =
 #include "sample_types.h"
-};
+  ;
 
-static void __attribute__ ((constructor)) mr_types_init ()
-{
-  int i;
-  for (i = 0; i < sizeof (mr_td) / sizeof (mr_td[0]); ++i)
-    mr_add_type (&mr_td[i]);
-}
+static inline void __attribute__((constructor)) mr_types_init (void) { mr_add_dwarf (&mr_dwarf); }
 ```
 
 `Makefile` should be modified as follows:

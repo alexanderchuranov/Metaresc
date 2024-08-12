@@ -5,18 +5,23 @@
 #include <mr_ic.h>
 #include <regression.h>
 
-static mr_td_t ra_td[] = {
+static mr_dwarf_t mr_dwarf[] = {
 #include <dw_export.h>
+  ,
 #include <dw_types.h>
 };
 
 static mr_td_t *
 get_td_by_name (mr_hashed_string_t * type)
 {
-  int i;
-  for (i = sizeof (ra_td) / sizeof (ra_td[0]) - 1; i >= 0; --i)
-    if (mr_hashed_string_cmp (&ra_td[i].type, type) == 0)
-      return (&ra_td[i]);
+  int j, mr_dwarf_count = sizeof (mr_dwarf) / sizeof (mr_dwarf[0]);
+  for (j = 0; j < mr_dwarf_count; ++j)
+    {
+      int i, td_count = mr_dwarf[j].tdps_size / sizeof (mr_dwarf[j].tdps[0]);
+      for (i = 0; i < td_count; ++i)
+	if (mr_hashed_string_cmp (&mr_dwarf[j].tdps[i]->type, type) == 0)
+	  return (mr_dwarf[j].tdps[i]);
+    }
   return (NULL);
 }
 
@@ -55,9 +60,8 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	mr_type = MR_TYPE_FUNC_TYPE;
       else if ((mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_CHAR))
 	mr_type = MR_TYPE_STRING;
-      if (mr_type == MR_TYPE_ANON_UNION)
-	mr_type = MR_TYPE_UNION;
-      else if (mr_fdp->stype.mr_type == MR_TYPE_VOID)
+
+      if (mr_fdp->stype.mr_type == MR_TYPE_VOID)
 	{
 	  if ((dw_fdp->stype.mr_type == MR_TYPE_BITFIELD) ||
 	      (dw_fdp->stype.mr_type == MR_TYPE_STRUCT) ||
@@ -172,7 +176,7 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 }
 
 static mr_status_t
-check_td (mr_ptr_t key, const void * context)
+check_td (mr_ptr_t key, void * context)
 {
   mr_td_t * mr_td = key.ptr;
   mr_td_t * dw_td = get_td_by_name (&mr_td->type);
@@ -210,9 +214,9 @@ check_td (mr_ptr_t key, const void * context)
 
 START_TEST (dw_check_all)
 {
-  int i;
-  for (i = 0; i < sizeof (ra_td) / sizeof (ra_td[0]); ++i)
-    mr_add_type (&ra_td[i]);
+  int i, count = sizeof (mr_dwarf) / sizeof (mr_dwarf[0]);
+  for (i = 0; i < count; ++i)
+    mr_add_dwarf (&mr_dwarf[i]);
 
   mr_type_void_fields ("mr_fd_t", "mr_type");
   mr_ic_foreach (&mr_conf.type_by_name, check_td, NULL);

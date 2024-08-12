@@ -26,9 +26,9 @@ uintptr_t_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 }
 
 static mr_status_t
-uintptr_t_visitor (mr_ptr_t node, const void * context)
+uintptr_t_visitor (mr_ptr_t node, void * context)
 {
-  uint32_t * mask = (typeof (mask))context;
+  uint32_t * mask = context;
   uintptr_t value = MR_MIN (node.uintptr, sizeof (*mask) * __CHAR_BIT__ - 1);
   *mask |= 1 << value;
   return (MR_SUCCESS);

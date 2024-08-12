@@ -321,7 +321,7 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
 }
 
 static mr_status_t
-mr_ud_foreach (mr_ud_set_t * uds, mr_visit_fn_t visit_fn, const void * context)
+mr_ud_foreach (mr_ud_set_t * uds, mr_visit_fn_t visit_fn, void * context)
 {
   if (uds->is_ic)
     return (mr_ic_foreach (uds->union_discriminator, visit_fn, context));
@@ -353,7 +353,7 @@ mr_ud_free (mr_ud_set_t * uds)
 static mr_fd_t *
 mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * union_fdp)
 {
-  mr_fd_t * fdp = NULL; /* marker that no valid discriminator was found */
+  mr_fd_t * fdp = NULL; /* marker that discriminator was not found */
   mr_idx_t parent, idx;
   intptr_t ud_idx, ud_find = -1;
   mr_union_discriminator_t * ud;
@@ -546,9 +546,9 @@ TYPEDEF_STRUCT (mr_check_ud_ctx_t,
  * @return MR_SUCCESS if union discriminator resolves to the same branch of union, and MR_FAILURE otherwise
  */
 static mr_status_t
-mr_check_ud (mr_ptr_t key, const void * context)
+mr_check_ud (mr_ptr_t key, void * context)
 {
-  const mr_check_ud_ctx_t * mr_check_ud_ctx = context;
+  mr_check_ud_ctx_t * mr_check_ud_ctx = context;
   mr_save_data_t * mr_save_data = mr_check_ud_ctx->mr_save_data;
   mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
   mr_idx_t idx = ptrs->size / sizeof (ptrs->ra[0]);
@@ -567,7 +567,7 @@ mr_check_ud (mr_ptr_t key, const void * context)
   
   /* otherwise we need to find union resolution in the context of new parent */
   fdp = mr_union_discriminator (mr_save_data, parent, ud->union_fdp);
-  
+
   return ((fdp == discriminated_fdp) ? MR_SUCCESS : MR_FAILURE);
 }
 

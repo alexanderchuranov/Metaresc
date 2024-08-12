@@ -34,9 +34,9 @@ mr_tr_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 }
 
 static mr_status_t
-mr_append_td  (mr_ptr_t key, const void * context)
+mr_append_td  (mr_ptr_t key, void * context)
 {
-  mr_types_dep_t * types_dep = (mr_types_dep_t *)context;
+  mr_types_dep_t * types_dep = context;
   mr_td_t * tdp = key.ptr;
 
   if ((MR_STRUCT_TYPES >> tdp->mr_type) & 1)
@@ -79,9 +79,9 @@ TYPEDEF_STRUCT (mr_append_ref_t,
 		);
 
 static mr_status_t
-mr_append_ref  (mr_ptr_t key, const void * context)
+mr_append_ref  (mr_ptr_t key, void * context)
 {
-  mr_append_ref_t * append_ref = (mr_append_ref_t *)context;
+  mr_append_ref_t * append_ref = context;
   mr_fd_t * fdp = key.ptr;
   mr_types_dep_t * types_dep = append_ref->types_dep;
   uintptr_t type_ref_idx = types_dep->size / sizeof (types_dep->types[0]);

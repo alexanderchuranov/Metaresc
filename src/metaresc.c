@@ -66,7 +66,8 @@ mr_conf_t mr_conf = {
   .field_by_name.ic_type = MR_IC_UNINITIALIZED,
   .field_by_name_and_type.ic_type = MR_IC_UNINITIALIZED,
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
-  .list = NULL,
+  .td_list = NULL,
+  .var_list = NULL,
 };
 
 static char *
@@ -419,7 +420,7 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
 static mr_status_t
-mr_conf_cleanup_visitor (mr_ptr_t key, const void * context)
+mr_conf_cleanup_visitor (mr_ptr_t key, void * context)
 {
   mr_td_t * tdp = key.ptr;
   if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
@@ -1721,8 +1722,23 @@ mr_add_type (mr_td_t * tdp)
   if ((MR_TYPE_NONE == tdp->mr_type) || tdp->next)
     return; /* skip types that were not properly detected */
 
-  tdp->next = mr_conf.list;
-  mr_conf.list = tdp;
+  tdp->next = mr_conf.td_list;
+  mr_conf.td_list = tdp;
+}
+
+void
+mr_add_dwarf (mr_dwarf_t * mr_dwarf)
+{
+  int i, count = mr_dwarf->tdps_size / sizeof (mr_dwarf->tdps[0]);
+  for (i = 0; i < count; ++i)
+    mr_add_type (mr_dwarf->tdps[i]);
+  count = mr_dwarf->vars_size / sizeof (mr_dwarf->vars[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_var_t * mr_var = mr_dwarf->vars[i];
+      mr_var->next = mr_conf.var_list;
+      mr_conf.var_list = mr_var;
+    }
 }
 
 static void
@@ -1909,15 +1925,16 @@ mr_conf_init ()
 
   if (!__atomic_test_and_set (&init_in_progress, __ATOMIC_RELAXED))
     {
+      mr_ic_new (&mr_conf.var_types, mr_var_get_hash, mr_var_cmp, "mr_var_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.enum_by_name, mr_ed_name_get_hash, mr_ed_name_cmp, "mr_ed_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.type_by_name, mr_td_name_get_hash, mr_td_name_cmp, "mr_td_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.field_by_name_and_type, mr_fd_name_and_type_get_hash, mr_fd_name_and_type_cmp, "mr_fd_t", MR_IC_HASH, NULL);
 
-      mr_conf.list = mr_sort_td (mr_conf.list);
+      mr_conf.td_list = mr_sort_td (mr_conf.td_list);
       
       mr_td_t * tdp;
-      for (tdp = mr_conf.list; tdp; tdp = tdp->next)
+      for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
 	{
 	  tdp->type.str = mr_skip_keywords (tdp->type.str);
 	  tdp->type.hash_value = 0;
@@ -1932,7 +1949,7 @@ mr_conf_init ()
 	  mr_ic_add (&mr_conf.type_by_name, tdp);
 	}
 
-      for (tdp = mr_conf.list; tdp; tdp = tdp->next)
+      for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
 	{
 	  if (tdp != mr_get_td_by_name_internal (tdp->type.str))
 	    continue; /* this type is a duplicate */
@@ -1944,10 +1961,14 @@ mr_conf_init ()
 	  mr_validate_td (tdp);
 	}
 
-      for (tdp = mr_conf.list; tdp; tdp = tdp->next)
+      for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
 	mr_type_is_union_discriminator (tdp);
 
       mr_udo_init ();
+
+      mr_var_t * mr_var;
+      for (mr_var = mr_conf.var_list; mr_var; mr_var = mr_var->next)
+	mr_ic_add (&mr_conf.var_types, mr_var);
 
       initialized = true;
     }
@@ -1970,6 +1991,37 @@ mr_detect_type (mr_fd_t * fdp)
     fdp->name.str = fdp->stype.tdp->type.str;
   
   mr_validate_stype (&fdp->stype);
+}
+
+mr_hash_value_t
+mr_var_get_hash (mr_ptr_t x, const void * context)
+{
+  mr_var_t * x_ = x.ptr;
+  return (mr_hash_str (x_->filename) + mr_hash_str (x_->varname));
+}
+
+int
+mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  const mr_var_t * x_ = x.ptr;
+  const mr_var_t * y_ = y.ptr;
+  int cmp = strcmp (x_->filename, y_->filename);
+  if (cmp)
+    return (cmp);
+  return (strcmp (x_->varname, y_->varname));
+}
+
+char *
+mr_ptr_detect_type (char * filename, char * varname)
+{
+  mr_conf_init ();
+
+  mr_var_t mr_var = { .filename = filename, .varname = varname, };
+  mr_ptr_t * find = mr_ic_find (&mr_conf.var_types, &mr_var);
+  if (NULL == find)
+    return (NULL);
+  mr_var_t * var = find->ptr;
+  return (var->type);
 }
 
 mr_uintmax_t

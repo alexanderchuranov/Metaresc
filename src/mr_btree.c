@@ -62,7 +62,7 @@ mr_tree_node_new (mr_tree_t * tree)
 }
 
 mr_status_t
-mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, const void * context)
+mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, void * context)
 {
   unsigned idx, size = 0;
   unsigned path[MR_PATH_SIZE];

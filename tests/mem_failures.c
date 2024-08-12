@@ -69,7 +69,7 @@ st_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 }
 
 static mr_status_t
-st_free (mr_ptr_t x, const void * context)
+st_free (mr_ptr_t x, void * context)
 {
   stack_trace_t * stack_trace = x.ptr;
   if (stack_trace->stack)
@@ -96,7 +96,7 @@ st_print (stack_trace_t * stack_trace)
 }
 
 mr_status_t
-print_block (mr_ptr_t x, const void * context)
+print_block (mr_ptr_t x, void * context)
 {
   fprintf (stderr, "Lost pointer:\n");
   st_print (x.ptr);

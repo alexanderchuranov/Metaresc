@@ -55,11 +55,11 @@ mr_ptrdes_to_mr_value (mr_value_t * mr_value, mr_ptrdes_t * ptrdes)
 }
 
 static mr_status_t
-enum_names_visitor (mr_ptr_t key, const void * context)
+enum_names_visitor (mr_ptr_t key, void * context)
 {
   mr_ed_t * edp = key.ptr;
   int enum_name_length = strlen (edp->name.str);
-  int * enum_max_length = (int*)context;
+  int * enum_max_length = context;
   if (enum_name_length > *enum_max_length)
     *enum_max_length = enum_name_length;
   return (MR_SUCCESS);

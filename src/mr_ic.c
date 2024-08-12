@@ -166,7 +166,7 @@ mr_ic_unsorted_array_find (mr_ic_t * ic, mr_ptr_t key)
 }
 
 mr_status_t
-mr_ic_unsorted_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+mr_ic_unsorted_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
   unsigned i, count = ic->rarray.size / sizeof (ic->rarray.ra[0]);
   for (i = 0; i < count; ++i)
@@ -483,9 +483,9 @@ mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
 }
 
 static mr_status_t
-mr_ic_hash_index_visitor (mr_ptr_t key, const void * context)
+mr_ic_hash_index_visitor (mr_ptr_t key, void * context)
 {
-  mr_ic_t * dst_ic = (void*)context;
+  mr_ic_t * dst_ic = context;
   mr_ptr_t * add = mr_ic_hash_index_add (dst_ic, key);
   return ((NULL == add) ? MR_FAILURE : MR_SUCCESS);
 }
@@ -632,7 +632,7 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key)
 }
 
 mr_status_t
-mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
   if (ic->hash.size < 2 * sizeof (ic->hash.hash_table[0]))
     return (MR_SUCCESS);
@@ -758,7 +758,7 @@ mr_ic_static_array_find (mr_ic_t * ic, mr_ptr_t key)
 }
 
 mr_status_t
-mr_ic_static_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+mr_ic_static_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
   unsigned i;
   for (i = 0; i < ic->items_count; ++i)
@@ -873,7 +873,7 @@ mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
 }
 
 mr_status_t
-mr_ic_tree_foreach_unsorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+mr_ic_tree_foreach_unsorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
   unsigned i;
   if (ic->tree.size >= 2 * sizeof (ic->tree.pool[0]))
@@ -884,7 +884,7 @@ mr_ic_tree_foreach_unsorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * 
 }
 
 mr_status_t
-mr_ic_tree_foreach_sorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, const void * context)
+mr_ic_tree_foreach_sorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
   return (mr_tree_walk (&ic->tree, visit_fn, context));
 }

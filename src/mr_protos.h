@@ -174,7 +174,7 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 
 TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
 
-TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, void * /* context */))
 
 TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
 
@@ -288,7 +288,7 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
 		(mr_status_t, del, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
 		(mr_ptr_t *, find, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
-		(mr_status_t, foreach, (mr_ic_t * /* ic */, mr_visit_fn_t /* visit_fn */, __const void * /* context */)),
+		(mr_status_t, foreach, (mr_ic_t * /* ic */, mr_visit_fn_t /* visit_fn */, void * /* context */)),
 		(mr_status_t, index, (mr_ic_t * /* ic */, mr_ptr_t * /* rarray */, size_t /* size */)),
 		(void, free, (mr_ic_t * /* ic */)),
 		)
@@ -663,12 +663,28 @@ TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type dete
 		(int, field_idx, , "index of the next detected field for structures bigger then (1 << __CHAR_BIT__)"),
 		)
 
+TYPEDEF_STRUCT (mr_var_t, ATTRIBUTES ( , "record to identify type of serialize expression"),
+		(char *, filename, , "source file name"),
+		(char *, varname, , "unique variable name to identify type of serialized expression"),
+		(char *, type, , "type of expression"),
+		VOID (mr_var_t *, next, , "linked list"),
+		)
+
+TYPEDEF_STRUCT (mr_dwarf_t, ATTRIBUTES ( , "record to identify type of serialize expression"),
+		(mr_td_t **, tdps, , "array of pointers on type descriptors", { .offset = offsetof (mr_dwarf_t, tdps_size), }, "offset"),
+		(size_t, tdps_size, , "size of tdps array"),
+		(mr_var_t **, vars, , "variables types", { .offset = offsetof (mr_dwarf_t, vars_size), }, "offset"),
+		(size_t, vars_size, , "size of vars array"),
+		)
+
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
 		(mr_log_level_t, log_level),
 		(bool, cache_func_resolve, , "global knob to enable dladdr caching"),
-		(mr_td_t *, list, , "linked list of all type descriptors"),
+		(mr_td_t *, td_list, , "linked list of all type descriptors"),
+		(mr_var_t *, var_list, , "linked list of all DWARF detected variable types"),
 		(mr_msg_handler_t, msg_handler),
+		(mr_ic_t, var_types, , "index over uniquely named variables to identify type"),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
 		(mr_ic_t, type_by_name, , "index over types descriptors"),
 		(mr_ic_t, field_by_name, , "index of all fields names"),
