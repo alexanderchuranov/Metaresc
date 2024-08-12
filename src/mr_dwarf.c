@@ -392,7 +392,7 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_ref_sup4, = DW_FORM_ref_sup4),
 	      (_DW_FORM_strp_sup, = DW_FORM_strp_sup, "dw_str"),
 	      (_DW_FORM_data16, = DW_FORM_data16),
-	      (_DW_FORM_line_strp, = DW_FORM_line_strp),
+	      (_DW_FORM_line_strp, = DW_FORM_line_strp, "dw_str"),
 	      (_DW_FORM_ref_sig8, = DW_FORM_ref_sig8, "dw_off"),
 	      (_DW_FORM_implicit_const, = DW_FORM_implicit_const, "dw_unsigned"),
 	      (_DW_FORM_loclistx, = DW_FORM_loclistx),
@@ -412,7 +412,7 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_GNU_strp_alt, = DW_FORM_GNU_strp_alt),
 	      )
 
-#define DW_FORM_STRING (0 MR_FOREACH (MR_ONE_SHIFT, _DW_FORM_string, _DW_FORM_strp, _DW_FORM_strx, _DW_FORM_strp_sup, _DW_FORM_strx1, _DW_FORM_strx2, _DW_FORM_strx3, _DW_FORM_strx4))
+#define DW_FORM_STRING (0 MR_FOREACH (MR_ONE_SHIFT, _DW_FORM_string, _DW_FORM_strp, _DW_FORM_strx, _DW_FORM_strp_sup, _DW_FORM_line_strp, _DW_FORM_strx1, _DW_FORM_strx2, _DW_FORM_strx3, _DW_FORM_strx4))
 #define DW_FORM_UNSIGNED (0 MR_FOREACH (MR_ONE_SHIFT, _DW_FORM_data1, _DW_FORM_data2, _DW_FORM_data4, _DW_FORM_data8, _DW_FORM_udata, _DW_FORM_implicit_const))
 
 TYPEDEF_STRUCT (mr_dw_attribute_t,
@@ -654,7 +654,6 @@ walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray, char * filename)
     case _DW_TAG_compile_unit:
       attr = die_attribute (mr_die, _DW_AT_name);
       assert (attr != NULL);
-      (void)MR_FPRINT (stderr, "form = (", attr->form, ") ", (mr_dw_form_t, &attr->form));
       assert ((DW_FORM_STRING >> attr->form) & 1);
       assert (attr->dw_str != NULL);
       filename = attr->dw_str;
