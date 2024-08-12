@@ -84,10 +84,10 @@ jobs:
           install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-libxml2 mingw-w64-${{matrix.env}}-libyaml mingw-w64-${{matrix.env}}-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
-      - name: skip tests for some formats due to 'out of memory' on mingw32
+      - name: skip some tests due to 'out of memory' on mingw32
         if: ${{ matrix.sys == 'mingw32' }}
         run: |
-          sed -i.bak -e "s/AM_CFLAGS = /AM_CFLAGS = -DSKIP_METHOD_XML2=0 -DSKIP_METHOD_XML1=0 -DSKIP_METHOD_SCM=0 -DSKIP_METHOD_JSON=0/" tests/Makefile.am
+	  sed -i.bak -e "s/union //" -e "s/enum //" -e "s/pointer_int //" -e "s/double //" -e "s/float //" -e "s/mr_ptr //" -e "s/pointer_other //" -e "s/complex_float //" -e "s/complex_double //" -e "s/complex_long_double //" tests/Makefile.am
           sed -i.bak -e "s/MR_BUILTIN_TYPES/int/" tests/dw_mr_types.h
       - name: autoconf/automake
         run: ./autogen.sh
