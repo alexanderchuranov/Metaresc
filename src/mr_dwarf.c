@@ -654,6 +654,7 @@ walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray, char * filename)
     case _DW_TAG_compile_unit:
       attr = die_attribute (mr_die, _DW_AT_name);
       assert (attr != NULL);
+      (void)MR_FPRINT (stderr, "form = (", attr->form, ") ", (mr_dw_form_t, &attr->form));
       assert ((DW_FORM_STRING >> attr->form) & 1);
       assert (attr->dw_str != NULL);
       filename = attr->dw_str;

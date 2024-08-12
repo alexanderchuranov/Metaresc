@@ -60,12 +60,12 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	mr_type = MR_TYPE_FUNC_TYPE;
       else if ((mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_CHAR))
 	mr_type = MR_TYPE_STRING;
-
-      if (mr_fdp->stype.mr_type == MR_TYPE_VOID)
+      else if (mr_type == MR_TYPE_VOID)
 	{
 	  if ((dw_fdp->stype.mr_type == MR_TYPE_BITFIELD) ||
 	      (dw_fdp->stype.mr_type == MR_TYPE_STRUCT) ||
 	      (dw_fdp->stype.mr_type == MR_TYPE_UNION) ||
+	      (dw_fdp->stype.mr_type == MR_TYPE_ANON_UNION) ||
 	      (dw_fdp->stype.mr_type == MR_TYPE_ARRAY) ||
 	      (dw_fdp->stype.mr_type == MR_TYPE_POINTER))
 	    mr_type = dw_fdp->stype.mr_type;
