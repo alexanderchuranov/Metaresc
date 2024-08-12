@@ -465,6 +465,7 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
     case _DW_FORM_string:
     case _DW_FORM_strp:
     case _DW_FORM_strp_sup:
+    case _DW_FORM_line_strp:
     case _DW_FORM_strx:
     case _DW_FORM_strx1:
     case _DW_FORM_strx2:
