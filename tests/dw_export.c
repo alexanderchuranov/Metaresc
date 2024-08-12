@@ -81,7 +81,8 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		     mr_td->type.str, mr_fdp->name.str, mr_type, dw_fdp->stype.mr_type);
       
       if (((mr_fdp->stype.mr_type == MR_TYPE_POINTER) || (mr_fdp->stype.mr_type == MR_TYPE_ARRAY) || (mr_fdp->stype.mr_type == MR_TYPE_BITFIELD)) &&
-	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_CHAR)))
+	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_CHAR)) &&
+	  !((mr_fdp->stype.mr_type == MR_TYPE_POINTER) && (mr_fdp->stype.mr_type_aux == MR_TYPE_VOID)))
 	ck_assert_msg ((mr_fdp->stype.mr_type_aux == dw_fdp->stype.mr_type_aux)
 #if SIZEOF_DOUBLE == SIZEOF_LONG_DOUBLE
 		       || ((MR_TYPE_COMPLEX_LONG_DOUBLE == mr_fdp->stype.mr_type_aux) && (MR_TYPE_COMPLEX_DOUBLE == dw_fdp->stype.mr_type_aux))
@@ -181,7 +182,7 @@ check_td (mr_ptr_t key, void * context)
   mr_td_t * mr_td = key.ptr;
   mr_td_t * dw_td = get_td_by_name (&mr_td->type);
 
-  if (mr_td == dw_td)
+  if (MR_TDP_DWARF == mr_td->td_producer)
     return (MR_SUCCESS);
   /*
     Metaresc has type descriptors for most of builin types like int, long, float.

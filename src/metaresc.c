@@ -446,6 +446,7 @@ static void __attribute__((destructor))
 mr_cleanup (void)
 {
   mr_ic_foreach (&mr_conf.type_by_name, mr_conf_cleanup_visitor, NULL);
+  mr_ic_free (&mr_conf.var_types);
   mr_ic_free (&mr_conf.enum_by_name);
   mr_ic_free (&mr_conf.type_by_name);
   mr_ic_free (&mr_conf.field_by_name);
