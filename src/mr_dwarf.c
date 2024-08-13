@@ -412,8 +412,11 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_GNU_strp_alt, = DW_FORM_GNU_strp_alt),
 	      )
 
-#define DW_FORM_STRING (0 MR_FOREACH (MR_ONE_SHIFT, _DW_FORM_string, _DW_FORM_strp, _DW_FORM_strx, _DW_FORM_strp_sup, _DW_FORM_line_strp, _DW_FORM_strx1, _DW_FORM_strx2, _DW_FORM_strx3, _DW_FORM_strx4))
-#define DW_FORM_UNSIGNED (0 MR_FOREACH (MR_ONE_SHIFT, _DW_FORM_data1, _DW_FORM_data2, _DW_FORM_data4, _DW_FORM_data8, _DW_FORM_udata, _DW_FORM_implicit_const))
+#define DW_FORM_STRING_LIST _DW_FORM_string, _DW_FORM_strp, _DW_FORM_strx, _DW_FORM_strp_sup, _DW_FORM_line_strp, _DW_FORM_strx1, _DW_FORM_strx2, _DW_FORM_strx3, _DW_FORM_strx4
+#define DW_FORM_UNSIGNED_LIST _DW_FORM_data1, _DW_FORM_data2, _DW_FORM_data4, _DW_FORM_data8, _DW_FORM_udata, _DW_FORM_implicit_const
+
+#define DW_FORM_STRING (0 MR_FOREACH (MR_ONE_SHIFT, DW_FORM_STRING_LIST))
+#define DW_FORM_UNSIGNED (0 MR_FOREACH (MR_ONE_SHIFT, DW_FORM_UNSIGNED_LIST))
 
 TYPEDEF_STRUCT (mr_dw_attribute_t,
 		(mr_dw_attribute_code_t, code),
@@ -462,15 +465,8 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
 
   switch (form)
     {
-    case _DW_FORM_string:
-    case _DW_FORM_strp:
-    case _DW_FORM_strp_sup:
-    case _DW_FORM_line_strp:
-    case _DW_FORM_strx:
-    case _DW_FORM_strx1:
-    case _DW_FORM_strx2:
-    case _DW_FORM_strx3:
-    case _DW_FORM_strx4:
+#define CASE_FORM(FORM) case FORM:
+      MR_FOREACH (CASE_FORM, DW_FORM_STRING_LIST)
       rv = dwarf_formstring (dw_attribute, &mr_attr->dw_str, NULL);
       assert (rv == DW_DLV_OK);
       if (mr_attr->dw_str)
@@ -507,13 +503,8 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
       rv = dwarf_global_formref (dw_attribute, &mr_attr->dw_off, NULL);
       assert (rv == DW_DLV_OK);
       break;
-	
-    case _DW_FORM_data1:
-    case _DW_FORM_data2:
-    case _DW_FORM_data4:
-    case _DW_FORM_data8:
-    case _DW_FORM_udata:
-    case _DW_FORM_implicit_const:
+
+      MR_FOREACH (CASE_FORM, DW_FORM_UNSIGNED_LIST)
       rv = dwarf_formudata (dw_attribute, &mr_attr->dw_unsigned, NULL);
       assert (rv == DW_DLV_OK);
       break;
