@@ -67,7 +67,7 @@ mr_conf_t mr_conf = {
   .field_by_name_and_type.ic_type = MR_IC_UNINITIALIZED,
   .output_format = { [0 ... MR_TYPE_LAST - 1] = NULL, },
   .td_list = NULL,
-  .var_list = NULL,
+  .dwarf_list = NULL,
 };
 
 static char *
@@ -1730,16 +1730,8 @@ mr_add_type (mr_td_t * tdp)
 void
 mr_add_dwarf (mr_dwarf_t * mr_dwarf)
 {
-  int i, count = mr_dwarf->tdps_size / sizeof (mr_dwarf->tdps[0]);
-  for (i = 0; i < count; ++i)
-    mr_add_type (mr_dwarf->tdps[i]);
-  count = mr_dwarf->vars_size / sizeof (mr_dwarf->vars[0]);
-  for (i = 0; i < count; ++i)
-    {
-      mr_var_t * mr_var = mr_dwarf->vars[i];
-      mr_var->next = mr_conf.var_list;
-      mr_conf.var_list = mr_var;
-    }
+  mr_dwarf->next = mr_conf.dwarf_list;
+  mr_conf.dwarf_list = mr_dwarf;
 }
 
 static void
@@ -1932,6 +1924,17 @@ mr_conf_init ()
       mr_ic_new (&mr_conf.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_HASH, NULL);
       mr_ic_new (&mr_conf.field_by_name_and_type, mr_fd_name_and_type_get_hash, mr_fd_name_and_type_cmp, "mr_fd_t", MR_IC_HASH, NULL);
 
+      mr_dwarf_t * mr_dwarf;
+      for (mr_dwarf = mr_conf.dwarf_list; mr_dwarf; mr_dwarf = mr_dwarf->next)
+	{
+	  int i, count = mr_dwarf->tdps_size / sizeof (mr_dwarf->tdps[0]);
+	  for (i = 0; i < count; ++i)
+	    mr_add_type (mr_dwarf->tdps[i]);
+	  count = mr_dwarf->vars_size / sizeof (mr_dwarf->vars[0]);
+	  for (i = 0; i < count; ++i)
+	    mr_ic_add (&mr_conf.var_types, mr_dwarf->vars[i]);
+	}
+
       mr_conf.td_list = mr_sort_td (mr_conf.td_list);
       
       mr_td_t * tdp;
@@ -1966,10 +1969,6 @@ mr_conf_init ()
 	mr_type_is_union_discriminator (tdp);
 
       mr_udo_init ();
-
-      mr_var_t * mr_var;
-      for (mr_var = mr_conf.var_list; mr_var; mr_var = mr_var->next)
-	mr_ic_add (&mr_conf.var_types, mr_var);
 
       initialized = true;
     }

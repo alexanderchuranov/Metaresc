@@ -667,7 +667,6 @@ TYPEDEF_STRUCT (mr_var_t, ATTRIBUTES ( , "record to identify type of serialize e
 		(char *, filename, , "source file name"),
 		(char *, varname, , "unique variable name to identify type of serialized expression"),
 		(char *, type, , "type of expression"),
-		VOID (mr_var_t *, next, , "linked list"),
 		)
 
 TYPEDEF_STRUCT (mr_dwarf_t, ATTRIBUTES ( , "record to identify type of serialize expression"),
@@ -675,6 +674,7 @@ TYPEDEF_STRUCT (mr_dwarf_t, ATTRIBUTES ( , "record to identify type of serialize
 		(size_t, tdps_size, , "size of tdps array"),
 		(mr_var_t **, vars, , "variables types", { .offset = offsetof (mr_dwarf_t, vars_size), }, "offset"),
 		(size_t, vars_size, , "size of vars array"),
+		(mr_dwarf_t *, next, , "linked list"),
 		)
 
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
@@ -682,7 +682,7 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_log_level_t, log_level),
 		(bool, cache_func_resolve, , "global knob to enable dladdr caching"),
 		(mr_td_t *, td_list, , "linked list of all type descriptors"),
-		(mr_var_t *, var_list, , "linked list of all DWARF detected variable types"),
+		(mr_dwarf_t *, dwarf_list, , "linked list of all DWARF detected types"),
 		(mr_msg_handler_t, msg_handler),
 		(mr_ic_t, var_types, , "index over uniquely named variables to identify type"),
 		(mr_ic_t, enum_by_name, , "index over all enum names"),
