@@ -16,7 +16,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
     return (fprintf (fd, "(null)"));
   
   if ((mr_type_aux > 0) && (mr_type_aux < sizeof (type_name) / sizeof (type_name[0])))
-    if (type_name[mr_type_aux])
+    if (type_name[mr_type_aux] && (NULL == type))
       type = type_name[mr_type_aux];
   
   if (NULL == type)
