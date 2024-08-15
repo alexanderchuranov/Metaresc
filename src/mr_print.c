@@ -49,8 +49,14 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
     })
 
   char * serialized = NULL;
+  char type_str[strlen (type) + sizeof ("([])")];
+  type_str[0] = 0;
+
   if (0 == strcmp (method, "CINIT"))
-    serialized = MR_SAVE_CINIT (type, value);
+    {
+      serialized = MR_SAVE_CINIT (type, value);
+      snprintf (type_str, sizeof (type_str), "(%s%s)", type, (size >= 0) ? "[]" : "");
+    }
   else if (0 == strcmp (method, "JSON"))
     serialized = MR_SAVE_JSON (type, value);
   else if (0 == strcmp (method, "SCM"))
@@ -72,7 +78,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
     return (fprintf (fd, "%p", value));
 
   serialized[strlen (serialized) - 1] = 0;
-  int rv = fprintf (fd, "%p ((%s%s)%s)", value, type, (size >= 0) ? "[]" : "", serialized);
+  int rv = fprintf (fd, "%p %s%s", value, type_str, serialized);
   MR_FREE (serialized);
   return (rv);
 }
