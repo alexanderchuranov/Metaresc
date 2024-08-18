@@ -102,7 +102,6 @@
 #define MR_ANON_UNION_MAX_EMBEDED_LEVELS (16)
 #define MR_ANONYMOUS_FIELD_NAME_TEMPLATE "%s_%d"
 #define MR_ANONYMOUS_FIELD_TYPE_TEMPLATE MR_ANONYMOUS_FIELD_NAME_TEMPLATE "_t"
-#define MR_PTR_META "mr_ptr_t magic meta feild"
 
 /* XML attribute for zero length strings */
 #define MR_DEFAULT_NODE_NAME "entity"

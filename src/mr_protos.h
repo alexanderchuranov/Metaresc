@@ -5,8 +5,8 @@
 #include <metaresc.h>
 
 TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointer on any type"),
-	       (void *, ptr, , MR_PTR_META, { MR_SIZE_STR }, "string", .unnamed = true),
-	       (void *, MR_OPAQUE_DATA, , , { MR_SIZE_STR }, "string"),
+	       (void *, ptr, , "mr_ptr_t void pointer", { MR_SIZE_STR }, "string", .unnamed = true),
+	       (void *, MR_OPAQUE_DATA, , "XDR opaque data", { MR_SIZE_STR }, "string"),
 	       (char *, string),
 	       (mr_offset_t, offset),
 	       (uintptr_t, uintptr),

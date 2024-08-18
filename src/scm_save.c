@@ -223,7 +223,7 @@ static mr_status_t
 scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
   int limit_level = MR_LIMIT_LEVEL (level);
-  int count;
+  int count = 0;
 
   if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
@@ -248,29 +248,34 @@ scm_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].parent != MR_NULL_IDX)
-    if ((ptrs->ra[ptrs->ra[idx].parent].first_child != idx) &&
-	(mr_ra_str->data.string[mr_ra_str->mr_size - 2] != '\n'))
-      {
-	count = mr_ra_append_char (mr_ra_str, ' ');
-	if (count < 0)
-	  return (MR_FAILURE);
-      }
-
-  if (ptrs->ra[idx].fdp)
-    if (ptrs->ra[idx].fdp->meta)
-      if (0 == strcmp (ptrs->ra[idx].fdp->meta, MR_PTR_META))
+  mr_idx_t parent = ptrs->ra[idx].parent;
+  /* members of union mr_ptr_t should be named */
+  if ((parent != MR_NULL_IDX) && ptrs->ra[parent].fdp)
+    if ((MR_TYPE_UNION == ptrs->ra[parent].mr_type) && ptrs->ra[parent].fdp->stype.tdp)
+      if (0 == strcmp (ptrs->ra[parent].fdp->stype.tdp->type.str, "mr_ptr_t"))
 	ptrs->ra[idx].flags &= ~MR_IS_UNNAMED;
 
-  if (!(ptrs->ra[idx].flags & MR_IS_UNNAMED))
+  if (ptrs->ra[idx].flags & MR_IS_UNNAMED)
+    {
+      if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
+	{
+	  mr_ra_str->mr_size--;
+	  count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE,
+				limit_level * MR_SCM_INDENT_SPACES, "");
+	}
+      else if ((ptrs->ra[idx].parent != MR_NULL_IDX) && (ptrs->ra[ptrs->ra[idx].parent].first_child != idx))
+	count = mr_ra_append_char (mr_ra_str, ' ');
+    }
+  else
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
 	mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD,
 			    limit_level * MR_SCM_INDENT_SPACES, "", ptrs->ra[idx].fdp->name.str);
-      if (count < 0)
-	return (MR_FAILURE);
     }
+
+  if (count < 0)
+    return (MR_FAILURE);
 
   if ((ptrs->ra[idx].first_child != MR_NULL_IDX) && !(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     {

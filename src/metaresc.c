@@ -702,7 +702,7 @@ mr_hash_value_t
 mr_fd_name_and_type_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
-  return (mr_hashed_string_get_hash (&x_->name) ^ (uintptr_t)x_->stype.tdp);
+  return (mr_hashed_string_get_hash (&x_->name) ^ mr_hashed_string_get_hash (&x_->stype.tdp->type));
 }
 
 int
@@ -713,7 +713,7 @@ mr_fd_name_and_type_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * contex
   int cmp = mr_hashed_string_cmp (&x_->name, &y_->name);
   if (cmp)
     return (cmp);
-  return ((x_->stype.tdp > y_->stype.tdp) - (x_->stype.tdp < y_->stype.tdp));
+  return (mr_hashed_string_cmp (&x_->stype.tdp->type, &y_->stype.tdp->type));
 }
 
 mr_hash_value_t
@@ -1629,7 +1629,8 @@ mr_detect_struct_fields (mr_td_t * tdp)
       if (fdp->name.str)
 	{
 	  mr_ic_add (&mr_conf.field_by_name, fdp);
-	  mr_ic_add (&mr_conf.field_by_name_and_type, fdp);
+	  if (fdp->stype.tdp)
+	    mr_ic_add (&mr_conf.field_by_name_and_type, fdp);
 	}
     }
 

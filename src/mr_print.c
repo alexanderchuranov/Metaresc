@@ -32,18 +32,13 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
       __fd__.stype.type = MR_TYPE_NAME_STR;				\
       __fd__.non_persistent = true;					\
       mr_detect_type (&__fd__);						\
-      if (__fd__.stype.tdp)						\
+      if (__fd__.stype.tdp && (size >= 0))				\
 	{								\
-	  if (size < 0)							\
-	    __fd__.stype.size = __fd__.stype.tdp->size;			\
-	  else								\
-	    {								\
-	      __fd__.stype.mr_type_aux = __fd__.stype.mr_type;		\
-	      __fd__.stype.mr_type = MR_TYPE_ARRAY;			\
-	      __fd__.stype.dim.dim[0] =	size / __fd__.stype.tdp->size;	\
-	      __fd__.stype.dim.size = sizeof (__fd__.stype.dim.dim[0]);	\
-	      __fd__.stype.size = size;					\
-	    }								\
+	  __fd__.stype.size = size;					\
+	  __fd__.stype.mr_type_aux = __fd__.stype.mr_type;		\
+	  __fd__.stype.mr_type = MR_TYPE_ARRAY;				\
+	  __fd__.stype.dim.dim[0] = size / __fd__.stype.tdp->size;	\
+	  __fd__.stype.dim.size = sizeof (__fd__.stype.dim.dim[0]);	\
 	}								\
       mr_save (__ptr__, &__fd__);					\
     })

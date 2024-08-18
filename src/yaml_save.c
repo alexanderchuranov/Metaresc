@@ -233,10 +233,11 @@ static mr_status_t
 yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  
-  if (ptrdes->fdp)
-    if (ptrdes->fdp->meta)
-      if (0 == strcmp (ptrdes->fdp->meta, MR_PTR_META))
+  mr_idx_t parent = ptrs->ra[idx].parent;
+
+  if ((parent != MR_NULL_IDX) && ptrs->ra[parent].fdp)
+    if ((MR_TYPE_UNION == ptrs->ra[parent].mr_type) && ptrs->ra[parent].fdp->stype.tdp)
+      if (0 == strcmp (ptrs->ra[parent].fdp->stype.tdp->type.str, "mr_ptr_t"))
 	ptrdes->flags &= ~MR_IS_UNNAMED;
   
   if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
