@@ -988,23 +988,22 @@
 #define MR_GENERIC_SORT_ARGS2(ARRAY, COUNT) mr_basic_types_sort (ARRAY, COUNT, MR_PTR_DETECT_TYPE (ARRAY), MR_TYPE_DETECT (__typeof__ (ARRAY[0])), sizeof (ARRAY[0]))
 #define MR_GENERIC_SORT_ARGS1(ARRAY) MR_GENERIC_SORT_ARGS2 (ARRAY, sizeof (ARRAY) / sizeof (ARRAY[0]))
 
-#ifdef HAVE_BUILTIN_DUMP_STRUCT
+#ifndef MR_PTR_DETECT_TYPE
+# ifdef HAVE_BUILTIN_DUMP_STRUCT
+#  ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
+#   define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP_EXTRA
+#  else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+#   define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP
+#  endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+# else /* HAVE_BUILTIN_DUMP_STRUCT */
+#  define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DWARF
+# endif /* HAVE_BUILTIN_DUMP_STRUCT */
+#endif /* MR_PTR_DETECT_TYPE */
 
-# define MR_IS_STRUCT_OR_UNION(S_PTR)					\
-  __builtin_choose_expr (						\
-			 (MR_UNION_TYPE_CLASS == __builtin_classify_type (*(S_PTR))) ||	\
+#define MR_IS_STRUCT_OR_UNION(S_PTR)					\
+  __builtin_choose_expr ((MR_UNION_TYPE_CLASS == __builtin_classify_type (*(S_PTR))) || \
 			 (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(S_PTR))), \
 			 &*(S_PTR), (mr_dummy_struct_t*)0)
-
-# ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
-#define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP_EXTRA
-# else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
-# define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP
-# endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
-
-#else /* HAVE_BUILTIN_DUMP_STRUCT */
-# define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DWARF
-#endif /* HAVE_BUILTIN_DUMP_STRUCT */
 
 #define MR_PTR_DETECT_TYPE_DUMP_EXTRA(S_PTR) ({				\
       mr_conf_init ();							\
