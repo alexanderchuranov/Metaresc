@@ -1109,37 +1109,33 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   assert (attr->dw_str != NULL);
 
   char * varname = attr->dw_str;
+
 #define MR_PTR_DETECT_TYPE_VAR_STR MR_STRINGIFY_READONLY (MR_PTR_DETECT_TYPE_VAR)
+  /* skip variables that do not match the pattern */
   if (strncmp (varname, MR_PTR_DETECT_TYPE_VAR_STR, sizeof (MR_PTR_DETECT_TYPE_VAR_STR) - sizeof ("")))
     return;
 
   char * filename = mr_die->filename;
+  /* skip variables that were already detected */
   mr_ptr_t * find = mr_ic_find (var_ic, (mr_var_t[]){ { .filename = filename, .varname = varname } });
   if (find != NULL)
     return;
 
-  attr = die_attribute (mr_die, _DW_AT_type);
-  assert (attr != NULL);
-  assert (_DW_FORM_ref4 == attr->form);
+  mr_die_t * mr_die_type = mr_die;
+  do {
+    attr = die_attribute (mr_die_type, _DW_AT_type);
+    assert (attr != NULL);
+    assert (_DW_FORM_ref4 == attr->form);
 
-  find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
-  assert (find != NULL);
-  mr_die_t * mr_die_type = find->ptr;
-
-  if ((mr_die_type->tag != _DW_TAG_pointer_type) && (mr_die_type->tag != _DW_TAG_array_type))
-    return;
-
-  attr = die_attribute (mr_die_type, _DW_AT_type);
-  assert (attr != NULL);
-  assert (_DW_FORM_ref4 == attr->form);
-
-  find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
-  assert (find != NULL);
-  mr_die_type = find->ptr;
+    find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
+    assert (find != NULL);
+    mr_die_type = find->ptr;
+  } while ((mr_die_type->tag == _DW_TAG_pointer_type) || (mr_die_type->tag == _DW_TAG_array_type));
 
   attr = die_attribute (mr_die_type, _DW_AT_name);
   if (attr == NULL)
     return;
+
   assert ((DW_FORM_STRING >> attr->form) & 1);
   char * type = attr->dw_str;
 
@@ -1147,12 +1143,8 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (attr)
     {
       assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
-
-      mr_type_sign_t mr_type_sign;
-      memset (&mr_type_sign, 0, sizeof (mr_type_sign));
-      mr_type_sign.size = attr->dw_unsigned;
-      mr_type_sign.type.str = type;
-      find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
+      /* skip variables of basic types */
+      find = mr_ic_find (&mr_type_sign_ic, (mr_type_sign_t[]){{ .size = attr->dw_unsigned, .type.str = type, .type.hash_value = 0, }});
       if (find != NULL)
 	return;
     }

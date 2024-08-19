@@ -997,7 +997,16 @@
 			 &*(S_PTR), (mr_dummy_struct_t*)0)
 
 # ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
-#  define MR_PTR_DETECT_TYPE(S_PTR) ({					\
+#define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP_EXTRA
+# else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+# define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP
+# endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+
+#else /* HAVE_BUILTIN_DUMP_STRUCT */
+# define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DWARF
+#endif /* HAVE_BUILTIN_DUMP_STRUCT */
+
+#define MR_PTR_DETECT_TYPE_DUMP_EXTRA(S_PTR) ({				\
       mr_conf_init ();							\
       mr_get_struct_type_name_t ctx;					\
       ctx.type_name = NULL;						\
@@ -1008,27 +1017,22 @@
 			       );					\
       ctx.type_name;							\
     })
-# else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
-#  define MR_PTR_DETECT_TYPE(S_PTR) ({					\
+
+#define MR_PTR_DETECT_TYPE_DUMP(S_PTR) ({				\
       mr_conf_init ();							\
       if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
 	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR),		\
 			       &mr_get_struct_type_name);		\
       mr_get_struct_type_name_ctx.type_name;				\
     })
-# endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
-#else /* HAVE_BUILTIN_DUMP_STRUCT */
-
-# define MR_PTR_DETECT_TYPE_VAR mr_ptr_detect_type_var_
-# define MR_PTR_DETECT_TYPE(S_PTR) MR_PTR_DETECT_TYPE_ (S_PTR, MR_PASTE2 (MR_PTR_DETECT_TYPE_VAR, __COUNTER__))
-# define MR_PTR_DETECT_TYPE_(...) MR_PTR_DETECT_TYPE__ (__VA_ARGS__)
-# define MR_PTR_DETECT_TYPE__(S_PTR, VAR) ({	\
-      { __typeof__ (S_PTR) VAR; (void)VAR; }	\
-      mr_ptr_detect_type (__FILE__, #VAR);	\
+#define MR_PTR_DETECT_TYPE_VAR mr_ptr_detect_type_var_
+#define MR_PTR_DETECT_TYPE_DWARF(S_PTR) MR_PTR_DETECT_TYPE_DWARF_ (S_PTR, MR_PASTE2 (MR_PTR_DETECT_TYPE_VAR, __COUNTER__))
+#define MR_PTR_DETECT_TYPE_DWARF_(...) MR_PTR_DETECT_TYPE_DWARF__ (__VA_ARGS__)
+#define MR_PTR_DETECT_TYPE_DWARF__(S_PTR, VAR) ({	\
+      __typeof__ (S_PTR) VAR[0];			\
+      mr_ptr_detect_type (__FILE__, #VAR, VAR);		\
     })
-
-#endif /* HAVE_BUILTIN_DUMP_STRUCT */
 
 #define MR_SAVE MR_SAVE_TYPED
 
@@ -1547,7 +1551,7 @@ extern mr_idx_t mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern mr_idx_t mr_last_child_for_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t parent);
 extern void mr_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child);
 extern void mr_detect_type (mr_fd_t * fdp);
-extern char * mr_ptr_detect_type (char * filename, char * varname);
+extern char * mr_ptr_detect_type (char * filename, char * varname, ...);
 extern mr_hash_value_t mr_var_get_hash (mr_ptr_t x, const void * context);
 extern int mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 

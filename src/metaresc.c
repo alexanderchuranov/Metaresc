@@ -2013,7 +2013,7 @@ mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 }
 
 char *
-mr_ptr_detect_type (char * filename, char * varname)
+mr_ptr_detect_type (char * filename, char * varname, ...)
 {
   mr_conf_init ();
 
