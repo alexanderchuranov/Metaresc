@@ -59,12 +59,14 @@ endif
 endif
 
 if HAVE_LIBDWARF
-  check_PROGRAMS += dw_export dw_types
+  check_PROGRAMS += dw_export dw_types dw_types_full
+  CLEANFILES = dw_export.h dw_types.h
 endif
 
 endif
 
 dw_export.$(OBJEXT): dw_export.h dw_types.h
+dw_types_init.$(OBJEXT): dw_types.h
 dw_export.h: ../src/libmetaresc.la
 	type dsymutil && dsymutil ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` || echo "dsymutil not found"
 	../src/mr_dwarf ../src/.libs/`$(SED) -ne "/^dlname='/{s/^dlname='\(.*\)'/\1/;p;}" $?` > $@
@@ -73,6 +75,8 @@ dw_types.h: dw_types$(EXEEXT)
 	type dsymutil && dsymutil .libs/$? || echo "dsymutil not found"
 	../src/mr_dwarf .libs/$? > $@
 
+dw_types_full_SOURCES = dw_types.c
+dw_types_full_LDADD = dw_types_init.$(OBJEXT)
 mf_mr_save_LDADD = mem_failures.$(OBJEXT)
 mf_mr_copy_LDADD = mem_failures.$(OBJEXT)
 mf_xdr_save_LDADD = mem_failures.$(OBJEXT)

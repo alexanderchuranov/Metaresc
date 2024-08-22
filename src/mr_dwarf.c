@@ -1122,15 +1122,32 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     return;
 
   mr_die_t * mr_die_type = mr_die;
+  int ptr_cnt = 0, arr_cnt = 0;
   do {
     attr = die_attribute (mr_die_type, _DW_AT_type);
     assert (attr != NULL);
     assert (_DW_FORM_ref4 == attr->form);
 
+    if (mr_die_type->tag == _DW_TAG_pointer_type)
+      ptr_cnt++;
+    else if (mr_die_type->tag == _DW_TAG_array_type)
+      {
+	int i, count = mr_die_type->children_size / sizeof (mr_die_type->children[0]);
+	for (i = 0; i < count; ++i)
+	  if (mr_die_type->children[i].tag == _DW_TAG_subrange_type)
+	    arr_cnt++;
+      }
+
     find = mr_ic_find (die_off_ic, (mr_die_t[]){{ .off = attr->dw_off }});
     assert (find != NULL);
     mr_die_type = find->ptr;
   } while ((mr_die_type->tag == _DW_TAG_pointer_type) || (mr_die_type->tag == _DW_TAG_array_type));
+
+  /* macro MR_PTR_DETECT_TYPE_DWARF makes a zero size array of introspected type,
+     so we are accepting only pointers ((ptr_cnt == 1) && (arr_cnt == 1))
+     or arrays of any order ((ptr_cnt == 0) && (arr_cnt > 1)) */
+  if (!(((ptr_cnt == 1) && (arr_cnt == 1)) || ((ptr_cnt == 0) && (arr_cnt > 1))))
+    return;
 
   attr = die_attribute (mr_die_type, _DW_AT_name);
   if (attr == NULL)
