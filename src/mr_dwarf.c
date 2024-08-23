@@ -1110,9 +1110,9 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
   char * varname = attr->dw_str;
 
-#define MR_PTR_DETECT_TYPE_VAR_STR MR_STRINGIFY_READONLY (MR_PTR_DETECT_TYPE_VAR)
+#define MR_OBJ_TYPE_VAR_STR MR_STRINGIFY_READONLY (MR_OBJ_TYPE_VAR)
   /* skip variables that do not match the pattern */
-  if (strncmp (varname, MR_PTR_DETECT_TYPE_VAR_STR, sizeof (MR_PTR_DETECT_TYPE_VAR_STR) - sizeof ("")))
+  if (strncmp (varname, MR_OBJ_TYPE_VAR_STR, sizeof (MR_OBJ_TYPE_VAR_STR) - sizeof ("")))
     return;
 
   char * filename = mr_die->filename;
@@ -1125,7 +1125,8 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   int ptr_cnt = 0, arr_cnt = 0;
   do {
     attr = die_attribute (mr_die_type, _DW_AT_type);
-    assert (attr != NULL);
+    if (attr == NULL)
+      return;
     assert (_DW_FORM_ref4 == attr->form);
 
     if (mr_die_type->tag == _DW_TAG_pointer_type)
@@ -1143,10 +1144,10 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     mr_die_type = find->ptr;
   } while ((mr_die_type->tag == _DW_TAG_pointer_type) || (mr_die_type->tag == _DW_TAG_array_type));
 
-  /* macro MR_PTR_DETECT_TYPE_DWARF makes a zero size array of introspected type,
+  /* macro MR_OBJ_TYPE_DWARF makes a zero size array of introspected type,
      so we are accepting only pointers ((ptr_cnt == 1) && (arr_cnt == 1))
-     or arrays of any order ((ptr_cnt == 0) && (arr_cnt > 1)) */
-  if (!(((ptr_cnt == 1) && (arr_cnt == 1)) || ((ptr_cnt == 0) && (arr_cnt > 1))))
+     or arrays of any order (ptr_cnt == 0) */
+  if (!(((ptr_cnt == 1) && (arr_cnt == 1)) || (ptr_cnt == 0)))
     return;
 
   attr = die_attribute (mr_die_type, _DW_AT_name);

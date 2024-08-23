@@ -985,27 +985,29 @@
     
 #define MR_GENERIC_SORT(...) MR_PASTE2 (MR_GENERIC_SORT_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_GENERIC_SORT_ARGS3(ARRAY, COUNT, TYPE) mr_generic_sort (ARRAY, COUNT, TYPE)
-#define MR_GENERIC_SORT_ARGS2(ARRAY, COUNT) mr_basic_types_sort (ARRAY, COUNT, MR_PTR_DETECT_TYPE (ARRAY), MR_TYPE_DETECT (__typeof__ (ARRAY[0])), sizeof (ARRAY[0]))
+#define MR_GENERIC_SORT_ARGS2(ARRAY, COUNT) mr_basic_types_sort (ARRAY, COUNT, MR_OBJ_TYPE (ARRAY), MR_TYPE_DETECT (__typeof__ (ARRAY[0])), sizeof (ARRAY[0]))
 #define MR_GENERIC_SORT_ARGS1(ARRAY) MR_GENERIC_SORT_ARGS2 (ARRAY, sizeof (ARRAY) / sizeof (ARRAY[0]))
 
-#ifndef MR_PTR_DETECT_TYPE
+#ifndef MR_OBJ_TYPE
 # ifdef HAVE_BUILTIN_DUMP_STRUCT
 #  ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
-#   define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP_EXTRA
+#   define MR_OBJ_TYPE MR_OBJ_TYPE_DUMP_EXTRA
 #  else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
-#   define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DUMP
+#   define MR_OBJ_TYPE MR_OBJ_TYPE_DUMP
 #  endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 # else /* HAVE_BUILTIN_DUMP_STRUCT */
-#  define MR_PTR_DETECT_TYPE MR_PTR_DETECT_TYPE_DWARF
+#  define MR_OBJ_TYPE MR_OBJ_TYPE_DWARF
 # endif /* HAVE_BUILTIN_DUMP_STRUCT */
-#endif /* MR_PTR_DETECT_TYPE */
+#endif /* MR_OBJ_TYPE */
 
-#define MR_IS_STRUCT_OR_UNION(S_PTR)					\
-  __builtin_choose_expr ((MR_UNION_TYPE_CLASS == __builtin_classify_type (*(S_PTR))) || \
-			 (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(S_PTR))), \
-			 &*(S_PTR), (mr_dummy_struct_t*)0)
+#define MR_IS_STRUCT_OR_UNION(S_PTR) ({					\
+      __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) __mr_ptr = MR_CAST_TO_PTR (S_PTR); \
+      __builtin_choose_expr ((MR_UNION_TYPE_CLASS == __builtin_classify_type (*__mr_ptr)) || \
+			     (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*__mr_ptr)), \
+			     __mr_ptr, (mr_dummy_struct_t*)0);		\
+    })
 
-#define MR_PTR_DETECT_TYPE_DUMP_EXTRA(S_PTR) ({				\
+#define MR_OBJ_TYPE_DUMP_EXTRA(S_PTR) ({				\
       mr_conf_init ();							\
       mr_get_struct_type_name_t ctx;					\
       ctx.type_name = NULL;						\
@@ -1017,7 +1019,7 @@
       ctx.type_name;							\
     })
 
-#define MR_PTR_DETECT_TYPE_DUMP(S_PTR) ({				\
+#define MR_OBJ_TYPE_DUMP(S_PTR) ({					\
       mr_conf_init ();							\
       if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
 	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR),		\
@@ -1025,10 +1027,10 @@
       mr_get_struct_type_name_ctx.type_name;				\
     })
 
-#define MR_PTR_DETECT_TYPE_VAR mr_ptr_detect_type_var_
-#define MR_PTR_DETECT_TYPE_DWARF(S_PTR) MR_PTR_DETECT_TYPE_DWARF_ (S_PTR, MR_PASTE2 (MR_PTR_DETECT_TYPE_VAR, __COUNTER__))
-#define MR_PTR_DETECT_TYPE_DWARF_(...) MR_PTR_DETECT_TYPE_DWARF__ (__VA_ARGS__)
-#define MR_PTR_DETECT_TYPE_DWARF__(S_PTR, VAR) ({	\
+#define MR_OBJ_TYPE_VAR mr_ptr_detect_type_var_
+#define MR_OBJ_TYPE_DWARF(S_PTR) MR_OBJ_TYPE_DWARF_ (S_PTR, MR_PASTE2 (MR_OBJ_TYPE_VAR, __COUNTER__))
+#define MR_OBJ_TYPE_DWARF_(...) MR_OBJ_TYPE_DWARF__ (__VA_ARGS__)
+#define MR_OBJ_TYPE_DWARF__(S_PTR, VAR) ({		\
       __typeof__ (S_PTR) VAR[0];			\
       mr_ptr_detect_type (__FILE__, #VAR, VAR);		\
     })
@@ -1039,9 +1041,9 @@
 #define MR_SAVE_TYPED_ARGS1(S_PTR) MR_SAVE_TYPED_ARGS2 ( , S_PTR)
 #define MR_SAVE_TYPED_ARGS2(MR_TYPE_NAME, S_PTR)		\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))			\
-    (MR_SAVE_STR_TYPED (MR_PTR_DETECT_TYPE (S_PTR), S_PTR))	\
-    (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);			\
-	MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
+       (MR_SAVE_STR_TYPED (MR_OBJ_TYPE (S_PTR), S_PTR))		\
+       (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);		\
+	   MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       void * __ptr__ = (void*)S_PTR;					\
@@ -1132,7 +1134,7 @@
 
 #define MR_LOAD_XDR_ARGS3(MR_TYPE_NAME, XDRS, D_PTR)			\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-       (MR_LOAD_XDR_ARGS3_ (MR_PTR_DETECT_TYPE (D_PTR), XDRS, D_PTR))	\
+       (MR_LOAD_XDR_ARGS3_ (MR_OBJ_TYPE (D_PTR), XDRS, D_PTR))		\
        (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
 	   MR_LOAD_XDR_ARGS3_ (#MR_TYPE_NAME, XDRS, D_PTR); }))
 
@@ -1207,9 +1209,9 @@
 
 #define MR_LOAD_XML2_NODE_ARGS3(MR_TYPE_NAME, XML, D_PTR)		\
     MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-      (MR_LOAD_XML2_NODE_ARGS3_ (MR_PTR_DETECT_TYPE (D_PTR), XML, D_PTR)) \
-      (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
-	  MR_LOAD_XML2_NODE_ARGS3_ (#MR_TYPE_NAME, XML, D_PTR); }))
+	 (MR_LOAD_XML2_NODE_ARGS3_ (MR_OBJ_TYPE (D_PTR), XML, D_PTR))	\
+	 (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
+	     MR_LOAD_XML2_NODE_ARGS3_ (#MR_TYPE_NAME, XML, D_PTR); }))
 
 #define MR_LOAD_XML2_NODE_ARGS3_(MR_TYPE_NAME, XML, D_PTR) ({		\
       mr_status_t __status__ = MR_FAILURE;				\
@@ -1297,7 +1299,7 @@
 
 #define MR_LOAD_METHOD_ARGS4(METHOD, MR_TYPE_NAME, STR, D_PTR)		\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-       (MR_LOAD_METHOD_ARGS4_ (METHOD, MR_PTR_DETECT_TYPE (D_PTR), STR, D_PTR)) \
+       (MR_LOAD_METHOD_ARGS4_ (METHOD, MR_OBJ_TYPE (D_PTR), STR, D_PTR)) \
        (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
 	   MR_LOAD_METHOD_ARGS4_ (METHOD, #MR_TYPE_NAME, STR, D_PTR); }))
 
@@ -1436,7 +1438,7 @@
 
 #define MR_TYPE_DETECT_OBJ(OBJ) ({ __typeof__ (OBJ) _mr; MR_TYPE_DETECT (__typeof__ (_mr)); })
 
-#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT_OBJ (X), MR_TYPE_DETECT_OBJ (*MR_CAST_TO_PTR (X)), MR_PTR_DETECT_TYPE (MR_CAST_TO_PTR (X)), MR_ARRAY_SIZE (X), MR_STRINGIFY_READONLY (MR_PRINT_SERIALIZATION_METHOD_GET ()), X)
+#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT_OBJ (X), MR_TYPE_DETECT_OBJ (*MR_CAST_TO_PTR (X)), MR_OBJ_TYPE (X), MR_ARRAY_SIZE (X), MR_STRINGIFY_READONLY (MR_PRINT_SERIALIZATION_METHOD_GET ()), X)
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\

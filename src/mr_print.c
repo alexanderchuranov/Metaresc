@@ -1,4 +1,5 @@
 #include <metaresc.h>
+#include <mr_save.h> /* MR_ONE_SHIFT */
 #include <mr_stringify.h>
 
 static int
@@ -105,13 +106,39 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
   const char * format = NULL;
   int rv = 0;
   va_list args;
+  mr_ed_t * edp = NULL;
+
   va_start (args, method);
+
+#define MR_ENUM_INT_TYPES_LIST int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t
+#define MR_TYPE_MASK(TYPE) MR_ONE_SHIFT (MR_TYPE_DETECT (TYPE))
+#define MR_ENUM_INT_TYPES (0 MR_FOREACH (MR_TYPE_MASK, MR_ENUM_INT_TYPES_LIST))
+  if (type && (MR_ENUM_INT_TYPES >> mr_type) & 1)
+    {
+      mr_td_t * tdp = mr_get_td_by_name (type);
+      mr_enum_value_type_t value = 0;
+      va_list _args = args;
+      switch (mr_type)
+	{
+#define MR_CASE_TYPE(TYPE)					\
+	  case MR_TYPE_DETECT (TYPE):				\
+	    value = va_arg (_args, typeof (0 + (TYPE)0));	\
+	    break;
+	  MR_FOREACH (MR_CASE_TYPE, MR_ENUM_INT_TYPES_LIST);
+	default:
+	  break;
+	}
+      if (tdp && (MR_TYPE_ENUM == tdp->mr_type))
+	edp = mr_get_enum_by_value (tdp, value);
+    }
 
   if ((mr_type >= 0) &&
       (mr_type < sizeof (formats) / sizeof (formats[0])))
     format = formats[mr_type];
-  
-  if (format != NULL)
+
+  if (edp)
+    rv = fprintf (fd, "%s", edp->name.str);
+  else if (format != NULL)
     rv = vfprintf (fd, format, args);
   else
     switch (mr_type)

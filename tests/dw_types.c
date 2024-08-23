@@ -12,14 +12,14 @@ mr_bitfields_t mr_bitfields;
 
 #define POSITIVE_TYPE_DETECTION(TYPE, PREFIX, SUFFIX) ({		\
       TYPE PREFIX var SUFFIX;						\
-      char * type = MR_PTR_DETECT_TYPE_DWARF (var);			\
+      char * type = MR_OBJ_TYPE_DWARF (var);				\
       ck_assert_msg (type && (0 == strcmp (type, #TYPE)),		\
 		     "DWARF type detection mismatched for type " #TYPE #PREFIX #SUFFIX ", but got %s", type); \
     })
 
 #define NEGATIVE_TYPE_DETECTION(TYPE, PREFIX, SUFFIX) ({		\
       TYPE PREFIX var SUFFIX;						\
-      char * type = MR_PTR_DETECT_TYPE_DWARF (var);			\
+      char * type = MR_OBJ_TYPE_DWARF (var);				\
       ck_assert_msg (type == NULL,					\
 		     "DWARF type detection mismatched for type " #TYPE #PREFIX #SUFFIX ". Expected NULL, but got %s", type); \
     })
@@ -29,7 +29,7 @@ START_TEST (dw_var_type_detection)
   if (NULL == mr_conf.dwarf_list)
     return;
 
-  NEGATIVE_TYPE_DETECTION (mr_type_t, , );
+  POSITIVE_TYPE_DETECTION (mr_type_t, , );
   POSITIVE_TYPE_DETECTION (mr_type_t, *, );
   POSITIVE_TYPE_DETECTION (mr_type_t, , [1]);
   POSITIVE_TYPE_DETECTION (mr_type_t, , [1][2]);
@@ -39,6 +39,8 @@ START_TEST (dw_var_type_detection)
   NEGATIVE_TYPE_DETECTION (int, *, );
   NEGATIVE_TYPE_DETECTION (int, , [1]);
   NEGATIVE_TYPE_DETECTION (int, *, [1]);
+  NEGATIVE_TYPE_DETECTION (void, *, );
+  NEGATIVE_TYPE_DETECTION (void, **, );
 } END_TEST
 
 MAIN_TEST_SUITE ((dw_var_type_detection, "Check variables types detection with DWARF"));
