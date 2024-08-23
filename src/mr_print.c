@@ -117,7 +117,9 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
     {
       mr_td_t * tdp = mr_get_td_by_name (type);
       mr_enum_value_type_t value = 0;
-      va_list _args = args;
+      va_list _args;
+
+      va_start (_args, method);
       switch (mr_type)
 	{
 #define MR_CASE_TYPE(TYPE)					\
@@ -128,6 +130,8 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	default:
 	  break;
 	}
+      va_end (_args);
+
       if (tdp && (MR_TYPE_ENUM == tdp->mr_type))
 	edp = mr_get_enum_by_value (tdp, value);
     }
