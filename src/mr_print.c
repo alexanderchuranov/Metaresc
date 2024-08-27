@@ -3,7 +3,7 @@
 #include <mr_stringify.h>
 
 static int
-mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, char * method, void * value)
+mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ssize_t size, char * type, char * method, void * value)
 {
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
   static char * type_name[] = {
@@ -15,10 +15,6 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
 
   if (NULL == value)
     return (fprintf (fd, "(null)"));
-
-  if (type)
-    if (0 == strcmp (type, "mr_dummy_struct_t"))
-      type = NULL;
 
   if ((mr_type_aux > 0) && (mr_type_aux < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[mr_type_aux] && (NULL == type))
@@ -48,14 +44,21 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
       mr_save (__ptr__, &__fd__);					\
     })
 
+#define MR_POINTER_TMPLT "%p "
+#define MR_TYPE_TMPLT "(%s%s)"
+#define MR_TYPED_POINTER_TMPLT MR_POINTER_TMPLT MR_TYPE_TMPLT
   char * serialized = NULL;
-  char type_str[strlen (type) + sizeof ("([])")];
-  type_str[0] = 0;
+  char typed_ptr_str[sizeof (MR_TYPED_POINTER_TMPLT) + sizeof (void *) * 2 + strlen (type)];
+  typed_ptr_str[0] = 0;
+
+  if (MR_POINTER_TYPE_CLASS == mr_type_class)
+    snprintf (typed_ptr_str, sizeof (typed_ptr_str), MR_POINTER_TMPLT, value);
 
   if (0 == strcmp (method, "CINIT"))
     {
       serialized = MR_SAVE_CINIT (type, value);
-      snprintf (type_str, sizeof (type_str), "(%s%s)", type, (size >= 0) ? "[]" : "");
+      if (MR_POINTER_TYPE_CLASS == mr_type_class)
+	snprintf (typed_ptr_str, sizeof (typed_ptr_str), MR_TYPED_POINTER_TMPLT, value, type, (size >= 0) ? "[]" : "");
     }
   else if (0 == strcmp (method, "JSON"))
     serialized = MR_SAVE_JSON (type, value);
@@ -78,13 +81,13 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, char * type, ssize_t size, c
     return (fprintf (fd, "%p", value));
 
   serialized[strlen (serialized) - 1] = 0;
-  int rv = fprintf (fd, "%p %s%s", value, type_str, serialized);
+  int rv = fprintf (fd, "%s%s", typed_ptr_str, serialized);
   MR_FREE (serialized);
   return (rv);
 }
 
 int
-mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, ssize_t size, char * method, ...)
+mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ssize_t size, char * type, char * method, ...)
 {
   static const char * const formats[] =
     {
@@ -200,7 +203,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type
 	  break;
 	}
       case MR_TYPE_NONE:
-	rv = mr_print_pointer (fd, mr_type_aux, type, size, method, va_arg (args, void *));
+	rv = mr_print_pointer (fd, mr_type_aux, mr_type_class, size, type, method, va_arg (args, void *));
 	break;
 	
       default:

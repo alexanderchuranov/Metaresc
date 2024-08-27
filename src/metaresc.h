@@ -1000,10 +1000,13 @@
 # endif /* HAVE_BUILTIN_DUMP_STRUCT */
 #endif /* MR_OBJ_TYPE */
 
-#define MR_IS_STRUCT_OR_UNION(S_PTR) ({					\
+#define MR_IS_STRUCT_OR_UNION(OBJ)				\
+  ((MR_UNION_TYPE_CLASS == __builtin_classify_type (OBJ)) ||	\
+   (MR_RECORD_TYPE_CLASS == __builtin_classify_type (OBJ)))
+
+#define MR_STRUCT_POINTER(S_PTR) ({					\
       __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) __mr_ptr = MR_CAST_TO_PTR (S_PTR); \
-      __builtin_choose_expr ((MR_UNION_TYPE_CLASS == __builtin_classify_type (*__mr_ptr)) || \
-			     (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*__mr_ptr)), \
+      __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*__mr_ptr),		\
 			     __mr_ptr, (mr_dummy_struct_t*)0);		\
     })
 
@@ -1012,18 +1015,24 @@
       mr_get_struct_type_name_t ctx;					\
       ctx.type_name = NULL;						\
       if (0 == setjmp (ctx._jmp_buf))					\
-	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR),		\
+	__builtin_dump_struct (MR_STRUCT_POINTER (S_PTR),		\
 			       &mr_get_struct_type_name_extra,		\
 			       &ctx					\
 			       );					\
+      if (ctx.type_name &&						\
+	  (0 == strcmp (ctx.type_name, "mr_dummy_struct_t")))		\
+	ctx.type_name = NULL;						\
       ctx.type_name;							\
     })
 
 #define MR_OBJ_TYPE_DUMP(S_PTR) ({					\
       mr_conf_init ();							\
       if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
-	__builtin_dump_struct (MR_IS_STRUCT_OR_UNION (S_PTR),		\
+	__builtin_dump_struct (MR_STRUCT_POINTER (S_PTR),		\
 			       &mr_get_struct_type_name);		\
+      if (mr_get_struct_type_name_ctx.type_name &&			\
+	  (0 == strcmp (mr_get_struct_type_name_ctx.type_name, "mr_dummy_struct_t"))) \
+	mr_get_struct_type_name_ctx.type_name = NULL;			\
       mr_get_struct_type_name_ctx.type_name;				\
     })
 
@@ -1427,8 +1436,6 @@
 	_rv_;						\
     })
 
-#define MR_ARRAY_SIZE(X) __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + (X)), __typeof__ (X)), -1, sizeof (X))
-
 #define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr ((MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ)) && \
 						   !__builtin_types_compatible_p (__typeof__ (OBJ), void *) && \
 						   !__builtin_types_compatible_p (__typeof__ (OBJ), void const *) && \
@@ -1436,9 +1443,25 @@
 						   !__builtin_types_compatible_p (__typeof__ (OBJ), void const volatile *) \
 						   , (OBJ), (void**)0)
 
+#define MR_ARRAY_SIZE(X) __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + MR_CAST_TO_PTR (X)), __typeof__ (X)), -1, sizeof (X))
+
 #define MR_TYPE_DETECT_OBJ(OBJ) ({ __typeof__ (OBJ) _mr; MR_TYPE_DETECT (__typeof__ (_mr)); })
 
-#define MR_PRINT_VALUE(FD, X) mr_print_value (FD, MR_TYPE_DETECT_OBJ (X), MR_TYPE_DETECT_OBJ (*MR_CAST_TO_PTR (X)), MR_OBJ_TYPE (X), MR_ARRAY_SIZE (X), MR_STRINGIFY_READONLY (MR_PRINT_SERIALIZATION_METHOD_GET ()), X)
+#define MR_PRINT_ARG(OBJ)						\
+  __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (OBJ),			\
+			 &__builtin_choose_expr (MR_IS_STRUCT_OR_UNION (OBJ), \
+						 (OBJ), ""),		\
+			 (OBJ))
+
+#define MR_PRINT_VALUE(FD, X)						\
+  mr_print_value (FD,							\
+		  MR_TYPE_DETECT_OBJ (X),				\
+		  MR_TYPE_DETECT_OBJ (*MR_CAST_TO_PTR (X)),		\
+		  __builtin_classify_type (X),				\
+		  MR_ARRAY_SIZE (X),					\
+		  MR_OBJ_TYPE (MR_PRINT_ARG (X)),			\
+		  MR_STRINGIFY_READONLY (MR_PRINT_SERIALIZATION_METHOD_GET ()),	\
+		  MR_PRINT_ARG (X))
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
@@ -1580,7 +1603,7 @@ extern void mr_message (const char * file_name, const char * func_name, int line
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
-extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, char * type, ssize_t size, char * method, ...);
+extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ssize_t size, char * type, char * method, ...);
 
 extern mr_fd_t * mr_get_any_fd_by_name (const char * name, mr_td_t * tdp);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
