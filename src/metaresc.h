@@ -1019,9 +1019,6 @@
 			       &mr_get_struct_type_name_extra,		\
 			       &ctx					\
 			       );					\
-      if (ctx.type_name &&						\
-	  (0 == strcmp (ctx.type_name, "mr_dummy_struct_t")))		\
-	ctx.type_name = NULL;						\
       ctx.type_name;							\
     })
 
@@ -1030,9 +1027,6 @@
       if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
 	__builtin_dump_struct (MR_STRUCT_POINTER (S_PTR),		\
 			       &mr_get_struct_type_name);		\
-      if (mr_get_struct_type_name_ctx.type_name &&			\
-	  (0 == strcmp (mr_get_struct_type_name_ctx.type_name, "mr_dummy_struct_t"))) \
-	mr_get_struct_type_name_ctx.type_name = NULL;			\
       mr_get_struct_type_name_ctx.type_name;				\
     })
 
