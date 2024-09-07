@@ -1004,29 +1004,31 @@
   ((MR_UNION_TYPE_CLASS == __builtin_classify_type (OBJ)) ||	\
    (MR_RECORD_TYPE_CLASS == __builtin_classify_type (OBJ)))
 
-#define MR_STRUCT_POINTER(S_PTR) ({					\
-      __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) __mr_ptr = MR_CAST_TO_PTR (S_PTR); \
-      __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*__mr_ptr),		\
-			     __mr_ptr, (mr_dummy_struct_t*)0);		\
+#define MR_STRUCT_POINTER(S_PTR) ({				\
+      __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) __mr_ptr = NULL;	\
+      __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*__mr_ptr),	\
+			     __mr_ptr, (mr_dummy_struct_t*)0);	\
     })
 
 #define MR_OBJ_TYPE_DUMP_EXTRA(S_PTR) ({				\
       mr_conf_init ();							\
       mr_get_struct_type_name_t ctx;					\
-      ctx.type_name = NULL;						\
-      if (0 == setjmp (ctx._jmp_buf))					\
-	__builtin_dump_struct (MR_STRUCT_POINTER (S_PTR),		\
-			       &mr_get_struct_type_name_extra,		\
-			       &ctx					\
-			       );					\
+      ctx.type_name = MR_OBJ_TYPE_DWARF (S_PTR);			\
+      if (ctx.type_name == NULL)					\
+	if (0 == setjmp (ctx._jmp_buf))					\
+	  __builtin_dump_struct (MR_STRUCT_POINTER (S_PTR),		\
+				 &mr_get_struct_type_name_extra,	\
+				 &ctx);					\
       ctx.type_name;							\
     })
 
 #define MR_OBJ_TYPE_DUMP(S_PTR) ({					\
       mr_conf_init ();							\
-      if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
-	__builtin_dump_struct (MR_STRUCT_POINTER (S_PTR),		\
-			       &mr_get_struct_type_name);		\
+      mr_get_struct_type_name_ctx.type_name = MR_OBJ_TYPE_DWARF (S_PTR); \
+      if (mr_get_struct_type_name_ctx.type_name == NULL)		\
+	if (0 == setjmp (mr_get_struct_type_name_ctx._jmp_buf))		\
+	  __builtin_dump_struct (MR_STRUCT_POINTER (S_PTR),		\
+				 &mr_get_struct_type_name);		\
       mr_get_struct_type_name_ctx.type_name;				\
     })
 
