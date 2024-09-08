@@ -1006,7 +1006,7 @@
 
 
 #define MR_STRUCT_POINTER(S_PTR) ({				\
-      __typeof__ (*MR_CAST_TO_PTR (S_PTR)) _mr[0];		\
+      __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) _mr = NULL;		\
       __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*_mr),	\
 			     _mr, (mr_dummy_struct_t*)0);	\
     })
