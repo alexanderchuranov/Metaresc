@@ -1001,13 +1001,14 @@
 #endif /* MR_OBJ_TYPE */
 
 #define MR_IS_STRUCT_OR_UNION(OBJ)				\
-  ((MR_UNION_TYPE_CLASS == __builtin_classify_type (OBJ)) ||	\
-   (MR_RECORD_TYPE_CLASS == __builtin_classify_type (OBJ)))
+  ((((1 << MR_UNION_TYPE_CLASS) | (1 << MR_RECORD_TYPE_CLASS))	\
+    >> __builtin_classify_type (OBJ)) & 1)
+
 
 #define MR_STRUCT_POINTER(S_PTR) ({				\
-      __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) __mr_ptr = NULL;	\
-      __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*__mr_ptr),	\
-			     __mr_ptr, (mr_dummy_struct_t*)0);	\
+      __typeof__ (*MR_CAST_TO_PTR (S_PTR)) _mr[0];		\
+      __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*_mr),	\
+			     _mr, (mr_dummy_struct_t*)0);	\
     })
 
 #define MR_OBJ_TYPE_DUMP_EXTRA(S_PTR) ({				\
@@ -1439,25 +1440,33 @@
 						   !__builtin_types_compatible_p (__typeof__ (OBJ), void const volatile *) \
 						   , (OBJ), (void**)0)
 
-#define MR_ARRAY_SIZE(X) __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + MR_CAST_TO_PTR (X)), __typeof__ (X)), -1, sizeof (X))
+#define MR_ARRAY_SIZE(OBJ) ({						\
+      __typeof__ (OBJ) _mr[0];						\
+      __builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (0 + MR_CAST_TO_PTR (*_mr)), __typeof__ (*_mr)), -1, sizeof (*_mr)); \
+    })
 
-#define MR_TYPE_DETECT_OBJ(OBJ) ({ __typeof__ (OBJ) _mr; MR_TYPE_DETECT (__typeof__ (_mr)); })
+#define MR_TYPE_DETECT_OBJ(OBJ) ({		\
+      __typeof__ (OBJ) _mr[0];			\
+      MR_TYPE_DETECT (__typeof__ (*_mr));	\
+    })
 
-#define MR_PRINT_ARG(OBJ)						\
-  __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (OBJ),			\
-			 &__builtin_choose_expr (MR_IS_STRUCT_OR_UNION (OBJ), \
+#define MR_PRINT_ARG(OBJ, TYPE_OBJ)					\
+  __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (TYPE_OBJ),		\
+			 &__builtin_choose_expr (MR_IS_STRUCT_OR_UNION (TYPE_OBJ), \
 						 (OBJ), ""),		\
 			 (OBJ))
 
-#define MR_PRINT_VALUE(FD, X)						\
-  mr_print_value (FD,							\
-		  MR_TYPE_DETECT_OBJ (X),				\
-		  MR_TYPE_DETECT_OBJ (*MR_CAST_TO_PTR (X)),		\
-		  __builtin_classify_type (X),				\
-		  MR_ARRAY_SIZE (X),					\
-		  MR_OBJ_TYPE (MR_PRINT_ARG (X)),			\
-		  MR_STRINGIFY_READONLY (MR_PRINT_SERIALIZATION_METHOD_GET ()),	\
-		  MR_PRINT_ARG (X))
+#define MR_PRINT_VALUE(FD, X) ({					\
+      __typeof__ (X) __mr[0];						\
+      mr_print_value (FD,						\
+		      MR_TYPE_DETECT (__typeof__ (*__mr)),		\
+		      MR_TYPE_DETECT_OBJ (*MR_CAST_TO_PTR (*__mr)),	\
+		      __builtin_classify_type (*__mr),			\
+		      MR_ARRAY_SIZE (*__mr),				\
+		      MR_OBJ_TYPE (MR_PRINT_ARG (*__mr, *__mr)),	\
+		      MR_STRINGIFY_READONLY (MR_PRINT_SERIALIZATION_METHOD_GET ()), \
+		      MR_PRINT_ARG (X, *__mr));				\
+    })
 
 #define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
@@ -1575,10 +1584,9 @@ extern char * mr_ptr_detect_type (char * filename, char * varname, ...);
 extern mr_hash_value_t mr_var_get_hash (mr_ptr_t x, const void * context);
 extern int mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 
-#define MR_IS_STRING(X) __builtin_types_compatible_p (char, __typeof__ (*__builtin_choose_expr ((__builtin_classify_type (X) == MR_POINTER_TYPE_CLASS) || (__builtin_classify_type (X) == MR_ARRAY_TYPE_CLASS), X, NULL)))
-#define MR_AND_IS_STRING(X) && MR_IS_STRING (X)
-#define MR_VALIDATE_ALL_ARGS_ARE_STRINGS(...) (void*) (0 / (true MR_FOREACH (MR_AND_IS_STRING, __VA_ARGS__)))
-#define mr_type_void_fields(type, ...) mr_type_void_fields_impl (type, __VA_ARGS__, MR_VALIDATE_ALL_ARGS_ARE_STRINGS (__VA_ARGS__))
+#define MR_AND_IS_STRING(X) && __builtin_types_compatible_p (char, __typeof__ (*(X)))
+#define MR_VALIDATE_ALL_ARGS_ARE_STRINGS(...) (true MR_FOREACH (MR_AND_IS_STRING, __VA_ARGS__))
+#define mr_type_void_fields(type, ...) MR_COMPILETIME_ASSERT (MR_VALIDATE_ALL_ARGS_ARE_STRINGS (__VA_ARGS__)); mr_type_void_fields_impl (type, __VA_ARGS__, NULL)
 extern void __attribute__ ((sentinel(0))) mr_type_void_fields_impl (char * type, char * name, ...);
 extern mr_size_t mr_type_size (mr_type_t mr_type);
 extern void mr_conf_init ();
