@@ -98,7 +98,7 @@ jobs:
       - name: make check
         run: make check || ( cat tests/test-suite.log ; false )
       - name: archive build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name:	win-${{matrix.env}}-${{matrix.sys}}
           path: |
