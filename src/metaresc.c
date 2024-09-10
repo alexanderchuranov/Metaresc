@@ -704,7 +704,7 @@ mr_hash_value_t
 mr_fd_name_and_type_get_hash (mr_ptr_t x, const void * context)
 {
   mr_fd_t * x_ = x.ptr;
-  return (mr_hashed_string_get_hash (&x_->name) ^ mr_hashed_string_get_hash (&x_->stype.tdp->type));
+  return (mr_hashed_string_get_hash (&x_->name) + mr_hashed_string_get_hash (&x_->stype.tdp->type));
 }
 
 int
