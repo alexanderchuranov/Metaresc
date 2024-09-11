@@ -23,22 +23,26 @@
 #define SMOKE_METHOD(METHOD, ...) START_TEST (mr_conf_save_load) {	\
     mr_conf_init ();							\
     mr_conf_t mr_conf_saved = mr_conf;					\
-    mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-      ck_assert_msg (((0 != mr_conf_serialized.MR_SIZE) && (NULL != mr_conf_serialized.data.ptr)), \
-		     "save for method " #METHOD " failed");		\
-      mr_conf_t mr_conf_loaded;						\
-      memset (&mr_conf_loaded, 0, sizeof (mr_conf_loaded));		\
-      mr_status_t status = MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, &mr_conf_loaded);	\
-      ck_assert_msg (MR_SUCCESS == status, "load for method " #METHOD " failed"); \
-      mr_conf = mr_conf_loaded;						\
-      mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
-      ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
-		     (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
-		     "restored mr_conf mismatched original dump for method " #METHOD); \
-      MR_FREE (mr_conf_serialized_.data.ptr);				\
-      MR_FREE (mr_conf_serialized.data.ptr);				\
-      mr_conf = mr_conf_saved;						\
-      MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);			\
+    mr_conf_t * src = &mr_conf;						\
+    mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, src++); \
+    ck_assert_msg (src - &mr_conf == 1, "Multiple src post increment for method " #METHOD);	\
+    ck_assert_msg (((0 != mr_conf_serialized.MR_SIZE) && (NULL != mr_conf_serialized.data.ptr)), \
+		   "save for method " #METHOD " failed");		\
+    mr_conf_t mr_conf_loaded;						\
+    mr_conf_t * dst = &mr_conf_loaded;					\
+    memset (&mr_conf_loaded, 0, sizeof (mr_conf_loaded));		\
+    mr_status_t status = MR_LOAD_ ## METHOD ## _RA (mr_conf_t, &mr_conf_serialized, dst++); \
+    ck_assert_msg (dst - &mr_conf_loaded == 1, "Multiple dst post increment for method " #METHOD); \
+    ck_assert_msg (MR_SUCCESS == status, "load for method " #METHOD " failed"); \
+    mr_conf = mr_conf_loaded;						\
+    mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
+    ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
+		   (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
+		   "restored mr_conf mismatched original dump for method " #METHOD); \
+    MR_FREE (mr_conf_serialized_.data.ptr);				\
+    MR_FREE (mr_conf_serialized.data.ptr);				\
+    mr_conf = mr_conf_saved;						\
+    MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);			\
   } END_TEST								\
 									\
   int main (int argc, char * argv[])					\

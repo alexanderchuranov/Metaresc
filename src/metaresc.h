@@ -931,6 +931,7 @@
 #define MR_COPY_RECURSIVELY_ARGS3(MR_TYPE_NAME, S_PTR, D_PTR) ({	\
       mr_status_t ___status = MR_FAILURE;				\
       MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
+      MR_CHECK_TYPES (__typeof__ (*(D_PTR)), S_PTR);			\
       mr_ra_ptrdes_t ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
       if (___ptrs.ra != NULL)						\
 	{								\
@@ -1004,7 +1005,6 @@
   ((((1 << MR_UNION_TYPE_CLASS) | (1 << MR_RECORD_TYPE_CLASS))	\
     >> __builtin_classify_type (OBJ)) & 1)
 
-
 #define MR_STRUCT_POINTER(S_PTR) ({				\
       __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) _mr = NULL;		\
       __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*_mr),	\
@@ -1052,7 +1052,7 @@
 	   MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
-      void * __ptr__ = (void*)S_PTR;					\
+      __typeof__ (&*(S_PTR)) __src__ = (S_PTR);				\
       mr_fd_t __fd__;							\
       memset (&__fd__, 0, sizeof (__fd__));				\
       __fd__.stype.type = MR_TYPE_NAME_STR;				\
@@ -1062,18 +1062,18 @@
       __fd__.name.hash_value = 0;					\
       __fd__.unnamed = true;						\
       __fd__.non_persistent = true;					\
-      __fd__.stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(S_PTR)));	\
-      __fd__.stype.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*(S_PTR))); \
-      __fd__.stype.size = sizeof (*(S_PTR));				\
-      if (!__builtin_types_compatible_p (__typeof__ (&*(S_PTR)), __typeof__ (S_PTR))) \
+      __fd__.stype.mr_type = MR_TYPE_DETECT (__typeof__ (*__src__));	\
+      __fd__.stype.mr_type_aux = MR_TYPE_DETECT_PTR (__typeof__ (*__src__)); \
+      __fd__.stype.size = sizeof (*__src__);				\
+      if (!__builtin_types_compatible_p (__typeof__ (__src__), __typeof__ (S_PTR))) \
 	{								\
 	  __fd__.stype.is_array = true;					\
 	  __fd__.stype.size = sizeof (S_PTR);				\
-	  __fd__.stype.dim.dim[0] = (0 + sizeof (S_PTR)) / sizeof (*(S_PTR)); \
+	  __fd__.stype.dim.dim[0] = (0 + sizeof (S_PTR)) / sizeof (*__src__); \
 	  __fd__.stype.dim.size = sizeof (__fd__.stype.dim.dim[0]);	\
 	}								\
       mr_detect_type (&__fd__);						\
-      mr_save (__ptr__, &__fd__);					\
+      mr_save (__src__, &__fd__);					\
     })
 
 #define MR_SAVE_XDR(XDRS, ...) ({					\
@@ -1151,16 +1151,18 @@
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
+	  __typeof__ (&*(D_PTR)) _dst_ = (D_PTR);			\
 	  mr_fd_t __fd__ =						\
 	    {								\
 	      .stype.type = MR_TYPE_NAME,				\
 	      .name = { .str = NULL, .hash_value = 0, },		\
 	      .non_persistent = true,					\
-	      .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
-	      .stype.size = sizeof (*(D_PTR)),				\
+	      .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*_dst_)),	\
+	      .stype.size = sizeof (*_dst_),				\
 	    };								\
+	  memset (_dst_, 0, sizeof (*_dst_));				\
 	  mr_detect_type (&__fd__);					\
-	  __status__ = mr_xdr_load ((D_PTR), &__fd__, __xdrs__);	\
+	  __status__ = mr_xdr_load (_dst_, &__fd__, __xdrs__);		\
 	}								\
       __status__;							\
     })
@@ -1220,6 +1222,7 @@
 	     MR_LOAD_XML2_NODE_ARGS3_ (#MR_TYPE_NAME, XML, D_PTR); }))
 
 #define MR_LOAD_XML2_NODE_ARGS3_(MR_TYPE_NAME, XML, D_PTR) ({		\
+      __typeof__ (&*(D_PTR)) _dst_ = (D_PTR);				\
       mr_status_t __status__ = MR_FAILURE;				\
       mr_ra_ptrdes_t __ptrs__ =						\
 	{								\
@@ -1231,12 +1234,13 @@
       mr_fd_t __fd__ =							\
 	{								\
 	  .stype.type = MR_TYPE_NAME,					\
-	  .name = { .str = NULL, .hash_value = 0, },			\
-	  .non_persistent = true,					\
-	  .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))),	\
-	  .stype.size = sizeof (*(D_PTR)),				\
+	    .name = { .str = NULL, .hash_value = 0, },			\
+	    .non_persistent = true,					\
+	    .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*_dst_)),	\
+	    .stype.size = sizeof (*_dst_),				\
 	};								\
       xmlNodePtr __xml__ = (XML);					\
+      memset (_dst_, 0, sizeof (*_dst_));				\
       if (NULL == __xml__)						\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NULL_POINTER);		\
       else								\
@@ -1247,7 +1251,7 @@
 	    {								\
 	      mr_idx_t __idx__ = mr_xml2_load (__xml__, &__ptrs__);	\
 	      if (__idx__ != MR_NULL_IDX)				\
-		__status__ = mr_load ((D_PTR), &__fd__, __idx__, &__ptrs__); \
+		__status__ = mr_load (_dst_, &__fd__, __idx__, &__ptrs__); \
 	      mr_free_load_values (&__ptrs__);				\
 	    }								\
 	}								\
@@ -1312,7 +1316,8 @@
 #define MR_LOAD_METHOD_ARGS4_(METHOD, MR_TYPE_NAME, STR, D_PTR) ({	\
       mr_ra_ptrdes_t _ptrs_ =						\
 	{ .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }; \
-      memset ((D_PTR), 0, sizeof (*(D_PTR)));				\
+      __typeof__ (&*(D_PTR)) _dst_ = (D_PTR);				\
+      memset (_dst_, 0, sizeof (*_dst_));				\
       mr_conf_init ();							\
       mr_add_ptr_to_list (&_ptrs_);					\
       mr_status_t _status_ = MR_FAILURE;				\
@@ -1325,11 +1330,11 @@
 		{							\
 		  .stype.type = MR_TYPE_NAME,				\
 		  .name = { .str = NULL, .hash_value = 0, },		\
-		  .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*(D_PTR))), \
-		  .stype.size = sizeof (*(D_PTR)),			\
+		  .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*_dst_)), \
+		  .stype.size = sizeof (*_dst_),			\
 		};							\
 	      mr_detect_type (&_fd_);					\
-	      _status_ = mr_load ((D_PTR), &_fd_, 1, &_ptrs_);		\
+	      _status_ = mr_load (_dst_, &_fd_, 1, &_ptrs_);		\
 	    }								\
 	  mr_free_load_values (&_ptrs_);				\
 	}								\

@@ -303,10 +303,27 @@ START_TEST (mr_hash_cmp_all_types) {
 } END_TEST
 
 START_TEST (mr_hash_cmp_mr_conf) {
-  mr_conf_t _mr_conf = MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf);
-  ck_assert_msg (MR_HASH_STRUCT (mr_conf_t, &mr_conf) == MR_HASH_STRUCT (mr_conf_t, &_mr_conf), "mismatch of hash for mr_conf copy");
-  ck_assert_msg (MR_CMP_STRUCTS (mr_conf_t, &mr_conf, &_mr_conf) == 0, "wrong equals check for mr_conf copy");
-  MR_FREE_RECURSIVELY (mr_conf_t, &_mr_conf);
+  mr_conf_t _mr_conf;
+  mr_conf_t * src = &mr_conf;
+  mr_conf_t * dst = &_mr_conf;
+  mr_status_t status = MR_COPY_RECURSIVELY (mr_conf_t, src++, dst++);
+  ck_assert_msg (status == MR_SUCCESS, "MR_COPY_RECURSIVELY failed");
+  ck_assert_msg (src - &mr_conf == 1, "Multiple src post increments in MR_COPY_RECURSIVELY");
+  ck_assert_msg (dst - &_mr_conf == 1, "Multiple dst post increments in MR_COPY_RECURSIVELY");
+
+  src = &mr_conf;
+  ck_assert_msg (MR_HASH_STRUCT (mr_conf_t, src++) == MR_HASH_STRUCT (mr_conf_t, &_mr_conf), "mismatch of hash for mr_conf copy");
+  ck_assert_msg (src - &mr_conf == 1, "Multiple src post increments in MR_HASH_STRUCT");
+
+  src = &mr_conf;
+  dst = &_mr_conf;
+  ck_assert_msg (MR_CMP_STRUCTS (mr_conf_t, src++, dst++) == 0, "wrong equals check for mr_conf copy");
+  ck_assert_msg (src - &mr_conf == 1, "Multiple post increments in MR_CMP_STRUCTS");
+  ck_assert_msg (dst - &_mr_conf == 1, "Multiple post increments in MR_HASH_STRUCT");
+
+  dst = &_mr_conf;
+  MR_FREE_RECURSIVELY (mr_conf_t, dst++);
+  ck_assert_msg (dst - &_mr_conf == 1, "Multiple post increments in MR_FREE_RECURSIVELY");
 } END_TEST
 
 #undef MR_MODE

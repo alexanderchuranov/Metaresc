@@ -7,10 +7,14 @@ TYPEDEF_STRUCT (ll_t,
 
 START_TEST (mr_copy_self_void_ptr) {
   ll_t x, y;
+  ll_t * _x = &x;
+  ll_t * _y = &y;
   x.ptr = &x;
 
-  mr_status_t status = MR_COPY_RECURSIVELY (ll_t, &x, &y);
+  mr_status_t status = MR_COPY_RECURSIVELY (ll_t, _x++, _y++); /* validate that post increment will happen only once */
   ck_assert_msg ((MR_SUCCESS == status), "MR_COPY_RECURSIVELY failed");
+  ck_assert_msg ((_x - &x == 1), "multiple post increments of source");
+  ck_assert_msg ((_y - &y == 1), "multiple post increments of destination");
 
   ck_assert_msg (MR_CMP_STRUCTS (ll_t, &x, &y) == 0, "MR_COPY_RECURSIVELY mismatched original");
 } END_TEST
