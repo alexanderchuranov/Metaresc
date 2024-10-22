@@ -226,10 +226,10 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * 
   return (MR_SUCCESS);
 }
 
-TYPEDEF_FUNC (bool, node_validator_t, (mr_tree_t * /* tree */, unsigned /* idx */, uint8_t * /* height */))
+TYPEDEF_FUNC (bool, node_validator_t, (mr_tree_t * /* tree */, unsigned /* idx */, uint8_t * /* height */));
 
 static bool
-mr_btree_is_valid_recurse (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, void * context, node_validator_t node_validator, uint8_t * height, int level)
+mr_btree_is_valid_recurse (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, void * context, node_validator_t node_validator, uint8_t * height, int level, unsigned left, unsigned right)
 {
   if (NONE_IDX == idx)
     return (true);
@@ -245,28 +245,23 @@ mr_btree_is_valid_recurse (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, v
       fprintf (stderr, "Node [%u] double linked\n", idx);
       return (false);
     }
-      
-  mr_child_idx_t child_idx;
-  for (child_idx = MR_LEFT; child_idx <= MR_RIGHT; ++child_idx)
+
+  if ((left != NONE_IDX) && (cmp (tree->pool[idx].key, tree->pool[left].key, context) <= 0))
     {
-      unsigned child = tree->pool[idx].next[child_idx].idx;
-      if (NONE_IDX != child)
-	{
-	  int diff = cmp (tree->pool[child].key, tree->pool[idx].key, context);
-	  if (0 == diff)
-	    {
-	      fprintf (stderr, "Tree unordered. Child (%u) == parent (%u)\n", child, idx);
-	      return (false);
-	    }	    
-	  if ((diff > 0) ^ child_idx)
-	    {
-	      fprintf (stderr, "Tree unordered. Child (%u) <> parent (%u)\n", child, idx);
-	      return (false);
-	    }
-	  if (!mr_btree_is_valid_recurse (tree, child, cmp, context, node_validator, height, level))
-	    return (false);
-	}
+      fprintf (stderr, "Tree unordered. node (%u) <= left (%u)\n", idx, left);
+      return (false);
     }
+
+  if ((right != NONE_IDX) && (cmp (tree->pool[right].key, tree->pool[idx].key, context) <= 0))
+    {
+      fprintf (stderr, "Tree unordered. node (%u) => right (%u)\n", idx, right);
+      return (false);
+    }
+
+  if (!mr_btree_is_valid_recurse (tree, tree->pool[idx].next[MR_LEFT].idx, cmp, context, node_validator, height, level, left, idx))
+    return (false);
+  if (!mr_btree_is_valid_recurse (tree, tree->pool[idx].next[MR_RIGHT].idx, cmp, context, node_validator, height, level, idx, right))
+    return (false);
   
   return (node_validator (tree, idx, height));
 }
@@ -300,7 +295,7 @@ mr_btree_is_valid (mr_tree_t * tree, mr_compar_fn_t cmp, void * context, node_va
     return (false);
 
   height[NONE_IDX] = 1;
-  bool valid = mr_btree_is_valid_recurse (tree, tree->pool->root.idx, cmp, context, node_validator, height, 0);
+  bool valid = mr_btree_is_valid_recurse (tree, tree->pool->root.idx, cmp, context, node_validator, height, 0, NONE_IDX, NONE_IDX);
 
   if (valid)
     for (idx = 0; idx < count; ++idx)
