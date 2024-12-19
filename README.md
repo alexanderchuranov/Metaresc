@@ -295,7 +295,7 @@ int main (int argc, char * argv[])
 Metadata generation macro will validate at compile time that provided
 types matches types of the structure fields, but it is still on user
 to synchronize the list of fields with the original declaration. Order of the
-fields could be arbitrary and library will reorder when based on offset
+fields could be arbitrary and library will reorder them based on offset
 for use in serialization. Necessity to keep types of fields in sync
 might be annoying and overwhelming. The good news is that you could
 omit types specification in macro language for all fields of basic
@@ -384,10 +384,12 @@ int main (int argc, char * argv[])
     (tree_node_t[]){ { "right" } },
   };
   
-  MR_PRINT ("tree = ", &root, "\n");
+  MR_PRINT ("tree = ", root, "\n");
   return (EXIT_SUCCESS);
 }
 ```
+NB! With DWARF type discovery you also get type detection for the
+  variables, so there is no need to specify types for serialization.
 You need to add one more file to the project `sample_types.c`:
 
 ```c

@@ -747,15 +747,20 @@
 #define MR_TYPEDEF_UNION_DESC(ID, MR_TYPE_NAME) MR_TYPEDEF_DESC (ID, MR_TYPE_NAME, MR_TYPE_UNION)
 #define MR_END_UNION_DESC(ID, MR_TYPE_NAME, /* META */ ...) MR_TYPEDEF_END_DESC (ID, MR_TYPE_NAME, __VA_ARGS__)
 
+#define MR_ANONYMOUS_FIELD_TYPE_SIZE(MR_TYPE_NAME) (sizeof (#MR_TYPE_NAME) + MR_ANON_UNION_MAX_EMBEDED_LEVELS * sizeof (MR_ANONYMOUS_FIELD_TYPE_TEMPLATE))
+
 #define MR_ANON_UNION_DESC(MR_TYPE_NAME, NAME, /* ATTR */ ...)		\
   (mr_fd_t[]){ {							\
-      .name.str = (char [sizeof (#MR_TYPE_NAME) + MR_ANON_UNION_MAX_EMBEDED_LEVELS * sizeof (MR_ANONYMOUS_FIELD_NAME_TEMPLATE)]) { #NAME }, \
+      .name.str = (char [MR_ANONYMOUS_FIELD_TYPE_SIZE (MR_TYPE_NAME)]) { #NAME }, \
 	.stype.type = "",						\
 	.stype.mr_type = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (MR_TYPE_ANON_UNION) (MR_TYPE_NAMED_ANON_UNION), \
 	.unnamed = MR_IF_ELSE (MR_IS_EMPTY (NAME)) (true) (false),	\
 	.offset = 0,							\
-	.res = { (mr_td_t[]){ { .type.str =				\
-	    (char [sizeof (#MR_TYPE_NAME) + MR_ANON_UNION_MAX_EMBEDED_LEVELS * sizeof (MR_ANONYMOUS_FIELD_TYPE_TEMPLATE)]) {}, } } }, \
+	.res = { (mr_td_t[]){ {						\
+	    .type.str =							\
+	    (char [MR_ANONYMOUS_FIELD_TYPE_SIZE (MR_TYPE_NAME)]) {	\
+	      [0 ... MR_ANONYMOUS_FIELD_TYPE_SIZE (MR_TYPE_NAME) - 2] = ' ', \
+	    }, } } },							\
 	.res_type = "mr_td_t",						\
 	} },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\

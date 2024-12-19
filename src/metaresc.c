@@ -877,61 +877,60 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  if (j >= count)
 	    return (MR_FAILURE);
 
-	  {
-	    int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_LAST */
-	    mr_fd_t * fields[fields_count];
-	    /*
-	      0  1  2  3  4  5  6  7  8
-	      F1 AH U1 U2 AE F2 F3 F4 T
-	      i = 1
-	      j = 4
-	      first = 2
-	      fields_count = 3
-	      count = 8
-	    */
-	    memcpy (fields, first, fields_count * sizeof (first[0]));
-	    memmove (first, &first[fields_count], (count - j) * sizeof (first[0])); /* blocks overlap possible */
-	    memcpy (&first[count - j], fields, fields_count * sizeof (first[0]));
+	  int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_LAST */
+	  mr_fd_t * fields[fields_count];
+	  /*
+	    0  1  2  3  4  5  6  7  8
+	    F1 AH U1 U2 AE F2 F3 F4 T
+	    i = 1
+	    j = 4
+	    first = 2
+	    fields_count = 3
+	    count = 8
+	  */
+	  memcpy (fields, first, fields_count * sizeof (first[0]));
+	  memmove (first, &first[fields_count], (count - j) * sizeof (first[0])); /* blocks overlap possible */
+	  memcpy (&first[count - j], fields, fields_count * sizeof (first[0]));
 
-	    tdp_->size = 0;
-	    for (j = 0; j < fields_count - 1; ++j)
-	      {
-		/* offset of union memebers may differ from offset of anonymous union place holder */
-		if (fields[j]->offset != 0) /* MR_VOID and MR_END_ANON_UNION has zero offset */
-		  fdp->offset = fields[j]->offset;
-		fields[j]->offset = 0; /* reset offset to zero */
-		if (tdp_->size < fields[j]->stype.size)
-		  tdp_->size = fields[j]->stype.size; /* find union max size member */
-	      }
+	  tdp_->size = 0;
+	  for (j = 0; j < fields_count - 1; ++j)
+	    {
+	      /* offset of union memebers may differ from offset of anonymous union place holder */
+	      if (fields[j]->offset != 0) /* MR_VOID and MR_END_ANON_UNION has zero offset */
+		fdp->offset = fields[j]->offset;
+	      fields[j]->offset = 0; /* reset offset to zero */
+	      if (tdp_->size < fields[j]->stype.size)
+		tdp_->size = fields[j]->stype.size; /* find union max size member */
+	    }
 
-	    last = tdp->param.struct_param.fields[count];
-	    tdp->param.struct_param.fields[count] = NULL;
-	    tdp_->mr_type = fdp->stype.mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
-	    tdp_->td_producer = MR_TDP_ANON_UNION;
+	  last = tdp->param.struct_param.fields[count];
+	  tdp->param.struct_param.fields[count] = NULL;
+	  tdp_->mr_type = fdp->stype.mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
+	  tdp_->td_producer = MR_TDP_ANON_UNION;
 
-	    sprintf (tdp_->type.str, MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, tdp->type.str, i);
-	    tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
+	  size_t buffer_size = strlen (tdp_->type.str) + 1;
+	  snprintf (tdp_->type.str, buffer_size, MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, tdp->type.str, i);
+	  tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
 
-	    /* set name of anonymous union to temporary templatized name */
-	    if (0 == fdp->name.str[0])
-	      sprintf (fdp->name.str, MR_ANONYMOUS_FIELD_NAME_TEMPLATE, tdp->type.str, i);
-	    fdp->name.hash_value = mr_hash_str (fdp->name.str);
+	  /* set name of anonymous union to temporary templatized name */
+	  if (0 == fdp->name.str[0])
+	    snprintf (fdp->name.str, buffer_size, MR_ANONYMOUS_FIELD_NAME_TEMPLATE, tdp->type.str, i);
+	  fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
-	    tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
+	  tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
 
-	    fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
-	    fdp->res = last->res;
-	    fdp->res_type = last->res_type;
-	    fdp->MR_SIZE = last->MR_SIZE;
-	    tdp->param.struct_param.fields_size -= fields_count * sizeof (tdp->param.struct_param.fields[0]);
-	    count -= fields_count;
-	    fdp->stype.type = tdp_->type.str;
-	    fdp->stype.size = tdp_->size;
+	  fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
+	  fdp->res = last->res;
+	  fdp->res_type = last->res_type;
+	  fdp->MR_SIZE = last->MR_SIZE;
+	  tdp->param.struct_param.fields_size -= fields_count * sizeof (tdp->param.struct_param.fields[0]);
+	  count -= fields_count;
+	  fdp->stype.type = tdp_->type.str;
+	  fdp->stype.size = tdp_->size;
 	    
-	    mr_init_struct (tdp_);
-	    mr_ic_add (&mr_conf.type_by_name, tdp_);
-	    mr_add_type (tdp_);
-	  }
+	  mr_init_struct (tdp_);
+	  mr_ic_add (&mr_conf.type_by_name, tdp_);
+	  mr_add_type (tdp_);
 	}
     }
   return (MR_SUCCESS);
