@@ -177,10 +177,10 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
 }
 
 static inline mr_status_t
-mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_traverse_t *))
+mr_tree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_traverse_t *))
 {
   mr_tree_traverse_t traverse;
-  mr_tree_find (key, rbtree, compar_fn, context, &traverse);
+  mr_tree_find (key, tree, compar_fn, context, &traverse);
 
   if (!traverse.equal)
     return (MR_FAILURE);
@@ -189,38 +189,38 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * rbtree, mr_compar_fn_t compar_fn, void * 
   unsigned node = traverse.path[traverse_size - 1].idx;
   unsigned del = node;
 
-  if ((NONE_IDX == rbtree->pool[node].next[MR_LEFT].idx) || (NONE_IDX == rbtree->pool[node].next[MR_RIGHT].idx))
+  if ((NONE_IDX == tree->pool[node].next[MR_LEFT].idx) || (NONE_IDX == tree->pool[node].next[MR_RIGHT].idx))
     --traverse_size;
   else
     {
       traverse.path[traverse_size - 1].child_idx = MR_RIGHT;
-      for (del = rbtree->pool[node].next[MR_RIGHT].idx;
-	   rbtree->pool[del].next[MR_LEFT].idx != NONE_IDX;
-	   del = rbtree->pool[del].next[MR_LEFT].idx)
+      for (del = tree->pool[node].next[MR_RIGHT].idx;
+	   tree->pool[del].next[MR_LEFT].idx != NONE_IDX;
+	   del = tree->pool[del].next[MR_LEFT].idx)
 	traverse.path[traverse_size++] = (typeof (traverse.path[0])){ .child_idx = MR_LEFT, .idx = del, };
       traverse.path[traverse_size].idx = del;
     }
   traverse.size = traverse_size * sizeof (traverse.path[0]);
 
   mr_tree_path_t * parent = &traverse.path[traverse_size - 1];
-  rbtree->pool[parent->idx].next[parent->child_idx].idx =
-    rbtree->pool[del].next[(rbtree->pool[del].next[MR_RIGHT].idx != NONE_IDX) ? MR_RIGHT : MR_LEFT].idx;
+  tree->pool[parent->idx].next[parent->child_idx].idx =
+    tree->pool[del].next[(tree->pool[del].next[MR_RIGHT].idx != NONE_IDX) ? MR_RIGHT : MR_LEFT].idx;
 
-  rbtree->pool[node].key = rbtree->pool[del].key;
+  tree->pool[node].key = tree->pool[del].key;
 
-  rebalance (rbtree, &traverse);
+  rebalance (tree, &traverse);
 
-  rbtree->size -= sizeof (rbtree->pool[0]);
-  unsigned last = rbtree->size / sizeof (rbtree->pool[0]);
+  tree->size -= sizeof (tree->pool[0]);
+  unsigned last = tree->size / sizeof (tree->pool[0]);
   if (del != last)
     {
-      mr_tree_find (rbtree->pool[last].key, rbtree, compar_fn, context, &traverse);
+      mr_tree_find (tree->pool[last].key, tree, compar_fn, context, &traverse);
       if (!traverse.equal)
 	return (MR_FAILURE);
       
-      rbtree->pool[del] = rbtree->pool[last];
+      tree->pool[del] = tree->pool[last];
       parent = &traverse.path[traverse.size / sizeof (traverse.path[0]) - 2];
-      rbtree->pool[parent->idx].next[parent->child_idx].idx = del;
+      tree->pool[parent->idx].next[parent->child_idx].idx = del;
     }
 
   return (MR_SUCCESS);
