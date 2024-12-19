@@ -16,13 +16,13 @@ jobs:
       - name: update packages
         run: sudo apt-get update -y
       - name: install dependencies
-        run: sudo apt-get install -y build-essential gcc clang autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev check valgrind python3
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev check valgrind python3
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}}
+        run: ./configure CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}} || ( cat config.log ; false )
       - name: make check
         run: make check -j 2 || ( cat tests/test-suite.log ; false )
       - name: check with valgrind
