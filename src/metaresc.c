@@ -350,6 +350,7 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value.ull) }
 	  else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
 	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double) }
+	  else MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_QUALIFIER, fmt);
 
 	  if (mr_type != MR_TYPE_LAST)
 	    {

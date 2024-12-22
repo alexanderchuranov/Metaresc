@@ -61,7 +61,7 @@ purposes far beyond just achieving persistence.
 
 ## How to build library:
 
-Install external dependencies `autoconf`, `automake`, `libtool`, `pkg-config`, `flex`, `bison`, `libxml2-dev`, `check`, `libdwarf-dev`.
+Install external dependencies `autoconf`, `automake`, `libtool`, `pkg-config`, `flex`, `bison`, `libxml2-dev`, `libyaml-dev`, `libtirpc-dev`, `check`.
 Clone Metaresc from Github, configure and build according to the standard autoconf/automake process.
 
 ### Ubuntu
@@ -69,7 +69,7 @@ Clone Metaresc from Github, configure and build according to the standard autoco
 On Ubuntu, run the following command:
 
 ```console
-# apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev check
+# apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev libtirpc-dev check
 ```
 
 Checkout Metaresc from github

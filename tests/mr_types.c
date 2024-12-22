@@ -542,6 +542,7 @@ MR_FOREACH (MR_ADD_TYPE, _dump_struct_types_t, struct aliases_t);
 
 START_TEST (dump_struct_types_detection) {
   mr_conf_init ();
+  mr_conf.log_level = MR_LL_ALL;
 
   mr_td_t * mr_tdp = mr_get_td_by_name ("dump_struct_types_t");
   ck_assert_msg (mr_tdp != NULL, "Failed to get type descriptor for type dump_struct_types_t.");
