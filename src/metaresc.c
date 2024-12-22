@@ -354,6 +354,8 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 
 	  if (mr_type != MR_TYPE_LAST)
 	    {
+	      if (mr_type == MR_TYPE_DETECT (typeof (value._long_double)))
+		fprintf (stderr, "_long_double %Lf [%d] fmt '%s'\n", value._long_double, value._uint8, fmt);
 	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
 	      if (fdp != NULL)
 		{
