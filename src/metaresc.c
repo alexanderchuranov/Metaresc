@@ -142,6 +142,7 @@ mr_get_struct_type_name (const char * fmt, char * value)
 
 TYPEDEF_UNION (mr_dump_struct_types_union_t,
 	       uint8_t _uint8,
+	       (uint8_t, _uint8arr, [sizeof (long double)]),
 	       uint16_t _uint16,
 	       uint32_t _uint32,
 	       uint64_t _uint64,
@@ -355,7 +356,7 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  if (mr_type != MR_TYPE_LAST)
 	    {
 	      if (mr_type == MR_TYPE_DETECT (typeof (value._long_double)))
-		fprintf (stderr, "_long_double %Lf [%d] fmt '%s'\n", value._long_double, value._uint8, fmt);
+		fprintf (stderr, "_long_double [%d:%d - %d]\n", value._uint8arr[0], value._uint8arr[1], value._uint8arr[sizeof (long double) - 1]);
 	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
 	      if (fdp != NULL)
 		{
