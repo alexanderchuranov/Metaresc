@@ -222,7 +222,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     {
       if (fields_count >= MR_PP_DEPTH)
 	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TOO_MANY_FIELDS, ctx->tdp->type.str, MR_PP_DEPTH);
+	  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
 	  longjmp (ctx->_jmp_buf, !0);
 	}
 
@@ -350,7 +350,7 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value.ull) }
 	  else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
 	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double) }
-	  else MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_QUALIFIER, fmt);
+	  else fprintf (stderr, "Unknown qualifier '%s'\n", fmt);
 
 	  if (mr_type != MR_TYPE_LAST)
 	    {
@@ -402,7 +402,7 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
 	    {
 	      if (fields_count >= MR_PP_DEPTH)
 		{
-		  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_TOO_MANY_FIELDS, ctx->tdp->type.str, MR_PP_DEPTH);
+		  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
 		  longjmp (ctx->_jmp_buf, !0);
 		}
 	      fdp->stype.mr_type = MR_TYPE_BITFIELD;

@@ -79,8 +79,6 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
 	      (MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, , "Unexpected number of items in static array collection %d."),
 	      (MR_MESSAGE_TOO_MANY_UD, , "Serialization require more distinct union discriminators. Recompile Metaresc with MR_RA_UD_IDX_TYPE defined to a type bigger then '%s' (e.g. ./configure --enable-ra-ud-idx=uint16_t)"),
-	      (MR_MESSAGE_UNKNOWN_QUALIFIER, , "Unknown qualifier '%s'"),
-	      (MR_MESSAGE_TOO_MANY_FIELDS, , "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)"),
 	      (MR_MESSAGE_FIELD_NOT_FOUND, , "Field '%s' is not found in type '%s'."),
 	      (MR_MESSAGE_YAML_ERROR, , "YAML error '%s'."),
 	      (MR_MESSAGE_UNKNOWN_FIELD_NAME, , "Field name '%s' is not valid."),
