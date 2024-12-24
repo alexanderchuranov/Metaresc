@@ -493,7 +493,7 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (uint64_t, _uint64),
 		     (mr_int128_t, _int128),
 		     (mr_uint128_t, _uint128),
-		     (bool, x1, : 1),
+		     //(bool, x1, : 1), /* under address sanitizer byte is truncated to bit */
 		     (char, x2, : 2),
 		     (signed char, x3, : 3),
 		     (unsigned char, x4, : 4),
