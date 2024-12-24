@@ -420,19 +420,19 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t o
   if (ptrs->ra[idx].flags & MR_IS_REFERENCE)
     {
       /* set REF_IDX property */
-      sprintf (number, "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
+      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
       xmlSetProp (node, BAD_CAST MR_REF, BAD_CAST number);
     }
   if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
     {
       /* set REF_CONTENT property */
-      sprintf (number, "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
+      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
       xmlSetProp (node, BAD_CAST MR_REF_CONTENT, BAD_CAST number);
     }
   if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
     {
       /* set IDX property */
-      sprintf (number, "%" SCNd32, (uint32_t)ptrs->ra[idx].idx);
+      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs->ra[idx].idx);
       xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
     }
   if (ptrs->ra[idx].flags & MR_IS_NULL)

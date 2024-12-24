@@ -670,7 +670,7 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       char type_name_buffer[sizeof (ANONYMOUS_TYPE_TEMPLATE) + sizeof (mr_die->off) * 3];
       char * type_name = fdp->stype.type ? fdp->stype.type : type_name_buffer;
       if (NULL == fdp->stype.type)
-	sprintf (type_name_buffer, ANONYMOUS_TYPE_TEMPLATE, (uint64_t)mr_die->off);
+	snprintf (type_name_buffer, sizeof (type_name_buffer), ANONYMOUS_TYPE_TEMPLATE, (uint64_t)mr_die->off);
 
       mr_die->attributes = MR_REALLOC (mr_die->attributes, mr_die->attributes_size + 2 * sizeof (mr_die->attributes[0]));
       assert (mr_die->attributes != NULL);
@@ -921,12 +921,12 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
     {
       int strlen_type = strlen (type);
       char field_name[sizeof (MR_ANONYMOUS_FIELD_NAME_TEMPLATE) + sizeof (idx) * 3 + strlen_type];
-      sprintf (field_name, MR_ANONYMOUS_FIELD_NAME_TEMPLATE, type, (int)idx);
+      snprintf (field_name, sizeof (field_name), MR_ANONYMOUS_FIELD_NAME_TEMPLATE, type, (int)idx);
       fdp->name.str = mr_strdup (field_name);
       assert (fdp->name.str != NULL);
 
       char field_type[sizeof (MR_ANONYMOUS_FIELD_TYPE_TEMPLATE) + sizeof (idx) * 3 + strlen_type];
-      sprintf (field_type, MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, type, (int)idx);
+      snprintf (field_type, sizeof (field_type), MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, type, (int)idx);
       fdp->stype.type = mr_strdup (field_type);
       assert (fdp->stype.type != NULL);
 

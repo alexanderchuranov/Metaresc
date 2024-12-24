@@ -36,7 +36,7 @@ yaml_get_anchor (char * anchor, mr_ptrdes_t * ptrdes)
   if (!(ptrdes->flags & MR_IS_REFERENCED))
     return (NULL);
   
-  sprintf (anchor, MR_YAML_ANCHOR_TMPLT, (uint32_t)ptrdes->idx);
+  snprintf (anchor, ANCHOR_SIZE, MR_YAML_ANCHOR_TMPLT, (uint32_t)ptrdes->idx);
   return ((yaml_char_t*)anchor);
 }
 
@@ -67,11 +67,12 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ra_ptrdes_t 
   if ((ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
       (ptrdes->first_child < ptrs->size / sizeof (ptrs->ra[0])))
     {
-      char anchor[MR_MAX (sizeof (MR_YAML_REF_ANCHOR_TMPLT), sizeof (MR_YAML_REF_ANCHOR_CONTENT_TMPLT)) + (sizeof (ptrdes->idx) * 12 + 4) / 5];
+#define MR_ANCHOR_SIZE (MR_MAX (sizeof (MR_YAML_REF_ANCHOR_TMPLT), sizeof (MR_YAML_REF_ANCHOR_CONTENT_TMPLT)) + (sizeof (ptrdes->idx) * 12 + 4) / 5)
+      char anchor[MR_ANCHOR_SIZE];
       if (ptrdes->flags & MR_IS_CONTENT_REFERENCE)
-	sprintf (anchor, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs->ra[ptrdes->first_child].idx);
+	snprintf (anchor, MR_ANCHOR_SIZE, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs->ra[ptrdes->first_child].idx);
       else
-	sprintf (anchor, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs->ra[ptrdes->first_child].idx);
+	snprintf (anchor, MR_ANCHOR_SIZE, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs->ra[ptrdes->first_child].idx);
 
       yaml_event_delete (event);
       if (!yaml_alias_event_initialize (event, (yaml_char_t *)anchor))
@@ -126,7 +127,7 @@ yaml_save_char (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_i
       buffer[1] = 0;
     }
   else
-    sprintf (buffer, "0x%02x", c);
+    snprintf (buffer, sizeof (buffer), "0x%02x", c);
     
   return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
 }
@@ -163,7 +164,7 @@ yaml_save_func (mr_yaml_context_t * mr_yaml_context, mr_ra_ptrdes_t * ptrs, mr_i
     return (yaml_emit_string (&mr_yaml_context->emitter, func_str, ptrs, idx));
   #define YAML_PTR_TMPLT "0x%llx"
   char buffer[sizeof (YAML_PTR_TMPLT) + sizeof (void*) * __CHAR_BIT__ / 4];
-  sprintf (buffer, YAML_PTR_TMPLT, (unsigned long long int)*(uintptr_t*)ptrdes->data.ptr);
+  snprintf (buffer, sizeof (buffer), YAML_PTR_TMPLT, (unsigned long long int)*(uintptr_t*)ptrdes->data.ptr);
   return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
 }
 
