@@ -350,13 +350,11 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (value.sll) }
 	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value.ull) }
 	  else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
-	  else if (strcmp (fmt, "%Lf\n") == 0) { uint8_t * val = va_arg (args, typeof (value._uint8arr)); memcpy (&value._long_double, val, sizeof (value._long_double)); mr_type = MR_TYPE_LONG_DOUBLE; }
+	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double); }
 	  else fprintf (stderr, "Unknown qualifier '%s'\n", fmt);
 
 	  if (mr_type != MR_TYPE_LAST)
 	    {
-	      if (mr_type == MR_TYPE_DETECT (typeof (value._long_double)))
-		fprintf (stderr, "_long_double [%d:%d - %d]\n", value._uint8arr[0], value._uint8arr[1], value._uint8arr[sizeof (long double) - 1]);
 	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
 	      if (fdp != NULL)
 		{
