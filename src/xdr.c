@@ -353,7 +353,7 @@ mr_xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
 static mr_status_t
 xdr_none (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
-  return (xdr_void () ? MR_SUCCESS : MR_FAILURE);
+  return (MR_SUCCESS);
 }
 
 /**
