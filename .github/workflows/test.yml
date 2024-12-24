@@ -22,7 +22,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: skip tests in libdwarf
-        run: sed -i.bak -e "s/test_tied//" -e "s/test_dwarfdumpMacos.sh//" libdwarf-code/test/Makefile.am 
+        run: sed -i.bak -e "s/test_tied/test_canonical/" -e "s/test_dwarfdumpMacos.sh//" libdwarf-code/test/Makefile.am 
       - name: configure
         run: ./configure CFLAGS="-I/usr/include/tirpc -Werror -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer" LIBS=-ltirpc CC=${{matrix.cc}} || ( cat config.log ; false )
       - name: make check
