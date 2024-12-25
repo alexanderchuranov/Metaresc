@@ -27,16 +27,16 @@ jobs:
         run: make check -j 2 || ( cat tests/test-suite.log ; false )
       - name: check with valgrind
         run: |
-	  cd tests
-	  sed -i.bak -e "s/long double, long_double/double, long_double/" mr_types.c
-	  rm -f mr_types
-	  CK_TIMEOUT_MULTIPLIER=2 make valgrind -j 2 || ( cat test-suite.log ; false )
+          cd tests
+          sed -i.bak -e "s/long double, long_double/double, long_double/" mr_types.c
+          rm -f mr_types
+          CK_TIMEOUT_MULTIPLIER=2 make valgrind -j 2 || ( cat test-suite.log ; false )
       - name: check with address sanitizer
         run: |
-	  make clean
-	  sed -i.bak -e "s/test_sanitized \\\/test_sanitized/" -e "s/test_tied//" -e "s/test_dwarfdumpMacos.sh//" libdwarf-code/test/Makefile.am 
-	  sed -i.bak -e "s/bool, _bool/uint8_t, _bool/" tests/mr_types.c
-	  make check -j 2 CFLAGS="-fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
+          make clean
+          sed -i.bak -e "s/test_sanitized \\\/test_sanitized/" -e "s/test_tied//" -e "s/test_dwarfdumpMacos.sh//" libdwarf-code/test/Makefile.am 
+          sed -i.bak -e "s/bool, _bool/uint8_t, _bool/" tests/mr_types.c
+          make check -j 2 CFLAGS="-fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
 
   macos-clang:
     runs-on: macos-latest
@@ -81,8 +81,8 @@ jobs:
           - { sys: mingw64, env: x86_64 }
           - { sys: mingw32, env: i686 }
           - { sys: ucrt64,  env: ucrt-x86_64 }
-          - { sys: clang64, env: clang-x86_64 }	  
-    defaults:
+          - { sys: clang64, env: clang-x86_64 }
+  defaults:
       run:
         shell: msys2 {0}
     steps:
