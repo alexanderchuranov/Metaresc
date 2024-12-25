@@ -482,9 +482,9 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (char *, _str_array, [2]),
 		     (string_t, string),
 		     (char, _char),
-		     //(bool, _bool), /* under address sanitizer byte is truncated to bit */
 		     (int8_t, _int8),
 		     (uint8_t, _uint8),
+		     (bool, _bool),
 		     (int16_t, _int16),
 		     (uint16_t, _uint16),
 		     (int32_t, _int32),
@@ -556,12 +556,7 @@ START_TEST (dump_struct_types_detection) {
       mr_fd_t * dst_fdp = mr_get_fd_by_name (dst_tdp, mr_fdp->name.str);
       ck_assert_msg (dst_fdp != NULL, "dump_struct have not detected field '%s'", mr_fdp->name.str);
 
-      /*
-	on github CI test under valgrind fails due to bug in va_arg (args, long double)
-	Here I will just skip offset check for long double field.
-      */
-      if ((0 != strcmp (mr_fdp->name.str, "_long_double")) && !RUNNING_ON_VALGRIND)
-	ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
+      ck_assert_msg (mr_fdp->offset == dst_fdp->offset, "dump_struct mismatched offset (%zd != %zd) for field '%s'", mr_fdp->offset, dst_fdp->offset, mr_fdp->name.str);
       ck_assert_msg (mr_fdp->stype.size == dst_fdp->stype.size, "dump_struct mismatched size (%d != %d) for field '%s'", (int)mr_fdp->stype.size, (int)dst_fdp->stype.size, mr_fdp->name.str);
       ck_assert_msg (mr_fdp->stype.tdp == dst_fdp->stype.tdp, "dump_struct mismatched types (%s != %s) for field '%s'", mr_fdp->stype.tdp->type.str, dst_fdp->stype.tdp->type.str, mr_fdp->name.str);
       ck_assert_msg (mr_fdp->stype.mr_type == dst_fdp->stype.mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->stype.mr_type, dst_fdp->stype.mr_type, mr_fdp->name.str);
