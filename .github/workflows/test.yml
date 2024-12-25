@@ -36,7 +36,7 @@ jobs:
           make clean
           sed -i.bak -e "s/test_sanitized \\\/test_sanitized/" -e "s/test_tied//" -e "s/test_dwarfdumpMacos.sh//" libdwarf-code/test/Makefile.am 
           sed -i.bak -e "s/bool, _bool/uint8_t, _bool/" tests/mr_types.c
-          make check -j 2 CFLAGS="-fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
+          make check -j 2 CFLAGS="-I/usr/include/tirpc -Werror -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
 
   macos-clang:
     runs-on: macos-latest
