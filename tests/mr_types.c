@@ -1,7 +1,6 @@
 #include <check.h>
 #include <metaresc.h>
 #include <regression.h>
-#include <valgrind.h>
 
 typedef char char_array_t[1];
 typedef char * char_ptr_t;
