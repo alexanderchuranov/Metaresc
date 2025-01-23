@@ -109,7 +109,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
   const char * format = NULL;
   int rv = 0;
   va_list args;
-  mr_ed_t * edp = NULL;
+  char * serialized_enum = NULL;
 
   va_start (args, method);
 
@@ -119,32 +119,43 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
   if (type && (MR_ENUM_INT_TYPES >> mr_type) & 1)
     {
       mr_td_t * tdp = mr_get_td_by_name (type);
-      mr_enum_value_type_t value = 0;
-      va_list _args;
-
-      va_start (_args, method);
-      switch (mr_type)
-	{
-#define MR_CASE_TYPE(TYPE)					\
-	  case MR_TYPE_DETECT (TYPE):				\
-	    value = va_arg (_args, typeof (0 + (TYPE)0));	\
-	    break;
-	  MR_FOREACH (MR_CASE_TYPE, MR_ENUM_INT_TYPES_LIST);
-	default:
-	  break;
-	}
-      va_end (_args);
-
       if (tdp && (MR_TYPE_ENUM == tdp->mr_type))
-	edp = mr_get_enum_by_value (tdp, value);
+	{
+	  mr_enum_value_type_t value = 0;
+	  mr_fd_t fd = { .stype.tdp = tdp, };
+	  mr_ptrdes_t ptrdes = { .data.ptr = &value, .fdp = &fd, };
+	  mr_rarray_t mr_ra_str = {
+	    .data = { mr_strdup ("") },
+	    .MR_SIZE = sizeof (""),
+	    .type = "string",
+	    .alloc_size = sizeof (""),
+	  };
+
+	  switch (mr_type)
+	    {
+#define MR_CASE_TYPE(TYPE)					\
+	      case MR_TYPE_DETECT (TYPE):			\
+		value = va_arg (args, typeof (0 + (TYPE)0));	\
+		break;
+	      MR_FOREACH (MR_CASE_TYPE, MR_ENUM_INT_TYPES_LIST);
+	    default:
+	      break;
+	    }
+
+	  mr_ra_printf_bitmask (&mr_ra_str, &ptrdes, " | ");
+	  serialized_enum = mr_ra_str.data.string;
+	}
     }
 
   if ((mr_type >= 0) &&
       (mr_type < sizeof (formats) / sizeof (formats[0])))
     format = formats[mr_type];
 
-  if (edp)
-    rv = fprintf (fd, "%s", edp->name.str);
+  if (serialized_enum)
+    {
+      rv = fprintf (fd, "%s", serialized_enum);
+      MR_FREE (serialized_enum);
+    }
   else if (format != NULL)
     rv = vfprintf (fd, format, args);
   else
