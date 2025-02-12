@@ -936,7 +936,7 @@
 #define MR_COPY_RECURSIVELY_ARGS3(MR_TYPE_NAME, S_PTR, D_PTR) ({	\
       mr_status_t ___status = MR_FAILURE;				\
       MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
-      MR_CHECK_TYPES (__typeof__ (*(D_PTR)), S_PTR);			\
+      MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
       mr_ra_ptrdes_t ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
       if (___ptrs.ra != NULL)						\
 	{								\
