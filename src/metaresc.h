@@ -921,7 +921,7 @@
   }
 
 #else /* ! HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
-#define MR_ADD_TYPE(MR_TYPE_NAME) "This feature require __builtin_dump_struct with support of extra args" + 0 / 0
+#define MR_ADD_TYPE(MR_TYPE_NAME) "This feature require __builtin_dump_struct with support of extra args"[0 / 0]
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 /*
   User can turn off strict types checking for Metaresc macroses, so compilation will produce only warnings.
@@ -929,7 +929,7 @@
   #define MR_CHECK_TYPES(...)
 */
 #ifndef MR_CHECK_TYPES
-#define MR_CHECK_TYPES(MR_TYPE_NAME, S_PTR) MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME)) () (((void) (1 / __builtin_types_compatible_p (MR_TYPE_NAME, __typeof__ (*(S_PTR))))))
+#define MR_CHECK_TYPES(MR_TYPE_NAME, S_PTR) MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME)) () (MR_COMPILETIME_ASSERT (__builtin_types_compatible_p (MR_TYPE_NAME, __typeof__ (*(S_PTR)))))
 #endif /* MR_CHECK_TYPES */
 
 #define MR_COPY_RECURSIVELY(...) MR_PASTE2 (MR_COPY_RECURSIVELY_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
@@ -937,6 +937,7 @@
       mr_status_t ___status = MR_FAILURE;				\
       MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
       MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
+      MR_COMPILETIME_ASSERT (__builtin_types_compatible_p (__typeof__ (D_PTR), __typeof__ (S_PTR))); \
       mr_ra_ptrdes_t ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
       if (___ptrs.ra != NULL)						\
 	{								\
@@ -946,7 +947,7 @@
       ___status;							\
     })
 #define MR_COPY_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
-      __typeof__ (__builtin_choose_expr (__builtin_types_compatible_p (__typeof__ (S_PTR), __typeof__ (&*(S_PTR))), *(S_PTR), S_PTR)) dst; \
+      __typeof__ (*(S_PTR)) dst;					\
       memset (&dst, 0, sizeof (dst));					\
       MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &dst);		\
       dst;								\
