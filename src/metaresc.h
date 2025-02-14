@@ -978,15 +978,16 @@
 #define MR_HASH_STRUCT_ARGS1(S_PTR) MR_HASH_STRUCT_ARGS2 ( , S_PTR)
 
 #define MR_CMP_STRUCTS(...) MR_PASTE2 (MR_CMP_STRUCTS_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
-#define MR_CMP_STRUCTS_ARGS3(MR_TYPE_NAME, X, Y) ({		\
-      mr_ra_ptrdes_t _x_ = MR_SAVE (MR_TYPE_NAME, X);		\
-      mr_ra_ptrdes_t _y_ = MR_SAVE (MR_TYPE_NAME, Y);		\
-      int _cmp_ = mr_cmp_structs (&_x_, &_y_);			\
-      if (_x_.ra)						\
-	MR_FREE (_x_.ra);					\
-      if (_y_.ra)						\
-	MR_FREE (_y_.ra);					\
-      _cmp_;							\
+#define MR_CMP_STRUCTS_ARGS3(MR_TYPE_NAME, X, Y) ({			\
+      MR_COMPILETIME_ASSERT (__builtin_types_compatible_p (__typeof__ (X), __typeof__ (Y))); \
+      mr_ra_ptrdes_t _x_ = MR_SAVE (MR_TYPE_NAME, X);			\
+      mr_ra_ptrdes_t _y_ = MR_SAVE (MR_TYPE_NAME, Y);			\
+      int _cmp_ = mr_cmp_structs (&_x_, &_y_);				\
+      if (_x_.ra)							\
+	MR_FREE (_x_.ra);						\
+      if (_y_.ra)							\
+	MR_FREE (_y_.ra);						\
+      _cmp_;								\
     })
 #define MR_CMP_STRUCTS_ARGS2(X, Y) MR_CMP_STRUCTS_ARGS3 ( , X, Y)
     
