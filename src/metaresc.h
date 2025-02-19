@@ -709,7 +709,7 @@
     (MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__))
 
 #define MR_VOID_DESC(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .func_param = { .args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, }, })
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .func_param.args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, })
 
 /*
   MR_OBJ_OF_TYPE returns an object of specified type. It could be as simple as (TYPE){},
@@ -772,17 +772,15 @@
 
 #define MR_TYPEDEF_ENUM_DESC(ID, MR_TYPE_NAME, ...)			\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-  .type = { .str = #MR_TYPE_NAME, },					\
+  .type.str = #MR_TYPE_NAME,						\
     .mr_type = MR_TYPE_ENUM,						\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
-    .param = {								\
-      .enum_param = {							\
-	.mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),		\
-	.enums = (mr_ed_t*[]){
+    .param.enum_param.mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),\
+    .param.enum_param.enums = (mr_ed_t*[]){
 
 #define MR_END_ENUM_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...)	\
-  NULL, }, }, },							\
+  NULL, },								\
     .meta = "" __VA_ARGS__ };						\
     static inline void __attribute__((constructor))			\
     MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
@@ -792,24 +790,22 @@
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
 #define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)   \
   (mr_ed_t[]){ {						     \
-      .name = { .str =  #NAME, },				     \
-	.value = { ._unsigned = NAME, },			     \
+      .name.str =  #NAME,					     \
+	.value._unsigned = NAME,				     \
 	.meta = "" __VA_ARGS__,					     \
 	} },
 
 #define MR_TYPEDEF_FUNC_DESC(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (ID, RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
 #define MR_TYPEDEF_FUNC_DESC_(ID, RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) \
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-    .type = { .str = #MR_TYPE_NAME, },					\
+    .type.str = #MR_TYPE_NAME,						\
     .mr_type = MR_TYPE_FUNC_TYPE,					\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
-    .param = {								\
-      .func_param = {							\
-	.args = (mr_stype_t*[]){					\
+    .param.func_param.args = (mr_stype_t*[]){				\
 	  MR_FUNC_ARG (RET_TYPE)					\
 	  MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS))		\
-	  NULL, }, }, },						\
+	  NULL, },							\
     .meta = "" __VA_ARGS__ };						\
   static inline void __attribute__((constructor))			\
   MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
@@ -818,13 +814,13 @@
 
 #define MR_TYPEDEF_DESC(ID, MR_TYPE_NAME, MR_TYPE, ...)			\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-  .type = { .str = #MR_TYPE_NAME, },					\
+  .type.str = #MR_TYPE_NAME,						\
     .mr_type = MR_TYPE,							\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
-    .param = { .struct_param = { .fields = (mr_fd_t*[]){
+    .param.struct_param.fields = (mr_fd_t*[]){
 #define MR_TYPEDEF_END_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...) 	\
-  NULL, }, }, },							\
+  NULL, },								\
     .meta = "" __VA_ARGS__ };						\
     static inline void __attribute__((constructor))			\
     MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
@@ -838,13 +834,13 @@
 #define MR_ADD_TYPE(MR_TYPE_NAME) MR_ADD_TYPE_ (__COUNTER__, MR_TYPE_NAME)
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
-    .type = { .str = #MR_TYPE_NAME, },					\
+    .type.str = #MR_TYPE_NAME,						\
     .mr_type = (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(MR_TYPE_NAME*)0)) ? MR_TYPE_STRUCT : MR_TYPE_UNION, \
     .td_producer = MR_TDP_DUMP_STRUCT,					\
     .size = sizeof (MR_TYPE_NAME),					\
-    .param = { .struct_param = { .fields = (mr_fd_t*[]){		\
+    .param.struct_param.fields = (mr_fd_t*[]){				\
 	  MR_FOR ( , MR_PP_DEPTH, MR_SER, MR_SINGLE_FD)			\
-	  NULL, }, }, }, };						\
+	  NULL, }, };							\
   static inline void __attribute__((constructor))			\
   MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
     mr_dump_struct_type_ctx_t dst_ctx;					\
@@ -935,8 +931,6 @@
 #define MR_COPY_RECURSIVELY(...) MR_PASTE2 (MR_COPY_RECURSIVELY_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_COPY_RECURSIVELY_ARGS3(MR_TYPE_NAME, S_PTR, D_PTR) ({	\
       mr_status_t ___status = MR_FAILURE;				\
-      MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
-      MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);				\
       MR_COMPILETIME_ASSERT (__builtin_types_compatible_p (__typeof__ (D_PTR), __typeof__ (S_PTR))); \
       mr_ra_ptrdes_t ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
       if (___ptrs.ra != NULL)						\
@@ -947,32 +941,32 @@
       ___status;							\
     })
 #define MR_COPY_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
-      __typeof__ (*(S_PTR)) dst;					\
-      memset (&dst, 0, sizeof (dst));					\
-      MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &dst);		\
-      dst;								\
+      __typeof__ (*(S_PTR)) _dst_;					\
+      memset (&_dst_, 0, sizeof (_dst_));				\
+      MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &_dst_);		\
+      _dst_;								\
     })
 #define MR_COPY_RECURSIVELY_ARGS1(S_PTR) MR_COPY_RECURSIVELY_ARGS2 ( , S_PTR)
 
 #define MR_FREE_RECURSIVELY(...) MR_PASTE2 (MR_FREE_RECURSIVELY_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_FREE_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({	\
-      mr_ra_ptrdes_t ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
-      mr_status_t status = MR_SUCCESS;				\
-      mr_free_recursively (&ptrs);				\
-      if (NULL == ptrs.ra)					\
-	status = MR_FAILURE;					\
+      mr_ra_ptrdes_t _ptrs_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_status_t _status_ = MR_SUCCESS;			\
+      mr_free_recursively (&_ptrs_);				\
+      if (NULL == _ptrs_.ra)					\
+	_status_ = MR_FAILURE;					\
       else							\
-	MR_FREE (ptrs.ra);					\
-      status;							\
+	MR_FREE (_ptrs_.ra);					\
+      _status_;							\
     })
 #define MR_FREE_RECURSIVELY_ARGS1(S_PTR) MR_FREE_RECURSIVELY_ARGS2 ( , S_PTR)
 
 #define MR_HASH_STRUCT(...) MR_PASTE2 (MR_HASH_STRUCT_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_HASH_STRUCT_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
-      mr_ra_ptrdes_t _s_ptr_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
-      mr_hash_value_t _hash_value_ = mr_hash_struct (&_s_ptr_);	\
-      if (_s_ptr_.ra)						\
-	MR_FREE (_s_ptr_.ra);					\
+      mr_ra_ptrdes_t _ptrs_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_hash_value_t _hash_value_ = mr_hash_struct (&_ptrs_);	\
+      if (_ptrs_.ra)						\
+	MR_FREE (_ptrs_.ra);					\
       _hash_value_;						\
     })
 #define MR_HASH_STRUCT_ARGS1(S_PTR) MR_HASH_STRUCT_ARGS2 ( , S_PTR)
@@ -1241,10 +1235,11 @@
       mr_fd_t __fd__ =							\
 	{								\
 	  .stype.type = MR_TYPE_NAME,					\
-	    .name = { .str = NULL, .hash_value = 0, },			\
-	    .non_persistent = true,					\
-	    .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*_dst_)),	\
-	    .stype.size = sizeof (*_dst_),				\
+	  .name.str = NULL,						\
+	  .name.hash_value = 0,						\
+	  .non_persistent = true,					\
+	  .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*_dst_)),	\
+	  .stype.size = sizeof (*_dst_),				\
 	};								\
       xmlNodePtr __xml__ = (XML);					\
       memset (_dst_, 0, sizeof (*_dst_));				\
