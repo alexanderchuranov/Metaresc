@@ -378,7 +378,7 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * 
   /* this record is only for lookups and there is no guarantee that parents already have union resolution info */
   mr_save_data->mr_ra_ud_size -= sizeof (mr_save_data->mr_ra_ud[0]);
   ud_idx = mr_save_data->mr_ra_ud_size / sizeof (mr_save_data->mr_ra_ud[0]); /* index of lookup record */
-  if ((ud_idx >> __CHAR_BIT__) >= (1UL << (__CHAR_BIT__ * (sizeof (MR_RA_UD_IDX_TYPE) - 1))))
+  if ((ud_idx >> (__CHAR_BIT__ * sizeof (MR_RA_UD_IDX_TYPE))) != 0)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_TOO_MANY_UD, MR_STRINGIFY_READONLY (MR_RA_UD_IDX_TYPE));
       return (NULL);
