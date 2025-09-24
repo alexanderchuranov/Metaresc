@@ -524,6 +524,12 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (complex float, cf),
 		     (complex double, cd),
 		     (complex long double, cld),
+		     (int *, sized_ptr, , "meta", { .string = "sized_ptr_size" }, "string"),
+		     (int, sized_ptr_size),
+		     (int, sized_array, [2], "meta", { .string = "sized_array_size" }, "string"),
+		     (int, sized_array_size),
+		     (embeded_union_t, discriminated_union, , "discriminated_union_discriminator"),
+		     (char *, discriminated_union_discriminator),
 		     );
 
 typedef char * alias_string_t;
@@ -559,8 +565,30 @@ START_TEST (dump_struct_types_detection) {
       ck_assert_msg (mr_fdp->stype.size == dst_fdp->stype.size, "dump_struct mismatched size (%d != %d) for field '%s'", (int)mr_fdp->stype.size, (int)dst_fdp->stype.size, mr_fdp->name.str);
       ck_assert_msg (mr_fdp->stype.tdp == dst_fdp->stype.tdp, "dump_struct mismatched types (%s != %s) for field '%s'", mr_fdp->stype.tdp->type.str, dst_fdp->stype.tdp->type.str, mr_fdp->name.str);
       ck_assert_msg (mr_fdp->stype.mr_type == dst_fdp->stype.mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->stype.mr_type, dst_fdp->stype.mr_type, mr_fdp->name.str);
+
       if ((mr_fdp->stype.mr_type == MR_TYPE_ARRAY) || (mr_fdp->stype.mr_type == MR_TYPE_POINTER))
-	ck_assert_msg (mr_fdp->stype.mr_type_aux == dst_fdp->stype.mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->stype.mr_type_aux, dst_fdp->stype.mr_type_aux, mr_fdp->name.str);
+	{
+	  ck_assert_msg (mr_fdp->stype.mr_type_aux == dst_fdp->stype.mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->stype.mr_type_aux, dst_fdp->stype.mr_type_aux, mr_fdp->name.str);
+	  if (mr_fdp->res_type != NULL)
+	    {
+	      ck_assert_msg (dst_fdp->res_type != NULL, "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
+	      ck_assert_msg (0 == strcmp (mr_fdp->res_type, dst_fdp->res_type), "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
+	      if ((0 == strcmp (mr_fdp->res_type, "string")) && (mr_fdp->res.string != NULL))
+		{
+		  ck_assert_msg (dst_fdp->res.string != NULL, "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);
+		  ck_assert_msg (0 == strcmp (mr_fdp->res.string, dst_fdp->res.string), "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);
+		}
+	    }
+	}
+
+      if ((mr_fdp->stype.mr_type == MR_TYPE_UNION) || (mr_fdp->stype.mr_type == MR_TYPE_ANON_UNION))
+	{
+	  if (mr_fdp->meta != NULL)
+	    {
+	      ck_assert_msg (dst_fdp->meta != NULL, "dump_struct mismatched meta (%s != %s) for union field '%s'", mr_fdp->meta, dst_fdp->meta, mr_fdp->name.str);
+	      ck_assert_msg (0 == strcmp (mr_fdp->meta, dst_fdp->meta), "dump_struct mismatched meta (%s != %s) for union field '%s'", mr_fdp->meta, dst_fdp->meta, mr_fdp->name.str);
+	    }
+	}
 
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
 	{

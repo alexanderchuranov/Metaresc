@@ -1881,6 +1881,41 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
       resolve_to->is_union_discriminator = true;
 }
 
+void mr_dump_struct_augment_fields (mr_td_t * tdp)
+{
+  if (tdp->td_producer != MR_TDP_DUMP_STRUCT)
+    return;
+
+  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
+  for (i = 0; i < count; ++i)
+    {
+      mr_fd_t * fdp = tdp->param.struct_param.fields[i];
+      int name_length = strlen (fdp->name.str);
+
+      if ((fdp->stype.mr_type == MR_TYPE_POINTER) || (fdp->stype.mr_type == MR_TYPE_ARRAY))
+	{
+	  char length_field[name_length + sizeof (MR_POINTER_SIZE_SUFFIX)];
+	  strcpy (length_field, fdp->name.str);
+	  strcat (length_field, MR_POINTER_SIZE_SUFFIX);
+	  mr_fd_t * length_field_fdp = mr_get_fd_by_name (tdp, length_field);
+	  if (length_field_fdp != NULL)
+	    {
+	      fdp->res_type = "string";
+	      fdp->res.string = length_field_fdp->name.str;
+	    }
+	}
+
+      if ((fdp->stype.mr_type == MR_TYPE_UNION) || (fdp->stype.mr_type == MR_TYPE_ANON_UNION))
+	{
+	  char ud_field[name_length + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX)];
+	  strcpy (ud_field, fdp->name.str);
+	  strcat (ud_field, MR_UNION_DISCRIMINATOR_SUFFIX);
+	  mr_fd_t * ud_field_fdp = mr_get_any_fd_by_name (ud_field, NULL);
+	  fdp->meta = (ud_field_fdp != NULL) ? ud_field_fdp->name.str : "";
+	}
+    }
+}
+
 static mr_td_t *
 mr_sort_td (mr_td_t * tdp)
 {
@@ -1970,8 +2005,10 @@ mr_conf_init ()
 	}
 
       for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
-	mr_type_is_union_discriminator (tdp);
-
+	{
+	  mr_type_is_union_discriminator (tdp);
+	  mr_dump_struct_augment_fields (tdp);
+	}
       mr_udo_init ();
 
       initialized = true;

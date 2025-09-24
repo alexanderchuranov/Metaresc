@@ -1336,12 +1336,11 @@ process_td (mr_ptr_t key, void * context)
 
 	if (need_size_specification)
 	  {
-#define POINTER_SIZE_SUFFIX "_size"
 	    assert (fdp->name.str != NULL);
-	    char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));
+	    char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (MR_POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));
 	    assert (size != NULL);
 	    strcpy (size, fdp->name.str);
-	    strcat (size, POINTER_SIZE_SUFFIX);
+	    strcat (size, MR_POINTER_SIZE_SUFFIX);
 	    fdp->res.ptr = size;
 	    fdp->res_type = mr_strdup ("string");
 	    assert (fdp->res_type != NULL);
@@ -1350,11 +1349,10 @@ process_td (mr_ptr_t key, void * context)
 	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == fdp->stype.mr_type_ptr) ||
 	    (MR_TYPE_ANON_UNION == fdp->stype.mr_type))
 	  {
-#define UNION_DISCRIMINATOR_SUFFIX "_discriminator"
-	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
+	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
 	    assert (discriminator != NULL);
 	    strcpy (discriminator, fdp->name.str);
-	    strcat (discriminator, UNION_DISCRIMINATOR_SUFFIX);
+	    strcat (discriminator, MR_UNION_DISCRIMINATOR_SUFFIX);
 	    fdp->meta = discriminator;
 	  }
       }
