@@ -847,7 +847,7 @@
   static inline void __attribute__((constructor))			\
   MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
     mr_dump_struct_type_ctx_t dst_ctx;					\
-    MR_TYPE_NAME value;							\
+    MR_TYPE_NAME value = {};						\
     uint8_t * ptr = (uint8_t*)&value;					\
     size_t block_size, i;						\
     for (i = 0; i < sizeof (value); ++i)				\
