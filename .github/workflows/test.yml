@@ -79,7 +79,6 @@ jobs:
       matrix:
         include:
           - { sys: mingw64, env: x86_64 }
-          - { sys: mingw32, env: i686 }
           - { sys: ucrt64,  env: ucrt-x86_64 }
           - { sys: clang64, env: clang-x86_64 }
     defaults:
@@ -91,14 +90,9 @@ jobs:
         with:
           msystem: ${{matrix.sys}}
           update: true
-          install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-check mingw-w64-${{matrix.env}}-libxml2 mingw-w64-${{matrix.env}}-libyaml mingw-w64-${{matrix.env}}-toolchain
+          install: base-devel git autoconf automake libtool pkg-config flex bison python3 mingw-w64-${{matrix.env}}-check mingw-w64-${{matrix.env}}-libxml2 mingw-w64-${{matrix.env}}-libyaml mingw-w64-${{matrix.env}}-toolchain
       - name: submodule update
         run: git submodule update --init --recursive --remote
-      - name: skip some tests due to 'out of memory' on mingw32
-        if: ${{ matrix.sys == 'mingw32' }}
-        run: |
-          sed -i.bak -e "s/union //" -e "s/enum //" -e "s/pointer_int //" -e "s/double //" -e "s/float //" -e "s/mr_ptr //" -e "s/pointer_other //" -e "s/complex_float //" -e "s/complex_double //" -e "s/complex_long_double //" tests/Makefile.am
-          sed -i.bak -e "s/MR_BUILTIN_TYPES/int/" tests/dw_mr_types.h
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
