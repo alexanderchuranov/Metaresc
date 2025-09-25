@@ -257,8 +257,10 @@ list_element: cinit
     }
 
   mr_td_t * tdp = mr_load->ptrs->ra[idx].fdp ? mr_load->ptrs->ra[idx].fdp->stype.tdp : NULL;
+  char * type = tdp ? tdp->type.str : NULL;
   $2.str[$2.length] = 0;
-  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($2.str, tdp);
+  mr_load->ptrs->ra[idx].fdp = mr_get_any_fd_by_name ($2.str, type);
+
   if (NULL == mr_load->ptrs->ra[idx].fdp)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, $2.str);

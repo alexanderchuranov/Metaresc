@@ -829,9 +829,9 @@ mr_td_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
  * @return pointer on type descriptor
  */
 mr_td_t *
-mr_get_td_by_name_internal (char * type)
+mr_get_td_by_name_internal (const char * type)
 {
-  mr_hashed_string_t hashed_type = { .str = type, .hash_value = mr_hash_str (type), };
+  mr_hashed_string_t hashed_type = { .str = (char*)type, .hash_value = mr_hash_str (type), };
   uintptr_t key = (uintptr_t)&hashed_type - offsetof (mr_td_t, type);
   mr_ptr_t * result = mr_ic_find (&mr_conf.type_by_name, key);
   return (result ? result->ptr : NULL);
@@ -1707,8 +1707,9 @@ mr_type_void_fields_impl (char * type, char * name, ...)
 }
 
 mr_fd_t *
-mr_get_any_fd_by_name (const char * name, mr_td_t * tdp)
+mr_get_any_fd_by_name (const char * name, const char * type)
 {
+  mr_td_t * tdp = mr_get_td_by_name_internal (type);
   mr_fd_t fd_ = { .name.str = (char*)name, .name.hash_value = 0, .stype.tdp = tdp, };
   mr_ic_t * ic = tdp ? &mr_conf.field_by_name_and_type : &mr_conf.field_by_name;
   mr_ptr_t * find = mr_ic_find (ic, &fd_);

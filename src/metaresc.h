@@ -1611,15 +1611,14 @@ extern mr_ed_t * mr_get_enum_by_name (char * name);
 extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value);
 extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value);
 extern mr_td_t * mr_get_td_by_name (char * type);
-extern mr_td_t * mr_get_td_by_name_internal (char * type);
+extern mr_td_t * mr_get_td_by_name_internal (const char * type);
 extern char * mr_message_format (mr_message_id_t message_id, va_list args);
 extern void mr_message (const char * file_name, const char * func_name, int line, mr_log_level_t log_level, mr_message_id_t message_id, ...);
 extern void * mr_rarray_append (mr_rarray_t * rarray, ssize_t size);
 extern void * mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, ssize_t element_size);
 extern int __attribute__ ((format (printf, 2, 3))) mr_ra_printf (mr_rarray_t * rarray, const char * format, ...);
 extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ssize_t size, char * type, char * method, ...);
-
-extern mr_fd_t * mr_get_any_fd_by_name (const char * name, mr_td_t * tdp);
+extern mr_fd_t * mr_get_any_fd_by_name (const char * name, const char * type);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 #define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (1) (__VA_ARGS__))
 extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start);
@@ -1629,8 +1628,8 @@ extern mr_hash_value_t mr_generic_hash (const mr_ptr_t x, const void * context);
 extern int mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_status_t mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_type, size_t element_size);
 
-extern mr_hash_value_t mr_hash_block (void * block, mr_size_t size);
-extern mr_hash_value_t mr_hash_str (char * str);
+extern mr_hash_value_t mr_hash_block (const void * block, mr_size_t size);
+extern mr_hash_value_t mr_hash_str (const char * str);
 extern int mr_fd_name_and_type_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
 extern mr_hash_value_t mr_fd_name_and_type_get_hash (mr_ptr_t x, const void * context);
 extern int mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);

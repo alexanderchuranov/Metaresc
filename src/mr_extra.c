@@ -196,9 +196,9 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 }
 
 mr_hash_value_t
-mr_hash_block (void * block, mr_size_t size)
+mr_hash_block (const void * block, mr_size_t size)
 {
-  mr_hash_value_t * _block = block;
+  const mr_hash_value_t * _block = block;
   mr_hash_value_t hash_value = 0;
   while (size > sizeof (hash_value))
     {
@@ -222,7 +222,7 @@ mr_hash_block (void * block, mr_size_t size)
  * @return Hash function value.
  */
 mr_hash_value_t
-mr_hash_str (char * str)
+mr_hash_str (const char * str)
 {
   return (str ? mr_hash_block (str, strlen (str)) : 1);
 }
