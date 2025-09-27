@@ -1311,50 +1311,17 @@ process_td (mr_ptr_t key, void * context)
     for (i = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]) - 2; i >= 0; --i)
       {
 	mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-	bool need_size_specification = false;
 
-	if (MR_TYPE_POINTER == fdp->stype.mr_type)
-	  {
-	    if (fdp->stype.mr_type_aux == MR_TYPE_NONE)
-	      fdp->stype.mr_type_aux = MR_TYPE_VOID;
-
-	    need_size_specification = (fdp->stype.mr_type_aux != MR_TYPE_VOID);
-	  }
+	if ((MR_TYPE_POINTER == fdp->stype.mr_type) && (fdp->stype.mr_type_aux == MR_TYPE_NONE))
+	  fdp->stype.mr_type_aux = MR_TYPE_VOID;
 
 	if (MR_TYPE_ARRAY == fdp->stype.mr_type)
 	  {
 	    int j, count = fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]);
 	    for (j = 0; j < count; ++j)
 	      fdp->stype.size *= fdp->stype.dim.dim[j];
-	    if (fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0]))
-	      {
-		if (MR_TYPE_CHAR == fdp->stype.mr_type_aux)
-		  fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
-		else
-		  need_size_specification = true;
-	      }
-	  }
-
-	if (need_size_specification)
-	  {
-	    assert (fdp->name.str != NULL);
-	    char * size = MR_CALLOC (strlen (fdp->name.str) + sizeof (MR_POINTER_SIZE_SUFFIX), sizeof (fdp->name.str[0]));
-	    assert (size != NULL);
-	    strcpy (size, fdp->name.str);
-	    strcat (size, MR_POINTER_SIZE_SUFFIX);
-	    fdp->res.ptr = size;
-	    fdp->res_type = mr_strdup ("string");
-	    assert (fdp->res_type != NULL);
-	  }
-
-	if ((MR_TYPE_UNION == fdp->stype.mr_type) || (MR_TYPE_UNION == fdp->stype.mr_type_aux) || (MR_TYPE_UNION == fdp->stype.mr_type_ptr) ||
-	    (MR_TYPE_ANON_UNION == fdp->stype.mr_type))
-	  {
-	    char * discriminator = MR_CALLOC (strlen (fdp->name.str) + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX), sizeof (fdp->name.str[0]));
-	    assert (discriminator != NULL);
-	    strcpy (discriminator, fdp->name.str);
-	    strcat (discriminator, MR_UNION_DISCRIMINATOR_SUFFIX);
-	    fdp->meta = discriminator;
+	    if ((fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0])) && (MR_TYPE_CHAR == fdp->stype.mr_type_aux))
+	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
 	  }
       }
   return (MR_SUCCESS);
@@ -1430,7 +1397,7 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_struct_param_t", "field_by_name");
   mr_type_void_fields ("mr_enum_param_t", "is_bitmask");
   mr_type_void_fields ("mr_td_param_t", "func_param");
-  mr_type_void_fields ("mr_fd_t", "mr_type_base", "mr_size", "non_persistent");
+  mr_type_void_fields ("mr_fd_t", "mr_type_base", "mr_size", "non_persistent", "meta", "res", "res_type");
   mr_type_void_fields ("mr_stype_t", "tdp", "mr_type_ptr", "mr_type_class", "is_array", "is_bitfield");
   mr_type_void_fields ("mr_ed_t", "mr_type", "meta", "res", "res_type", "mr_size");
   mr_type_void_fields ("mr_bitfield_param_t", "bitfield", "size", "initialized");

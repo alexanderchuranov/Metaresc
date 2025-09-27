@@ -1884,20 +1884,24 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
 
 void mr_dump_struct_augment_fields (mr_td_t * tdp)
 {
-  if (tdp->td_producer != MR_TDP_DUMP_STRUCT)
+  if ((tdp->td_producer != MR_TDP_DUMP_STRUCT) && (tdp->td_producer != MR_TDP_DWARF))
+    return;
+  if ((tdp->mr_type != MR_TYPE_STRUCT) && (tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION))
     return;
 
   int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
   for (i = 0; i < count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      int name_length = strlen (fdp->name.str);
+      if (fdp == NULL)
+	continue;
 
+      int name_length = strlen (fdp->name.str);
       if ((fdp->stype.mr_type == MR_TYPE_POINTER) || (fdp->stype.mr_type == MR_TYPE_ARRAY))
 	{
-	  char length_field[name_length + sizeof (MR_POINTER_SIZE_SUFFIX)];
+	  char length_field[name_length + sizeof (MR_POINTER_SIZE_SUFFIX_STR)];
 	  strcpy (length_field, fdp->name.str);
-	  strcat (length_field, MR_POINTER_SIZE_SUFFIX);
+	  strcat (length_field, MR_POINTER_SIZE_SUFFIX_STR);
 	  mr_fd_t * length_field_fdp = mr_get_fd_by_name (tdp, length_field);
 	  if (length_field_fdp != NULL)
 	    {
@@ -1906,11 +1910,12 @@ void mr_dump_struct_augment_fields (mr_td_t * tdp)
 	    }
 	}
 
-      if ((fdp->stype.mr_type == MR_TYPE_UNION) || (fdp->stype.mr_type == MR_TYPE_ANON_UNION))
+      if ((fdp->stype.mr_type == MR_TYPE_UNION) || (fdp->stype.mr_type == MR_TYPE_ANON_UNION) ||
+	  (fdp->stype.mr_type_aux == MR_TYPE_UNION) || (fdp->stype.mr_type_aux == MR_TYPE_ANON_UNION))
 	{
-	  char ud_field[name_length + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX)];
+	  char ud_field[name_length + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX_STR)];
 	  strcpy (ud_field, fdp->name.str);
-	  strcat (ud_field, MR_UNION_DISCRIMINATOR_SUFFIX);
+	  strcat (ud_field, MR_UNION_DISCRIMINATOR_SUFFIX_STR);
 	  mr_fd_t * ud_field_fdp = mr_get_any_fd_by_name (ud_field, NULL);
 	  fdp->meta = (ud_field_fdp != NULL) ? ud_field_fdp->name.str : "";
 	}
