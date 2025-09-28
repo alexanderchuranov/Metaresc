@@ -1903,6 +1903,9 @@ void mr_dump_struct_augment_fields (mr_td_t * tdp)
 	  strcpy (length_field, fdp->name.str);
 	  strcat (length_field, MR_POINTER_SIZE_SUFFIX_STR);
 	  mr_fd_t * length_field_fdp = mr_get_fd_by_name (tdp, length_field);
+	  if ((tdp->mr_type != MR_TYPE_STRUCT) && (length_field_fdp == NULL))
+	    length_field_fdp = mr_get_any_fd_by_name (length_field, NULL);
+
 	  if (length_field_fdp != NULL)
 	    {
 	      fdp->res_type = "string";
