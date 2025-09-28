@@ -948,7 +948,7 @@
       ___status;							\
     })
 #define MR_COPY_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
-      __typeof__ (*(S_PTR)) _dst_;					\
+      __typeof__ (*(S_PTR)) _dst_ = {};					\
       memset (&_dst_, 0, sizeof (_dst_));				\
       MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &_dst_);		\
       _dst_;								\
