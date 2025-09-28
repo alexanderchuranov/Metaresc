@@ -36,6 +36,15 @@ START_TEST (mr_copy_single_arg) {
 } END_TEST
 #endif /* HAVE_BUILTIN_DUMP_STRUCT */
 
+TYPEDEF_STRUCT (const_field_t, const int x);
+
+START_TEST (mr_copy_const_field) {
+  const_field_t x = { 123 };
+  const_field_t y = MR_COPY_RECURSIVELY (const_field_t, &x);
+  int orig_eq_restored = (0 == CMP_SERIALIAZED (const_field_t, &x, &y));
+  ck_assert_msg (orig_eq_restored, "dump of MR_COPY_RECURSIVELY mismatched dump of original const_field_t");
+} END_TEST
+
 START_TEST (mr_copy_args2) {
   mr_conf_t mr_conf_copy = MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf);
   int orig_eq_restored = (0 == CMP_SERIALIAZED (mr_conf_t, &mr_conf, &mr_conf_copy));
@@ -57,6 +66,7 @@ MAIN_TEST_SUITE ((mr_copy_self_void_ptr, "test MR_COPY_RECURSIVELY works for sel
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
 		 (mr_copy_single_arg, "test single argumets MR_COPY_RECURSIVELY, MR_HASH_STRUCT, MR_CMP_STRUCTS, MR_FREE_RECURSIVELY"),
 #endif /* HAVE_BUILTIN_DUMP_STRUCT */
+		 (mr_copy_const_field, "test that MR_COPY_RECURSIVELY works for struct with const field"),
 		 (mr_copy_args2, "test that dump of mr_conf matches with dump of MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf)"),
 		 (mr_copy_arg3, "test that dump of mr_conf matches with dump of MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf, &mr_conf_copy)")
 		 );
