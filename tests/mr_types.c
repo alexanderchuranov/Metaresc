@@ -544,7 +544,7 @@ struct aliases_t {
   const volatile char * volatile const cv_string;
 };
 
-MR_FOREACH (MR_ADD_TYPE, _dump_struct_types_t, struct aliases_t);
+MR_ADD_TYPES (_dump_struct_types_t, struct aliases_t);
 
 START_TEST (dump_struct_types_detection) {
   mr_conf_init ();

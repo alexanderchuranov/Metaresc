@@ -1882,7 +1882,7 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
       resolve_to->is_union_discriminator = true;
 }
 
-void mr_dump_struct_augment_fields (mr_td_t * tdp)
+void mr_augment_fields (mr_td_t * tdp)
 {
   if ((tdp->td_producer != MR_TDP_DUMP_STRUCT) && (tdp->td_producer != MR_TDP_DWARF))
     return;
@@ -2016,7 +2016,7 @@ mr_conf_init ()
       for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
 	{
 	  mr_type_is_union_discriminator (tdp);
-	  mr_dump_struct_augment_fields (tdp);
+	  mr_augment_fields (tdp);
 	}
       mr_udo_init ();
 
