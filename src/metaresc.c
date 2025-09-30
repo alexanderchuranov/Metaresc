@@ -142,23 +142,24 @@ mr_get_struct_type_name (const char * fmt, char * value)
 
 TYPEDEF_UNION (mr_dump_struct_types_union_t,
 	       uint8_t _uint8,
-	       (uint8_t, _uint8arr, [sizeof (long double)]),
 	       uint16_t _uint16,
 	       uint32_t _uint32,
 	       uint64_t _uint64,
+	       size_t _zu,
+	       ssize_t _zd,
 	       float _float,
 	       double _double,
 	       long double _long_double,
-	       (signed char, sc),
-	       (unsigned char, uc),
-	       (signed short, ss),
-	       (unsigned short, us),
-	       (signed int, si),
-	       (unsigned int, ui),
-	       (signed long, sl),
-	       (unsigned long, ul),
-	       (signed long long, sll),
-	       (unsigned long long, ull),
+	       signed char _sc,
+	       unsigned char _uc,
+	       signed short _ss,
+	       unsigned short _us,
+	       signed int _si,
+	       unsigned int _ui,
+	       signed long _sl,
+	       unsigned long _ul,
+	       signed long long _sll,
+	       unsigned long long _ull,
 	       (void *, _ptr),
 	       );
 
@@ -339,16 +340,18 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
 	  if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
 	  else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
 	  else if (strcmp (fmt, "%p\n") == 0) { CASE (value._ptr, MR_TYPE_POINTER) }
-	  else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value.sc) }
-	  else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value.uc) }
-	  else if (strcmp (fmt, "%hd\n") == 0) { CASE (value.ss) }
-	  else if (strcmp (fmt, "%hu\n") == 0) { CASE (value.us) }
-	  else if (strcmp (fmt, "%d\n") == 0) { CASE (value.si) }
-	  else if (strcmp (fmt, "%u\n") == 0) { CASE (value.ui) }
-	  else if (strcmp (fmt, "%ld\n") == 0) { CASE (value.sl) }
-	  else if (strcmp (fmt, "%lu\n") == 0) { CASE (value.ul) }
-	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (value.sll) }
-	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value.ull) }
+	  else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value._sc) }
+	  else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value._uc) }
+	  else if (strcmp (fmt, "%hd\n") == 0) { CASE (value._ss) }
+	  else if (strcmp (fmt, "%hu\n") == 0) { CASE (value._us) }
+	  else if (strcmp (fmt, "%d\n") == 0) { CASE (value._si) }
+	  else if (strcmp (fmt, "%u\n") == 0) { CASE (value._ui) }
+	  else if (strcmp (fmt, "%ld\n") == 0) { CASE (value._sl) }
+	  else if (strcmp (fmt, "%lu\n") == 0) { CASE (value._ul) }
+	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (value._sll) }
+	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value._ull) }
+	  else if (strcmp (fmt, "%zd\n") == 0) { CASE (value._zd) }
+	  else if (strcmp (fmt, "%zu\n") == 0) { CASE (value._zu) }
 	  else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
 	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double); }
 	  else fprintf (stderr, "Unknown qualifier '%s'\n", fmt);
