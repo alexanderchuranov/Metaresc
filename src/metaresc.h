@@ -417,7 +417,7 @@
 
 /* list of substitutions for P00_FIELD_UNFOLD_ */
 #define P00_COMMA_AUTO AUTO,
-#define P00_COMMA__ AUTO,
+#define P00_COMMA__ VOID,
 #define P00_COMMA_VOID VOID,
 #define P00_COMMA_BITFIELD BITFIELD,
 #define P00_COMMA_ARRAY ARRAY,
@@ -527,15 +527,7 @@
   (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, P00_GET_FIRST NAME, P00_GET_SECOND TYPE1_TYPE2, P00_GET_SECOND NAME)) \
   (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, NAME, P00_GET_SECOND TYPE1_TYPE2, NAME))
 
-#ifndef MR_COMPARE_FIELDS_EXT
-#define MR_COMPARE_FIELDS_EXT(...) true
-/*
-  if your types contains only builtin types then you can do more precies comparation.
-  #undef MR_COMPARE_FIELDS_EXT
-  #define MR_COMPARE_FIELDS_EXT(TYPE1, NAME1, TYPE2, NAME2) __builtin_types_compatible_p (__typeof__ (((TYPE1*)0)->NAME1), __typeof__ (((TYPE2*)0)->NAME2))
-*/
-#endif /* MR_COMPARE_FIELDS_EXT */
-#define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) == offsetof (TYPE2, NAME2)) && (sizeof (((TYPE1*)0)->NAME1) == sizeof (((TYPE2*)0)->NAME2)) && MR_COMPARE_FIELDS_EXT (TYPE1, NAME1, TYPE2, NAME2)
+#define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) == offsetof (TYPE2, NAME2)) && __builtin_types_compatible_p (__typeof__ (((TYPE1*)0)->NAME1), __typeof__ (((TYPE2*)0)->NAME2))
 
 /* Macroses for prototypes generation mode */
 #define MR_TYPEDEF_STRUCT_PROTO(ID, MR_TYPE_NAME) typedef struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) MR_TYPE_NAME; struct MR_TYPEDEF_PREFIX (MR_TYPE_NAME) {
