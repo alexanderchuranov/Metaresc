@@ -250,7 +250,7 @@ TYPEDEF_STRUCT (mr_func_name_t,
 		(const char *, name))
 
 TYPEDEF_STRUCT (mr_ra_fn_t,
-		(mr_func_name_t *, ra, , , { .offset = offsetof (mr_ra_fn_t, size) }, "offset"),
+		(mr_func_name_t *, ra, , , { .size_field_offset = offsetof (mr_ra_fn_t, size) }, "size_field_offset"),
 		(ssize_t, size),
 		(ssize_t, alloc_size))
 

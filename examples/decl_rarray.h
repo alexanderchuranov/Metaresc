@@ -9,6 +9,6 @@ TYPEDEF_STRUCT (employee_t,
 
 TYPEDEF_STRUCT (organization_t,
                 (char *, name),
-		(employee_t *, employees, /* suffix */ , /* meta */ , { "size" }, "string"),
+		(employee_t *, employees, /* suffix */ , /* meta */ , { "size" }, "size_field_name"),
 		VOID (ssize_t, size),
                 )

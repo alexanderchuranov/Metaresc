@@ -24,7 +24,7 @@ TYPEDEF_STRUCT (stack_trace_t,
 		(const char *, filename),
 		(const char *, function),
 		(int, line),
-		(mr_ptr_t *, stack, , "type", { .offset = offsetof (stack_trace_t, size), }, "offset"),
+		(mr_ptr_t *, stack, , "type", { .size_field_offset = offsetof (stack_trace_t, size), }, "size_field_offset"),
 		(ssize_t, size),
 		(char *, type))
 

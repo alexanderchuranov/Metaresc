@@ -313,9 +313,9 @@ START_TEST (backward_ref_is_a_field) {
 } END_TEST
 
 TYPEDEF_STRUCT (two_dynamic_arrays_t,
-		(int *, da1, , "dynamic array one", { .offset = offsetof (two_dynamic_arrays_t, size1), }, "offset"),
+		(int *, da1, , "dynamic array one", { .size_field_offset = offsetof (two_dynamic_arrays_t, size1), }, "size_field_offset"),
 		(ssize_t, size1),
-		(int *, da2, , "dynamic array two", { .offset = offsetof (two_dynamic_arrays_t, size2), }, "offset"),
+		(int *, da2, , "dynamic array two", { .size_field_offset = offsetof (two_dynamic_arrays_t, size2), }, "size_field_offset"),
 		(ssize_t, size2),
 		);
 
@@ -669,7 +669,7 @@ TYPEDEF_STRUCT (int_array_t,
 
 TYPEDEF_STRUCT (pointer_to_array_t,
 		(int_array_t *, array_ptr),
-		(int *, da, , "dynamic array", { .offset = offsetof (pointer_to_array_t, size), }, "offset"),
+		(int *, da, , "dynamic array", { .size_field_offset = offsetof (pointer_to_array_t, size), }, "size_field_offset"),
 		(ssize_t, size),
 		);
 

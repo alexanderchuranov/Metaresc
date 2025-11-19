@@ -5,13 +5,15 @@
 
 TYPEDEF_STRUCT (mr_type_ref_t, ATTRIBUTES ( , "type desciptor and list of type indexes that reffers this type"),
 		(mr_td_t *, tdp, , "type defscriptor"),
-		(unsigned *, ref, , "list of type indexes that reffer to this type", { .offset = offsetof (mr_type_ref_t, size), }, "offset"),
+		(unsigned *, ref, , "list of type indexes that reffer to this type",
+		 { .size_field_offset = offsetof (mr_type_ref_t, size), }, "size_field_offset"),
 		(ssize_t, size, , "size of ref list"),
 		(ssize_t, alloc_size, , "allocated size of ref list"),
 		);
 
 TYPEDEF_STRUCT (mr_types_dep_t, ATTRIBUTES ( , "graph of types dependencies"),
-		(mr_type_ref_t *, types, , "all struct and unions", { .offset = offsetof (mr_types_dep_t, size), }, "offset"),
+		(mr_type_ref_t *, types, , "all struct and unions",
+		 { .size_field_offset = offsetof (mr_types_dep_t, size), }, "size_field_offset"),
 		(ssize_t, size, , "size of types list"),
 		(ssize_t, alloc_size, , "allocated size of types list"),
 		(mr_ic_t, index, , "lookup by tdp"),

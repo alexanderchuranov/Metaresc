@@ -7,7 +7,7 @@
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		int size,
 		);
 
@@ -23,7 +23,7 @@ START_TEST (resizable_array) {
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_bool_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		bool size,
 		);
 
@@ -39,7 +39,7 @@ START_TEST (resizable_array_size_as_bool) {
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int8_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		int8_t size,
 		);
 
@@ -55,7 +55,7 @@ START_TEST (resizable_array_size_as_int8) {
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int16_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		int16_t size,
 		);
 
@@ -71,7 +71,7 @@ START_TEST (resizable_array_size_as_int16) {
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int32_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		int32_t size,
 		);
 
@@ -87,7 +87,7 @@ START_TEST (resizable_array_size_as_int32) {
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_int64_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		int64_t size,
 		);
 
@@ -103,7 +103,7 @@ START_TEST (resizable_array_size_as_int64) {
 /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_size_as_bitfield_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		(int8_t, size, :3),
 		);
 
@@ -125,7 +125,7 @@ TYPEDEF_ENUM (array_size_t,
 	      );
 
 TYPEDEF_STRUCT (resizable_array_size_as_enum_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		(array_size_t, size),
 		);
 
@@ -143,7 +143,7 @@ START_TEST (resizable_array_size_as_enum) {
 #define CMP_RPTR_SIZEPTR(TYPE, X, Y, ...) ((*(X)->size != *(Y)->size) || memcmp ((X)->data, (Y)->data, *(X)->size))
 
 TYPEDEF_STRUCT (resizable_array_size_as_int_ptr_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		(int *, size),
 		);
 
@@ -159,7 +159,7 @@ START_TEST (resizable_array_size_as_int_ptr) {
   /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_without_size_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		VOID (int, size),
 		);
 
@@ -175,7 +175,7 @@ START_TEST (resizable_array_without_size) {
   /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_casted_by_offset_t,
-		(int8_t *, data, , , { .offset = offsetof (resizable_array_casted_by_offset_t, size) }, "offset"),
+		(int8_t *, data, , , { .size_field_offset = offsetof (resizable_array_casted_by_offset_t, size) }, "size_field_offset"),
 		int size,
 		);
 
@@ -191,7 +191,7 @@ START_TEST (resizable_array_casted_by_offset) {
   /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_without_size_casted_by_offset_t,
-		(int8_t *, data, , , { .offset = offsetof (resizable_array_without_size_casted_by_offset_t, size) }, "offset"),
+		(int8_t *, data, , , { .size_field_offset = offsetof (resizable_array_without_size_casted_by_offset_t, size) }, "size_field_offset"),
 		VOID (int, size),
 		);
 
@@ -207,7 +207,7 @@ START_TEST (resizable_array_without_size_casted_by_offset) {
   /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_casted_by_string_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		int size,
 		);
 
@@ -223,7 +223,7 @@ START_TEST (resizable_array_casted_by_string) {
   /********************************************************************************************************/
 
 TYPEDEF_STRUCT (resizable_array_without_size_casted_by_string_t,
-		(int8_t *, data, , , { "size" }, "string"),
+		(int8_t *, data, , , { "size" }, "size_field_name"),
 		VOID (int, size),
 		);
 
@@ -260,7 +260,7 @@ START_TEST (resizable_mr_ptr) {
 #define TEST_METHODS XDR
 
 TYPEDEF_STRUCT (resizable_array_as_opaque_data_t,
-		(int8_t *, MR_OPAQUE_DATA, , , { "size" }, "string"),
+		(int8_t *, MR_OPAQUE_DATA, , , { "size" }, "size_field_name"),
 		VOID (int, size),
 		);
 

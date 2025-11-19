@@ -9,7 +9,7 @@
 #define TEST_PERFORMANCE(METHOD, ...)					\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
-  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "string"), (ssize_t, size), (char *, ptr_type)); \
+  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "size_field_name"), (ssize_t, size), (char *, ptr_type)); \
 									\
   int test_run (int count)						\
   {									\

@@ -1911,7 +1911,7 @@ void mr_augment_fields (mr_td_t * tdp)
 
 	  if (length_field_fdp != NULL)
 	    {
-	      fdp->res_type = "string";
+	      fdp->res_type = "size_field_name";
 	      fdp->res.string = length_field_fdp->name.str;
 	    }
 	}

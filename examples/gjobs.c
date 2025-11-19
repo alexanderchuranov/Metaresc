@@ -36,7 +36,7 @@ TYPEDEF_STRUCT (job_t,
 		string_t Application,
 		string_t Category,
 		(update_t, Update),
-		(person_t *, Developers, /* suffix */, /* meta */, { .offset = offsetof (job_t, Developers_size) }, "offset"),
+		(person_t *, Developers, /* suffix */, /* meta */, { .size_field_offset = offsetof (job_t, Developers_size) }, "size_field_offset"),
 		VOID (ssize_t, Developers_size),
 		(person_t, Contact),
 		string_t Requirements,
@@ -45,7 +45,7 @@ TYPEDEF_STRUCT (job_t,
 		)
 
 TYPEDEF_STRUCT (helping_t,
-		(job_t *, Jobs, /* suffix */ , /* meta */, { .offset = offsetof (helping_t, Jobs_size) }, "offset" ),
+		(job_t *, Jobs, /* suffix */ , /* meta */, { .size_field_offset = offsetof (helping_t, Jobs_size) }, "size_field_offset" ),
 		VOID (ssize_t, Jobs_size),
 		)
 

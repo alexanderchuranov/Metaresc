@@ -960,9 +960,9 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
   mr_fd_t * fdp = ptrs->ra[idx].fdp;
   if (fdp->res_type != NULL)
     {
-      if (0 == strcmp ("offset", fdp->res_type))
+      if (0 == strcmp ("size_field_offset", fdp->res_type))
 	name = ""; /* detect case if size field defined by offset */
-      else if (0 == strcmp ("string", fdp->res_type))
+      else if (0 == strcmp ("size_field_name", fdp->res_type))
 	if (mr_get_any_fd_by_name (fdp->res.string, NULL) != NULL)
 	  name = fdp->res.string; /* detect case if size field defined by name */
     }
@@ -989,7 +989,7 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
 
   /* lookup for a size field in this parent */
   if (0 == name[0])
-    parent_fdp = mr_get_fd_by_offset (parent_tdp, fdp->res.offset);
+    parent_fdp = mr_get_fd_by_offset (parent_tdp, fdp->res.size_field_offset);
   else
     parent_fdp = mr_get_fd_by_name (parent_tdp, name);
   /* quit if size field was not found in parent structure */

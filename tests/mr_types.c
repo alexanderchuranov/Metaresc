@@ -526,9 +526,9 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (complex float, cf),
 		     (complex double, cd),
 		     (complex long double, cld),
-		     (int *, sized_ptr, , "meta", { .string = "sized_ptr_size" }, "string"),
+		     (int *, sized_ptr, , "meta", { .size_field_name = "sized_ptr_size" }, "size_field_name"),
 		     (int, sized_ptr_size),
-		     (int, sized_array, [2], "meta", { .string = "sized_array_size" }, "string"),
+		     (int, sized_array, [2], "meta", { .size_field_name = "sized_array_size" }, "size_field_name"),
 		     (int, sized_array_size),
 		     (embeded_union_t, discriminated_union, , "discriminated_union_discriminator"),
 		     (char *, discriminated_union_discriminator),
@@ -575,7 +575,7 @@ START_TEST (dump_struct_types_detection) {
 	    {
 	      ck_assert_msg (dst_fdp->res_type != NULL, "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
 	      ck_assert_msg (0 == strcmp (mr_fdp->res_type, dst_fdp->res_type), "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
-	      if ((0 == strcmp (mr_fdp->res_type, "string")) && (mr_fdp->res.string != NULL))
+	      if ((0 == strcmp (mr_fdp->res_type, "size_field_name")) && (mr_fdp->res.string != NULL))
 		{
 		  ck_assert_msg (dst_fdp->res.string != NULL, "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);
 		  ck_assert_msg (0 == strcmp (mr_fdp->res.string, dst_fdp->res.string), "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);

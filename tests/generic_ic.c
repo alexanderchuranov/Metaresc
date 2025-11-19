@@ -17,7 +17,7 @@ TYPEDEF_STRUCT (struct_2fields_t, int x, int y);
 TYPEDEF_STRUCT (type_samples_t,
 		string_t type,
 		size_t samples_size,
-		(mr_ptr_t *, samples, , "type", { .offset = offsetof (type_samples_t, samples_size) }, "offset"));
+		(mr_ptr_t *, samples, , "type", { .size_field_offset = offsetof (type_samples_t, samples_size) }, "size_field_offset"));
 
 void func_zero (void) {}
 void func_one (void) {}

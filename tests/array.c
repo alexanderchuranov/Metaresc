@@ -387,7 +387,7 @@ START_TEST (string_ptr_array)
 } END_TEST
 
 TYPEDEF_STRUCT (dynamically_limitted_array_t,
-		(int32_t, x, [2], "meta", { "size" }, "string"),
+		(int32_t, x, [2], "meta", { "size" }, "size_field_name"),
 		(int32_t, size)
 		);
 
