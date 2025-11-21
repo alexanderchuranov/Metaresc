@@ -707,20 +707,20 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
   if (NULL != find)
     return (find);
 
-  if (ic->items_count > sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
+  if (ic->items_count > sizeof (ic->static_array) / sizeof (ic->static_array[0]))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, ic->items_count);
       ic->items_count = 0;
     }
 
-  if (ic->items_count == sizeof (ic->static_array.static_array) / sizeof (ic->static_array.static_array[0]))
+  if (ic->items_count == sizeof (ic->static_array) / sizeof (ic->static_array[0]))
     {
       mr_ic_t dst_ic;
       mr_status_t status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
 	return (NULL);
 
-      status = mr_ic_index (&dst_ic, ic->static_array.static_array, sizeof (ic->static_array.static_array));
+      status = mr_ic_index (&dst_ic, ic->static_array, sizeof (ic->static_array));
       if (MR_SUCCESS != status)
 	return (NULL);
 
@@ -728,7 +728,7 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
       return (mr_ic_add (ic, key));
     }
 
-  mr_ptr_t * add = &ic->static_array.static_array[ic->items_count++];
+  mr_ptr_t * add = &ic->static_array[ic->items_count++];
   *add = key;
   return (add);
 }
@@ -740,10 +740,10 @@ mr_ic_static_array_del (mr_ic_t * ic, mr_ptr_t key)
   if (NULL == find)
     return (MR_FAILURE);
 
-  ptrdiff_t offset = (char*)find - (char*)&ic->static_array.static_array[0];
+  ptrdiff_t offset = (char*)find - (char*)&ic->static_array[0];
   --ic->items_count;
-  memmove (find, &find[1], ic->items_count * sizeof (ic->static_array.static_array[0]) - offset);
-  ic->static_array.static_array[ic->items_count].intptr = 0;
+  memmove (find, &find[1], ic->items_count * sizeof (ic->static_array[0]) - offset);
+  ic->static_array[ic->items_count].intptr = 0;
   return (MR_SUCCESS);
 }
 
@@ -752,8 +752,8 @@ mr_ic_static_array_find (mr_ic_t * ic, mr_ptr_t key)
 {
   int i;
   for (i = 0; i < ic->items_count; ++i)
-    if (0 == ic->compar_fn (key, ic->static_array.static_array[i], ic->context.data.ptr))
-      return (&ic->static_array.static_array[i]);
+    if (0 == ic->compar_fn (key, ic->static_array[i], ic->context.data.ptr))
+      return (&ic->static_array[i]);
   return (NULL);
 }
 
@@ -762,7 +762,7 @@ mr_ic_static_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context
 {
   unsigned i;
   for (i = 0; i < ic->items_count; ++i)
-    if (MR_SUCCESS != visit_fn (ic->static_array.static_array[i], context))
+    if (MR_SUCCESS != visit_fn (ic->static_array[i], context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
 }
@@ -771,13 +771,13 @@ void
 mr_ic_static_array_free (mr_ic_t * ic)
 {
   ic->items_count = 0;
-  memset (&ic->static_array.static_array, 0, sizeof (ic->static_array.static_array));
+  memset (&ic->static_array, 0, sizeof (ic->static_array));
 }
 
 mr_status_t
 mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
-  if (size > sizeof (ic->static_array.static_array))
+  if (size > sizeof (ic->static_array))
     {
       mr_status_t status = mr_ic_sorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)

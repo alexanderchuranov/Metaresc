@@ -202,10 +202,6 @@ TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collect
 		(bool, zero_key, : 1),
 		)
 
-TYPEDEF_STRUCT (mr_ic_static_array_t, ATTRIBUTES ( , "indexed collection for small sets"),
-		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_t) / sizeof (mr_ptr_t)], "key_type"),
-		)
-
 TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed)), "tree traverse to the left/right"),
 	      (MR_LEFT, = 0),
 	      (MR_RIGHT, = 1),
@@ -281,7 +277,8 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(void *, void_ptr, [0], "default serialization"),
 		(mr_ic_rarray_t, rarray),
 		(mr_ic_hash_t, hash),
-		(mr_ic_static_array_t, static_array),
+		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_t) / sizeof (mr_ptr_t)],
+		 "key_type", { .count_field_offset = offsetof (mr_ic_t, items_count), }, "count_field_offset"),
 		(mr_tree_t, rb),
 		(mr_tree_t, avl),
 		(mr_tree_t, tree),
