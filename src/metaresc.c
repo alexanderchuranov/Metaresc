@@ -1887,8 +1887,6 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
 
 void mr_augment_fields (mr_td_t * tdp)
 {
-  if ((tdp->td_producer != MR_TDP_DUMP_STRUCT) && (tdp->td_producer != MR_TDP_DWARF))
-    return;
   if ((tdp->mr_type != MR_TYPE_STRUCT) && (tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION))
     return;
 
@@ -1900,7 +1898,8 @@ void mr_augment_fields (mr_td_t * tdp)
 	continue;
 
       int name_length = strlen (fdp->name.str);
-      if ((fdp->stype.mr_type == MR_TYPE_POINTER) || (fdp->stype.mr_type == MR_TYPE_ARRAY))
+      if (((fdp->stype.mr_type == MR_TYPE_POINTER) || (fdp->stype.mr_type == MR_TYPE_ARRAY)) &&
+	  (fdp->res_type == NULL))
 	{
 	  char count_field[name_length + sizeof (MR_POINTER_COUNT_SUFFIX_STR)];
 	  strcpy (count_field, fdp->name.str);
@@ -1931,8 +1930,9 @@ void mr_augment_fields (mr_td_t * tdp)
 	    }
 	}
 
-      if ((fdp->stype.mr_type == MR_TYPE_UNION) || (fdp->stype.mr_type == MR_TYPE_ANON_UNION) ||
-	  (fdp->stype.mr_type_aux == MR_TYPE_UNION) || (fdp->stype.mr_type_aux == MR_TYPE_ANON_UNION))
+      if (((fdp->stype.mr_type == MR_TYPE_UNION) || (fdp->stype.mr_type == MR_TYPE_ANON_UNION) ||
+	   (fdp->stype.mr_type_aux == MR_TYPE_UNION) || (fdp->stype.mr_type_aux == MR_TYPE_ANON_UNION)) &&
+	  ((fdp->meta == NULL) || (0 == fdp->meta[0])))
 	{
 	  char ud_field[name_length + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX_STR)];
 	  strcpy (ud_field, fdp->name.str);
