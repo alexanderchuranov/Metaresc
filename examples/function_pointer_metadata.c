@@ -23,11 +23,9 @@ int print_func_field_signature (mr_fd_t const * fdp)
       return (EXIT_FAILURE);
     }
 
-  size_t const num_args = fdp->func_param.size / sizeof (fdp->func_param.args[0]);
-
   printf ("%s (*) (", fdp->func_param.args[0]->type);
 
-  for (i = 1; i < num_args; ++i)
+  for (i = 1; i < fdp->func_param.args_count; ++i)
     {
       if (i > 1)
 	printf(", ");

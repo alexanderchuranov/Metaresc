@@ -31,13 +31,13 @@ int print_array_field_info (mr_td_t * td, char name[])
       return (EXIT_FAILURE);
     }
 
-  printf("field declaration: %s %s", fdp->stype.type, fdp->name.str);
+  printf ("field declaration: %s %s", fdp->stype.type, fdp->name.str);
 
   int i;
-  for (i = 0; i < fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]); ++i)
-    printf("[%d]", (int)fdp->stype.dim.dim[i]);
+  for (i = 0; i < fdp->stype.dim.dim_count; ++i)
+    printf ("[%d]", (int)fdp->stype.dim.dim[i]);
 
-  printf("\n");
+  printf ("\n");
 
   return (EXIT_SUCCESS);
 }

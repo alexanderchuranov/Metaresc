@@ -339,8 +339,8 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
 		(mr_stype_t **, args, , "function arguments saved as resizable array of pointers on structured types",
-		{ .size_field_offset = offsetof (mr_func_param_t, size) }, "size_field_offset"), 
-		(ssize_t, size, , "size of args array"),
+		{ .count_field_offset = offsetof (mr_func_param_t, args_count) }, "count_field_offset"), 
+		(ssize_t, args_count, , "size of args array"),
 		)
 
 #define MR_FIELD_PARAM_UNION_UDO				\

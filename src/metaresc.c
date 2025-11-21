@@ -1105,7 +1105,7 @@ mr_init_func (mr_td_t * tdp)
 
   int i;
   for (i = 0; tdp->param.func_param.args[i] != NULL; ++i);
-  tdp->param.func_param.size = i * sizeof (tdp->param.func_param.args[0]);
+  tdp->param.func_param.args_count = i;
 }
 
 /**
@@ -1487,7 +1487,7 @@ mr_func_field_detect (mr_fd_t * fdp)
   int i;
   for (i = 0; fdp->func_param.args[i] != NULL; ++i)
     mr_detect_structured_type (fdp->func_param.args[i]);
-  fdp->func_param.size = i * sizeof (fdp->func_param.args[0]);
+  fdp->func_param.args_count = i;
 }
 
 static mr_status_t
@@ -1611,8 +1611,8 @@ mr_detect_func_args_types (mr_td_t * tdp)
   if (tdp->mr_type != MR_TYPE_FUNC_TYPE)
     return;
 
-  int i, count = tdp->param.func_param.size / sizeof (tdp->param.func_param.args[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < tdp->param.func_param.args_count; ++i)
     mr_detect_structured_type (tdp->param.func_param.args[i]);
 }
 
