@@ -1285,7 +1285,7 @@ mr_type_is_an_array (mr_stype_t * stype, char * type)
   if ((i > 0) &&
       !((stype->mr_type == MR_TYPE_CHAR_ARRAY) && (i == 1)))
     {
-      dim.size = i * sizeof (dim.dim[0]);
+      dim.dim_count = i;
       stype->dim = dim;
       stype->is_array = true;
     }
@@ -1457,7 +1457,7 @@ mr_detect_structured_type (mr_stype_t * stype)
       int i;
       if (MR_TYPE_POINTER == stype->mr_type_aux)
 	stype->size = sizeof (void*);
-      for (i = stype->dim.size / sizeof (stype->dim.dim[0]) - 1; i >= 0; --i)
+      for (i = stype->dim.dim_count - 1; i >= 0; --i)
 	stype->size *= stype->dim.dim[i];
     }
 }

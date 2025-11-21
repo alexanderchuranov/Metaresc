@@ -787,7 +787,7 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
       else
 	fdp->stype.dim.dim[j - 1] *= dimension;
     }
-  fdp->stype.dim.size = j * sizeof (fdp->stype.dim.dim[0]);
+  fdp->stype.dim.dim_count = j;
 }
 
 static void
@@ -1317,10 +1317,10 @@ process_td (mr_ptr_t key, void * context)
 
 	if (MR_TYPE_ARRAY == fdp->stype.mr_type)
 	  {
-	    int j, count = fdp->stype.dim.size / sizeof (fdp->stype.dim.dim[0]);
-	    for (j = 0; j < count; ++j)
+	    int j;
+	    for (j = 0; j < fdp->stype.dim.dim_count; ++j)
 	      fdp->stype.size *= fdp->stype.dim.dim[j];
-	    if ((fdp->stype.dim.size == sizeof (fdp->stype.dim.dim[0])) && (MR_TYPE_CHAR == fdp->stype.mr_type_aux))
+	    if ((fdp->stype.dim.dim_count == 1) && (MR_TYPE_CHAR == fdp->stype.mr_type_aux))
 	      fdp->stype.mr_type = MR_TYPE_CHAR_ARRAY;
 	  }
       }

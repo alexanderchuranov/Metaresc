@@ -102,12 +102,12 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
       
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
 	{
-	  ck_assert_msg (mr_fdp->stype.dim.size == dw_fdp->stype.dim.size,
-			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim.size %d != %d",
+	  ck_assert_msg (mr_fdp->stype.dim.dim_count == dw_fdp->stype.dim.dim_count,
+			 "DWARF descriptor for type '%s' mismatched builtin: field '%s' array dimensions %d != %d",
 			 mr_td->type.str, mr_fdp->name.str,
-			 (int)mr_fdp->stype.dim.size, (int)dw_fdp->stype.dim.size);
+			 (int)mr_fdp->stype.dim.dim_count, (int)dw_fdp->stype.dim.dim_count);
 
-	  for (j = 0; j < mr_fdp->stype.dim.size / sizeof (mr_fdp->stype.dim.dim[0]); ++j)
+	  for (j = 0; j < mr_fdp->stype.dim.dim_count; ++j)
 	    ck_assert_msg (mr_fdp->stype.dim.dim[j] == dw_fdp->stype.dim.dim[j],
 			   "DWARF descriptor for type '%s' mismatched builtin: field '%s' dim[%d] %d != %d",
 			   mr_td->type.str, mr_fdp->name.str, j,

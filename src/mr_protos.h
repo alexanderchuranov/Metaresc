@@ -303,8 +303,8 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 		)
 
 TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
-		(uint32_t, dim, [4], "up to 4 dimensions", { .size_field_offset = offsetof (mr_array_dimensions_t, size) }, "size_field_offset"),
-		(uint32_t, size, , "size of 'dim' array"),
+		(uint32_t, dim, [4], "up to 4 dimensions", { .count_field_offset = offsetof (mr_array_dimensions_t, dim_count) }, "count_field_offset"),
+		(uint32_t, dim_count, , "count of used elements in 'dim' array"),
 		)
 
 TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),

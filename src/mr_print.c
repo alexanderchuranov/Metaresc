@@ -39,7 +39,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_clas
 	  __fd__.stype.mr_type_aux = __fd__.stype.mr_type;		\
 	  __fd__.stype.mr_type = MR_TYPE_ARRAY;				\
 	  __fd__.stype.dim.dim[0] = size / __fd__.stype.tdp->size;	\
-	  __fd__.stype.dim.size = sizeof (__fd__.stype.dim.dim[0]);	\
+	  __fd__.stype.dim.dim_count = 1;				\
 	}								\
       mr_save (__ptr__, &__fd__);					\
     })

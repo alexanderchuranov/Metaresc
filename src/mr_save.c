@@ -1188,7 +1188,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   fd_.offset = 0;
   fd_.stype.size /= count;
 
-  if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
+  if (fd_.stype.dim.dim_count == 1)
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux;
       fd_.stype.mr_type_aux = fd_.mr_type_base;
@@ -1227,8 +1227,8 @@ mr_save_array (mr_save_data_t * mr_save_data)
     }
   else
     {
-      fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
-      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[0], fd_.stype.dim.size);
+      --fd_.stype.dim.dim_count;
+      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[0], fd_.stype.dim.dim_count * sizeof (fd_.stype.dim.dim[0]));
     }
 
   for (i = 0; i < count; )

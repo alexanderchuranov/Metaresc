@@ -592,8 +592,8 @@
       sizeof (A2) / sizeof (A3),					\
       sizeof (A3) / sizeof (TYPE),					\
     },									\
-    .size = sizeof (((mr_array_dimensions_t*)0)->dim) -			\
-    sizeof (((mr_array_dimensions_t*)0)->dim[0]) *			\
+    .dim_count = sizeof (((mr_array_dimensions_t*)0)->dim) /		\
+    sizeof (((mr_array_dimensions_t*)0)->dim[0]) -			\
     (__builtin_types_compatible_p (TYPE, __typeof__ (A1)) +		\
      __builtin_types_compatible_p (TYPE, __typeof__ (A2)) +		\
      __builtin_types_compatible_p (TYPE, __typeof__ (A3))		\
@@ -1080,7 +1080,7 @@
 	  __fd__.stype.is_array = true;					\
 	  __fd__.stype.size = sizeof (S_PTR);				\
 	  __fd__.stype.dim.dim[0] = (0 + sizeof (S_PTR)) / sizeof (*__src__); \
-	  __fd__.stype.dim.size = sizeof (__fd__.stype.dim.dim[0]);	\
+	  __fd__.stype.dim.dim_count = 1;				\
 	}								\
       mr_detect_type (&__fd__);						\
       mr_save (__src__, &__fd__);					\

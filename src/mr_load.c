@@ -645,15 +645,15 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   fd_.offset = 0;
   fd_.stype.size /= count;
 
-  if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
+  if (fd_.stype.dim.dim_count == 1)
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux; /* prepare copy of filed descriptor for array elements loading */
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
     }
   else
     {
-      fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
-      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[1], fd_.stype.dim.size);
+      --fd_.stype.dim.dim_count;
+      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[1], fd_.stype.dim.dim_count * sizeof (fd_.stype.dim.dim[0]));
     }
 
   /* loop on subnodes */

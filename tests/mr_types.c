@@ -595,11 +595,11 @@ START_TEST (dump_struct_types_detection) {
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
 	{
 	  int j;
-	  ck_assert_msg (mr_fdp->stype.dim.size == dst_fdp->stype.dim.size,
-			 "dump_struct mismatched array_param.size (%d != %d) for field '%s'",
-			 (int)mr_fdp->stype.dim.size, (int)dst_fdp->stype.dim.size, mr_fdp->name.str);
+	  ck_assert_msg (mr_fdp->stype.dim.dim_count == dst_fdp->stype.dim.dim_count,
+			 "dump_struct mismatched array dimensions (%d != %d) for field '%s'",
+			 (int)mr_fdp->stype.dim.dim_count, (int)dst_fdp->stype.dim.dim_count, mr_fdp->name.str);
 
-	  for (j = 0; j < mr_fdp->stype.dim.size / sizeof (mr_fdp->stype.dim.dim[0]); ++j)
+	  for (j = 0; j < mr_fdp->stype.dim.dim_count; ++j)
 	    ck_assert_msg (mr_fdp->stype.dim.dim[j] == dst_fdp->stype.dim.dim[j],
 			   "dump_struct mismatched dim[%d] (%d != %d) for field '%s'",
 			   j, (int)mr_fdp->stype.dim.dim[j], (int)dst_fdp->stype.dim.dim[j], mr_fdp->name.str);

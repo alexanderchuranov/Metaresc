@@ -868,7 +868,7 @@ xdr_save_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   /* only for single dimensional arrays store actual size */
   if (!ptrs->ra[idx].fdp->non_persistent)
-    if ((ptrs->ra[idx].fdp->stype.dim.size == sizeof (ptrs->ra[idx].fdp->stype.dim.dim[0])) &&
+    if ((ptrs->ra[idx].fdp->stype.dim.dim_count == 1) &&
 	(ptrs->ra[idx].fdp->stype.dim.dim[0] != 0))
       if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
 	return (MR_FAILURE);
@@ -895,7 +895,7 @@ xdr_load_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   fd_.non_persistent = true;
   fd_.stype.size /= count;
 
-  if (fd_.stype.dim.size == sizeof (fd_.stype.dim.dim[0]))
+  if (fd_.stype.dim.dim_count == 1)
     {
       fd_.stype.mr_type = fd_.stype.mr_type_aux;
       fd_.stype.mr_type_aux = fd_.stype.tdp ? fd_.stype.tdp->mr_type : MR_TYPE_VOID;
@@ -917,8 +917,8 @@ xdr_load_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     }
   else
     {
-      fd_.stype.dim.size -= sizeof (fd_.stype.dim.dim[0]);
-      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[1], fd_.stype.dim.size);
+      --fd_.stype.dim.dim_count;
+      memmove (&fd_.stype.dim.dim[0], &fd_.stype.dim.dim[1], fd_.stype.dim.dim_count * sizeof (fd_.stype.dim.dim[0]));
     }
 
   for (i = 0; i < count; ++i)
