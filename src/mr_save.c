@@ -954,22 +954,21 @@ mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->offset) offset)
 void
 mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
-  char * name = NULL;
   memset (ptrdes, 0, sizeof (*ptrdes));
 
   mr_fd_t * fdp = ptrs->ra[idx].fdp;
-  if (fdp->res_type != NULL)
-    {
-      if (0 == strcmp ("size_field_offset", fdp->res_type))
-	name = ""; /* detect case if size field defined by offset */
-      else if (0 == strcmp ("size_field_name", fdp->res_type))
-	if (mr_get_any_fd_by_name (fdp->res.string, NULL) != NULL)
-	  name = fdp->res.string; /* detect case if size field defined by name */
-    }
-  
-  /* quit if size field is not defined */  
-  if (NULL == name)
+  if (fdp->res_type == NULL)
     return;
+
+  bool field_by_name = ((0 == strcmp ("size_field_name", fdp->res_type)) || (0 == strcmp ("count_field_name", fdp->res_type)));
+  bool field_by_offset = ((0 == strcmp ("size_field_offset", fdp->res_type)) || (0 == strcmp ("count_field_offset", fdp->res_type)));
+
+  if (!field_by_name && !field_by_offset)
+    return;
+
+  if (field_by_name)
+    if (mr_get_any_fd_by_name (fdp->res.string, NULL) == NULL)
+      return; /* quit if size field is not defined */
 
   mr_idx_t parent;
   /* traverse through parents up to first structure */
@@ -981,17 +980,17 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
   if (MR_NULL_IDX == parent)
     return;
 
-  mr_fd_t * parent_fdp;
   mr_td_t * parent_tdp = ptrs->ra[parent].fdp ? ptrs->ra[parent].fdp->stype.tdp : NULL;
   /* quit if structure type descriptor is missing */
   if (NULL == parent_tdp)
     return;
 
+  mr_fd_t * parent_fdp = NULL;
   /* lookup for a size field in this parent */
-  if (0 == name[0])
-    parent_fdp = mr_get_fd_by_offset (parent_tdp, fdp->res.size_field_offset);
-  else
-    parent_fdp = mr_get_fd_by_name (parent_tdp, name);
+  if (field_by_offset)
+    parent_fdp = mr_get_fd_by_offset (parent_tdp, fdp->res.offset);
+  if (field_by_name)
+    parent_fdp = mr_get_fd_by_name (parent_tdp, fdp->res.string);
   /* quit if size field was not found in parent structure */
   if (NULL == parent_fdp)
     return;
@@ -1000,6 +999,8 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
   ptrdes->mr_type = parent_fdp->stype.mr_type;
   ptrdes->mr_type_aux = parent_fdp->stype.mr_type_aux;
   ptrdes->data.ptr = (char*)ptrs->ra[parent].data.ptr + parent_fdp->offset; /* get an address of size field */
+  ptrdes->res.type = fdp->res_type;
+  ptrdes->res.data = fdp->res;
 }
 
 /**
@@ -1197,17 +1198,28 @@ mr_save_array (mr_save_data_t * mr_save_data)
 	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
 	  if (src.data.ptr != NULL)
 	    {
-	      ssize_t size;
-	      dst.data.ptr = &size;
-	      dst.mr_type = MR_TYPE_DETECT (typeof (size));
+	      ssize_t size_count;
+	      dst.data.ptr = &size_count;
+	      dst.mr_type = MR_TYPE_DETECT (typeof (size_count));
 	      mr_assign_int (&dst, &src);
-	      if (size <= 0)
+	      if (size_count <= 0)
 		count = 0;
 	      else
 		{
-		  mr_idx_t count_ = size / fd_.stype.size;
-		  if (count > count_)
-		    count = count_;
+		  /* We get to this execution branch only if src.data.ptr != NULL.
+		     In that case we will have src.res.data.string set to one of four possible values:
+		     1. size_field_offset
+		     2. size_field_name
+		     3. count_field_offset
+		     4. count_field_name
+
+		     By the first letter of this string we could determine that value is either size or count.
+		     In case of size we need to normalize size to count.
+		  */
+		  if (src.res.type[0] == 's')
+		    size_count /= fd_.stype.size;
+		  if (count > size_count)
+		    count = size_count;
 		}
 	    }
 	  mr_save_data->ptrs.ra[idx].MR_SIZE = count * fd_.stype.size;
@@ -1526,6 +1538,8 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
 	  dst.data.ptr = &ptrdes->MR_SIZE;
 	  dst.mr_type = MR_TYPE_DETECT (typeof (ptrdes->MR_SIZE));
 	  mr_assign_int (&dst, &src);
+	  if (src.res.type[0] == 'c') /* if pointer discriminated by count we need to scale MR_SIZE by element_size */
+	    ptrdes->MR_SIZE *= element_size;
 	}
 
       if (ptrdes->fdp->name.str != NULL)

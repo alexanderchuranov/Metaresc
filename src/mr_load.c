@@ -682,8 +682,19 @@ mr_pointer_set_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       
   if (dst.data.ptr != NULL)
     {
-      src.data.ptr = &ptrs->ra[idx].MR_SIZE;
-      src.mr_type = MR_TYPE_DETECT (__typeof__ (ptrs->ra[idx].MR_SIZE));
+      __typeof__ (ptrs->ra[idx].MR_SIZE) size = ptrs->ra[idx].MR_SIZE;
+      src.data.ptr = &size;
+      src.mr_type = MR_TYPE_DETECT (__typeof__ (size));
+      if (dst.res.type[0] == 'c')
+	{
+	  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+	  mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux);
+	  mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
+	  if (0 == element_size)
+	    element_size = tdp ? tdp->size : 0;
+	  if (0 != element_size)
+	    size /= element_size;
+	}
       mr_assign_int (&dst, &src);
     }
 }

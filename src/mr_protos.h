@@ -9,7 +9,10 @@ TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointe
 	       (void *, MR_OPAQUE_DATA, , "XDR opaque data", { MR_SIZE_STR }, "size_field_name"),
 	       (char *, string),
 	       (char *, size_field_name),
+	       (char *, count_field_name),
+	       (mr_offset_t, offset),
 	       (mr_offset_t, size_field_offset),
+	       (mr_offset_t, count_field_offset),
 	       (uintptr_t, uintptr),
 	       (intptr_t, intptr),
 	       )
