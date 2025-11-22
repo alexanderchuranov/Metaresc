@@ -869,7 +869,7 @@ mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
   mr_tree_traverse_t traverse;
   mr_tree_find (key, &ic->tree, ic->compar_fn, ic->context.data.ptr, &traverse);
   return (traverse.equal ?
-	  &ic->tree.pool[traverse.path[traverse.size / sizeof (traverse.path[0]) - 1].idx].key
+	  &ic->tree.pool[traverse.path[traverse.count - 1].idx].key
 	  : NULL);
 }
 

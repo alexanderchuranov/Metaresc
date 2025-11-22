@@ -86,40 +86,38 @@ mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, void * context)
 void
 mr_tree_next (mr_tree_t * tree, mr_tree_traverse_t * traverse, mr_child_idx_t next)
 {
-  unsigned traverse_size = traverse->size / sizeof (traverse->path[0]);
-  if (traverse_size <= 1)
+  if (traverse->count <= 1)
     return;
   
-  if (traverse->equal || (traverse->path[traverse_size - 1].child_idx == next))
+  if (traverse->equal || (traverse->path[traverse->count - 1].child_idx == next))
     {
-      unsigned idx = traverse->path[traverse_size - 1].idx;
-      traverse->path[traverse_size - 1].child_idx = next;
+      unsigned idx = traverse->path[traverse->count - 1].idx;
+      traverse->path[traverse->count - 1].child_idx = next;
       if (tree->pool[idx].next[next].idx != NONE_IDX)
 	for (idx = tree->pool[idx].next[next].idx;
 	     idx != NONE_IDX;
 	     idx = tree->pool[idx].next[next ^ FLIP].idx)
-	  traverse->path[traverse_size++] = (typeof (traverse->path[0])){
+	  traverse->path[traverse->count++] = (typeof (traverse->path[0])){
 	    .idx = idx,
 	    .child_idx = next ^ FLIP,
 	  };
       else
-	while (--traverse_size > 1)
-	  if (traverse->path[traverse_size - 1].child_idx != next)
+	while (--traverse->count > 1)
+	  if (traverse->path[traverse->count - 1].child_idx != next)
 	    break;
     }
 
   traverse->equal = true;
-  traverse->size = traverse_size * sizeof (traverse->path[0]);
 }
 
 void
 mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_traverse_t * traverse)
 {
-  unsigned traverse_size = 0;
   bool equal = false;
   unsigned idx;
 
-  traverse->path[traverse_size++] = (typeof (traverse->path[0])){
+  traverse->count = 0;
+  traverse->path[traverse->count++] = (typeof (traverse->path[0])){
     .idx = NONE_IDX,
     .child_idx = MR_LEFT,
   };
@@ -131,7 +129,7 @@ mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * c
 	mr_child_idx_t child_idx = (cmp > 0) ? MR_RIGHT : MR_LEFT;
 
 	equal = (0 == cmp);
-	traverse->path[traverse_size++] = (typeof (traverse->path[0])){
+	traverse->path[traverse->count++] = (typeof (traverse->path[0])){
 	  .idx = idx,
 	  .child_idx = child_idx,
 	};
@@ -142,7 +140,6 @@ mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * c
       }
 
   traverse->equal = equal;
-  traverse->size = traverse_size * sizeof (traverse->path[0]);
 }
 
 static inline mr_ptr_t *
@@ -157,18 +154,18 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
 
   mr_tree_traverse_t traverse;
   mr_tree_find (key, tree, compar_fn, context, &traverse);
-  unsigned traverse_size = traverse.size / sizeof (traverse.path[0]);
+
   if (traverse.equal)
-    return (&tree->pool[traverse.path[traverse_size - 1].idx].key);
+    return (&tree->pool[traverse.path[traverse.count - 1].idx].key);
 
   unsigned idx = mr_tree_node_new (tree);
   if (NONE_IDX == idx)
     return (NULL);
 
-  traverse.path[traverse_size].idx = idx;
+  traverse.path[traverse.count].idx = idx;
   tree->pool[idx].key = key;
 
-  mr_tree_path_t * parent = &traverse.path[traverse_size - 1];
+  mr_tree_path_t * parent = &traverse.path[traverse.count - 1];
   tree->pool[parent->idx].next[parent->child_idx].idx = idx;
 
   rebalance (tree, &traverse);
@@ -185,24 +182,22 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
   if (!traverse.equal)
     return (MR_FAILURE);
 
-  unsigned traverse_size = traverse.size / sizeof (traverse.path[0]);
-  unsigned node = traverse.path[traverse_size - 1].idx;
+  unsigned node = traverse.path[traverse.count - 1].idx;
   unsigned del = node;
 
   if ((NONE_IDX == tree->pool[node].next[MR_LEFT].idx) || (NONE_IDX == tree->pool[node].next[MR_RIGHT].idx))
-    --traverse_size;
+    --traverse.count;
   else
     {
-      traverse.path[traverse_size - 1].child_idx = MR_RIGHT;
+      traverse.path[traverse.count - 1].child_idx = MR_RIGHT;
       for (del = tree->pool[node].next[MR_RIGHT].idx;
 	   tree->pool[del].next[MR_LEFT].idx != NONE_IDX;
 	   del = tree->pool[del].next[MR_LEFT].idx)
-	traverse.path[traverse_size++] = (typeof (traverse.path[0])){ .child_idx = MR_LEFT, .idx = del, };
-      traverse.path[traverse_size].idx = del;
+	traverse.path[traverse.count++] = (typeof (traverse.path[0])){ .child_idx = MR_LEFT, .idx = del, };
+      traverse.path[traverse.count].idx = del;
     }
-  traverse.size = traverse_size * sizeof (traverse.path[0]);
 
-  mr_tree_path_t * parent = &traverse.path[traverse_size - 1];
+  mr_tree_path_t * parent = &traverse.path[traverse.count - 1];
   tree->pool[parent->idx].next[parent->child_idx].idx =
     tree->pool[del].next[(tree->pool[del].next[MR_RIGHT].idx != NONE_IDX) ? MR_RIGHT : MR_LEFT].idx;
 
@@ -219,7 +214,7 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
 	return (MR_FAILURE);
       
       tree->pool[del] = tree->pool[last];
-      parent = &traverse.path[traverse.size / sizeof (traverse.path[0]) - 2];
+      parent = &traverse.path[traverse.count - 2];
       tree->pool[parent->idx].next[parent->child_idx].idx = del;
     }
 
@@ -341,18 +336,18 @@ mr_tree_grand_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t ch
 static inline void 
 mr_rbtree_rebalance_add (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 {
-  unsigned traverse_size = traverse->size / sizeof (traverse->path[0]);
+  unsigned traverse_count = traverse->count;
   mr_tree_path_t * path = traverse->path;
   
-  rbtree->pool[path[traverse_size].idx].rb.red = true;
+  rbtree->pool[path[traverse_count].idx].rb.red = true;
   
-  if (rbtree->pool[path[traverse_size - 1].idx].rb.red)
-    while ((traverse_size > 2) && rbtree->pool[path[traverse_size - 1].idx].rb.red)
+  if (rbtree->pool[path[traverse_count - 1].idx].rb.red)
+    while ((traverse_count > 2) && rbtree->pool[path[traverse_count - 1].idx].rb.red)
       {
-	unsigned node = path[traverse_size].idx;
-	unsigned parent = path[--traverse_size].idx;
-	unsigned grand_parent = path[--traverse_size].idx;
-	mr_child_idx_t parent_idx = path[traverse_size].child_idx;
+	unsigned node = path[traverse_count].idx;
+	unsigned parent = path[--traverse_count].idx;
+	unsigned grand_parent = path[--traverse_count].idx;
+	mr_child_idx_t parent_idx = path[traverse_count].child_idx;
 	unsigned uncle = rbtree->pool[grand_parent].next[parent_idx ^ FLIP].idx;
       
 	if (!rbtree->pool[uncle].rb.red)
@@ -363,11 +358,11 @@ mr_rbtree_rebalance_add (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 	      rbtree->pool[parent].rb.red = false;
 	    else
 	      {
-		mr_tree_rotate (rbtree, &path[traverse_size + 1], parent_idx ^ FLIP);
+		mr_tree_rotate (rbtree, &path[traverse_count + 1], parent_idx ^ FLIP);
 		rbtree->pool[node].rb.red = false;
 	      }
 
-	    mr_tree_rotate (rbtree, &path[traverse_size], parent_idx);
+	    mr_tree_rotate (rbtree, &path[traverse_count], parent_idx);
 	    rbtree->pool[grand_parent].rb.red = true;
 	    break;
 	  }
@@ -389,14 +384,14 @@ mr_rbtree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * 
 static void
 mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 {
-  unsigned traverse_size = traverse->size / sizeof (traverse->path[0]);
+  unsigned traverse_count = traverse->count;
   mr_tree_path_t * path = traverse->path;
   
-  if (!rbtree->pool[path[traverse_size].idx].rb.red)
-    for ( ; traverse_size > 0; --traverse_size)
+  if (!rbtree->pool[path[traverse_count].idx].rb.red)
+    for ( ; traverse_count > 0; --traverse_count)
       {
-	unsigned parent = path[traverse_size - 1].idx;
-	mr_child_idx_t child_idx = path[traverse_size - 1].child_idx;
+	unsigned parent = path[traverse_count - 1].idx;
+	mr_child_idx_t child_idx = path[traverse_count - 1].child_idx;
 	unsigned child = rbtree->pool[parent].next[child_idx].idx;
 	unsigned brother = rbtree->pool[parent].next[child_idx ^ FLIP].idx;
 
@@ -411,11 +406,11 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 	    rbtree->pool[brother].rb.red = false;
 	    rbtree->pool[parent].rb.red = true;
 	  
-	    mr_tree_rotate (rbtree, &path[traverse_size - 1], child_idx ^ FLIP);
+	    mr_tree_rotate (rbtree, &path[traverse_count - 1], child_idx ^ FLIP);
 	      
-	    path[traverse_size - 1].idx = brother;
-	    path[traverse_size].child_idx = child_idx;
-	    path[traverse_size++].idx = parent;
+	    path[traverse_count - 1].idx = brother;
+	    path[traverse_count].child_idx = child_idx;
+	    path[traverse_count++].idx = parent;
 	    brother = rbtree->pool[parent].next[child_idx ^ FLIP].idx;
 	  }
       
@@ -429,9 +424,9 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 		rbtree->pool[nephew].rb.red = false;
 		rbtree->pool[brother].rb.red = true;
 
-		path[traverse_size].idx = brother;
-		path[traverse_size - 1].child_idx ^= FLIP;
-		mr_tree_rotate (rbtree, &path[traverse_size], child_idx);
+		path[traverse_count].idx = brother;
+		path[traverse_count - 1].child_idx ^= FLIP;
+		mr_tree_rotate (rbtree, &path[traverse_count], child_idx);
 
 		brother = nephew;
 	      }
@@ -440,7 +435,7 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 	    rbtree->pool[parent].rb.red = false;
 	    rbtree->pool[rbtree->pool[brother].next[child_idx ^ FLIP].idx].rb.red = false;
 
-	    mr_tree_rotate (rbtree, &path[traverse_size - 1], child_idx ^ FLIP);
+	    mr_tree_rotate (rbtree, &path[traverse_count - 1], child_idx ^ FLIP);
 	    break;
 	  }
 
@@ -509,11 +504,11 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
 static inline void 
 mr_avltree_rebalance_add (mr_tree_t * avltree, mr_tree_traverse_t * traverse)
 {
-  unsigned idx, traverse_size = traverse->size / sizeof (traverse->path[0]);
+  unsigned idx;
   
-  avltree->pool[traverse->path[traverse_size].idx].avl.balanced = true;
+  avltree->pool[traverse->path[traverse->count].idx].avl.balanced = true;
   
-  for (idx = traverse_size - 1; idx > 0; --idx)
+  for (idx = traverse->count - 1; idx > 0; --idx)
     {
       unsigned node = traverse->path[idx].idx;
       mr_child_idx_t child_idx = traverse->path[idx].child_idx;
@@ -585,9 +580,9 @@ mr_avltree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void *
 static void 
 mr_avltree_rebalance_del (mr_tree_t * avltree, mr_tree_traverse_t * traverse)
 {
-  unsigned idx, traverse_size = traverse->size / sizeof (traverse->path[0]);
+  unsigned idx;
   
-  for (idx = traverse_size - 1; idx > 0; --idx)
+  for (idx = traverse->count - 1; idx > 0; --idx)
     {
       unsigned node = traverse->path[idx].idx;
       mr_child_idx_t child_idx = traverse->path[idx].child_idx;

@@ -248,10 +248,10 @@ TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "element of traverse index and di
 		)
 
 TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag for the last comparison"),
-		(uint16_t, size, , "size of tree traverse"),
+		(uint16_t, count, , "size of tree traverse"),
 		(bool, equal, , "equal flag for the last comparison in the traverse"),
 		(mr_tree_path_t, path, [(sizeof (mr_tree_node_idx_t) * __CHAR_BIT__ << 1) - 1], "tree traverse path",
-		 { .size_field_offset = offsetof (mr_tree_traverse_t, size) }, "size_field_offset"),
+		 { .count_field_offset = offsetof (mr_tree_traverse_t, count) }, "count_field_offset"),
 		)
 
 TYPEDEF_STRUCT (mr_typed_ptr_t,
