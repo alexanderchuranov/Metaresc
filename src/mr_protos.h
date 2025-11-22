@@ -535,10 +535,10 @@ TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES (__attribute__ ((packed)), "set union di
 		ANON_UNION ( , __attribute__ ((packed))),
 		/* to make mr_ptrdes_t more compact we need to align size of mr_save_params_t with size of mr_load_params_t */
 		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (mr_idx_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
-		 "in place list of union discriminators", { "size" }, "size_field_name"),
+		 "in place list of union discriminators", { "count" }, "count_field_name"),
 		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
 		END_ANON_UNION ("ud_is_ic"),
-		(unsigned, size, : __CHAR_BIT__ - 1, "size of union discriminator in place list"),
+		(unsigned, count, : __CHAR_BIT__ - 1, "number of union discriminator in the list"),
 		(bool, is_ic, : 1, "true if union discriminator is an indexed collection"),
 		)
 

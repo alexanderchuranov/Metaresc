@@ -248,8 +248,8 @@ mr_ud_find (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
       return (find ? find->uintptr : -1);
     }
 
-  int i, count = uds->size / sizeof (uds->idx[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < uds->count; ++i)
     if (0 == mr_ud_cmp (key, (intptr_t)uds->idx[i], mr_save_data))
       return (uds->idx[i]);
   return (-1);
@@ -268,13 +268,13 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
   if (find != -1)
     return (find);
 
-  if (uds->size > sizeof (uds->idx))
+  if (uds->count > 1)
     {
-      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, uds->size / sizeof (uds->idx[0]));
-      uds->size = 0;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, uds->count);
+      uds->count = 0;
     }
 
-  if (uds->size == sizeof (uds->idx))
+  if (uds->count == 1)
     {
       mr_ic_t * dst_ic = MR_CALLOC (1, sizeof (*dst_ic));
       if (NULL == dst_ic)
@@ -313,10 +313,7 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
       return (add ? add->uintptr : -1);
     }
 
-  int idx = uds->size / sizeof (uds->idx[0]);
-  uds->idx[idx] = key.uintptr;
-  uds->size += sizeof (uds->idx[0]);
-
+  uds->idx[uds->count++] = key.uintptr;
   return (key.uintptr);
 }
 
@@ -326,8 +323,8 @@ mr_ud_foreach (mr_ud_set_t * uds, mr_visit_fn_t visit_fn, void * context)
   if (uds->is_ic)
     return (mr_ic_foreach (uds->union_discriminator, visit_fn, context));
 
-  int i, count = uds->size / sizeof (uds->idx[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < uds->count; ++i)
     if (MR_SUCCESS != visit_fn ((intptr_t)uds->idx[i], context))
       return (MR_FAILURE);
   return (MR_SUCCESS);
@@ -343,7 +340,7 @@ mr_ud_free (mr_ud_set_t * uds)
       uds->union_discriminator = NULL;
     }
   uds->is_ic = false;
-  uds->size = 0;
+  uds->count = 0;
 }
 
 /**
@@ -1030,7 +1027,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
   ptrdes->first_child = MR_NULL_IDX;
   ptrdes->next = MR_NULL_IDX;
   ptrdes->save_params.next_untyped = MR_NULL_IDX;
-  ptrdes->save_params.ud_set.size = 0;
+  ptrdes->save_params.ud_set.count = 0;
   ptrdes->save_params.ud_set.is_ic = false;
 
   /* forward reference resolving */
