@@ -421,8 +421,8 @@ TYPEDEF_STRUCT (mr_ed_t, ATTRIBUTES ( , "Metaresc enum descriptor"),
 		)
 
 TYPEDEF_STRUCT (mr_enum_param_t,
-		(mr_ed_t **, enums, , "fields or enums descriptors", { .size_field_offset = offsetof (mr_enum_param_t, enums_size) }, "size_field_offset"),
-		(ssize_t, enums_size, , "size of 'enums' array"),
+		(mr_ed_t **, enums, , "fields or enums descriptors", { .count_field_offset = offsetof (mr_enum_param_t, enums_count) }, "count_field_offset"),
+		(ssize_t, enums_count, , "count of 'enums' array"),
 		(uint8_t, size_effective, , "effective size"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(bool, is_bitmask, , "set to true if all enum values are power of 2"),

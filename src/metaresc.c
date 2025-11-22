@@ -1022,7 +1022,7 @@ mr_init_enum (mr_td_t * tdp)
   int i, count;
   for (count = 0; tdp->param.enum_param.enums[count] != NULL; ++count)
     tdp->param.enum_param.enums[count]->mr_type = tdp->param.enum_param.mr_type_effective;
-  tdp->param.enum_param.enums_size = count * sizeof (tdp->param.enum_param.enums[0]);
+  tdp->param.enum_param.enums_count = count;
 
   /*
     Old versions of GCC (e.g. 4.x) might have mismatched sizeof and effectivily used size for enums.
@@ -1120,7 +1120,10 @@ mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value)
 {
   unsigned idx;
   uintptr_t key = (uintptr_t)&value - offsetof (mr_ed_t, value);
-  mr_ic_rarray_t ic_rarray = { .ra = (mr_ptr_t*)tdp->param.enum_param.enums, .size = tdp->param.enum_param.enums_size, };
+  mr_ic_rarray_t ic_rarray = {
+    .ra = (mr_ptr_t*)tdp->param.enum_param.enums,
+    .size = tdp->param.enum_param.enums_count * sizeof (tdp->param.enum_param.enums[0]),
+  };
   int diff = mr_ic_sorted_array_find_idx (key, &ic_rarray, mr_ed_enum_value_cmp, NULL, &idx);
   return (diff ? NULL : tdp->param.enum_param.enums[idx]);
 }

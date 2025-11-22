@@ -143,7 +143,7 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 static void
 compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
-  dw_td->param.enum_param.enums_size -= sizeof (dw_td->param.enum_param.enums[0]);
+  --dw_td->param.enum_param.enums_count;
 
   ck_assert_msg (mr_td->param.enum_param.mr_type_effective == dw_td->param.enum_param.mr_type_effective,
 		 "DWARF descriptor for type '%s' mismatched builtin: effective mr_type %d != %d",
@@ -153,11 +153,11 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		 mr_td->type.str, (int)mr_td->param.enum_param.size_effective, (int)dw_td->param.enum_param.size_effective);
 
   int i, j;
-  for (i = mr_td->param.enum_param.enums_size / sizeof (mr_td->param.enum_param.enums[0]) - 1; i >= 0; --i)
+  for (i = mr_td->param.enum_param.enums_count - 1; i >= 0; --i)
     {
       mr_ed_t * mr_edp = mr_td->param.enum_param.enums[i];
       mr_ed_t * dw_edp = NULL;
-      for (j = dw_td->param.enum_param.enums_size / sizeof (dw_td->param.enum_param.enums[0]) - 1; j >= 0; --j)
+      for (j = dw_td->param.enum_param.enums_count - 1; j >= 0; --j)
 	if (mr_hashed_string_cmp (&dw_td->param.enum_param.enums[j]->name, &mr_edp->name) == 0)
 	  {
 	    dw_edp = dw_td->param.enum_param.enums[j];
@@ -171,9 +171,9 @@ compare_enum_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		     mr_td->type.str, mr_edp->value._signed, dw_edp->value._signed);
     }
 
-  ck_assert_msg (dw_td->param.enum_param.enums_size == mr_td->param.enum_param.enums_size,
-		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
-		 mr_td->type.str, (int)dw_td->param.enum_param.enums_size, (int)mr_td->param.enum_param.enums_size);
+  ck_assert_msg (dw_td->param.enum_param.enums_count == mr_td->param.enum_param.enums_count,
+		 "DWARF descriptor for type '%s' mismatched builtin: enums list count %d != %d",
+		 mr_td->type.str, (int)dw_td->param.enum_param.enums_count, (int)mr_td->param.enum_param.enums_count);
 }
 
 static mr_status_t

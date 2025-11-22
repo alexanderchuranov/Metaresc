@@ -31,8 +31,8 @@ int main ()
       return (EXIT_FAILURE);
     }
 
-  int i, count = tdp->param.enum_param.enums_size / sizeof (tdp->param.enum_param.enums[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < tdp->param.enum_param.enums_count; ++i)
     {
       mr_ed_t * edp = tdp->param.enum_param.enums[i];
       printf ("%d: %s = %" PRIu64 "\n", i, edp->name.str, edp->value._unsigned);

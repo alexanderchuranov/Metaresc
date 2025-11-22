@@ -174,13 +174,13 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
 
   bool first = true;
   int count = 0;
-  int i, enums_count = tdp->param.enum_param.enums_size / sizeof (tdp->param.enum_param.enums[0]);
+  int i;
   mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       
   if (0 == value)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
-  for (i = 0; i < enums_count; ++i)
+  for (i = 0; i < tdp->param.enum_param.enums_count; ++i)
     if (value & tdp->param.enum_param.enums[i]->value._unsigned)
       {
 	if (first)
