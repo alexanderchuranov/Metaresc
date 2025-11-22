@@ -975,6 +975,56 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
   get_mr_type (fdp, mr_die, die_off_ic);
 }
 
+static void load_struct (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
+{
+  int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
+  ssize_t alloc_size = 0;
+  int idx = 0;
+
+  for (i = 0; i < count; ++i)
+    if (mr_die->children[i].tag == _DW_TAG_member)
+      {
+	void ** elem = mr_rarray_allocate_element ((void*)&tdp->param.struct_param.fields,
+						   &tdp->param.struct_param.fields_size,
+						   &alloc_size, sizeof (*elem));
+	assert (elem != NULL);
+	*elem = MR_CALLOC (1, sizeof (*tdp->param.struct_param.fields[0]));
+	assert (*elem != NULL);
+	load_member (tdp->type.str, idx++, *elem, &mr_die->children[i], die_off_ic);
+      }
+
+  void ** elem = mr_rarray_allocate_element ((void*)&tdp->param.struct_param.fields,
+					     &tdp->param.struct_param.fields_size,
+					     &alloc_size, sizeof (*elem));
+  assert (elem != NULL);
+  *elem = NULL;
+}
+
+static void load_enum (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
+{
+  int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
+  ssize_t alloc_size = 0;
+  int idx = 0;
+
+  for (i = 0; i < count; ++i)
+    if (mr_die->children[i].tag == _DW_TAG_enumerator)
+      {
+	void ** elem = mr_rarray_allocate_element ((void*)&tdp->param.enum_param.enums,
+						   &tdp->param.enum_param.enums_size,
+						   &alloc_size, sizeof (*elem));
+	assert (elem != NULL);
+	*elem = MR_CALLOC (1, sizeof (*tdp->param.enum_param.enums[0]));
+	assert (*elem != NULL);
+	load_enumerator (tdp->type.str, idx++, *elem, &mr_die->children[i], die_off_ic);
+      }
+
+  void ** elem = mr_rarray_allocate_element ((void*)&tdp->param.enum_param.enums,
+					     &tdp->param.enum_param.enums_size,
+					     &alloc_size, sizeof (*elem));
+  assert (elem != NULL);
+  *elem = NULL;
+}
+
 static void
 create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
@@ -1015,12 +1065,6 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       && (mr_die->tag != _DW_TAG_pointer_type))
     return;
 
-  mr_dw_tag_t children_tag = _DW_TAG_undefined;
-  void (*load_child) (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic) = NULL;
-  void ** rarray = NULL;
-  ssize_t * rarray_size = NULL;
-  size_t elem_size = 0;
-
   mr_td_t * tdp = MR_CALLOC (1, sizeof (*tdp));
   assert (tdp != NULL);
 
@@ -1031,32 +1075,31 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   find = mr_ic_add (td_ic, tdp);
   assert (find != NULL);
 
+  attr = die_attribute (mr_die, _DW_AT_byte_size);
+  if (attr != NULL)
+    {
+      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+      tdp->size = attr->dw_unsigned;
+    }
+
   switch (mr_die->tag)
     {
+    case _DW_TAG_union_type:
+      attr = die_attribute (mr_die, _DW_AT_anonymous);
+      tdp->mr_type = attr ? MR_TYPE_ANON_UNION : MR_TYPE_UNION;
+      load_struct (mr_die, tdp, die_off_ic);
+      break;
+
     case _DW_TAG_structure_type:
       tdp->mr_type = MR_TYPE_STRUCT;
-      __attribute__ ((fallthrough));
-
-    case _DW_TAG_union_type:
-      if (mr_die->tag == _DW_TAG_union_type)
-	{
-	  attr = die_attribute (mr_die, _DW_AT_anonymous);
-	  tdp->mr_type = attr ? MR_TYPE_ANON_UNION : MR_TYPE_UNION;
-	}
-      children_tag = _DW_TAG_member;
-      load_child = load_member;
-      rarray = (void*)&tdp->param.struct_param.fields;
-      rarray_size = &tdp->param.struct_param.fields_size;
-      elem_size = sizeof (*tdp->param.struct_param.fields[0]);
+      load_struct (mr_die, tdp, die_off_ic);
       break;
+
     case _DW_TAG_enumeration_type:
       tdp->mr_type = MR_TYPE_ENUM;
-      children_tag = _DW_TAG_enumerator;
-      load_child = load_enumerator;
-      rarray = (void*)&tdp->param.enum_param.enums;
-      rarray_size = &tdp->param.enum_param.enums_size;
-      elem_size = sizeof (*tdp->param.enum_param.enums[0]);
+      load_enum (mr_die, tdp, die_off_ic);
       break;
+
     case _DW_TAG_pointer_type:
       {
 	mr_fd_t fd;
@@ -1068,34 +1111,9 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 	tdp->size = sizeof (void*);
       }
       break;
+
     default:
       break;
-    }
-
-  attr = die_attribute (mr_die, _DW_AT_byte_size);
-  if (attr != NULL)
-    {
-      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);	  
-      tdp->size = attr->dw_unsigned;
-    }
-
-  ssize_t alloc_size = 0;
-  if (load_child != NULL)
-    {
-      int i, i_ = 0, count = mr_die->children_size / sizeof (mr_die->children[0]);
-      for (i = 0; i < count; ++i)
-	if (mr_die->children[i].tag == children_tag)
-	  {
-	    void ** elem = mr_rarray_allocate_element (rarray, rarray_size, &alloc_size, sizeof (*elem));
-	    assert (elem != NULL);
-	    *elem = MR_CALLOC (1, elem_size);
-	    assert (*elem != NULL);
-	    load_child (tdp->type.str, i_++, *elem, &mr_die->children[i], die_off_ic);
-	  }
-
-      void ** elem = mr_rarray_allocate_element (rarray, rarray_size, &alloc_size, sizeof (*elem));
-      assert (elem != NULL);
-      *elem = NULL;
     }
 }
 
