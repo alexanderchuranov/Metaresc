@@ -440,7 +440,7 @@ mr_ic_hash_free (mr_ic_t * ic)
   if (NULL != ic->hash.hash_table)
     MR_FREE (ic->hash.hash_table);
   ic->hash.hash_table = NULL;
-  ic->hash.size = 0;
+  ic->hash.count = 0;
   ic->hash.zero_key = false;
   ic->items_count = 0;
 }
@@ -448,9 +448,9 @@ mr_ic_hash_free (mr_ic_t * ic)
 static mr_ptr_t *
 mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
 {
-  if (ic->hash.size >= 2 * sizeof (ic->hash.hash_table[0]))
+  if (ic->hash.count >= 2)
     {
-      unsigned count = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1;
+      unsigned count = ic->hash.count - 1;
       
       if (0 == key.intptr)
 	{
@@ -500,10 +500,11 @@ mr_ic_hash_reindex (mr_ic_t * dst_ic, mr_ic_t * src_ic)
     {
       unsigned count = (src_ic->items_count << 2) + 6; /* 6 is a magic constant found in a manual performance test */
 
-      if (dst_ic->hash.size < count * sizeof (dst_ic->hash.hash_table[0]))
+      if (dst_ic->hash.count < count)
 	{
-	  dst_ic->hash.size = count * sizeof (dst_ic->hash.hash_table[0]);
-	  typeof (dst_ic->hash.hash_table) hash_table = MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.size);
+	  dst_ic->hash.count = count;
+	  typeof (dst_ic->hash.hash_table) hash_table =
+	    MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.count * sizeof (dst_ic->hash.hash_table[0]));
 	  if (NULL == hash_table)
 	    {
 	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -514,8 +515,8 @@ mr_ic_hash_reindex (mr_ic_t * dst_ic, mr_ic_t * src_ic)
 	}
     }
 
-  if ((NULL != dst_ic->hash.hash_table) && (0 != dst_ic->hash.size))
-    memset (dst_ic->hash.hash_table, 0, dst_ic->hash.size);
+  if ((NULL != dst_ic->hash.hash_table) && (0 != dst_ic->hash.count))
+    memset (dst_ic->hash.hash_table, 0, dst_ic->hash.count * sizeof (dst_ic->hash.hash_table[0]));
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
 }
 
@@ -544,7 +545,7 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key)
   if (find != NULL)
     return (find);
   
-  if (ic->items_count >= ic->hash.size / sizeof (ic->hash.hash_table[0]) / 2)
+  if (ic->items_count >= ic->hash.count / 2)
     {
       mr_ic_t dst_ic;
       if (MR_SUCCESS != mr_ic_hash_new (&dst_ic, ic->hash.hash_fn, ic->compar_fn, ic->key_type, &ic->context))
@@ -567,7 +568,7 @@ mr_ic_hash_del (mr_ic_t * ic, mr_ptr_t key)
     return (MR_FAILURE);
 
   --ic->items_count;
-  unsigned count = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1;
+  unsigned count = ic->hash.count - 1;
   unsigned bucket = find - ic->hash.hash_table;
   
   if (bucket == count)
@@ -606,10 +607,10 @@ mr_ic_hash_del (mr_ic_t * ic, mr_ptr_t key)
 mr_ptr_t *
 mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key)
 {
-  if (ic->hash.size < 2 * sizeof (ic->hash.hash_table[0]))
+  if (ic->hash.count < 2)
     return (NULL);
   
-  unsigned count = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1;
+  unsigned count = ic->hash.count - 1;
   unsigned i, bucket = ic->hash.hash_fn (key, ic->context.data.ptr) % count;
 
   for (i = bucket; ;)
@@ -634,10 +635,10 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key)
 mr_status_t
 mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
-  if (ic->hash.size < 2 * sizeof (ic->hash.hash_table[0]))
+  if (ic->hash.count < 2)
     return (MR_SUCCESS);
   
-  unsigned i, count = ic->hash.size / sizeof (ic->hash.hash_table[0]) - 1;
+  unsigned i, count = ic->hash.count - 1;
   
   if (ic->hash.zero_key)
     if (MR_SUCCESS != visit_fn (ic->hash.hash_table[count], context))

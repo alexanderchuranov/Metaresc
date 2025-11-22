@@ -197,8 +197,8 @@ TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers fo
 TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(mr_hash_fn_t, hash_fn),
 		/* resizable array for hash table sized by field 'size' mr_ptr_t typed by 'key_type' in mr_ic_t */
-		(mr_ptr_t *, hash_table, , "key_type", { "size" }, "size_field_name"),
-		(size_t, size, : sizeof (size_t) * __CHAR_BIT__ - 1, "size of hash table"),
+		(mr_ptr_t *, hash_table, , "key_type", { "count" }, "count_field_name"),
+		(size_t, count, : sizeof (size_t) * __CHAR_BIT__ - 1, "number of items in the hash table"),
 		(bool, zero_key, : 1),
 		)
 
