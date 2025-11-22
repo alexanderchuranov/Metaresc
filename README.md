@@ -328,11 +328,12 @@ int main (int argc, char * argv[])
 ```
 
 For happy users of clang15+ library provides one more option to
-discover type descriptors. Use macro `MR_ADD_TYPE` for structs and
-unions. This macro will automatically discover fields of most basic
-types, inline structures and unions, bitfields, arrays and pointers of
-known types. Fields of the following types are not supported: inline
-strings, enums, function pointers. Example above will look as follows:
+discover type descriptors. Use macro `MR_ADD_TYPES` for structs and
+unions. This macro variable number of type names. It will
+automatically discover fields of most basic types, inline structures
+and unions, bitfields, arrays and pointers of known types. Fields of
+the following types are not supported: inline strings, enums, function
+pointers. Example above will look as follows: 
 
 ```c
 #include <metaresc.h>
@@ -343,7 +344,7 @@ typedef struct tree_node_t {
   struct tree_node_t * right;
 } tree_node_t;
 
-MR_ADD_TYPE (tree_node_t);
+MR_ADD_TYPES (tree_node_t);
   
 int main (int argc, char * argv[])
 {
@@ -357,9 +358,6 @@ int main (int argc, char * argv[])
   return (EXIT_SUCCESS);
 }
 ```
-
-For registration of multiple types use macro lambda iterator
-`MR_FOREACH (MR_ADD_TYPE, my_struct0_t, my_struct1_t, my_struct2_t);`.
 
 I would expect that some of the users still will find this a bit
 challenging and overcomplicated. For those users library provides a
@@ -822,52 +820,103 @@ also supported.
 Default serialization of a pointer is a single instance of designated
 type, but Metaresc also supports representation of pointers as arrays
 of variable size. Size of the array in this case should provided as
-another field of the same structure. User may specify name of
-this field via structured resource of the pointer field. There are two
+another field of the first wrapping structure (i.e. resolution of
+pointers within unions requie context of first top level structure
+that contains this union). Size may be specified either in bytes and
+serialization engine will calculate number of elements based on size
+of base type of the pointer, or user may provide a field with a number
+of elements in this variable size array. Size/count field could be
+specified via structured resource of the pointer field. There are two
 options how this could be done.
-1. User may specify name of the `size` field as a string and denote 
-that type of the resource is a `"string"`. Sample declaration as 
-follows:
+
+1. User may specify name of the `size`/`count` field as a string and denote 
+that type of the resource is a `"size_field_name"` or
+`"count_field_name"`. Sample declaration as follows:
 
 ```c
 TYPEDEF_STRUCT (resizable_array_t,
-		(sample_t *, array, /* suffix */, /* text metadata */, { "array_size" }, "string"),
+		(sample_t *, array, /* suffix */, /* text metadata */, { "array_size" }, "size_field_name"),
 		ssize_t array_size,
 		);
+
+// The same example with counter of elements
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array, /* suffix */, /* text metadata */, { "array_count" }, "count_field_name"),
+		ssize_t array_count,
+		);
 ```
-Existence of the `size` field could be validated only at the run-time,
+Existence of the `size`/`count` field could be validated only at the run-time,
 so this method makes a loosely-coupled definition.
 
-2. Another way to specify `size` field is to provide `offset` of this
+2. Another way to specify `size`/`count` field is to provide `offset` of this
 field as a structured resource. Sample declaration as follows:
 
 ```c
 TYPEDEF_STRUCT (resizable_array_t,
-		(sample_t *, array, /* suffix */, /* text metadata */, { .offset = offsetof (resizable_array_t, array_size) }, "offset"),
+		(sample_t *, array, /* suffix */, /* text metadata */, { .offset = offsetof (resizable_array_t, array_size) }, "size_field_offset"),
 		ssize_t array_size,
 		);
+
+// The same example with counter of elements
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array, /* suffix */, /* text metadata */, { .offset = offsetof (resizable_array_t, array_count) }, "count_field_offset"),
+		ssize_t array_count,
+		);
 ```
-This method ensures that `size` field is presented in
-designated structure, but does not verify that `pointer` and `size`
-fields are within the same structure and `size` field has appropriate
-type. This validation happens at run-time. `size` field might be of
-any integer type including `bool` and `char`. It could also be an
-`enum` or `bitfield` which are integer types by language design. `size`
-field could also be a pointer on any type listed above except
-`bitfield`. `bitfields` could be specified as `size` field only with
-the first declaration method, because compiler can't calculate
-`offsetof` for the `bitfields`.
+This method ensures that `size`/`count` field is presented in
+designated structure, but does not verify that `pointer` and
+`size`/`count` fields are within the same structure and `size`/`count`
+field has appropriate type. This validation happens at
+run-time. `size`/`count` field might be of any integer type including
+`bool` and `char`. It could also be an `enum` or `bitfield` which are
+integer types by language design. `size`/`count` field could also be a
+pointer on any type listed above except `bitfield`. `bitfields` could
+be specified as `size`/`count` field only with the first declaration
+method, because compiler can't calculate `offsetof` for the
+`bitfields`. 
 
-Size should be specified in bytes, i.e. number of elemenets in this
-dynamic array will be calculated as total size divided by size of one
-element. Size specification for double pointers will affect only top
-level pointer, and second level pointer will be serialized as a single
-element.
+Please note that for serialization of double pointers size/count
+specification will affect only top level pointer, and second level
+pointer will be serialized as a single element.
 
-Descriptors for pointer fields that are generated from DWARF debug
-info have structured resource configured according to the first
-method. I.e. `size` field configured as a string identifier and formed
-from the name of the field with `_size` suffix.
+You may also use naming convention for this kind of
+declarations. Pointers without user defined resources will be
+automatically augmented with `size`/`count` fields based on naming
+convention. Fields named as a name of the pointer with suffix
+`_size`/`_count` are considered as fields designated `size`/`count`
+fields. If both fields are presented (`ptr_size`/`ptr_count`) than
+`ptr_count` takes the precedence. This naming convention works for all
+types registed in Metaresc including types derived from DWARF and `MR_ADD_TYPES`.
+
+Example above could be shortned to:
+```c
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array),
+		ssize_t array_size,
+		);
+
+// The same example with counter of elements
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array),
+		ssize_t array_count,
+		);
+```
+
+For future backward compatibility purposes you may use macro
+`MR_POINTER_SIZE_FIELD()` and `MR_POINTER_COUNT_FIELD()` to properly
+form names with appropriate suffix. Example above will read as:
+```c
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array),
+		ssize_t MR_POINTER_SIZE_FIELD (array),
+		);
+
+// The same example with counter of elements
+TYPEDEF_STRUCT (resizable_array_t,
+		(sample_t *, array),
+		ssize_t MR_POINTER_COUNT_FIELD (array),
+		);
+```
 
 #### Array declaration
 Third argument **_suffix_** in the field's declaration denotes dimensions
@@ -929,7 +978,7 @@ value 'element_discriminator'. 'element_discriminator' is interpreted
 as an integer index within union, i.e. both elements of the array will
 be serialized as '_bool' or as '_int' respectively.
 
-* with 'res' you could define overrides for union discriminators
+* with `res` you could define overrides for union discriminators
 ```c
 TYPEDEF_UNION (union_t,
 	       (bool, _bool),
@@ -940,15 +989,22 @@ TYPEDEF_STRUCT (array_t,
 		(union_t, array, [2], "element_discriminator", { (mr_ud_override_t[]){ { false, "_float" } } }, "mr_ud_override_t"),
 		(bool, element_discriminator, , "discriminator for array elements"));
 ```
-Example similar to previous one, but if 'element_discriminator' is
-equal to 'false' union serialized as '_float'.
-* with 'res' you could define size for a single dimensional
+Example similar to previous one, but if `element_discriminator` is
+equal to `false` union serialized as `_float`.
+* with `res` you could define size for a single dimensional
 array. Semantics is similar to pointers of variable size. You could
-specify 'size' field either via 'offset' or as a name of the field.
+specify `size`/`count` field either via `offset` or as a name of the field.
 ```c
 TYPEDEF_STRUCT (array_t,
 		(int, array, [16], "static array allocated for a maximal possible size, but real utilization is defined	by 'size' field", { .offset = offsetof (array_t, size) }, "offset"),
 		(size_t, size, , "dynamically limit serialization of a static array to a certain size"));
+```
+Dynamic array size specification could also be achieved with a naming
+convention identical with pointers. 
+```c
+TYPEDEF_STRUCT (array_t,
+		(int, array, [16], "static array allocated for a maximal possible size, but real utilization is defined	by 'array_count field"),
+		(size_t, MR_POINTER_COUNT_FIELD (array), , "dynamically limit serialization of a static array to a certain size"));
 ```
 
 #### Function pointer declaration

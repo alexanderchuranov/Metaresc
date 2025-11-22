@@ -1904,7 +1904,7 @@ void mr_augment_fields (mr_td_t * tdp)
 
       int name_length = strlen (fdp->name.str);
       if (((fdp->stype.mr_type == MR_TYPE_POINTER) || (fdp->stype.mr_type == MR_TYPE_ARRAY)) &&
-	  (fdp->res_type == NULL))
+	  (fdp->res_type == NULL) && (fdp->res.ptr == NULL))
 	{
 	  char count_field[name_length + sizeof (MR_POINTER_COUNT_SUFFIX_STR)];
 	  strcpy (count_field, fdp->name.str);
