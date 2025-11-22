@@ -187,12 +187,11 @@ mr_udo_detect_types (mr_types_dep_t * types_dep, int type_idx, mr_fd_t * fdp)
 static void
 mr_udo_foreach (mr_types_dep_t * types_dep)
 {
-  int i, types_count = types_dep->size / sizeof (types_dep->types[0]);
+  int i, j, types_count = types_dep->size / sizeof (types_dep->types[0]);
   for (i = 0; i < types_count; ++i)
     {
       mr_struct_param_t * sp = &types_dep->types[i].tdp->param.struct_param;
-      int j, fields_count = sp->fields_size / sizeof (sp->fields[0]);
-      for (j = 0; j < fields_count; ++j)
+      for (j = 0; j < sp->fields_count; ++j)
 	mr_udo_detect_types (types_dep, i, sp->fields[j]);
     }
 }

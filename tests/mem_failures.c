@@ -469,8 +469,8 @@ swap_fields (char * type, char * field0, char * field1)
   mr_fd_t * fdp1 = mr_get_fd_by_name (tdp, field1);
   ck_assert_msg (fdp1 != NULL, "Failed to field descriptor for '%s'", field1);
 
-  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     if (tdp->param.struct_param.fields[i] == fdp0)
       tdp->param.struct_param.fields[i] = fdp1;
     else if (tdp->param.struct_param.fields[i] == fdp1)

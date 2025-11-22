@@ -172,7 +172,6 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 {
   mr_offset_t offset = 0;
   mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
-  int fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
   
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
 #error Support for non little endian architectures to be implemented
@@ -216,13 +215,13 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     }
 
   int field_idx = ctx->field_idx++;
-  if (field_idx > fields_count)
-    field_idx = fields_count;
+  if (field_idx > struct_param->fields_count)
+    field_idx = struct_param->fields_count;
   mr_fd_t * fdp = struct_param->fields[field_idx];
 
-  if (field_idx == fields_count)
+  if (field_idx == struct_param->fields_count)
     {
-      if (fields_count >= MR_PP_DEPTH)
+      if (struct_param->fields_count >= MR_PP_DEPTH)
 	{
 	  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
 	  longjmp (ctx->_jmp_buf, !0);
@@ -233,14 +232,14 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       fdp->name.str = name;
       fdp->offset = offset;
 
-      struct_param->fields_size += sizeof (struct_param->fields[0]);
+      ++struct_param->fields_count;
     }
 
   if (ctx->offset_byte != 0)
     {
       if (mr_type != MR_TYPE_NONE)
 	{
-	  if ((field_idx >= fields_count) || strcmp (struct_param->fields[field_idx]->name.str, name))
+	  if ((field_idx >= struct_param->fields_count) || strcmp (struct_param->fields[field_idx]->name.str, name))
 	    longjmp (ctx->_jmp_buf, !0);
 	  fdp->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
 	}
@@ -396,15 +395,14 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
       if (2 == indent_spaces)
 	{
 	  mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
-	  int fields_count = struct_param->fields_size / sizeof (struct_param->fields[0]);
 	  int field_idx = ctx->field_idx++;
-	  if (field_idx > fields_count)
-	    field_idx = fields_count;
+	  if (field_idx > struct_param->fields_count)
+	    field_idx = struct_param->fields_count;
 	  mr_fd_t * fdp = struct_param->fields[field_idx];
 
-	  if (field_idx == fields_count)
+	  if (field_idx == struct_param->fields_count)
 	    {
-	      if (fields_count >= MR_PP_DEPTH)
+	      if (struct_param->fields_count >= MR_PP_DEPTH)
 		{
 		  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
 		  longjmp (ctx->_jmp_buf, !0);
@@ -414,7 +412,7 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
 	      fdp->name.str = name;
 	      fdp->bitfield_param.width = width;
 
-	      struct_param->fields_size += sizeof (struct_param->fields[0]);
+	      ++struct_param->fields_count;
 	    }
 
 	  fdp->offset = (fdp->offset << 1) | (value & 1);
@@ -435,8 +433,8 @@ mr_conf_cleanup_visitor (mr_ptr_t key, void * context)
 
   mr_ic_free (&tdp->param.struct_param.field_by_name);
 
-  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if ((MR_UNION_TYPES >> fdp->mr_type_base) & 1)
@@ -856,7 +854,7 @@ static void mr_init_struct (mr_td_t * tdp); /* recursive call */
 static mr_status_t
 mr_anon_unions_extract (mr_td_t * tdp)
 {
-  int count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
+  int count = tdp->param.struct_param.fields_count;
   int i, j;
 
   for (i = 0; i < count; ++i)
@@ -928,7 +926,7 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	  fdp->res = last->res;
 	  fdp->res_type = last->res_type;
 	  fdp->MR_SIZE = last->MR_SIZE;
-	  tdp->param.struct_param.fields_size -= fields_count * sizeof (tdp->param.struct_param.fields[0]);
+	  tdp->param.struct_param.fields_count -= fields_count;
 	  count -= fields_count;
 	  fdp->stype.type = tdp_->type.str;
 	  fdp->stype.size = tdp_->size;
@@ -1600,12 +1598,13 @@ mr_init_struct (mr_td_t * tdp)
   int count;
   for (count = 0; tdp->param.struct_param.fields[count] != NULL; ++count)
     mr_normalize_field_name (tdp->param.struct_param.fields[count]);
-  tdp->param.struct_param.fields_size = count * sizeof (tdp->param.struct_param.fields[0]);
+  tdp->param.struct_param.fields_count = count;
 
   mr_anon_unions_extract (tdp); /* important to extract unions before building index over fields */
 
   mr_ic_new (&tdp->param.struct_param.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
-  mr_ic_index (&tdp->param.struct_param.field_by_name, (mr_ptr_t*)tdp->param.struct_param.fields, tdp->param.struct_param.fields_size);
+  mr_ic_index (&tdp->param.struct_param.field_by_name, (mr_ptr_t*)tdp->param.struct_param.fields,
+	       tdp->param.struct_param.fields_count * sizeof (tdp->param.struct_param.fields[0]));
 }
 
 static void
@@ -1625,8 +1624,8 @@ mr_detect_struct_fields (mr_td_t * tdp)
   if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
     return;
 
-  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       mr_fd_detect_field_type (fdp);
@@ -1651,7 +1650,10 @@ mr_detect_struct_fields (mr_td_t * tdp)
     Zero size fields will have the same offsets with the field declared afterwards.
   */
   if (tdp->mr_type == MR_TYPE_STRUCT)
-    mr_hsort (tdp->param.struct_param.fields, count, sizeof (tdp->param.struct_param.fields[0]), mr_fd_offset_cmp_sorting, NULL);
+    mr_hsort (tdp->param.struct_param.fields,
+	      tdp->param.struct_param.fields_count,
+	      sizeof (tdp->param.struct_param.fields[0]),
+	      mr_fd_offset_cmp_sorting, NULL);
 }
 
 /**
@@ -1864,8 +1866,8 @@ mr_validate_td (mr_td_t * tdp)
   if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
     return;
 
-  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     mr_validate_stype (&tdp->param.struct_param.fields[i]->stype);
 }
 
@@ -1877,7 +1879,7 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
     {
       resolve_to->is_union_discriminator_set = true;
       if (((MR_STRUCT_TYPES >> resolve_to->mr_type) & 1) &&
-	  (resolve_to->param.struct_param.fields_size >= sizeof (resolve_to->param.struct_param.fields[0])))
+	  (resolve_to->param.struct_param.fields_count >= 1))
 	continue;
 #define MR_UNION_RESOLVABLE_TYPES (MR_INT_TYPES MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY))
       resolve_to->is_union_discriminator = (MR_UNION_RESOLVABLE_TYPES >> resolve_to->mr_type) & 1;
@@ -1893,8 +1895,8 @@ void mr_augment_fields (mr_td_t * tdp)
   if ((tdp->mr_type != MR_TYPE_STRUCT) && (tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION))
     return;
 
-  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
-  for (i = 0; i < count; ++i)
+  int i;
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if (fdp == NULL)

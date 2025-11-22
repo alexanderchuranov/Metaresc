@@ -877,7 +877,7 @@
 	memset (ptr, i, sizeof (value) & (block_size - 1));		\
       }									\
     mr_struct_param_t * struct_param = &dst_ctx.tdp->param.struct_param; \
-    size_t count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
+    size_t count = struct_param->fields_count;				\
     int size = sizeof (value) - 1;					\
     block_size = 1 << (sizeof (int) * __CHAR_BIT__ -			\
 		       __builtin_clz ((size <= 0) ? 1 : size) - 1);	\
@@ -911,7 +911,7 @@
 	if (0 == setjmp (dst_ctx._jmp_buf))				\
 	  __builtin_dump_struct (&value, mr_dump_struct_bitfield_detection, &dst_ctx); \
 	i = count;							\
-	count = struct_param->fields_size / sizeof (struct_param->fields[0]); \
+	count = struct_param->fields_count;				\
 	for ( ; i < count; ++i)						\
 	  {								\
 	    struct_param->fields[i]->bitfield_param.initialized = true;	\

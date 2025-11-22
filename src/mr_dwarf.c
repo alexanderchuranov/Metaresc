@@ -979,14 +979,14 @@ static void load_struct (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
 {
   int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
   ssize_t alloc_size = 0;
+  ssize_t size = 0;
   int idx = 0;
 
   for (i = 0; i < count; ++i)
     if (mr_die->children[i].tag == _DW_TAG_member)
       {
 	void ** elem = mr_rarray_allocate_element ((void*)&tdp->param.struct_param.fields,
-						   &tdp->param.struct_param.fields_size,
-						   &alloc_size, sizeof (*elem));
+						   &size, &alloc_size, sizeof (*elem));
 	assert (elem != NULL);
 	*elem = MR_CALLOC (1, sizeof (*tdp->param.struct_param.fields[0]));
 	assert (*elem != NULL);
@@ -994,10 +994,10 @@ static void load_struct (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
       }
 
   void ** elem = mr_rarray_allocate_element ((void*)&tdp->param.struct_param.fields,
-					     &tdp->param.struct_param.fields_size,
-					     &alloc_size, sizeof (*elem));
+					     &size, &alloc_size, sizeof (*elem));
   assert (elem != NULL);
   *elem = NULL;
+  tdp->param.struct_param.fields_count = ++idx;
 }
 
 static void load_enum (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
@@ -1325,7 +1325,7 @@ process_td (mr_ptr_t key, void * context)
 	tdp->param.enum_param.enums[i]->mr_type = tdp->param.enum_param.mr_type_effective;
     }
   else
-    for (i = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]) - 2; i >= 0; --i)
+    for (i = tdp->param.struct_param.fields_count - 2; i >= 0; --i)
       {
 	mr_fd_t * fdp = tdp->param.struct_param.fields[i];
 

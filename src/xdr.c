@@ -670,8 +670,8 @@ xdr_load_struct (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (NULL == tdp)
     return (MR_FAILURE);
 
-  mr_idx_t i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
-  for (i = 0; i < count; ++i)
+  mr_idx_t i;
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if (MR_SUCCESS != xdr_load_inner (&data[fdp->offset], fdp, xdrs, ptrs, idx))
@@ -736,7 +736,7 @@ xdr_load_union (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_DISCRIMINATOR_ERROR, discriminator);
   else
     {
-      if (0 == tdp->param.struct_param.fields_size) /* check for an empty union */
+      if (0 == tdp->param.struct_param.fields_count) /* check for an empty union */
 	status = MR_SUCCESS;
       else
 	{

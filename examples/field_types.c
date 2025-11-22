@@ -15,7 +15,7 @@ int main ()
 {
   char name[] = "employee_t";
   mr_td_t * tdp = mr_get_td_by_name(name);
-  int i, count;
+  int i;
 
   if (NULL == tdp)
     {
@@ -23,8 +23,7 @@ int main ()
       return (EXIT_FAILURE);
     }
 
-  count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
-  for (i = 0; i < count; ++i)
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       printf("\t%d: name = %s, type = %s, size = %u bytes\n",

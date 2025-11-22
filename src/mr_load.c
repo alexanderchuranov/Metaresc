@@ -555,9 +555,9 @@ mr_load_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 static mr_fd_t *
 mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
 {
-  int i, count = tdp->param.struct_param.fields_size / sizeof (tdp->param.struct_param.fields[0]);
+  int i;
 
-  for (i = 0; i < count; ++i)
+  for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     if (NULL == fdp)
       return (tdp->param.struct_param.fields[i]);
     else if (tdp->param.struct_param.fields[i] == fdp)

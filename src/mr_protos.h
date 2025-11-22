@@ -430,8 +430,8 @@ TYPEDEF_STRUCT (mr_enum_param_t,
 
 TYPEDEF_STRUCT (mr_struct_param_t,
 		(mr_fd_t **, fields, , "fields or enums descriptors",
-		 { .size_field_offset = offsetof (mr_struct_param_t, fields_size) }, "size_field_offset"),
-		(ssize_t, fields_size, , "size of 'fields' array"),
+		 { .count_field_offset = offsetof (mr_struct_param_t, fields_count) }, "count_field_offset"),
+		(ssize_t, fields_count, , "count of 'fields' array"),
 		(mr_ic_t, field_by_name, , "lookup by field names"),
 		)
 

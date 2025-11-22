@@ -29,8 +29,8 @@ static void
 compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 {
   int i, j, named_anon_union_count = 0;
-  int count = mr_td->param.struct_param.fields_size / sizeof (mr_td->param.struct_param.fields[0]);
-  dw_td->param.struct_param.fields_size -= sizeof (dw_td->param.struct_param.fields[0]);
+  int count = mr_td->param.struct_param.fields_count;
+  --dw_td->param.struct_param.fields_count;
 
   for (i = 0; i < count; ++i)
     {
@@ -45,7 +45,7 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 	continue;
 
       mr_fd_t * dw_fdp = NULL;
-      for (j = dw_td->param.struct_param.fields_size / sizeof (dw_td->param.struct_param.fields[0]) - 1; j >= 0; --j)
+      for (j = dw_td->param.struct_param.fields_count - 1; j >= 0; --j)
 	if (mr_hashed_string_cmp (&dw_td->param.struct_param.fields[j]->name, &mr_fdp->name) == 0)
 	  {
 	    dw_fdp = dw_td->param.struct_param.fields[j];
@@ -135,9 +135,9 @@ compare_fields_meta (mr_td_t * mr_td, mr_td_t * dw_td)
 		       mr_td->type.str, mr_fdp->name.str, mr_fdp->stype.type, dw_fdp->stype.type);
     }
 
-  ck_assert_msg (dw_td->param.struct_param.fields_size == mr_td->param.struct_param.fields_size + named_anon_union_count * sizeof (mr_td->param.struct_param.fields[0]),
-		 "DWARF descriptor for type '%s' mismatched builtin: fields list size %d != %d",
-		 mr_td->type.str, (int)dw_td->param.struct_param.fields_size, (int)mr_td->param.struct_param.fields_size);
+  ck_assert_msg (dw_td->param.struct_param.fields_count == mr_td->param.struct_param.fields_count + named_anon_union_count,
+		 "DWARF descriptor for type '%s' mismatched builtin: fields list count %d != %d",
+		 mr_td->type.str, (int)dw_td->param.struct_param.fields_count, (int)mr_td->param.struct_param.fields_count);
 }
 
 static void
