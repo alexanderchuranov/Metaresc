@@ -1998,11 +1998,10 @@ mr_conf_init ()
       mr_dwarf_t * mr_dwarf;
       for (mr_dwarf = mr_conf.dwarf_list; mr_dwarf; mr_dwarf = mr_dwarf->next)
 	{
-	  int i, count = mr_dwarf->tdps_size / sizeof (mr_dwarf->tdps[0]);
-	  for (i = 0; i < count; ++i)
+	  int i;
+	  for (i = 0; i < mr_dwarf->tdps_count; ++i)
 	    mr_add_type (mr_dwarf->tdps[i]);
-	  count = mr_dwarf->vars_size / sizeof (mr_dwarf->vars[0]);
-	  for (i = 0; i < count; ++i)
+	  for (i = 0; i < mr_dwarf->vars_count; ++i)
 	    mr_ic_add (&mr_conf.var_types, mr_dwarf->vars[i]);
 	}
 

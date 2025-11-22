@@ -1373,8 +1373,7 @@ static mr_status_t
 append_td (mr_ptr_t key, void * context)
 {
   mr_dwarf_t * mr_dwarf = context;
-  mr_dwarf->tdps[mr_dwarf->tdps_size / sizeof (mr_dwarf->tdps[0])] = key.ptr;
-  mr_dwarf->tdps_size += sizeof (mr_dwarf->tdps[0]);
+  mr_dwarf->tdps[mr_dwarf->tdps_count++] = key.ptr;
   return (MR_SUCCESS);
 }
 
@@ -1382,8 +1381,7 @@ static mr_status_t
 append_var (mr_ptr_t key, void * context)
 {
   mr_dwarf_t * mr_dwarf = context;
-  mr_dwarf->vars[mr_dwarf->vars_size / sizeof (mr_dwarf->vars[0])] = key.ptr;
-  mr_dwarf->vars_size += sizeof (mr_dwarf->vars[0]);
+  mr_dwarf->vars[mr_dwarf->vars_count++] = key.ptr;
   return (MR_SUCCESS);
 }
 

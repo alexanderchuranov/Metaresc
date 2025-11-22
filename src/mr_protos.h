@@ -673,10 +673,10 @@ TYPEDEF_STRUCT (mr_var_t, ATTRIBUTES ( , "record to identify type of serialize e
 		)
 
 TYPEDEF_STRUCT (mr_dwarf_t, ATTRIBUTES ( , "record to identify type of serialize expression"),
-		(mr_td_t **, tdps, , "array of pointers on type descriptors", { .size_field_offset = offsetof (mr_dwarf_t, tdps_size), }, "size_field_offset"),
-		(size_t, tdps_size, , "size of tdps array"),
-		(mr_var_t **, vars, , "variables types", { .size_field_offset = offsetof (mr_dwarf_t, vars_size), }, "size_field_offset"),
-		(size_t, vars_size, , "size of vars array"),
+		(mr_td_t **, tdps, , "array of pointers on type descriptors", { .count_field_offset = offsetof (mr_dwarf_t, tdps_count), }, "count_field_offset"),
+		(size_t, tdps_count, , "count of tdps array"),
+		(mr_var_t **, vars, , "variables types", { .count_field_offset = offsetof (mr_dwarf_t, vars_count), }, "count_field_offset"),
+		(size_t, vars_count, , "count of vars array"),
 		(mr_dwarf_t *, next, , "linked list"),
 		)
 

@@ -14,11 +14,10 @@ static mr_dwarf_t mr_dwarf[] = {
 static mr_td_t *
 get_td_by_name (mr_hashed_string_t * type)
 {
-  int j, mr_dwarf_count = sizeof (mr_dwarf) / sizeof (mr_dwarf[0]);
+  int i, j, mr_dwarf_count = sizeof (mr_dwarf) / sizeof (mr_dwarf[0]);
   for (j = 0; j < mr_dwarf_count; ++j)
     {
-      int i, td_count = mr_dwarf[j].tdps_size / sizeof (mr_dwarf[j].tdps[0]);
-      for (i = 0; i < td_count; ++i)
+      for (i = 0; i < mr_dwarf[j].tdps_count; ++i)
 	if (mr_hashed_string_cmp (&mr_dwarf[j].tdps[i]->type, type) == 0)
 	  return (mr_dwarf[j].tdps[i]);
     }
