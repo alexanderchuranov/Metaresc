@@ -699,8 +699,9 @@ declarations could be presented in a multiple forms:
 1. most of the basic types could be declared in a standard C notation
 2. pointers, fields of a custom types, arrays, function pointers
 should be declared as a structured set in parentheses
-3. non-serializable fields, bitfields, anonymous unions looks like a
-macro calls, i.e. a `keyword` followed by a set of arguments in parentheses.
+3. non-serializable fields, anonymous unions looks like a
+macro calls, i.e. a `keyword (...)` followed by a set of
+arguments in parentheses.
 
 #### Fields of a basic types
 This is a simplified notation for basic types. It allows declaration
@@ -724,6 +725,9 @@ keywords:
 * `uint32_t`
 * `int64_t`
 * `uint64_t`
+* `__int128`
+* `mr_int128_t`
+* `mr_uint128_t`
 * `size_t`
 * `ssize_t`
 * `long_double_t`
@@ -750,7 +754,7 @@ resources at runtime via reflection API provided by Metaresc. Field
 declaration is presented as positional set of parameters in
 parentheses:
 
-`(type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)`
+(type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
 
 Only the first two parameters are mandatory, the rest are optional.
 1. **type** is a field type
@@ -761,7 +765,7 @@ Only the first two parameters are mandatory, the rest are optional.
 initialize with a pointer on array of structured resources
 6. **_resource\_type_** is a string that defines type of resource pointer
 7. **_resource\_array\_size_** is an integer value that denotes size of \
-resource array
+resource array in bytes
 
 **_text\_metadata_** and **_resource_** information are available at
   run-time through reflection API.
@@ -788,9 +792,9 @@ TYPEDEF_STRUCT (sample_t,
 ```
 
 #### Non-serializable fields
-For the fields that should not be serialized use keyword `VOID` as a
-prefix for declaration. Metaresc still detect type of those fields, but
-skip them at the serialization/deserialization process.
+For the fields that should not be serialized use keyword `VOID` or `_`
+as a keyword for declaration. Metaresc still detect type of those
+fields, but skip them at the serialization/deserialization process.
 Note that function pointers needs to be declared without braces and
 asterisk, and asterisk for pointers should be a part of type, but not
 a field name.
@@ -803,6 +807,7 @@ TYPEDEF_STRUCT (non_serializable_t,
 		VOID (int, array, [2]),
 		VOID (int, function, (int)),
 		VOID (int, bitfield, : 4),
+		_ (int, metadata, /* suffix */, "alternative way to declare	non-serializable fields"),
 		);
 ```
 
@@ -819,15 +824,20 @@ also supported.
 
 Default serialization of a pointer is a single instance of designated
 type, but Metaresc also supports representation of pointers as arrays
-of variable size. Size of the array in this case should provided as
+of variable size. Size of the array in this case should be provided as
 another field of the first wrapping structure (i.e. resolution of
 pointers within unions requie context of first top level structure
 that contains this union). Size may be specified either in bytes and
 serialization engine will calculate number of elements based on size
 of base type of the pointer, or user may provide a field with a number
-of elements in this variable size array. Size/count field could be
-specified via structured resource of the pointer field. There are two
-options how this could be done.
+of elements in this variable size array. The difference between those
+two methods is the same as for memory allocators in Libc. `malloc
+(size_t size)` takes a single argument and it is up to the user to
+manage objects within this range. On the other hand `calloc (size_t
+count, size_t size)` takes two arguments and ensure that total
+allocated range will fit `count` elements of `size`
+bytes. `size`/`count` field could be specified via structured resource
+of the pointer field. There are two options how this could be done.
 
 1. User may specify name of the `size`/`count` field as a string and denote 
 that type of the resource is a `"size_field_name"` or
@@ -849,7 +859,9 @@ Existence of the `size`/`count` field could be validated only at the run-time,
 so this method makes a loosely-coupled definition.
 
 2. Another way to specify `size`/`count` field is to provide `offset` of this
-field as a structured resource. Sample declaration as follows:
+field as a structured resource. Type of structured resource in that
+case should be `"size_field_offset"` or `"count_field_offset"`.  Sample
+declaration as follows:
 
 ```c
 TYPEDEF_STRUCT (resizable_array_t,
@@ -884,9 +896,10 @@ declarations. Pointers without user defined resources will be
 automatically augmented with `size`/`count` fields based on naming
 convention. Fields named as a name of the pointer with suffix
 `_size`/`_count` are considered as fields designated `size`/`count`
-fields. If both fields are presented (`ptr_size`/`ptr_count`) than
+fields. If both fields are presented (`ptr_size`/`ptr_count`) then
 `ptr_count` takes the precedence. This naming convention works for all
-types registed in Metaresc including types derived from DWARF and `MR_ADD_TYPES`.
+types registered in Metaresc including types derived from DWARF and
+`MR_ADD_TYPES()`.
 
 Example above could be shortned to:
 ```c
@@ -919,12 +932,12 @@ TYPEDEF_STRUCT (resizable_array_t,
 ```
 
 #### Array declaration
-Third argument **_suffix_** in the field's declaration denotes dimensions
-of the array. Metaresc is capable to distinguish multi-dimensional
-arrays up to 4 diminsions. Higher orders of dimensions are treated as
-four-dimensional arrays with aggregated lower dimension. You could
-use intermediate wrapper types for propper serialization of 5+
-dimensional arrays.
+Third argument **_suffix_** in the field's declaration may be used for
+specification array dimensions. Metaresc is capable to distinguish
+multi-dimensional arrays up to 4 diminsions. Higher orders of
+dimensions are treated as four-dimensional arrays with aggregated
+lower dimension. You could use intermediate wrapper types for propper
+serialization of 5+ dimensional arrays.
 
 ```c
 TYPEDEF_STRUCT (array_1d_t,
@@ -937,8 +950,8 @@ TYPEDEF_STRUCT (array_8d_t,
 		(array_4d_t, array, [2][2][2][2]));
 ```
 
-Each dimension is limitted to 2^32 elements. If you need more than
-that most probably you're doing something wrong.
+Each dimension is limitted to 2^32^ elements (uint32_t type). If you
+need more than that most probably you're doing something wrong.
 
 Zero-size arrays are also supported. Type descriptor will have all
 meta information for those fields, but serialization will omit them as
@@ -959,10 +972,10 @@ function, char array)
 * pointer on types listed above
 * double pointers are not supported
 
-`meta` and `res` fields will be derived for serialization of
-individual array's elements. This allows extended semantics for
-arrays of unions:
-* with 'meta' you could define discriminators for unions
+**text\_metadata_** and **resource** fields will be derived for
+serialization of individual array's elements. This allows extended
+semantics for arrays of unions:
+* with **text\_metadata_** you could define discriminators for unions
 ```c
 TYPEDEF_UNION (union_t,
 	       (bool, _bool),
@@ -978,7 +991,7 @@ value 'element_discriminator'. 'element_discriminator' is interpreted
 as an integer index within union, i.e. both elements of the array will
 be serialized as '_bool' or as '_int' respectively.
 
-* with `res` you could define overrides for union discriminators
+* with **resource** you could define overrides for union discriminators
 ```c
 TYPEDEF_UNION (union_t,
 	       (bool, _bool),
@@ -991,7 +1004,7 @@ TYPEDEF_STRUCT (array_t,
 ```
 Example similar to previous one, but if `element_discriminator` is
 equal to `false` union serialized as `_float`.
-* with `res` you could define size for a single dimensional
+* with **resource** you could define size for a single dimensional
 array. Semantics is similar to pointers of variable size. You could
 specify `size`/`count` field either via `offset` or as a name of the field.
 ```c
@@ -1008,7 +1021,7 @@ TYPEDEF_STRUCT (array_t,
 ```
 
 #### Function pointer declaration
-If `**_suffix_**` is an expression in parentheses, then this field is
+If **_suffix_** is an expression in parentheses, then this field is
 treated as a function pointer declaration. I.e. declaration is
 equivalent of `type (*name) suffix;` as a standard type
 declaration. List of function arguments is processed and Metaresc type
@@ -1019,7 +1032,7 @@ declared as non-serializable fields. Metaresc serialize function
 pointers as function names retrieved via `dladdr ()`. You need to
 compile with `-rdynamic` flag to enable resolution of pointers into
 function names at run time. If function name is not available then the
-pointer is serialized as hex value.
+pointer is serialized as hex value of a pointer.
 
 ```c
 TYPEDEF_STRUCT (functions_t,
@@ -1032,8 +1045,8 @@ TYPEDEF_STRUCT (functions_t,
 
 #### Bitfields declaration
 Bitfields could be declared with the same semantics as arrays and
-function pointers. Specify `**_suffix_**` as semicolon and bitfield width
-and Metaresc will automatically detect bitfield declaration. **type**
+function pointers. If **_suffix_** is a semicolon and bitfield width
+then Metaresc will automatically detect bitfield declaration. **type**
 must be one of integer types including `bool`. `enums` are  also
 represented as integer types by language design.
 
@@ -1175,10 +1188,27 @@ arrays of unions. Unfortunatelly you can't declare overrides for
 pointers on dynamic arrays, because both declarations uses structured
 resources of the field.
 
-Descriptors for union fields that are generated from DWARF debug
-info have **text\_metadata** set to the name of the field with
-`_discriminator` suffix. Names for anonymous unions are auto-generated
-based on DWARF internal indexing schema.
+In case if union field doesn't have **text\_metadata** Metaresc will
+automatically augment this field with discriminator formed based on
+naming convention. The name of the union field with `_discriminator`
+suffix will be set as **text\_metadata** if such field exists in any
+other data type. You may use macro `MR_UNION_DISCRIMINATOR_FIELD()`
+to form name of discriminator field for the future backward
+compatibility purposes. Example as follows:
+```c
+TYPEDEF_STRUCT (discriminated_union_t,
+		(union_t, value),
+		(union_discriminator_t, value_discriminator),
+		);
+
+// Or you can use macro to properly form name for the discriminator field
+TYPEDEF_STRUCT (discriminated_union_t,
+		(union_t, value),
+		(union_discriminator_t, MR_UNION_DISCRIMINATOR_FIELD (value)),
+		);
+```
+Augmentation with union discriminator works for all types registered
+in Metaresc including types derived from DWARF and `MR_ADD_TYPES()`.
 
 #### Text metadata and resource information
 Text metadata is a user defined string that could be retrieved at
@@ -1262,7 +1292,7 @@ argument of the macro is a type name and the rest are enumeration
 values. For enumeration values you can use either simplified semantics
 or extended variant.
 
-`(name, _value\_assignment_, _text\_metadata_, { _pointer\_on\_resources\_array_ }, _resource\_type_, _resource\_array\_size_)`
+(name, _value\_assignment_, _text\_metadata_, { _pointer\_on\_resources\_array_ }, _resource\_type_, _resource\_array\_size_)
 
 All arguments except the first one are optional. Example below
 demonstrates the use of the macro:
