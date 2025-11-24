@@ -1039,7 +1039,7 @@ TYPEDEF_STRUCT (functions_t,
 		(int, my_fork, ()),
 		(int, my_fork_implicit_void, (void)),
 		(int, my_vprintf, (const char * restrict /* format */, va_list /* ap */)),
-		VOID (int, (*my_printf), (const char * restrict /* format */, ...)),
+		VOID (int, my_printf, (const char * restrict /* format */, ...)),
 		);
 ```
 

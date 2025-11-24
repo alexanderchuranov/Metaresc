@@ -268,13 +268,13 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
   if (find != -1)
     return (find);
 
-  if (uds->count > 1)
+  if (uds->count > sizeof (uds->idx) / sizeof (uds->idx[0]))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, uds->count);
       uds->count = 0;
     }
 
-  if (uds->count == 1)
+  if (uds->count == sizeof (uds->idx) / sizeof (uds->idx[0]))
     {
       mr_ic_t * dst_ic = MR_CALLOC (1, sizeof (*dst_ic));
       if (NULL == dst_ic)
