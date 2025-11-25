@@ -2,67 +2,74 @@
 
 [![YourActionName Actions Status](https://github.com/alexanderchuranov/Metaresc/workflows/ci/badge.svg)](https://github.com/alexanderchuranov/Metaresc/actions)
 
-METARESC is a software library written in the C programming language. It
-allows declaring types using a special METARESC grammar. The variables
-of types declared that way may be subsequently serialized into various
-formats and deserialized later. To achieve this the library adds
-metadata annotations to types. These annotations may be used for many
-purposes far beyond just achieving persistence.
+METARESC is a software library that implements reflection in the C
+programming language. It allows to derive fields metadata from
+declarations of structures and unions. You may use a special METARESC
+grammar for types declaration or get metadata from DWARF debug symbols
+or \__builtin_dump_struct function available in Clang. The variables
+of discovered types may be subsequently serialized into various
+formats (XML, JSON, YAML, XDR) and deserialized later. To achieve this
+the library adds metadata annotations to types. These annotations may
+be used for many purposes far beyond just achieving persistence: deep
+copy, recursive memory deallocation, automatic hashing and comparation
+of structures, generic sorting.
 
-<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-generate-toc again -->
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
 - [METARESC: META data and RESource library for C language](#metaresc-meta-data-and-resource-library-for-c-language)
-    - [How to build library:](#how-to-build-library)
-        - [Ubuntu](#ubuntu)
-        - [MacOs](#macos)
-        - [FreeBSD](#freebsd)
-        - [Windows](#windows)
-    - [How to build a sample app](#how-to-build-a-sample-app)
-    - [Serialization/deserialization interface](#serializationdeserialization-interface)
-        - [Serialization](#serialization)
-        - [Deserialization](#deserialization)
-        - [MR_PRINT helper macro](#mr_print-helper-macro)
-    - [Types declaration macro language](#types-declaration-macro-language)
-        - [Structure type declaration](#structure-type-declaration)
-            - [Fields of a basic types](#fields-of-a-basic-types)
-            - [Extended semantics for fields declaration](#extended-semantics-for-fields-declaration)
-            - [Non-serializable fields](#non-serializable-fields)
-            - [Field declaration](#field-declaration)
-            - [Pointer declaration](#pointer-declaration)
-            - [Array declaration](#array-declaration)
-            - [Function pointer declaration](#function-pointer-declaration)
-            - [Bitfields declaration](#bitfields-declaration)
-            - [Union declaration](#union-declaration)
-            - [Text metadata and resource information](#text-metadata-and-resource-information)
-            - [NULL-terminated strings vs character arrays](#null-terminated-strings-vs-character-arrays)
-        - [Union type declaration](#union-type-declaration)
-        - [Enumeration type declaration](#enumeration-type-declaration)
-        - [Function pointer type declaration](#function-pointer-type-declaration)
-        - [Metadata and resources definition for types](#metadata-and-resources-definition-for-types)
-    - [Extra features](#extra-features)
-        - [Deep copy](#deep-copy)
-        - [Recursive memory deallocation](#recursive-memory-deallocation)
-        - [Objects hashing](#objects-hashing)
-        - [Comparation of structures](#comparation-of-structures)
-        - [Generic sorting](#generic-sorting)
-        - [Structure of serialization graph](#structure-of-serialization-graph)
-        - [Access and structure of type descriptor](#access-and-structure-of-type-descriptor)
-        - [Access and structure of field descriptor](#access-and-structure-of-field-descriptor)
-        - [Enumerations metadata](#enumerations-metadata)
-    - [Internals](#internals)
-        - [Error handling](#error-handling)
-        - [Memory allocation](#memory-allocation)
-        - [How to make certain field in type non-serializable](#how-to-make-certain-field-in-type-non-serializable)
-        - [Formatted output to a resizable array](#formatted-output-to-a-resizable-array)
-        - [Indexing framework](#indexing-framework)
+  - [How to build library:](#how-to-build-library)
+    - [Ubuntu](#ubuntu)
+    - [MacOs](#macos)
+    - [FreeBSD](#freebsd)
+    - [Windows](#windows)
+  - [How to build a sample app](#how-to-build-a-sample-app)
+  - [Serialization/deserialization interface](#serializationdeserialization-interface)
+    - [Serialization](#serialization)
+    - [Deserialization](#deserialization)
+    - [MR_PRINT helper macro](#mr_print-helper-macro)
+  - [Types declaration macro language](#types-declaration-macro-language)
+    - [Structure type declaration](#structure-type-declaration)
+      - [Fields of a basic types](#fields-of-a-basic-types)
+      - [Extended semantics for fields declaration](#extended-semantics-for-fields-declaration)
+      - [Non-serializable fields](#non-serializable-fields)
+      - [Field declaration](#field-declaration)
+      - [Pointer declaration](#pointer-declaration)
+      - [Function pointer declaration](#function-pointer-declaration)
+      - [Bitfields declaration](#bitfields-declaration)
+      - [Union declaration](#union-declaration)
+      - [Array declaration](#array-declaration)
+      - [Text metadata and resource information](#text-metadata-and-resource-information)
+      - [NULL-terminated strings vs character arrays](#null-terminated-strings-vs-character-arrays)
+    - [Union type declaration](#union-type-declaration)
+    - [Enumeration type declaration](#enumeration-type-declaration)
+    - [Function pointer type declaration](#function-pointer-type-declaration)
+    - [Metadata and resources definition for types](#metadata-and-resources-definition-for-types)
+  - [Extra features](#extra-features)
+    - [Deep copy](#deep-copy)
+    - [Recursive memory deallocation](#recursive-memory-deallocation)
+    - [Objects hashing](#objects-hashing)
+    - [Comparation of structures](#comparation-of-structures)
+    - [Generic sorting](#generic-sorting)
+    - [Structure of serialization graph](#structure-of-serialization-graph)
+    - [Access and structure of type descriptor](#access-and-structure-of-type-descriptor)
+    - [Access and structure of field descriptor](#access-and-structure-of-field-descriptor)
+    - [Enumerations metadata](#enumerations-metadata)
+  - [Internals](#internals)
+    - [Error handling](#error-handling)
+    - [Memory allocation](#memory-allocation)
+    - [How to make certain field in type non-serializable](#how-to-make-certain-field-in-type-non-serializable)
+    - [Formatted output to a resizable array](#formatted-output-to-a-resizable-array)
+    - [Indexing framework](#indexing-framework)
 
 <!-- markdown-toc end -->
 
 ## How to build library:
 
-Install external dependencies `autoconf`, `automake`, `libtool`, `pkg-config`, `flex`, `bison`, `libxml2-dev`, `libyaml-dev`, `libtirpc-dev`, `check`.
-Clone Metaresc from Github, configure and build according to the standard autoconf/automake process.
+Install external dependencies `autoconf`, `automake`, `libtool`,
+`pkg-config`, `flex`, `bison`, `libxml2-dev`, `libyaml-dev`,
+`libtirpc-dev`, `check`. Clone Metaresc from Github, configure and
+build according to the standard autoconf/automake process.
 
 ### Ubuntu
 
@@ -294,14 +301,14 @@ int main (int argc, char * argv[])
 
 Metadata generation macro will validate at compile time that provided
 types matches types of the structure fields, but it is still on user
-to synchronize the list of fields with the original declaration. Order of the
-fields could be arbitrary and library will reorder them based on offset
-for use in serialization. Necessity to keep types of fields in sync
-might be annoying and overwhelming. The good news is that you could
-omit types specification in macro language for all fields of basic
-types (boolean, integer, float, complex, single characters, strings,
-pointers on all types listed above and even pointers on structures of
-base type). So example above could be reduced to:
+to synchronize the list of fields with the original declaration. Order
+of the fields could be arbitrary and library will reorder them based
+on offset for use in serialization. Necessity to keep types of fields
+in sync might be annoying and overwhelming. The good news is that you
+could omit types specification in macro language for all fields of
+basic types (boolean, integer, float, complex, single characters,
+strings, pointers on all types listed above and even pointers on
+structures of base type). So example above could be reduced to:
 ```c
 #include <metaresc.h>
 
@@ -932,96 +939,6 @@ TYPEDEF_STRUCT (resizable_array_t,
 		);
 ```
 
-#### Array declaration
-Third argument **_suffix_** in the field's declaration may be used for
-specification array dimensions. Metaresc is capable to distinguish
-multi-dimensional arrays up to 4 diminsions. Higher orders of
-dimensions are treated as four-dimensional arrays with aggregated
-lower dimension. You could use intermediate wrapper types for propper
-serialization of 5+ dimensional arrays.
-
-```c
-TYPEDEF_STRUCT (array_1d_t,
-		(int, array, [2]));
-TYPEDEF_STRUCT (array_4d_t,
-		(int, array, [2][2][2][2]));
-TYPEDEF_STRUCT (array_5d_t,
-		(array_1d_t, array, [2][2][2][2]));
-TYPEDEF_STRUCT (array_8d_t,
-		(array_4d_t, array, [2][2][2][2]));
-```
-
-Each dimension is limitted to 2<sup>32</sup> elements (uint32_t
-type). If you need more than that most probably you're doing something
-wrong.
-
-Zero-size arrays are also supported. Type descriptor will have all
-meta information for those fields, but serialization will omit them as
-empty fields. C standard allows empty-size declaration at the end of
-the structure. In Metaresc those fields could be declared as
-non-serializable.
-
-```c
-TYPEDEF_STRUCT (array_t,
-		(int, zero_size_array, [0]),
-		VOID (int, empty_size_array, []));
-```
-
-Base type of array's declaration might be:
-* C basic type (character, string, boolean, integer, float, complex)
-* any other type declared within Metaresc (struct, enum, union,
-function, char array)
-* pointer on types listed above
-* double pointers are not supported
-
-**_text\_metadata_** and **resource** fields will be derived for
-serialization of individual array's elements. This allows extended
-semantics for arrays of unions:
-* with **_text\_metadata_** you could define discriminators for unions
-```c
-TYPEDEF_UNION (union_t,
-	       (bool, _bool),
-	       (int, _int),
-	       (float, _float));
-
-TYPEDEF_STRUCT (array_t,
-		(union_t, array, [2], "element_discriminator"),
-		(bool, element_discriminator, , "discriminator for array elements"));
-```
-Example demostrates array of two elements discriminated by boolean
-value 'element_discriminator'. 'element_discriminator' is interpreted
-as an integer index within union, i.e. both elements of the array will
-be serialized as '_bool' or as '_int' respectively.
-
-* with **resource** you could define overrides for union discriminators
-```c
-TYPEDEF_UNION (union_t,
-	       (bool, _bool),
-	       (int, _int),
-	       (float, _float));
-
-TYPEDEF_STRUCT (array_t,
-		(union_t, array, [2], "element_discriminator", { (mr_ud_override_t[]){ { false, "_float" } } }, "mr_ud_override_t"),
-		(bool, element_discriminator, , "discriminator for array elements"));
-```
-Example similar to previous one, but if `element_discriminator` is
-equal to `false` union serialized as `_float`.
-* with **resource** you could define size for a single dimensional
-array. Semantics is similar to pointers of variable size. You could
-specify `size`/`count` field either via `offset` or as a name of the field.
-```c
-TYPEDEF_STRUCT (array_t,
-		(int, array, [16], "static array allocated for a maximal possible size, but real utilization is defined	by 'size' field", { .offset = offsetof (array_t, size) }, "offset"),
-		(size_t, size, , "dynamically limit serialization of a static array to a certain size"));
-```
-Dynamic array size specification could also be achieved with a naming
-convention identical with pointers. 
-```c
-TYPEDEF_STRUCT (array_t,
-		(int, array, [16], "static array allocated for a maximal possible size, but real utilization is defined	by 'array_count field"),
-		(size_t, MR_POINTER_COUNT_FIELD (array), , "dynamically limit serialization of a static array to a certain size"));
-```
-
 #### Function pointer declaration
 If **_suffix_** is an expression in parentheses, then this field is
 treated as a function pointer declaration. I.e. declaration is
@@ -1211,6 +1128,96 @@ TYPEDEF_STRUCT (discriminated_union_t,
 ```
 Augmentation with union discriminator works for all types registered
 in Metaresc including types derived from DWARF and `MR_ADD_TYPES()`.
+
+#### Array declaration
+Third argument **_suffix_** in the field's declaration may be used for
+specification array dimensions. Metaresc is capable to distinguish
+multi-dimensional arrays up to 4 diminsions. Higher orders of
+dimensions are treated as four-dimensional arrays with aggregated
+lower dimension. You could use intermediate wrapper types for propper
+serialization of 5+ dimensional arrays.
+
+```c
+TYPEDEF_STRUCT (array_1d_t,
+		(int, array, [2]));
+TYPEDEF_STRUCT (array_4d_t,
+		(int, array, [2][2][2][2]));
+TYPEDEF_STRUCT (array_5d_t,
+		(array_1d_t, array, [2][2][2][2]));
+TYPEDEF_STRUCT (array_8d_t,
+		(array_4d_t, array, [2][2][2][2]));
+```
+
+Each dimension is limitted to 2<sup>32</sup> elements (uint32_t
+type). If you need more than that most probably you're doing something
+wrong.
+
+Zero-size arrays are also supported. Type descriptor will have all
+meta information for those fields, but serialization will omit them as
+empty fields. C standard allows empty-size declaration at the end of
+the structure. In Metaresc those fields could be declared as
+non-serializable.
+
+```c
+TYPEDEF_STRUCT (array_t,
+		(int, zero_size_array, [0]),
+		VOID (int, empty_size_array, []));
+```
+
+Base type of array's declaration might be:
+* C basic type (character, string, boolean, integer, float, complex)
+* any other type declared within Metaresc (struct, enum, union,
+function, char array)
+* pointer on types listed above
+* double pointers are not supported
+
+**_text\_metadata_** and **resource** fields will be derived for
+serialization of individual array's elements. This allows extended
+semantics for arrays of unions:
+* with **_text\_metadata_** you could define discriminators for unions
+```c
+TYPEDEF_UNION (union_t,
+	       (bool, _bool),
+	       (int, _int),
+	       (float, _float));
+
+TYPEDEF_STRUCT (array_t,
+		(union_t, array, [2], "element_discriminator"),
+		(bool, element_discriminator, , "discriminator for array elements"));
+```
+Example demostrates array of two elements discriminated by boolean
+value 'element_discriminator'. 'element_discriminator' is interpreted
+as an integer index within union, i.e. both elements of the array will
+be serialized as '_bool' or as '_int' respectively.
+
+* with **resource** you could define overrides for union discriminators
+```c
+TYPEDEF_UNION (union_t,
+	       (bool, _bool),
+	       (int, _int),
+	       (float, _float));
+
+TYPEDEF_STRUCT (array_t,
+		(union_t, array, [2], "element_discriminator", { (mr_ud_override_t[]){ { false, "_float" } } }, "mr_ud_override_t"),
+		(bool, element_discriminator, , "discriminator for array elements"));
+```
+Example similar to previous one, but if `element_discriminator` is
+equal to `false` union serialized as `_float`.
+* with **resource** you could define size for a single dimensional
+array. Semantics is similar to pointers of variable size. You could
+specify `size`/`count` field either via `offset` or as a name of the field.
+```c
+TYPEDEF_STRUCT (array_t,
+		(int, array, [16], "static array allocated for a maximal possible size, but real utilization is defined	by 'size' field", { .offset = offsetof (array_t, size) }, "offset"),
+		(size_t, size, , "dynamically limit serialization of a static array to a certain size"));
+```
+Dynamic array size specification could also be achieved with a naming
+convention identical with pointers.
+```c
+TYPEDEF_STRUCT (array_t,
+		(int, array, [16], "static array allocated for a maximal possible size, but real utilization is defined	by 'array_count field"),
+		(size_t, MR_POINTER_COUNT_FIELD (array), , "dynamically limit serialization of a static array to a certain size"));
+```
 
 #### Text metadata and resource information
 Text metadata is a user defined string that could be retrieved at
