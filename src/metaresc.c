@@ -901,7 +901,12 @@ mr_anon_unions_extract (mr_td_t * tdp)
 	      /* offset of union memebers may differ from offset of anonymous union place holder */
 	      if (fields[j]->offset != 0) /* MR_VOID and MR_END_ANON_UNION has zero offset */
 		fdp->offset = fields[j]->offset;
-	      fields[j]->offset = 0; /* reset offset to zero */
+	      /*
+		We need to reset offset of all fields to zero, but offset for bitfields within
+		anonymous unions will be calculated later at library init stage. To consolidate this
+		logic in one place we will not do it right now and will relay on initialization code.
+		fields[j]->offset = 0;
+	      */
 	      if (tdp_->size < fields[j]->stype.size)
 		tdp_->size = fields[j]->stype.size; /* find union max size member */
 	    }
@@ -1633,6 +1638,9 @@ mr_detect_struct_fields (mr_td_t * tdp)
       mr_fd_init_ud_overrides (fdp);
       mr_func_field_detect (fdp);
       mr_fd_init_bitfield_params (fdp);
+#define MR_ANON_UNION_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
+      if ((MR_ANON_UNION_TYPES >> tdp->mr_type) & 1)
+	fdp->offset = 0;
 
       if (fdp->name.str)
 	{
