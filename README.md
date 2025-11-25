@@ -336,7 +336,7 @@ int main (int argc, char * argv[])
 
 For happy users of clang15+ library provides one more option to
 discover type descriptors. Use macro `MR_ADD_TYPES` for structs and
-unions. This macro variable number of type names. It will
+unions. This macro accepts variable number of type names. It will
 automatically discover fields of most basic types, inline structures
 and unions, bitfields, arrays and pointers of known types. Fields of
 the following types are not supported: inline strings, enums, function
@@ -431,10 +431,9 @@ Here we build two binary executables: `sample` and
 real `sample` also requires `sample_types.o`. `sample_types.o` is
 built out of `sample_types.c` mentioned above. This is a static
 function that will be automatically executed at the start of
-application (`__attribute__ ((constructor))`). This function iterates
-through the array of type descriptors and registers those types in the
-library. Array of type descriptors is a statically initialized array
-that gets type descriptors via include of `sample_types.h`
+application (`__attribute__ ((constructor))`). This function adds to
+library registry type descriptors that were discovered from DWARF debug
+symbols. Those type descriptors comes from `sample_types.h`
 file. Content of `sample_types.h` generated in the build process with
 the use of `mr_dwarf` utility. This utility takes an arbitrary list of
 object files (on Linux only) and executables and dumps all types of
