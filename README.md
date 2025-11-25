@@ -761,11 +761,12 @@ Only the first two parameters are mandatory, the rest are optional.
 2. **name** is a field name
 3. **_suffix_** is used for declaration of arrays, function pointers and bitfields
 4. **_text\_metadata_** is a user defined string
-5. **_pointer\_on\_resources\_array_** is a `void*` pointer that user can \
-initialize with a pointer on array of structured resources
+5. **_pointer\_on\_resources\_array_** (**_resource_**) is a `void*`
+   pointer that user can initialize with a pointer on array of
+   structured resources
 6. **_resource\_type_** is a string that defines type of resource pointer
-7. **_resource\_array\_size_** is an integer value that denotes size of \
-resource array in bytes
+7. **_resource\_array\_size_** is an integer value that denotes size
+   of resource array in bytes 
 
 **_text\_metadata_** and **_resource_** information are available at
   run-time through reflection API.
@@ -950,8 +951,9 @@ TYPEDEF_STRUCT (array_8d_t,
 		(array_4d_t, array, [2][2][2][2]));
 ```
 
-Each dimension is limitted to 2^32^ elements (uint32_t type). If you
-need more than that most probably you're doing something wrong.
+Each dimension is limitted to 2<sup>32</sup> elements (uint32_t
+type). If you need more than that most probably you're doing something
+wrong.
 
 Zero-size arrays are also supported. Type descriptor will have all
 meta information for those fields, but serialization will omit them as
@@ -972,10 +974,10 @@ function, char array)
 * pointer on types listed above
 * double pointers are not supported
 
-**text\_metadata_** and **resource** fields will be derived for
+**_text\_metadata_** and **resource** fields will be derived for
 serialization of individual array's elements. This allows extended
 semantics for arrays of unions:
-* with **text\_metadata_** you could define discriminators for unions
+* with **_text\_metadata_** you could define discriminators for unions
 ```c
 TYPEDEF_UNION (union_t,
 	       (bool, _bool),
@@ -1188,10 +1190,10 @@ arrays of unions. Unfortunatelly you can't declare overrides for
 pointers on dynamic arrays, because both declarations uses structured
 resources of the field.
 
-In case if union field doesn't have **text\_metadata** Metaresc will
+In case if union field doesn't have **_text\_metadata_** Metaresc will
 automatically augment this field with discriminator formed based on
 naming convention. The name of the union field with `_discriminator`
-suffix will be set as **text\_metadata** if such field exists in any
+suffix will be set as **_text\_metadata_** if such field exists in any
 other data type. You may use macro `MR_UNION_DISCRIMINATOR_FIELD()`
 to form name of discriminator field for the future backward
 compatibility purposes. Example as follows:
@@ -1233,12 +1235,12 @@ on an array or characters of a certain length.
 By default `char *` is classified by Metaresc as a NULL-terminated
 string. For declaration of a pointer on a single character add
 `.stype.mr_type = MR_TYPE_POINTER` at the end of field declaration
-(separated by comma after any argument after _text\_metadata_).
+(separated by comma after any argument after **_text\_metadata_**).
 
 ```c
 TYPEDEF_STRUCT (substr_t,
-	        (char *, str, , { .offset = offsetof (substr_t, length) }, "offset", .stype.mr_type = MR_TYPE_POINTER),
-		VOID (size_t, length));
+	(char *, str, , { .offset = offsetof (substr_t, length) }, "count_field_offset", .stype.mr_type = MR_TYPE_POINTER),
+	VOID (size_t, length));
 ```
 
 The same problem is applicable for the declaration of characters
@@ -1306,27 +1308,9 @@ TYPEDEF_ENUM (color_t, ATTRIBUTES (__attribute__ ((packed))),
               (GREEN,  = 3,  "set to 3 - this is a textual meta info"),
               (BLUE, ,  "auto-enumerated", { "a void pointer for arbitrary resource" }),
 
-              (PURPLE,
-	       /* value argument may be empty */,
-	       "becomes 5",
-	       { "next argument is a type of this poiner" },
-	       "string"
-	       ),
-
-              (PINK,
-	       /* auto-enumerated */,
-	       /* no meta         */,
-	       { (color_t[]){ PINK } },
-	       "color_t" /* type itself might be used for initialization of resource */
-	       ),
-
-              (BROWN,
-	       /* auto-enumerated */,
-	       /* no meta         */,
-	       { (color_t[]){ RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, PINK, BROWN } },
-	       "color_t",
-	       8 * sizeof (color_t) /* size of resource array */
-	       )           /* trailing comma is optional */
+              (PURPLE, , "auto-enumerated", { "next argument is a type of this poiner" }, "string"),
+              (PINK, /* auto-enumerated */, /* no meta */, { (color_t[]){ PINK } }, "color_t" /* type itself might be used for initialization of resource */),
+              (BROWN, /* auto-enumerated */, /* no meta */, { (color_t[]){ RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE, PINK, BROWN } }, "color_t", 8 * sizeof (color_t) /* size of resource array */) /* trailing comma is optional */
               );
 ```
 
