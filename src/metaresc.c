@@ -248,7 +248,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   return (fdp);
 }
 
-int
+static int
 mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
 {
   va_list args;
@@ -375,7 +375,7 @@ mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt
   return (0);
 }
 
-int
+static int
 mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
 {
   va_list args;
@@ -421,6 +421,87 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
 
   va_end (args);
   return (0);
+}
+
+void
+mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
+						 int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...),
+						 mr_dump_struct_type_ctx_t * ctx),
+			 mr_td_t * tdp, int fields_fd_count, int anon_union_fd_count)
+{
+  mr_dump_struct_type_ctx_t dst_ctx;
+  uint8_t value[tdp->size];
+  uint8_t * ptr = value;
+  size_t block_size, i;
+
+  for (i = 0; i < tdp->size; ++i)
+    *ptr++ = i;
+
+  memset (&dst_ctx, 0, sizeof (dst_ctx));
+  dst_ctx.struct_ptr = value;
+  dst_ctx.tdp = tdp;
+
+  for (dst_ctx.offset_byte = 0; ; ++dst_ctx.offset_byte)
+    {
+      dst_ctx.field_idx = 0;
+      if (0 == setjmp (dst_ctx._jmp_buf))
+	mr_dump_struct (value, mr_dump_struct_type_detection, &dst_ctx);
+      block_size = 1 << (__CHAR_BIT__ * (1 + dst_ctx.offset_byte));
+      if (tdp->size < block_size)
+	break;
+      i = 0;
+      for (ptr = value; ptr - value < tdp->size - (block_size - 1); ptr += block_size)
+	memset (ptr, i++, block_size);
+      memset (ptr, i, tdp->size & (block_size - 1));
+    }
+
+  mr_struct_param_t * struct_param = &dst_ctx.tdp->param.struct_param;
+  size_t count = struct_param->fields_count;
+  int size = tdp->size - 1;
+  block_size = 1 << (sizeof (int) * __CHAR_BIT__ - __builtin_clz ((size <= 0) ? 1 : size) - 1);
+
+  while (block_size != 0)
+    {
+      i = 0;
+      for (ptr = value; ptr - value < tdp->size - (block_size - 1); ptr += block_size)
+	memset (ptr, -(i++ & 1), block_size);
+      memset (ptr, -(i++ & 1), tdp->size & (block_size - 1));
+
+      dst_ctx.field_idx = count;
+      if (0 == setjmp (dst_ctx._jmp_buf))
+	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
+      if (dst_ctx.field_idx == count)
+	break;
+      block_size >>= 1;
+    }
+
+  if (dst_ctx.field_idx != count)
+    {
+      memset (value, 0b11110000, tdp->size);
+      dst_ctx.field_idx = count;
+      if (0 == setjmp (dst_ctx._jmp_buf))
+	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
+      memset (value, 0b11001100, tdp->size);
+      dst_ctx.field_idx = count;
+      if (0 == setjmp (dst_ctx._jmp_buf))
+	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
+      memset (value, 0b10101010, tdp->size);
+      dst_ctx.field_idx = count;
+      if (0 == setjmp (dst_ctx._jmp_buf))
+	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
+      i = count;
+      count = struct_param->fields_count;
+      for ( ; i < count; ++i)
+	{
+	  struct_param->fields[i]->bitfield_param.initialized = true;
+	  struct_param->fields[i]->bitfield_param.shift =
+	    struct_param->fields[i]->offset % __CHAR_BIT__;
+	  struct_param->fields[i]->offset /= __CHAR_BIT__;
+	}
+    }
+  struct_param->fields[fields_fd_count] = struct_param->fields[count];
+  struct_param->fields[count] = NULL;
+  mr_add_type (tdp);
 }
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
