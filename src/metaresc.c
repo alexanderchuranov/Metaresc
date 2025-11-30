@@ -423,6 +423,55 @@ mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char *
   return (0);
 }
 
+static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_fd_count, int anon_union_fd_count)
+{
+  int i;
+  int same_offset_cnt = 1;
+  int non_zero_znt = 0;
+  int anon_union_fd_idx = fields_fd_count;
+
+  for (i = 1; i <= struct_param->fields_count; ++i)
+    {
+      bool non_zero = true;
+      if (struct_param->fields[i] != NULL)
+	non_zero = (strstr (struct_param->fields[i]->stype.type, "[0]") == NULL);
+
+      if ((struct_param->fields[i] != NULL) && (struct_param->fields[i]->offset == struct_param->fields[i - 1]->offset))
+	{
+	  ++same_offset_cnt;
+	  if (non_zero && (struct_param->fields[i]->stype.mr_type != MR_TYPE_BITFIELD))
+	    ++non_zero_znt;
+	}
+      else
+	{
+	  if ((same_offset_cnt > 1) && (non_zero_znt > 1))
+	    {
+	      if ((anon_union_fd_count == 0) || (struct_param->fields_count >= fields_fd_count))
+		{
+		  fprintf (stderr, "Too many anonynous unions\n");
+		  return;
+		}
+	      else
+		{
+		  int idx = i - same_offset_cnt;
+		  mr_fd_t * trailing_fd = struct_param->fields[struct_param->fields_count + 1];
+		  trailing_fd->stype.mr_type = MR_TYPE_END_ANON_UNION;
+
+		  memmove (&struct_param->fields[i + 1], &struct_param->fields[i], (++struct_param->fields_count - i) * sizeof (struct_param->fields[0]));
+		  struct_param->fields[i] = trailing_fd;
+		  memmove (&struct_param->fields[idx + 1], &struct_param->fields[idx], (++struct_param->fields_count - idx) * sizeof (struct_param->fields[0]));
+		  struct_param->fields[idx] = struct_param->fields[++anon_union_fd_idx];
+
+		  --anon_union_fd_count;
+		  i += 2;
+		}
+	    }
+	  same_offset_cnt = 1;
+	  non_zero_znt = non_zero ? 1 : 0;
+	}
+    }
+}
+
 void
 mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
 						 int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...),
@@ -456,7 +505,7 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
     }
 
   mr_struct_param_t * struct_param = &dst_ctx.tdp->param.struct_param;
-  size_t count = struct_param->fields_count;
+  int count = struct_param->fields_count;
   int size = tdp->size - 1;
   block_size = 1 << (sizeof (int) * __CHAR_BIT__ - __builtin_clz ((size <= 0) ? 1 : size) - 1);
 
@@ -501,6 +550,8 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
     }
   struct_param->fields[fields_fd_count] = struct_param->fields[count];
   struct_param->fields[count] = NULL;
+
+  mr_detect_anon_unions (struct_param, fields_fd_count, anon_union_fd_count);
   mr_add_type (tdp);
 }
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */

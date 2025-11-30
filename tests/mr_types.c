@@ -534,6 +534,25 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     (char *, discriminated_union_discriminator),
 		     );
 
+typedef struct anon_union_t {
+  int zero_size_field[0];
+  int field_after_zero_size_field;
+  union {
+    int _zero_size_field[0];
+    int _field_after_zero_size_field;
+  };
+  union {
+    int zero_size_array[0];
+    int anon_union_field1;
+    float anon_union_field2;
+  };
+  union {
+    int _zero_size_array[0];
+    int _anon_union_field1;
+    float _anon_union_field2;
+  };
+} anon_union_t;
+
 typedef char * alias_string_t;
 
 struct aliases_t {
@@ -546,7 +565,7 @@ struct aliases_t {
   const volatile char * volatile const cv_string;
 };
 
-MR_ADD_TYPES (_dump_struct_types_t, struct aliases_t);
+MR_ADD_TYPES (_dump_struct_types_t, struct aliases_t, anon_union_t);
 
 START_TEST (dump_struct_types_detection) {
   mr_conf_init ();
@@ -626,6 +645,10 @@ START_TEST (dump_struct_types_detection) {
       ck_assert_msg (fdp->stype.mr_type == MR_TYPE_STRING, "Field '%s' was registered with a wrong mr_type (%d)", string_fields[i], fdp->stype.mr_type);
       ck_assert_msg (fdp->stype.tdp != NULL, "Type desicriptor for field '%s' was not registered", string_fields[i]);
     }
+
+  tdp = mr_get_td_by_name ("anon_union_t");
+  ck_assert_msg (tdp != NULL, "Type descriptor for anon_union_t was not found");
+  ck_assert_msg (tdp->param.struct_param.fields_count == 6, "Incorrect detection of anonymous unions");
 } END_TEST
 
 #else
