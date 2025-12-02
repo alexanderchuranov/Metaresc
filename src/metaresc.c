@@ -238,21 +238,17 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       fdp->stype.type = type;
       fdp->name.str = name;
       fdp->offset = 0;
-
-      ++struct_param->fields_count;
-    }
-  else
-    {
-      if (ctx->bitfield_detection)
-	return (fdp);
-
       if (MR_TYPE_NONE == mr_type)
 	fdp->offset = value->_ptr - ctx->struct_ptr;
-      else
-	fdp->offset = (fdp->offset << 1) | (value->_uint8 & 1);
+
+      ++struct_param->fields_count;
+      return (fdp);
     }
 
-  return (fdp);
+  if (!ctx->bitfield_detection && (mr_type != MR_TYPE_NONE))
+    fdp->offset = (fdp->offset << 1) | (value->_uint8 & 1);
+
+  return (NULL);
 }
 
 static void
@@ -267,108 +263,108 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
 
   fmt += sizeof (NON_BITFIELD_FMT) - sizeof ("");
 
-  if (' ' == fmt[0])
-    {
-      ++fmt;
-      if ((indent_spaces > 2) && ctx->type && ctx->name)
-	{
-	  type = ctx->type;
-	  name = ctx->name;
-	  ctx->type = ctx->name = NULL;
-	  detect_offset = true;
-	}
-      else
-	detect_offset = (2 == indent_spaces);
-    }
-  else
+  if (' ' != fmt[0])
     {
       if (2 == indent_spaces)
 	{
 	  ctx->type = type;
 	  ctx->name = name;
 	}
+      return;
     }
 
-  if (detect_offset)
+  if ((indent_spaces > 2) && (ctx->type != NULL) && (ctx->name != NULL))
     {
-      mr_dump_struct_types_union_t value;
-      mr_type_t mr_type = MR_TYPE_LAST;
-      static mr_type_class_t tc[MR_TYPE_LAST] =
-	{
-	  [MR_TYPE_NONE] = MR_POINTER_TYPE_CLASS,
-	  [MR_TYPE_STRING] = MR_POINTER_TYPE_CLASS,
-	  [MR_TYPE_CHAR_ARRAY] = MR_ARRAY_TYPE_CLASS,
-	  [MR_TYPE_CHAR] = MR_CHAR_TYPE_CLASS,
-	  [MR_TYPE_VOID] = MR_VOID_TYPE_CLASS,
-	  [MR_TYPE_BOOL] = MR_BOOLEAN_TYPE_CLASS,
-	  [MR_TYPE_INT8] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_UINT8] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_INT16] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_UINT16] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_INT32] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_UINT32] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_INT64] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_UINT64] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_INT128] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_UINT128] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_FLOAT] = MR_REAL_TYPE_CLASS,
-	  [MR_TYPE_COMPLEX_FLOAT] = MR_COMPLEX_TYPE_CLASS,
-	  [MR_TYPE_DOUBLE] = MR_REAL_TYPE_CLASS,
-	  [MR_TYPE_COMPLEX_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
-	  [MR_TYPE_LONG_DOUBLE] = MR_REAL_TYPE_CLASS,
-	  [MR_TYPE_COMPLEX_LONG_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
-	  [MR_TYPE_STRUCT] = MR_RECORD_TYPE_CLASS,
-	  [MR_TYPE_ENUM] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_FUNC_TYPE] = MR_FUNCTION_TYPE_CLASS,
-	  [MR_TYPE_FUNC] = MR_FUNCTION_TYPE_CLASS,
-	  [MR_TYPE_BITFIELD] = MR_INTEGER_TYPE_CLASS,
-	  [MR_TYPE_ARRAY] = MR_ARRAY_TYPE_CLASS,
-	  [MR_TYPE_POINTER] = MR_POINTER_TYPE_CLASS,
-	  [MR_TYPE_UNION] = MR_UNION_TYPE_CLASS,
-	  [MR_TYPE_ANON_UNION] = MR_UNION_TYPE_CLASS,
-	  [MR_TYPE_NAMED_ANON_UNION] = MR_UNION_TYPE_CLASS,
-	  [MR_TYPE_END_ANON_UNION] = MR_UNION_TYPE_CLASS,
-	};
+      type = ctx->type;
+      name = ctx->name;
+      ctx->type = ctx->name = NULL;
+      detect_offset = true;
+    }
+  else
+    detect_offset = (2 == indent_spaces);
 
-      memset (&value, 0, sizeof (value));
+  if (!detect_offset)
+    return;
+
+  mr_dump_struct_types_union_t value = {};
+  mr_type_t mr_type;
 
 #define CASE_(FIELD, MR_TYPE) FIELD = va_arg (args, typeof (0 + (typeof (FIELD))0)); mr_type = MR_TYPE;
 #define CASE(FIELD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) \
-	(CASE_ (FIELD, MR_TYPE_DETECT (typeof (FIELD))))	\
-	(CASE_ (FIELD, __VA_ARGS__))
+    (CASE_ (FIELD, MR_TYPE_DETECT (typeof (FIELD))))		\
+    (CASE_ (FIELD, __VA_ARGS__))
 	  
-      if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
-      else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
-      else if (strcmp (fmt, "%p\n") == 0) { CASE (value._ptr, MR_TYPE_POINTER) }
-      else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value._sc) }
-      else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value._uc) }
-      else if (strcmp (fmt, "%hd\n") == 0) { CASE (value._ss) }
-      else if (strcmp (fmt, "%hu\n") == 0) { CASE (value._us) }
-      else if (strcmp (fmt, "%d\n") == 0) { CASE (value._si) }
-      else if (strcmp (fmt, "%u\n") == 0) { CASE (value._ui) }
-      else if (strcmp (fmt, "%ld\n") == 0) { CASE (value._sl) }
-      else if (strcmp (fmt, "%lu\n") == 0) { CASE (value._ul) }
-      else if (strcmp (fmt, "%lld\n") == 0) { CASE (value._sll) }
-      else if (strcmp (fmt, "%llu\n") == 0) { CASE (value._ull) }
-      else if (strcmp (fmt, "%zd\n") == 0) { CASE (value._zd) }
-      else if (strcmp (fmt, "%zu\n") == 0) { CASE (value._zu) }
-      else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
-      else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double); }
-      else fprintf (stderr, "Unknown qualifier '%s'\n", fmt);
+  ++fmt;
+  if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
+  else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
+  else if (strcmp (fmt, "%p\n") == 0) { CASE (value._ptr, MR_TYPE_POINTER) }
+  else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value._sc) }
+  else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value._uc) }
+  else if (strcmp (fmt, "%hd\n") == 0) { CASE (value._ss) }
+  else if (strcmp (fmt, "%hu\n") == 0) { CASE (value._us) }
+  else if (strcmp (fmt, "%d\n") == 0) { CASE (value._si) }
+  else if (strcmp (fmt, "%u\n") == 0) { CASE (value._ui) }
+  else if (strcmp (fmt, "%ld\n") == 0) { CASE (value._sl) }
+  else if (strcmp (fmt, "%lu\n") == 0) { CASE (value._ul) }
+  else if (strcmp (fmt, "%lld\n") == 0) { CASE (value._sll) }
+  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value._ull) }
+  else if (strcmp (fmt, "%zd\n") == 0) { CASE (value._zd) }
+  else if (strcmp (fmt, "%zu\n") == 0) { CASE (value._zu) }
+  else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
+  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double); }
+  else
+    {
+      fprintf (stderr, "Unknown qualifier '%s'\n", fmt);
+      return;
+    }
 
-      if (mr_type != MR_TYPE_LAST)
-	{
-	  mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
-	  if (fdp != NULL)
-	    {
-	      fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
-	      if (indent_spaces > 2)
-		{
-		  fdp->stype.mr_type = MR_TYPE_NONE;
-		  fdp->stype.mr_type_class = MR_RECORD_TYPE_CLASS;
-		}
-	    }
-	}
+  mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
+  if (fdp == NULL)
+    return;
+
+  static mr_type_class_t tc[MR_TYPE_LAST] =
+    {
+      [MR_TYPE_NONE] = MR_POINTER_TYPE_CLASS,
+      [MR_TYPE_STRING] = MR_POINTER_TYPE_CLASS,
+      [MR_TYPE_CHAR_ARRAY] = MR_ARRAY_TYPE_CLASS,
+      [MR_TYPE_CHAR] = MR_CHAR_TYPE_CLASS,
+      [MR_TYPE_VOID] = MR_VOID_TYPE_CLASS,
+      [MR_TYPE_BOOL] = MR_BOOLEAN_TYPE_CLASS,
+      [MR_TYPE_INT8] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_UINT8] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_INT16] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_UINT16] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_INT32] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_UINT32] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_INT64] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_UINT64] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_INT128] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_UINT128] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_FLOAT] = MR_REAL_TYPE_CLASS,
+      [MR_TYPE_COMPLEX_FLOAT] = MR_COMPLEX_TYPE_CLASS,
+      [MR_TYPE_DOUBLE] = MR_REAL_TYPE_CLASS,
+      [MR_TYPE_COMPLEX_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
+      [MR_TYPE_LONG_DOUBLE] = MR_REAL_TYPE_CLASS,
+      [MR_TYPE_COMPLEX_LONG_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
+      [MR_TYPE_STRUCT] = MR_RECORD_TYPE_CLASS,
+      [MR_TYPE_ENUM] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_FUNC_TYPE] = MR_FUNCTION_TYPE_CLASS,
+      [MR_TYPE_FUNC] = MR_FUNCTION_TYPE_CLASS,
+      [MR_TYPE_BITFIELD] = MR_INTEGER_TYPE_CLASS,
+      [MR_TYPE_ARRAY] = MR_ARRAY_TYPE_CLASS,
+      [MR_TYPE_POINTER] = MR_POINTER_TYPE_CLASS,
+      [MR_TYPE_UNION] = MR_UNION_TYPE_CLASS,
+      [MR_TYPE_ANON_UNION] = MR_UNION_TYPE_CLASS,
+      [MR_TYPE_NAMED_ANON_UNION] = MR_UNION_TYPE_CLASS,
+      [MR_TYPE_END_ANON_UNION] = MR_UNION_TYPE_CLASS,
+    };
+
+  if (2 == indent_spaces)
+    fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
+  else
+    {
+      fdp->stype.mr_type = MR_TYPE_NONE;
+      fdp->stype.mr_type_class = MR_RECORD_TYPE_CLASS;
     }
 }
 
