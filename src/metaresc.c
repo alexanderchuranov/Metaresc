@@ -228,9 +228,9 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 
   if (field_idx == struct_param->fields_count)
     {
-      if (struct_param->fields_count >= MR_PP_DEPTH)
+      if (struct_param->fields_count >= ctx->fields_count)
 	{
-	  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
+	  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_TDP_FIELDS_COUNT);
 	  longjmp (ctx->_jmp_buf, !0);
 	}
 
@@ -259,7 +259,6 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
   char * type = va_arg (args, char *);
   char * name = va_arg (args, char *);
   int indent_spaces = strlen (indent);
-  bool detect_offset = false;
 
   fmt += sizeof (NON_BITFIELD_FMT) - sizeof ("");
 
@@ -273,6 +272,7 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
       return;
     }
 
+  bool detect_offset = false;
   if ((indent_spaces > 2) && (ctx->type != NULL) && (ctx->name != NULL))
     {
       type = ctx->type;
@@ -319,7 +319,7 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
     }
 
   mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
-  if (fdp == NULL)
+  if (NULL == fdp)
     return;
 
   static mr_type_class_t tc[MR_TYPE_LAST] =
@@ -379,40 +379,39 @@ mr_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args)
   int value = va_arg (args, int);
   int indent_spaces = strlen (indent);
 
-  if (2 == indent_spaces)
+  if (2 != indent_spaces)
+    return;
+
+  mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
+  size_t field_idx = ctx->field_idx++;
+  if (field_idx > struct_param->fields_count)
     {
-      mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
-      size_t field_idx = ctx->field_idx++;
-      if (field_idx > struct_param->fields_count)
+      fprintf (stderr, "Unexpected field index %zd out of allocated %zd fields\n", field_idx, struct_param->fields_count);
+      longjmp (ctx->_jmp_buf, !0);
+    }
+  mr_fd_t * fdp = struct_param->fields[field_idx];
+
+  if (field_idx == struct_param->fields_count)
+    {
+      if (struct_param->fields_count >= ctx->fields_count)
 	{
-	  fprintf (stderr, "Unexpected field index %zd out of allocated %zd fields\n", field_idx, struct_param->fields_count);
+	  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_TDP_FIELDS_COUNT);
 	  longjmp (ctx->_jmp_buf, !0);
 	}
-      mr_fd_t * fdp = struct_param->fields[field_idx];
+      fdp->stype.mr_type = MR_TYPE_BITFIELD;
+      fdp->stype.type = type;
+      fdp->name.str = name;
+      fdp->bitfield_param.width = width;
+      fdp->bitfield_param.initialized = true;
 
-      if (field_idx == struct_param->fields_count)
-	{
-	  if (struct_param->fields_count >= MR_PP_DEPTH)
-	    {
-	      fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
-	      longjmp (ctx->_jmp_buf, !0);
-	    }
-	  fdp->stype.mr_type = MR_TYPE_BITFIELD;
-	  fdp->stype.type = type;
-	  fdp->name.str = name;
-	  fdp->bitfield_param.width = width;
-	  fdp->bitfield_param.initialized = true;
-
-	  ++struct_param->fields_count;
-	}
-      else
-	{
-	  if (ctx->bitfield_detection)
-	    fdp->bitfield_param.shift = (fdp->bitfield_param.shift << 1) | (value & 1);
-	  else
-	    fdp->offset = (fdp->offset << 1) | (value & 1);
-	}
+      ++struct_param->fields_count;
+      return;
     }
+
+  if (ctx->bitfield_detection)
+    fdp->bitfield_param.shift = (fdp->bitfield_param.shift << 1) | (value & 1);
+  else
+    fdp->offset = (fdp->offset << 1) | (value & 1);
 }
 
 static int
@@ -430,18 +429,19 @@ mr_fields_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
   return (0);
 }
 
-static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_fd_count, int anon_union_fd_count)
+static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_count, int anon_union_count)
 {
   int i;
   int same_offset_cnt = 1;
   int non_zero_znt = 0;
-  int anon_union_fd_idx = fields_fd_count;
+  int anon_union_fd_idx = fields_count;
 
+  fields_count -= struct_param->fields_count; /* calculate number of unallocated field descriptors */
   for (i = 1; i <= struct_param->fields_count; ++i)
     {
       bool non_zero = true;
       if (struct_param->fields[i] != NULL)
-	non_zero = (strstr (struct_param->fields[i]->stype.type, "[0]") == NULL);
+	non_zero = (strstr (struct_param->fields[i]->stype.type, "[0]") == NULL); /* detect zero-size arrays */
 
       if ((struct_param->fields[i] != NULL) && (struct_param->fields[i]->offset == struct_param->fields[i - 1]->offset))
 	{
@@ -453,9 +453,10 @@ static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_
 	{
 	  if ((same_offset_cnt > 1) && (non_zero_znt > 1))
 	    {
-	      if ((anon_union_fd_count == 0) || (struct_param->fields_count >= fields_fd_count))
+	      if ((anon_union_count == 0) || (fields_count == 0))
 		{
-		  fprintf (stderr, "Too many anonynous unions\n");
+		  fprintf (stderr, "Too many anonynous unions. Define MR_TDP_FIELDS_COUNT (%d/%d) and MR_ANON_UNION_FD_COUNT (%d/%d) to higher values.\n",
+			   fields_count, MR_TDP_FIELDS_COUNT, anon_union_count, MR_ANON_UNION_FD_COUNT);
 		  return;
 		}
 	      else
@@ -469,7 +470,8 @@ static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_
 		  memmove (&struct_param->fields[idx + 1], &struct_param->fields[idx], (++struct_param->fields_count - idx) * sizeof (struct_param->fields[0]));
 		  struct_param->fields[idx] = struct_param->fields[++anon_union_fd_idx];
 
-		  --anon_union_fd_count;
+		  --anon_union_count;
+		  --fields_count;
 		  i += 2;
 		}
 	    }
@@ -483,21 +485,24 @@ void
 mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
 						 int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...),
 						 mr_dump_struct_type_ctx_t * ctx),
-			 mr_td_t * tdp, int fields_fd_count, int anon_union_fd_count)
+			 mr_td_t * tdp, int fields_count, int anon_union_count)
 {
   mr_struct_param_t * struct_param = &tdp->param.struct_param;
   mr_dump_struct_type_ctx_t dst_ctx = {};
   uint8_t value[tdp->size];
   size_t block_size, i;
 
+  dst_ctx.fields_count = fields_count;
   dst_ctx.struct_ptr = value;
   dst_ctx.tdp = tdp;
 
+  /* on a first pass we allocate descriptors for all fields. Entire structure should be set to non-zero value to distinguish integere fields from booleans. */
   memset (value, -1, tdp->size);
   dst_ctx.field_idx = 0;
   if (0 == setjmp (dst_ctx._jmp_buf))
     mr_dump_struct (value, mr_fields_detection, &dst_ctx);
 
+  /* on next passes we will fill non-zero values to addresses with i-th bit set in the offset. First iteration fills non-zeros to offsets with highest set bit */
   for (block_size = 1UL << (sizeof (long long) * __CHAR_BIT__ - __builtin_clzll ((tdp->size <= 1) ? 1 : tdp->size - 1) - 1);
        block_size != 0;
        block_size >>= 1)
@@ -512,6 +517,7 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
 	mr_dump_struct (value, mr_fields_detection, &dst_ctx);
     }
 
+  /* Finally we need to find starting offset for bitfields within first byte. */
   dst_ctx.bitfield_detection = true;
   uint8_t pattern[] = {0b11110000, 0b11001100, 0b10101010};
   for (i = 0; i < sizeof (pattern) / sizeof (pattern[0]); ++i)
@@ -521,11 +527,11 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
       if (0 == setjmp (dst_ctx._jmp_buf))
 	mr_dump_struct (value, mr_fields_detection, &dst_ctx);
     }
-
-  struct_param->fields[fields_fd_count] = struct_param->fields[struct_param->fields_count];
+  /* Here we set a trailing NULL fields descriptor */
+  struct_param->fields[fields_count] = struct_param->fields[struct_param->fields_count];
   struct_param->fields[struct_param->fields_count] = NULL;
-
-  mr_detect_anon_unions (struct_param, fields_fd_count, anon_union_fd_count);
+  /* One more heuristic to detect anonymous unions */
+  mr_detect_anon_unions (struct_param, fields_count, anon_union_count);
   mr_add_type (tdp);
 }
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */

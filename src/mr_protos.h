@@ -663,6 +663,7 @@ TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type dete
 		(char *, type, , "embeded struct/union type"),
 		(char *, name, , "embeded struct/union name"),
 		(int, field_idx, , "index of the next detected field"),
+		(int, fields_count, , "number of allocated fields descriptors"),
 		(bool, bitfield_detection, , "flag for bit-fields offset detection"),
 		)
 
