@@ -161,6 +161,7 @@ TYPEDEF_UNION (mr_dump_struct_types_union_t,
 	       signed long long _sll,
 	       unsigned long long _ull,
 	       (void *, _ptr),
+	       (uint8_t, bytes, [sizeof (long double)]),
 	       );
 
 static mr_fd_t *
@@ -170,7 +171,6 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 			       mr_type_t mr_type,
 			       mr_dump_struct_types_union_t * value)
 {
-  mr_offset_t offset = 0;
   mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
   
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
@@ -182,7 +182,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     case MR_TYPE_INT32:
       if (0 == (value->_uint32 >> __CHAR_BIT__))
 	mr_type = MR_TYPE_BOOL;
-      __attribute__ ((fallthrough));
+      break;
 
     case MR_TYPE_INT8:
     case MR_TYPE_UINT8:
@@ -194,29 +194,36 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     case MR_TYPE_STRING:
     case MR_TYPE_POINTER:
     case MR_TYPE_LONG_DOUBLE:
-      offset = value->_uint8;
       break;
 
     case MR_TYPE_DOUBLE:
-      if (0 == value->_uint16)
-	{
-	  mr_type = MR_TYPE_FLOAT;
-	  value->_float = value->_double;
-	}
-      offset = value->_uint8;
+      {
+	int i;
+	for (i = 0; i < sizeof (double); ++i)
+	  if ((value->bytes[i] != 0) && (value->bytes[i] != (uint8_t)-1))
+	    break;
+	if (i < sizeof (double))
+	  {
+	    mr_type = MR_TYPE_FLOAT;
+	    value->_float = value->_double;
+	  }
+      }
       break;
 
     case MR_TYPE_NONE:
-      offset = value->_ptr - ctx->struct_ptr;
+      /* offset could be calculated in one shot, but not bit by bit */
       break;
 
     default:
       return (NULL);
     }
 
-  int field_idx = ctx->field_idx++;
+  size_t field_idx = ctx->field_idx++;
   if (field_idx > struct_param->fields_count)
-    field_idx = struct_param->fields_count;
+    {
+      fprintf (stderr, "Unexpected field index %zd out of allocated %zd fields\n", field_idx, struct_param->fields_count);
+      longjmp (ctx->_jmp_buf, !0);
+    }
   mr_fd_t * fdp = struct_param->fields[field_idx];
 
   if (field_idx == struct_param->fields_count)
@@ -230,194 +237,198 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
       fdp->stype.mr_type = mr_type;
       fdp->stype.type = type;
       fdp->name.str = name;
-      fdp->offset = offset;
+      fdp->offset = 0;
 
       ++struct_param->fields_count;
     }
-
-  if (ctx->offset_byte != 0)
+  else
     {
-      if (mr_type != MR_TYPE_NONE)
-	{
-	  if ((field_idx >= struct_param->fields_count) || strcmp (struct_param->fields[field_idx]->name.str, name))
-	    longjmp (ctx->_jmp_buf, !0);
-	  fdp->offset += offset << (__CHAR_BIT__ * ctx->offset_byte);
-	}
-      return (NULL);
+      if (ctx->bitfield_detection)
+	return (fdp);
+
+      if (MR_TYPE_NONE == mr_type)
+	fdp->offset = value->_ptr - ctx->struct_ptr;
+      else
+	fdp->offset = (fdp->offset << 1) | (value->_uint8 & 1);
     }
+
   return (fdp);
 }
 
-static int
-mr_dump_struct_type_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
+static void
+mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const char * fmt)
 {
-  va_list args;
-  va_start (args, fmt);
+#define NON_BITFIELD_FMT "%s%s %s ="
+  char * indent = va_arg (args, char *);
+  char * type = va_arg (args, char *);
+  char * name = va_arg (args, char *);
+  int indent_spaces = strlen (indent);
+  bool detect_offset = false;
 
-#define FMT "%s%s %s ="
+  fmt += sizeof (NON_BITFIELD_FMT) - sizeof ("");
 
-  if (strncmp (fmt, FMT, sizeof (FMT) - sizeof ("")) == 0)
+  if (' ' == fmt[0])
     {
-      char * indent = va_arg (args, char *);
-      char * type = va_arg (args, char *);
-      char * name = va_arg (args, char *);
-      int indent_spaces = strlen (indent);
-      bool detect_offset = false;
-
-      fmt += sizeof (FMT) - sizeof ("");
-
-      if (' ' == fmt[0])
+      ++fmt;
+      if ((indent_spaces > 2) && ctx->type && ctx->name)
 	{
-	  ++fmt;
-	  if ((indent_spaces > 2) && ctx->type && ctx->name)
-	    {
-	      type = ctx->type;
-	      name = ctx->name;
-	      ctx->type = ctx->name = NULL;
-	      detect_offset = true;
-	    }
-	  else
-	    detect_offset = (2 == indent_spaces);
+	  type = ctx->type;
+	  name = ctx->name;
+	  ctx->type = ctx->name = NULL;
+	  detect_offset = true;
 	}
       else
+	detect_offset = (2 == indent_spaces);
+    }
+  else
+    {
+      if (2 == indent_spaces)
 	{
-	  if (2 == indent_spaces)
-	    {
-	      ctx->type = type;
-	      ctx->name = name;
-	    }
+	  ctx->type = type;
+	  ctx->name = name;
 	}
+    }
 
-      if (detect_offset)
+  if (detect_offset)
+    {
+      mr_dump_struct_types_union_t value;
+      mr_type_t mr_type = MR_TYPE_LAST;
+      static mr_type_class_t tc[MR_TYPE_LAST] =
 	{
-	  mr_dump_struct_types_union_t value;
-	  mr_type_t mr_type = MR_TYPE_LAST;
-	  static mr_type_class_t tc[MR_TYPE_LAST] =
-	    {
-	      [MR_TYPE_NONE] = MR_POINTER_TYPE_CLASS,
-	      [MR_TYPE_STRING] = MR_POINTER_TYPE_CLASS,
-	      [MR_TYPE_CHAR_ARRAY] = MR_ARRAY_TYPE_CLASS,
-	      [MR_TYPE_CHAR] = MR_CHAR_TYPE_CLASS,
-	      [MR_TYPE_VOID] = MR_VOID_TYPE_CLASS,
-	      [MR_TYPE_BOOL] = MR_BOOLEAN_TYPE_CLASS,
-	      [MR_TYPE_INT8] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_UINT8] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_INT16] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_UINT16] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_INT32] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_UINT32] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_INT64] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_UINT64] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_INT128] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_UINT128] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_FLOAT] = MR_REAL_TYPE_CLASS,
-	      [MR_TYPE_COMPLEX_FLOAT] = MR_COMPLEX_TYPE_CLASS,
-	      [MR_TYPE_DOUBLE] = MR_REAL_TYPE_CLASS,
-	      [MR_TYPE_COMPLEX_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
-	      [MR_TYPE_LONG_DOUBLE] = MR_REAL_TYPE_CLASS,
-	      [MR_TYPE_COMPLEX_LONG_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
-	      [MR_TYPE_STRUCT] = MR_RECORD_TYPE_CLASS,
-	      [MR_TYPE_ENUM] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_FUNC_TYPE] = MR_FUNCTION_TYPE_CLASS,
-	      [MR_TYPE_FUNC] = MR_FUNCTION_TYPE_CLASS,
-	      [MR_TYPE_BITFIELD] = MR_INTEGER_TYPE_CLASS,
-	      [MR_TYPE_ARRAY] = MR_ARRAY_TYPE_CLASS,
-	      [MR_TYPE_POINTER] = MR_POINTER_TYPE_CLASS,
-	      [MR_TYPE_UNION] = MR_UNION_TYPE_CLASS,
-	      [MR_TYPE_ANON_UNION] = MR_UNION_TYPE_CLASS,
-	      [MR_TYPE_NAMED_ANON_UNION] = MR_UNION_TYPE_CLASS,
-	      [MR_TYPE_END_ANON_UNION] = MR_UNION_TYPE_CLASS,
-	    };
+	  [MR_TYPE_NONE] = MR_POINTER_TYPE_CLASS,
+	  [MR_TYPE_STRING] = MR_POINTER_TYPE_CLASS,
+	  [MR_TYPE_CHAR_ARRAY] = MR_ARRAY_TYPE_CLASS,
+	  [MR_TYPE_CHAR] = MR_CHAR_TYPE_CLASS,
+	  [MR_TYPE_VOID] = MR_VOID_TYPE_CLASS,
+	  [MR_TYPE_BOOL] = MR_BOOLEAN_TYPE_CLASS,
+	  [MR_TYPE_INT8] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_UINT8] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_INT16] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_UINT16] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_INT32] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_UINT32] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_INT64] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_UINT64] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_INT128] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_UINT128] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_FLOAT] = MR_REAL_TYPE_CLASS,
+	  [MR_TYPE_COMPLEX_FLOAT] = MR_COMPLEX_TYPE_CLASS,
+	  [MR_TYPE_DOUBLE] = MR_REAL_TYPE_CLASS,
+	  [MR_TYPE_COMPLEX_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
+	  [MR_TYPE_LONG_DOUBLE] = MR_REAL_TYPE_CLASS,
+	  [MR_TYPE_COMPLEX_LONG_DOUBLE] = MR_COMPLEX_TYPE_CLASS,
+	  [MR_TYPE_STRUCT] = MR_RECORD_TYPE_CLASS,
+	  [MR_TYPE_ENUM] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_FUNC_TYPE] = MR_FUNCTION_TYPE_CLASS,
+	  [MR_TYPE_FUNC] = MR_FUNCTION_TYPE_CLASS,
+	  [MR_TYPE_BITFIELD] = MR_INTEGER_TYPE_CLASS,
+	  [MR_TYPE_ARRAY] = MR_ARRAY_TYPE_CLASS,
+	  [MR_TYPE_POINTER] = MR_POINTER_TYPE_CLASS,
+	  [MR_TYPE_UNION] = MR_UNION_TYPE_CLASS,
+	  [MR_TYPE_ANON_UNION] = MR_UNION_TYPE_CLASS,
+	  [MR_TYPE_NAMED_ANON_UNION] = MR_UNION_TYPE_CLASS,
+	  [MR_TYPE_END_ANON_UNION] = MR_UNION_TYPE_CLASS,
+	};
 
-	  memset (&value, 0, sizeof (value));
+      memset (&value, 0, sizeof (value));
 
 #define CASE_(FIELD, MR_TYPE) FIELD = va_arg (args, typeof (0 + (typeof (FIELD))0)); mr_type = MR_TYPE;
 #define CASE(FIELD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) \
-	    (CASE_ (FIELD, MR_TYPE_DETECT (typeof (FIELD))))	\
-	    (CASE_ (FIELD, __VA_ARGS__))
+	(CASE_ (FIELD, MR_TYPE_DETECT (typeof (FIELD))))	\
+	(CASE_ (FIELD, __VA_ARGS__))
 	  
-	  if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
-	  else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
-	  else if (strcmp (fmt, "%p\n") == 0) { CASE (value._ptr, MR_TYPE_POINTER) }
-	  else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value._sc) }
-	  else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value._uc) }
-	  else if (strcmp (fmt, "%hd\n") == 0) { CASE (value._ss) }
-	  else if (strcmp (fmt, "%hu\n") == 0) { CASE (value._us) }
-	  else if (strcmp (fmt, "%d\n") == 0) { CASE (value._si) }
-	  else if (strcmp (fmt, "%u\n") == 0) { CASE (value._ui) }
-	  else if (strcmp (fmt, "%ld\n") == 0) { CASE (value._sl) }
-	  else if (strcmp (fmt, "%lu\n") == 0) { CASE (value._ul) }
-	  else if (strcmp (fmt, "%lld\n") == 0) { CASE (value._sll) }
-	  else if (strcmp (fmt, "%llu\n") == 0) { CASE (value._ull) }
-	  else if (strcmp (fmt, "%zd\n") == 0) { CASE (value._zd) }
-	  else if (strcmp (fmt, "%zu\n") == 0) { CASE (value._zu) }
-	  else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
-	  else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double); }
-	  else fprintf (stderr, "Unknown qualifier '%s'\n", fmt);
+      if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
+      else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
+      else if (strcmp (fmt, "%p\n") == 0) { CASE (value._ptr, MR_TYPE_POINTER) }
+      else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value._sc) }
+      else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value._uc) }
+      else if (strcmp (fmt, "%hd\n") == 0) { CASE (value._ss) }
+      else if (strcmp (fmt, "%hu\n") == 0) { CASE (value._us) }
+      else if (strcmp (fmt, "%d\n") == 0) { CASE (value._si) }
+      else if (strcmp (fmt, "%u\n") == 0) { CASE (value._ui) }
+      else if (strcmp (fmt, "%ld\n") == 0) { CASE (value._sl) }
+      else if (strcmp (fmt, "%lu\n") == 0) { CASE (value._ul) }
+      else if (strcmp (fmt, "%lld\n") == 0) { CASE (value._sll) }
+      else if (strcmp (fmt, "%llu\n") == 0) { CASE (value._ull) }
+      else if (strcmp (fmt, "%zd\n") == 0) { CASE (value._zd) }
+      else if (strcmp (fmt, "%zu\n") == 0) { CASE (value._zu) }
+      else if (strcmp (fmt, "%f\n") == 0) { CASE (value._double) }
+      else if (strcmp (fmt, "%Lf\n") == 0) { CASE (value._long_double); }
+      else fprintf (stderr, "Unknown qualifier '%s'\n", fmt);
 
-	  if (mr_type != MR_TYPE_LAST)
+      if (mr_type != MR_TYPE_LAST)
+	{
+	  mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
+	  if (fdp != NULL)
 	    {
-	      mr_fd_t * fdp = mr_dump_struct_type_add_field (ctx, type, name, mr_type, &value);
-	      if (fdp != NULL)
+	      fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
+	      if (indent_spaces > 2)
 		{
-		  fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
-		  if (indent_spaces > 2)
-		    {
-		      fdp->stype.mr_type = MR_TYPE_NONE;
-		      fdp->stype.mr_type_class = MR_RECORD_TYPE_CLASS;
-		    }
+		  fdp->stype.mr_type = MR_TYPE_NONE;
+		  fdp->stype.mr_type_class = MR_RECORD_TYPE_CLASS;
 		}
 	    }
 	}
     }
+}
 
-  va_end (args);
-  return (0);
+static void
+mr_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args)
+{
+#define BITFIELD_FMT "%s%s %s : %zu = %"
+  char * indent = va_arg (args, char *);
+  char * type = va_arg (args, char *);
+  char * name = va_arg (args, char *);
+  size_t width = va_arg (args, size_t);
+  int value = va_arg (args, int);
+  int indent_spaces = strlen (indent);
+
+  if (2 == indent_spaces)
+    {
+      mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
+      size_t field_idx = ctx->field_idx++;
+      if (field_idx > struct_param->fields_count)
+	{
+	  fprintf (stderr, "Unexpected field index %zd out of allocated %zd fields\n", field_idx, struct_param->fields_count);
+	  longjmp (ctx->_jmp_buf, !0);
+	}
+      mr_fd_t * fdp = struct_param->fields[field_idx];
+
+      if (field_idx == struct_param->fields_count)
+	{
+	  if (struct_param->fields_count >= MR_PP_DEPTH)
+	    {
+	      fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
+	      longjmp (ctx->_jmp_buf, !0);
+	    }
+	  fdp->stype.mr_type = MR_TYPE_BITFIELD;
+	  fdp->stype.type = type;
+	  fdp->name.str = name;
+	  fdp->bitfield_param.width = width;
+	  fdp->bitfield_param.initialized = true;
+
+	  ++struct_param->fields_count;
+	}
+      else
+	{
+	  if (ctx->bitfield_detection)
+	    fdp->bitfield_param.shift = (fdp->bitfield_param.shift << 1) | (value & 1);
+	  else
+	    fdp->offset = (fdp->offset << 1) | (value & 1);
+	}
+    }
 }
 
 static int
-mr_dump_struct_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
+mr_fields_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
 {
   va_list args;
   va_start (args, fmt);
 
-#define BITFIELD_FMT "%s%s %s : %zu = %"
-
-  if (strncmp (fmt, BITFIELD_FMT, sizeof (BITFIELD_FMT) - sizeof ("")) == 0)
-    {
-      char * indent = va_arg (args, char *);
-      char * type = va_arg (args, char *);
-      char * name = va_arg (args, char *);
-      size_t width = va_arg (args, size_t);
-      int value = va_arg (args, int);
-      int indent_spaces = strlen (indent);
-
-      if (2 == indent_spaces)
-	{
-	  mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
-	  int field_idx = ctx->field_idx++;
-	  if (field_idx > struct_param->fields_count)
-	    field_idx = struct_param->fields_count;
-	  mr_fd_t * fdp = struct_param->fields[field_idx];
-
-	  if (field_idx == struct_param->fields_count)
-	    {
-	      if (struct_param->fields_count >= MR_PP_DEPTH)
-		{
-		  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_PP_DEPTH);
-		  longjmp (ctx->_jmp_buf, !0);
-		}
-	      fdp->stype.mr_type = MR_TYPE_BITFIELD;
-	      fdp->stype.type = type;
-	      fdp->name.str = name;
-	      fdp->bitfield_param.width = width;
-
-	      ++struct_param->fields_count;
-	    }
-
-	  fdp->offset = (fdp->offset << 1) | (value & 1);
-	}
-    }
+  if (strncmp (fmt, NON_BITFIELD_FMT, sizeof (NON_BITFIELD_FMT) - sizeof ("")) == 0)
+    mr_non_bitfield_detection (ctx, args, fmt);
+  else if (strncmp (fmt, BITFIELD_FMT, sizeof (BITFIELD_FMT) - sizeof ("")) == 0)
+    mr_bitfield_detection (ctx, args);
 
   va_end (args);
   return (0);
@@ -478,78 +489,45 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
 						 mr_dump_struct_type_ctx_t * ctx),
 			 mr_td_t * tdp, int fields_fd_count, int anon_union_fd_count)
 {
-  mr_dump_struct_type_ctx_t dst_ctx;
+  mr_struct_param_t * struct_param = &tdp->param.struct_param;
+  mr_dump_struct_type_ctx_t dst_ctx = {};
   uint8_t value[tdp->size];
-  uint8_t * ptr = value;
   size_t block_size, i;
 
-  for (i = 0; i < tdp->size; ++i)
-    *ptr++ = i;
-
-  memset (&dst_ctx, 0, sizeof (dst_ctx));
   dst_ctx.struct_ptr = value;
   dst_ctx.tdp = tdp;
 
-  for (dst_ctx.offset_byte = 0; ; ++dst_ctx.offset_byte)
-    {
-      dst_ctx.field_idx = 0;
-      if (0 == setjmp (dst_ctx._jmp_buf))
-	mr_dump_struct (value, mr_dump_struct_type_detection, &dst_ctx);
-      block_size = 1 << (__CHAR_BIT__ * (1 + dst_ctx.offset_byte));
-      if (tdp->size < block_size)
-	break;
-      i = 0;
-      for (ptr = value; ptr - value < tdp->size - (block_size - 1); ptr += block_size)
-	memset (ptr, i++, block_size);
-      memset (ptr, i, tdp->size & (block_size - 1));
-    }
+  memset (value, -1, tdp->size);
+  dst_ctx.field_idx = 0;
+  if (0 == setjmp (dst_ctx._jmp_buf))
+    mr_dump_struct (value, mr_fields_detection, &dst_ctx);
 
-  mr_struct_param_t * struct_param = &dst_ctx.tdp->param.struct_param;
-  int count = struct_param->fields_count;
-  int size = tdp->size - 1;
-  block_size = 1 << (sizeof (int) * __CHAR_BIT__ - __builtin_clz ((size <= 0) ? 1 : size) - 1);
-
-  while (block_size != 0)
+  for (block_size = 1UL << (sizeof (long long) * __CHAR_BIT__ - __builtin_clzll ((tdp->size <= 1) ? 1 : tdp->size - 1) - 1);
+       block_size != 0;
+       block_size >>= 1)
     {
+      uint8_t * ptr, * last_block = &value[tdp->size - block_size];
       i = 0;
-      for (ptr = value; ptr - value < tdp->size - (block_size - 1); ptr += block_size)
+      for (ptr = value; ptr <= last_block; ptr += block_size)
 	memset (ptr, -(i++ & 1), block_size);
       memset (ptr, -(i++ & 1), tdp->size & (block_size - 1));
-
-      dst_ctx.field_idx = count;
+      dst_ctx.field_idx = 0;
       if (0 == setjmp (dst_ctx._jmp_buf))
-	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
-      if (dst_ctx.field_idx == count)
-	break;
-      block_size >>= 1;
+	mr_dump_struct (value, mr_fields_detection, &dst_ctx);
     }
 
-  if (dst_ctx.field_idx != count)
+  dst_ctx.bitfield_detection = true;
+  uint8_t pattern[] = {0b11110000, 0b11001100, 0b10101010};
+  for (i = 0; i < sizeof (pattern) / sizeof (pattern[0]); ++i)
     {
-      memset (value, 0b11110000, tdp->size);
-      dst_ctx.field_idx = count;
+      memset (value, pattern[i], tdp->size);
+      dst_ctx.field_idx = 0;
       if (0 == setjmp (dst_ctx._jmp_buf))
-	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
-      memset (value, 0b11001100, tdp->size);
-      dst_ctx.field_idx = count;
-      if (0 == setjmp (dst_ctx._jmp_buf))
-	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
-      memset (value, 0b10101010, tdp->size);
-      dst_ctx.field_idx = count;
-      if (0 == setjmp (dst_ctx._jmp_buf))
-	mr_dump_struct (value, mr_dump_struct_bitfield_detection, &dst_ctx);
-      i = count;
-      count = struct_param->fields_count;
-      for ( ; i < count; ++i)
-	{
-	  struct_param->fields[i]->bitfield_param.initialized = true;
-	  struct_param->fields[i]->bitfield_param.shift =
-	    struct_param->fields[i]->offset % __CHAR_BIT__;
-	  struct_param->fields[i]->offset /= __CHAR_BIT__;
-	}
+	mr_dump_struct (value, mr_fields_detection, &dst_ctx);
     }
-  struct_param->fields[fields_fd_count] = struct_param->fields[count];
-  struct_param->fields[count] = NULL;
+
+  struct_param->fields[fields_fd_count] = struct_param->fields[struct_param->fields_count];
+  struct_param->fields[struct_param->fields_count] = NULL;
 
   mr_detect_anon_unions (struct_param, fields_fd_count, anon_union_fd_count);
   mr_add_type (tdp);

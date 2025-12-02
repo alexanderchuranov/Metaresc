@@ -773,7 +773,6 @@
 	} },
 #define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\
   (mr_fd_t[]){ {							\
-      .stype.type = "",							\
 	.stype.mr_type = MR_TYPE_END_ANON_UNION,			\
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -856,10 +855,11 @@
 	  NULL,								\
 	  MR_FOR (MR_TYPE_NAME, MR_ANON_UNION_FD_COUNT, MR_SER, MR_ANON_UNION_FD) \
       }, };								\
-  static void MR_PASTE2 (mr_dump_struct_, ID) (void * value,		\
-					      int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...), \
-					      mr_dump_struct_type_ctx_t * ctx) \
-  { __builtin_dump_struct ((MR_TYPE_NAME*)value, callback, ctx); } \
+  static void MR_PASTE2 (mr_dump_struct_, ID)				\
+    (void * value,							\
+     int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...), \
+     mr_dump_struct_type_ctx_t * ctx)					\
+  { __builtin_dump_struct ((MR_TYPE_NAME*)value, callback, ctx); }	\
   static inline void __attribute__((constructor))			\
   MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void)			\
   { mr_dump_struct_add_type (MR_PASTE2 (mr_dump_struct_, ID),		\

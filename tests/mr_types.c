@@ -544,10 +544,12 @@ typedef struct anon_union_t {
   union {
     int zero_size_array[0];
     int anon_union_field1;
+    int bitfield : 4;
     float anon_union_field2;
   };
   union {
     int _zero_size_array[0];
+    int _bitfield : 4;
     int _anon_union_field1;
     float _anon_union_field2;
   };

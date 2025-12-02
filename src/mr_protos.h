@@ -662,8 +662,8 @@ TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type dete
 		(mr_td_t *, tdp, , "memory for type desctiptor"),
 		(char *, type, , "embeded struct/union type"),
 		(char *, name, , "embeded struct/union name"),
-		(int, offset_byte, , "which byte of offset is set in struct"),
-		(int, field_idx, , "index of the next detected field for structures bigger then (1 << __CHAR_BIT__)"),
+		(int, field_idx, , "index of the next detected field"),
+		(bool, bitfield_detection, , "flag for bit-fields offset detection"),
 		)
 
 TYPEDEF_STRUCT (mr_var_t, ATTRIBUTES ( , "record to identify type of serialize expression"),
