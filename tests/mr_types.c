@@ -535,6 +535,10 @@ TYPEDEF_STRUCT_HACK (dump_struct_types_t,
 		     );
 
 typedef struct anon_union_t {
+  union {
+    int non_zero_size_field;
+    float another_non_zero_size_field;
+  };
   int zero_size_field[0];
   int field_after_zero_size_field;
   union {
@@ -650,7 +654,7 @@ START_TEST (dump_struct_types_detection) {
 
   tdp = mr_get_td_by_name ("anon_union_t");
   ck_assert_msg (tdp != NULL, "Type descriptor for anon_union_t was not found");
-  ck_assert_msg (tdp->param.struct_param.fields_count == 6, "Incorrect detection of anonymous unions");
+  ck_assert_msg (tdp->param.struct_param.fields_count == 7, "Incorrect detection of anonymous unions");
 } END_TEST
 
 #else

@@ -433,10 +433,13 @@ static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_
 {
   int i;
   int same_offset_cnt = 1;
-  int non_zero_znt = 0;
+  int non_zero_cnt = 0;
   int anon_union_fd_idx = fields_count;
 
   fields_count -= struct_param->fields_count; /* calculate number of unallocated field descriptors */
+  if (struct_param->fields_count > 0)
+    non_zero_cnt = (strstr (struct_param->fields[0]->stype.type, "[0]") == NULL) ? 1 : 0;
+
   for (i = 1; i <= struct_param->fields_count; ++i)
     {
       bool non_zero = true;
@@ -447,11 +450,11 @@ static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_
 	{
 	  ++same_offset_cnt;
 	  if (non_zero && (struct_param->fields[i]->stype.mr_type != MR_TYPE_BITFIELD))
-	    ++non_zero_znt;
+	    ++non_zero_cnt;
 	}
       else
 	{
-	  if ((same_offset_cnt > 1) && (non_zero_znt > 1))
+	  if ((same_offset_cnt > 1) && (non_zero_cnt > 1))
 	    {
 	      if ((anon_union_count == 0) || (fields_count == 0))
 		{
@@ -476,7 +479,7 @@ static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_
 		}
 	    }
 	  same_offset_cnt = 1;
-	  non_zero_znt = non_zero ? 1 : 0;
+	  non_zero_cnt = non_zero ? 1 : 0;
 	}
     }
 }
