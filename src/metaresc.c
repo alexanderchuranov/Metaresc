@@ -431,15 +431,15 @@ mr_fields_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
 
 static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_count, int anon_union_count)
 {
+  if (struct_param->fields_count == 0)
+    return;
+
   int i;
   int same_offset_cnt = 1;
-  int non_zero_cnt = 0;
+  int non_zero_cnt = (strstr (struct_param->fields[0]->stype.type, "[0]") == NULL) ? 1 : 0;
   int anon_union_fd_idx = fields_count;
 
   fields_count -= struct_param->fields_count; /* calculate number of unallocated field descriptors */
-  if (struct_param->fields_count > 0)
-    non_zero_cnt = (strstr (struct_param->fields[0]->stype.type, "[0]") == NULL) ? 1 : 0;
-
   for (i = 1; i <= struct_param->fields_count; ++i)
     {
       bool non_zero = true;
@@ -2015,7 +2015,7 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
 
 void mr_augment_fields (mr_td_t * tdp)
 {
-  if ((tdp->mr_type != MR_TYPE_STRUCT) && (tdp->mr_type != MR_TYPE_UNION) && (tdp->mr_type != MR_TYPE_ANON_UNION))
+  if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
     return;
 
   int i;
