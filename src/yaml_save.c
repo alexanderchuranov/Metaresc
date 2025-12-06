@@ -5,7 +5,8 @@
 
 TYPEDEF_STRUCT (mr_yaml_context_t,
 		VOID (yaml_emitter_t, emitter),
-		(mr_rarray_t, buffer));
+		(mr_rarray_t, buffer)
+		);
 
 TYPEDEF_FUNC (mr_status_t, mr_yaml_save_handler_t, (mr_yaml_context_t * /* context */, mr_ra_ptrdes_t * /* ptrs */, mr_idx_t /* idx */));
 

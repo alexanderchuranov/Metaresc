@@ -247,12 +247,14 @@ TYPEDEF_STRUCT (mr_func_name_t,
 		(uintptr_t, func_),
 		(void *, func),
 		END_ANON_UNION (),
-		(const char *, name))
+		(const char *, name)
+		);
 
 TYPEDEF_STRUCT (mr_ra_fn_t,
 		(mr_func_name_t *, ra, , , { .size_field_offset = offsetof (mr_ra_fn_t, size) }, "size_field_offset"),
 		(ssize_t, size),
-		(ssize_t, alloc_size))
+		(ssize_t, alloc_size)
+		);
 
 mr_hash_value_t
 mr_fn_get_hash (const mr_ptr_t x, const void * context)

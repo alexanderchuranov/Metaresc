@@ -7,7 +7,7 @@
 #include <mr_stringify.h>
 #include <mr_save.h>
 
-TYPEDEF_FUNC (mr_idx_t, mr_save_handler_t, (mr_save_data_t *))
+TYPEDEF_FUNC (mr_idx_t, mr_save_handler_t, (mr_save_data_t *));
 
 static mr_save_handler_t mr_save_handler[];
 
@@ -532,7 +532,7 @@ mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,
 		(mr_save_data_t *, mr_save_data),
 		(mr_idx_t, node),
-		)
+		);
 /**
  * We have a previously saved node that was a pointer,
  * but now we need to save the same pointer as a part of bigger structure. This means that

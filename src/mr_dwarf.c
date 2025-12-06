@@ -135,7 +135,7 @@ TYPEDEF_ENUM (mr_dw_tag_t, ATTRIBUTES ( , "awk '/#define DW_TAG_/{print \"(_\"$2
 	      (_DW_TAG_BORLAND_Delphi_set, = DW_TAG_BORLAND_Delphi_set),
 	      (_DW_TAG_BORLAND_Delphi_variant, = DW_TAG_BORLAND_Delphi_variant),
 	      (_DW_TAG_hi_user, = DW_TAG_hi_user),
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_dw_attribute_code_t,
 	      (_DW_AT_sibling, = DW_AT_sibling),
@@ -360,7 +360,7 @@ TYPEDEF_ENUM (mr_dw_attribute_code_t,
 	      (_DW_AT_APPLE_sdk, = DW_AT_APPLE_sdk),
 	      (_DW_AT_hi_user, = DW_AT_hi_user),	      
 	      (_DW_AT_anonymous, , "new attribute to flag anonymous types"),
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_addr, = DW_FORM_addr, "dw_addr"),
@@ -410,7 +410,7 @@ TYPEDEF_ENUM (mr_dw_form_t,
 	      (_DW_FORM_GNU_str_index, = DW_FORM_GNU_str_index),
 	      (_DW_FORM_GNU_ref_alt, = DW_FORM_GNU_ref_alt),
 	      (_DW_FORM_GNU_strp_alt, = DW_FORM_GNU_strp_alt),
-	      )
+	      );
 
 #define DW_FORM_STRING_LIST _DW_FORM_string, _DW_FORM_strp, _DW_FORM_strx, _DW_FORM_strp_sup, _DW_FORM_line_strp, _DW_FORM_strx1, _DW_FORM_strx2, _DW_FORM_strx3, _DW_FORM_strx4
 #define DW_FORM_UNSIGNED_LIST _DW_FORM_data1, _DW_FORM_data2, _DW_FORM_data4, _DW_FORM_data8, _DW_FORM_udata, _DW_FORM_implicit_const
@@ -430,7 +430,7 @@ TYPEDEF_STRUCT (mr_dw_attribute_t,
 		(Dwarf_Off, dw_off),
 		(char *, dw_str),
 		END_ANON_UNION ("form"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_die_t,
 		(Dwarf_Off, off),
@@ -441,13 +441,13 @@ TYPEDEF_STRUCT (mr_die_t,
 		(mr_die_t *, children, , "", { "children_size" }, "size_field_name"),
 		VOID (ssize_t, children_size),
 		VOID (ssize_t, children_alloc_size),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_type_sign_t,
 		(mr_hashed_string_t, type),
 		(mr_type_t, mr_type),
 		(size_t, size),
-		)
+		);
 
 static mr_ic_t mr_type_sign_ic;
 

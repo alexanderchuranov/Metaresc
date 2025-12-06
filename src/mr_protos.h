@@ -15,7 +15,11 @@ TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointe
 	       (mr_offset_t, count_field_offset),
 	       (uintptr_t, uintptr),
 	       (intptr_t, intptr),
-	       )
+	       );
+
+TYPEDEF_UNION (mr_non_serializable_t, ATTRIBUTES (__attribute__((transparent_union)), "zero size union to address fields after it"),
+	       (uint8_t, uint8, [0]),
+	       );
 
 TYPEDEF_ENUM (mr_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      (MR_LL_ALL, = 0),
@@ -26,7 +30,7 @@ TYPEDEF_ENUM (mr_log_level_t, ATTRIBUTES ( ,"Log levels enum"),
 	      MR_LL_ERROR,
 	      MR_LL_FATAL,
 	      MR_LL_OFF,
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string saved in .meta field"),
 	      (MR_MESSAGE_OUT_OF_MEMORY, , "Out of memory."),
@@ -89,7 +93,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_INTERNAL_PARSER_ERROR, , "Internal parser error: load structure is corrupted."),
 	      (MR_MESSAGE_ZERO_SIZE_FIELD, , "Field '%s' has zero size."),
 	      (MR_MESSAGE_LAST, , "Last message ID."),
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"),
 	      (MR_TYPE_NONE, = 0),
@@ -126,7 +130,7 @@ TYPEDEF_ENUM (mr_type_t, ATTRIBUTES (__attribute__ ((packed)) , "Metaresc types"
 	      MR_TYPE_NAMED_ANON_UNION,
 	      MR_TYPE_END_ANON_UNION,
 	      MR_TYPE_LAST, /* keep it last */
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classification provided by __builtin_classify_type"),
 	      (MR_NO_TYPE_CLASS, = -1),
@@ -150,7 +154,7 @@ TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classific
 	      MR_OPAQUE_TYPE_CLASS,
 	      MR_BITINT_TYPE_CLASS,
 	      MR_VECTOR_TYPE_CLASS,
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type descriptor producer"),
 	      MR_TDP_MACRO,
@@ -158,12 +162,12 @@ TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type des
 	      MR_TDP_DUMP_STRUCT,
 	      MR_TDP_ANON_UNION,
 	      MR_TDP_LAST,
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      MR_SUCCESS,
 	      MR_FAILURE,
-	      )
+	      );
 
 TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_UNINITIALIZED, = 0, "void_ptr"),
@@ -173,26 +177,26 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_HASH, , "hash"),
 	      (MR_IC_RBTREE, , "rb"),
 	      (MR_IC_AVLTREE, , "avl"),
-	      )
+	      );
 
-TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */))
+TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */));
 
-TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, void * /* context */))
+TYPEDEF_FUNC (mr_status_t, mr_visit_fn_t, (mr_ptr_t /* nodep */, void * /* context */));
 
-TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */))
+TYPEDEF_FUNC (mr_hash_value_t, mr_hash_fn_t, (mr_ptr_t /* nodep */, __const void * /* context */));
 
 TYPEDEF_STRUCT (mr_rarray_t, ATTRIBUTES ( , "resizable array type"),
 		(mr_ptr_t, data, , "type"),
 		(ssize_t, MR_SIZE, , "used space in bytes"),
 		VOID (ssize_t, alloc_size, , "allocated space in bytes"),
 		(char *, type, , "type of 'data' pointer"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_ic_rarray_t, ATTRIBUTES ( , "resizable array with pointers for indexed collections"),
 		(mr_ptr_t *, ra, , "key_type", { .size_field_offset = offsetof (mr_ic_rarray_t, size) }, "size_field_offset"), 
 		(ssize_t, size, , "size of array"),
 		VOID (ssize_t, alloc_size, , "allocated size for array"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collections based on hash table"),
 		(mr_hash_fn_t, hash_fn),
@@ -200,31 +204,31 @@ TYPEDEF_STRUCT (mr_ic_hash_t, ATTRIBUTES ( , "private fields for indexed collect
 		(mr_ptr_t *, hash_table, , "key_type", { "count" }, "count_field_name"),
 		(size_t, count, : sizeof (size_t) * __CHAR_BIT__ - 1, "number of items in the hash table"),
 		(bool, zero_key, : 1),
-		)
+		);
 
 TYPEDEF_ENUM (mr_child_idx_t, ATTRIBUTES (__attribute__ ((packed)), "tree traverse to the left/right"),
 	      (MR_LEFT, = 0),
 	      (MR_RIGHT, = 1),
-	      )
+	      );
 
 TYPEDEF_STRUCT (mr_rbtree_node_t, ATTRIBUTES ( , "node of the red/black tree"),
 		(unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		VOID (bool, unused, : 1),
 		(unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		(bool, red, : 1),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_avltree_node_t, ATTRIBUTES ( , "node of the avl tree"),
 		(unsigned int, left, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		(bool, balanced, : 1),
 		(unsigned int, right, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		(mr_child_idx_t, longer, : 1),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_tree_node_idx_t, ATTRIBUTES ( , "index of the binary tree with 1 bit extra property"),
 		(unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		(bool, bit, : 1),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_tree_node_t, ATTRIBUTES ( , "node of the red/black or avl tree"),
 		(mr_ptr_t, key, , "key_type"),
@@ -234,36 +238,36 @@ TYPEDEF_STRUCT (mr_tree_node_t, ATTRIBUTES ( , "node of the red/black or avl tre
 		(mr_avltree_node_t, avl),
 		(mr_rbtree_node_t, rb),
 		END_ANON_UNION ("ic_type"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_tree_t, ATTRIBUTES ( , "indexed collection for binary tree"),
 		(mr_tree_node_t *, pool, , "mr_tree_node_t allocation pool", { .size_field_offset = offsetof (mr_tree_t, size) }, "size_field_offset"),
 		(ssize_t, size),
 		VOID (ssize_t, alloc_size),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_tree_path_t, ATTRIBUTES ( , "element of traverse index and discent direction"), 
 		(unsigned int, idx, : sizeof (unsigned int) * __CHAR_BIT__ - 1, "index in the pool"),
 		(mr_child_idx_t, child_idx, : 1, "descent direction"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag for the last comparison"),
 		(uint16_t, count, , "size of tree traverse"),
 		(bool, equal, , "equal flag for the last comparison in the traverse"),
 		(mr_tree_path_t, path, [(sizeof (mr_tree_node_idx_t) * __CHAR_BIT__ << 1) - 1], "tree traverse path",
 		 { .count_field_offset = offsetof (mr_tree_traverse_t, count) }, "count_field_offset"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_typed_ptr_t,
 		(char *, type, , "union discriminator"),
 		(mr_ptr_t, data, , "type"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_res_t,
 		(char *, type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of data"),
 		(mr_ptr_t, data, , "type"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_res_t, context),
@@ -274,7 +278,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(struct mr_ic_virt_func_t *, virt_func),
 		
 		ANON_UNION (),
-		(void *, void_ptr, [0], "default serialization"),
+		(mr_non_serializable_t, non_serializable, , "default serialization"),
 		(mr_ic_rarray_t, rarray),
 		(mr_ic_hash_t, hash),
 		(mr_ptr_t, static_array, [sizeof (mr_ic_hash_t) / sizeof (mr_ptr_t)],
@@ -283,7 +287,7 @@ TYPEDEF_STRUCT (mr_ic_t, ATTRIBUTES ( , "indexed collection"),
 		(mr_tree_t, avl),
 		(mr_tree_t, tree),
 		END_ANON_UNION ("ic_type"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for indexed collections"),
 		(mr_ptr_t *, add, (mr_ic_t * /* ic */, mr_ptr_t /* key */)),
@@ -292,7 +296,7 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 		(mr_status_t, foreach, (mr_ic_t * /* ic */, mr_visit_fn_t /* visit_fn */, void * /* context */)),
 		(mr_status_t, index, (mr_ic_t * /* ic */, mr_ptr_t * /* rarray */, size_t /* size */)),
 		(void, free, (mr_ic_t * /* ic */)),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discriminator override"),
 		(int64_t, value, , "discriminator value that has a custom override"),
@@ -300,12 +304,12 @@ TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discr
 		(char *, type, , "discriminator for typed_value"),
 		(mr_ptr_t, typed_value, , "type"),
 		(struct mr_fd_t *, fdp, , "descriptor of union branch"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_array_dimensions_t, ATTRIBUTES ( , "all array's dimensions"),
 		(uint32_t, dim, [4], "up to 4 dimensions", { .count_field_offset = offsetof (mr_array_dimensions_t, dim_count) }, "count_field_offset"),
 		(uint32_t, dim_count, , "count of used elements in 'dim' array"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		(struct mr_td_t *, tdp, , "type descriptor"),
@@ -318,15 +322,15 @@ TYPEDEF_STRUCT (mr_stype_t, ATTRIBUTES ( , "Metaresc structured type"),
 		(bool, is_bitfield, : 1, "true if field is a bitfield"),
 		(mr_size_t, size, , "size of type"),
 		ANON_UNION (),
-		(uint8_t, default_serialization, [0], "default serialization"),
+		(mr_non_serializable_t, non_serializable, , "default serialization"),
 		(mr_array_dimensions_t, dim, , "array dimensions"),
 		END_ANON_UNION ("mr_type", { (mr_ud_override_t[]){{ MR_TYPE_ARRAY, "dim" }} }, "mr_ud_override_t"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_hashed_string_t, ATTRIBUTES (__attribute__ ((packed)) , "hashed string"),
 		(char *, str, , "key field"),
 		(mr_hash_value_t, hash_value, , "hash value of 'str'"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(uint8_t * , bitfield, , "flagged bit-fields saved as resizable array of bytes",
@@ -335,13 +339,13 @@ TYPEDEF_STRUCT (mr_bitfield_param_t, ATTRIBUTES ( , "bit-field parameters"),
 		(uint8_t, width, , "bit-field width in bits"),
 		(uint8_t, shift, , "bit-field shift in first byte"),
 		(bool, initialized, , "flag that width and shift are initialized"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_func_param_t, ATTRIBUTES ( , "types descriptors for function return value and all arguments"),
 		(mr_stype_t **, args, , "function arguments saved as resizable array of pointers on structured types",
 		{ .count_field_offset = offsetof (mr_func_param_t, args_count) }, "count_field_offset"), 
 		(ssize_t, args_count, , "size of args array"),
-		)
+		);
 
 #define MR_FIELD_PARAM_UNION_UDO				\
   (mr_ud_override_t[]) {					\
@@ -367,7 +371,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 
 		ANON_UNION (),
 		ANON_UNION (),
-		(uint8_t, default_serialization, [0], "default serialization is empty"),
+		(mr_non_serializable_t, non_serializable, , "default serialization"),
 		(mr_bitfield_param_t, bitfield_param, , "bit-field parameters"),
 		(mr_func_param_t, func_param, , "types of function arguments"),
 		END_ANON_UNION ("mr_type", { MR_FIELD_PARAM_NON_UNION_UDO }, "mr_ud_override_t", sizeof (MR_FIELD_PARAM_NON_UNION_UDO)),
@@ -388,7 +392,7 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
-		)
+		);
 
 #define MR_ENUM_VALUE_UDO					\
   (mr_ud_override_t[]) {					\
@@ -405,10 +409,10 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
       }
 
 TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enum"),
-	       (uint64_t, default_serialization, [0]),
+	       (mr_non_serializable_t, non_serializable, , "default serialization"),
 	       (uint64_t, _unsigned),
 	       (int64_t, _signed),
-	       )
+	       );
 
 TYPEDEF_STRUCT (mr_ed_t, ATTRIBUTES ( , "Metaresc enum descriptor"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
@@ -418,7 +422,7 @@ TYPEDEF_STRUCT (mr_ed_t, ATTRIBUTES ( , "Metaresc enum descriptor"),
 		(mr_ptr_t, res, , "res_type"), /* extra pointer for user data */
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_enum_param_t,
 		(mr_ed_t **, enums, , "fields or enums descriptors", { .count_field_offset = offsetof (mr_enum_param_t, enums_count) }, "count_field_offset"),
@@ -426,22 +430,22 @@ TYPEDEF_STRUCT (mr_enum_param_t,
 		(uint8_t, size_effective, , "effective size"),
 		(mr_type_t, mr_type_effective, , "automatic type detection is required for enums size adjustment"),
 		(bool, is_bitmask, , "set to true if all enum values are power of 2"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_struct_param_t,
 		(mr_fd_t **, fields, , "fields or enums descriptors",
 		 { .count_field_offset = offsetof (mr_struct_param_t, fields_count) }, "count_field_offset"),
 		(ssize_t, fields_count, , "count of 'fields' array"),
 		(mr_ic_t, field_by_name, , "lookup by field names"),
-		)
+		);
 
 TYPEDEF_UNION (mr_td_param_t,
-	       (uint8_t, default_serialization, [0], "default serialization"),
+	       (mr_non_serializable_t, non_serializable, , "default serialization"),
 	       (mr_enum_param_t, enum_param, , "parameters specific for enums"),
 	       (mr_struct_param_t, struct_param, , "parameters specific for structures/unions"),
 	       (mr_struct_param_t, union_param, , "parameters specific for structures/unions"),
 	       (mr_func_param_t, func_param, , "types of function arguments"),
-	       )
+	       );
 
 #define MR_TYPE_PARAM_UDO					\
   (mr_ud_override_t[]) {					\
@@ -467,13 +471,13 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		(char *, res_type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of array pointed by 'res'"),
 		VOID (mr_td_t *, next, , "single linked list"),
-		) /* type descriptor */
+		); /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
 		(void *, calloc, (const char *, const char *, int, size_t, size_t), "pointer on malloc() function"),
 		(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
 		(void, free, (const char *, const char *, int, void *), "pointer on free() function"),
-		)
+		);
 
 TYPEDEF_ENUM (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter descriptor flag bitfield values"),
 	      (MR_NO_FLAGS, = 0, "fancy serialization of empty flags"),
@@ -484,18 +488,18 @@ TYPEDEF_ENUM (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter d
 	      (MR_IS_OPAQUE_DATA, = 1 << 4, "opaque serialization of resizeable pointer for XDR"),
 	      (MR_IS_UNNAMED, = 1 << 5, "for CINIT serialization some nodes are unnamed (anonymous union and arrays elements)"),
 	      (MR_IS_TYPED, = 1 << 6, "for CINIT deserialization pointer node has a type"),
-	      )
+	      );
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
 		(mr_fd_t *, union_fdp, , "union field descriptor"),
 		(mr_fd_t *, discriminated_fdp, , "discriminated union field descriptor"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES (__attribute__ ((packed)), "substring"),
 		(char *, str, , "pointer on substring",
 		 { .size_field_offset = offsetof (mr_substr_t, length) }, "size_field_offset", .stype.mr_type = MR_TYPE_POINTER),
 		(size_t, length, , "length of the substring"),
-		)
+		);
 
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of values from lexer"),
 	      (MR_VT_VOID, = 0),
@@ -506,12 +510,12 @@ TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of va
 	      (MR_VT_INT, , "vt_int"),
 	      (MR_VT_FLOAT, , "vt_float"),
 	      (MR_VT_COMPLEX, , "vt_complex"),
-	      )
+	      );
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
 		ANON_UNION (),
-		(uint8_t, default_serialization, [0], "no serialization by default"),
+		(mr_non_serializable_t, non_serializable, , "default serialization"),
 		(complex_long_double_t, vt_complex),
 		(mr_substr_t, vt_substr),
 		(mr_intmax_t, vt_int),
@@ -519,17 +523,17 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		string_t vt_string,
 		char vt_char,
 		END_ANON_UNION ("value_type"),
-		)
+		);
 
 TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
-	       (uint8_t, default_serialization, [0], "no serialization by default"),
+	       (mr_non_serializable_t, non_serializable, , "default serialization"),
 	       (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
 	       (mr_substr_t, vt_substr),
 	       (uint8_t, vt_int, [sizeof (mr_intmax_t)]),
 	       (uint8_t, vt_float, [sizeof (long double)]),
 	       string_t vt_string,
 	       char vt_char,
-	       )
+	       );
 
 TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES (__attribute__ ((packed)), "set union discriminator indexes"),
 		ANON_UNION ( , __attribute__ ((packed))),
@@ -540,12 +544,12 @@ TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES (__attribute__ ((packed)), "set union di
 		END_ANON_UNION ("is_ic"),
 		(unsigned, count, : __CHAR_BIT__ - 1, "number of union discriminator in the list"),
 		(bool, is_ic, : 1, "true if union discriminator is an indexed collection"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
 		(mr_ud_set_t, ud_set, , "set union discriminator indexes"),
 		(mr_idx_t, next_untyped, , "linked list of nodes with same pointer"),
-		)
+		);
 
 #define MR_DATA_UDO						\
   (mr_ud_override_t[]) {					\
@@ -592,19 +596,19 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		END_ANON_UNION ("mr_type", { MR_DATA_UDO }, "mr_ud_override_t", sizeof (MR_DATA_UDO)),
 
 		ANON_UNION (),
-		(uint8_t, default_serialization, [0]),
+		(mr_non_serializable_t, non_serializable, , "default serialization"),
 		(mr_save_params_t, save_params, , "attributes specific for saving"),
 		(mr_load_params_t, load_params, , "value_type"),
 		(mr_typed_ptr_t, res, , "extra pointer for user data"),
 		END_ANON_UNION ("ptrdes_type"),
-		)
+		);
 
 TYPEDEF_ENUM (mr_ptrdes_type_t,
-	      (MR_PD_UNINITIALIZED, = 0, "default_serialization"),
+	      (MR_PD_UNINITIALIZED, = 0, "non_serializable"),
 	      (MR_PD_SAVE, , "save_params"),
 	      (MR_PD_LOAD, , "load_params"),
 	      (MR_PD_CUSTOM, , "res"),
-	      )
+	      );
 
 TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements",
@@ -614,14 +618,14 @@ TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(mr_idx_t, last_child, , "last added child index"),
 		(mr_ptrdes_type_t, ptrdes_type, , "discriminator for anonymous union in mr_ptrdes_t"),
 		(mr_res_t, res, , "extra pointer for user data"),
-		)
+		);
 
 TYPEDEF_ENUM (mr_dfs_order_t,
 	      MR_DFS_PRE_ORDER,
 	      MR_DFS_POST_ORDER,
-	      )
+	      );
 
-TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, mr_idx_t /* idx */, int /* level */, mr_dfs_order_t /* order */, mr_ptr_t /* context */))
+TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, mr_idx_t /* idx */, int /* level */, mr_dfs_order_t /* order */, mr_ptr_t /* context */));
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
@@ -631,17 +635,17 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators",
 		{ .size_field_offset = offsetof (mr_save_data_t, mr_ra_ud_size) }, "size_field_offset"),
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
-		)
+		);
 
-TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *))
+TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *));
 
-TYPEDEF_FUNC (void, mr_msg_handler_t, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), ATTRIBUTES ( , "handler for error messages"))
+TYPEDEF_FUNC (void, mr_msg_handler_t, (const char *, const char *, int, mr_log_level_t, mr_message_id_t, va_list), ATTRIBUTES ( , "handler for error messages"));
 
 TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
 		(int, lineno, , "parser location - line number"),
 		(int, column, , "parser location - column number"),
 		(int, offset, , "parser location - offset in string"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
@@ -649,12 +653,12 @@ TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(char *, buf, , "parser internal buffer"),
 		(mr_lloc_t, lloc, , "current location of parser"),
 		(mr_idx_t, parent, , "index of current parent"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_get_struct_type_name_t, ATTRIBUTES ( , "long jump buffer and type name"),
 		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
 		(char *, type_name, , "type name"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type detection with __builtin_dump_struct"),
 		VOID (jmp_buf, _jmp_buf, , "long jump buffer"),
@@ -665,13 +669,13 @@ TYPEDEF_STRUCT (mr_dump_struct_type_ctx_t, ATTRIBUTES ( , "context for type dete
 		(int, field_idx, , "index of the next detected field"),
 		(int, fields_count, , "number of allocated fields descriptors"),
 		(bool, bitfield_detection, , "flag for bit-fields offset detection"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_var_t, ATTRIBUTES ( , "record to identify type of serialize expression"),
 		(char *, filename, , "source file name"),
 		(char *, varname, , "unique variable name to identify type of serialized expression"),
 		(char *, type, , "type of expression"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_dwarf_t, ATTRIBUTES ( , "record to identify type of serialize expression"),
 		(mr_td_t **, tdps, , "array of pointers on type descriptors", { .count_field_offset = offsetof (mr_dwarf_t, tdps_count), }, "count_field_offset"),
@@ -679,7 +683,7 @@ TYPEDEF_STRUCT (mr_dwarf_t, ATTRIBUTES ( , "record to identify type of serialize
 		(mr_var_t **, vars, , "variables types", { .count_field_offset = offsetof (mr_dwarf_t, vars_count), }, "count_field_offset"),
 		(size_t, vars_count, , "count of vars array"),
 		(mr_dwarf_t *, next, , "linked list"),
-		)
+		);
 
 TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_mem_t, mr_mem, , "memory operations"),
@@ -694,5 +698,4 @@ TYPEDEF_STRUCT (mr_conf_t, ATTRIBUTES ( , "Metaresc configuration"),
 		(mr_ic_t, field_by_name, , "index of all fields names"),
 		(mr_ic_t, field_by_name_and_type, , "index of all fields by name and type"),
 		(mr_ra_printf_t, output_format, [MR_TYPE_LAST], "formaters"),
-		)
-
+		);

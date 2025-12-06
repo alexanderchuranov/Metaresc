@@ -38,7 +38,7 @@ TYPEDEF_STRUCT (mr_xml_esc_t,
 		(char *, esc_seq, , "escape sequence"),
 		(int, length, , "length of escape sequence"),
 		(char, symbol, , "escaped symbol"),
-		)
+		);
 
 /**
  * XML unquote function. Replace XML special characters aliases on a source characters.
