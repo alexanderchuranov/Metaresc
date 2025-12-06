@@ -309,6 +309,7 @@ mr_ud_add (mr_ud_set_t * uds, mr_ptr_t key, mr_save_data_t * mr_save_data)
 
       uds->union_discriminator = dst_ic;
       uds->is_ic = true;
+      uds->count = 0;
       mr_ptr_t * add = mr_ic_add (dst_ic, key);
       return (add ? add->uintptr : -1);
     }
