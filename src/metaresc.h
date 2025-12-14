@@ -963,7 +963,7 @@
 #define MR_STRUCT_POINTER(S_PTR) ({				\
       __typeof__ (&*MR_CAST_TO_PTR (S_PTR)) _mr = NULL;		\
       __builtin_choose_expr (MR_IS_STRUCT_OR_UNION (*_mr),	\
-			     _mr, (mr_dummy_struct_t*)0);	\
+			     _mr, (struct {} *)0);		\
     })
 
 #define MR_OBJ_TYPE_DUMP_EXTRA(S_PTR) ({				\
@@ -1449,11 +1449,7 @@ typedef complex float complex_float_t;
 typedef complex double complex_double_t;
 typedef complex long double complex_long_double_t;
 typedef unsigned mr_hash_value_t;
-typedef struct mr_ic_t mr_ic_t_; /* required for forward definition of struct mr_ic_t which is used in mr_ic_hash_t */
-typedef struct mr_dummy_struct_t {
-  char dummy_field[0];
-} mr_dummy_struct_t;
-typedef __typeof__ (offsetof (mr_dummy_struct_t, dummy_field)) mr_offset_t;
+typedef __typeof__ (offsetof (struct {int x;}, x)) mr_offset_t;
 
 #ifdef MR_HAVE_INT128
 

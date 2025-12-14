@@ -119,8 +119,6 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
     }
 
   ctx->type_name = fdp ? fdp->name.str : NULL;
-  if (ctx->type_name && (0 == strcmp (ctx->type_name, "mr_dummy_struct_t")))
-    ctx->type_name = NULL;
   longjmp (ctx->_jmp_buf, !0);
   return (0);
 }
