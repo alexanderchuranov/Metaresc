@@ -533,7 +533,7 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
   /* Here we set a trailing NULL fields descriptor */
   struct_param->fields[fields_count] = struct_param->fields[struct_param->fields_count];
   struct_param->fields[struct_param->fields_count] = NULL;
-  /* One more heuristic to detect anonymous unions */
+  /* Heuristic to detect anonymous unions within structures */
   if (tdp->mr_type == MR_TYPE_STRUCT)
     mr_detect_anon_unions (struct_param, fields_count, anon_union_count);
   mr_add_type (tdp);
@@ -2148,7 +2148,7 @@ mr_conf_init ()
 	  tdp->type.hash_value = 0;
 
 	  /* check whether this type is already in the list */
-	  if (mr_get_td_by_name_internal (tdp->type.str))
+	  if (NULL != mr_get_td_by_name_internal (tdp->type.str))
 	    continue; /* this type is already registered */
 
 	  mr_init_struct (tdp);
@@ -2171,6 +2171,9 @@ mr_conf_init ()
 
       for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
 	{
+	  if (tdp != mr_get_td_by_name_internal (tdp->type.str))
+	    continue; /* this type is a duplicate */
+
 	  mr_type_is_union_discriminator (tdp);
 	  mr_augment_fields (tdp);
 	}
