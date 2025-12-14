@@ -534,7 +534,8 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
   struct_param->fields[fields_count] = struct_param->fields[struct_param->fields_count];
   struct_param->fields[struct_param->fields_count] = NULL;
   /* One more heuristic to detect anonymous unions */
-  mr_detect_anon_unions (struct_param, fields_count, anon_union_count);
+  if (tdp->mr_type == MR_TYPE_STRUCT)
+    mr_detect_anon_unions (struct_param, fields_count, anon_union_count);
   mr_add_type (tdp);
 }
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
@@ -2032,7 +2033,7 @@ void mr_augment_fields (mr_td_t * tdp)
   for (i = 0; i < tdp->param.struct_param.fields_count; ++i)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
-      if (fdp == NULL)
+      if ((fdp == NULL) || (fdp->name.str == NULL))
 	continue;
 
       int name_length = strlen (fdp->name.str);
