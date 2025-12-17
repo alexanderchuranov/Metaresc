@@ -148,7 +148,6 @@ TYPEDEF_UNION (mr_dump_struct_types_union_t,
 	       float _float,
 	       double _double,
 	       long double _long_double,
-	       char _c,
 	       signed char _sc,
 	       unsigned char _uc,
 	       signed short _ss,
@@ -297,7 +296,7 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
   if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
   else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
   else if (strcmp (fmt, "%p\n") == 0) { CASE (value._ptr, MR_TYPE_POINTER) }
-  else if (strcmp (fmt, "%c\n") == 0) { CASE (value._c) }
+  else if (strcmp (fmt, "%c\n") == 0) { CASE (value._uc) }
   else if (strcmp (fmt, "%hhd\n") == 0) { CASE (value._sc) }
   else if (strcmp (fmt, "%hhu\n") == 0) { CASE (value._uc) }
   else if (strcmp (fmt, "%hd\n") == 0) { CASE (value._ss) }
