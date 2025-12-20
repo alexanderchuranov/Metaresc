@@ -298,8 +298,14 @@ TYPEDEF_STRUCT (mr_ic_virt_func_t, ATTRIBUTES ( , "virtual functions table for i
 		(void, free, (mr_ic_t * /* ic */)),
 		);
 
+TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES (__attribute__((transparent_union)), "signed/unsigned value of the enum"),
+	       VOID (uint64_t, non_serializable, , "default serialization"),
+	       (uint64_t, _unsigned),
+	       (int64_t, _signed),
+	       );
+
 TYPEDEF_STRUCT (mr_ud_override_t, ATTRIBUTES ( , "key value pair for union discriminator override"),
-		(int64_t, value, , "discriminator value that has a custom override"),
+		(__typeof__ (((mr_enum_value_t*)0)->_signed), value, , "discriminator value that has a custom override"),
 		(char *, discriminator, , "name of union branch for this value"),
 		(char *, type, , "discriminator for typed_value"),
 		(mr_ptr_t, typed_value, , "type"),
@@ -407,12 +413,6 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
       { MR_TYPE_INT128, "_signed" },				\
       { MR_TYPE_UINT128, "_unsigned" },				\
       }
-
-TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES (__attribute__((transparent_union)), "signed/unsigned value of the enum"),
-	       VOID (uint64_t, non_serializable, , "default serialization"),
-	       (uint64_t, _unsigned),
-	       (int64_t, _signed),
-	       );
 
 TYPEDEF_STRUCT (mr_ed_t, ATTRIBUTES ( , "Metaresc enum descriptor"),
 		(mr_hashed_string_t, name, , "hashed name of the field"),
