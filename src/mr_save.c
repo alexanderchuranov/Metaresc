@@ -76,7 +76,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	{
 	case MR_TYPE_BOOL:
 	  {
-	    int idx = !!*(uint8_t*)discriminator;
+	    __typeof__ (((mr_enum_value_t*)0)->_unsigned) idx = !!*(uint8_t*)discriminator;
 	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, idx);
 	    if (fdp)
 	      return (fdp);
@@ -87,7 +87,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 #define CASE_RETURN_BY_TYPE_(TYPE, MR_TYPE)				\
 	  case MR_TYPE:							\
 	    {								\
-	      mr_fd_t * fdp = mr_ud_override_value (ud_overrides, *(TYPE*)discriminator); \
+	      mr_fd_t * fdp = mr_ud_override_value			\
+		(ud_overrides, (__typeof__ (((mr_enum_value_t*)0)->_unsigned))*(TYPE*)discriminator); \
 	      if (fdp)							\
 		return (fdp);						\
 	      return (mr_union_discriminator_by_idx (tdp, *(TYPE*)discriminator)); \
@@ -105,7 +106,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 
 	    mr_save_bitfield_value (&ptrdes, &value); /* get value of the bitfield */
 
-	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
+	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, (__typeof__ (((mr_enum_value_t*)0)->_unsigned))value);
 	    if (fdp)
 	      return (fdp);
 	  
@@ -113,7 +114,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	      if (MR_TYPE_ENUM == enum_tdp->mr_type)
 		{
 		  /* if bitfield is a enumeration then get named discriminator from enum value meta field */
-		  mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, value);
+		  mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, (__typeof__ (((mr_enum_value_t*)0)->_unsigned))value);
 		  return (mr_union_discriminator_by_name (tdp, edp ? edp->meta : NULL));
 		}
 	    

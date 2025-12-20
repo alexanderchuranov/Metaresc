@@ -17,7 +17,7 @@ TYPEDEF_UNION (mr_ptr_t, ATTRIBUTES (__attribute__((transparent_union)), "pointe
 	       (intptr_t, intptr),
 	       );
 
-TYPEDEF_UNION (mr_non_serializable_t, ATTRIBUTES (__attribute__((transparent_union)), "zero size union to address fields after it"),
+TYPEDEF_UNION (mr_non_serializable_t, ATTRIBUTES ( , "zero size union to address fields after it"),
 	       (uint8_t, uint8, [0]),
 	       );
 
