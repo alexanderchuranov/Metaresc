@@ -1396,26 +1396,22 @@ mr_type_is_an_array (mr_stype_t * stype, char * type)
   if ((NULL == type) || (0 == type[0]))
     return (false);
 
-  mr_array_dimensions_t dim;
-  memset (&dim, 0, sizeof (dim));
-
-  int i = 0;
+  mr_array_dimensions_t dim = {};
   char * open_bracket;
   for (open_bracket = strchr (type, '['); open_bracket != NULL; open_bracket = strchr (open_bracket + 1, '['))
     {
       *open_bracket = 0;
 
-      uint32_t count = atoi (open_bracket + 1);
-      if (i < sizeof (dim.dim) / sizeof (dim.dim[0]))
-	dim.dim[i++] = count;
+      int count = atoi (open_bracket + 1);
+      if (dim.dim_count < sizeof (dim.dim) / sizeof (dim.dim[0]))
+	dim.dim[dim.dim_count++] = count;
       else
-	dim.dim[i - 1] *= count;
+	dim.dim[dim.dim_count - 1] *= count;
     }
 
-  if ((i > 0) &&
-      !((stype->mr_type == MR_TYPE_CHAR_ARRAY) && (i == 1)))
+  if ((dim.dim_count > 0) &&
+      !((stype->mr_type == MR_TYPE_CHAR_ARRAY) && (dim.dim_count == 1)))
     {
-      dim.dim_count = i;
       stype->dim = dim;
       stype->is_array = true;
     }
