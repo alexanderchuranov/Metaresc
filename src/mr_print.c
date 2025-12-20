@@ -121,7 +121,7 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
       mr_td_t * tdp = mr_get_td_by_name (type);
       if (tdp && (MR_TYPE_ENUM == tdp->mr_type))
 	{
-	  mr_enum_value_type_t value = 0;
+	  mr_enum_value_t value = { 0 };
 	  mr_fd_t fd = { .stype.tdp = tdp, };
 	  mr_ptrdes_t ptrdes = { .data.ptr = &value, .fdp = &fd, };
 	  mr_rarray_t mr_ra_str = {
@@ -133,9 +133,9 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
 
 	  switch (mr_type)
 	    {
-#define MR_CASE_TYPE(TYPE)					\
-	      case MR_TYPE_DETECT (TYPE):			\
-		value = va_arg (args, typeof (0 + (TYPE)0));	\
+#define MR_CASE_TYPE(TYPE)						\
+	      case MR_TYPE_DETECT (TYPE):				\
+		value._unsigned = va_arg (args, typeof (0 + (TYPE)0));	\
 		break;
 	      MR_FOREACH (MR_CASE_TYPE, MR_ENUM_INT_TYPES_LIST);
 	    default:

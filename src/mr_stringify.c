@@ -142,7 +142,7 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   /* check whether type descriptor was found */
   if (tdp)
     {
-      mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
+      mr_enum_value_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_ed_t * edp = mr_get_enum_by_value (tdp, value);
       if (edp)
 	if (edp->name.str)
@@ -175,25 +175,25 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   bool first = true;
   int count = 0;
   int i;
-  mr_enum_value_type_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
+  mr_enum_value_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       
-  if (0 == value)
+  if (0 == value._unsigned)
     return (mr_ra_printf_enum (mr_ra_str, ptrdes));
 
   for (i = 0; i < tdp->param.enum_param.enums_count; ++i)
-    if (value & tdp->param.enum_param.enums[i]->value._unsigned)
+    if (value._unsigned & tdp->param.enum_param.enums[i]->value._unsigned)
       {
 	if (first)
 	  first = false;
 	else
 	  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
 	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, tdp->param.enum_param.enums[i]->name.str));
-	value ^= tdp->param.enum_param.enums[i]->value._unsigned;
-	if (0 == value)
+	value._unsigned ^= tdp->param.enum_param.enums[i]->value._unsigned;
+	if (0 == value._unsigned)
 	  break;
       }
 
-  if (0 != value)
+  if (0 != value._unsigned)
     {
       mr_ptrdes_t _ptrdes = { .data = { &value } };
       char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;

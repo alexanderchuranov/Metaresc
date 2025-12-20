@@ -41,7 +41,7 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
 }
 
 static inline mr_fd_t *
-mr_ud_override_value (mr_ic_t * ud_overrides, uint64_t value)
+mr_ud_override_value (mr_ic_t * ud_overrides, mr_enum_value_t value)
 {
   if (NULL == ud_overrides)
     return (NULL);
@@ -132,7 +132,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 	    if (NULL == enum_tdp)
 	      return (mr_union_discriminator_by_name (tdp, NULL));
 
-	    mr_enum_value_type_t value = mr_get_enum_value (enum_tdp, discriminator);
+	    mr_enum_value_t value = mr_get_enum_value (enum_tdp, discriminator);
 	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
 	    if (fdp)
 	      return (fdp);

@@ -408,8 +408,8 @@ TYPEDEF_STRUCT (mr_fd_t, ATTRIBUTES ( , "Metaresc field descriptor"),
       { MR_TYPE_UINT128, "_unsigned" },				\
       }
 
-TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES ( , "signed/unsigned value of the enum"),
-	       (mr_non_serializable_t, non_serializable, , "default serialization"),
+TYPEDEF_UNION (mr_enum_value_t, ATTRIBUTES (__attribute__((transparent_union)), "signed/unsigned value of the enum"),
+	       VOID (uint64_t, non_serializable, , "default serialization"),
 	       (uint64_t, _unsigned),
 	       (int64_t, _signed),
 	       );

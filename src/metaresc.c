@@ -30,7 +30,7 @@ MR_FOREACH (MR_TYPEDEF_DESC_BI,
 	    char *, char*, va_list, void,
 	    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t,
 	    mr_uintmax_t, mr_intmax_t, mr_static_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
-	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, mr_enum_value_type_t, long_double_t,
+	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, long_double_t,
 	    complex_float_t, complex_double_t, complex_long_double_t);
 
 /* bool is defined as _Bool. Resolution of previous macro resolves bool into _Bool. Next statement declares "bool" without macro resolution. */
@@ -1070,18 +1070,21 @@ mr_anon_unions_extract (mr_td_t * tdp)
  * @param ptrdes descriptor of the saved field
  * @return enum value
  */
-mr_enum_value_type_t
+mr_enum_value_t
 mr_get_enum_value (mr_td_t * tdp, void * data)
 {
-  mr_enum_value_type_t enum_value = 0;
+  mr_enum_value_t enum_value = { 0 };
   /*
-    GCC caluculates sizeof for the type according alignment, but initialize only effective bytes
-    i.e. for typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
+    Old versions of GCC (e.g. 4.x) caluculates sizeof for the type according alignment,
+    but initialize only effective bytes i.e. for:
+
+    typedef enum __attribute__ ((packed, aligned (sizeof (uint16_t)))) {} enum_t;
+
     sizeof (enum_t) == 2, but type has size only 1 byte
   */
   switch (tdp->param.enum_param.mr_type_effective)
     {
-#define CASE_GET_ENUM_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): enum_value = *(TYPE*)data; break;
+#define CASE_GET_ENUM_BY_TYPE(TYPE) case MR_TYPE_DETECT (TYPE): enum_value._unsigned = *(TYPE*)data; break;
 
       MR_FOREACH (CASE_GET_ENUM_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 #ifdef HAVE_INT128
@@ -1189,19 +1192,19 @@ mr_init_enum (mr_td_t * tdp)
   tdp->param.enum_param.is_bitmask = true;
   for (i = 0; i < count; ++i)
     {
-      mr_enum_value_type_t value = tdp->param.enum_param.enums[i]->value._unsigned;
+      mr_enum_value_t value = tdp->param.enum_param.enums[i]->value;
 
       /*
 	there is a corner case when enum has a single negative value which is a highest sign bit
 	Compiler will extend sign bit to higher positoins and this value will not be classified
 	as a power of two. That's why we need to truncate value to expected bit width before checking.
        */
-      value &= (2LL << (tdp->param.enum_param.size_effective * __CHAR_BIT__ - 1)) - 1;
+      value._unsigned &= (2LL << (tdp->param.enum_param.size_effective * __CHAR_BIT__ - 1)) - 1;
 
-      if (value != 0)
+      if (value._unsigned != 0)
 	++non_zero_cnt;
       
-      if ((value & (value - 1)) != 0)
+      if ((value._unsigned & (value._unsigned - 1)) != 0)
 	tdp->param.enum_param.is_bitmask = false;
       
       /* adding to global lookup table by enum literal names */
@@ -1240,7 +1243,7 @@ mr_init_func (mr_td_t * tdp)
  * @return pointer on enum value descriptor (mr_fd_t*) or NULL is value was not found
  */
 mr_ed_t *
-mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value)
+mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_t value)
 {
   unsigned idx;
   uintptr_t key = (uintptr_t)&value - offsetof (mr_ed_t, value);

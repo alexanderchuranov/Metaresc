@@ -1479,8 +1479,6 @@ typedef int64_t mr_int128_t[2];
 #undef MR_MODE
 #endif
 
-typedef __typeof__ (((mr_enum_value_t*)0)->_unsigned) mr_enum_value_type_t;
-
 extern mr_conf_t mr_conf;
 
 #ifdef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
@@ -1554,8 +1552,8 @@ extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
 extern mr_hash_value_t mr_hash_struct (mr_ra_ptrdes_t * ptrs);
 extern int mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
-extern mr_enum_value_type_t mr_get_enum_value (mr_td_t * tdp, void * data);
-extern mr_ed_t * mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_type_t value);
+extern mr_enum_value_t mr_get_enum_value (mr_td_t * tdp, void * data);
+extern mr_ed_t * mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_t value);
 extern mr_ed_t * mr_get_enum_by_name (char * name);
 extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value);
 extern mr_status_t mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value);
