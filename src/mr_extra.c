@@ -1,4 +1,124 @@
 #include <metaresc.h>
+#include <mr_hsort.h>
+
+static int
+mr_elements_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  return (mr_cmp_structs (x.ptr, y.ptr));
+}
+
+mr_status_t
+mr_generic_sort (void * data, size_t count, char * key_type)
+{
+  mr_td_t * tdp = mr_get_td_by_name (key_type);
+
+  if ((NULL == tdp) || (0 == tdp->size))
+    return (MR_FAILURE);
+
+  size_t i;
+  mr_status_t status = MR_SUCCESS;
+  mr_ra_ptrdes_t * array = MR_CALLOC (count, sizeof (array[0]));
+
+  if (NULL == array)
+    return (MR_FAILURE);
+
+  for (i = 0; i < count; ++i)
+    {
+      array[i] = MR_SAVE_STR_TYPED (key_type, (uint8_t*)data + i * tdp->size);
+      if ((array[i].ra == NULL) || (array[i].size < 2 * sizeof (array[i].ra[0])))
+	{
+	  status = MR_FAILURE;
+	  goto cleanup;
+	}
+    }
+
+  uint8_t * copy = MR_CALLOC (count, tdp->size);
+  if (copy == NULL)
+    {
+      status = MR_FAILURE;
+      goto cleanup;
+    }
+
+  mr_hsort (array, count, sizeof (array[0]), mr_elements_cmp, NULL);
+
+  for (i = 0; i < count; ++i)
+    memcpy (copy + i * tdp->size, array[i].ra[1].data.ptr, tdp->size);
+
+  memcpy (data, copy, count * tdp->size);
+  MR_FREE (copy);
+
+ cleanup:
+  for (i = 0; i < count; ++i)
+    if (array[i].ra != NULL)
+      MR_FREE (array[i].ra);
+  MR_FREE (array);
+
+  return (status);
+}
+
+#define MR_TYPE_CMP_FUNC_NAME(TYPE) mr_ ## TYPE ## _cmp
+#define MR_TYPE_CMP_FUNC(TYPE)						\
+  static int MR_TYPE_CMP_FUNC_NAME (TYPE)				\
+    (const mr_ptr_t x, const mr_ptr_t y, const void * context)		\
+  {									\
+    TYPE * _x = x.ptr;							\
+    TYPE * _y = y.ptr;							\
+    return ((*_x > *_y) - (*_x < *_y));					\
+  }
+
+typedef void * void_ptr;
+
+#define MR_BASIC_TYPES char, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t, float, double, long_double_t
+
+MR_FOREACH (MR_TYPE_CMP_FUNC, void_ptr, MR_BASIC_TYPES);
+
+static int MR_TYPE_CMP_FUNC_NAME (string_t) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  string_t * _x = x.ptr;
+  string_t * _y = y.ptr;
+  if (*_x && *_y)
+    return (strcmp (*_x, *_y));
+  return ((*_x > *_y) - (*_x < *_y));
+}
+
+static int MR_TYPE_CMP_FUNC_NAME (char_array) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+{
+  char * _x = x.ptr;
+  char * _y = y.ptr;
+  return (strcmp (_x, _y));
+}
+
+static mr_compar_fn_t
+mr_type_compar_fn (mr_type_t mr_type)
+{
+  static mr_compar_fn_t types_compar_fn[MR_TYPE_LAST] =
+    {
+#define MR_TYPE_CMP_FUNC_ENTRY(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_TYPE_CMP_FUNC_NAME (TYPE),
+      [MR_TYPE_CHAR_ARRAY] = MR_TYPE_CMP_FUNC_NAME (char_array),
+      [MR_TYPE_FUNC] = MR_TYPE_CMP_FUNC_NAME (void_ptr),
+      [MR_TYPE_FUNC_TYPE] = MR_TYPE_CMP_FUNC_NAME (void_ptr),
+      MR_FOREACH (MR_TYPE_CMP_FUNC_ENTRY, string_t, MR_BASIC_TYPES)
+    };
+
+  if ((mr_type >= 0) && (mr_type < MR_TYPE_LAST))
+    return (types_compar_fn[mr_type]);
+  return (NULL);
+}
+
+mr_status_t
+mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_type, size_t element_size)
+{
+  if (MR_TYPE_NONE == mr_type)
+    return (mr_generic_sort (data, count, key_type));
+  else
+    {
+      mr_compar_fn_t compar_fn = mr_type_compar_fn (mr_type);
+      if (NULL == compar_fn)
+	return (MR_FAILURE);
+      mr_hsort (data, count, element_size, compar_fn, NULL);
+    }
+  return (MR_SUCCESS);
+}
 
 /**
  * Recursively free all allocated memory. Needs to be done from bottom to top.
