@@ -625,7 +625,7 @@ TYPEDEF_ENUM (mr_dfs_order_t,
 	      MR_DFS_POST_ORDER,
 	      );
 
-TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ra_ptrdes_t * /* ptrs */, mr_idx_t /* idx */, int /* level */, mr_dfs_order_t /* order */, mr_ptr_t /* context */));
+TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ptrdes_t * /* ptrs */, mr_idx_t /* idx */, int /* level */, mr_dfs_order_t /* order */, mr_ptr_t /* context */));
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),

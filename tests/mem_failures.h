@@ -11,8 +11,8 @@ extern mr_mem_t _mr_mem, mr_mem;
 
 #undef MR_SAVE
 #define MR_SAVE(MR_TYPE, PTR) ({					\
-      mr_ra_ptrdes_t __ptrs = MR_SAVE_TYPED (MR_TYPE, PTR);		\
-      mr_reorder_strings (&__ptrs);					\
+      mr_ptrdes_t * __ptrs = MR_SAVE_TYPED (MR_TYPE, PTR);		\
+      mr_reorder_strings (__ptrs);					\
       __ptrs;								\
     })
 
@@ -48,12 +48,12 @@ extern mr_mem_t _mr_mem, mr_mem;
     memset (&_mr_conf, 0, sizeof (_mr_conf));				\
     status = MR_LOAD_## METHOD ## _RA (mr_conf_t, ra, &_mr_conf);	\
     mr_conf.mr_mem = mr_mem;						\
-    mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &_mr_conf);		\
+    mr_ptrdes_t * ptrs = MR_SAVE (mr_conf_t, &_mr_conf);		\
     mr_conf.mr_mem = _mr_mem;						\
-    if (ptrs.ra != NULL)						\
+    if (ptrs != NULL)							\
       {									\
-	mr_free_recursively (&ptrs);					\
-	mr_mem.free (NULL, NULL, 0, ptrs.ra);				\
+	mr_free_recursively (ptrs);					\
+	mr_mem.free (NULL, NULL, 0, ptrs);				\
       }									\
     return (status);							\
   }									\

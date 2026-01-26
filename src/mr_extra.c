@@ -4,7 +4,7 @@
 static int
 mr_elements_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
-  return (mr_cmp_structs (x.ptr, y.ptr));
+  return (mr_cmp_structs (*(mr_ptrdes_t**)x.ptr, *(mr_ptrdes_t**)y.ptr));
 }
 
 mr_status_t
@@ -17,7 +17,7 @@ mr_generic_sort (void * data, size_t count, char * key_type)
 
   size_t i;
   mr_status_t status = MR_SUCCESS;
-  mr_ra_ptrdes_t * array = MR_CALLOC (count, sizeof (array[0]));
+  mr_ptrdes_t ** array = MR_CALLOC (count, sizeof (array[0]));
 
   if (NULL == array)
     return (MR_FAILURE);
@@ -25,7 +25,7 @@ mr_generic_sort (void * data, size_t count, char * key_type)
   for (i = 0; i < count; ++i)
     {
       array[i] = MR_SAVE_STR_TYPED (key_type, (uint8_t*)data + i * tdp->size);
-      if ((array[i].ra == NULL) || (array[i].size < 2 * sizeof (array[i].ra[0])))
+      if (array[i] == NULL)
 	{
 	  status = MR_FAILURE;
 	  goto cleanup;
@@ -42,15 +42,15 @@ mr_generic_sort (void * data, size_t count, char * key_type)
   mr_hsort (array, count, sizeof (array[0]), mr_elements_cmp, NULL);
 
   for (i = 0; i < count; ++i)
-    memcpy (copy + i * tdp->size, array[i].ra[1].data.ptr, tdp->size);
+    memcpy (copy + i * tdp->size, array[i][1].data.ptr, tdp->size);
 
   memcpy (data, copy, count * tdp->size);
   MR_FREE (copy);
 
  cleanup:
   for (i = 0; i < count; ++i)
-    if (array[i].ra != NULL)
-      MR_FREE (array[i].ra);
+    if (array[i] != NULL)
+      MR_FREE (array[i]);
   MR_FREE (array);
 
   return (status);
@@ -126,57 +126,57 @@ mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_ty
  * @return status
  */
 mr_status_t
-mr_free_recursively (mr_ra_ptrdes_t * ptrs)
+mr_free_recursively (mr_ptrdes_t * ptrs)
 {
-  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_idx_t i, count = 1;
   mr_status_t status = MR_SUCCESS;
 
   mr_conf_init ();
   
   if (NULL == ptrs)
     return (MR_FAILURE);
-  if (NULL == ptrs->ra)
-    return (MR_FAILURE);
 
-  ptrs->ptrdes_type = MR_PD_CUSTOM;
-
-  for (i = 1; i < count; ++i)
+  for (i = 1; i <= count; ++i)
     {
-      mr_ptrdes_t * ptrdes = &ptrs->ra[i];
-      ptrdes->res.data.ptr = NULL;
-      ptrdes->res.type = NULL;
+      if (count < ptrs[i].next)
+	count = ptrs[i].next;
+      if (count < ptrs[i].first_child)
+	count = ptrs[i].first_child;
 
-      if ((ptrdes->idx != MR_NULL_IDX) && !(ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
-	  ((MR_TYPE_POINTER == ptrdes->mr_type) || (MR_TYPE_STRING == ptrdes->mr_type)))
+      ptrs[i].res.data.ptr = NULL;
+      ptrs[i].res.type = NULL;
+
+      if ((ptrs[i].idx != MR_NULL_IDX) && !(ptrs[i].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
+	  ((MR_TYPE_POINTER == ptrs[i].mr_type) || (MR_TYPE_STRING == ptrs[i].mr_type)))
 	{
-	  if (NULL == ptrdes->data.ptr)
+	  if (NULL == ptrs[i].data.ptr)
 	    {
 	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
 	      status = MR_FAILURE;
 	    }
 	  else
-	    ptrdes->res.data.ptr = *(void**)ptrdes->data.ptr;
+	    ptrs[i].res.data.ptr = *(void**)ptrs[i].data.ptr;
 	}
     }
 
-  for (i = 1; i < count; ++i)
-    if (ptrs->ra[i].res.data.ptr)
-      MR_FREE (ptrs->ra[i].res.data.ptr);
+  for (i = 1; i <= count; ++i)
+    if (ptrs[i].res.data.ptr)
+      MR_FREE (ptrs[i].res.data.ptr);
 
   return (status);
 }
 
 static mr_status_t
-calc_relative_addr (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+calc_relative_addr (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_PRE_ORDER != order)
     return (MR_SUCCESS);
 
   /* is new address is not set yet, then it could be calculated as relative address from the parent node */
-  if (NULL == ptrs->ra[idx].res.data.ptr)
+  if (NULL == ptrs[idx].res.data.ptr)
     {
-      mr_idx_t parent = ptrs->ra[idx].parent;
-      ptrs->ra[idx].res.data.ptr = &((char*)ptrs->ra[parent].res.data.ptr)[ptrs->ra[idx].data.ptr - ptrs->ra[parent].data.ptr];
+      mr_idx_t parent = ptrs[idx].parent;
+      ptrs[idx].res.data.ptr = &((char*)ptrs[parent].res.data.ptr)[ptrs[idx].data.ptr - ptrs[parent].data.ptr];
     }
   return (MR_SUCCESS);
 }
@@ -187,43 +187,43 @@ calc_relative_addr (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order
  * @return status
  */
 mr_status_t
-mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
+mr_copy_recursively (mr_ptrdes_t * ptrs, void * dst)
 {
-  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
-
   mr_conf_init ();
 
   if ((NULL == ptrs) || (NULL == dst))
     return (MR_FAILURE);
-  if (NULL == ptrs->ra)
-    return (MR_FAILURE);
 
-  ptrs->ptrdes_type = MR_PD_CUSTOM;
-
-  /* copy first level struct */
-  memcpy (dst, ptrs->ra[1].data.ptr, ptrs->ra[1].MR_SIZE);
-  ptrs->ra[1].res.data.ptr = dst;
-
-  for (i = 2; i < count; ++i)
+  mr_idx_t i, count = 1;
+  for (i = 1; i <= count; ++i)
     {
-      ptrs->ra[i].res.data.ptr = NULL;
-      ptrs->ra[i].res.type = NULL;
+      if (count < ptrs[i].next)
+	count = ptrs[i].next;
+      if (count < ptrs[i].first_child)
+	count = ptrs[i].first_child;
+
+      ptrs[i].res.data.ptr = NULL;
+      ptrs[i].res.type = NULL;
     }
 
+  /* copy first level struct */
+  memcpy (dst, ptrs[1].data.ptr, ptrs[1].MR_SIZE);
+  ptrs[1].res.data.ptr = dst;
+
   /* NB index 1 is excluded */
-  for (i = 2; i < count; ++i)
+  for (i = 2; i <= count; ++i)
     /*
-      process nodes that are in final save graph (ptrs->ra[i].idx != MR_NULL_IDX)
+      process nodes that are in final save graph (ptrs[i].idx != MR_NULL_IDX)
       and are not references on other nodes and not a NULL pointer
     */
-    if ((ptrs->ra[i].idx != MR_NULL_IDX) && !(ptrs->ra[i].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-      switch (ptrs->ra[i].mr_type)
+    if ((ptrs[i].idx != MR_NULL_IDX) && !(ptrs[i].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+      switch (ptrs[i].mr_type)
 	{
 	case MR_TYPE_STRING:
-	  if (*(char**)ptrs->ra[i].data.ptr != NULL)
+	  if (*(char**)ptrs[i].data.ptr != NULL)
 	    {
-	      ptrs->ra[i].res.type = mr_strdup (*(char**)ptrs->ra[i].data.ptr);
-	      if (NULL == ptrs->ra[i].res.type)
+	      ptrs[i].res.type = mr_strdup (*(char**)ptrs[i].data.ptr);
+	      if (NULL == ptrs[i].res.type)
 		goto failure;
 	    }
 	  break;
@@ -232,12 +232,12 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	  {
 	    int idx;
 	    char * copy;
-	    typeof (ptrs->ra[i].MR_SIZE) size = ptrs->ra[i].MR_SIZE;
+	    typeof (ptrs[i].MR_SIZE) size = ptrs[i].MR_SIZE;
 
-	    if (ptrs->ra[i].first_child == MR_NULL_IDX)
+	    if (ptrs[i].first_child == MR_NULL_IDX)
 	      {
-		mr_td_t * tdp = ptrs->ra[i].fdp ? ptrs->ra[i].fdp->stype.tdp : NULL;
-		char * name = ptrs->ra[i].fdp ? ptrs->ra[i].fdp->name.str : MR_DEFAULT_NODE_NAME;
+		mr_td_t * tdp = ptrs[i].fdp ? ptrs[i].fdp->stype.tdp : NULL;
+		char * name = ptrs[i].fdp ? ptrs[i].fdp->name.str : MR_DEFAULT_NODE_NAME;
 		MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_NODE_CHILD_MISSING,
 			    tdp ? tdp->type.str : "unknown", name);
 		goto failure;
@@ -257,10 +257,10 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
 	      }
 
 	    /* copy data from source */
-	    memcpy (copy, *(void**)ptrs->ra[i].data.ptr, size);
+	    memcpy (copy, *(void**)ptrs[i].data.ptr, size);
 	    /* go thru all childs and calculate their addresses in newly allocated chunk */
-	    for (idx = ptrs->ra[i].first_child; idx != MR_NULL_IDX; idx = ptrs->ra[idx].next)
-	      ptrs->ra[idx].res.data.ptr = &copy[(char*)ptrs->ra[idx].data.ptr - *(char**)ptrs->ra[i].data.ptr];
+	    for (idx = ptrs[i].first_child; idx != MR_NULL_IDX; idx = ptrs[idx].next)
+	      ptrs[idx].res.data.ptr = &copy[(char*)ptrs[idx].data.ptr - *(char**)ptrs[i].data.ptr];
 	  }
 	  break;
 	default:
@@ -271,27 +271,27 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
   mr_ptrs_dfs (ptrs, calc_relative_addr, NULL);
 
   /* now we should update pointers in a copy */
-  for (i = 2; i < count; ++i)
-    if ((ptrs->ra[i].idx != MR_NULL_IDX)) /* skip invalid nodes */
-      switch (ptrs->ra[i].mr_type)
+  for (i = 2; i <= count; ++i)
+    if ((ptrs[i].idx != MR_NULL_IDX)) /* skip invalid nodes */
+      switch (ptrs[i].mr_type)
 	{
 	case MR_TYPE_STRING:
 	  /* update pointer in the copy */
-	  if (!(ptrs->ra[i].flags & MR_IS_NULL))
+	  if (!(ptrs[i].flags & MR_IS_NULL))
 	    {
-	      if (ptrs->ra[i].flags & MR_IS_REFERENCE)
-		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.data.ptr;
-	      else if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
-		*(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.type;
+	      if (ptrs[i].flags & MR_IS_REFERENCE)
+		*(void**)ptrs[i].res.data.ptr = ptrs[ptrs[i].first_child].res.data.ptr;
+	      else if (ptrs[i].flags & MR_IS_CONTENT_REFERENCE)
+		*(void**)ptrs[i].res.data.ptr = ptrs[ptrs[i].first_child].res.type;
 	      else
-		*(char**)ptrs->ra[i].res.data.ptr = ptrs->ra[i].res.type;
+		*(char**)ptrs[i].res.data.ptr = ptrs[i].res.type;
 	    }
 	  break;
 
 	case MR_TYPE_POINTER:
 	  /* update pointer in the copy */
-	  if (ptrs->ra[i].first_child != MR_NULL_IDX)
-	    *(void**)ptrs->ra[i].res.data.ptr = ptrs->ra[ptrs->ra[i].first_child].res.data.ptr;
+	  if (ptrs[i].first_child != MR_NULL_IDX)
+	    *(void**)ptrs[i].res.data.ptr = ptrs[ptrs[i].first_child].res.data.ptr;
 	  break;
 
 	default:
@@ -301,15 +301,15 @@ mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * dst)
   return (MR_SUCCESS);
 
  failure:
-  for (i = 2; i < count; ++i)
-    if ((MR_TYPE_STRING == ptrs->ra[i].mr_type) && (ptrs->ra[i].res.type != NULL))
-      MR_FREE (ptrs->ra[i].res.type);
-    else if ((MR_TYPE_POINTER == ptrs->ra[i].mr_type) &&
-	     (ptrs->ra[i].first_child != MR_NULL_IDX))
-      if (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr != NULL)
+  for (i = 2; i <= count; ++i)
+    if ((MR_TYPE_STRING == ptrs[i].mr_type) && (ptrs[i].res.type != NULL))
+      MR_FREE (ptrs[i].res.type);
+    else if ((MR_TYPE_POINTER == ptrs[i].mr_type) &&
+	     (ptrs[i].first_child != MR_NULL_IDX))
+      if (ptrs[ptrs[i].first_child].res.data.ptr != NULL)
 	{
-	  MR_FREE (ptrs->ra[ptrs->ra[i].first_child].res.data.ptr);
-	  ptrs->ra[ptrs->ra[i].first_child].res.data.ptr = NULL;
+	  MR_FREE (ptrs[ptrs[i].first_child].res.data.ptr);
+	  ptrs[ptrs[i].first_child].res.data.ptr = NULL;
 	}
 
   return (MR_FAILURE);
@@ -348,12 +348,12 @@ mr_hash_str (const char * str)
 }
 
 static mr_status_t
-node_hash (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+node_hash (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_POST_ORDER != order)
     return (MR_SUCCESS);
 
-  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+  mr_ptrdes_t * ptrdes = &ptrs[idx];
 
   switch (ptrdes->mr_type)
     {
@@ -412,8 +412,8 @@ node_hash (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order,
       {
 	mr_idx_t child;
 	mr_hash_value_t hash_value = 0;
-	for (child = ptrdes->first_child; child != MR_NULL_IDX; child = ptrs->ra[child].next)
-	  hash_value = hash_value * 3 + ptrs->ra[child].res.data.uintptr + 1;
+	for (child = ptrdes->first_child; child != MR_NULL_IDX; child = ptrs[child].next)
+	  hash_value = hash_value * 3 + ptrs[child].res.data.uintptr + 1;
 	ptrdes->res.data.uintptr = hash_value;
 	break;
       }
@@ -447,54 +447,55 @@ node_hash (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order,
     case MR_TYPE_END_ANON_UNION:
     case MR_TYPE_LAST:
       break;
-
     }
 
   return (MR_SUCCESS);
 }
 
 mr_hash_value_t
-mr_hash_struct (mr_ra_ptrdes_t * ptrs)
+mr_hash_struct (mr_ptrdes_t * ptrs)
 {
   mr_conf_init ();
   
   if (NULL == ptrs)
     return (0);
-  if ((NULL == ptrs->ra) || (ptrs->size < sizeof (ptrs->ra[0])))
-    return (0);
 
-  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  for (i = 1; i < count; ++i)
+  mr_idx_t i, count = 1;
+  for (i = 1; i <= count; ++i)
     {
-      ptrs->ra[i].res.data.uintptr = 0;
-      ptrs->ra[i].res.type = "uintptr";
+      if (count < ptrs[i].next)
+	count = ptrs[i].next;
+      if (count < ptrs[i].first_child)
+	count = ptrs[i].first_child;
+
+      ptrs[i].res.data.uintptr = 0;
+      ptrs[i].res.type = "uintptr";
     }
   
-  ptrs->ptrdes_type = MR_PD_CUSTOM;
   mr_ptrs_dfs (ptrs, node_hash, NULL);
-  return (ptrs->ra[1].res.data.uintptr);
+  return (ptrs[1].res.data.uintptr);
 }
 
 int
-mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y)
+mr_cmp_structs (mr_ptrdes_t * x, mr_ptrdes_t * y)
 {
   mr_conf_init ();
   
   if ((NULL == x) || (NULL == y))
-    return (0);
-  if ((NULL == x->ra) || (x->size < sizeof (x->ra[0])) ||
-      (NULL == y->ra) || (y->size < sizeof (y->ra[0])))
-    return (0);
+    return ((x > y) - (x < y));
 
-  int diff = (x->size > y->size) - (x->size < y->size);
+  mr_idx_t i, count_x, count_y;
+  count_x = mr_ptrs_count (x);
+  count_y = mr_ptrs_count (y);
+
+  int diff = (count_x > count_y) - (count_x < count_y);
   if (diff)
     return (diff);
 
-  mr_idx_t i, count = x->size / sizeof (x->ra[0]);
-  for (i = 1; i < count; ++i)
+  for (i = 1; i < count_x; ++i)
     {
-      mr_ptrdes_t * x_i = &x->ra[i];
-      mr_ptrdes_t * y_i = &y->ra[i];
+      mr_ptrdes_t * x_i = &x[i];
+      mr_ptrdes_t * y_i = &y[i];
 
       diff = (x_i->idx > y_i->idx) - (x_i->idx < y_i->idx);
       if (diff)

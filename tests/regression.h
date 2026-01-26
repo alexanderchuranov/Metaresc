@@ -103,34 +103,36 @@
   }									\
 
 static inline void
-mr_ra_ptrdes_eq (mr_ra_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_size)
+mr_ra_ptrdes_eq (mr_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_size)
 {
-  ck_assert_msg (ptrs->size == expected_size, "size mismatch %d != %d", (int)ptrs->size, (int)expected_size);
-  int i, count = expected_size / sizeof (*expected);
+  mr_idx_t i, count = mr_ptrs_count (ptrs);
+  int expected_count = expected_size / sizeof (expected[0]);
+  ck_assert_msg (count == expected_count, "size mismatch %d != %d", (int)count, expected_count);
+
   for (i = 1; i < count; ++i)
     {
-      ck_assert_msg (strcmp (ptrs->ra[i].fdp->name.str, expected[i].fdp->name.str) == 0,
-		     "[%d] name %s != %s", i, ptrs->ra[i].fdp->name.str, expected[i].fdp->name.str);
-      ck_assert_msg (ptrs->ra[i].mr_type == expected[i].mr_type,
-		     "[%d] mr_type %d != %d", i, ptrs->ra[i].mr_type, expected[i].mr_type);
+      ck_assert_msg (strcmp (ptrs[i].fdp->name.str, expected[i].fdp->name.str) == 0,
+		     "[%d] name %s != %s", i, ptrs[i].fdp->name.str, expected[i].fdp->name.str);
+      ck_assert_msg (ptrs[i].mr_type == expected[i].mr_type,
+		     "[%d] mr_type %d != %d", i, ptrs[i].mr_type, expected[i].mr_type);
 
-      if ((MR_TYPED_TYPES >> ptrs->ra[i].mr_type) & 1)
-	ck_assert_msg (strcmp (ptrs->ra[i].fdp->stype.type, expected[i].fdp->stype.type) == 0,
-		       "[%d] type %s != %s", i, ptrs->ra[i].fdp->stype.type, expected[i].fdp->stype.type);
-      ck_assert_msg (ptrs->ra[i].flags == expected[i].flags,
-		     "[%d] flags %d != %d", i, ptrs->ra[i].flags, expected[i].flags);
-      ck_assert_msg (ptrs->ra[i].first_child == expected[i].first_child,
-		     "[%d] first_child %d != %d", i, ptrs->ra[i].first_child, expected[i].first_child);
-      ck_assert_msg (ptrs->ra[i].next == expected[i].next,
-		     "[%d] next %d != %d", i, ptrs->ra[i].next, expected[i].next);
+      if ((MR_TYPED_TYPES >> ptrs[i].mr_type) & 1)
+	ck_assert_msg (strcmp (ptrs[i].fdp->stype.type, expected[i].fdp->stype.type) == 0,
+		       "[%d] type %s != %s", i, ptrs[i].fdp->stype.type, expected[i].fdp->stype.type);
+      ck_assert_msg (ptrs[i].flags == expected[i].flags,
+		     "[%d] flags %d != %d", i, ptrs[i].flags, expected[i].flags);
+      ck_assert_msg (ptrs[i].first_child == expected[i].first_child,
+		     "[%d] first_child %d != %d", i, ptrs[i].first_child, expected[i].first_child);
+      ck_assert_msg (ptrs[i].next == expected[i].next,
+		     "[%d] next %d != %d", i, ptrs[i].next, expected[i].next);
     }
 }
 
 #define ASSERT_MR_SAVE(TYPE, S_PTR, EXPECTED) ({			\
-      mr_ra_ptrdes_t ptrs = MR_SAVE (TYPE, S_PTR);			\
-      ck_assert_msg (ptrs.ra != NULL, "Failed to MR_SAVE");		\
-      mr_ra_ptrdes_eq (&ptrs, EXPECTED, sizeof (EXPECTED));		\
-      MR_FREE (ptrs.ra);						\
+      mr_ptrdes_t * ptrs = MR_SAVE (TYPE, S_PTR);			\
+      ck_assert_msg (ptrs != NULL, "Failed to MR_SAVE");		\
+      mr_ra_ptrdes_eq (ptrs, EXPECTED, sizeof (EXPECTED));		\
+      MR_FREE (ptrs);							\
     })
 
 #endif /* _REGRESSION_H_ */

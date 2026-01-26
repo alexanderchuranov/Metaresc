@@ -201,68 +201,68 @@ static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
 };
 
 static mr_status_t
-json_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
+json_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
   mr_ra_printf_t save_handler = NULL;
   
-  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
-    save_handler = json_save_tbl[ptrs->ra[idx].mr_type];
+  if ((ptrs[idx].mr_type >= 0) && (ptrs[idx].mr_type < MR_TYPE_LAST))
+    save_handler = json_save_tbl[ptrs[idx].mr_type];
 
   if (NULL == save_handler)
     {
       save_handler = mr_ra_printf_void;
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs[idx].mr_type);
     }
 
-  memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
+  memset (&ptrs[idx].res, 0, sizeof (ptrs[idx].res));
 
   if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
   
-  bool unnamed = !!(ptrs->ra[idx].flags & MR_IS_UNNAMED);
-  mr_idx_t parent = ptrs->ra[idx].parent;
+  bool unnamed = !!(ptrs[idx].flags & MR_IS_UNNAMED);
+  mr_idx_t parent = ptrs[idx].parent;
   if (unnamed && (parent != MR_NULL_IDX))
-    if ((MR_STRUCT_TYPES >> ptrs->ra[parent].mr_type) & 1)
+    if ((MR_STRUCT_TYPES >> ptrs[parent].mr_type) & 1)
       unnamed = false;
   
   if (!unnamed)
     {
       if (mr_ra_append_char (mr_ra_str, '"') < 0)
 	return (MR_FAILURE);
-      char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
+      char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (mr_ra_append_string (mr_ra_str, name) < 0)
 	return (MR_FAILURE);
       if (mr_ra_append_string (mr_ra_str, "\": ") < 0)
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+  if (ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
-      if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
+      if (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE)
 	if (mr_ra_append_char (mr_ra_str, '-') < 0)
 	  return (MR_FAILURE);
-      if (mr_ra_printf (mr_ra_str, "%" SCNu32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
+      if (mr_ra_printf (mr_ra_str, "%" SCNu32, (uint32_t)ptrs[ptrs[idx].first_child].idx) < 0)
 	return (MR_FAILURE);
     }
-  else if (ptrs->ra[idx].flags & MR_IS_NULL)
+  else if (ptrs[idx].flags & MR_IS_NULL)
     {
       if (mr_ra_append_string (mr_ra_str, JSON_NULL) < 0)
 	return (MR_FAILURE);
     }
-  else if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
+  else if (save_handler (mr_ra_str, &ptrs[idx]) < 0)
     return (MR_FAILURE);
   
   return (MR_SUCCESS);
 }
 
 static mr_status_t
-json_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
+json_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
-  if (ptrs->ra[idx].res.data.string)
-    if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
+  if (ptrs[idx].res.data.string)
+    if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES + 1, ptrs[idx].res.data.string) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].next != MR_NULL_IDX)
+  if (ptrs[idx].next != MR_NULL_IDX)
     if (mr_ra_append_char (mr_ra_str, ',') < 0)
       return (MR_FAILURE);
 
@@ -273,7 +273,7 @@ json_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_
 }
 
 static mr_status_t
-json_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+json_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   mr_rarray_t * mr_ra_str = context;
 
@@ -289,8 +289,11 @@ json_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t 
 }
 
 char *
-mr_json_save (mr_ra_ptrdes_t * ptrs)
+mr_json_save (mr_ptrdes_t * ptrs)
 {
+  if (NULL == ptrs)
+    return (NULL);
+
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },
     .MR_SIZE = sizeof (""),
@@ -300,8 +303,6 @@ mr_json_save (mr_ra_ptrdes_t * ptrs)
 
   if (NULL == mr_ra_str.data.string)
     return (NULL);
-
-  ptrs->ptrdes_type = MR_PD_CUSTOM;
 
   mr_ptrs_dfs (ptrs, json_print_node, &mr_ra_str);
 

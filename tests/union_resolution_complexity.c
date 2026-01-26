@@ -50,11 +50,11 @@ measure_time_for_n_elements (int n)
   rarray.type = "a_t";
   
   clock_t _time = clock ();
-  mr_ra_ptrdes_t ptrs = MR_SAVE (mr_rarray_t, &rarray);
+  mr_ptrdes_t * ptrs = MR_SAVE (mr_rarray_t, &rarray);
   _time = clock () - _time;
 
-  if (ptrs.ra)
-    MR_FREE (ptrs.ra);
+  if (ptrs)
+    MR_FREE (ptrs);
   
   MR_FREE (array);
   return (_time);

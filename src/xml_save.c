@@ -246,52 +246,52 @@ static mr_ra_printf_t xml_ra_printf_tbl[MR_TYPE_LAST] =
   };
 
 static mr_status_t
-xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
+xml1_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
   bool empty_tag = true;
 
   /* route saving handler */
   mr_ra_printf_t save_handler = NULL;
-  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
-    save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
+  if ((ptrs[idx].mr_type >= 0) && (ptrs[idx].mr_type < MR_TYPE_LAST))
+    save_handler = xml_ra_printf_tbl[ptrs[idx].mr_type];
   
   if (NULL == save_handler)
     {
       save_handler = mr_ra_printf_void;
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs[idx].mr_type);
     }
 
-  memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
+  memset (&ptrs[idx].res, 0, sizeof (ptrs[idx].res));
 
-  char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
+  char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
   if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START,
 		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", name) < 0)
     return (MR_FAILURE);
   
-  if (ptrs->ra[idx].flags & MR_IS_REFERENCE)
-    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
+  if (ptrs[idx].flags & MR_IS_REFERENCE)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF, (uint32_t)ptrs[ptrs[idx].first_child].idx) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
-    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_CONTENT, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
+  if (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_CONTENT, (uint32_t)ptrs[ptrs[idx].first_child].idx) < 0)
       return (MR_FAILURE);
   
-  if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
-    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, (uint32_t)ptrs->ra[idx].idx) < 0)
+  if (ptrs[idx].flags & MR_IS_REFERENCED)
+    if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_INT, MR_REF_IDX, (uint32_t)ptrs[idx].idx) < 0)
       return (MR_FAILURE);
   
-  if (ptrs->ra[idx].flags & MR_IS_NULL)
+  if (ptrs[idx].flags & MR_IS_NULL)
     if (mr_ra_printf (mr_ra_str, MR_XML1_ATTR_CHARP, MR_ISNULL, MR_ISNULL_VALUE) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+  if (ptrs[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     empty_tag = true;
   else
     {
       if (mr_ra_append_char (mr_ra_str, '>') < 0)
 	return (MR_FAILURE);
-      int count = save_handler (mr_ra_str, &ptrs->ra[idx]);
-      empty_tag = (ptrs->ra[idx].first_child == MR_NULL_IDX) && (0 == count);
+      int count = save_handler (mr_ra_str, &ptrs[idx]);
+      empty_tag = (ptrs[idx].first_child == MR_NULL_IDX) && (0 == count);
       if (empty_tag)
 	mr_ra_str->data.string[--mr_ra_str->MR_SIZE] = 0;
     }
@@ -302,24 +302,24 @@ xml1_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t
 	return (MR_FAILURE);
     }
 
-  ptrs->ra[idx].res.data.intptr = empty_tag;
-  ptrs->ra[idx].res.type = "intptr";
+  ptrs[idx].res.data.intptr = empty_tag;
+  ptrs[idx].res.type = "intptr";
 
   return (MR_SUCCESS);
 }
 
 static mr_status_t
-xml1_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
+xml1_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
-  if ((ptrs->ra[idx].first_child != MR_NULL_IDX) && !(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+  if ((ptrs[idx].first_child != MR_NULL_IDX) && !(ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "") < 0)
       return (MR_FAILURE);
 
-  if (!ptrs->ra[idx].res.data.intptr)
+  if (!ptrs[idx].res.data.intptr)
     {
       if (mr_ra_append_string (mr_ra_str, "</") < 0)
 	return (MR_FAILURE);
-      char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
+      char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (mr_ra_append_string (mr_ra_str, name) < 0)
 	return (MR_FAILURE);
       if (mr_ra_append_char (mr_ra_str, '>') < 0)
@@ -330,7 +330,7 @@ xml1_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_
 }
 
 static mr_status_t
-xml1_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+xml1_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   mr_rarray_t * mr_ra_str = context;
 
@@ -351,8 +351,11 @@ xml1_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t 
  * @return stringified representation of object
  */
 char *
-mr_xml1_save (mr_ra_ptrdes_t * ptrs)
+mr_xml1_save (mr_ptrdes_t * ptrs)
 {
+  if (ptrs == NULL)
+    return (NULL);
+
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup (MR_XML1_DOCUMENT_HEADER) },
     .MR_SIZE = sizeof (MR_XML1_DOCUMENT_HEADER),
@@ -374,34 +377,34 @@ mr_xml1_save (mr_ra_ptrdes_t * ptrs)
 #ifdef HAVE_LIBXML2
 
 static mr_status_t
-xml2_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+xml2_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_PRE_ORDER != order)
     return (MR_SUCCESS);
 
   mr_rarray_t * mr_ra_str = context;
-  mr_idx_t parent = ptrs->ra[idx].parent;
+  mr_idx_t parent = ptrs[idx].parent;
   char number[MR_INT_TO_STRING_BUF_SIZE];
 
   /* route saving handler */
   mr_ra_printf_t save_handler = NULL;
-  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
-    save_handler = xml_ra_printf_tbl[ptrs->ra[idx].mr_type];
+  if ((ptrs[idx].mr_type >= 0) && (ptrs[idx].mr_type < MR_TYPE_LAST))
+    save_handler = xml_ra_printf_tbl[ptrs[idx].mr_type];
   
   if (NULL == save_handler)
     {
       save_handler = mr_ra_printf_void;
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs[idx].mr_type);
     }
 
   mr_ra_str->MR_SIZE = sizeof ("");
   mr_ra_str->data.string[0] = 0;
   
-  if (!(ptrs->ra[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-    if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
+  if (!(ptrs[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+    if (save_handler (mr_ra_str, &ptrs[idx]) < 0)
       return (MR_FAILURE);
 
-  char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
+  char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
   xmlNodePtr node = xmlNewNode (NULL, BAD_CAST name);
 
   if (NULL == node)
@@ -410,36 +413,36 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t o
       return (MR_FAILURE);
     }
 
-  ptrs->ra[idx].res.data.ptr = node;
-  ptrs->ra[idx].res.type = "xmlNode";
+  ptrs[idx].res.data.ptr = node;
+  ptrs[idx].res.type = "xmlNode";
   node->_private = (void*)(intptr_t)idx;
 
   if (mr_ra_str->data.string[0])
     xmlNodeSetContent (node, BAD_CAST mr_ra_str->data.string);
   
-  if (ptrs->ra[idx].flags & MR_IS_REFERENCE)
+  if (ptrs[idx].flags & MR_IS_REFERENCE)
     {
       /* set REF_IDX property */
-      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
+      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs[ptrs[idx].first_child].idx);
       xmlSetProp (node, BAD_CAST MR_REF, BAD_CAST number);
     }
-  if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
+  if (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE)
     {
       /* set REF_CONTENT property */
-      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx);
+      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs[ptrs[idx].first_child].idx);
       xmlSetProp (node, BAD_CAST MR_REF_CONTENT, BAD_CAST number);
     }
-  if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
+  if (ptrs[idx].flags & MR_IS_REFERENCED)
     {
       /* set IDX property */
-      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs->ra[idx].idx);
+      snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs[idx].idx);
       xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
     }
-  if (ptrs->ra[idx].flags & MR_IS_NULL)
+  if (ptrs[idx].flags & MR_IS_NULL)
     xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
   if (parent != MR_NULL_IDX)
-    xmlAddChild (ptrs->ra[parent].res.data.ptr, node);
+    xmlAddChild (ptrs[parent].res.data.ptr, node);
 
   return (MR_SUCCESS);
 }
@@ -450,8 +453,11 @@ xml2_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t o
  * @return XML document
  */
 xmlDocPtr
-mr_xml2_save (mr_ra_ptrdes_t * ptrs)
+mr_xml2_save (mr_ptrdes_t * ptrs)
 {
+  if (ptrs == NULL)
+    return (NULL);
+
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },
     .MR_SIZE = sizeof (""),
@@ -468,15 +474,10 @@ mr_xml2_save (mr_ra_ptrdes_t * ptrs)
     MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_XML_SAVE_FAILED);
   else
     {
-      ptrs->ptrdes_type = MR_PD_CUSTOM;
-      ptrs->res.data.ptr = doc;
-      ptrs->res.type = NULL;
-
       mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       
-      if (ptrs->size >= 2 * sizeof (ptrs->ra[0]))
-	if (NULL != ptrs->ra[1].res.data.ptr)
-	  xmlDocSetRootElement (doc, ptrs->ra[1].res.data.ptr);
+      if (NULL != ptrs[1].res.data.ptr)
+	xmlDocSetRootElement (doc, ptrs[1].res.data.ptr);
     }
 
   if (mr_ra_str.data.ptr)

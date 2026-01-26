@@ -277,44 +277,47 @@ START_TEST (check_ext_enum) {
 START_TEST (check_type_autodetection) {
   embeded_struct_t x = {0};
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
-  mr_ra_ptrdes_t ptrs = MR_SAVE ( , &x);
+  mr_ptrdes_t * ptrs = MR_SAVE ( , &x);
 #else /* HAVE_BUILTIN_DUMP_STRUCT */
-  mr_ra_ptrdes_t ptrs = MR_SAVE (embeded_struct_t , &x);
+  mr_ptrdes_t * ptrs = MR_SAVE (embeded_struct_t , &x);
 #endif /* HAVE_BUILTIN_DUMP_STRUCT */
-  ck_assert_msg (ptrs.size / sizeof (ptrs.ra[0]) == 3, "Incorrect introspection of the empty struct");
-  ck_assert_msg (ptrs.ra != NULL, "Failed to serialize array sructure");
-  ck_assert_msg (ptrs.ra[1].mr_type == MR_TYPE_STRUCT, "Incorrect type of root node");
-  ck_assert_msg (ptrs.ra[2].mr_type == MR_TYPE_DETECT (__typeof__ (((embeded_struct_t*)0)->x)), "Incorrect type of data node");
-  if (ptrs.ra)
-    MR_FREE (ptrs.ra);
+
+  ck_assert_msg (mr_ptrs_count (ptrs) == 3, "Incorrect introspection of the empty struct");
+  ck_assert_msg (ptrs != NULL, "Failed to serialize array sructure");
+  ck_assert_msg (ptrs[1].mr_type == MR_TYPE_STRUCT, "Incorrect type of root node");
+  ck_assert_msg (ptrs[2].mr_type == MR_TYPE_DETECT (__typeof__ (((embeded_struct_t*)0)->x)), "Incorrect type of data node");
+  if (ptrs)
+    MR_FREE (ptrs);
 } END_TEST
 
 START_TEST (check_struct_array_autodetect) {
   embeded_struct_t array[] = { {1}, {2}, {3} };
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
-  mr_ra_ptrdes_t ptrs = MR_SAVE ( , array);
+  mr_ptrdes_t * ptrs = MR_SAVE ( , array);
 #else /* HAVE_BUILTIN_DUMP_STRUCT */
-  mr_ra_ptrdes_t ptrs = MR_SAVE (embeded_struct_t , array);
+  mr_ptrdes_t * ptrs = MR_SAVE (embeded_struct_t , array);
 #endif /* HAVE_BUILTIN_DUMP_STRUCT */
-  ck_assert_msg (ptrs.size / sizeof (ptrs.ra[0]) == 2 * sizeof (array) / sizeof (array[0]) + 2, "Incorrect introspection of the array");
-  ck_assert_msg (ptrs.ra != NULL, "Failed to serialize array sructure");
-  ck_assert_msg (ptrs.ra[1].mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
-  ck_assert_msg (ptrs.ra[1].mr_type_aux == MR_TYPE_STRUCT, "Incorrect auxiliary type of root node");
-  ck_assert_msg (ptrs.ra[1].MR_SIZE == sizeof (array), "Incorrect array size");
-  if (ptrs.ra)
-    MR_FREE (ptrs.ra);
+
+  ck_assert_msg (mr_ptrs_count (ptrs) == 2 * sizeof (array) / sizeof (array[0]) + 2, "Incorrect introspection of the array");
+  ck_assert_msg (ptrs != NULL, "Failed to serialize array sructure");
+  ck_assert_msg (ptrs[1].mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
+  ck_assert_msg (ptrs[1].mr_type_aux == MR_TYPE_STRUCT, "Incorrect auxiliary type of root node");
+  ck_assert_msg (ptrs[1].MR_SIZE == sizeof (array), "Incorrect array size");
+  if (ptrs)
+    MR_FREE (ptrs);
 } END_TEST
 
 START_TEST (check_basic_type_array_autodetect) {
   complex long double array[] = {1, 2, 3};
-  mr_ra_ptrdes_t ptrs = MR_SAVE ( , array);
-  ck_assert_msg (ptrs.size / sizeof (ptrs.ra[0]) == sizeof (array) / sizeof (array[0]) + 2, "Incorrect introspection of the array");
-  ck_assert_msg (ptrs.ra != NULL, "Failed to serialize array sructure");
-  ck_assert_msg (ptrs.ra[1].mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
-  ck_assert_msg (ptrs.ra[1].mr_type_aux == MR_TYPE_DETECT (__typeof__ (*array)), "Incorrect auxiliary type of root node");
-  ck_assert_msg (ptrs.ra[1].MR_SIZE == sizeof (array), "Incorrect array size");
-  if (ptrs.ra)
-    MR_FREE (ptrs.ra);
+  mr_ptrdes_t * ptrs = MR_SAVE ( , array);
+
+  ck_assert_msg (mr_ptrs_count (ptrs) == sizeof (array) / sizeof (array[0]) + 2, "Incorrect introspection of the array");
+  ck_assert_msg (ptrs != NULL, "Failed to serialize array sructure");
+  ck_assert_msg (ptrs[1].mr_type == MR_TYPE_ARRAY, "Incorrect type of root node");
+  ck_assert_msg (ptrs[1].mr_type_aux == MR_TYPE_DETECT (__typeof__ (*array)), "Incorrect auxiliary type of root node");
+  ck_assert_msg (ptrs[1].MR_SIZE == sizeof (array), "Incorrect array size");
+  if (ptrs)
+    MR_FREE (ptrs);
 } END_TEST
 
 START_TEST (check_types_detection) {

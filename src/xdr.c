@@ -1084,7 +1084,7 @@ static xdr_handler_t xdr_save_handler[MR_TYPE_LAST] =
   };
 
 static mr_status_t
-xdr_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+xdr_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_PRE_ORDER != order)
     return (MR_SUCCESS);
@@ -1092,13 +1092,14 @@ xdr_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t or
   XDR * xdrs = context;
 
   xdr_handler_t save_handler = NULL;
-  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
-    save_handler = xdr_save_handler[ptrs->ra[idx].mr_type];
-  
-  if (save_handler)
-    return (save_handler (xdrs, idx, ptrs));
+  if ((ptrs[idx].mr_type >= 0) && (ptrs[idx].mr_type < MR_TYPE_LAST))
+    save_handler = xdr_save_handler[ptrs[idx].mr_type];
 
-  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+  mr_ra_ptrdes_t mr_ra_ptrdes = { .ra = ptrs };
+  if (save_handler)
+    return (save_handler (xdrs, idx, &mr_ra_ptrdes));
+
+  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs[idx].mr_type);
   return (MR_FAILURE);
 }
 
@@ -1109,7 +1110,7 @@ xdr_save_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t or
  * @return status
  */
 mr_status_t
-mr_xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs)
+mr_xdr_save (XDR * xdrs, mr_ptrdes_t * ptrs)
 {
   return (mr_ptrs_dfs (ptrs, xdr_save_node, xdrs));
 }

@@ -1249,12 +1249,12 @@ mr_save_array (mr_save_data_t * mr_save_data)
 
 /**
  * Abstract DFS for pointers descriptors
- * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param mr_ptrdes_t resizable array with pointers descriptors
  * @param processor visitor function
  * @param context untyped pointer on context passed through DFS traverse
  */
 mr_status_t
-mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start)
+mr_ptrs_dfs_impl (mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start)
 {
   int level = 0;
   mr_idx_t idx = start;
@@ -1263,49 +1263,49 @@ mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr
       if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_PRE_ORDER, context))
 	return (MR_FAILURE);
 
-      if ((ptrs->ra[idx].first_child != MR_NULL_IDX) && !(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+      if ((ptrs[idx].first_child != MR_NULL_IDX) && !(ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
 	{
-	  idx = ptrs->ra[idx].first_child;
+	  idx = ptrs[idx].first_child;
 	  ++level;
 	}
       else
 	{
 	  if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
 	    return (MR_FAILURE);
-	  while ((ptrs->ra[idx].next == MR_NULL_IDX) && (ptrs->ra[idx].parent != MR_NULL_IDX))
+	  while ((ptrs[idx].next == MR_NULL_IDX) && (ptrs[idx].parent != MR_NULL_IDX))
 	    {
-	      idx = ptrs->ra[idx].parent;
+	      idx = ptrs[idx].parent;
 	      --level;
 	      if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
 		return (MR_FAILURE);
 	      if (idx == start)
 		return (MR_SUCCESS);
 	    }
-	  idx = ptrs->ra[idx].next;
+	  idx = ptrs[idx].next;
 	}
     }
   return (MR_SUCCESS);
 }
 
 static mr_status_t
-mr_reorder_strings_visitor (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+mr_reorder_strings_visitor (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_POST_ORDER != order)
     return (MR_SUCCESS);
 
-  mr_idx_t ref_idx = ptrs->ra[idx].first_child;
-  if ((MR_TYPE_STRING == ptrs->ra[idx].mr_type) && (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE))
+  mr_idx_t ref_idx = ptrs[idx].first_child;
+  if ((MR_TYPE_STRING == ptrs[idx].mr_type) && (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE))
     {
-      if (ptrs->ra[ref_idx].flags & MR_IS_CONTENT_REFERENCE)
-	ptrs->ra[idx].first_child = ptrs->ra[ref_idx].first_child;
-      else if (ptrs->ra[idx].idx < ptrs->ra[ref_idx].idx)
+      if (ptrs[ref_idx].flags & MR_IS_CONTENT_REFERENCE)
+	ptrs[idx].first_child = ptrs[ref_idx].first_child;
+      else if (ptrs[idx].idx < ptrs[ref_idx].idx)
 	{
-	  ptrs->ra[idx].first_child = MR_NULL_IDX;
-	  ptrs->ra[idx].flags |= MR_IS_REFERENCED;
-	  ptrs->ra[idx].flags &= ~MR_IS_CONTENT_REFERENCE;
-	  ptrs->ra[ref_idx].first_child = idx;
-	  ptrs->ra[ref_idx].flags &= ~MR_IS_REFERENCED;
-	  ptrs->ra[ref_idx].flags |= MR_IS_CONTENT_REFERENCE;
+	  ptrs[idx].first_child = MR_NULL_IDX;
+	  ptrs[idx].flags |= MR_IS_REFERENCED;
+	  ptrs[idx].flags &= ~MR_IS_CONTENT_REFERENCE;
+	  ptrs[ref_idx].first_child = idx;
+	  ptrs[ref_idx].flags &= ~MR_IS_REFERENCED;
+	  ptrs[ref_idx].flags |= MR_IS_CONTENT_REFERENCE;
 	}
     }
   return (MR_SUCCESS);
@@ -1315,49 +1315,54 @@ mr_reorder_strings_visitor (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_d
  * Memory allocation failure test for XDR can't properly deallocate strings if it is saved as forward reference.
  * This function makes first reference on a string in DFS traverse as a primary entry and point other references
  * on this entry.
- * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param mr_ptrdes_t resizable array with pointers descriptors
  */
 void
-mr_reorder_strings (mr_ra_ptrdes_t * ptrs)
+mr_reorder_strings (mr_ptrdes_t * ptrs)
 {
-  if ((NULL == ptrs) || (NULL == ptrs->ra))
+  if (NULL == ptrs)
     return;
   mr_ptrs_dfs (ptrs, mr_reorder_strings_visitor, NULL);
-  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  for (i = 1; i < count; ++i)
+  mr_idx_t i, count = 1;
+  for (i = 1; i <= count; ++i)
     {
-      mr_idx_t ref_idx = ptrs->ra[i].first_child;
-      if ((MR_TYPE_POINTER == ptrs->ra[i].mr_type) &&
-	  (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE) &&
-	  (ptrs->ra[ref_idx].flags & MR_IS_CONTENT_REFERENCE))
-	ptrs->ra[i].first_child = ptrs->ra[ref_idx].first_child;
+      mr_idx_t ref_idx = ptrs[i].first_child;
+      if (count < ptrs[i].next)
+	count = ptrs[i].next;
+      if (count < ptrs[i].first_child)
+	count = ptrs[i].first_child;
+
+      if ((MR_TYPE_POINTER == ptrs[i].mr_type) &&
+	  (ptrs[i].flags & MR_IS_CONTENT_REFERENCE) &&
+	  (ptrs[ref_idx].flags & MR_IS_CONTENT_REFERENCE))
+	ptrs[i].first_child = ptrs[ref_idx].first_child;
     }
 }
 
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
 
 static mr_status_t
-mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+mr_remove_empty_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
-  if ((MR_DFS_POST_ORDER != order) || !((MR_STRUCT_TYPES >> ptrs->ra[idx].mr_type) & 1))
+  if ((MR_DFS_POST_ORDER != order) || !((MR_STRUCT_TYPES >> ptrs[idx].mr_type) & 1))
     return (MR_SUCCESS);
 
-  if (!(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+  if (!(ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     {
-      mr_idx_t * next = &ptrs->ra[idx].first_child;
+      mr_idx_t * next = &ptrs[idx].first_child;
 
       while (*next != MR_NULL_IDX)
-	if ((ptrs->ra[*next].first_child == MR_NULL_IDX)
-	    && !(ptrs->ra[*next].flags & MR_IS_REFERENCED)
-	    && ((REMOVE_IF_EMPTY >> ptrs->ra[*next].mr_type) & 1))
+	if ((ptrs[*next].first_child == MR_NULL_IDX)
+	    && !(ptrs[*next].flags & MR_IS_REFERENCED)
+	    && ((REMOVE_IF_EMPTY >> ptrs[*next].mr_type) & 1))
 	  {
 	    bool * need_reindex = context;
 	    *need_reindex = true;
 	    /* empty node found - unchain it from previous node */
-	    *next = ptrs->ra[*next].next;
+	    *next = ptrs[*next].next;
 	  }
 	else
-	  next = &ptrs->ra[*next].next;
+	  next = &ptrs[*next].next;
     }
 
   return (MR_SUCCESS);
@@ -1365,26 +1370,26 @@ mr_remove_empty_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_ord
 
 /**
  * DFS visitor for nodes renumbering
- * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param mr_ptrdes_t resizable array with pointers descriptors
  * @param idx index of processed node
  * @param context untyped pointer on context passed through DFS traverse
  */
 mr_status_t
-mr_renumber_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+mr_renumber_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   if (MR_DFS_PRE_ORDER != order)
     return (MR_SUCCESS);
   mr_idx_t * idx_ = context;
-  ptrs->ra[idx].idx = (*idx_)++;
+  ptrs[idx].idx = (*idx_)++;
   return (MR_SUCCESS);
 }
 
 /**
  * There is no need to save empty nodes and possibly their parent structures 
- * @param mr_ra_ptrdes_t resizable array with pointers descriptors
+ * @param mr_ptrdes_t resizable array with pointers descriptors
  */
 void
-mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
+mr_remove_empty_nodes (mr_ptrdes_t * ptrs)
 {
   bool need_reindex_empty = false;
   mr_ptrs_dfs (ptrs, mr_remove_empty_node, &need_reindex_empty);
@@ -1394,6 +1399,31 @@ mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs)
       mr_idx_t idx = 1;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx);
     }
+}
+
+/**
+ * Calculate count of pointer descriptors in output of mr_save ()
+ * @param mr_ptrdes_t resizable array with pointers descriptors
+ */
+mr_idx_t
+mr_ptrs_count (mr_ptrdes_t * ptrs)
+{
+  if (NULL == ptrs)
+    return (0);
+
+  mr_idx_t i, count = 1;
+  for (i = 1; i <= count; ++i)
+    {
+      if (count < ptrs[i].next)
+	count = ptrs[i].next;
+      if (count < ptrs[i].first_child)
+	count = ptrs[i].first_child;
+    }
+
+  if ((ptrs[count].mr_type == MR_TYPE_STRING) &&
+      !(ptrs[count].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+    ++count;
+  return (count + 1);
 }
 
 /**
@@ -1507,7 +1537,7 @@ mr_post_process (mr_save_data_t * mr_save_data)
   for (i = 1; i < count; ++i)
     resolve_void_ptr_and_strings (mr_save_data, i);
   i = 1;
-  mr_ptrs_dfs (&mr_save_data->ptrs, mr_renumber_node, &i); /* enumeration of nodes should be done only after strings processing */
+  mr_ptrs_dfs (mr_save_data->ptrs.ra, mr_renumber_node, &i); /* enumeration of nodes should be done only after strings processing */
 }
 
 /**
@@ -1568,9 +1598,9 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
  * Public function. Calls save scheduler and frees lookup tables.
  * @param data a pointer on data
  * @param fdp a ponter of field descriptor
- * @param mr_save_data save routines data and lookup structures
+ * @return pointer on array of mr_ptrdes_t (pointer descriptors) 
  */
-mr_ra_ptrdes_t
+mr_ptrdes_t *
 mr_save (void * data, mr_fd_t * fdp)
 {
   mr_save_data_t mr_save_data;
@@ -1583,11 +1613,11 @@ mr_save (void * data, mr_fd_t * fdp)
 
   memset (&mr_save_data, 0, sizeof (mr_save_data));
   if (NULL == data)
-    return (mr_save_data.ptrs);
+    return (NULL);
 
   mr_add_ptr_to_list (&mr_save_data.ptrs); /* add first descriptor that plays a role of NULL pointer */
   if (NULL == mr_save_data.ptrs.ra)
-    return (mr_save_data.ptrs);
+    return (NULL);
 
   mr_save_data.ptrs.ptrdes_type = MR_PD_SAVE;
 #define MR_IC_METHOD MR_IC_HASH
@@ -1628,7 +1658,7 @@ mr_save (void * data, mr_fd_t * fdp)
   mr_ic_free (&mr_save_data.union_discriminators);
   mr_ic_free (&mr_save_data.untyped_ptrs);
 
-  return (mr_save_data.ptrs);
+  return (mr_save_data.ptrs.ra);
 }
 
 /**

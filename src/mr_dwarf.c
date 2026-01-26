@@ -1347,21 +1347,21 @@ process_td (mr_ptr_t key, void * context)
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_POINTER))
 
 static mr_status_t __attribute__ ((unused))
-mr_remove_empty_node_visitor (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+mr_remove_empty_node_visitor (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
-  if ((MR_DFS_POST_ORDER != order) || !((MR_STRUCT_TYPES >> ptrs->ra[idx].mr_type) & 1))
+  if ((MR_DFS_POST_ORDER != order) || !((MR_STRUCT_TYPES >> ptrs[idx].mr_type) & 1))
     return (MR_SUCCESS);
 
-  if (!(ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+  if (!(ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     {
-      mr_idx_t * next = &ptrs->ra[idx].first_child;
+      mr_idx_t * next = &ptrs[idx].first_child;
 
       while (*next != MR_NULL_IDX)
-	if (((ptrs->ra[*next].first_child == MR_NULL_IDX) && ((REMOVE_IF_EMPTY >> ptrs->ra[*next].mr_type) & 1))
-	    || ((MR_TYPE_STRING == ptrs->ra[*next].mr_type) && (ptrs->ra[*next].flags & MR_IS_NULL)))
-	  *next = ptrs->ra[*next].next; /* empty node found - unchain it from previous node */
+	if (((ptrs[*next].first_child == MR_NULL_IDX) && ((REMOVE_IF_EMPTY >> ptrs[*next].mr_type) & 1))
+	    || ((MR_TYPE_STRING == ptrs[*next].mr_type) && (ptrs[*next].flags & MR_IS_NULL)))
+	  *next = ptrs[*next].next; /* empty node found - unchain it from previous node */
 	else
-	  next = &ptrs->ra[*next].next;
+	  next = &ptrs[*next].next;
     }
 
   return (MR_SUCCESS);

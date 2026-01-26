@@ -187,66 +187,66 @@ static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
 };
 
 static mr_status_t
-cinit_pre_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
+cinit_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
   mr_ra_printf_t save_handler = NULL;
 
-  if ((ptrs->ra[idx].mr_type >= 0) && (ptrs->ra[idx].mr_type < MR_TYPE_LAST))
-    save_handler = cinit_save_tbl[ptrs->ra[idx].mr_type];
+  if ((ptrs[idx].mr_type >= 0) && (ptrs[idx].mr_type < MR_TYPE_LAST))
+    save_handler = cinit_save_tbl[ptrs[idx].mr_type];
   
   if (NULL == save_handler)
     {
       save_handler = mr_ra_printf_void;
-      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs->ra[idx].mr_type);
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs[idx].mr_type);
     }
 
-  memset (&ptrs->ra[idx].res, 0, sizeof (ptrs->ra[idx].res));
+  memset (&ptrs[idx].res, 0, sizeof (ptrs[idx].res));
 
   if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
 
-  if (!(ptrs->ra[idx].flags & MR_IS_UNNAMED))
+  if (!(ptrs[idx].flags & MR_IS_UNNAMED))
     {
       if (mr_ra_append_char (mr_ra_str, '.') < 0)
 	return (MR_FAILURE);
-      char * name = ptrs->ra[idx].fdp ? ptrs->ra[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
+      char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (mr_ra_append_string (mr_ra_str, name) < 0)
 	return (MR_FAILURE);
       if (mr_ra_append_string (mr_ra_str, " = ") < 0)
 	return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].flags & MR_IS_REFERENCE)
-    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
+  if (ptrs[idx].flags & MR_IS_REFERENCE)
+    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF, (uint32_t)ptrs[ptrs[idx].first_child].idx) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags & MR_IS_CONTENT_REFERENCE)
-    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_CONTENT, (uint32_t)ptrs->ra[ptrs->ra[idx].first_child].idx) < 0)
+  if (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE)
+    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_CONTENT, (uint32_t)ptrs[ptrs[idx].first_child].idx) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags & MR_IS_REFERENCED)
-    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_IDX, (uint32_t)ptrs->ra[idx].idx) < 0)
+  if (ptrs[idx].flags & MR_IS_REFERENCED)
+    if (mr_ra_printf (mr_ra_str, CINIT_ATTR_INT, MR_REF_IDX, (uint32_t)ptrs[idx].idx) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+  if (ptrs[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
       if (mr_ra_append_string (mr_ra_str, CINIT_NULL) < 0)
 	return (MR_FAILURE);
     }
-  else if (save_handler (mr_ra_str, &ptrs->ra[idx]) < 0)
+  else if (save_handler (mr_ra_str, &ptrs[idx]) < 0)
     return (MR_FAILURE);
 
   return (MR_SUCCESS);
 }
 
 static mr_status_t
-cinit_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
+cinit_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
-  if (ptrs->ra[idx].res.data.string)
-    if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES + 1, ptrs->ra[idx].res.data.string) < 0)
+  if (ptrs[idx].res.data.string)
+    if (mr_ra_printf (mr_ra_str, CINIT_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * CINIT_INDENT_SPACES + 1, ptrs[idx].res.data.string) < 0)
       return (MR_FAILURE);
 
-  if (ptrs->ra[idx].next != MR_NULL_IDX)
+  if (ptrs[idx].next != MR_NULL_IDX)
     if (mr_ra_append_char (mr_ra_str, ',') < 0)
       return (MR_FAILURE);
 
@@ -257,7 +257,7 @@ cinit_post_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray
 }
 
 static mr_status_t
-cinit_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+cinit_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
   mr_rarray_t * mr_ra_str = context;
 
@@ -273,8 +273,11 @@ cinit_print_node (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t
 }
 
 char *
-mr_cinit_save (mr_ra_ptrdes_t * ptrs)
+mr_cinit_save (mr_ptrdes_t * ptrs)
 {
+  if (NULL == ptrs)
+    return (NULL);
+
   mr_rarray_t mr_ra_str = {
     .data = { mr_strdup ("") },
     .MR_SIZE = sizeof (""),
@@ -284,8 +287,6 @@ mr_cinit_save (mr_ra_ptrdes_t * ptrs)
 
   if (NULL == mr_ra_str.data.string)
     return (NULL);
-
-  ptrs->ptrdes_type = MR_PD_CUSTOM;
 
   mr_ptrs_dfs (ptrs, cinit_print_node, &mr_ra_str);
 

@@ -75,9 +75,9 @@ check_mem_ops_complexity (void callback (mr_res_t * res), char * method)
 static void
 mr_save_callback (mr_res_t * res)
 {
-  mr_ra_ptrdes_t ptrs = MR_SAVE (mr_res_t, res);
-  if (ptrs.ra)
-    MR_FREE (ptrs.ra);
+  mr_ptrdes_t * ptrs = MR_SAVE (mr_res_t, res);
+  if (ptrs)
+    MR_FREE (ptrs);
 }
 
 START_TEST (mem_allocation_complexity_mr_save) {

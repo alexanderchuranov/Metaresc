@@ -17,22 +17,20 @@
 
 #define ASSERT_UNION_RESOLUTION(TYPE, ...) ({				\
       TYPE orig = { .dummy = 0, { MR_PI }, __VA_ARGS__ };		\
-      mr_ra_ptrdes_t ptrs = MR_SAVE (TYPE, &orig);			\
+      mr_ptrdes_t * ptrs = MR_SAVE (TYPE, &orig);			\
       bool union_resolved_correctly = false;				\
-      if (ptrs.ra != NULL)						\
+      if (ptrs != NULL)							\
 	{								\
-	  int i;							\
-	  for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i >= 0; --i)	\
-	    {								\
-	      if (ptrs.ra[i].fdp &&					\
-		  (ptrs.ra[i].fdp->name.str != NULL) &&			\
-		  (0 == strcmp (ptrs.ra[i].fdp->name.str, "y")))	\
-		{							\
-		  union_resolved_correctly = true;			\
-		  break;						\
-		}							\
-	    }								\
-	  MR_FREE (ptrs.ra);						\
+	  mr_idx_t i, count = mr_ptrs_count (ptrs);			\
+	  for (i = 1; i < count; ++i)					\
+	    if (ptrs[i].fdp &&						\
+		(ptrs[i].fdp->name.str != NULL) &&			\
+		(0 == strcmp (ptrs[i].fdp->name.str, "y")))		\
+	      {								\
+		union_resolved_correctly = true;			\
+		break;							\
+	      }								\
+	  MR_FREE (ptrs);						\
 	}								\
       ck_assert_msg (union_resolved_correctly, "Union resolved incorrectly"); \
     })

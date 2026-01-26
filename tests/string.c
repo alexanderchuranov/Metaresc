@@ -60,20 +60,19 @@ START_TEST (char_array_overflow) {
 START_TEST (pointer_match_content_known) {
   struct_ca_str_t orig = { .x = "string_t" };
   orig.y = orig.x;
-  mr_ra_ptrdes_t ptrs = MR_SAVE (struct_ca_str_t, &orig);
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t * ptrs = MR_SAVE (struct_ca_str_t, &orig);
+  if (ptrs != NULL)
     {
       bool string_is_a_reference = false;
-      int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
-	{
-	  if (ptrs.ra[i].fdp &&
-	      (ptrs.ra[i].fdp->name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].fdp->name.str, "y")) &&
-	      (ptrs.ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	    string_is_a_reference = true;
-	}
-      MR_FREE (ptrs.ra);
+      mr_idx_t i, count = mr_ptrs_count (ptrs);
+      for (i = 1; i < count; ++i)
+	if (ptrs[i].fdp &&
+	    (ptrs[i].fdp->name.str != NULL) &&
+	    (0 == strcmp (ptrs[i].fdp->name.str, "y")) &&
+	    (ptrs[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+	  string_is_a_reference = true;
+
+      MR_FREE (ptrs);
       ck_assert_msg (string_is_a_reference, "string was not resolved a reference on char array");
     }
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_ca_str_t, &orig);
@@ -82,20 +81,19 @@ START_TEST (pointer_match_content_known) {
 START_TEST (pointer_match_content_unknown) {
   struct_str_ca_t orig = { .x = "string_t" };
   orig.y = orig.x;
-  mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_ca_t, &orig);
-  if (ptrs.ra != NULL)
+  mr_ptrdes_t * ptrs = MR_SAVE (struct_str_ca_t, &orig);
+  if (ptrs != NULL)
     {
       bool string_is_a_reference = false;
-      int i;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
-	{
-	  if (ptrs.ra[i].fdp &&
-	      (ptrs.ra[i].fdp->name.str != NULL) &&
-	      (0 == strcmp (ptrs.ra[i].fdp->name.str, "y")) &&
-	      (ptrs.ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	    string_is_a_reference = true;
-	}
-      MR_FREE (ptrs.ra);
+      mr_idx_t i, count = mr_ptrs_count (ptrs);
+      for (i = 1; i < count; ++i)
+	if (ptrs[i].fdp &&
+	    (ptrs[i].fdp->name.str != NULL) &&
+	    (0 == strcmp (ptrs[i].fdp->name.str, "y")) &&
+	    (ptrs[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+	  string_is_a_reference = true;
+
+      MR_FREE (ptrs);
       ck_assert_msg (string_is_a_reference, "string was not resolved a reference on char array");
     }
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_ca_t, &orig);
@@ -105,17 +103,18 @@ START_TEST (pointer_match_another_pointer) {
   struct_str_str_t orig = { .x = "string_t", };
   mr_td_t * string_tdp = mr_get_td_by_name ("string_t");
   orig.y = orig.x;
-  mr_ra_ptrdes_t ptrs = MR_SAVE (struct_str_str_t, &orig);
+  mr_ptrdes_t * ptrs = MR_SAVE (struct_str_str_t, &orig);
 
-  if (ptrs.ra != NULL)
+  if (ptrs != NULL)
     {
-      int i, count = 0;
-      for (i = ptrs.size / sizeof (ptrs.ra[0]) - 1; i > 0; --i)
-	if ((ptrs.ra[i].fdp->stype.tdp == string_tdp) && (ptrs.ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	  ++count;
+      int ptr_cnt = 0;
+      mr_idx_t i, count = mr_ptrs_count (ptrs);
+      for (i = 1; i < count; ++i)
+	if ((ptrs[i].fdp->stype.tdp == string_tdp) && (ptrs[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+	  ++ptr_cnt;
       
-      MR_FREE (ptrs.ra);
-      ck_assert_msg (1 == count, "pointer on existing string was not detected properly");
+      MR_FREE (ptrs);
+      ck_assert_msg (1 == ptr_cnt, "pointer on existing string was not detected properly");
     }
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_str_t, &orig);
 } END_TEST

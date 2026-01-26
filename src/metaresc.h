@@ -886,11 +886,11 @@
 #define MR_COPY_RECURSIVELY_ARGS3(MR_TYPE_NAME, S_PTR, D_PTR) ({	\
       mr_status_t ___status = MR_FAILURE;				\
       MR_COMPILETIME_ASSERT (__builtin_types_compatible_p (__typeof__ (D_PTR), __typeof__ (S_PTR))); \
-      mr_ra_ptrdes_t ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
-      if (___ptrs.ra != NULL)						\
+      mr_ptrdes_t * ___ptrs = MR_SAVE (MR_TYPE_NAME, S_PTR);		\
+      if (___ptrs != NULL)						\
 	{								\
-	  ___status = mr_copy_recursively (&___ptrs, D_PTR);		\
-	  MR_FREE (___ptrs.ra);						\
+	  ___status = mr_copy_recursively (___ptrs, D_PTR);		\
+	  MR_FREE (___ptrs);						\
 	}								\
       ___status;							\
     })
@@ -904,23 +904,25 @@
 
 #define MR_FREE_RECURSIVELY(...) MR_PASTE2 (MR_FREE_RECURSIVELY_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_FREE_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({	\
-      mr_ra_ptrdes_t _ptrs_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_ptrdes_t * _ptrs_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
       mr_status_t _status_ = MR_SUCCESS;			\
-      mr_free_recursively (&_ptrs_);				\
-      if (NULL == _ptrs_.ra)					\
+      if (NULL == _ptrs_)					\
 	_status_ = MR_FAILURE;					\
       else							\
-	MR_FREE (_ptrs_.ra);					\
+	{							\
+	  mr_free_recursively (_ptrs_);				\
+	  MR_FREE (_ptrs_);					\
+	}							\
       _status_;							\
     })
 #define MR_FREE_RECURSIVELY_ARGS1(S_PTR) MR_FREE_RECURSIVELY_ARGS2 ( , S_PTR)
 
 #define MR_HASH_STRUCT(...) MR_PASTE2 (MR_HASH_STRUCT_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_HASH_STRUCT_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
-      mr_ra_ptrdes_t _ptrs_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
-      mr_hash_value_t _hash_value_ = mr_hash_struct (&_ptrs_);	\
-      if (_ptrs_.ra)						\
-	MR_FREE (_ptrs_.ra);					\
+      mr_ptrdes_t * _ptrs_ = MR_SAVE (MR_TYPE_NAME, S_PTR);	\
+      mr_hash_value_t _hash_value_ = mr_hash_struct (_ptrs_);	\
+      if (_ptrs_)						\
+	MR_FREE (_ptrs_);					\
       _hash_value_;						\
     })
 #define MR_HASH_STRUCT_ARGS1(S_PTR) MR_HASH_STRUCT_ARGS2 ( , S_PTR)
@@ -928,13 +930,13 @@
 #define MR_CMP_STRUCTS(...) MR_PASTE2 (MR_CMP_STRUCTS_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_CMP_STRUCTS_ARGS3(MR_TYPE_NAME, X, Y) ({			\
       MR_COMPILETIME_ASSERT (__builtin_types_compatible_p (__typeof__ (X), __typeof__ (Y))); \
-      mr_ra_ptrdes_t _x_ = MR_SAVE (MR_TYPE_NAME, X);			\
-      mr_ra_ptrdes_t _y_ = MR_SAVE (MR_TYPE_NAME, Y);			\
-      int _cmp_ = mr_cmp_structs (&_x_, &_y_);				\
-      if (_x_.ra)							\
-	MR_FREE (_x_.ra);						\
-      if (_y_.ra)							\
-	MR_FREE (_y_.ra);						\
+      mr_ptrdes_t * _x_ = MR_SAVE (MR_TYPE_NAME, X);			\
+      mr_ptrdes_t * _y_ = MR_SAVE (MR_TYPE_NAME, Y);			\
+      int _cmp_ = mr_cmp_structs (_x_, _y_);				\
+      if (_x_)								\
+	MR_FREE (_x_);							\
+      if (_y_)								\
+	MR_FREE (_y_);							\
       _cmp_;								\
     })
 #define MR_CMP_STRUCTS_ARGS2(X, Y) MR_CMP_STRUCTS_ARGS3 ( , X, Y)
@@ -1038,11 +1040,11 @@
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_WRONG_ENCODING_MODE);	\
       else								\
 	{								\
-	  mr_ra_ptrdes_t __ptrs__ = MR_SAVE (__VA_ARGS__);		\
-	  if (__ptrs__.ra != NULL)					\
+	  mr_ptrdes_t * __ptrs__ = MR_SAVE (__VA_ARGS__);		\
+	  if (__ptrs__ != NULL)						\
 	    {								\
-	      __status__ = mr_xdr_save (__xdrs__, &__ptrs__);		\
-	      MR_FREE (__ptrs__.ra);					\
+	      __status__ = mr_xdr_save (__xdrs__, __ptrs__);		\
+	      MR_FREE (__ptrs__);					\
 	    }								\
 	}								\
       __status__;							\
@@ -1058,13 +1060,13 @@
     })
 
 #define MR_SAVE_METHOD(METHOD, ...) ({					\
-      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (__VA_ARGS__);			\
+      mr_ptrdes_t * __ptrs__ = MR_SAVE (__VA_ARGS__);			\
       char * __str__ = NULL;						\
-      if (__ptrs__.ra != NULL)						\
+      if (__ptrs__ != NULL)						\
 	{								\
-	  mr_remove_empty_nodes (&__ptrs__);				\
-	  __str__ = METHOD (&__ptrs__);					\
-	  MR_FREE (__ptrs__.ra);					\
+	  mr_remove_empty_nodes (__ptrs__);				\
+	  __str__ = METHOD (__ptrs__);					\
+	  MR_FREE (__ptrs__);						\
 	}								\
       __str__;								\
     })
@@ -1150,12 +1152,12 @@
       int __size__;							\
       char * __str__ = NULL;						\
       xmlChar * __xml_str__ = NULL;					\
-      mr_ra_ptrdes_t __ptrs__ = MR_SAVE (__VA_ARGS__);			\
-      if (__ptrs__.ra != NULL)						\
+      mr_ptrdes_t * __ptrs__ = MR_SAVE (__VA_ARGS__);			\
+      if (__ptrs__ != NULL)						\
 	{								\
-	  mr_remove_empty_nodes (&__ptrs__);				\
-	  xmlDocPtr __doc__ = mr_xml2_save (&__ptrs__);			\
-	  MR_FREE (__ptrs__.ra);					\
+	  mr_remove_empty_nodes (__ptrs__);				\
+	  xmlDocPtr __doc__ = mr_xml2_save (__ptrs__);			\
+	  MR_FREE (__ptrs__);						\
 	  if (__doc__)							\
 	    {								\
 	      xmlDocDumpFormatMemory (__doc__, &__xml_str__, &__size__, 1); \
@@ -1497,28 +1499,28 @@ extern void mr_add_dwarf (mr_dwarf_t * mr_dwarf);
 extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
-extern mr_ra_ptrdes_t mr_save (void * data, mr_fd_t * fdp);
-extern void mr_reorder_strings (mr_ra_ptrdes_t * ptrs);
+extern mr_ptrdes_t * mr_save (void * data, mr_fd_t * fdp);
+extern void mr_reorder_strings (mr_ptrdes_t * ptrs);
 extern void mr_free_load_values (mr_ra_ptrdes_t * ptrs);
 extern mr_status_t mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs);
 #ifdef HAVE_LIBXML2
-extern xmlDocPtr mr_xml2_save (mr_ra_ptrdes_t * ptrs);
+extern xmlDocPtr mr_xml2_save (mr_ptrdes_t * ptrs);
 extern mr_idx_t mr_xml2_load (xmlNodePtr, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBXML2 */
 #ifdef HAVE_LIBYAML
-extern char * mr_yaml_save (mr_ra_ptrdes_t * ptrs);
+extern char * mr_yaml_save (mr_ptrdes_t * ptrs);
 extern mr_status_t mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs);
 #endif /* HAVE_LIBYAML */
 #ifdef HAVE_RPC_TYPES_H
-extern mr_status_t mr_xdr_save (XDR * xdrs, mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_xdr_save (XDR * xdrs, mr_ptrdes_t * ptrs);
 extern mr_status_t mr_xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs);
 extern void mr_xdrra_create (XDR * xdrs, mr_rarray_t * rarray, enum xdr_op op);
 #endif /* HAVE_RPC_TYPES_H */
 
-extern char * mr_xml1_save (mr_ra_ptrdes_t * ptrs);
-extern char * mr_cinit_save (mr_ra_ptrdes_t * ptrs);
-extern char * mr_json_save (mr_ra_ptrdes_t * ptrs);
-extern char * mr_scm_save (mr_ra_ptrdes_t * ptrs);
+extern char * mr_xml1_save (mr_ptrdes_t * ptrs);
+extern char * mr_cinit_save (mr_ptrdes_t * ptrs);
+extern char * mr_json_save (mr_ptrdes_t * ptrs);
+extern char * mr_scm_save (mr_ptrdes_t * ptrs);
 
 #ifdef HAVE_BISON_FLEX
 extern mr_status_t mr_xml1_load (char * str, mr_ra_ptrdes_t * ptrs);
@@ -1547,10 +1549,10 @@ extern int mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 extern void __attribute__ ((sentinel(0))) mr_type_void_fields_impl (char * type, char * name, ...);
 extern mr_size_t mr_type_size (mr_type_t mr_type);
 extern void mr_conf_init ();
-extern mr_status_t mr_free_recursively (mr_ra_ptrdes_t * ptrs);
-extern mr_status_t mr_copy_recursively (mr_ra_ptrdes_t * ptrs, void * data);
-extern mr_hash_value_t mr_hash_struct (mr_ra_ptrdes_t * ptrs);
-extern int mr_cmp_structs (mr_ra_ptrdes_t * x, mr_ra_ptrdes_t * y);
+extern mr_status_t mr_free_recursively (mr_ptrdes_t * ptrs);
+extern mr_status_t mr_copy_recursively (mr_ptrdes_t * ptrs, void * data);
+extern mr_hash_value_t mr_hash_struct (mr_ptrdes_t * ptrs);
+extern int mr_cmp_structs (mr_ptrdes_t * x, mr_ptrdes_t * y);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_enum_value_t mr_get_enum_value (mr_td_t * tdp, void * data);
 extern mr_ed_t * mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_t value);
@@ -1568,8 +1570,9 @@ extern int mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, 
 extern mr_fd_t * mr_get_any_fd_by_name (const char * name, const char * type);
 extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 #define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (1) (__VA_ARGS__))
-extern mr_status_t mr_ptrs_dfs_impl (mr_ra_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start);
-extern void mr_remove_empty_nodes (mr_ra_ptrdes_t * ptrs);
+extern mr_status_t mr_ptrs_dfs_impl (mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start);
+extern void mr_remove_empty_nodes (mr_ptrdes_t * ptrs);
+extern mr_idx_t mr_ptrs_count (mr_ptrdes_t * ptrs);
 extern mr_status_t mr_generic_sort (void * data, size_t count, char * key_type);
 extern mr_hash_value_t mr_generic_hash (const mr_ptr_t x, const void * context);
 extern int mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);

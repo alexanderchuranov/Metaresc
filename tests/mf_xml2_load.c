@@ -13,12 +13,12 @@ xml2_load_method (void * arg)
   memset (&_mr_conf, 0, sizeof (_mr_conf));
   status = MR_LOAD_XML2_NODE_ARGS3 (mr_conf_t, node, &_mr_conf);
   mr_conf.mr_mem = mr_mem;
-  mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &_mr_conf);
+  mr_ptrdes_t * ptrs = MR_SAVE (mr_conf_t, &_mr_conf);
   mr_conf.mr_mem = _mr_mem;
-  if (ptrs.ra != NULL)
+  if (ptrs != NULL)
     {
-      mr_free_recursively (&ptrs);
-      mr_mem.free (__FILE__, __FUNCTION__, __LINE__, ptrs.ra);
+      mr_free_recursively (ptrs);
+      mr_mem.free (__FILE__, __FUNCTION__, __LINE__, ptrs);
     }
   return (status);
 }

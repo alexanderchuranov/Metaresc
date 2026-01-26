@@ -8,10 +8,10 @@
 mr_status_t
 mr_save_method (void * arg)
 {
-  mr_ra_ptrdes_t ptrs = MR_SAVE (mr_conf_t, &mr_conf);
-  if (ptrs.ra)
+  mr_ptrdes_t * ptrs = MR_SAVE (mr_conf_t, &mr_conf);
+  if (ptrs)
     {
-      MR_FREE (ptrs.ra);
+      MR_FREE (ptrs);
       return (MR_SUCCESS);
     }
   return (MR_FAILURE);
