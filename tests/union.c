@@ -21,8 +21,8 @@
       bool union_resolved_correctly = false;				\
       if (ptrs != NULL)							\
 	{								\
-	  mr_idx_t i, count = mr_ptrs_count (ptrs);			\
-	  for (i = 1; i < count; ++i)					\
+	  mr_idx_t i;							\
+	  for (i = 1; i < ptrs[0].next; ++i)				\
 	    if (ptrs[i].fdp &&						\
 		(ptrs[i].fdp->name.str != NULL) &&			\
 		(0 == strcmp (ptrs[i].fdp->name.str, "y")))		\

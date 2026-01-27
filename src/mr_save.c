@@ -1323,14 +1323,10 @@ mr_reorder_strings (mr_ptrdes_t * ptrs)
   if (NULL == ptrs)
     return;
   mr_ptrs_dfs (ptrs, mr_reorder_strings_visitor, NULL);
-  mr_idx_t i, count = 1;
-  for (i = 1; i <= count; ++i)
+  mr_idx_t i;
+  for (i = 1; i < ptrs[0].next; ++i)
     {
       mr_idx_t ref_idx = ptrs[i].first_child;
-      if (count < ptrs[i].next)
-	count = ptrs[i].next;
-      if (count < ptrs[i].first_child)
-	count = ptrs[i].first_child;
 
       if ((MR_TYPE_POINTER == ptrs[i].mr_type) &&
 	  (ptrs[i].flags & MR_IS_CONTENT_REFERENCE) &&
@@ -1399,31 +1395,6 @@ mr_remove_empty_nodes (mr_ptrdes_t * ptrs)
       mr_idx_t idx = 1;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx);
     }
-}
-
-/**
- * Calculate count of pointer descriptors in output of mr_save ()
- * @param mr_ptrdes_t resizable array with pointers descriptors
- */
-mr_idx_t
-mr_ptrs_count (mr_ptrdes_t * ptrs)
-{
-  if (NULL == ptrs)
-    return (0);
-
-  mr_idx_t i, count = 1;
-  for (i = 1; i <= count; ++i)
-    {
-      if (count < ptrs[i].next)
-	count = ptrs[i].next;
-      if (count < ptrs[i].first_child)
-	count = ptrs[i].first_child;
-    }
-
-  if ((ptrs[count].mr_type == MR_TYPE_STRING) &&
-      !(ptrs[count].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-    ++count;
-  return (count + 1);
 }
 
 /**
@@ -1657,6 +1628,9 @@ mr_save (void * data, mr_fd_t * fdp)
 
   mr_ic_free (&mr_save_data.union_discriminators);
   mr_ic_free (&mr_save_data.untyped_ptrs);
+
+  if (mr_save_data.ptrs.ra != NULL)
+    mr_save_data.ptrs.ra[0].next = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]);
 
   return (mr_save_data.ptrs.ra);
 }

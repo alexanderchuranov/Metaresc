@@ -105,7 +105,7 @@
 static inline void
 mr_ra_ptrdes_eq (mr_ptrdes_t * ptrs, mr_ptrdes_t * expected, size_t expected_size)
 {
-  mr_idx_t i, count = mr_ptrs_count (ptrs);
+  mr_idx_t i, count = ptrs[0].next;
   int expected_count = expected_size / sizeof (expected[0]);
   ck_assert_msg (count == expected_count, "size mismatch %d != %d", (int)count, expected_count);
 

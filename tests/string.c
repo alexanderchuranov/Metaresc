@@ -64,8 +64,8 @@ START_TEST (pointer_match_content_known) {
   if (ptrs != NULL)
     {
       bool string_is_a_reference = false;
-      mr_idx_t i, count = mr_ptrs_count (ptrs);
-      for (i = 1; i < count; ++i)
+      mr_idx_t i;
+      for (i = 1; i < ptrs[0].next; ++i)
 	if (ptrs[i].fdp &&
 	    (ptrs[i].fdp->name.str != NULL) &&
 	    (0 == strcmp (ptrs[i].fdp->name.str, "y")) &&
@@ -85,8 +85,8 @@ START_TEST (pointer_match_content_unknown) {
   if (ptrs != NULL)
     {
       bool string_is_a_reference = false;
-      mr_idx_t i, count = mr_ptrs_count (ptrs);
-      for (i = 1; i < count; ++i)
+      mr_idx_t i;
+      for (i = 1; i < ptrs[0].next; ++i)
 	if (ptrs[i].fdp &&
 	    (ptrs[i].fdp->name.str != NULL) &&
 	    (0 == strcmp (ptrs[i].fdp->name.str, "y")) &&
@@ -108,8 +108,8 @@ START_TEST (pointer_match_another_pointer) {
   if (ptrs != NULL)
     {
       int ptr_cnt = 0;
-      mr_idx_t i, count = mr_ptrs_count (ptrs);
-      for (i = 1; i < count; ++i)
+      mr_idx_t i;
+      for (i = 1; i < ptrs[0].next; ++i)
 	if ((ptrs[i].fdp->stype.tdp == string_tdp) && (ptrs[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
 	  ++ptr_cnt;
       

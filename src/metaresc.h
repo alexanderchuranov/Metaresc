@@ -1572,7 +1572,6 @@ extern void xml_unquote_string (mr_substr_t * substr, char * dst);
 #define mr_ptrs_dfs(ptrs, processor, context, ...) mr_ptrs_dfs_impl (ptrs, processor, context, MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (1) (__VA_ARGS__))
 extern mr_status_t mr_ptrs_dfs_impl (mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t context, mr_idx_t start);
 extern void mr_remove_empty_nodes (mr_ptrdes_t * ptrs);
-extern mr_idx_t mr_ptrs_count (mr_ptrdes_t * ptrs);
 extern mr_status_t mr_generic_sort (void * data, size_t count, char * key_type);
 extern mr_hash_value_t mr_generic_hash (const mr_ptr_t x, const void * context);
 extern int mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);

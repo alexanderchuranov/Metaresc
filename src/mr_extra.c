@@ -128,21 +128,15 @@ mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_ty
 mr_status_t
 mr_free_recursively (mr_ptrdes_t * ptrs)
 {
-  mr_idx_t i, count = 1;
-  mr_status_t status = MR_SUCCESS;
-
   mr_conf_init ();
   
   if (NULL == ptrs)
     return (MR_FAILURE);
 
-  for (i = 1; i <= count; ++i)
+  mr_idx_t i;
+  mr_status_t status = MR_SUCCESS;
+  for (i = 1; i < ptrs[0].next; ++i)
     {
-      if (count < ptrs[i].next)
-	count = ptrs[i].next;
-      if (count < ptrs[i].first_child)
-	count = ptrs[i].first_child;
-
       ptrs[i].res.data.ptr = NULL;
       ptrs[i].res.type = NULL;
 
@@ -159,7 +153,7 @@ mr_free_recursively (mr_ptrdes_t * ptrs)
 	}
     }
 
-  for (i = 1; i <= count; ++i)
+  for (i = 1; i < ptrs[0].next; ++i)
     if (ptrs[i].res.data.ptr)
       MR_FREE (ptrs[i].res.data.ptr);
 
@@ -194,14 +188,9 @@ mr_copy_recursively (mr_ptrdes_t * ptrs, void * dst)
   if ((NULL == ptrs) || (NULL == dst))
     return (MR_FAILURE);
 
-  mr_idx_t i, count = 1;
-  for (i = 1; i <= count; ++i)
+  mr_idx_t i;
+  for (i = 1; i < ptrs[0].next; ++i)
     {
-      if (count < ptrs[i].next)
-	count = ptrs[i].next;
-      if (count < ptrs[i].first_child)
-	count = ptrs[i].first_child;
-
       ptrs[i].res.data.ptr = NULL;
       ptrs[i].res.type = NULL;
     }
@@ -211,7 +200,7 @@ mr_copy_recursively (mr_ptrdes_t * ptrs, void * dst)
   ptrs[1].res.data.ptr = dst;
 
   /* NB index 1 is excluded */
-  for (i = 2; i <= count; ++i)
+  for (i = 2; i < ptrs[0].next; ++i)
     /*
       process nodes that are in final save graph (ptrs[i].idx != MR_NULL_IDX)
       and are not references on other nodes and not a NULL pointer
@@ -271,7 +260,7 @@ mr_copy_recursively (mr_ptrdes_t * ptrs, void * dst)
   mr_ptrs_dfs (ptrs, calc_relative_addr, NULL);
 
   /* now we should update pointers in a copy */
-  for (i = 2; i <= count; ++i)
+  for (i = 2; i < ptrs[0].next; ++i)
     if ((ptrs[i].idx != MR_NULL_IDX)) /* skip invalid nodes */
       switch (ptrs[i].mr_type)
 	{
@@ -301,7 +290,7 @@ mr_copy_recursively (mr_ptrdes_t * ptrs, void * dst)
   return (MR_SUCCESS);
 
  failure:
-  for (i = 2; i <= count; ++i)
+  for (i = 2; i < ptrs[0].next; ++i)
     if ((MR_TYPE_STRING == ptrs[i].mr_type) && (ptrs[i].res.type != NULL))
       MR_FREE (ptrs[i].res.type);
     else if ((MR_TYPE_POINTER == ptrs[i].mr_type) &&
@@ -460,14 +449,9 @@ mr_hash_struct (mr_ptrdes_t * ptrs)
   if (NULL == ptrs)
     return (0);
 
-  mr_idx_t i, count = 1;
-  for (i = 1; i <= count; ++i)
+  mr_idx_t i;
+  for (i = 1; i < ptrs[0].next; ++i)
     {
-      if (count < ptrs[i].next)
-	count = ptrs[i].next;
-      if (count < ptrs[i].first_child)
-	count = ptrs[i].first_child;
-
       ptrs[i].res.data.uintptr = 0;
       ptrs[i].res.type = "uintptr";
     }
@@ -484,9 +468,9 @@ mr_cmp_structs (mr_ptrdes_t * x, mr_ptrdes_t * y)
   if ((NULL == x) || (NULL == y))
     return ((x > y) - (x < y));
 
-  mr_idx_t i, count_x, count_y;
-  count_x = mr_ptrs_count (x);
-  count_y = mr_ptrs_count (y);
+  mr_idx_t i;
+  mr_idx_t count_x = x[0].next;
+  mr_idx_t count_y = y[0].next;
 
   int diff = (count_x > count_y) - (count_x < count_y);
   if (diff)

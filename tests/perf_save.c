@@ -4,7 +4,7 @@
       mr_ptrdes_t * ptrs = MR_SAVE (__VA_ARGS__);		\
       (mr_rarray_t){						\
 	.data.ptr = ptrs,					\
-	  .MR_SIZE = mr_ptrs_count (ptrs) * sizeof (ptrs[0]),	\
+	  .MR_SIZE = ptrs[0].next * sizeof (ptrs[0]),		\
 	  .type = "mr_ptrdes_t",				\
 	  };							\
     })
