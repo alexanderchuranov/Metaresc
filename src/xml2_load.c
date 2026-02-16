@@ -66,9 +66,8 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
       goto failure;
     }
   
-  ptrs->ra[idx].value_type = MR_VT_SUBSTR;
-  ptrs->ra[idx].load_params.vt_substr.str = content;
-  ptrs->ra[idx].load_params.vt_substr.length = strlen (content);
+  ptrs->ra[idx].value_type = MR_VT_UNALLOCATED_STRING;
+  ptrs->ra[idx].vt_string = content;
 
   /* loop on subnodes */
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)

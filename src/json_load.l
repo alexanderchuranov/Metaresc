@@ -30,11 +30,11 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE]{INT_NUM
 %%
 
 "null" { return (TOK_JSON_NULL); }
-"false" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = false; return (TOK_JSON_NUMBER); }
-"true" { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = true; return (TOK_JSON_NUMBER); }
+"false" { yylval->value.value_type = MR_VT_INTMAX; yylval->value.vt_intmax = false; return (TOK_JSON_NUMBER); }
+"true" { yylval->value.value_type = MR_VT_INTMAX; yylval->value.vt_intmax = true; return (TOK_JSON_NUMBER); }
 
-{INT_NUMBER} { yylval->value.value_type = MR_VT_INT; yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 0); return (TOK_JSON_NUMBER); }
-{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_FLOAT; yylval->value.vt_float = strtold (yytext, NULL); return (TOK_JSON_NUMBER); }
+{INT_NUMBER} { yylval->value.value_type = MR_VT_INTMAX; yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 0); return (TOK_JSON_NUMBER); }
+{FLOAT_NUMBER} { yylval->value.value_type = MR_VT_LONG_DOUBLE; yylval->value.vt_long_double = strtold (yytext, NULL); return (TOK_JSON_NUMBER); }
 
 "\""([^\"\\]|\\.)*"\"" {
   yylval->string.str = &yytext[1];

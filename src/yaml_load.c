@@ -52,8 +52,8 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
   if (value)
     {
       ptrs->ra[idx].value_type = MR_VT_STRING;
-      ptrs->ra[idx].load_params.vt_string = mr_strdup (value);
-      if (NULL == ptrs->ra[idx].load_params.vt_string)
+      ptrs->ra[idx].vt_string = mr_strdup (value);
+      if (NULL == ptrs->ra[idx].vt_string)
 	return (MR_FAILURE);
     }
 
@@ -219,8 +219,6 @@ mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 
   if (MR_SUCCESS == status)
     add_missed_crossrefs (ptrs);
-  else
-    mr_free_load_values (ptrs);
 
   return (status);
 }

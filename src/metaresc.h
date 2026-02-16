@@ -839,7 +839,7 @@
 #define MR_SINGLE_FD(CONTEXT, ARG, I) (mr_fd_t[]){{}},
 #define MR_ANON_UNION_FD(CONTEXT, ARG, I) MR_ANON_UNION_DESC (CONTEXT, )
 #ifndef MR_ANON_UNION_FD_COUNT
-#define MR_ANON_UNION_FD_COUNT 4
+#define MR_ANON_UNION_FD_COUNT 16
 #endif /* MR_ANON_UNION_FD_COUNT */
 #ifndef MR_TDP_FIELDS_COUNT
 #define MR_TDP_FIELDS_COUNT MR_PP_DEPTH
@@ -896,7 +896,6 @@
     })
 #define MR_COPY_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
       __typeof__ (*(S_PTR)) _dst_ = {};					\
-      memset (&_dst_, 0, sizeof (_dst_));				\
       MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &_dst_);		\
       _dst_;								\
     })
@@ -970,7 +969,7 @@
 
 #define MR_OBJ_TYPE_DUMP_EXTRA(S_PTR) ({				\
       mr_conf_init ();							\
-      mr_get_struct_type_name_t ctx;					\
+      mr_get_struct_type_name_t ctx = {};				\
       ctx.type_name = MR_OBJ_TYPE_DWARF (S_PTR);			\
       if (ctx.type_name == NULL)					\
 	if (0 == setjmp (ctx._jmp_buf))					\
@@ -1052,7 +1051,7 @@
 
 #define MR_SAVE_XDR_RA(...) ({						\
       XDR _xdrs_;							\
-      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .data = { NULL }, .type = "uint8_t" }; \
+      mr_rarray_t _ra_ = { .type = "uint8_t" };				\
       mr_xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
       if (MR_SUCCESS != MR_SAVE_XDR (&_xdrs_, __VA_ARGS__))		\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_SAVE_FAILED);		\
@@ -1072,9 +1071,8 @@
     })
 
 #define MR_SAVE_METHOD_RA(STR) ({					\
-      mr_rarray_t _ra_ = { .alloc_size = 0, .MR_SIZE = 0, .type = "string" }; \
-      _ra_.data.string = STR;						\
-      if (_ra_.data.ptr)						\
+      mr_rarray_t _ra_ = { .type = "string", .data.string = STR, };	\
+      if (_ra_.data.string)						\
 	_ra_.MR_SIZE = _ra_.alloc_size = strlen (_ra_.data.string) + 1;	\
       _ra_;								\
     })
@@ -1112,7 +1110,6 @@
 	  mr_fd_t __fd__ =						\
 	    {								\
 	      .stype.type = MR_TYPE_NAME,				\
-	      .name = { .str = NULL, .hash_value = 0, },		\
 	      .non_persistent = true,					\
 	      .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*_dst_)),	\
 	      .stype.size = sizeof (*_dst_),				\
@@ -1181,13 +1178,7 @@
 #define MR_LOAD_XML2_NODE_ARGS3_(MR_TYPE_NAME, XML, D_PTR) ({		\
       __typeof__ (&*(D_PTR)) _dst_ = (D_PTR);				\
       mr_status_t __status__ = MR_FAILURE;				\
-      mr_ra_ptrdes_t __ptrs__ =						\
-	{								\
-	  .ra = NULL,							\
-	  .size = 0,							\
-	  .alloc_size = 0,						\
-	  .ptrdes_type = MR_PD_LOAD,					\
-	};								\
+      mr_ra_ptrdes_t __ptrs__ = {};					\
       mr_fd_t __fd__ =							\
 	{								\
 	  .stype.type = MR_TYPE_NAME,					\
@@ -1272,8 +1263,7 @@
 	   MR_LOAD_METHOD_ARGS4_ (METHOD, #MR_TYPE_NAME, STR, D_PTR); }))
 
 #define MR_LOAD_METHOD_ARGS4_(METHOD, MR_TYPE_NAME, STR, D_PTR) ({	\
-      mr_ra_ptrdes_t _ptrs_ =						\
-	{ .ra = NULL, .size = 0, .alloc_size = 0, .ptrdes_type = MR_PD_LOAD, }; \
+      mr_ra_ptrdes_t _ptrs_ = {};					\
       __typeof__ (&*(D_PTR)) _dst_ = (D_PTR);				\
       memset (_dst_, 0, sizeof (*_dst_));				\
       mr_conf_init ();							\
@@ -1287,7 +1277,6 @@
 	      mr_fd_t _fd_ =						\
 		{							\
 		  .stype.type = MR_TYPE_NAME,				\
-		  .name = { .str = NULL, .hash_value = 0, },		\
 		  .stype.mr_type = MR_TYPE_DETECT (__typeof__ (*_dst_)), \
 		  .stype.size = sizeof (*_dst_),			\
 		};							\
@@ -1555,6 +1544,7 @@ extern mr_hash_value_t mr_hash_struct (mr_ptrdes_t * ptrs);
 extern int mr_cmp_structs (mr_ptrdes_t * x, mr_ptrdes_t * y);
 extern mr_fd_t * mr_get_fd_by_name (mr_td_t * tdp, char * name);
 extern mr_enum_value_t mr_get_enum_value (mr_td_t * tdp, void * data);
+extern mr_intmax_t mr_get_enum_value_by_name (char * name);
 extern mr_ed_t * mr_get_enum_by_value (mr_td_t * tdp, mr_enum_value_t value);
 extern mr_ed_t * mr_get_enum_by_name (char * name);
 extern mr_status_t mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value);

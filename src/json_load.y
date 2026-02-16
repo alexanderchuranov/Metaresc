@@ -123,26 +123,26 @@ value: object | array
 	}
       json_unquote_str (&$1, buf);
       mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_string = buf;
+      mr_load->ptrs->ra[mr_load->parent].vt_string = buf;
     }
   else
     {
-      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = &mr_load->str[$1.str - mr_load->buf];
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = $1.length;
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR_POS;
+      mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.offset = $1.str - mr_load->buf;
+      mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.length = $1.length;
     }
   }
 | TOK_JSON_NUMBER {
   mr_load_t * mr_load = MR_LOAD;
-  mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1);
+  mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1, mr_load->ptrs->str);
   if (MR_SUCCESS != status)
     { YYERROR; }
  }
 | TOK_JSON_NULL {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
-  memset (&mr_load->ptrs->ra[mr_load->parent].load_params.vt_int, 0, sizeof (mr_load->ptrs->ra[mr_load->parent].load_params.vt_int));
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INTPTR;
+  mr_load->ptrs->ra[mr_load->parent].vt_intptr = 0;
   }
 
 object: TOK_JSON_LBRACE TOK_JSON_RBRACE

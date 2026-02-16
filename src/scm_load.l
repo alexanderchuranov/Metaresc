@@ -33,16 +33,16 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 {WS}  { return (TOK_SCM_WS); }
 
 {INT_NUMBER} {
-  yylval->value.value_type = MR_VT_INT;
-  yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 10);
+  yylval->value.value_type = MR_VT_INTMAX;
+  yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 10);
   return (TOK_SCM_NUMBER);
 }
 
 {HEX_NUMBER} {
   char * hash = ('#' == *yytext) ? yytext : &yytext[1];
   hash[0] = '0';
-  yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 16);
-  yylval->value.value_type = MR_VT_INT;
+  yylval->value.value_type = MR_VT_INTMAX;
+  yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 16);
   return (TOK_SCM_NUMBER);
 }
 
@@ -50,21 +50,21 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
   char * hash = ('#' == *yytext) ? yytext : &yytext[1];
   hash[0] = '0';
   hash[1] = '0';
-  yylval->value.vt_int = mr_strtouintmax (yytext, NULL, 8);
-  yylval->value.value_type = MR_VT_INT;
+  yylval->value.value_type = MR_VT_INTMAX;
+  yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 8);
   return (TOK_SCM_NUMBER);
 }
 
 {FLOAT_NUMBER} {
-  yylval->value.value_type = MR_VT_FLOAT;
-  yylval->value.vt_float = strtold (yytext, NULL);
+  yylval->value.value_type = MR_VT_LONG_DOUBLE;
+  yylval->value.vt_long_double = strtold (yytext, NULL);
   return (TOK_SCM_NUMBER);
 }
 
 "nil" { return (TOK_SCM_FALSE); }
 "t" {
-  yylval->value.value_type = MR_VT_INT;
-  yylval->value.vt_int = true;
+  yylval->value.value_type = MR_VT_INTMAX;
+  yylval->value.vt_intmax = true;
   return (TOK_SCM_NUMBER);
 }
 

@@ -169,7 +169,7 @@ value:
 compaund
 | expr {
   mr_load_t * mr_load = MR_LOAD;
-  mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1);
+  mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1, mr_load->ptrs->str);
   if (MR_SUCCESS != status)
     { YYERROR; }
 }
@@ -185,24 +185,36 @@ compaund
 	}
       cinit_unquote_str (&$1, buf);
       mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_string = buf;
+      mr_load->ptrs->ra[mr_load->parent].vt_string = buf;
     }
   else
     {
-      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = &mr_load->str[$1.str - mr_load->buf];
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = $1.length;
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR_POS;
+      mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.offset = $1.str - mr_load->buf;
+      mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.length = $1.length;
     }
   }
 | TOK_CINIT_NULL {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INT;
-  memset (&mr_load->ptrs->ra[mr_load->parent].load_params.vt_int, 0, sizeof (mr_load->ptrs->ra[mr_load->parent].load_params.vt_int));
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INTPTR;
+  mr_load->ptrs->ra[mr_load->parent].vt_intptr = 0;
   }
+
+expr:
+  expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
+| expr TOK_CINIT_MINUS expr { mr_value_sub (&$$, &$1, &$3); }
+| expr TOK_CINIT_MUL expr { mr_value_mul (&$$, &$1, &$3); }
+| expr TOK_CINIT_DIV expr { mr_value_div (&$$, &$1, &$3); }
+| expr TOK_CINIT_MOD expr { mr_value_mod (&$$, &$1, &$3); }
+| expr TOK_CINIT_BIT_OR expr { mr_value_bit_or (&$$, &$1, &$3); }
+| expr TOK_CINIT_BIT_AND expr { mr_value_bit_and (&$$, &$1, &$3); }
+| expr TOK_CINIT_BIT_XOR expr { mr_value_bit_xor (&$$, &$1, &$3); }
+| TOK_CINIT_MINUS expr %prec NEG { $$ = $2; mr_value_neg (&$$); }
+| TOK_CINIT_PLUS expr %prec NEG { $$ = $2; }
+| TOK_CINIT_NUMBER { $$ = $1; }
+| TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
 | TOK_CINIT_CHAR {
-  mr_load_t * mr_load = MR_LOAD;
-  $1.str[$1.length] = 0;
   if ($1.length > sizeof ("\\000"))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_CHAR, $1.str);
@@ -218,29 +230,15 @@ compaund
       YYERROR;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_char = vt_char_str[0];
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_CHAR;
+  $$.vt_char = vt_char_str[0];
+  $$.value_type = MR_VT_CHAR;
 }
-
-expr:
-  expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
-| expr TOK_CINIT_MINUS expr { mr_value_sub (&$$, &$1, &$3); }
-| expr TOK_CINIT_MUL expr { mr_value_mul (&$$, &$1, &$3); }
-| expr TOK_CINIT_DIV expr { mr_value_div (&$$, &$1, &$3); }
-| expr TOK_CINIT_MOD expr { mr_value_mod (&$$, &$1, &$3); }
-| expr TOK_CINIT_BIT_OR expr { mr_value_bit_or (&$$, &$1, &$3); }
-| expr TOK_CINIT_BIT_AND expr { mr_value_bit_and (&$$, &$1, &$3); }
-| expr TOK_CINIT_BIT_XOR expr { mr_value_bit_xor (&$$, &$1, &$3); }
-| TOK_CINIT_MINUS expr %prec NEG { $$ = $2; mr_value_neg (&$$); }
-| TOK_CINIT_PLUS expr %prec NEG { $$ = $2; }
-| TOK_CINIT_NUMBER { $$ = $1; }
 | TOK_CINIT_ID {
-  mr_load_t * mr_load = MR_LOAD;
-  $$.value_type = MR_VT_ID;
-  $$.vt_substr.str = &mr_load->str[$1.str - mr_load->buf];
-  $$.vt_substr.length = $1.length;
+    mr_load_t * mr_load = MR_LOAD;
+    $$.value_type = MR_VT_SUBSTR;
+    $$.vt_substr.str = &mr_load->ptrs->str[$1.str - mr_load->buf];
+    $$.vt_substr.length = $1.length;
   }
-| TOK_CINIT_LPAREN expr TOK_CINIT_RPAREN { $$ = $2; }
 
 compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE
 

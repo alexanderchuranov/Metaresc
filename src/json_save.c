@@ -122,8 +122,8 @@ json_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 json_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  ptrdes->res.data.string = "}";
-  ptrdes->res.type = "string";
+  ptrdes->vt_string = "}";
+  ptrdes->value_type = MR_VT_STRING;
   return (mr_ra_append_string (mr_ra_str, "{\n"));
 }
 
@@ -141,8 +141,8 @@ json_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  ptrdes->res.data.string = "]";
-  ptrdes->res.type = "string";
+  ptrdes->vt_string = "]";
+  ptrdes->value_type = MR_VT_STRING;
   return (mr_ra_append_string (mr_ra_str, "[\n"));
 }
 
@@ -214,7 +214,8 @@ json_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs[idx].mr_type);
     }
 
-  memset (&ptrs[idx].res, 0, sizeof (ptrs[idx].res));
+  ptrs[idx].value_type = MR_VT_VOID;
+  ptrs[idx].vt_intptr = 0;
 
   if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES, "") < 0)
     return (MR_FAILURE);
@@ -258,8 +259,8 @@ json_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
 static mr_status_t
 json_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
-  if (ptrs[idx].res.data.string)
-    if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES + 1, ptrs[idx].res.data.string) < 0)
+  if (ptrs[idx].vt_string)
+    if (mr_ra_printf (mr_ra_str, JSON_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * JSON_INDENT_SPACES + 1, ptrs[idx].vt_string) < 0)
       return (MR_FAILURE);
 
   if (ptrs[idx].next != MR_NULL_IDX)

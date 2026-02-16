@@ -86,7 +86,8 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
   mr_status_t mr_ ## METHOD ## _load (char * str, mr_ra_ptrdes_t * ptrs) { \
     mr_status_t status = MR_FAILURE;					\
     yyscan_t scanner;							\
-    mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .str = str, .buf = NULL, .parent = 0, .ptrs = ptrs }; \
+    mr_load_t mr_load = { .lloc = { .lineno = 1, .column = 0, .offset = 0, }, .buf = NULL, .parent = 0, .ptrs = ptrs }; \
+    ptrs->str = str;							\
     if (NULL == str)							\
       {									\
 	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\

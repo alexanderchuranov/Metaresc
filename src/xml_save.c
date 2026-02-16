@@ -261,8 +261,6 @@ xml1_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, ptrs[idx].mr_type);
     }
 
-  memset (&ptrs[idx].res, 0, sizeof (ptrs[idx].res));
-
   char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
   if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START,
 		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", name) < 0)
@@ -302,8 +300,8 @@ xml1_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
 	return (MR_FAILURE);
     }
 
-  ptrs[idx].res.data.intptr = empty_tag;
-  ptrs[idx].res.type = "intptr";
+  ptrs[idx].vt_intptr = empty_tag;
+  ptrs[idx].value_type = MR_VT_INTPTR;
 
   return (MR_SUCCESS);
 }
@@ -315,7 +313,7 @@ xml1_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t *
     if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE, MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "") < 0)
       return (MR_FAILURE);
 
-  if (!ptrs[idx].res.data.intptr)
+  if (!ptrs[idx].vt_intptr)
     {
       if (mr_ra_append_string (mr_ra_str, "</") < 0)
 	return (MR_FAILURE);
@@ -413,8 +411,8 @@ xml2_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t orde
       return (MR_FAILURE);
     }
 
-  ptrs[idx].res.data.ptr = node;
-  ptrs[idx].res.type = "xmlNode";
+  ptrs[idx].vt_ptr = node;
+  ptrs[idx].value_type = MR_VT_PTR;
   node->_private = (void*)(intptr_t)idx;
 
   if (mr_ra_str->data.string[0])
@@ -442,7 +440,7 @@ xml2_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t orde
     xmlSetProp (node, BAD_CAST MR_ISNULL, BAD_CAST MR_ISNULL_VALUE);
 
   if (parent != MR_NULL_IDX)
-    xmlAddChild (ptrs[parent].res.data.ptr, node);
+    xmlAddChild (ptrs[parent].vt_ptr, node);
 
   return (MR_SUCCESS);
 }
@@ -476,8 +474,8 @@ mr_xml2_save (mr_ptrdes_t * ptrs)
     {
       mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       
-      if (NULL != ptrs[1].res.data.ptr)
-	xmlDocSetRootElement (doc, ptrs[1].res.data.ptr);
+      if (NULL != ptrs[1].vt_ptr)
+	xmlDocSetRootElement (doc, ptrs[1].vt_ptr);
     }
 
   if (mr_ra_str.data.ptr)

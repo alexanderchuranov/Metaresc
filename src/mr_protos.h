@@ -258,11 +258,6 @@ TYPEDEF_STRUCT (mr_tree_traverse_t, ATTRIBUTES ( , "tree traverse and zero flag 
 		 { .count_field_offset = offsetof (mr_tree_traverse_t, count) }, "count_field_offset"),
 		);
 
-TYPEDEF_STRUCT (mr_typed_ptr_t,
-		(char *, type, , "union discriminator"),
-		(mr_ptr_t, data, , "type"),
-		);
-
 TYPEDEF_STRUCT (mr_res_t,
 		(char *, type, , "union discriminator"),
 		(ssize_t, MR_SIZE, , "size of data"),
@@ -501,54 +496,51 @@ TYPEDEF_STRUCT (mr_substr_t, ATTRIBUTES (__attribute__ ((packed)), "substring"),
 		(size_t, length, , "length of the substring"),
 		);
 
+#define MR_SUBSTR_OFFSET_BITS (36)
+TYPEDEF_STRUCT (mr_substr_pos_t, ATTRIBUTES ( , "substring position within parsed buffer"),
+		(mr_offset_t, offset, : MR_SUBSTR_OFFSET_BITS , "start position offset"),
+		(size_t, length, : sizeof (uint64_t) * __CHAR_BIT__ - MR_SUBSTR_OFFSET_BITS, "length of the substring"),
+		);
+
 TYPEDEF_ENUM (mr_value_type_t, ATTRIBUTES (__attribute__ ((packed)), "type of values from lexer"),
 	      (MR_VT_VOID, = 0),
 	      (MR_VT_CHAR, , "vt_char"),
 	      (MR_VT_STRING, , "vt_string"),
+	      (MR_VT_UNALLOCATED_STRING, , "vt_string"),
 	      (MR_VT_SUBSTR, , "vt_substr"),
-	      (MR_VT_ID, , "vt_substr"),
-	      (MR_VT_INT, , "vt_int"),
-	      (MR_VT_FLOAT, , "vt_float"),
-	      (MR_VT_COMPLEX, , "vt_complex"),
+	      (MR_VT_SUBSTR_POS, , "vt_substr_pos"),
+	      (MR_VT_UINTPTR, , "vt_uintptr"),
+	      (MR_VT_INTPTR, , "vt_intptr"),
+	      (MR_VT_INTMAX, , "vt_intmax"),
+	      (MR_VT_DOUBLE, , "vt_double"),
+	      (MR_VT_LONG_DOUBLE, , "vt_long_double"),
+	      (MR_VT_COMPLEX_FLOAT, , "vt_complex_float"),
+	      (MR_VT_COMPLEX_LONG_DOUBLE, , "vt_complex_long_double"),
+	      (MR_VT_PTR, , "vt_ptr"),
+	      (MR_VT_UD_PTR, , "union_discriminator"),
+	      (MR_VT_UD_SET, , "ud_set"),
 	      );
 
 TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		(mr_value_type_t, value_type),
 		ANON_UNION (),
 		(mr_non_serializable_t, non_serializable, , "default serialization"),
-		(complex_long_double_t, vt_complex),
 		(mr_substr_t, vt_substr),
-		(mr_intmax_t, vt_int),
-		long double vt_float,
+		(mr_substr_pos_t, vt_substr_pos),
+		(mr_intmax_t, vt_intmax),
+		complex long double vt_complex_long_double,
+		long double vt_long_double,
 		string_t vt_string,
 		char vt_char,
 		END_ANON_UNION ("value_type"),
 		);
 
-TYPEDEF_UNION (mr_load_params_t, ATTRIBUTES ( , "attributes specific for loading"),
-	       (mr_non_serializable_t, non_serializable, , "default serialization"),
-	       (complex_long_double_t *, vt_complex, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
-	       (mr_substr_t, vt_substr),
-	       (uint8_t, vt_int, [sizeof (mr_intmax_t)]),
-	       (uint8_t, vt_float, [sizeof (long double)]),
-	       string_t vt_string,
-	       char vt_char,
-	       );
-
-TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES (__attribute__ ((packed)), "set union discriminator indexes"),
-		ANON_UNION ( , __attribute__ ((packed))),
-		/* to make mr_ptrdes_t more compact we need to align size of mr_save_params_t with size of mr_load_params_t */
-		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (mr_load_params_t) - sizeof (mr_idx_t) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
-		 "in place list of union discriminators", { "count" }, "count_field_name"),
-		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
-		END_ANON_UNION ("is_ic"),
-		(unsigned, count, : __CHAR_BIT__ - 1, "number of union discriminator in the list"),
-		(bool, is_ic, : 1, "true if union discriminator is an indexed collection"),
-		);
-
-TYPEDEF_STRUCT (mr_save_params_t, ATTRIBUTES ( , "attributes specific for saving"),
-		(mr_ud_set_t, ud_set, , "set union discriminator indexes"),
-		(mr_idx_t, next_untyped, , "linked list of nodes with same pointer"),
+TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
+		/* to make mr_ptrdes_t more compact we need to align size of mr_ud_set_t with sizeof (void*) */
+		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (void*) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
+		 "in place list of union discriminators",
+		 { .count_field_offset = offsetof (mr_ud_set_t, count), }, "count_field_offset"),
+		(uint8_t, count, , "number of union discriminator in the list"),
 		);
 
 #define MR_DATA_UDO						\
@@ -582,13 +574,13 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 		(mr_type_t, mr_type, , "Metaresc type"),
 		(mr_type_t, mr_type_aux, , "Metaresc type if field is a pointer on builtin types or bit-field"),
 		(mr_ptrdes_flags_t, flags, , "packed flags"),
-		(mr_value_type_t, value_type, , "value type for load_params"),
+		(mr_value_type_t, value_type, , "value type for anonymous union at the end of the structure"),
 		(mr_size_t, MR_SIZE, , "size of 'data' resizable array"),
 
-		(mr_idx_t, idx, , "public index"),
 		(mr_idx_t, parent, , "parent index"),
 		(mr_idx_t, next, , "next sibling index"),
 		(mr_idx_t, first_child, , "first child index"),
+		(mr_idx_t, idx, , "linked list of nodes with same pointer" " or " "public index"),
 
 		ANON_UNION (),
 		(void *, _data_, , "by default try to resolve pointer as void *"),
@@ -597,18 +589,21 @@ TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),
 
 		ANON_UNION (),
 		(mr_non_serializable_t, non_serializable, , "default serialization"),
-		(mr_save_params_t, save_params, , "attributes specific for saving"),
-		(mr_load_params_t, load_params, , "value_type"),
-		(mr_typed_ptr_t, res, , "extra pointer for user data"),
-		END_ANON_UNION ("ptrdes_type"),
+		(uintptr_t, vt_uintptr),
+		(intptr_t, vt_intptr),
+		(double, vt_double),
+		(complex float, vt_complex_float),
+		(mr_substr_pos_t, vt_substr_pos),
+		string_t vt_string,
+		char vt_char,
+		(mr_intmax_t *, vt_intmax),
+		(long double *, vt_long_double),
+		(complex long double *, vt_complex_long_double, , "Macos on M1 has long double the same as double, so pointer on this type is stored as double* in DWARF"),
+		(void *, vt_ptr),
+		(mr_ic_t *, union_discriminator, , "index over unions discriminator"),
+		(mr_ud_set_t, ud_set),
+		END_ANON_UNION ("value_type"),
 		);
-
-TYPEDEF_ENUM (mr_ptrdes_type_t,
-	      (MR_PD_UNINITIALIZED, = 0, "non_serializable"),
-	      (MR_PD_SAVE, , "save_params"),
-	      (MR_PD_LOAD, , "load_params"),
-	      (MR_PD_CUSTOM, , "res"),
-	      );
 
 TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(mr_ptrdes_t *, ra, , "resizable array with descriptors of saved elements",
@@ -616,8 +611,7 @@ TYPEDEF_STRUCT (mr_ra_ptrdes_t, ATTRIBUTES ( , "mr_ptrdes_t resizable array"),
 		(ssize_t, size, , "size of resizable array"),
 		VOID (ssize_t, alloc_size, , "allocated size of resizable array"),
 		(mr_idx_t, last_child, , "last added child index"),
-		(mr_ptrdes_type_t, ptrdes_type, , "discriminator for anonymous union in mr_ptrdes_t"),
-		(mr_res_t, res, , "extra pointer for user data"),
+		(char *, str, , "string to parse"),
 		);
 
 TYPEDEF_ENUM (mr_dfs_order_t,
@@ -631,9 +625,9 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
 		(mr_ic_t, union_discriminators, , "index over all union discriminators"),
-		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators",
 		{ .size_field_offset = offsetof (mr_save_data_t, mr_ra_ud_size) }, "size_field_offset"),
+		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
 		);
 
@@ -649,7 +643,6 @@ TYPEDEF_STRUCT (mr_lloc_t, ATTRIBUTES ( , "parser location"),
 
 TYPEDEF_STRUCT (mr_load_t, ATTRIBUTES ( , "Metaresc load parser data"),
 		(mr_ra_ptrdes_t *, ptrs, , "resizable array with mr_ptrdes_t"),
-		(char *, str, , "string to parse"),
 		(char *, buf, , "parser internal buffer"),
 		(mr_lloc_t, lloc, , "current location of parser"),
 		(mr_idx_t, parent, , "index of current parent"),

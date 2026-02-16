@@ -1067,7 +1067,8 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
 /**
  * Gets enum value as integer
- * @param ptrdes descriptor of the saved field
+ * @param tdp type descriptor
+ * @param data pointer on enum value
  * @return enum value
  */
 mr_enum_value_t
@@ -1100,6 +1101,49 @@ mr_get_enum_value (mr_td_t * tdp, void * data)
       break;
     }
   return (enum_value);
+}
+
+/**
+ * Gets enum value as integer
+ * @param ptrdes descriptor of the saved field
+ * @return enum value
+ */
+mr_intmax_t
+mr_get_enum_value_by_name (char * name)
+{
+  if (0 == strcmp ("false", name))
+    return (false);
+  else if (0 == strcmp ("true", name))
+    return (true);
+
+  mr_ed_t * edp = mr_get_enum_by_name (name);
+
+  if (NULL == edp)
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_ENUM, name);
+      return (0);
+    }
+
+  switch (edp->mr_type)
+    {
+    case MR_TYPE_INT8:
+    case MR_TYPE_INT16:
+    case MR_TYPE_INT32:
+    case MR_TYPE_INT64:
+      return (edp->value._signed);
+      break;
+
+    case MR_TYPE_UINT8:
+    case MR_TYPE_UINT16:
+    case MR_TYPE_UINT32:
+    case MR_TYPE_UINT64:
+      return (edp->value._unsigned);
+      break;
+
+    default:
+      break;
+    }
+  return (0);
 }
 
 /**

@@ -91,9 +91,8 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
       YYERROR;
     }
 
-  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = "";
-  mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = 0;
+  mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_UNALLOCATED_STRING;
+  mr_load->ptrs->ra[mr_load->parent].vt_string = "";
   
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
 }
@@ -143,13 +142,13 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
 	}
       xml_unquote_string (&$4, buf);
       mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_string = buf;
+      mr_load->ptrs->ra[mr_load->parent].vt_string = buf;
     }
   else
     {
-      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR;
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.str = &mr_load->str[$4.str - mr_load->buf];
-      mr_load->ptrs->ra[mr_load->parent].load_params.vt_substr.length = $4.length;
+      mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_SUBSTR_POS;
+      mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.offset = $4.str - mr_load->buf;
+      mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.length = $4.length;
     }
 
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;

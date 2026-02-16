@@ -81,13 +81,13 @@ START_TEST (mr_intmax_signed_max_value) {
   mr_intmax_t x = INT64_FIRST;
   mr_intmax_t parsed_x = MR_LOAD_CINIT (mr_intmax_t, "INT64_FIRST");
   ck_assert_msg ((x == parsed_x), "Parsed unsigned value mismatches static initialization");
- } END_TEST
+} END_TEST
 
 START_TEST (mr_intmax_unsigned_max_value) {
   mr_intmax_t x = UINT64_LAST;
   mr_intmax_t parsed_x = MR_LOAD_CINIT (mr_intmax_t, "UINT64_LAST");
   ck_assert_msg ((x == parsed_x), "Parsed unsigned value mismatches static initialization");
- } END_TEST
+} END_TEST
 
 static int warnings = 0;
 

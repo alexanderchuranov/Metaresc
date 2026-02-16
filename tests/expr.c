@@ -9,6 +9,8 @@
 		 "restored value mismatched original for method CINIT on expression %s", #VALUE); \
 
 START_TEST (parse_bool_true) { ASSERT_LOAD_EXPR (bool, true); } END_TEST
+START_TEST (parse_bool_false) { ASSERT_LOAD_EXPR (bool, (false)); } END_TEST
+START_TEST (parse_bool_char_plus_num) { ASSERT_LOAD_EXPR (int, ('a' + 1)); } END_TEST
 START_TEST (parse_int_zero) { ASSERT_LOAD_EXPR (int, 1); } END_TEST
 START_TEST (parse_int_paren) { ASSERT_LOAD_EXPR (int, (1)); } END_TEST
 START_TEST (parse_unary_minus) { ASSERT_LOAD_EXPR (int, (1 + -1)); } END_TEST
@@ -19,7 +21,9 @@ START_TEST (parse_float_op2) { ASSERT_LOAD_EXPR (float, 3.14159265358979323846 +
 START_TEST (parse_bits_op1) { ASSERT_LOAD_EXPR (int, 7 ^ 5 * 8); } END_TEST
 START_TEST (parse_bits_op2) { ASSERT_LOAD_EXPR (int, 2 | 5 * 8); } END_TEST
 
-MAIN_TEST_SUITE ((parse_bool_true, "parse bool true = (0)"),
+MAIN_TEST_SUITE ((parse_bool_true, "parse bool true"),
+		 (parse_bool_false, "parse bool (false)"),
+		 (parse_bool_char_plus_num, "parse int ('a' + 1)"),
 		 (parse_int_zero, "parse int 1"),
 		 (parse_int_paren, "parse int x = (1)"),
 		 (parse_unary_minus, "parse int x = (1 + -1)"),
