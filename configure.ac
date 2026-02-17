@@ -196,7 +196,7 @@ AC_DEFINE_UNQUOTED(MR_DBL_DIG, ${MR_DBL_DIG}, [digits for double values])
 AC_MSG_RESULT(${MR_DBL_DIG})
 
 AC_MSG_CHECKING(digits for long double values)
-MR_DBL_DIG=35
+MR_LDBL_DIG=20
 AC_RUN_IFELSE([
   AC_LANG_PROGRAM(
     [#include <stdio.h>
