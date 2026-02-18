@@ -28,6 +28,8 @@ TYPEDEF_UNION (embeded_union_t,
 	       float y,
 	       );
 
+#define MR_IS_BUILTIN_embeded_struct_t embeded_struct_t,
+
 TYPEDEF_STRUCT (struct_t,
 		bool bool_,
 		int8_t int8_,
@@ -106,8 +108,8 @@ TYPEDEF_STRUCT (struct_t,
 		(string_t const volatile *, string_t_const_volatile_ptr_),
 		(string_t volatile const *, string_t_volatile_const_ptr_),
 
-		(embeded_struct_t, embeded_struct),
-		(const volatile struct embeded_struct_t, const_volatile_struct_embeded_struct),
+		embeded_struct_t embeded_struct,
+		const volatile struct embeded_struct_t const_volatile_struct_embeded_struct,
 		(embeded_struct_t *, embeded_struct_ptr),
 		(const volatile struct embeded_struct_t *, const_volatile_struct_embeded_struct_ptr),
 

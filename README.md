@@ -741,6 +741,8 @@ keywords:
 * `mr_ptr_t`
 * `volatile`
 * `const`
+* `struct`
+* `union`
 
 Here is a valid example:
 ```c
@@ -749,6 +751,18 @@ TYPEDEF_STRUCT (sample_t,
 		long int y,
 		long long int z,
 		volatile long long int v,
+		);
+```
+
+You can add your own keywords to the list. For that you need to define a macro
+`MR_IS_BUILTIN_yourkeyword` to resolve into `yourkeyword,`. For example declaration
+of fields of user defined types could be as follows:
+```c
+#define MR_IS_BUILTIN_sample_t sample_t,
+
+TYPEDEF_STRUCT (extended_sample_t,
+	        sample_t base,
+	        string_t str,
 		);
 ```
 

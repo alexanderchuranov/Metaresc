@@ -394,7 +394,12 @@
   The 3rd macro unfolds to MR_{VOID|BITFIELD|...}_{PROTO|DESC} (P00_TYPE_NAME, ARGS...)
   Last one detects unknown field qualifiers.
 */
-#define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, MR_PASTE2 (P00_COMMA_, FIELD))
+
+#define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD)			\
+  MR_IF_ELSE (MR_HAS_COMMA (MR_PASTE2 (MR_IS_BUILTIN_, FIELD)))		\
+    (P00_FIELD_UNFOLD__ (P00_MODE_TYPE_NAME, FIELD, AUTO_BI, MR_PASTE2 (MR_IS_BUILTIN_, FIELD))) \
+    (P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, MR_PASTE2 (P00_COMMA_, FIELD)))
+
 #define P00_FIELD_UNFOLD_(...) P00_FIELD_UNFOLD__ (__VA_ARGS__)
 #define P00_FIELD_UNFOLD__(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA, ...) \
   MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
@@ -426,42 +431,8 @@
 #define P00_COMMA_ARRAY ARRAY,
 #define P00_COMMA_ARRAY_OR_BITFIELD ARRAY_OR_BITFIELD,
 #define P00_COMMA_FUNC FUNC,
-
-#define P00_COMMA_char AUTO_BI, char,
-#define P00_COMMA_short AUTO_BI, short,
-#define P00_COMMA_int AUTO_BI, int,
-#define P00_COMMA_unsigned AUTO_BI, unsigned,
-#define P00_COMMA_signed AUTO_BI, signed,
-#define P00_COMMA_long AUTO_BI, long,
-#define P00_COMMA_float AUTO_BI, float,
-#define P00_COMMA_double AUTO_BI, double,
-#define P00_COMMA_bool AUTO_BI, bool,
-#define P00_COMMA__Bool AUTO_BI, _Bool,
-#define P00_COMMA_complex AUTO_BI, complex,
-#define P00_COMMA___complex__ AUTO_BI, __complex__,
-#define P00_COMMA__Complex AUTO_BI, _Complex,
-#define P00_COMMA_int8_t AUTO_BI, int8_t,
-#define P00_COMMA_uint8_t AUTO_BI, uint8_t,
-#define P00_COMMA_int16_t AUTO_BI, int16_t,
-#define P00_COMMA_uint16_t AUTO_BI, uint16_t,
-#define P00_COMMA_int32_t AUTO_BI, int32_t,
-#define P00_COMMA_uint32_t AUTO_BI, uint32_t,
-#define P00_COMMA_int64_t AUTO_BI, int64_t,
-#define P00_COMMA_uint64_t AUTO_BI, uint64_t,
-#define P00_COMMA___int128 AUTO_BI, __int128,
-#define P00_COMMA_mr_uint128_t AUTO_BI, mr_uint128_t,
-#define P00_COMMA_mr_int128_t AUTO_BI, mr_int128_t,
-#define P00_COMMA_size_t AUTO_BI, size_t,
-#define P00_COMMA_ssize_t AUTO_BI, ssize_t,
-#define P00_COMMA_long_double_t AUTO_BI, long_double_t,
-#define P00_COMMA_string_t AUTO_BI, string_t,
-#define P00_COMMA_mr_ptr_t AUTO_BI, mr_ptr_t,
-#define P00_COMMA_volatile AUTO_BI, volatile,
-#define P00_COMMA___volatile AUTO_BI, __volatile,
-#define P00_COMMA___volatile__ AUTO_BI, __volatile__,
-#define P00_COMMA_const AUTO_BI, const,
-#define P00_COMMA___const AUTO_BI, __const,
-#define P00_COMMA___const__ AUTO_BI, __const__,
+#define P00_COMMA_ANON_UNION ANON_UNION,
+#define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
 #define MR_AUTO_BI_PROTO(...) MR_AUTO_BI_0 (PROTO, __VA_ARGS__)
 #define MR_AUTO_BI_DESC(...) MR_AUTO_BI_0 (DESC, __VA_ARGS__)
@@ -513,10 +484,8 @@
 #define MR_IS_BUILTIN_const const,
 #define MR_IS_BUILTIN___const __const,
 #define MR_IS_BUILTIN___const__ __const__,
-
-/* NB! for p99 mode only one anonymous union in struct is possible and it has default name */
-#define P00_COMMA_ANON_UNION ANON_UNION,
-#define P00_COMMA_END_ANON_UNION END_ANON_UNION,
+#define MR_IS_BUILTIN_struct struct,
+#define MR_IS_BUILTIN_union union,
 
 #define MR_UNIQ_NAME(ID) name_ ## ID
 #define MR_COMPILETIME_ASSERT(CONDITION, ...) MR_COMPILETIME_ASSERT_ (__COUNTER__, CONDITION, __VA_ARGS__)
