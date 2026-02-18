@@ -28,7 +28,6 @@
     ck_assert_msg (src - &mr_conf == 1, "Multiple src post increment for method " #METHOD);	\
     ck_assert_msg (((0 != mr_conf_serialized.MR_SIZE) && (NULL != mr_conf_serialized.data.ptr)), \
 		   "save for method " #METHOD " failed");		\
-    if (0) {								\
     mr_conf_t mr_conf_loaded;						\
     mr_conf_t * dst = &mr_conf_loaded;					\
     memset (&mr_conf_loaded, 0, sizeof (mr_conf_loaded));		\
@@ -43,7 +42,6 @@
     mr_conf = mr_conf_saved;						\
     MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);			\
     MR_FREE (mr_conf_serialized_.data.ptr);				\
-    }									\
     MR_FREE (mr_conf_serialized.data.ptr);				\
   } END_TEST								\
 									\

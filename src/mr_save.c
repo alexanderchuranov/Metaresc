@@ -1658,7 +1658,15 @@ mr_save (void * data, mr_fd_t * fdp)
   mr_ic_free (&mr_save_data.untyped_ptrs);
 
   if (mr_save_data.ptrs.ra != NULL)
-    mr_save_data.ptrs.ra[0].next = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]);
+    {
+      static mr_td_t mr_ptrdes_t_td = { .type.str = "mr_ptrdes_t" };
+      static mr_fd_t mr_ptrdes_t_fd = { .stype.tdp = &mr_ptrdes_t_td };
+      mr_save_data.ptrs.ra[0].fdp = &mr_ptrdes_t_fd;
+      mr_save_data.ptrs.ra[0].mr_type = MR_TYPE_STRUCT;
+      mr_save_data.ptrs.ra[0].data.ptr = mr_save_data.ptrs.ra;
+      mr_save_data.ptrs.ra[0].MR_SIZE = mr_save_data.ptrs.size;
+      mr_save_data.ptrs.ra[0].next = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]);
+    }
 
   return (mr_save_data.ptrs.ra);
 }
