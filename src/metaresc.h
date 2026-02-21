@@ -363,22 +363,27 @@
 /* field handler checks for trailing empty field */
 #define P00_FIELD(P00_MODE_TYPE_NAME, FIELD, I) MR_IF_ELSE (MR_IS_EMPTY (FIELD)) () (P00_FIELD_ (P00_MODE_TYPE_NAME, FIELD))
 /*
-  field descriptions might be in two forms.
-  1. MR_TYPE_MACRO (ARGS) for type scpecific declarations like VOID (TYPE, NAME)
-  2. (TYPE, NAME, SUFFIX..., META..., RES..., RES_TYPE..., RES_SIZE...) for auto detection declarations.
+  field descriptions might be in tree forms.
+  1. (TYPE, NAME, SUFFIX..., META..., RES..., RES_TYPE..., RES_SIZE...) for auto detection declarations.
+  2. MR_TYPE_MACRO (ARGS) for type scpecific declarations like VOID (TYPE, NAME) or ANON_UNION (...)
+  3. BUILTIN_TYPE NAME as a simplified grammar declaration
+  First case we detect by parentheses over declaration, third and second by resolution of MR_IS_BUILTIN_token macro.
+  Simplified grammar is passed to the next level of resolution as a AUTO_BI (FIELD) declaration.
 */
 #define P00_FIELD_(P00_MODE_TYPE_NAME, FIELD)				\
   MR_IF_ELSE (MR_IS_IN_PAREN (FIELD))					\
-  (P00_FIELD_DETECT (P00_MODE_TYPE_NAME, FIELD, MR_GET_SUFFIX FIELD))	\
-  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FIELD))
+    (P00_FIELD_DETECT (P00_MODE_TYPE_NAME, FIELD, MR_GET_SUFFIX FIELD))	\
+    (MR_IF_ELSE (MR_HAS_COMMA (MR_PASTE2 (MR_IS_BUILTIN_, FIELD)))	\
+     (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO_BI (FIELD)))		\
+     (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FIELD)))
 
 #define MR_GET_SUFFIX(...) MR_GET_SUFFIX_ (__VA_ARGS__, ,)
 #define MR_GET_SUFFIX_(_0, _1, _2, ...) _2
 /*
   There are 3 options for auto-detection:
-  a. Suffix with parentheses goes to FUNC as function.
-  b. Non-empty suffix without parentheses goes to ARRAY as array.
-  c. Everything else goes to AUTO.
+  1. Suffix with parentheses goes to FUNC as function.
+  2. Non-empty suffix without parentheses goes to ARRAY_OR_BITFIELD.
+  3. Everything else goes to AUTO.
 */
 #define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)	\
   MR_IF_ELSE (MR_IS_IN_PAREN (SUFFIX))				\
@@ -389,22 +394,30 @@
 
 #define P00_GET_MODE(P00_MODE, P00_TYPE_NAME) P00_MODE
 #define P00_GET_TYPE_NAME(P00_MODE, P00_TYPE_NAME) P00_TYPE_NAME
+
 /*
   Field type prefix should be extracted as separate macro argument. So we add prefix P00_COMMA_ and expect that in next macro field prefix will be substituted on comma delimitted MR_ type prefix.
   The 3rd macro unfolds to MR_{VOID|BITFIELD|...}_{PROTO|DESC} (P00_TYPE_NAME, ARGS...)
   Last one detects unknown field qualifiers.
 */
-
-#define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD)			\
-  MR_IF_ELSE (MR_HAS_COMMA (MR_PASTE2 (MR_IS_BUILTIN_, FIELD)))		\
-    (P00_FIELD_UNFOLD__ (P00_MODE_TYPE_NAME, FIELD, AUTO_BI, MR_PASTE2 (MR_IS_BUILTIN_, FIELD))) \
-    (P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, MR_PASTE2 (P00_COMMA_, FIELD)))
-
+#define P00_FIELD_UNFOLD(P00_MODE_TYPE_NAME, FIELD) P00_FIELD_UNFOLD_ (P00_MODE_TYPE_NAME, FIELD, MR_PASTE2 (P00_COMMA_, FIELD))
 #define P00_FIELD_UNFOLD_(...) P00_FIELD_UNFOLD__ (__VA_ARGS__)
 #define P00_FIELD_UNFOLD__(P00_MODE_TYPE_NAME, FIELD, P00_FIELD_COMMA, ...) \
   MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
   (P00_UNFOLD (MR_, UNKNOWN, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, FIELD))	\
   (P00_UNFOLD (MR_, P00_FIELD_COMMA, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (__VA_ARGS__)))
+
+/* list of substitutions for P00_FIELD_UNFOLD_ */
+#define P00_COMMA_AUTO AUTO,
+#define P00_COMMA_AUTO_BI AUTO_BI,
+#define P00_COMMA__ VOID,
+#define P00_COMMA_VOID VOID,
+#define P00_COMMA_BITFIELD BITFIELD,
+#define P00_COMMA_ARRAY ARRAY,
+#define P00_COMMA_ARRAY_OR_BITFIELD ARRAY_OR_BITFIELD,
+#define P00_COMMA_FUNC FUNC,
+#define P00_COMMA_ANON_UNION ANON_UNION,
+#define P00_COMMA_END_ANON_UNION END_ANON_UNION,
 
 /* produce compilation error for unkown field qualifiers */
 #define MR_UNKNOWN_PROTO(P00_TYPE_NAME, ...) int _1[#__VA_ARGS__()];
@@ -423,20 +436,11 @@
   ()									\
   (P00_UNFOLD (MR_, ENUM_DEF, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (FIELD)))
 
-/* list of substitutions for P00_FIELD_UNFOLD_ */
-#define P00_COMMA_AUTO AUTO,
-#define P00_COMMA__ VOID,
-#define P00_COMMA_VOID VOID,
-#define P00_COMMA_BITFIELD BITFIELD,
-#define P00_COMMA_ARRAY ARRAY,
-#define P00_COMMA_ARRAY_OR_BITFIELD ARRAY_OR_BITFIELD,
-#define P00_COMMA_FUNC FUNC,
-#define P00_COMMA_ANON_UNION ANON_UNION,
-#define P00_COMMA_END_ANON_UNION END_ANON_UNION,
+#define MR_AUTO_BI_PROTO(...) MR_AUTO_BI (PROTO, __VA_ARGS__)
+#define MR_AUTO_BI_DESC(...) MR_AUTO_BI (DESC, __VA_ARGS__)
 
-#define MR_AUTO_BI_PROTO(...) MR_AUTO_BI_0 (PROTO, __VA_ARGS__)
-#define MR_AUTO_BI_DESC(...) MR_AUTO_BI_0 (DESC, __VA_ARGS__)
-
+#define MR_AUTO_BI(P00_MODE, MR_TYPE_NAME, FIELD) MR_AUTO_BI_0_ (P00_MODE, MR_TYPE_NAME, MR_PASTE2 (MR_IS_BUILTIN_, FIELD))
+#define MR_AUTO_BI_0_(...) MR_AUTO_BI_0 (__VA_ARGS__)
 #define MR_AUTO_BI_0(P00_MODE, MR_TYPE_NAME, TYPE, NAME) MR_IF_ELSE (MR_HAS_COMMA (MR_PASTE2 (MR_IS_BUILTIN_, NAME))) (MR_AUTO_BI_1_ (P00_MODE, MR_TYPE_NAME, TYPE MR_PASTE2 (MR_IS_BUILTIN_, NAME))) (MR_PASTE2 (MR_AUTO_, P00_MODE) (MR_TYPE_NAME, TYPE, NAME))
 #define MR_AUTO_BI_1_(...) MR_AUTO_BI_1 (__VA_ARGS__)
 #define MR_AUTO_BI_1(P00_MODE, MR_TYPE_NAME, TYPE, NAME) MR_IF_ELSE (MR_HAS_COMMA (MR_PASTE2 (MR_IS_BUILTIN_, NAME))) (MR_AUTO_BI_2_ (P00_MODE, MR_TYPE_NAME, TYPE MR_PASTE2 (MR_IS_BUILTIN_, NAME))) (MR_PASTE2 (MR_AUTO_, P00_MODE) (MR_TYPE_NAME, TYPE, NAME))
@@ -486,6 +490,7 @@
 #define MR_IS_BUILTIN___const__ __const__,
 #define MR_IS_BUILTIN_struct struct,
 #define MR_IS_BUILTIN_union union,
+#define MR_IS_BUILTIN_enum enum,
 
 #define MR_UNIQ_NAME(ID) name_ ## ID
 #define MR_COMPILETIME_ASSERT(CONDITION, ...) MR_COMPILETIME_ASSERT_ (__COUNTER__, CONDITION, __VA_ARGS__)
@@ -708,7 +713,7 @@
 #define MR_END_STUB_STUB(ID, MR_TYPE_NAME, ATTR, ...) } MR_TYPEDEF_STUB_PREFIX (MR_TYPE_NAME);
 #define MR_ANON_UNION_STUB(...)
 #define MR_END_ANON_UNION_STUB(...)
-#define MR_AUTO_BI_STUB(...) MR_AUTO_BI_0 (STUB, __VA_ARGS__)
+#define MR_AUTO_BI_STUB(...) MR_AUTO_BI (STUB, __VA_ARGS__)
 #define MR_FIELD_STUB(MR_TYPE_NAME, TYPE, NAME, ...) int8_t NAME;
 #define MR_UNKNOWN_STUB(MR_TYPE_NAME, NAME, ...) int8_t NAME;
 #define MR_AUTO_STUB MR_FIELD_STUB

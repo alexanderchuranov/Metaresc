@@ -157,6 +157,7 @@ TYPEDEF_ENUM (mr_type_class_t, ATTRIBUTES (__attribute__ ((packed)) , "Classific
 	      );
 
 TYPEDEF_ENUM (mr_td_producer_t, ATTRIBUTES (__attribute__ ((packed)) , "Type descriptor producer"),
+	      (MR_TDP_UNINITIALIZED, = 0),
 	      MR_TDP_MACRO,
 	      MR_TDP_DWARF,
 	      MR_TDP_DUMP_STRUCT,
@@ -170,7 +171,7 @@ TYPEDEF_ENUM (mr_status_t, ATTRIBUTES ( , "return status"),
 	      );
 
 TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
-	      (MR_IC_UNINITIALIZED, = 0, "void_ptr"),
+	      (MR_IC_UNINITIALIZED, = 0),
 	      (MR_IC_UNSORTED_ARRAY, , "rarray"),
 	      (MR_IC_SORTED_ARRAY, , "rarray"),
 	      (MR_IC_STATIC_ARRAY, , "static_array"),
@@ -178,6 +179,9 @@ TYPEDEF_ENUM (mr_ic_type_t, ATTRIBUTES ( , "types of indexed collections"),
 	      (MR_IC_RBTREE, , "rb"),
 	      (MR_IC_AVLTREE, , "avl"),
 	      );
+
+TYPEDEF_FUNC (ATTRIBUTES ( , "dummy type for proper resolution of non-typed function pointers", .mr_type = MR_TYPE_FUNC ),
+	      void, mr_func_t, ());
 
 TYPEDEF_FUNC (int, mr_compar_fn_t, (__const mr_ptr_t /* x */, __const mr_ptr_t /* y */, __const void * /* context */));
 
@@ -469,7 +473,7 @@ TYPEDEF_STRUCT (mr_td_t, ATTRIBUTES ( , "Metaresc type descriptor"),
 		); /* type descriptor */
 
 TYPEDEF_STRUCT (mr_mem_t, ATTRIBUTES ( , "Metaresc memory operations"),
-		(void *, calloc, (const char *, const char *, int, size_t, size_t), "pointer on malloc() function"),
+		(void *, calloc, (const char *, const char *, int, size_t, size_t), "pointer on calloc() function"),
 		(void *, realloc, (const char *, const char *, int, void *, size_t), "pointer on realloc() function"),
 		(void, free, (const char *, const char *, int, void *), "pointer on free() function"),
 		);
@@ -566,6 +570,8 @@ TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
     { MR_TYPE_COMPLEX_LONG_DOUBLE, "data" },			\
     { MR_TYPE_STRUCT, "data" },					\
     { MR_TYPE_ENUM, "data" },					\
+    { MR_TYPE_FUNC, "data" },					\
+    { MR_TYPE_FUNC_TYPE, "data" },				\
   }
 
 TYPEDEF_STRUCT (mr_ptrdes_t, ATTRIBUTES ( , "pointer descriptor type"),

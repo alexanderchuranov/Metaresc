@@ -1023,9 +1023,9 @@ mr_anon_unions_extract (mr_td_t * tdp)
 
 		fields[j]->offset = 0;
 
-		The same apples to calculation of anonymous union size. At this stage sizes of
+		The same applies to calculation of anonymous union size. At this stage sizes of
 		union memebers might be unknow and set to zero (MR_ADD_TYPES macro case). We need to
-		detect fields sizes first and set seze of anonymous union to maximum of those values.
+		detect fields sizes first and set size of anonymous union to maximum of those values.
 
 		if (tdp_->size < fields[j]->stype.size)
 		  tdp_->size = fields[j]->stype.size;
@@ -1653,6 +1653,11 @@ mr_func_field_detect (mr_fd_t * fdp)
 {
   if (fdp->stype.mr_type != MR_TYPE_FUNC)
     return;
+
+  static mr_td_t * mr_func_tdp = NULL;
+  if (mr_func_tdp == NULL)
+    mr_func_tdp = mr_get_td_by_name_internal ("mr_func_t");
+  fdp->stype.tdp = mr_func_tdp;
 
   int i;
   for (i = 0; fdp->func_param.args[i] != NULL; ++i)
