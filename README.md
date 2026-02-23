@@ -743,6 +743,7 @@ keywords:
 * `const`
 * `struct`
 * `union`
+* `enum`
 
 Here is a valid example:
 ```c

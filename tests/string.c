@@ -63,18 +63,35 @@ START_TEST (pointer_match_content_known) {
   mr_ptrdes_t * ptrs = MR_SAVE (struct_ca_str_t, &orig);
   if (ptrs != NULL)
     {
-      bool string_is_a_reference = false;
-      mr_idx_t i;
-      for (i = 1; i < ptrs[0].next; ++i)
-	if (ptrs[i].fdp &&
-	    (ptrs[i].fdp->name.str != NULL) &&
-	    (0 == strcmp (ptrs[i].fdp->name.str, "y")) &&
-	    (ptrs[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	  string_is_a_reference = true;
-
+      mr_ptrdes_t expected[] =
+	{
+	  {},
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "struct_ca_str_t", .name.str = "struct_ca_str_t" }},
+	    .mr_type = MR_TYPE_STRUCT,
+	    .flags = MR_IS_UNNAMED,
+	    .next = 0,
+	    .first_child = 2,
+	  },
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
+	    .mr_type = MR_TYPE_CHAR_ARRAY,
+	    .flags = MR_IS_REFERENCED,
+	    .next = 3,
+	    .first_child = 0,
+	  },
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
+	    .mr_type = MR_TYPE_STRING,
+	    .flags = MR_IS_REFERENCE,
+	    .next = 0,
+	    .first_child = 2,
+	  },
+	};
+      ASSERT_MR_SAVE (struct_ca_str_t, &orig, expected);
       MR_FREE (ptrs);
-      ck_assert_msg (string_is_a_reference, "string was not resolved a reference on char array");
     }
+
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_ca_str_t, &orig);
 } END_TEST
 
@@ -84,37 +101,79 @@ START_TEST (pointer_match_content_unknown) {
   mr_ptrdes_t * ptrs = MR_SAVE (struct_str_ca_t, &orig);
   if (ptrs != NULL)
     {
-      bool string_is_a_reference = false;
-      mr_idx_t i;
-      for (i = 1; i < ptrs[0].next; ++i)
-	if (ptrs[i].fdp &&
-	    (ptrs[i].fdp->name.str != NULL) &&
-	    (0 == strcmp (ptrs[i].fdp->name.str, "y")) &&
-	    (ptrs[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	  string_is_a_reference = true;
+      mr_ptrdes_t expected[] =
+	{
+	  {},
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "struct_str_ca_t", .name.str = "struct_str_ca_t" }},
+	    .mr_type = MR_TYPE_STRUCT,
+	    .flags = MR_IS_UNNAMED,
+	    .next = 0,
+	    .first_child = 2,
+	  },
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
+	    .mr_type = MR_TYPE_STRING,
+	    .flags = MR_IS_REFERENCE,
+	    .next = 3,
+	    .first_child = 3,
+	  },
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
+	    .mr_type = MR_TYPE_CHAR_ARRAY,
+	    .flags = MR_IS_REFERENCED,
+	    .next = 0,
+	    .first_child = 0,
+	  },
+	};
+      ASSERT_MR_SAVE (struct_str_ca_t, &orig, expected);
 
       MR_FREE (ptrs);
-      ck_assert_msg (string_is_a_reference, "string was not resolved a reference on char array");
     }
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_ca_t, &orig);
 } END_TEST
 
 START_TEST (pointer_match_another_pointer) {
   struct_str_str_t orig = { .x = "string_t", };
-  mr_td_t * string_tdp = mr_get_td_by_name ("string_t");
   orig.y = orig.x;
   mr_ptrdes_t * ptrs = MR_SAVE (struct_str_str_t, &orig);
 
   if (ptrs != NULL)
     {
-      int ptr_cnt = 0;
-      mr_idx_t i;
-      for (i = 1; i < ptrs[0].next; ++i)
-	if ((ptrs[i].fdp->stype.tdp == string_tdp) && (ptrs[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	  ++ptr_cnt;
-      
+      mr_ptrdes_t expected[] =
+	{
+	  {},
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "struct_str_str_t", .name.str = "struct_str_str_t" }},
+	    .mr_type = MR_TYPE_STRUCT,
+	    .flags = MR_IS_UNNAMED,
+	    .next = 0,
+	    .first_child = 2,
+	  },
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "x" }},
+	    .mr_type = MR_TYPE_STRING,
+	    .flags = MR_IS_REFERENCED,
+	    .next = 4,
+	    .first_child = 0,
+	  },
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
+	    .mr_type = MR_TYPE_CHAR_ARRAY,
+	    .flags = MR_IS_REFERENCED,
+	    .next = 0,
+	    .first_child = 0,
+	  },
+	  {
+	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
+	    .mr_type = MR_TYPE_STRING,
+	    .flags = MR_IS_CONTENT_REFERENCE,
+	    .next = 0,
+	    .first_child = 2,
+	  },
+	};
+      ASSERT_MR_SAVE (struct_str_str_t, &orig, expected);
       MR_FREE (ptrs);
-      ck_assert_msg (1 == ptr_cnt, "pointer on existing string was not detected properly");
     }
   ALL_METHODS (ASSERT_SAVE_LOAD, struct_str_str_t, &orig);
 } END_TEST
