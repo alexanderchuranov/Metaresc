@@ -22,7 +22,7 @@ main (int argc, char * argv[])
   MR_PRINT ("Load status ", (mr_status_t, &status));
 
   //mr_conf = mr_conf_loaded;
-  char * mr_conf_serialized_ = MR_SAVE_JSON (mr_conf_t, &mr_conf_loaded);
+  char * mr_conf_serialized_ = MR_SAVE_CINIT (mr_conf_t, &mr_conf_loaded);
   MR_PRINT ("#2 Serialized '", mr_conf_serialized_, "'\n");
 
   mr_conf = mr_conf_saved;
