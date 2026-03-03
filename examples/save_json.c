@@ -15,15 +15,15 @@ main (int argc, char * argv[])
 {
   mr_conf_t mr_conf_saved = mr_conf;
   char * mr_conf_serialized = MR_SAVE_JSON (mr_conf_t, &mr_conf);
-  MR_PRINT ("#1 Serialized ", strlen (mr_conf_serialized), "\n");
+  MR_PRINT ("#1 Serialized ", (mr_conf_serialized), "\n");
 
   mr_conf_t mr_conf_loaded = {};
   mr_status_t status = MR_LOAD_JSON (mr_conf_t, mr_conf_serialized, &mr_conf_loaded);
   MR_PRINT ("Load status ", (mr_status_t, &status));
 
   //mr_conf = mr_conf_loaded;
-  char * mr_conf_serialized_ = MR_SAVE_CINIT (mr_conf_t, &mr_conf_loaded);
-  MR_PRINT ("#2 Serialized '", mr_conf_serialized_, "'\n");
+  mr_ptrdes_t * mr_conf_serialized_ = MR_SAVE (mr_conf_t, &mr_conf_loaded);
+  MR_PRINT ("#2 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
 
   mr_conf = mr_conf_saved;
   MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);
