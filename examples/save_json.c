@@ -23,7 +23,7 @@ main (int argc, char * argv[])
 
   //mr_conf = mr_conf_loaded;
   mr_ptrdes_t * mr_conf_serialized_ = NULL;
-  mr_type_void_fields ("mr_conf_t", "type_by_name");
+  mr_type_void_fields ("mr_conf_t", "type_by_name", "field_by_name", "field_by_name_and_type");
   mr_conf_serialized_ = MR_SAVE (mr_conf_t, &mr_conf_loaded);
   MR_PRINT ("#5 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
 
