@@ -22,18 +22,10 @@ main (int argc, char * argv[])
   MR_PRINT ("Load status ", (mr_status_t, &status));
 
   //mr_conf = mr_conf_loaded;
-  mr_ptrdes_t * mr_conf_serialized_ = MR_SAVE (mr_mem_t, &mr_conf_loaded.mr_mem);
-  MR_PRINT ("#2 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
-  mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.var_types);
-  MR_PRINT ("#3 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
-  mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.enum_by_name);
-  MR_PRINT ("#4 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
-  mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.type_by_name);
+  mr_ptrdes_t * mr_conf_serialized_ = NULL;
+  mr_type_void_fields ("mr_conf_t", "type_by_name");
+  mr_conf_serialized_ = MR_SAVE (mr_conf_t, &mr_conf_loaded);
   MR_PRINT ("#5 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
-  mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.field_by_name);
-  MR_PRINT ("#6 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
-  mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.field_by_name_and_type);
-  MR_PRINT ("#7 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
 
   mr_conf = mr_conf_saved;
   MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);
