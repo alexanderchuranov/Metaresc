@@ -1057,8 +1057,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
     return (0); /* memory allocation error occured */
   mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
 
-  fprintf (stderr, "[%d] type %s name %s mr_type %d\n", idx,
-	  fdp->stype.tdp ? fdp->stype.tdp->type.str : "NONE", fdp->name.str, fdp->stype.mr_type);
   ptrdes->data.ptr = data;
   ptrdes->fdp = fdp;
   ptrdes->mr_type = fdp->stype.mr_type;
@@ -1072,6 +1070,14 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
   ptrdes->value_type = MR_VT_UD_SET;
   ptrdes->ud_set.count = 0;
 
+  if (idx == 13987)
+    {
+      mr_idx_t i;
+      for (i = idx; i != MR_NULL_IDX; i = mr_save_data->ptrs.ra[i].parent)
+	fprintf (stderr, "[%d] type %s name %s mr_type %d\n", i,
+		 mr_save_data->ptrs.ra[i].fdp->stype.tdp ? mr_save_data->ptrs.ra[i].fdp->stype.tdp->type.str : "NONE",
+		 mr_save_data->ptrs.ra[i].fdp->name.str, mr_save_data->ptrs.ra[i].mr_type);
+    }
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->untyped_ptrs, (uintptr_t)idx);
   if (NULL == search_result)
