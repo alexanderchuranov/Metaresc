@@ -17,6 +17,15 @@ main (int argc, char * argv[])
   char * mr_conf_serialized = MR_SAVE_JSON (mr_conf_t, &mr_conf);
   MR_PRINT ("#1 Serialized ", strlen (mr_conf_serialized), "\n");
 
+  mr_ra_ptrdes_t _ptrs_ = {};
+  mr_add_ptr_to_list (&_ptrs_);
+  if (_ptrs_.ra)
+    {
+      mr_json_load (mr_conf_serialized, &_ptrs_);
+      MR_PRINT (_ptrs_.ra[21102], "\n");
+      mr_free_load_values (&_ptrs_);
+    }
+
   mr_conf_t mr_conf_loaded = {};
   mr_status_t status = MR_LOAD_JSON (mr_conf_t, mr_conf_serialized, &mr_conf_loaded);
   MR_PRINT ("Load status ", (mr_status_t, &status));
