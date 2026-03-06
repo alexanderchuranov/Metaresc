@@ -22,7 +22,12 @@ main (int argc, char * argv[])
   if (_ptrs_.ra)
     {
       mr_json_load (mr_conf_serialized, &_ptrs_);
-      MR_PRINT (_ptrs_.ra[21102], "\n");
+      int i;
+      for (i = _ptrs_.size / sizeof (_ptrs_.ra[0]) - 1; i > 0; --i)
+	if (_ptrs_.ra[i].value_type == MR_VT_SUBSTR_POS)
+	  if ((sizeof ("mr_fd_t") - sizeof ("") == _ptrs_.ra[i].vt_substr_pos.length) &&
+	      (strncmp (&_ptrs_.str[_ptrs_.ra[i].vt_substr_pos.offset], "mr_fd_t", sizeof ("mr_fd_t") - sizeof ("")) == 0))
+	    MR_PRINT ("[", i, "] ", _ptrs_.ra[i], "\n");
       mr_free_load_values (&_ptrs_);
     }
 

@@ -157,7 +157,6 @@ json_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     case MR_RECORD_TYPE_CLASS:
     case MR_UNION_TYPE_CLASS:
     case MR_ARRAY_TYPE_CLASS:
-      //return (mr_ra_append_string (mr_ra_str, "{}"));
     case MR_POINTER_TYPE_CLASS:
       return (mr_ra_append_string (mr_ra_str, JSON_NULL));
     default:
