@@ -1057,6 +1057,8 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
     return (0); /* memory allocation error occured */
   mr_ptrdes_t * ptrdes = &mr_save_data->ptrs.ra[idx];
 
+  printf ("[%d] type %s name %s mr_type %d\n", idx,
+	  fdp->stype.tdp ? fdp->stype.tdp->type.str : "NONE", fdp->name.str, fdp->stype.mr_type);
   ptrdes->data.ptr = data;
   ptrdes->fdp = fdp;
   ptrdes->mr_type = fdp->stype.mr_type;
