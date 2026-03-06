@@ -1072,10 +1072,10 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
 
   if (idx == 13987)
     {
-      mr_idx_t i;
-      fprintf (stderr, "prev field '%s'\n", mr_save_data->ptrs.ra[idx - 1].fdp->name.str);
-      if (0 == strcmp (mr_save_data->ptrs.ra[idx - 1].fdp->name.str, "meta"))
-	fprintf (stderr, "meta '%s'\n", *(char**)mr_save_data->ptrs.ra[idx - 1].data.ptr);
+      mr_idx_t i, first_child = mr_save_data->ptrs.ra[mr_save_data->ptrs.ra[idx].parent].first_child;
+      if (mr_save_data->ptrs.ra[first_child].fdp->name.str &&
+	  (0 == strcmp (mr_save_data->ptrs.ra[first_child].fdp->name.str, "type")))
+	fprintf (stderr, "type '%s'\n", *(char**)mr_save_data->ptrs.ra[first_child].data.ptr);
       for (i = idx; i != MR_NULL_IDX; i = mr_save_data->ptrs.ra[i].parent)
 	fprintf (stderr, "[%d] type %s name %s mr_type %d\n", i,
 		 mr_save_data->ptrs.ra[i].fdp->stype.tdp ? mr_save_data->ptrs.ra[i].fdp->stype.tdp->type.str : "NONE",
