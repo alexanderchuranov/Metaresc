@@ -1070,17 +1070,6 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
   ptrdes->value_type = MR_VT_UD_SET;
   ptrdes->ud_set.count = 0;
 
-  if (idx == 13987)
-    {
-      mr_idx_t i, first_child = mr_save_data->ptrs.ra[mr_save_data->ptrs.ra[idx].parent].first_child;
-      if (mr_save_data->ptrs.ra[first_child].fdp->name.str &&
-	  (0 == strcmp (mr_save_data->ptrs.ra[first_child].fdp->name.str, "type")))
-	fprintf (stderr, "type '%s'\n", *(char**)mr_save_data->ptrs.ra[first_child].data.ptr);
-      for (i = idx; i != MR_NULL_IDX; i = mr_save_data->ptrs.ra[i].parent)
-	fprintf (stderr, "[%d] type %s name %s mr_type %d\n", i,
-		 mr_save_data->ptrs.ra[i].fdp->stype.tdp ? mr_save_data->ptrs.ra[i].fdp->stype.tdp->type.str : "NONE",
-		 mr_save_data->ptrs.ra[i].fdp->name.str, mr_save_data->ptrs.ra[i].mr_type);
-    }
   /* forward reference resolving */
   mr_ptr_t * search_result = mr_ic_add (&mr_save_data->untyped_ptrs, (uintptr_t)idx);
   if (NULL == search_result)
@@ -1111,8 +1100,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
     nodes_added = save_handler (mr_save_data);
 
   mr_save_data->ptrs.ra[idx].fdp = mr_get_persistent_fd (mr_save_data->ptrs.ra, idx);
-  if (idx == 13987)
-    fprintf (stderr, "done\n");
+
   return (nodes_added);
 }
 

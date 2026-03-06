@@ -22,14 +22,18 @@ main (int argc, char * argv[])
   MR_PRINT ("Load status ", (mr_status_t, &status));
 
   //mr_conf = mr_conf_loaded;
-  mr_ptrdes_t * mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.type_by_name);
-  MR_PRINT ("Serialized ", mr_conf_serialized_->next, "\n");
-
+  //mr_ptrdes_t * mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.type_by_name);
+  //MR_PRINT ("Serialized ", mr_conf_serialized_->next, "\n");
+  int i;
+  mr_ic_hash_t * hash = &mr_conf_loaded.type_by_name.hash;
+  for (i = 0; i < hash->count; ++i)
+    if (hash->hash_table[i].ptr)
+      MR_PRINT ("[", i, "] type ", ((mr_td_t*)hash->hash_table[i].ptr)->type.str, "\n");
   mr_conf = mr_conf_saved;
   //MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);
   MR_PRINT ("Free done\n");
 
-  MR_FREE (mr_conf_serialized_);
+  //MR_FREE (mr_conf_serialized_);
   MR_FREE (mr_conf_serialized);
   return (EXIT_SUCCESS);
 
