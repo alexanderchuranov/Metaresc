@@ -22,13 +22,11 @@ main (int argc, char * argv[])
   MR_PRINT ("Load status ", (mr_status_t, &status));
 
   //mr_conf = mr_conf_loaded;
-  mr_ptrdes_t * mr_conf_serialized_ = NULL;
-  mr_type_void_fields ("mr_conf_t", "type_by_name", "field_by_name", "field_by_name_and_type");
-  mr_conf_serialized_ = MR_SAVE (mr_conf_t, &mr_conf_loaded);
-  MR_PRINT ("#5 Serialized '", (mr_ptrdes_t, mr_conf_serialized_), "'\n");
+  mr_ptrdes_t * mr_conf_serialized_ = MR_SAVE (mr_ic_t, &mr_conf_loaded.type_by_name);
+  MR_PRINT ("Serialized ", mr_conf_serialized_->next, "\n");
 
   mr_conf = mr_conf_saved;
-  MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);
+  //MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);
   MR_PRINT ("Free done\n");
 
   MR_FREE (mr_conf_serialized_);
