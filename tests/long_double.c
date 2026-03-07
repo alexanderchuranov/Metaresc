@@ -11,7 +11,6 @@
       bool cmp = (x_non_nan != y_non_nan);	\
       if (x_non_nan && y_non_nan)		\
 	cmp = (_x != _y);			\
-      if (cmp) fprintf (stderr, "Mismatch %Lg %Lg\n", _x, _y);	\
       cmp;					\
     })
 
