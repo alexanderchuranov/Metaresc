@@ -32,7 +32,7 @@ main (int argc, char * argv[])
   for (i = 1; i < ptrs->next; ++i)
     ptrs[i].idx = 0;
   mr_remove_empty_nodes (ptrs);
-
+  MR_PRINT ((mr_ptrdes_t, ptrs), "\n");
   max = 0;
   for (i = 1; i < ptrs->next; ++i)
     {
