@@ -36,10 +36,6 @@ main (int argc, char * argv[])
 
   int max = 0;
   for (i = 1; i < ptrs->next; ++i)
-    if (max < ptrs[i].idx)
-      max = ptrs[i].idx;
-  MR_PRINT ("Save count = ", ptrs->next, " max ", max, "\n");
-  for (i = 1; i < ptrs->next; ++i)
     ptrs[i].idx = 0;
   mr_remove_empty_nodes (ptrs);
 
@@ -69,7 +65,7 @@ main (int argc, char * argv[])
 		    _ptrs_.ra[j].fdp ? _ptrs_.ra[j].fdp->name.str : "unnamed", ") ");
 	MR_PRINT ("\n");
       }
-  return (EXIT_SUCCESS);
+  //return (EXIT_SUCCESS);
 
   mr_conf_t mr_conf_loaded = {};
   mr_status_t status = MR_LOAD_JSON (mr_conf_t, mr_conf_serialized, &mr_conf_loaded);

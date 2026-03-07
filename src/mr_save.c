@@ -1426,7 +1426,6 @@ mr_remove_empty_nodes (mr_ptrdes_t * ptrs)
     {
       mr_idx_t idx = 1;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx);
-      fprintf (stderr, "Reindexing done\n");
     }
 }
 
