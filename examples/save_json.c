@@ -24,13 +24,16 @@ main (int argc, char * argv[])
   mr_ptrdes_t * map[ptrs->next] = {};
   int i, j;
 
-  MR_PRINT ("Save count = ", ptrs->next, "\n");
+  int max = 0;
+  for (i = 1; i < ptrs->next; ++i)
+    if (max < ptrs[i].idx)
+      max = ptrs[i].idx;
+  MR_PRINT ("Save count = ", ptrs->next, " max ", max, "\n");
   for (i = 1; i < ptrs->next; ++i)
     ptrs[i].idx = 0;
   mr_remove_empty_nodes (ptrs);
-  MR_PRINT ("Save count = ", ptrs->next, "\n");
 
-  int max = 0;
+  max = 0;
   for (i = 1; i < ptrs->next; ++i)
     {
       map[ptrs[i].idx] = &ptrs[i];
