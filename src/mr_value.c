@@ -17,15 +17,15 @@
   This function is not static or inline intentionally - to avoid incorrect optimization.
 */
 bool
-mr_long_double_equals_double (long double * x, double * y)
+mr_long_double_equals_double (void * x, void * y)
 {
-  return (*x == (long double)*y);
+  return (*(long double *)x == (long double)*(double *)y);
 }
 
 bool
-mr_complex_long_double_equals_complex_float (complex long double * x, complex float * y)
+mr_complex_long_double_equals_complex_float (void * x, void * y)
 {
-  return (*x == (complex long double)*y);
+  return (*(complex long double *)x == (complex long double)*(complex float *)y);
 }
 
 mr_status_t
