@@ -1385,9 +1385,7 @@ mr_remove_empty_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_
 	    && !(ptrs[*next].flags & MR_IS_REFERENCED)
 	    && ((REMOVE_IF_EMPTY >> ptrs[*next].mr_type) & 1))
 	  {
-	    bool * need_reindex = context;
-	    if (!*need_reindex)
-	      *need_reindex = true;
+	    ptrs->vt_uintptr = true;
 	    /* empty node found - unchain it from previous node */
 	    *next = ptrs[*next].next;
 	  }
@@ -1421,10 +1419,10 @@ mr_renumber_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t or
 void
 mr_remove_empty_nodes (mr_ptrdes_t * ptrs)
 {
-  bool need_reindex_empty = false;
-  mr_ptrs_dfs (ptrs, mr_remove_empty_node, &need_reindex_empty);
+  ptrs->vt_uintptr = false;
+  mr_ptrs_dfs (ptrs, mr_remove_empty_node, NULL);
   /* re-enumerate nodes after empty nodes removal */
-  if (need_reindex_empty)
+  if (ptrs->vt_uintptr)
     {
       mr_idx_t idx = 1;
       mr_ptrs_dfs (ptrs, mr_renumber_node, &idx);
