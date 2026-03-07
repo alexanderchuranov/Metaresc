@@ -10,6 +10,16 @@ TYPEDEF_STRUCT (employee_t,
 		(int, salary),
 		)
 
+mr_status_t
+mr_renumber_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+{
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
+  mr_idx_t * idx_ = context;
+  ptrs[idx].idx = (*idx_)++;
+  return (MR_SUCCESS);
+}
+
 int
 main (int argc, char * argv[])
 {
@@ -32,7 +42,9 @@ main (int argc, char * argv[])
   for (i = 1; i < ptrs->next; ++i)
     ptrs[i].idx = 0;
   mr_remove_empty_nodes (ptrs);
-  MR_PRINT ((mr_ptrdes_t, ptrs), "\n");
+  mr_idx_t idx = 1;
+  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx);
+
   max = 0;
   for (i = 1; i < ptrs->next; ++i)
     {
