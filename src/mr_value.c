@@ -76,7 +76,6 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
     case MR_VT_LONG_DOUBLE:
       {
 	double _double = mr_value->vt_long_double;
-	fprintf (stderr, "ld %.20Lg d %.20g eq = %d\n", mr_value->vt_long_double, _double, (mr_value->vt_long_double == _double));
 	if (mr_value->vt_long_double == _double)
 	  {
 	    ptrdes->vt_double = _double;
@@ -95,7 +94,7 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
     case MR_VT_COMPLEX_LONG_DOUBLE:
       {
 	complex float _complex_float = mr_value->vt_complex_long_double;
-	if (mr_complex_long_double_equals_complex_float (&mr_value->vt_complex_long_double, &_complex_float))
+	if (mr_value->vt_complex_long_double == _complex_float)
 	  {
 	    ptrdes->vt_complex_float = _complex_float;
 	    ptrdes->value_type = MR_VT_COMPLEX_FLOAT;
