@@ -60,6 +60,7 @@ START_TEST (json_cross_ref) {
 
   mr_free_load_values (&ptrs_json);
   MR_FREE (mr_conf_json);
+  MR_FREE (ptrs_orig);
 
   ck_assert_msg (!mismatched_nodes, "Deserialized JSON has mismatched nodes with original structure");
 } END_TEST
