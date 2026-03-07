@@ -28,11 +28,17 @@ main (int argc, char * argv[])
     ptrs[i].idx = 0;
   mr_remove_empty_nodes (ptrs);
 
+  int max = 0;
   for (i = 1; i < ptrs->next; ++i)
-    map[ptrs[i].idx] = &ptrs[i];
-
+    {
+      map[ptrs[i].idx] = &ptrs[i];
+      if (max < ptrs[i].idx)
+	max = ptrs[i].idx;
+    }
+  MR_PRINT ("Load count ", _ptrs_.size / sizeof (_ptrs_.ra[0]), " save max idx ", max, "\n");
   for (i = 1; i < _ptrs_.size / sizeof (_ptrs_.ra[0]); ++i)
-    if (_ptrs_.ra[i].fdp && (strcmp (_ptrs_.ra[i].fdp->name.str, map[i]->fdp->name.str) != 0))
+    if (_ptrs_.ra[i].fdp && map[i] && map[i]->fdp &&
+	(strcmp (_ptrs_.ra[i].fdp->name.str, map[i]->fdp->name.str) != 0))
       {
 	MR_PRINT ("[", i, "] ",
 		  map[i]->fdp ? map[i]->fdp->name.str : "unnamed", " ",
