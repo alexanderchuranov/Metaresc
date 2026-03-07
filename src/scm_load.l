@@ -58,6 +58,7 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 {FLOAT_NUMBER} {
   yylval->value.value_type = MR_VT_LONG_DOUBLE;
   yylval->value.vt_long_double = strtold (yytext, NULL);
+  fprintf (stderr, "SCM load float %.20Lg\n", yylval->value.vt_long_double);
   return (TOK_SCM_NUMBER);
 }
 

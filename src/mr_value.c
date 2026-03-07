@@ -76,6 +76,7 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
     case MR_VT_LONG_DOUBLE:
       if (mr_long_double_equals_double (mr_value->vt_long_double, mr_value->vt_long_double))
 	{
+	  fprintf (stderr, "Long double %.20Lg converged to double %.20g\n", mr_value->vt_long_double, (double)mr_value->vt_long_double);
 	  ptrdes->vt_double = mr_value->vt_long_double;
 	  ptrdes->value_type = MR_VT_DOUBLE;
 	}
