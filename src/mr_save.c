@@ -1386,8 +1386,6 @@ mr_remove_empty_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_
 	    && ((REMOVE_IF_EMPTY >> ptrs[*next].mr_type) & 1))
 	  {
 	    bool * need_reindex = context;
-	    if (!*need_reindex)
-	      fprintf (stderr, "Reindexing required\n");
 	    *need_reindex = true;
 	    /* empty node found - unchain it from previous node */
 	    *next = ptrs[*next].next;
