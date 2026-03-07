@@ -1511,6 +1511,7 @@ extern int mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 #define mr_type_void_fields(type, ...) MR_COMPILETIME_ASSERT (MR_VALIDATE_ALL_ARGS_ARE_STRINGS (__VA_ARGS__)); mr_type_void_fields_impl (type, __VA_ARGS__, NULL)
 extern void __attribute__ ((sentinel(0))) mr_type_void_fields_impl (char * type, char * name, ...);
 extern mr_size_t mr_type_size (mr_type_t mr_type);
+extern void mr_noop (void * ptr);
 extern void mr_conf_init ();
 extern mr_status_t mr_free_recursively (mr_ptrdes_t * ptrs);
 extern mr_status_t mr_copy_recursively (mr_ptrdes_t * ptrs, void * data);

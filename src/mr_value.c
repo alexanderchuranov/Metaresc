@@ -10,24 +10,6 @@
 #include <mr_value.h>
 #include <mr_ic.h>
 
-/*
-  GCC 12.x on platforms with long double support do an aggressive optimization and
-  incorrectly assume that (x == (double) x) is always true. Here is a function that
-  forces GCC to properly cast value and compare it with original value.
-  This function is not static or inline intentionally - to avoid incorrect optimization.
-*/
-bool
-mr_long_double_equals_double (void * x, void * y)
-{
-  return (*(long double *)x == (long double)*(double *)y);
-}
-
-bool
-mr_complex_long_double_equals_complex_float (void * x, void * y)
-{
-  return (*(complex long double *)x == (complex long double)*(complex float *)y);
-}
-
 mr_status_t
 mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
 {
@@ -76,6 +58,13 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
     case MR_VT_LONG_DOUBLE:
       {
 	double _double = mr_value->vt_long_double;
+	/*
+	  GCC 12.x on platforms with long double support do an aggressive optimization and
+	  incorrectly assume that (x == (double) x) is always true. To workaround this we
+	  explicitly cast value to double and expose it to external function, so compiler
+	  will not be eligible to optimize it's value.
+	*/
+	mr_noop (&_double);
 	if (mr_value->vt_long_double == _double)
 	  {
 	    ptrdes->vt_double = _double;
@@ -94,6 +83,7 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
     case MR_VT_COMPLEX_LONG_DOUBLE:
       {
 	complex float _complex_float = mr_value->vt_complex_long_double;
+	mr_noop (&_complex_float);
 	if (mr_value->vt_complex_long_double == _complex_float)
 	  {
 	    ptrdes->vt_complex_float = _complex_float;
