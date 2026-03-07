@@ -42,8 +42,6 @@ main (int argc, char * argv[])
   for (i = 1; i < ptrs->next; ++i)
     ptrs[i].idx = 0;
   mr_remove_empty_nodes (ptrs);
-  mr_idx_t idx = 1;
-  mr_ptrs_dfs (ptrs, mr_renumber_node, &idx);
 
   max = 0;
   for (i = 1; i < ptrs->next; ++i)
