@@ -2090,9 +2090,7 @@ void mr_augment_fields (mr_td_t * tdp)
 	  char count_field[name_length + sizeof (MR_POINTER_COUNT_SUFFIX_STR)];
 	  strcpy (count_field, fdp->name.str);
 	  strcat (count_field, MR_POINTER_COUNT_SUFFIX_STR);
-	  mr_fd_t * count_field_fdp = mr_get_fd_by_name (tdp, count_field);
-	  if ((tdp->mr_type != MR_TYPE_STRUCT) && (count_field_fdp == NULL))
-	    count_field_fdp = mr_get_any_fd_by_name (count_field, NULL);
+	  mr_fd_t * count_field_fdp = mr_get_any_fd_by_name (count_field, NULL);
 
 	  if (count_field_fdp != NULL)
 	    {
@@ -2104,9 +2102,7 @@ void mr_augment_fields (mr_td_t * tdp)
 	      char size_field[name_length + sizeof (MR_POINTER_SIZE_SUFFIX_STR)];
 	      strcpy (size_field, fdp->name.str);
 	      strcat (size_field, MR_POINTER_SIZE_SUFFIX_STR);
-	      mr_fd_t * size_field_fdp = mr_get_fd_by_name (tdp, size_field);
-	      if ((tdp->mr_type != MR_TYPE_STRUCT) && (size_field_fdp == NULL))
-		size_field_fdp = mr_get_any_fd_by_name (size_field, NULL);
+	      mr_fd_t * size_field_fdp = mr_get_any_fd_by_name (size_field, NULL);
 
 	      if (size_field_fdp != NULL)
 		{

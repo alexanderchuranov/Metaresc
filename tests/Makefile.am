@@ -32,7 +32,7 @@ endif
 endif
 
 if HAVE_BISON_FLEX
-  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr
+  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr json_cross_ref
 
   expr.$(OBJEXT): CFLAGS += -ffast-math
 
