@@ -92,15 +92,13 @@ json_unquote_str (mr_substr_t * substr, char * dst)
 
 json: element
 
-element: push_node value pop_node
-
-pop_node: {
+element: start_node value {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
   (void)mr_json_nerrs; /* workaround compiler warning: variable 'mr_json_nerrs' set but not used */
 }
 
-push_node: { 
+start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (MR_NULL_IDX == idx)
