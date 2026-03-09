@@ -1856,8 +1856,6 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
   return (result ? result->ptr : NULL);
 }
 
-void mr_noop (void * arg) {}
-
 void __attribute__ ((sentinel(0)))
 mr_type_void_fields_impl (char * type, char * name, ...)
 {

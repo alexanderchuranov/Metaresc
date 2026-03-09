@@ -56,47 +56,33 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
       break;
 
     case MR_VT_LONG_DOUBLE:
-      {
-	double _double = mr_value->vt_long_double;
-	/*
-	  GCC 12.x on platforms with long double support do an aggressive optimization and
-	  incorrectly assume that (x == (double) x) is always true. To workaround this we
-	  explicitly cast value to double and expose it to external function, so compiler
-	  will not be eligible to optimize it's value.
-	*/
-	mr_noop (&_double);
-	if (mr_value->vt_long_double == _double)
-	  {
-	    ptrdes->vt_double = _double;
-	    ptrdes->value_type = MR_VT_DOUBLE;
-	  }
-	else
-	  {
-	    ptrdes->vt_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_long_double));
-	    if (NULL == ptrdes->vt_long_double)
-	      return (MR_FAILURE);
-	    *ptrdes->vt_long_double = mr_value->vt_long_double;
-	  }
-      }
+      if (mr_value->vt_long_double == (typeof (ptrdes->vt_double))mr_value->vt_long_double)
+	{
+	  ptrdes->vt_double = mr_value->vt_long_double;
+	  ptrdes->value_type = MR_VT_DOUBLE;
+	}
+      else
+	{
+	  ptrdes->vt_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_long_double));
+	  if (NULL == ptrdes->vt_long_double)
+	    return (MR_FAILURE);
+	  *ptrdes->vt_long_double = mr_value->vt_long_double;
+	}
       break;
 
     case MR_VT_COMPLEX_LONG_DOUBLE:
-      {
-	complex float _complex_float = mr_value->vt_complex_long_double;
-	mr_noop (&_complex_float);
-	if (mr_value->vt_complex_long_double == _complex_float)
-	  {
-	    ptrdes->vt_complex_float = _complex_float;
-	    ptrdes->value_type = MR_VT_COMPLEX_FLOAT;
-	  }
-	else
-	  {
-	    ptrdes->vt_complex_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_complex_long_double));
-	    if (NULL == ptrdes->vt_complex_long_double)
-	      return (MR_FAILURE);
-	    *ptrdes->vt_complex_long_double = mr_value->vt_complex_long_double;
-	  }
-      }
+      if (mr_value->vt_complex_long_double == (typeof (ptrdes->vt_complex_float))mr_value->vt_complex_long_double)
+	{
+	  ptrdes->vt_complex_float = mr_value->vt_complex_long_double;
+	  ptrdes->value_type = MR_VT_COMPLEX_FLOAT;
+	}
+      else
+	{
+	  ptrdes->vt_complex_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_complex_long_double));
+	  if (NULL == ptrdes->vt_complex_long_double)
+	    return (MR_FAILURE);
+	  *ptrdes->vt_complex_long_double = mr_value->vt_complex_long_double;
+	}
       break;
 
     default:
