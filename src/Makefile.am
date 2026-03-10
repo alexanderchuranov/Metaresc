@@ -1,6 +1,7 @@
 # -*- makefile -*-
 
-AM_CPPFLAGS = @AM_CPPFLAGS@ -I$(top_srcdir)/src
+AM_CFLAGS = @AM_CFLAGS@
+AM_CPPFLAGS = -I$(top_srcdir)/src
 
 DISTCLEANFILES = mr_pp.h
 MOSTLYCLEANFILES = *.tab.[ch] *.lex.[ch]
