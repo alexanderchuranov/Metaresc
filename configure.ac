@@ -31,13 +31,13 @@ test -n "${YACC}" || YACC="bison"
 AC_PROG_YACC
 AC_PROG_LEX
 
-AM_CFLAGS=""
+AM_CPPFLAGS=""
 for aux_CFLAGS in -Wall -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion -fcx-limited-range
 do
   save_CFLAGS=${CFLAGS}
   CFLAGS="${CFLAGS} ${aux_CFLAGS}"
   AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-  AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CFLAGS="${AM_CFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+  AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_CPPFLAGS="${AM_CPPFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
   CFLAGS=${save_CFLAGS}
 done
 
@@ -73,7 +73,7 @@ fi
 AM_CONDITIONAL(HAVE_LIBXML2, test x${HAVE_LIBXML2} = xyes)
 if [[ x${HAVE_LIBXML2} = xyes ]]; then
   AC_DEFINE(HAVE_LIBXML2, [], [define if libxml2 is present])
-  AM_CFLAGS="${AM_CFLAGS} ${LIBXML2_CFLAGS}"
+  AM_CPPFLAGS="${AM_CPPFLAGS} ${LIBXML2_CFLAGS}"
   LIBS="${LIBS} ${LIBXML2_LIBS}"
 fi
 
@@ -86,11 +86,11 @@ fi
 AM_CONDITIONAL(HAVE_LIBYAML, test x${HAVE_LIBYAML} = xyes)
 if [[ x${HAVE_LIBYAML} = xyes ]]; then
   AC_DEFINE(HAVE_LIBYAML, [], [define if libyaml is present])
-  AM_CFLAGS="${AM_CFLAGS} ${LIBYAML_CFLAGS}"
+  AM_CPPFLAGS="${AM_CPPFLAGS} ${LIBYAML_CFLAGS}"
   LIBS="${LIBS} ${LIBYAML_LIBS}"
 fi
 
-AC_SUBST(AM_CFLAGS, ${AM_CFLAGS})
+AC_SUBST(AM_CPPFLAGS, ${AM_CPPFLAGS})
 AC_SUBST(AM_LDFLAGS, ${AM_LDFLAGS})
 
 AC_CHECK_LIB(execinfo, backtrace, [ LIBS="${LIBS} -lexecinfo" ])

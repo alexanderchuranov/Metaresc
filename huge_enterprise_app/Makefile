@@ -4,7 +4,7 @@ NUMFILES ?= 100
 BINARY = huge_enterprise_app
 
 CFLAGS += -Wall -I../src `xml2-config --cflags`
-LDADD += ../src/.libs/libmetaresc.a `xml2-config --libs`
+LDADD += ../src/.libs/libmetaresc.a `xml2-config --libs` -lyaml
 
 all: ${BINARY}
 
@@ -23,7 +23,7 @@ file_%.h:
 
 main.h: $(patsubst %.c, %.h, $(patsubst main.c, , ${SOURCES})) 
 	echo -e "#ifndef _MAIN_H_\n#define _MAIN_H_\n" $(patsubst %,"#include \"%\"\n", $?) "#endif\n" > main.h
-	
+
 clean:
 	@${RM} ${BINARY} *.o
 
