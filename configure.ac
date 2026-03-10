@@ -32,7 +32,7 @@ AC_PROG_YACC
 AC_PROG_LEX
 
 AM_CFLAGS=""
-for aux_CFLAGS in -Wall -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion -fcx-limited-range
+for aux_CFLAGS in -Wall -O2 -gdwarf-4 -Wno-initializer-overrides -Wno-bitfield-constant-conversion
 do
   save_CFLAGS=${CFLAGS}
   CFLAGS="${CFLAGS} ${aux_CFLAGS}"
@@ -42,12 +42,14 @@ do
 done
 
 AM_LDFLAGS=""
-aux_CFLAGS=-rdynamic
-save_CFLAGS=${CFLAGS}
-CFLAGS="${CFLAGS} ${aux_CFLAGS}"
-AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
-AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_LDFLAGS="${AM_LDFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
-CFLAGS=${save_CFLAGS}
+for aux_CFLAGS in -rdynamic
+do
+  save_CFLAGS=${CFLAGS}
+  CFLAGS="${CFLAGS} ${aux_CFLAGS}"
+  AC_MSG_CHECKING([${CC} accepts flag ${aux_CFLAGS}])
+  AC_COMPILE_IFELSE( [AC_LANG_PROGRAM( [[]], [[]])], [ AM_LDFLAGS="${AM_LDFLAGS} ${aux_CFLAGS}"; AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no])])
+  CFLAGS=${save_CFLAGS}
+done
 
 dnl The dlopen() function is in the C library for *BSD and in libdl on GLIBC-based systems
 AC_SEARCH_LIBS([dladdr], [dl dld], [AC_DEFINE(HAVE_LIBDL, [], [define if dl is present])], [])
