@@ -46,7 +46,7 @@ if HAVE_XDR
   libmetaresc_la_SOURCES += xdr.c
 endif
 
-mr_value.lo: CFLAGS += -fno-math-errno -ffinite-math-only -fno-rounding-math -ffp-contract=fast
+mr_value.lo: CFLAGS += -fno-math-errno -ffinite-math-only -fno-rounding-math -ffp-contract=fast -fcx-limited-range -Wno-error=overriding-option
 
 pkginclude_HEADERS = metaresc.h mr_protos.h mr_export.h mr_pp.h
 

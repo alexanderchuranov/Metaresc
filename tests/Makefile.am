@@ -34,7 +34,7 @@ endif
 if HAVE_BISON_FLEX
   check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr json_cross_ref
 
-  expr.$(OBJEXT): CFLAGS += -fno-math-errno -ffinite-math-only -fno-rounding-math -ffp-contract=fast
+  expr.$(OBJEXT): CFLAGS += -fno-math-errno -ffinite-math-only -fno-rounding-math -ffp-contract=fast -fcx-limited-range -Wno-error=overriding-option
 
 if HAVE_PERFTEST
   check_PROGRAMS += perf_cinit perf_json perf_scm perf_xml1
