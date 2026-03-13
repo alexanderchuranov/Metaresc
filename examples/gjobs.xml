@@ -20,8 +20,7 @@
 	  <gjob:Person>Jason Venner</gjob:Person>
 	  <gjob:Email>jvener@mirantis.com</gjob:Email>
 	  <gjob:Company>Mirantis, Inc</gjob:Company>
-	  <gjob:Organisation>
-	  </gjob:Organisation>
+	  <gjob:Organisation/>
 	  <gjob:Webpage>http://mirantis.com/</gjob:Webpage>
 	  <gjob:Snailmail>615 National av., Mountain View, CA, 94043</gjob:Snailmail>
 	  <gjob:Phone>+1 (650) 465-8798</gjob:Phone>
@@ -32,19 +31,15 @@
 	<gjob:Person>Nathan Clemons</gjob:Person>
 	<gjob:Email>nathan@windsofstorm.net</gjob:Email>
 	<gjob:Company>FooBar Software</gjob:Company>
-	<gjob:Organisation>
-	</gjob:Organisation>
+	<gjob:Organisation/>
 	<gjob:Webpage>web://foobarsoftware/</gjob:Webpage>
 	<gjob:Snailmail>321 Hillview Court, Somewhere-city, ZQ 54312, Zimbovia</gjob:Snailmail>
 	<gjob:Phone>011 4321 917 123 45 67</gjob:Phone>
       </gjob:Contact>
       
-      <gjob:Requirements>
-	The program should be released as free software, under the FreeBSD license.
-      </gjob:Requirements>
+      <gjob:Requirements>The program should be released as free software, under the FreeBSD license.</gjob:Requirements>
       
-      <gjob:Skills>
-      </gjob:Skills>
+      <gjob:Skills/>
       
       <gjob:Details>
 	A GNOME based system that will allow a superuser to configure 

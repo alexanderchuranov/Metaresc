@@ -819,7 +819,8 @@ as a keyword for declaration. Metaresc still detect type of those
 fields, but skip them at the serialization/deserialization process.
 Note that function pointers needs to be declared without braces and
 asterisk, and asterisk for pointers should be a part of type, but not
-a field name.
+a field name. You could also use those key words as a prefix for
+fields with types declared as `MR_IS_BUILTIN_yourkeyword`.
 Sample declaration as follows:
 
 ```c
@@ -829,7 +830,8 @@ TYPEDEF_STRUCT (non_serializable_t,
 		VOID (int, array, [2]),
 		VOID (int, function, (int)),
 		VOID (int, bitfield, : 4),
-		_ (int, metadata, /* suffix */, "alternative way to declare	non-serializable fields"),
+		_ (char *, metadata, /* suffix */, "alternative way to declare non-serializable fields"),
+		_ int builtin_type_variable,
 		);
 ```
 
@@ -965,7 +967,8 @@ declared as non-serializable fields. Metaresc serialize function
 pointers as function names retrieved via `dladdr ()`. You need to
 compile with `-rdynamic` flag to enable resolution of pointers into
 function names at run time. If function name is not available then the
-pointer is serialized as hex value of a pointer.
+pointer is serialized as hex value of a pointer. To make a function
+pointer field non-serializable add a prefix `VOID` or `_`.
 
 ```c
 TYPEDEF_STRUCT (functions_t,
@@ -973,6 +976,7 @@ TYPEDEF_STRUCT (functions_t,
 		(int, my_fork_implicit_void, (void)),
 		(int, my_vprintf, (const char * restrict /* format */, va_list /* ap */)),
 		VOID (int, my_printf, (const char * restrict /* format */, ...)),
+		_ (int, my_scanff, (const char * restrict /* format */, ...)),
 		);
 ```
 

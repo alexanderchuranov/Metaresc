@@ -60,7 +60,8 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
     content = "";
 
   ptrs->ra[idx].fdp = mr_get_any_fd_by_name ((char*)node->name, NULL);
-  if (NULL == ptrs->ra[idx].fdp)
+  /* root node might have name that do not match any field registered in library */
+  if ((NULL == ptrs->ra[idx].fdp) && (idx != 1))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNKNOWN_FIELD_NAME, (char*)node->name);
       goto failure;
