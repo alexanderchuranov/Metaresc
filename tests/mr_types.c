@@ -119,7 +119,13 @@ TYPEDEF_STRUCT (struct_t,
 		(embeded_union_t *, embeded_union_ptr),
 		(const volatile union embeded_union_t *, const_volatile_union_embeded_union_ptr),
 
-		_enum_t _enum,
+		_enum_t _enum0,
+		AUTO _enum_t _enum1,
+		(_enum_t _enum2),
+		_ _enum_t _enum3,
+		VOID _enum_t _enum4,
+		_ (_enum_t _enum5),
+		VOID (_enum_t _enum6),
 		const volatile enum _enum_t const_volatile_enum_enum,
 		(_enum_t *, _enum_ptr),
 		(const volatile enum _enum_t *, const_volatile_enum_enum_ptr),
@@ -423,7 +429,13 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (embeded_union_ptr, MR_TYPE_POINTER, MR_TYPE_UNION);
   ASSERT_STRUCT_FIELD_TYPE (const_volatile_union_embeded_union_ptr, MR_TYPE_POINTER, MR_TYPE_UNION);
   
-  ASSERT_STRUCT_FIELD_TYPE (_enum, MR_TYPE_ENUM, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (_enum0, MR_TYPE_ENUM, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (_enum1, MR_TYPE_ENUM, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (_enum2, MR_TYPE_ENUM, MR_TYPE_NONE);
+  ASSERT_STRUCT_FIELD_TYPE (_enum3, MR_TYPE_VOID, MR_TYPE_INT8);
+  ASSERT_STRUCT_FIELD_TYPE (_enum4, MR_TYPE_VOID, MR_TYPE_INT8);
+  ASSERT_STRUCT_FIELD_TYPE (_enum5, MR_TYPE_VOID, MR_TYPE_INT8);
+  ASSERT_STRUCT_FIELD_TYPE (_enum6, MR_TYPE_VOID, MR_TYPE_INT8);
   ASSERT_STRUCT_FIELD_TYPE (const_volatile_enum_enum, MR_TYPE_ENUM, MR_TYPE_NONE);
   ASSERT_STRUCT_FIELD_TYPE (_enum_ptr, MR_TYPE_POINTER, MR_TYPE_ENUM);
   ASSERT_STRUCT_FIELD_TYPE (const_volatile_enum_enum_ptr, MR_TYPE_POINTER, MR_TYPE_ENUM);
