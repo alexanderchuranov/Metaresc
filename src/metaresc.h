@@ -542,14 +542,23 @@
 #define MR_TYPEDEF_FUNC_PROTO_(RET_TYPE, MR_TYPE_NAME, ARGS, ATTR, /* META */ ...) typedef ATTR RET_TYPE (*MR_TYPE_NAME) ARGS;
 
 /* Macroses for descriptors generation mode */
+#define MR_FUNC_ARG(TYPE) (mr_stype_t[]){ {				\
+      .type = #TYPE,							\
+	.size = sizeof (TYPE),						\
+	.mr_type = MR_TYPE_DETECT (TYPE),				\
+	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
+	.mr_type_class = __builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), MR_VOID_TYPE_CLASS, \
+						__builtin_classify_type (MR_OBJ_OF_TYPE (TYPE))), \
+	} },
 
-#define MR_FIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, MR_TYPE, /* META */ ...) \
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...)	\
   (mr_fd_t[]){ {							\
       .name.str = #NAME,						\
 	.stype.type = #TYPE,						\
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
-	.stype.mr_type = MR_TYPE,					\
+	.stype.mr_type = MR_TYPE_FUNC,					\
 	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
+	.func_param.args = (mr_stype_t*[]){ MR_FOREACH (MR_FUNC_ARG, TYPE, MR_IDENT ARGS) NULL }, \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
@@ -633,7 +642,9 @@
 	.meta = "" __VA_ARGS__,						\
 	} },
 
-#define MR_VOID_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+#define MR_VOID_DESC(MR_TYPE_NAME, TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_EVAL_ARGS (MR_VOID_DESC_0, MR_TYPE_NAME, MR_BI_TYPES (TYPE))) (MR_VOID_DESC_0 (MR_TYPE_NAME, TYPE, __VA_ARGS__))
+#define MR_VOID_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_1 (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
+#define MR_VOID_DESC_1(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name.str = (char []) { #NAME },					\
 	.stype.mr_type = MR_TYPE_VOID,					\
@@ -658,7 +669,13 @@
 	.meta = "" __VA_ARGS__,						\
 	} },
 
-#define MR_AUTO_DESC_(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+#define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_EVAL_ARGS (MR_AUTO_DESC_0, MR_TYPE_NAME, MR_BI_TYPES (TYPE))) (MR_AUTO_DESC_0 (MR_TYPE_NAME, TYPE, __VA_ARGS__))
+/* ensure that name is a token without parentheses or braces at the end */
+#define MR_AUTO_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC_1 (_ ## NAME ## _, MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
+#define MR_AUTO_DESC_1(VALIDATED_NAME, MR_TYPE_NAME, TYPE, NAME, ...) MR_IF_ELSE (MR_IS_EMPTY (TYPE)) \
+    (MR_AUTO_DESC_2 (MR_TYPE_NAME, __typeof__ (((MR_TYPE_NAME*)0)->NAME), NAME, __VA_ARGS__)) \
+    (MR_AUTO_DESC_2 (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__))
+#define MR_AUTO_DESC_2(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {							\
       .name.str = #NAME,						\
 	.stype.type = __builtin_choose_expr				\
@@ -677,21 +694,9 @@
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
-
 /* Generate division by zero error if type of the field mismatches
    with type provided in macro. This is possible for descriptors
    generated for external types */
-
-#define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_EVAL_ARGS (MR_AUTO_DESC_0, MR_TYPE_NAME, MR_BI_TYPES (TYPE))) (MR_AUTO_DESC_0 (MR_TYPE_NAME, TYPE, __VA_ARGS__))
-/* ensure that name is a token without parentheses or braces at the end */
-#define MR_AUTO_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC_1 (_ ## NAME ## _, MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-#define MR_AUTO_DESC_1(VALIDATED_NAME, MR_TYPE_NAME, TYPE, NAME, ...) MR_IF_ELSE (MR_IS_EMPTY (TYPE)) \
-    (MR_AUTO_DESC_ (MR_TYPE_NAME, __typeof__ (((MR_TYPE_NAME*)0)->NAME), NAME, __VA_ARGS__)) \
-    (MR_AUTO_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__))
-
-#define MR_VOID_DESC(MR_TYPE_NAME, TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_EVAL_ARGS (MR_VOID_DESC_0, MR_TYPE_NAME, MR_BI_TYPES (TYPE))) (MR_VOID_DESC_0 (MR_TYPE_NAME, TYPE, __VA_ARGS__))
-#define MR_VOID_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_ (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) MR_FIELD_DESC (MR_TYPE_NAME, TYPE, NAME, , MR_TYPE_FUNC, __VA_ARGS__, .func_param.args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS)) NULL, })
 
 /*
   MR_OBJ_OF_TYPE returns an object of specified type. It could be as simple as (TYPE){},
@@ -699,15 +704,6 @@
   Type cast require additional typeof wrapper for array types, otherwise construct is invalid.
 */
 #define MR_OBJ_OF_TYPE(TYPE) *__builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), "", (__typeof__ (TYPE) *)0)
-
-#define MR_FUNC_ARG(TYPE) (mr_stype_t[]){ {				\
-      .type = #TYPE,							\
-	.size = sizeof (TYPE),						\
-	.mr_type = MR_TYPE_DETECT (TYPE),				\
-	.mr_type_aux = MR_TYPE_DETECT_PTR (TYPE),			\
-	.mr_type_class = __builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), MR_VOID_TYPE_CLASS, \
-						__builtin_classify_type (MR_OBJ_OF_TYPE (TYPE))), \
-	} },
 
 #define MR_TYPEDEF_STUB_STUB(ID, MR_TYPE_NAME) typedef union {
 #define MR_END_STUB_STUB(ID, MR_TYPE_NAME, ATTR, ...) } MR_TYPEDEF_STUB_PREFIX (MR_TYPE_NAME);
