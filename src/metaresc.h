@@ -558,7 +558,7 @@
 	.stype.size = sizeof (((MR_TYPE_NAME*)0)->NAME),		\
 	.stype.mr_type = MR_TYPE_FUNC,					\
 	.stype.mr_type_class = __builtin_classify_type (((MR_TYPE_NAME*)0)->NAME), \
-	.func_param.args = (mr_stype_t*[]){ MR_FOREACH (MR_FUNC_ARG, TYPE, MR_IDENT ARGS) NULL }, \
+	.func_param.args = (mr_stype_t*[]){ MR_FUNC_ARG (TYPE) MR_FOREACH (MR_FUNC_ARG, MR_IDENT ARGS) NULL }, \
 	.offset = offsetof (MR_TYPE_NAME, NAME),			\
 	.meta = "" __VA_ARGS__,						\
 	} },
