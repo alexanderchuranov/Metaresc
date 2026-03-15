@@ -167,38 +167,38 @@
 #define MR_TYPE_DETECT(TYPE, ...) MR_TYPE_DETECT_ (TYPE, __VA_ARGS__)
 #define MR_TYPE_DETECT_(TYPE, SUFFIX)					\
   (0 /* MR_TYPE_NONE */							\
-  | (__builtin_types_compatible_p (void SUFFIX, TYPE) ? MR_TYPE_VOID : 0) \
-  | (__builtin_types_compatible_p (bool SUFFIX, TYPE) ? MR_TYPE_BOOL : 0) \
-  | (__builtin_types_compatible_p (char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
-  | (__builtin_types_compatible_p (signed char SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_CHAR) : 0) \
-  | (__builtin_types_compatible_p (unsigned char SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_CHAR) : 0) \
-  | (__builtin_types_compatible_p (signed short SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_SHORT) : 0) \
-  | (__builtin_types_compatible_p (unsigned short SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_SHORT) : 0) \
-  | (__builtin_types_compatible_p (signed int SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_INT) : 0) \
-  | (__builtin_types_compatible_p (unsigned int SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_INT) : 0) \
-  | (__builtin_types_compatible_p (signed long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_LONG) : 0) \
-  | (__builtin_types_compatible_p (unsigned long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_LONG) : 0) \
-  | (__builtin_types_compatible_p (signed long long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_LONG_LONG) : 0) \
-  | (__builtin_types_compatible_p (unsigned long long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_LONG_LONG) : 0) \
-  | (__builtin_types_compatible_p (mr_int128_t SUFFIX, TYPE) ? MR_TYPE_INT128 : 0) \
-  | (__builtin_types_compatible_p (mr_uint128_t SUFFIX, TYPE) ? MR_TYPE_UINT128 : 0) \
-  | (__builtin_types_compatible_p (float SUFFIX, TYPE) ? MR_TYPE_FLOAT : 0) \
-  | (__builtin_types_compatible_p (complex float SUFFIX, TYPE) ? MR_TYPE_COMPLEX_FLOAT : 0) \
-  | (__builtin_types_compatible_p (double SUFFIX, TYPE) ? MR_TYPE_DOUBLE : 0) \
-  | (__builtin_types_compatible_p (complex double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_DOUBLE : 0) \
-  | (__builtin_types_compatible_p (long double SUFFIX, TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
-  | (__builtin_types_compatible_p (complex long double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
-  | ((__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE)	\
-      | __builtin_types_compatible_p (__typeof__ (const char []) SUFFIX, TYPE) \
-      | __builtin_types_compatible_p (__typeof__ (volatile char []) SUFFIX, TYPE) \
-      | __builtin_types_compatible_p (__typeof__ (const volatile char []) SUFFIX, TYPE) \
-      ) ? MR_TYPE_CHAR_ARRAY : 0)					\
-  | ((__builtin_types_compatible_p (__typeof__ (char *) SUFFIX, TYPE)	\
-      | __builtin_types_compatible_p (__typeof__ (const char *) SUFFIX, TYPE) \
-      | __builtin_types_compatible_p (__typeof__ (volatile char *) SUFFIX, TYPE) \
-      | __builtin_types_compatible_p (__typeof__ (const volatile char *) SUFFIX, TYPE) \
-      ) ? MR_TYPE_STRING : 0)						\
-  )
+   | (__builtin_types_compatible_p (void SUFFIX, TYPE) ? MR_TYPE_VOID : 0) \
+   | (__builtin_types_compatible_p (bool SUFFIX, TYPE) ? MR_TYPE_BOOL : 0) \
+   | (__builtin_types_compatible_p (char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
+   | (__builtin_types_compatible_p (signed char SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_CHAR) : 0) \
+   | (__builtin_types_compatible_p (unsigned char SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_CHAR) : 0) \
+   | (__builtin_types_compatible_p (signed short SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_SHORT) : 0) \
+   | (__builtin_types_compatible_p (unsigned short SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_SHORT) : 0) \
+   | (__builtin_types_compatible_p (signed int SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_INT) : 0) \
+   | (__builtin_types_compatible_p (unsigned int SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_INT) : 0) \
+   | (__builtin_types_compatible_p (signed long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_LONG) : 0) \
+   | (__builtin_types_compatible_p (unsigned long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_LONG) : 0) \
+   | (__builtin_types_compatible_p (signed long long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_LONG_LONG) : 0) \
+   | (__builtin_types_compatible_p (unsigned long long SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_LONG_LONG) : 0) \
+   | (__builtin_types_compatible_p (mr_int128_t SUFFIX, TYPE) ? MR_TYPE_INT128 : 0) \
+   | (__builtin_types_compatible_p (mr_uint128_t SUFFIX, TYPE) ? MR_TYPE_UINT128 : 0) \
+   | (__builtin_types_compatible_p (float SUFFIX, TYPE) ? MR_TYPE_FLOAT : 0) \
+   | (__builtin_types_compatible_p (complex float SUFFIX, TYPE) ? MR_TYPE_COMPLEX_FLOAT : 0) \
+   | (__builtin_types_compatible_p (double SUFFIX, TYPE) ? MR_TYPE_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (complex double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (long double SUFFIX, TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
+   | (__builtin_types_compatible_p (complex long double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
+   | ((__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE)	\
+       | __builtin_types_compatible_p (__typeof__ (const char []) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (volatile char []) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (const volatile char []) SUFFIX, TYPE) \
+       ) ? MR_TYPE_CHAR_ARRAY : 0)					\
+   | ((__builtin_types_compatible_p (__typeof__ (char *) SUFFIX, TYPE)	\
+       | __builtin_types_compatible_p (__typeof__ (const char *) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (volatile char *) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (const volatile char *) SUFFIX, TYPE) \
+       ) ? MR_TYPE_STRING : 0)						\
+   )
 
 #define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, const *) | MR_TYPE_DETECT (TYPE, volatile *) | MR_TYPE_DETECT (TYPE, const volatile *))
 
@@ -293,8 +293,8 @@
 #define P00_TYPEDEF(...) P00_TYPEDEF_ (__COUNTER__, __VA_ARGS__)
 #define P00_TYPEDEF_(...)						\
   MR_IF_ELSE (MR_PASTE2 (MR_IS_MR_MODE_EQ_, MR_MODE))			\
-  (P00_TYPEDEF_MODE (MR_MODE, __VA_ARGS__))				\
-  (P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__))
+    (P00_TYPEDEF_MODE (MR_MODE, __VA_ARGS__))				\
+    (P00_TYPEDEF_MODE (PROTO, __VA_ARGS__) P00_TYPEDEF_MODE (DESC, __VA_ARGS__))
 
 #define P00_IS_ATTRIBUTES_EQ_ATTRIBUTES(...) 0 /* help macro for ATTRIBUTES test IF clause */
 #define P00_REMOVE_ATTRIBUTES(...) __VA_ARGS__
@@ -302,12 +302,12 @@
 /* Outputs only arguments that start with ATTRIBUTES. Removes key word ATTRIBUTES and parenthesis. */
 #define P00_EXTRACT_ATTRIBUTES(ARG)					\
   MR_IF_ELSE (MR_HAS_COMMA (P00_IS__EQ__ ARG)) ()			\
-  (MR_IF_ELSE (MR_PASTE2 (P00_IS_ATTRIBUTES_EQ_, ARG)) () (MR_PASTE2 (P00_REMOVE_, ARG)))
+    (MR_IF_ELSE (MR_PASTE2 (P00_IS_ATTRIBUTES_EQ_, ARG)) () (MR_PASTE2 (P00_REMOVE_, ARG)))
 
 /* Outputs arguments that do not start with ATTRIBUTES. Delemit them with comma */
 #define P00_EXTRACT_NON_ATTRIBUTES(ARG)					\
   MR_IF_ELSE (MR_HAS_COMMA (P00_IS__EQ__ ARG)) (ARG, )			\
-  (MR_IF_ELSE (MR_PASTE2 (P00_IS_ATTRIBUTES_EQ_, ARG)) (ARG, ) ())
+    (MR_IF_ELSE (MR_PASTE2 (P00_IS_ATTRIBUTES_EQ_, ARG)) (ARG, ) ())
 
 #define P00_GET_ATTRIBUTES(...) MR_FOREACH (P00_EXTRACT_ATTRIBUTES, __VA_ARGS__)
 #define P00_GET_NON_ATTRIBUTES(...) MR_FOREACH (P00_EXTRACT_NON_ATTRIBUTES, __VA_ARGS__)
@@ -352,8 +352,8 @@
 
 #define TYPEDEF_ATTR(P00_MODE, P00_ID, P00_TYPE, ATTR_META_RES, P00_TYPE_NAME, ...) \
   P00_UNFOLD (MR_TYPEDEF_, P00_TYPE, P00_MODE, P00_ID, P00_TYPE_NAME)	\
-  MR_FOR ((P00_MODE, P00_TYPE_NAME), MR_NARG (__VA_ARGS__), MR_SER, MR_PASTE3 (P00_, P00_TYPE, _HANDLER), __VA_ARGS__) \
-  P00_UNFOLD (MR_END_, P00_TYPE, P00_MODE, P00_ID, P00_TYPE_NAME, MR_PASTE2 (P00_REMOVE_, ATTR_META_RES))
+    MR_FOR ((P00_MODE, P00_TYPE_NAME), MR_NARG (__VA_ARGS__), MR_SER, MR_PASTE3 (P00_, P00_TYPE, _HANDLER), __VA_ARGS__) \
+    P00_UNFOLD (MR_END_, P00_TYPE, P00_MODE, P00_ID, P00_TYPE_NAME, MR_PASTE2 (P00_REMOVE_, ATTR_META_RES))
 
 #define P00_STUB_HANDLER P00_FIELD
 #define P00_STRUCT_HANDLER P00_FIELD
@@ -385,12 +385,12 @@
   2. Non-empty suffix without parentheses goes to ARRAY_OR_BITFIELD.
   3. Everything else goes to AUTO.
 */
-#define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)	\
-  MR_IF_ELSE (MR_IS_IN_PAREN (SUFFIX))				\
-  (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FUNC FIELD))		\
-  (MR_IF_ELSE (MR_IS_EMPTY (SUFFIX))				\
-   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))		\
-   (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY_OR_BITFIELD FIELD)))
+#define P00_FIELD_DETECT(P00_MODE_TYPE_NAME, FIELD, SUFFIX)		\
+  MR_IF_ELSE (MR_IS_IN_PAREN (SUFFIX))					\
+    (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, FUNC FIELD))			\
+    (MR_IF_ELSE (MR_IS_EMPTY (SUFFIX))					\
+     (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, AUTO FIELD))		\
+     (P00_FIELD_UNFOLD (P00_MODE_TYPE_NAME, ARRAY_OR_BITFIELD FIELD)))
 
 #define P00_GET_MODE(P00_MODE, P00_TYPE_NAME) P00_MODE
 #define P00_GET_TYPE_NAME(P00_MODE, P00_TYPE_NAME) P00_TYPE_NAME
@@ -432,8 +432,8 @@
 */
 #define P00_ENUM_DEF(P00_MODE_TYPE_NAME, FIELD, I)			\
   MR_IF_ELSE (MR_IS_EMPTY (FIELD))					\
-  ()									\
-  (P00_UNFOLD (MR_, ENUM_DEF, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (FIELD)))
+    ()									\
+    (P00_UNFOLD (MR_, ENUM_DEF, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (FIELD)))
 
 #define MR_EVAL_ARGS(FUNC, ...) FUNC (__VA_ARGS__)
 
@@ -505,8 +505,8 @@
 #define P00_GET_SECOND(_1, _2) _2
 #define P00_COMPARE_FIELDS(TYPE1_TYPE2, NAME, I)			\
   MR_IF_ELSE (MR_IS_IN_PAREN (NAME))					\
-  (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, P00_GET_FIRST NAME, P00_GET_SECOND TYPE1_TYPE2, P00_GET_SECOND NAME)) \
-  (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, NAME, P00_GET_SECOND TYPE1_TYPE2, NAME))
+    (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, P00_GET_FIRST NAME, P00_GET_SECOND TYPE1_TYPE2, P00_GET_SECOND NAME)) \
+    (MR_COMPARE_FIELDS (P00_GET_FIRST TYPE1_TYPE2, NAME, P00_GET_SECOND TYPE1_TYPE2, NAME))
 
 #define MR_COMPARE_FIELDS(TYPE1, NAME1, TYPE2, NAME2) (offsetof (TYPE1, NAME1) == offsetof (TYPE2, NAME2)) && __builtin_types_compatible_p (__typeof__ (((TYPE1*)0)->NAME1), __typeof__ (((TYPE2*)0)->NAME2))
 
@@ -566,19 +566,19 @@
 #define MR_ARRAY_SLICE0(TYPE, ARRAY) (__builtin_choose_expr (__builtin_types_compatible_p (TYPE, __typeof__ (ARRAY[0])), (TYPE[]){}, ARRAY[0]))
 #define MR_ARRAY_SLICE1(TYPE, ARRAY) (__builtin_choose_expr (__builtin_types_compatible_p (TYPE, __typeof__ (ARRAY[0])), (TYPE[]){}, ARRAY[0]))
 
-#define MR_ARRAY_DIMENSIONS_(TYPE, A0, A1, A2, A3) {			\
-    .dim = {								\
-      sizeof (A0) / sizeof (A1),					\
-      sizeof (A1) / sizeof (A2),					\
-      sizeof (A2) / sizeof (A3),					\
-      sizeof (A3) / sizeof (TYPE),					\
-    },									\
-    .dim_count = sizeof (((mr_array_dimensions_t*)0)->dim) /		\
-    sizeof (((mr_array_dimensions_t*)0)->dim[0]) -			\
-    (__builtin_types_compatible_p (TYPE, __typeof__ (A1)) +		\
-     __builtin_types_compatible_p (TYPE, __typeof__ (A2)) +		\
-     __builtin_types_compatible_p (TYPE, __typeof__ (A3))		\
-     ),									\
+#define MR_ARRAY_DIMENSIONS_(TYPE, A0, A1, A2, A3) {		\
+    .dim = {							\
+      sizeof (A0) / sizeof (A1),				\
+      sizeof (A1) / sizeof (A2),				\
+      sizeof (A2) / sizeof (A3),				\
+      sizeof (A3) / sizeof (TYPE),				\
+    },								\
+    .dim_count = sizeof (((mr_array_dimensions_t*)0)->dim) /	\
+    sizeof (((mr_array_dimensions_t*)0)->dim[0]) -		\
+    (__builtin_types_compatible_p (TYPE, __typeof__ (A1)) +	\
+     __builtin_types_compatible_p (TYPE, __typeof__ (A2)) +	\
+     __builtin_types_compatible_p (TYPE, __typeof__ (A3))	\
+     ),								\
   }
 
 #define MR_ARRAY_DIMENSIONS(TYPE, ARRAY) MR_ARRAY_DIMENSIONS_ (TYPE, ARRAY, ARRAY[0], MR_ARRAY_SLICE0 (TYPE, ARRAY)[0], MR_ARRAY_SLICE1 (TYPE, MR_ARRAY_SLICE0 (TYPE, ARRAY))[0])
@@ -740,10 +740,10 @@
 	    }, } } },							\
 	.res_type = "mr_td_t",						\
 	} },
-#define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)		\
-  (mr_fd_t[]){ {							\
-	.stype.mr_type = MR_TYPE_END_ANON_UNION,			\
-	.meta = "" __VA_ARGS__,						\
+#define MR_END_ANON_UNION_DESC(MR_TYPE_NAME, /* META */ ...)	\
+  (mr_fd_t[]){ {						\
+      .stype.mr_type = MR_TYPE_END_ANON_UNION,			\
+	.meta = "" __VA_ARGS__,					\
 	} },
 
 #define MR_TYPEDEF_ENUM_DESC(ID, MR_TYPE_NAME, ...)			\
@@ -752,7 +752,7 @@
     .mr_type = MR_TYPE_ENUM,						\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
-    .param.enum_param.mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME),\
+    .param.enum_param.mr_type_effective = MR_TYPE_DETECT (MR_TYPE_NAME), \
     .param.enum_param.enums = (mr_ed_t*[]){
 
 #define MR_END_ENUM_DESC(ID, MR_TYPE_NAME, ATTR, /* META */ ...)	\
@@ -764,11 +764,11 @@
     }
 
 #define MR_ENUM_DEF_DESC(MR_TYPE_NAME, NAME, ...) MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, __VA_ARGS__)
-#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)   \
-  (mr_ed_t[]){ {						     \
-      .name.str =  #NAME,					     \
-	.value._unsigned = NAME,				     \
-	.meta = "" __VA_ARGS__,					     \
+#define MR_ENUM_DEF_DESC_(MR_TYPE_NAME, NAME, RHS, /* META */ ...)	\
+  (mr_ed_t[]){ {							\
+      .name.str =  #NAME,						\
+	.value._unsigned = NAME,					\
+	.meta = "" __VA_ARGS__,						\
 	} },
 
 #define MR_TYPEDEF_FUNC_DESC(ID, RET_TYPE, MR_TYPE_NAME, ARGS, /* ATTR */ ...) MR_TYPEDEF_FUNC_DESC_ (ID, RET_TYPE, MR_TYPE_NAME, ARGS, __VA_ARGS__)
@@ -778,10 +778,8 @@
     .mr_type = MR_TYPE_FUNC_TYPE,					\
     .td_producer = MR_TDP_MACRO,					\
     .size = sizeof (MR_TYPE_NAME),					\
-    .param.func_param.args = (mr_stype_t*[]){				\
-	  MR_FUNC_ARG (RET_TYPE)					\
-	  MR_FOREACH (MR_FUNC_ARG, MR_REMOVE_PAREN (ARGS))		\
-	  NULL, },							\
+    .param.func_param.args =						\
+    (mr_stype_t*[]){ MR_FUNC_ARG (RET_TYPE) MR_FOREACH (MR_FUNC_ARG, MR_IDENT ARGS) NULL, }, \
     .meta = "" __VA_ARGS__ };						\
   static inline void __attribute__((constructor))			\
   MR_CONSTRUCTOR_PREFIX (ID, MR_TYPE_NAME) (void) {			\
@@ -823,10 +821,10 @@
     .td_producer = MR_TDP_DUMP_STRUCT,					\
     .size = sizeof (MR_TYPE_NAME),					\
     .param.struct_param.fields = (mr_fd_t*[]){				\
-	  MR_FOR ( , MR_TDP_FIELDS_COUNT, MR_SER, MR_SINGLE_FD)			\
-	  NULL,								\
-	  MR_FOR (MR_TYPE_NAME, MR_ANON_UNION_FD_COUNT, MR_SER, MR_ANON_UNION_FD) \
-      }, };								\
+      MR_FOR ( , MR_TDP_FIELDS_COUNT, MR_SER, MR_SINGLE_FD)		\
+      NULL,								\
+      MR_FOR (MR_TYPE_NAME, MR_ANON_UNION_FD_COUNT, MR_SER, MR_ANON_UNION_FD) \
+    }, };								\
   static void MR_PASTE2 (mr_dump_struct_, ID)				\
     (void * value,							\
      int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...), \
@@ -863,10 +861,10 @@
 	}								\
       ___status;							\
     })
-#define MR_COPY_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({		\
-      __typeof__ (*(S_PTR)) _dst_ = {};					\
-      MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &_dst_);		\
-      _dst_;								\
+#define MR_COPY_RECURSIVELY_ARGS2(MR_TYPE_NAME, S_PTR) ({	\
+      __typeof__ (*(S_PTR)) _dst_ = {};				\
+      MR_COPY_RECURSIVELY_ARGS3 (MR_TYPE_NAME, S_PTR, &_dst_);	\
+      _dst_;							\
     })
 #define MR_COPY_RECURSIVELY_ARGS1(S_PTR) MR_COPY_RECURSIVELY_ARGS2 ( , S_PTR)
 
@@ -961,20 +959,20 @@
 #define MR_OBJ_TYPE_VAR mr_ptr_detect_type_var_
 #define MR_OBJ_TYPE_DWARF(S_PTR) MR_OBJ_TYPE_DWARF_ (S_PTR, MR_PASTE2 (MR_OBJ_TYPE_VAR, __COUNTER__))
 #define MR_OBJ_TYPE_DWARF_(...) MR_OBJ_TYPE_DWARF__ (__VA_ARGS__)
-#define MR_OBJ_TYPE_DWARF__(S_PTR, VAR) ({		\
-      __typeof__ (S_PTR) VAR[0];			\
-      mr_ptr_detect_type (__FILE__, #VAR, VAR);		\
+#define MR_OBJ_TYPE_DWARF__(S_PTR, VAR) ({	\
+      __typeof__ (S_PTR) VAR[0];		\
+      mr_ptr_detect_type (__FILE__, #VAR, VAR);	\
     })
 
 #define MR_SAVE MR_SAVE_TYPED
 
 #define MR_SAVE_TYPED(...) MR_PASTE2 (MR_SAVE_TYPED_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 #define MR_SAVE_TYPED_ARGS1(S_PTR) MR_SAVE_TYPED_ARGS2 ( , S_PTR)
-#define MR_SAVE_TYPED_ARGS2(MR_TYPE_NAME, S_PTR)		\
-  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))			\
-       (MR_SAVE_STR_TYPED (MR_OBJ_TYPE (S_PTR), S_PTR))		\
-       (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);		\
-	   MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
+#define MR_SAVE_TYPED_ARGS2(MR_TYPE_NAME, S_PTR)	\
+  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))		\
+    (MR_SAVE_STR_TYPED (MR_OBJ_TYPE (S_PTR), S_PTR))	\
+    (({ MR_CHECK_TYPES (MR_TYPE_NAME, S_PTR);		\
+	MR_SAVE_STR_TYPED (#MR_TYPE_NAME, S_PTR); }))
 
 #define MR_SAVE_STR_TYPED(MR_TYPE_NAME_STR, S_PTR) ({			\
       __typeof__ (&*(S_PTR)) __src__ = (S_PTR);				\
@@ -1018,25 +1016,25 @@
       __status__;							\
     })
 
-#define MR_SAVE_XDR_RA(...) ({						\
-      XDR _xdrs_;							\
-      mr_rarray_t _ra_ = { .type = "uint8_t" };				\
-      mr_xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);			\
-      if (MR_SUCCESS != MR_SAVE_XDR (&_xdrs_, __VA_ARGS__))		\
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_SAVE_FAILED);		\
-      _ra_;								\
+#define MR_SAVE_XDR_RA(...) ({					\
+      XDR _xdrs_;						\
+      mr_rarray_t _ra_ = { .type = "uint8_t" };			\
+      mr_xdrra_create (&_xdrs_, &_ra_, XDR_ENCODE);		\
+      if (MR_SUCCESS != MR_SAVE_XDR (&_xdrs_, __VA_ARGS__))	\
+	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_XDR_SAVE_FAILED);	\
+      _ra_;							\
     })
 
-#define MR_SAVE_METHOD(METHOD, ...) ({					\
-      mr_ptrdes_t * __ptrs__ = MR_SAVE (__VA_ARGS__);			\
-      char * __str__ = NULL;						\
-      if (__ptrs__ != NULL)						\
-	{								\
-	  mr_remove_empty_nodes (__ptrs__);				\
-	  __str__ = METHOD (__ptrs__);					\
-	  MR_FREE (__ptrs__);						\
-	}								\
-      __str__;								\
+#define MR_SAVE_METHOD(METHOD, ...) ({			\
+      mr_ptrdes_t * __ptrs__ = MR_SAVE (__VA_ARGS__);	\
+      char * __str__ = NULL;				\
+      if (__ptrs__ != NULL)				\
+	{						\
+	  mr_remove_empty_nodes (__ptrs__);		\
+	  __str__ = METHOD (__ptrs__);			\
+	  MR_FREE (__ptrs__);				\
+	}						\
+      __str__;						\
     })
 
 #define MR_SAVE_METHOD_RA(STR) ({					\
@@ -1062,11 +1060,11 @@
 #define MR_SAVE_YAML_RA(...) MR_SAVE_METHOD_RA (MR_SAVE_YAML (__VA_ARGS__))
 #endif /* HAVE_LIBYAML */
 
-#define MR_LOAD_XDR_ARGS3(MR_TYPE_NAME, XDRS, D_PTR)			\
-  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-       (MR_LOAD_XDR_ARGS3_ (MR_OBJ_TYPE (D_PTR), XDRS, D_PTR))		\
-       (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
-	   MR_LOAD_XDR_ARGS3_ (#MR_TYPE_NAME, XDRS, D_PTR); }))
+#define MR_LOAD_XDR_ARGS3(MR_TYPE_NAME, XDRS, D_PTR)		\
+  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))			\
+    (MR_LOAD_XDR_ARGS3_ (MR_OBJ_TYPE (D_PTR), XDRS, D_PTR))	\
+    (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
+	MR_LOAD_XDR_ARGS3_ (#MR_TYPE_NAME, XDRS, D_PTR); }))
 
 #define MR_LOAD_XDR_ARGS3_(MR_TYPE_NAME, XDRS, D_PTR) ({		\
       mr_status_t __status__ = MR_FAILURE;				\
@@ -1102,12 +1100,12 @@
 
 #define MR_LOAD_XDR(...) MR_PASTE2 (MR_LOAD_XDR_ARGS, MR_NARG (__VA_ARGS__)) (__VA_ARGS__)
 
-#define MR_LOAD_XDR_RA(MR_TYPE_NAME, RA, ...) ({			\
-      XDR _xdrs_;							\
-      mr_xdrra_create (&_xdrs_, RA, XDR_DECODE);			\
-      MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))				\
-	(MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_))				\
-	(MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_, __VA_ARGS__));		\
+#define MR_LOAD_XDR_RA(MR_TYPE_NAME, RA, ...) ({		\
+      XDR _xdrs_;						\
+      mr_xdrra_create (&_xdrs_, RA, XDR_DECODE);		\
+      MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__))			\
+	(MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_))			\
+	(MR_LOAD_XDR (MR_TYPE_NAME, &_xdrs_, __VA_ARGS__));	\
     })
 
 #ifdef HAVE_LIBXML2
@@ -1139,10 +1137,10 @@
     })
 
 #define MR_LOAD_XML2_NODE_ARGS3(MR_TYPE_NAME, XML, D_PTR)		\
-    MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-	 (MR_LOAD_XML2_NODE_ARGS3_ (MR_OBJ_TYPE (D_PTR), XML, D_PTR))	\
-	 (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
-	     MR_LOAD_XML2_NODE_ARGS3_ (#MR_TYPE_NAME, XML, D_PTR); }))
+  MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
+    (MR_LOAD_XML2_NODE_ARGS3_ (MR_OBJ_TYPE (D_PTR), XML, D_PTR))	\
+    (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
+	MR_LOAD_XML2_NODE_ARGS3_ (#MR_TYPE_NAME, XML, D_PTR); }))
 
 #define MR_LOAD_XML2_NODE_ARGS3_(MR_TYPE_NAME, XML, D_PTR) ({		\
       __typeof__ (&*(D_PTR)) _dst_ = (D_PTR);				\
@@ -1228,9 +1226,9 @@
 
 #define MR_LOAD_METHOD_ARGS4(METHOD, MR_TYPE_NAME, STR, D_PTR)		\
   MR_IF_ELSE (MR_IS_EMPTY (MR_TYPE_NAME))				\
-       (MR_LOAD_METHOD_ARGS4_ (METHOD, MR_OBJ_TYPE (D_PTR), STR, D_PTR)) \
-       (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);			\
-	   MR_LOAD_METHOD_ARGS4_ (METHOD, #MR_TYPE_NAME, STR, D_PTR); }))
+    (MR_LOAD_METHOD_ARGS4_ (METHOD, MR_OBJ_TYPE (D_PTR), STR, D_PTR))	\
+    (({ MR_CHECK_TYPES (MR_TYPE_NAME, D_PTR);				\
+	MR_LOAD_METHOD_ARGS4_ (METHOD, #MR_TYPE_NAME, STR, D_PTR); }))
 
 #define MR_LOAD_METHOD_ARGS4_(METHOD, MR_TYPE_NAME, STR, D_PTR) ({	\
       mr_ra_ptrdes_t _ptrs_ = {};					\
@@ -1334,34 +1332,36 @@
     (MR_PRINT_SERIALIZATION_METHOD)					\
     (CINIT)
 
-#define MR_PRINT_IN_PAREN(COUNT, FD, VALUE)		\
-  MR_IF_ELSE (MR_PASTE2 (MR_EQ_2_, COUNT))		\
-       (MR_PRINT_IN_PAREN_ (COUNT, FD, VALUE))		\
-       (MR_PRINT_STRUCT_ (FD, MR_REMOVE_PAREN_ VALUE, MR_PRINT_SERIALIZATION_METHOD_GET ()))
+#define MR_PRINT_IN_PAREN(COUNT, FD, VALUE)				\
+  MR_IF_ELSE (MR_PASTE2 (MR_EQ_2_, COUNT))				\
+    (MR_PRINT_IN_PAREN_ (COUNT, FD, VALUE))				\
+    (MR_PRINT_STRUCT_ (FD, MR_REMOVE_PAREN_ VALUE, MR_PRINT_SERIALIZATION_METHOD_GET ()))
 
 #define MR_PRINT_IN_PAREN_(COUNT, FD, VALUE)		\
   MR_IF_ELSE (MR_PASTE2 (MR_EQ_3_, COUNT))		\
-       (MR_PRINT_VALUE (FD, VALUE))			\
-       (MR_PRINT_STRUCT_ (FD, MR_REMOVE_PAREN_ VALUE))
+    (MR_PRINT_VALUE (FD, VALUE))			\
+    (MR_PRINT_STRUCT_ (FD, MR_REMOVE_PAREN_ VALUE))
 
 #define MR_PRINT_STRUCT_(...) MR_PRINT_STRUCT (__VA_ARGS__)
 #define MR_PRINT_STRUCT(FD, TYPE, PTR, METHOD) ({	\
       char * _dump_ = MR_SAVE_ ## METHOD (TYPE, PTR);	\
-	int _rv_ = 0;					\
-	if (_dump_)					\
-	  {						\
-	    _rv_ = fprintf (FD, "%s", _dump_);		\
-	    MR_FREE (_dump_);				\
-	  }						\
-	_rv_;						\
+      int _rv_ = 0;					\
+      if (_dump_)					\
+	{						\
+	  _rv_ = fprintf (FD, "%s", _dump_);		\
+	  MR_FREE (_dump_);				\
+	}						\
+      _rv_;						\
     })
 
-#define MR_CAST_TO_PTR(OBJ) __builtin_choose_expr ((MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ)) && \
-						   !__builtin_types_compatible_p (__typeof__ (OBJ), void *) && \
-						   !__builtin_types_compatible_p (__typeof__ (OBJ), void const *) && \
-						   !__builtin_types_compatible_p (__typeof__ (OBJ), void volatile *) && \
-						   !__builtin_types_compatible_p (__typeof__ (OBJ), void const volatile *) \
-						   , (OBJ), (void**)0)
+#define MR_CAST_TO_PTR(OBJ)						\
+  __builtin_choose_expr							\
+  ((MR_POINTER_TYPE_CLASS == __builtin_classify_type (OBJ)) &&		\
+   !__builtin_types_compatible_p (__typeof__ (OBJ), void *) &&		\
+   !__builtin_types_compatible_p (__typeof__ (OBJ), void const *) &&	\
+   !__builtin_types_compatible_p (__typeof__ (OBJ), void volatile *) && \
+   !__builtin_types_compatible_p (__typeof__ (OBJ), void const volatile *), \
+   (OBJ), (void**)0)
 
 #define MR_ARRAY_SIZE(OBJ) ({						\
       __typeof__ (OBJ) _mr[0];						\
@@ -1391,10 +1391,10 @@
 		      MR_PRINT_ARG (X, *__mr));				\
     })
 
-#define MR_PRINT_ONE_ELEMENT(FD, X, I)				\
-  MR_IF_ELSE (MR_IS_IN_PAREN (X))				\
-       (MR_PRINT_IN_PAREN (MR_NARG X, FD, X))			\
-       (MR_PRINT_VALUE (FD, X))
+#define MR_PRINT_ONE_ELEMENT(FD, X, I)		\
+  MR_IF_ELSE (MR_IS_IN_PAREN (X))		\
+    (MR_PRINT_IN_PAREN (MR_NARG X, FD, X))	\
+    (MR_PRINT_VALUE (FD, X))
 
 #define MR_ADD(NAME, I, REC, X) REC + X
 #define MR_PRINT(...) (void)MR_FPRINT (stdout, __VA_ARGS__)
