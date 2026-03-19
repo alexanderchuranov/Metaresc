@@ -540,8 +540,8 @@ TYPEDEF_STRUCT (mr_value_t, ATTRIBUTES ( , "value for expressions calculation"),
 		);
 
 TYPEDEF_STRUCT (mr_ud_set_t, ATTRIBUTES ( , "set union discriminator indexes"),
-		/* to make mr_ptrdes_t more compact we need to align size of mr_ud_set_t with sizeof (void*) */
-		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (void*) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
+		/* to make mr_ptrdes_t more compact we need to align size of mr_ud_set_t with sizeof (double) */
+		(MR_RA_UD_IDX_TYPE, idx, [(sizeof (double) - sizeof (uint8_t)) / sizeof (MR_RA_UD_IDX_TYPE)],
 		 "in place list of union discriminators",
 		 { .count_field_offset = offsetof (mr_ud_set_t, count), }, "count_field_offset"),
 		(uint8_t, count, , "number of union discriminator in the list"),
