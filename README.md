@@ -492,13 +492,13 @@ which expects `type` to be a C token. There is another underlying
 macro `MR_SAVE_STR_TYPED` which takes `type` as a string. User could
 redefine `MR_SAVE` to `MR_SAVE_STR_TYPED` as needed.
 There is also an option to pass a single argument for
-'MR_SAVE_TYPED'. This is an equivalent of an empty `type` and single
+`MR_SAVE_TYPED`. This is an equivalent of an empty `type` and single
 passed parameter is used as a second parameter `pointer`. With
 Clang library will detect type of the `pointer` and will convert it
 to a string. On GCC this feature is not supported and empty `type` will
-work only for pointers on basic types (int, float, complex,
-bool. char*, etc) which doesn't really make much sense in real life
-use cases. Semantics of empty 'type' and single argument macro applies
+work only for pointers on basic types (`int`, `float`, `complex`,
+`bool`, `char*`, etc) which doesn't really make much sense in real life
+use cases. Semantics of empty `type` and single argument macro applies
 to whole family of macroses for all serialization formats.
 
 Data pointer might be a pointer on a local array. In this cases
@@ -1204,9 +1204,9 @@ TYPEDEF_STRUCT (array_t,
 		(bool, element_discriminator, , "discriminator for array elements"));
 ```
 Example demostrates array of two elements discriminated by boolean
-value 'element_discriminator'. 'element_discriminator' is interpreted
+value `element_discriminator`. `element_discriminator` is interpreted
 as an integer index within union, i.e. both elements of the array will
-be serialized as '_bool' or as '_int' respectively.
+be serialized as `_bool` or as `_int` respectively.
 
 * with **resource** you could define overrides for union discriminators
 ```c
@@ -1221,7 +1221,8 @@ TYPEDEF_STRUCT (array_t,
 ```
 Example similar to previous one, but if `element_discriminator` is
 equal to `false` union serialized as `_float`.
-* with **resource** you could define size for a single dimensional
+For fixed sized arrays you could serialize variable number elements. 
+With **resource** you could define dynamic size for a single dimensional
 array. Semantics is similar to pointers of variable size. You could
 specify `size`/`count` field either via `offset` or as a name of the field.
 ```c

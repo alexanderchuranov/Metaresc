@@ -651,8 +651,7 @@ move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
   mr_idx_t count, ref_idx = ra[ref_parent].first_child;
   mr_idx_t parent = ra[idx].parent;
   mr_size_t element_size = ra[idx].fdp ? ra[idx].fdp->stype.size : 0;
-    
-  ra[ref_parent].first_child = ref_idx;
+
   ra[ref_parent].flags |= MR_IS_REFERENCE;
   ra[ref_idx].flags |= MR_IS_REFERENCED;
 			  
@@ -750,37 +749,28 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
       /* otherwise we can handle only match with another resizable pointer */
       if (MR_TYPE_POINTER == ra[ref_parent].mr_type)
 	{
+	  typeof (ra[idx].MR_SIZE) size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
+	  mr_idx_t total_required = ra[idx].MR_SIZE / element_size;
+	  /*
+	    Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
+	    but previously saved pointer is shorter then we need for new one.
+	    We need to append required number of nodes to previously saved pointer and set new resizable pointer as a references.
+	  */
+	  ra[ref_parent].MR_SIZE += size_delta;
+	  ra[parent].first_child = ref_idx;
+	  ra[parent].flags |= MR_IS_REFERENCE;
+	  ra[ref_idx].flags |= MR_IS_REFERENCED;
 	  *resolved = true;
-	  if (is_first_child (ra, ref_idx))
-	    /*
-	      previously saved resizable pointer was pointing to the same address, but was shorter.
-	      we need to reassign nodes to bigger resizable pointer and make a references for shorter one.
-	    */
-	    return (move_nodes_to_parent (ptrs, ref_parent, idx));
-	  else
-	    {
-	      typeof (ra[idx].MR_SIZE) size_delta = ra[idx].MR_SIZE - ra[ref_idx].MR_SIZE;
-	      mr_idx_t total_required = ra[idx].MR_SIZE / element_size;
-	      /*
-		Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
-		but previously saved pointer is shorter then we need for new one.
-		We need to append required number of nodes to previously saved pointer and set new resizable pointer as a references.
-	      */
-	      ra[ref_parent].MR_SIZE += size_delta;
-	      ra[parent].first_child = ref_idx;
-	      ra[parent].flags |= MR_IS_REFERENCE;
-	      ra[ref_idx].flags |= MR_IS_REFERENCED;
-	      mr_idx_t nodes_added = mr_save_pointer_content (ref_parent, mr_save_data);
-	      if (nodes_added == 0)
-		return (0);
-	      return (total_required);
-	    }
+	  mr_idx_t nodes_added = mr_save_pointer_content (ref_parent, mr_save_data);
+	  if (nodes_added == 0)
+	    return (0);
+	  return (total_required);
 	}
     }
   else
     {
       /* we can handle only match with another resizable pointer */
-      if (MR_TYPE_POINTER == ra[ref_parent].mr_type)
+      if ((MR_TYPE_POINTER == ra[ref_parent].mr_type) && !ref_is_parent (ra, parent, ref_parent))
 	{
 	  /*
 	    in the middle of saving of resizable pointer we matched another resizable pointer
