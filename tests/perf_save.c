@@ -1,12 +1,12 @@
 #include <perf.h>
 
-#define MR_SAVE_NONE_RA(...) ({					\
-      mr_ptrdes_t * ptrs = MR_SAVE (__VA_ARGS__);		\
-      (mr_rarray_t){						\
-	.data.ptr = ptrs,					\
-	  .MR_SIZE = ptrs[0].next * sizeof (ptrs[0]),		\
-	  .type = "mr_ptrdes_t",				\
-	  };							\
+#define MR_SAVE_NONE_RA(...) ({				\
+      mr_ptrdes_t * ptrs = MR_SAVE (__VA_ARGS__);	\
+      (mr_rarray_t){					\
+	.data.ptr = ptrs,				\
+	  .MR_SIZE = ptrs->MR_SIZE,			\
+	  .type = "mr_ptrdes_t",			\
+	  };						\
     })
 
 #define MR_LOAD_NONE_RA(TYPE, RA, PTR) ({	\

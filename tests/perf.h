@@ -9,7 +9,8 @@
 #define TEST_PERFORMANCE(METHOD, ...)					\
   TYPEDEF_STRUCT (list_t, (mr_ptr_t, mr_ptr, , "ptr_type"), (list_t *, next)); \
   TYPEDEF_STRUCT (typed_list_t, (char *, ptr_type), (list_t *, root));	\
-  TYPEDEF_STRUCT (array_t, (list_t *, ra, , , { "size" }, "size_field_name"), (ssize_t, size), (char *, ptr_type)); \
+  TYPEDEF_STRUCT (array_t, (list_t *, ra), (size_t, ra_count), (char *, ptr_type)); \
+  TYPEDEF_STRUCT (vector_t, (vector_t *, vec), (size_t, vec_count));	\
 									\
   int test_run (int count)						\
   {									\
@@ -18,7 +19,7 @@
     mr_rarray_t ra;							\
     typed_list_t list_, typed_list = { .ptr_type = "string", };		\
     memset (&array, 0, sizeof (array));					\
-    array.size = count * sizeof (array.ra[0]);				\
+    array.ra_count = count;						\
     array.ptr_type = "string";						\
     array.ra = MR_CALLOC (count, sizeof (array.ra[0]));			\
     ck_assert_msg (NULL != array.ra, "Memory allocation failed.");	\
@@ -30,26 +31,44 @@
     array.ra[count - 1].next = &array.ra[0];				\
     array.ra[count - 1].mr_ptr.ptr = "string";				\
     typed_list.root = &array.ra[0];					\
+									\
+    vector_t * vector = MR_CALLOC (count, sizeof (vector[0]));		\
+    ck_assert_msg (NULL != vector, "Memory allocation failed.");	\
+    for (i = 0; i < count; ++i)						\
+      {									\
+	vector[i].vec = vector;						\
+	vector[i].vec_count = i + 2;					\
+      }									\
+    vector[count - 1].vec_count = count;				\
+									\
     clock_t _start = clock ();						\
     ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);		\
-      ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\
-		     "Serialization for method " #METHOD " failed.");	\
-      ck_assert_msg (MR_SUCCESS ==					\
-		     MR_LOAD_ ## METHOD ## _RA (typed_list_t, &ra, &list_), \
-		     "Deserialization for method " #METHOD " failed.");	\
-      MR_FREE_RECURSIVELY (typed_list_t, &list_);			\
-      MR_FREE (ra.data.ptr);						\
-      ra = MR_SAVE_ ## METHOD ## _RA (array_t, &array);			\
-	ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),	\
-		       "Serialization for method " #METHOD " failed.");	\
-	ck_assert_msg (MR_SUCCESS ==					\
-		       MR_LOAD_ ## METHOD ## _RA (array_t, &ra, &array_), \
-		       "Deserialization for method " #METHOD " failed."); \
-	MR_FREE_RECURSIVELY (array_t, &array_);				\
-	MR_FREE (ra.data.ptr);						\
-	MR_FREE (array.ra);						\
-	clock_t _finish = clock ();					\
-	return (_finish - _start);					\
+    ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\
+		   "Serialization for method " #METHOD " failed.");	\
+    ck_assert_msg (MR_SUCCESS ==					\
+		   MR_LOAD_ ## METHOD ## _RA (typed_list_t, &ra, &list_), \
+		   "Deserialization for method " #METHOD " failed.");	\
+    MR_FREE_RECURSIVELY (typed_list_t, &list_);				\
+    MR_FREE (ra.data.ptr);						\
+									\
+    ra = MR_SAVE_ ## METHOD ## _RA (array_t, &array);			\
+    ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\
+		   "Serialization for method " #METHOD " failed.");	\
+    ck_assert_msg (MR_SUCCESS ==					\
+		   MR_LOAD_ ## METHOD ## _RA (array_t, &ra, &array_),	\
+		   "Deserialization for method " #METHOD " failed.");	\
+    MR_FREE_RECURSIVELY (array_t, &array_);				\
+    MR_FREE (ra.data.ptr);						\
+    MR_FREE (array.ra);							\
+									\
+    ra = MR_SAVE_ ## METHOD ## _RA (vector_t, vector);			\
+    ck_assert_msg ((ra.MR_SIZE > 0) && (ra.data.ptr != NULL),		\
+		   "Serialization for method " #METHOD " failed.");	\
+    MR_FREE (ra.data.ptr);						\
+    MR_FREE (vector);							\
+									\
+    clock_t _finish = clock ();						\
+    return (_finish - _start);						\
   }									\
 									\
   START_TEST (test_performance) {					\

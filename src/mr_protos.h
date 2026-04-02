@@ -487,6 +487,7 @@ TYPEDEF_ENUM (mr_ptrdes_flags_t, ATTRIBUTES (__attribute__ ((packed)), "ponter d
 	      (MR_IS_OPAQUE_DATA, = 1 << 4, "opaque serialization of resizeable pointer for XDR"),
 	      (MR_IS_UNNAMED, = 1 << 5, "for CINIT serialization some nodes are unnamed (anonymous union and arrays elements)"),
 	      (MR_IS_TYPED, = 1 << 6, "for CINIT deserialization pointer node has a type"),
+	      (MR_IS_POSTPONED, = 1 << 7, "indicates that pointer is already in the stack for postponed loading"),
 	      );
 
 TYPEDEF_STRUCT (mr_union_discriminator_t, ATTRIBUTES ( , "cache for union discriminator resolution"),
@@ -632,9 +633,13 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
 		(mr_ic_t, union_discriminators, , "index over all union discriminators"),
 		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators",
-		{ .size_field_offset = offsetof (mr_save_data_t, mr_ra_ud_size) }, "size_field_offset"),
+		 { .size_field_offset = offsetof (mr_save_data_t, mr_ra_ud_size) }, "size_field_offset"),
 		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
+		(mr_idx_t *, postponed, , "stack for indexes of pointer nodes that require extension",
+		 { .size_field_offset = offsetof (mr_save_data_t, postponed_size) }, "size_field_offset"),
+		(ssize_t, postponed_size, , "size of 'postponed'"),
+		VOID (ssize_t, postponed_alloc_size, , "allocated size of 'postponed'"),
 		);
 
 TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *));
