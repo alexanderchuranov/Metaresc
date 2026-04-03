@@ -650,7 +650,9 @@ move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
   mr_ptrdes_t * ra = ptrs->ra;
   mr_idx_t count, ref_idx = ra[ref_parent].first_child;
   mr_idx_t parent = ra[idx].parent;
-  mr_size_t element_size = ra[idx].fdp ? ra[idx].fdp->stype.size : 0;
+  mr_size_t element_size = mr_type_size (ra[idx].mr_type);
+  if ((element_size == 0) && ra[idx].fdp)
+    element_size = ra[idx].fdp->stype.size;
 
   ra[ref_parent].flags |= MR_IS_REFERENCE;
   ra[ref_idx].flags |= MR_IS_REFERENCED;
@@ -787,9 +789,11 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
   mr_idx_t idx = ptrs->size / sizeof (ptrs->ra[0]);
   mr_idx_t parent = ra[idx].parent;
   mr_idx_t ref_parent = ra[ref_idx].parent;
-  mr_size_t element_size = ra[idx].fdp->stype.size;
+  mr_size_t element_size = mr_type_size (ra[idx].mr_type);
 
   *resolved = false;
+  if ((element_size == 0) && ra[idx].fdp)
+    element_size = ra[idx].fdp->stype.size;
   if (element_size == 0)
     return (0);
   
