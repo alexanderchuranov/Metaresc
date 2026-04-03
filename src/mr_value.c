@@ -56,34 +56,42 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
       break;
 
     case MR_VT_LONG_DOUBLE:
-      if (mr_value->vt_long_double == (typeof (ptrdes->vt_double))mr_value->vt_long_double)
-	{
-	  ptrdes->vt_double = mr_value->vt_long_double;
-	  ptrdes->value_type = MR_VT_DOUBLE;
-	}
-      else
-	{
-	  ptrdes->vt_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_long_double));
-	  if (NULL == ptrdes->vt_long_double)
-	    return (MR_FAILURE);
-	  *ptrdes->vt_long_double = mr_value->vt_long_double;
-	}
-      break;
+      {
+	typeof (ptrdes->vt_double) casted = mr_value->vt_long_double;
+	(void)mr_hash_block (&casted, sizeof (casted));
+	if (mr_value->vt_long_double == casted)
+	  {
+	    ptrdes->vt_double = mr_value->vt_long_double;
+	    ptrdes->value_type = MR_VT_DOUBLE;
+	  }
+	else
+	  {
+	    ptrdes->vt_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_long_double));
+	    if (NULL == ptrdes->vt_long_double)
+	      return (MR_FAILURE);
+	    *ptrdes->vt_long_double = mr_value->vt_long_double;
+	  }
+	break;
+      }
 
     case MR_VT_COMPLEX_LONG_DOUBLE:
-      if (mr_value->vt_complex_long_double == (typeof (ptrdes->vt_complex_float))mr_value->vt_complex_long_double)
-	{
-	  ptrdes->vt_complex_float = mr_value->vt_complex_long_double;
-	  ptrdes->value_type = MR_VT_COMPLEX_FLOAT;
-	}
-      else
-	{
-	  ptrdes->vt_complex_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_complex_long_double));
-	  if (NULL == ptrdes->vt_complex_long_double)
-	    return (MR_FAILURE);
-	  *ptrdes->vt_complex_long_double = mr_value->vt_complex_long_double;
-	}
-      break;
+      {
+	typeof (ptrdes->vt_complex_float) casted = mr_value->vt_complex_long_double;
+	(void)mr_hash_block (&casted, sizeof (casted));
+	if (mr_value->vt_complex_long_double == casted)
+	  {
+	    ptrdes->vt_complex_float = mr_value->vt_complex_long_double;
+	    ptrdes->value_type = MR_VT_COMPLEX_FLOAT;
+	  }
+	else
+	  {
+	    ptrdes->vt_complex_long_double = MR_CALLOC (1, sizeof (*ptrdes->vt_complex_long_double));
+	    if (NULL == ptrdes->vt_complex_long_double)
+	      return (MR_FAILURE);
+	    *ptrdes->vt_complex_long_double = mr_value->vt_complex_long_double;
+	  }
+	break;
+      }
 
     default:
       return (MR_FAILURE);
