@@ -36,10 +36,10 @@
     ck_assert_msg (NULL != vector, "Memory allocation failed.");	\
     for (i = 0; i < count; ++i)						\
       {									\
-	vector[i].vec = vector;						\
-	vector[i].vec_count = i + 2;					\
+	vector[i].vec = &vector[i];					\
+	vector[i].vec_count = 2;					\
       }									\
-    vector[count - 1].vec_count = count;				\
+    vector[count - 1].vec_count = 1;					\
 									\
     clock_t _start = clock ();						\
     ra = MR_SAVE_ ## METHOD ## _RA (typed_list_t, &typed_list);		\
