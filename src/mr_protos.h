@@ -86,6 +86,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
 	      (MR_MESSAGE_WRONG_SIZE_FOR_DYNAMIC_ARRAY, , "Wrong size (%zd) for dynamics array."),
 	      (MR_MESSAGE_UNEXPECTED_MR_TYPE, , "Unexpected mr_type for serialized node."),
 	      (MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, , "Unexpected number of items in static array collection %d."),
+	      (MR_MESSAGE_UNEXPECTED_CHILDREN_NODES, , "Unexpected children nodes within pointer serialization."),
 	      (MR_MESSAGE_TOO_MANY_UD, , "Serialization require more distinct union discriminators. Recompile Metaresc with MR_RA_UD_IDX_TYPE defined to a type bigger then '%s' (e.g. ./configure --enable-ra-ud-idx=uint16_t)"),
 	      (MR_MESSAGE_FIELD_NOT_FOUND, , "Field '%s' is not found in type '%s'."),
 	      (MR_MESSAGE_YAML_ERROR, , "YAML error '%s'."),
@@ -635,7 +636,6 @@ TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup st
 		 { .size_field_offset = offsetof (mr_save_data_t, mr_ra_ud_size) }, "size_field_offset"),
 		(ssize_t, mr_ra_ud_size, , "size of 'mr_ra_ud'"),
 		VOID (ssize_t, mr_ra_ud_alloc_size, , "allocated size of 'mr_ra_ud'"),
-		(mr_idx_t, postponed, , "index of pointer nodes that require extension"),
 		);
 
 TYPEDEF_FUNC (int, mr_ra_printf_t, (mr_rarray_t *, mr_ptrdes_t *));
