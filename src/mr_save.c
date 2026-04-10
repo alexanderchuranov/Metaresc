@@ -789,7 +789,8 @@ mr_extend_pointer (mr_save_data_t * mr_save_data, mr_idx_t idx, mr_size_t delta)
   char ** data = ra[idx].data.ptr;
 
   mr_save_data->ptrs.last_child = mr_get_child_by_addr (mr_save_data, idx, ra[first_child].data.uintptr + (i - 1) * fd.stype.size);
-  if (mr_save_data->ptrs.last_child == MR_NULL_IDX)
+  if ((mr_save_data->ptrs.last_child == MR_NULL_IDX) ||
+      (mr_save_data->ptrs.ra[mr_save_data->ptrs.last_child].next != MR_NULL_IDX))
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_CHILDREN_NODES);
       return (0);

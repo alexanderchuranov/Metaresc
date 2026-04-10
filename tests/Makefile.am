@@ -17,7 +17,7 @@ if HAVE_INT128
 endif
 
 if HAVE_PERFTEST
-  check_PROGRAMS += union_resolution_complexity perf_save
+  check_PROGRAMS += union_resolution_complexity perf
 endif
 
 if HAVE_EXECINFO
@@ -36,9 +36,6 @@ if HAVE_BISON_FLEX
 
   expr.$(OBJEXT): CFLAGS += -fno-math-errno -ffinite-math-only -fno-rounding-math -ffp-contract=fast
 
-if HAVE_PERFTEST
-  check_PROGRAMS += perf_cinit perf_json perf_scm perf_xml1
-endif
 if HAVE_EXECINFO
   check_PROGRAMS += mf_cinit_save mf_cinit_load mf_json_save mf_json_load mf_scm_save mf_scm_load mf_xml1_save mf_xml1_load
 endif
