@@ -1,3 +1,5 @@
+#include <time.h>
+
 #include <metaresc.h>
 #include <check.h>
 
