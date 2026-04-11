@@ -45,6 +45,9 @@ union_resolution (int count, void (*save_load) (mr_res_t * res))
   clock_t _start = clock ();
   save_load (&res);
   clock_t _finish = clock ();
+
+  MR_FREE (ra);
+
   return (_finish - _start);
 }
 
@@ -71,6 +74,9 @@ pointers_extension_overlap (int count, void (*save_load) (mr_res_t * res))
   clock_t _start = clock ();
   save_load (&res);
   clock_t _finish = clock ();
+
+  MR_FREE (ra);
+
   return (_finish - _start);
 }
 
