@@ -648,74 +648,73 @@ static mr_idx_t
 move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
 {
   mr_ptrdes_t * ra = ptrs->ra;
-  mr_idx_t count, ref_idx = ra[ref_parent].first_child;
+  mr_idx_t ref_idx = ra[ref_parent].first_child;
   mr_idx_t parent = ra[idx].parent;
   mr_size_t element_size = mr_type_size (ra[idx].mr_type);
   if ((element_size == 0) && ra[idx].fdp && ra[idx].fdp->stype.tdp)
     element_size = ra[idx].fdp->stype.tdp->size;
 
+  mr_idx_t last_child = mr_last_child_for_parent (ptrs, parent);
+  if ((last_child == MR_NULL_IDX) || (ra[last_child].next != MR_NULL_IDX))
+    return (0);
+  ra[last_child].next = ref_idx;
+
   ra[ref_parent].flags |= MR_IS_REFERENCE;
   ra[ref_idx].flags |= MR_IS_REFERENCED;
 
+  mr_idx_t count = 0;
   mr_fd_t * fdp = mr_get_persistent_fd (ra, idx);
-  for (count = 0; ref_idx != MR_NULL_IDX; ++count)
+  for ( ; ref_idx != MR_NULL_IDX; ref_idx = ra[ref_idx].next)
     {
-      mr_idx_t next = ra[ref_idx].next;
       ra[ref_idx].fdp = fdp;
       ra[ref_idx].flags &= ~MR_IS_UNNAMED;
       ra[ref_idx].flags |= ra[idx].flags & MR_IS_UNNAMED;
 
-      ra[ref_idx].MR_SIZE = ra[idx].MR_SIZE - count * element_size;
-      mr_add_child (ptrs, parent, ref_idx);
-      ref_idx = next;
+      ra[ref_idx].parent = parent;
+      ptrs->last_child = ref_idx;
+      ++count;
     }
   return (count);
 }
-  
+
 static mr_idx_t mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent);
 
-static mr_idx_t mr_get_child_by_addr (mr_save_data_t * mr_save_data, mr_idx_t parent, uintptr_t addr)
+static mr_idx_t *
+mr_get_bucket_ptr (mr_save_data_t * mr_save_data, uintptr_t addr)
 {
   mr_idx_t alloc_idx = mr_add_ptr_to_list (&mr_save_data->ptrs); /* allocate pointer descriptor for lookup */
-  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   if (alloc_idx == MR_NULL_IDX)
     return (MR_NULL_IDX);
 
-  ra[alloc_idx].data.uintptr = addr;
-  mr_ptr_t * find_result = mr_ic_find (&mr_save_data->untyped_ptrs, (uintptr_t)alloc_idx);
   mr_save_data->ptrs.size -= sizeof (mr_save_data->ptrs.ra[0]);
-  if (find_result == NULL)
-    return (MR_NULL_IDX);
+  mr_save_data->ptrs.ra[alloc_idx].data.uintptr = addr;
+  return ((mr_idx_t*)mr_ic_find (&mr_save_data->untyped_ptrs, (uintptr_t)alloc_idx));
+}
 
-  mr_idx_t bucket;
-  for (bucket = find_result->uintptr; bucket != MR_NULL_IDX; bucket = ra[bucket].idx)
-    if ((ra[bucket].data.uintptr == addr) && (ra[bucket].parent == parent))
-      break;
+static mr_idx_t *
+mr_get_idx_ptr (mr_save_data_t * mr_save_data, mr_idx_t idx)
+{
+  mr_idx_t * bucket = mr_get_bucket_ptr (mr_save_data, mr_save_data->ptrs.ra[idx].data.uintptr);
+  if (bucket == NULL)
+    return (NULL);
+  for ( ; *bucket != idx; bucket = &mr_save_data->ptrs.ra[*bucket].idx)
+    if (*bucket == MR_NULL_IDX)
+      return (NULL);
   return (bucket);
 }
 
-static mr_idx_t __attribute__ ((unused))
-mr_find_last_child (mr_save_data_t * mr_save_data, mr_idx_t idx, size_t size)
+static mr_idx_t
+mr_get_child_by_addr (mr_save_data_t * mr_save_data, mr_idx_t parent, uintptr_t addr)
 {
-  mr_idx_t l = 1;
-  mr_idx_t r = mr_save_data->ptrs.ra[idx].MR_SIZE / size;
-  mr_idx_t first_child = mr_save_data->ptrs.ra[idx].first_child;
-  uintptr_t base = mr_save_data->ptrs.ra[first_child].data.uintptr;
+  mr_idx_t * bucket = mr_get_bucket_ptr (mr_save_data, addr);
+  if (bucket == NULL)
+    return (MR_NULL_IDX);
 
-  mr_save_data->ptrs.last_child = first_child;
-  while (l < r)
-    {
-      mr_idx_t m = (l + r) >> 1;
-      mr_idx_t child = mr_get_child_by_addr (mr_save_data, idx, base + m * size);
-      if (child == MR_NULL_IDX)
-	r = m;
-      else
-	{
-	  l = m + 1;
-	  mr_save_data->ptrs.last_child = child;
-	}
-    }
-  return (l);
+  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  for ( ; *bucket != MR_NULL_IDX; bucket = &ra[*bucket].idx)
+    if ((ra[*bucket].data.uintptr == addr) && (ra[*bucket].parent == parent))
+      break;
+  return (*bucket);
 }
 
 static mr_fd_t
@@ -733,6 +732,135 @@ mr_get_pointer_fd (mr_type_t mr_type, mr_fd_t * fdp)
   if (fd.stype.size == 0)
     fd.stype.size = fd.stype.tdp ? fd.stype.tdp->size : 0;
   return (fd);
+}
+
+/*
+  This function returns address of .next or .first_child field that refers on node idx.
+  It assumes that ptrs.ra arena has at least one pre-allocated element.
+  It also assumes that node [idx] has type MR_TYPE_POINTER.
+  Both assumptions are not validated within this function.
+  In default case we just need to walk list of children and find the one that refers on target node.
+  This might yeld O(n) complexity for nodes within arrays of resizable pointers. For those cases we could
+  find previous node based on it's address. Address could be calculated from address of node [idx].
+ */
+static mr_idx_t *
+find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
+{
+  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  mr_idx_t parent = ra[idx].parent;
+  mr_idx_t * idx_ptr = &ra[parent].first_child;
+  if (*idx_ptr != idx)
+    switch (ra[parent].mr_type)
+      {
+      case MR_TYPE_POINTER:
+      case MR_TYPE_ARRAY:
+	{
+	  mr_idx_t prev = mr_get_child_by_addr (mr_save_data, parent, ra[idx].data.uintptr - sizeof (void*));
+	  if ((prev != MR_NULL_IDX) && (ra[prev].next == idx))
+	    return (&ra[prev].next);
+	}
+	  __attribute__ ((fallthrough));
+
+      default:
+	for (idx_ptr = &ra[parent].first_child;
+	     (*idx_ptr != idx) && (*idx_ptr != MR_NULL_IDX);
+	     idx_ptr = &ra[*idx_ptr].next);
+	break;
+      }
+  return (idx_ptr);
+}
+
+static mr_idx_t
+merge_pointers_content (mr_save_data_t * mr_save_data, mr_idx_t ref_parent, mr_idx_t idx, mr_size_t element_size)
+{
+  /*
+    Here we need to merge content of two pointers. Entire content of ref_parent needs to be appended to parent of idx.
+    Affect of this function should be semantically the same as of move_nodes_to_parent, but amount of ref_parent content
+    is greater than the other pointer and we need to swap parent and ref_parent in the graph, so update of 'parent' field
+    will be required for less number of nodes.
+
+    Below is a diagram of initial state:
+                                        ┌────────────────┐                                                                  
+                                        │ref_grand_parent│                                                                  
+                                        └────────┬───────┘                                                                  
+                                                 │                                                                          
+┌────────────────┐                      ┌────────▼───────┐      ┌───────────────┐   ┌──────────┐  ┌───────────────┐         
+│  grand_parent  │                      │ref_parent_first├─► ──►│ref_parent_prev├───►REF_PARENT├──►ref_parent_next│         
+└────────┬───────┘                      └────────────────┘      └───────────────┘   └────┬─────┘  └───────────────┘         
+         │                                                                               │                                  
+┌────────▼───────┐      ┌───────────────┐   ┌──────────┐  ┌─────────────┐           ┌────▼─────┐  ┌────────┐      ┌────────┐
+│  parent_first  ├─► ──►│  parent_prev  ├───►  PARENT  ├──► parent_next │           │    ref   ├──►ref_next├─►  ──►ref_last│
+└────────────────┘      └───────────────┘   └────┬─────┘  └─────────────┘           └──────────┘  └────────┘      └────────┘
+                                                 │                                                                          
+                                            ┌────▼──────┐   ┌────┐      ┌──────────┐  ┌──────┐                              
+                                            │first_child├───►next├──► ──►last_child├──► idx  │                              
+                                            └───────────┘   └────┘      └──────────┘  └──────┘
+
+  Here is transformation that needs to be done:
+
+                                        ┌────────────────┐                                                                  
+                                        │ref_grand_parent│                                                                  
+                                        └────────┬───────┘                                                                  
+                                                 │                                                                          
+┌────────────────┐                      ┌────────▼───────┐      ┌───────────────┐   ┌──────────┐  ┌───────────────┐         
+│  grand_parent  │                      │ref_parent_first├─► ──►│ref_parent_prev├───►  PARENT  ├──►ref_parent_next│         
+└────────┬───────┘                      └────────────────┘      └───────────────┘   └────┬─────┘  └───────────────┘         
+         │                                                                               │                                  
+┌────────▼───────┐      ┌───────────────┐   ┌──────────┐  ┌─────────────┐                │                                  
+│  parent_first  ├─► ──►│  parent_prev  ├───►REF_PARENT├──► parent_next │                │                                  
+└────────────────┘      └───────────────┘   └────┬─────┘  └─────────────┘                │                                  
+                                                 │                                       │                                  
+                                            ┌────▼──────┐   ┌────┐      ┌──────────┐  ┌──▼─────┐  ┌────────┐      ┌────────┐
+                                            │first_child├───►next├──► ──►last_child├──► ref    ├──►ref_next├─►  ──►ref_last│
+                                            └───────────┘   └────┘      └──────────┘  └────────┘  └────────┘      └────────┘
+
+  Nodes PARENT and REF_PARENT needs to be swapped and the following references updated:
+  1. ref_parent_prev.next = PARENT
+  2. parent_prev.next = REF_PARENT
+  3. last_child.next = ref
+  4. All nodes from [first_child, next, ..., last_child] needs update to parent to REF_PARENT
+  Search index over nodes (mr_save_data.untyped_ptrs) for PARENT and REF_PARENT also needs to be updated.
+  */
+
+  mr_idx_t parent = mr_save_data->ptrs.ra[idx].parent;
+  mr_idx_t * parent_idx = mr_get_idx_ptr (mr_save_data, parent);
+  mr_idx_t * ref_parent_idx = mr_get_idx_ptr (mr_save_data, ref_parent);
+  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  mr_ptrdes_t parent_ptrdes = ra[parent];
+  mr_ptrdes_t ref_parent_ptrdes = ra[ref_parent];
+  mr_idx_t * parent_prev = find_prev_idx (mr_save_data, parent);
+  mr_idx_t * ref_parent_prev = find_prev_idx (mr_save_data, ref_parent);
+
+  /* Update search index for both nodes */
+  if (parent_idx)
+    *parent_idx = ref_parent;
+  if (ref_parent_idx)
+    *ref_parent_idx = parent;
+
+  /* Swap content */
+  ra[parent] = ref_parent_ptrdes;
+  ra[parent].flags |= MR_IS_REFERENCE;
+  if (ref_parent_prev)
+    *ref_parent_prev = parent;
+
+  ra[ref_parent] = parent_ptrdes;
+  if (parent_prev)
+    *parent_prev = ref_parent;
+
+  /* Go through the list of children and update parent */
+  mr_idx_t * node;
+  for (node = &parent_ptrdes.first_child; *node != MR_NULL_IDX; node = &ra[*node].next)
+    ra[*node].parent = ref_parent;
+
+  /* link children nodes of original ref_parent to the end of the list of original parent */
+  *node = ref_parent_ptrdes.first_child;
+  ra[ref_parent_ptrdes.first_child].flags |= MR_IS_REFERENCED;
+
+  /* update last_child for furher appends */
+  mr_save_data->ptrs.last_child = mr_get_child_by_addr (mr_save_data, idx, *(uintptr_t*)ref_parent_ptrdes.data.ptr + ref_parent_ptrdes.MR_SIZE - element_size);
+
+  /* signal how many nodes were added */
+  return (ref_parent_ptrdes.MR_SIZE / element_size);
 }
 
 /**
@@ -872,14 +1000,15 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
 	    adjust counters if total length of sequence increased
 	  */
 	  *resolved = true;
+	  mr_size_t parent_saved_size = ra[parent].MR_SIZE - ra[idx].MR_SIZE;
 	  if (ref_mr_size > ra[idx].MR_SIZE)
-	    {
-	      /* this is required for proper reindexing of nodes that will be moved by move_nodes_to_parent */
-	      ra[idx].MR_SIZE = ref_mr_size;
-	      ra[parent].MR_SIZE += ref_mr_size - ra[idx].MR_SIZE; /* increase size of resizable array on detected delta */
-	    }
+	    ra[parent].MR_SIZE += ref_mr_size - ra[idx].MR_SIZE; /* increase size of resizable array on detected delta */
 
-	  return (move_nodes_to_parent (ptrs, ref_parent, idx));
+	  /* based on size of pointers decide on aggregation method */
+	  if (parent_saved_size >= ref_mr_size)
+	    return (move_nodes_to_parent (ptrs, ref_parent, idx));
+	  else
+	    return (merge_pointers_content (mr_save_data, ref_parent, idx, element_size));
 	}
     }
   
@@ -1212,7 +1341,7 @@ mr_save_string (mr_save_data_t * mr_save_data)
   mr_fd_t fd = *mr_save_data->ptrs.ra[idx].fdp;
   fd.non_persistent = true;
   fd.stype.mr_type = MR_TYPE_CHAR_ARRAY;
-  fd.stype.size = sizeof (char);
+  fd.stype.size = strlen (str) + 1;
   fd.stype.type = "char";
   return (mr_save_inner (str, &fd, 1, mr_save_data, idx));
 }
@@ -1489,6 +1618,26 @@ mr_renumber_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t or
   return (MR_SUCCESS);
 }
 
+static mr_status_t
+mr_update_pointers_content (mr_ptrdes_t * ra, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
+{
+  if (MR_DFS_PRE_ORDER != order)
+    return (MR_SUCCESS);
+  mr_idx_t * idx_ = context;
+  ra[idx].idx = (*idx_)++;
+
+  mr_idx_t parent = ra[idx].parent;
+  if (ra[parent].mr_type == MR_TYPE_POINTER)
+    {
+      mr_idx_t first_child = ra[parent].first_child;
+      mr_ptrdes_flags_t unnamed = ra[first_child].flags & MR_IS_UNNAMED;
+      ra[idx].fdp = ra[parent].fdp;
+      ra[idx].flags &= ~MR_IS_UNNAMED;
+      ra[idx].flags |= unnamed;
+    }
+  return (MR_SUCCESS);
+}
+
 /**
  * There is no need to save empty nodes and possibly their parent structures 
  * @param mr_ptrdes_t resizable array with pointers descriptors
@@ -1520,7 +1669,6 @@ mr_post_process (mr_save_data_t * mr_save_data)
   for (idx = 1; idx < count; ++idx)
     {
       mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-
       /* Try resolve void pointers that were not resolved at save time.
 	 Those pointers might be saved as typed entries on a later stages. */
       switch (ptrdes->mr_type)
@@ -1613,7 +1761,7 @@ mr_post_process (mr_save_data_t * mr_save_data)
     ptrs->ra[idx].idx = 0;
 
   idx = 1;
-  mr_ptrs_dfs (mr_save_data->ptrs.ra, mr_renumber_node, &idx); /* enumeration of nodes should be done only after strings processing */
+  mr_ptrs_dfs (mr_save_data->ptrs.ra, mr_update_pointers_content, &idx); /* enumeration of nodes should be done only after strings processing */
 }
 
 /**

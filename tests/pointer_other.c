@@ -462,20 +462,7 @@ START_TEST (tda_overlapping_1) {
 	.mr_type = MR_TYPE_STRUCT,
 	.flags = MR_IS_UNNAMED,
 	.next = 0,
-	.first_child = 2
-      },
-      {
-	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_POINTER,
-	.flags = MR_IS_REFERENCE,
-	.next = 3,
-	.first_child = 6
-      },
-      {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
-	.mr_type = MR_TYPE_DETECT (ssize_t),
-	.next = 4,
-	.first_child = 0
+	.first_child = 4
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
@@ -483,6 +470,19 @@ START_TEST (tda_overlapping_1) {
 	.flags = MR_NO_FLAGS,
 	.next = 5,
 	.first_child = 8
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
+	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.next = 2,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 3,
+	.first_child = 6
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},

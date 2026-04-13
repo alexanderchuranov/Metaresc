@@ -80,6 +80,35 @@ pointers_extension_overlap (int count, void (*save_load) (mr_res_t * res))
   return (_finish - _start);
 }
 
+static clock_t
+pointers_merger_overlap (int count, void (*save_load) (mr_res_t * res))
+{
+  int i;
+  vector_t * ra = MR_CALLOC (count, sizeof (ra[0]));
+  ck_assert_msg (ra != NULL, "Memory allocation failed.");
+
+  for (i = 0; i < count; ++i)
+    {
+      ra[i].vec = &ra[count - 1 - i];
+      ra[i].vec_count = 2;
+    }
+  ra[0].vec_count = 1;
+
+  mr_res_t res = {
+    .type = "vector_t",
+    .MR_SIZE = sizeof (vector_t),
+    .data.ptr = &ra[0],
+  };
+
+  clock_t _start = clock ();
+  save_load (&res);
+  clock_t _finish = clock ();
+
+  MR_FREE (ra);
+
+  return (_finish - _start);
+}
+
 static void
 check_cpu_complexity (void (*save_load) (mr_res_t * res), char * method,
 		      clock_t (*test_run) (int count, void (*save_load) (mr_res_t * res)))
@@ -120,6 +149,10 @@ START_TEST (pointers_extension_overlap_complexity_mr_save) {
   check_cpu_complexity (mr_save_callback, "MR_SAVE", pointers_extension_overlap);
 } END_TEST
 
+START_TEST (pointers_merger_overlap_complexity_mr_save) {
+  check_cpu_complexity (mr_save_callback, "MR_SAVE", pointers_merger_overlap);
+} END_TEST
+
 #define CPU_COMPLEXITY(METHOD, ...)					\
   static void mr_save_ ## METHOD ## _callback (mr_res_t * res)		\
   {									\
@@ -146,15 +179,18 @@ START_TEST (pointers_extension_overlap_complexity_mr_save) {
 
 ALL_METHODS (CPU_COMPLEXITY);
 
-#define CPU_OPS_COMPLEXITY(METHOD)					\
+#define CPU_COMPLEXITY_TESTS_(METHOD)					\
+  (union_resolution_complexity_ ## METHOD, "test union resolution complexity for " #METHOD), \
+    (pointers_extension_overlap_complexity_ ## METHOD, "test union resolution complexity for " #METHOD), \
+
+#define CPU_COMPLEXITY_TESTS(METHOD)					\
   MR_IF_ELSE (SKIP_METHOD_ ## METHOD)					\
-    ((union_resolution_complexity_ ## METHOD, "test union resolution complexity for " #METHOD), \
-     (pointers_extension_overlap_complexity_ ## METHOD, "test union resolution complexity for " #METHOD), \
-     )									\
+    (CPU_COMPLEXITY_TESTS_ (METHOD))					\
     ()
 
 MAIN_TEST_SUITE (
-		 MR_FOREACH (CPU_OPS_COMPLEXITY, TEST_METHODS)
+		 MR_FOREACH (CPU_COMPLEXITY_TESTS, TEST_METHODS)
 		 (union_resolution_complexity_mr_save, "test union resolution complexity for MR_SAVE"),
-		 (pointers_extension_overlap_complexity_mr_save, "test pointers extension overlap complexity for MR_SAVE")
+		 (pointers_extension_overlap_complexity_mr_save, "test pointers extension overlap complexity for MR_SAVE"),
+		 (pointers_merger_overlap_complexity_mr_save, "test pointers merger overlap complexity for MR_SAVE")
 		 );
