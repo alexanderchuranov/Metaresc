@@ -697,10 +697,12 @@ mr_get_idx_ptr (mr_save_data_t * mr_save_data, mr_idx_t idx)
   mr_idx_t * bucket = mr_get_bucket_ptr (mr_save_data, mr_save_data->ptrs.ra[idx].data.uintptr);
   if (bucket == NULL)
     return (NULL);
-  for ( ; *bucket != idx; bucket = &mr_save_data->ptrs.ra[*bucket].idx)
-    if (*bucket == MR_NULL_IDX)
-      return (NULL);
-  return (bucket);
+
+  mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
+  for ( ; *bucket != MR_NULL_IDX; bucket = &ra[*bucket].idx)
+    if (*bucket == idx)
+      return (bucket);
+  return (NULL);
 }
 
 static mr_idx_t
@@ -765,6 +767,9 @@ find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
 	for (idx_ptr = &ra[parent].first_child;
 	     (*idx_ptr != idx) && (*idx_ptr != MR_NULL_IDX);
 	     idx_ptr = &ra[*idx_ptr].next);
+
+	if (*idx_ptr != idx)
+	  idx_ptr = NULL;
 	break;
       }
   return (idx_ptr);
