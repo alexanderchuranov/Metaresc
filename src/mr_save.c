@@ -1641,11 +1641,10 @@ mr_update_pointers_content (mr_ptrdes_t * ra, mr_idx_t idx, int level, mr_dfs_or
   mr_idx_t parent = ra[idx].parent;
   if (ra[parent].mr_type == MR_TYPE_POINTER)
     {
-      mr_idx_t first_child = ra[parent].first_child;
-      mr_ptrdes_flags_t unnamed = ra[first_child].flags & MR_IS_UNNAMED;
       ra[idx].fdp = ra[parent].fdp;
-      ra[idx].flags &= ~MR_IS_UNNAMED;
-      ra[idx].flags |= unnamed;
+      ra[idx].flags |= MR_IS_UNNAMED;
+      if (ra[idx].mr_type != MR_TYPE_POINTER)
+	ra[idx].MR_SIZE = ra[parent].MR_SIZE - (ra[idx].data.uintptr - *(uintptr_t*)ra[parent].data.ptr);
     }
   return (MR_SUCCESS);
 }
