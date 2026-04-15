@@ -11,6 +11,8 @@ TYPEDEF_FUNC (mr_idx_t, mr_save_handler_t, (mr_save_data_t *));
 
 static mr_save_handler_t mr_save_handler[];
 
+static mr_idx_t mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent);
+
 static inline mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
@@ -529,10 +531,10 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
       break;
       
     case MR_TYPE_ARRAY:
-    case MR_TYPE_POINTER:
     case MR_TYPE_BITFIELD:
       return ((x > y) - (x < y));
       
+    case MR_TYPE_POINTER:
     case MR_TYPE_STRUCT:
     case MR_TYPE_ENUM:
     case MR_TYPE_UNION:
@@ -677,8 +679,6 @@ move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
   return (count);
 }
 
-static mr_idx_t mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent);
-
 static mr_idx_t *
 mr_get_bucket_ptr (mr_save_data_t * mr_save_data, uintptr_t addr)
 {
@@ -759,7 +759,7 @@ find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
 	  if ((prev != MR_NULL_IDX) && (ra[prev].next == idx))
 	    return (&ra[prev].next);
 	}
-	  __attribute__ ((fallthrough));
+	__attribute__ ((fallthrough));
 
       default:
 	for (idx_ptr = &ra[parent].first_child;
@@ -838,13 +838,22 @@ merge_pointers_content (mr_save_data_t * mr_save_data, mr_idx_t ref_parent, mr_i
     *ref_parent_idx = parent;
 
   /* Swap content */
+  ra[ref_parent] = parent_ptrdes;
   ra[parent] = ref_parent_ptrdes;
   ra[parent].flags |= MR_IS_REFERENCE;
-  if (ref_parent_prev)
+
+  /*
+    we need to handle corner case when parent and ref_parent were linked as .next to each other
+    Otherwise just update references on moved nodes.
+  */
+  if (parent_ptrdes.next == ref_parent)
+    ra[ref_parent].next = parent;
+  else if (ref_parent_prev)
     *ref_parent_prev = parent;
 
-  ra[ref_parent] = parent_ptrdes;
-  if (parent_prev)
+  if (ref_parent_ptrdes.next == parent)
+    ra[parent].next = ref_parent;
+  else if (parent_prev)
     *parent_prev = ref_parent;
 
   /* Go through the list of children and update parent */
@@ -858,6 +867,7 @@ merge_pointers_content (mr_save_data_t * mr_save_data, mr_idx_t ref_parent, mr_i
 
   /* update last_child for furher appends */
   mr_save_data->ptrs.last_child = mr_get_child_by_addr (mr_save_data, idx, *(uintptr_t*)ref_parent_ptrdes.data.ptr + ref_parent_ptrdes.MR_SIZE - element_size);
+  mr_save_data->pointer_idx = ref_parent;
 
   /* signal how many nodes were added */
   return (ref_parent_ptrdes.MR_SIZE / element_size);
@@ -885,9 +895,10 @@ mr_save_pointer_content (mr_save_data_t * mr_save_data, mr_idx_t idx)
   mr_idx_t i = 0;
   mr_idx_t count = ra[idx].MR_SIZE / fd.stype.size;
   char ** data = ra[idx].data.ptr;
+  mr_save_data->pointer_idx = idx;
   while (i < count)
     {
-      mr_idx_t nodes_added = mr_save_inner (*data + i * fd.stype.size, &fd, count - i, mr_save_data, idx);
+      mr_idx_t nodes_added = mr_save_inner (*data + i * fd.stype.size, &fd, count - i, mr_save_data, mr_save_data->pointer_idx);
       if (nodes_added == 0)
 	return (0);
       i += nodes_added;
@@ -924,9 +935,10 @@ mr_extend_pointer (mr_save_data_t * mr_save_data, mr_idx_t idx, mr_size_t delta)
       return (0);
     }
 
+  mr_save_data->pointer_idx = idx;
   while (i < count)
     {
-      mr_idx_t nodes_added = mr_save_inner (*data + i * fd.stype.size, &fd, count - i, mr_save_data, idx);
+      mr_idx_t nodes_added = mr_save_inner (*data + i * fd.stype.size, &fd, count - i, mr_save_data, mr_save_data->pointer_idx);
       if (nodes_added == 0)
 	return (0);
       i += nodes_added;

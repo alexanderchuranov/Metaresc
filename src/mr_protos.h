@@ -630,6 +630,7 @@ TYPEDEF_FUNC (mr_status_t, mr_ptrdes_processor_t, (mr_ptrdes_t * /* ptrs */, mr_
 
 TYPEDEF_STRUCT (mr_save_data_t, ATTRIBUTES ( , "save routines data and lookup structures"),
 		(mr_ra_ptrdes_t, ptrs, , "internal representation of a saved tree"),
+		(mr_idx_t, pointer_idx, , "index of parent node for pointer content"),
 		(mr_ic_t, untyped_ptrs, , "index over untyped nodes"),
 		(mr_ic_t, union_discriminators, , "index over all union discriminators"),
 		(mr_union_discriminator_t *, mr_ra_ud, , "allocation of union discriminators",

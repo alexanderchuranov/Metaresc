@@ -313,10 +313,10 @@ START_TEST (backward_ref_is_a_field) {
 } END_TEST
 
 TYPEDEF_STRUCT (two_dynamic_arrays_t,
-		(int *, da1, , "dynamic array one", { .size_field_offset = offsetof (two_dynamic_arrays_t, size1), }, "size_field_offset"),
-		(ssize_t, size1),
-		(int *, da2, , "dynamic array two", { .size_field_offset = offsetof (two_dynamic_arrays_t, size2), }, "size_field_offset"),
-		(ssize_t, size2),
+		(int *, da1, , "dynamic array one"),
+		(int *, da2, , "dynamic array two"),
+		(size_t, da1_count),
+		(size_t, da2_count),
 		);
 
 START_TEST (tda_same_ptr_and_size) {
@@ -324,9 +324,9 @@ START_TEST (tda_same_ptr_and_size) {
   int array[2] = { 1, 2, };
 
   tda.da1 = array;
-  tda.size1 = sizeof (array);
+  tda.da1_count = 2;
   tda.da2 = array;
-  tda.size2 = sizeof (array);
+  tda.da2_count = 2;
 
   mr_ptrdes_t expected[] =
   {
@@ -345,34 +345,34 @@ START_TEST (tda_same_ptr_and_size) {
       .first_child = 6
     },
     {
-      .fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
-      .mr_type = MR_TYPE_DETECT (ssize_t),
-      .next = 4,
-      .first_child = 0
-    },
-    {
       .fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
       .mr_type = MR_TYPE_POINTER,
       .flags = MR_IS_REFERENCE,
-      .next = 5,
+      .next = 4,
       .first_child = 6
     },
     {
-      .fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
-      .mr_type = MR_TYPE_DETECT (ssize_t),
+      .fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da1_count" }},
+      .mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da1_count)),
+      .next = 5,
+      .first_child = 0
+    },
+    {
+      .fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da2_count" }},
+      .mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da2_count)),
       .next = 0,
       .first_child = 0
     },
     {
       .fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-      .mr_type = MR_TYPE_DETECT (int),
+      .mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
       .flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
       .next = 7,
       .first_child = 0
     },
     {
       .fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-      .mr_type = MR_TYPE_DETECT (int),
+      .mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
       .flags = MR_IS_UNNAMED,
       .next = 0,
       .first_child = 0
@@ -387,9 +387,9 @@ START_TEST (tda_same_ptr_and_bigger) {
   int array[2] = { 1, 2, };
 
   tda.da1 = array;
-  tda.size1 = sizeof (array);
+  tda.da1_count = 2;
   tda.da2 = array;
-  tda.size2 = sizeof (array[0]);
+  tda.da2_count = 1;
   
   mr_ptrdes_t expected[] =
     {
@@ -408,34 +408,34 @@ START_TEST (tda_same_ptr_and_bigger) {
 	.first_child = 6
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
-	.mr_type = MR_TYPE_DETECT (ssize_t),
-	.next = 4,
-	.first_child = 0
-      },
-      {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
 	.mr_type = MR_TYPE_POINTER,
 	.flags = MR_IS_REFERENCE,
-	.next = 5,
+	.next = 4,
 	.first_child = 6
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
-	.mr_type = MR_TYPE_INT64,
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da1_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da1_count)),
+	.next = 5,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da2_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da2_count)),
 	.next = 0,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
 	.next = 7,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_UNNAMED,
 	.next = 0,
 	.first_child = 0
@@ -450,9 +450,9 @@ START_TEST (tda_overlapping_1) {
   int array[3] = { 1, 2, 3, };
 
   tda.da1 = &array[1];
-  tda.size1 = 2 * sizeof (array[0]);
+  tda.da1_count = 2;
   tda.da2 = &array[0];
-  tda.size2 = 2 * sizeof (array[0]);
+  tda.da2_count = 2;
 
   mr_ptrdes_t expected[] =
     {
@@ -462,51 +462,51 @@ START_TEST (tda_overlapping_1) {
 	.mr_type = MR_TYPE_STRUCT,
 	.flags = MR_IS_UNNAMED,
 	.next = 0,
-	.first_child = 4
+	.first_child = 3
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
 	.mr_type = MR_TYPE_POINTER,
 	.flags = MR_NO_FLAGS,
-	.next = 5,
+	.next = 4,
 	.first_child = 8
-      },
-      {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
-	.mr_type = MR_TYPE_DETECT (ssize_t),
-	.next = 2,
-	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
 	.mr_type = MR_TYPE_POINTER,
 	.flags = MR_IS_REFERENCE,
-	.next = 3,
+	.next = 2,
 	.first_child = 6
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
-	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da1_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da1_count)),
+	.next = 5,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da2_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da2_count)),
 	.next = 0,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da2)),
 	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
 	.next = 7,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da2)),
 	.flags = MR_IS_UNNAMED,
 	.next = 0,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da2)),
 	.flags = MR_IS_UNNAMED,
 	.next = 6,
 	.first_child = 0
@@ -521,9 +521,9 @@ START_TEST (tda_overlapping_2) {
   int array[3] = { 1, 2, 3, };
 
   tda.da1 = &array[0];
-  tda.size1 = 2 * sizeof (array[0]);
+  tda.da1_count = 2;
   tda.da2 = &array[1];
-  tda.size2 = 2 * sizeof (array[0]);
+  tda.da2_count = 2;
 
   mr_ptrdes_t expected[] =
     {
@@ -542,41 +542,41 @@ START_TEST (tda_overlapping_2) {
 	.first_child = 6
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
-	.mr_type = MR_TYPE_DETECT (ssize_t),
-	.next = 4,
-	.first_child = 0
-      },
-      {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
 	.mr_type = MR_TYPE_POINTER,
 	.flags = MR_IS_REFERENCE,
-	.next = 5,
+	.next = 4,
 	.first_child = 7
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
-	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da1_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da1_count)),
+	.next = 5,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da2_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da2_count)),
 	.next = 0,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_UNNAMED,
 	.next = 7,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
 	.next = 8,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_UNNAMED,
 	.next = 0,
 	.first_child = 0
@@ -590,10 +590,87 @@ START_TEST (tda_overlapping_3) {
   two_dynamic_arrays_t tda;
   int array[] = { 1, 2, 3, 4, };
 
+  tda.da1 = &array[1];
+  tda.da1_count = 2;
+  tda.da2 = &array[0];
+  tda.da2_count = 4;
+
+  mr_ptrdes_t expected[] =
+    {
+      {},
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "two_dynamic_arrays_t", .name.str = "two_dynamic_arrays_t" }},
+	.mr_type = MR_TYPE_STRUCT,
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 3
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_POINTER,
+	.next = 4,
+	.first_child = 8
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
+	.mr_type = MR_TYPE_POINTER,
+	.flags = MR_IS_REFERENCE,
+	.next = 2,
+	.first_child = 6
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da1_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da1_count)),
+	.next = 5,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da2_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da2_count)),
+	.next = 0,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da2)),
+	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
+	.next = 7,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da2)),
+	.flags = MR_IS_UNNAMED,
+	.next = 9,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da2)),
+	.flags = MR_IS_UNNAMED,
+	.next = 6,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da2)),
+	.flags = MR_IS_UNNAMED,
+	.next = 0,
+	.first_child = 0
+      }
+    };
+
+  ASSERT_MR_SAVE (two_dynamic_arrays_t, &tda, expected);
+} END_TEST
+
+START_TEST (tda_overlapping_4) {
+  two_dynamic_arrays_t tda;
+  int array[] = { 1, 2, 3, 4, };
+
   tda.da1 = &array[0];
-  tda.size1 = 4 * sizeof (array[0]);
+  tda.da1_count = 4;
   tda.da2 = &array[1];
-  tda.size2 = 2 * sizeof (array[0]);
+  tda.da2_count = 2;
   
   mr_ptrdes_t expected[] =
     {
@@ -612,48 +689,48 @@ START_TEST (tda_overlapping_3) {
 	.first_child = 6
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size1" }},
-	.mr_type = MR_TYPE_INT64,
-	.next = 4,
-	.first_child = 0
-      },
-      {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da2" }},
 	.mr_type = MR_TYPE_POINTER,
 	.flags = MR_IS_REFERENCE,
-	.next = 5,
+	.next = 4,
 	.first_child = 7
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "ssize_t", .name.str = "size2" }},
-	.mr_type = MR_TYPE_DETECT (ssize_t),
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da1_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da1_count)),
+	.next = 5,
+	.first_child = 0
+      },
+      {
+	.fdp = (mr_fd_t[]){{ .stype.type = "size_t", .name.str = "da2_count" }},
+	.mr_type = MR_TYPE_DETECT (typeof (((two_dynamic_arrays_t*)0)->da2_count)),
 	.next = 0,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_UNNAMED,
 	.next = 7,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_REFERENCED | MR_IS_UNNAMED,
 	.next = 8,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_UNNAMED,
 	.next = 9,
 	.first_child = 0
       },
       {
 	.fdp = (mr_fd_t[]){{ .stype.type = "int *", .name.str = "da1" }},
-	.mr_type = MR_TYPE_DETECT (int),
+	.mr_type = MR_TYPE_DETECT (typeof (*((two_dynamic_arrays_t*)0)->da1)),
 	.flags = MR_IS_UNNAMED,
 	.next = 0,
 	.first_child = 0
@@ -836,6 +913,7 @@ MAIN_TEST_SUITE ((ld_ptr, "pointer on a long double (type name with spaces)"),
 		 (tda_overlapping_1, "Two overlaping dynamic arrays. Lower pointer saved first"),
 		 (tda_overlapping_2, "Two overlaping dynamic arrays. Lower pointer saved second"),
 		 (tda_overlapping_3, "Two overlaping dynamic arrays. First saved pointer is embeded into second one"),
+		 (tda_overlapping_4, "Two overlaping dynamic arrays. Second saved pointer is embeded into first one"),
 		 (pointer_to_array, "Pointer into the middle of static array loaded first"),
 		 (mr_ptr_resolution, "test of mr_ptr_t resolution")
 		 );
