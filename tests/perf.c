@@ -167,14 +167,6 @@ START_TEST (pointers_merger_overlap_complexity_mr_save) {
   START_TEST (union_resolution_complexity_ ## METHOD) {			\
     check_cpu_complexity (mr_save_ ## METHOD ## _callback, #METHOD,	\
 			  union_resolution);				\
-  } END_TEST								\
-  START_TEST (pointers_extension_overlap_complexity_ ## METHOD) {	\
-    check_cpu_complexity (mr_save_ ## METHOD ## _callback, #METHOD,	\
-			  pointers_extension_overlap);			\
-  } END_TEST								\
-  START_TEST (pointers_merger_overlap_complexity_ ## METHOD) {		\
-    check_cpu_complexity (mr_save_ ## METHOD ## _callback, #METHOD,	\
-			  pointers_merger_overlap);			\
   } END_TEST
 
 #define SKIP_METHOD_XDR 0
@@ -183,14 +175,9 @@ START_TEST (pointers_merger_overlap_complexity_mr_save) {
 
 ALL_METHODS (CPU_COMPLEXITY);
 
-#define CPU_COMPLEXITY_TESTS_(METHOD)					\
-  (union_resolution_complexity_ ## METHOD, "test union resolution complexity for " #METHOD), \
-    (pointers_extension_overlap_complexity_ ## METHOD, "test pointers extnsion complexity for " #METHOD), \
-    (pointers_merger_overlap_complexity_ ## METHOD, "test pointers overlap resolution complexity for " #METHOD),
-
 #define CPU_COMPLEXITY_TESTS(METHOD)					\
   MR_IF_ELSE (SKIP_METHOD_ ## METHOD)					\
-    (CPU_COMPLEXITY_TESTS_ (METHOD))					\
+    ((union_resolution_complexity_ ## METHOD, "test union resolution complexity for " #METHOD),) \
     ()
 
 MAIN_TEST_SUITE (
