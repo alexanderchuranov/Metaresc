@@ -751,28 +751,28 @@ find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
   mr_ptrdes_t * ra = mr_save_data->ptrs.ra;
   mr_idx_t parent = ra[idx].parent;
   mr_idx_t * idx_ptr = &ra[parent].first_child;
-  if (*idx_ptr != idx)
-    switch (ra[parent].mr_type)
+
+  if (*idx_ptr == idx)
+    return (idx_ptr);
+
+  switch (ra[parent].mr_type)
+    {
+    case MR_TYPE_POINTER:
+    case MR_TYPE_ARRAY:
       {
-      case MR_TYPE_POINTER:
-      case MR_TYPE_ARRAY:
-	{
-	  mr_idx_t prev = mr_get_child_by_addr (mr_save_data, parent, ra[idx].data.uintptr - sizeof (void*));
-	  if ((prev != MR_NULL_IDX) && (ra[prev].next == idx))
-	    return (&ra[prev].next);
-	}
-	__attribute__ ((fallthrough));
-
-      default:
-	for (idx_ptr = &ra[parent].first_child;
-	     (*idx_ptr != idx) && (*idx_ptr != MR_NULL_IDX);
-	     idx_ptr = &ra[*idx_ptr].next);
-
-	if (*idx_ptr != idx)
-	  idx_ptr = NULL;
-	break;
+	mr_idx_t prev = mr_get_child_by_addr (mr_save_data, parent, ra[idx].data.uintptr - sizeof (void*));
+	if ((prev != MR_NULL_IDX) && (ra[prev].next == idx))
+	  return (&ra[prev].next);
       }
-  return (idx_ptr);
+      __attribute__ ((fallthrough));
+
+    default:
+      for (idx_ptr = &ra[parent].first_child; *idx_ptr != MR_NULL_IDX; idx_ptr = &ra[*idx_ptr].next)
+	if (*idx_ptr == idx)
+	  return (idx_ptr);
+      break;
+    }
+  return (NULL);
 }
 
 static mr_idx_t
@@ -1693,43 +1693,29 @@ mr_post_process (mr_save_data_t * mr_save_data)
 	  if (((MR_TYPE_NONE == ptrdes->mr_type_aux) || (MR_TYPE_VOID == ptrdes->mr_type_aux)) &&
 	      !(ptrdes->flags & MR_IS_NULL))
 	    {
-	      void * data_ptr = *(void**)ptrdes->data.ptr;
-	      mr_idx_t alloc_idx = mr_add_ptr_to_list (ptrs);
-
-	      if (MR_NULL_IDX == alloc_idx)
-		break; /* memory allocation error occured */
-	      ptrdes = &ptrs->ra[idx]; /* ptrs->ra might be reallocated in mr_add_ptr_to_list */
 	      ptrdes->flags |= MR_IS_NULL; /* void pointers are saved as NULL */
-
-	      /* populate attributes of new node */
-	      ptrs->ra[alloc_idx].data.ptr = data_ptr;
-
-	      /* this element is required only for a search so we need to adjust back size of collection */
-	      ptrs->size -= sizeof (ptrs->ra[0]);
-
-	      /* search in index of typed references */
-	      mr_ptr_t * find_result = mr_ic_find (&mr_save_data->untyped_ptrs, (uintptr_t)alloc_idx);
-	      if (NULL == find_result)
+	      uintptr_t data_ptr = *(uintptr_t*)ptrdes->data.ptr;
+	      mr_idx_t * bucket = mr_get_bucket_ptr (mr_save_data, data_ptr);
+	      if (bucket == NULL)
 		break;
 
-	      /* typed entry was found and here we configure reference on it */
 	      /* as we put multiple addresses into one bucket,
 		 we need to traverse through the list in this bucket and
 		 filter out only entries with matching address */
-	      mr_idx_t bucket, ref_idx = MR_NULL_IDX;
-	      for (bucket = find_result->uintptr; bucket != MR_NULL_IDX; bucket = ptrs->ra[bucket].idx)
-		if (ptrs->ra[bucket].data.ptr == data_ptr)
+	      mr_idx_t ref_idx = MR_NULL_IDX;
+	      for ( ; *bucket != MR_NULL_IDX; bucket = &ptrs->ra[*bucket].idx)
+		if (ptrs->ra[*bucket].data.uintptr == data_ptr)
 		  {
 		    if (MR_NULL_IDX == ref_idx)
-		      ref_idx = bucket; /* first entry with the matched address */
-		    else if (ptrs->ra[bucket].MR_SIZE > ptrs->ra[ref_idx].MR_SIZE)
-		      ref_idx = bucket; /* another entry, but bigger in size */
+		      ref_idx = *bucket; /* first entry with the matched address */
+		    else if (ptrs->ra[*bucket].MR_SIZE > ptrs->ra[ref_idx].MR_SIZE)
+		      ref_idx = *bucket; /* another entry, but bigger in size */
 		  }
 	      if (MR_NULL_IDX == ref_idx)
 		break;
 
-	      ptrdes->first_child = ref_idx;
-	      ptrdes->flags |= MR_IS_REFERENCE;
+	      ptrs->ra[idx].first_child = ref_idx;
+	      ptrs->ra[idx].flags |= MR_IS_REFERENCE;
 	      ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
 	    }
 	  break;
