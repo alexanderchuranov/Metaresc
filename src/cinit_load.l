@@ -19,31 +19,31 @@
 #define YYSTYPE MR_CINIT_STYPE
 #define YYLTYPE MR_CINIT_LTYPE
 
-static void
-get_type (mr_substr_t * substr, char * start)
-{
-  while (isspace (*start))
-    ++start;
+   static void
+   get_type (mr_substr_t * substr, char * start)
+   {
+     while (isspace (*start))
+       ++start;
 
-  substr->str = start;
-  substr->length = strlen (start);
+     substr->str = start;
+     substr->length = strlen (start);
 
-  char * stop = memchr (substr->str, ')', substr->length);
-  if (stop)
-    {
-      while (--stop > start)
-	if (!((isspace (*stop) || ('[' == *stop) || (']' == *stop) || ('*' == *stop))))
-	  break;
-      substr->length = stop - start + 1;
-    }
-}
+     char * stop = memchr (substr->str, ')', substr->length);
+     if (stop)
+       {
+	 while (--stop > start)
+	   if (!((isspace (*stop) || ('[' == *stop) || (']' == *stop) || ('*' == *stop))))
+	     break;
+	 substr->length = stop - start + 1;
+       }
+   }
 
 %}
 
 %x in_comment
 
-WS	[[:space:]]*
-ID	[_[:alpha:]][_[:alnum:]]*
+WS        [[:space:]]*
+ID        [_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [[:digit:]]+
 HEX_NUMBER (0x|0X)[[:xdigit:]]+
 OCT_NUMBER 0[[0-7]]+
@@ -97,13 +97,13 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
   mr_get_id (&yylval->id_ivalue.id, &yytext[2]);
   yylval->id_ivalue.ivalue = strtoull (strchr (yytext, '=') + 1, NULL, 0);
   return (TOK_CINIT_ID_IVALUE);
-}
+				       }
 
-"/*"			  { BEGIN(in_comment); }
+"/*" { BEGIN(in_comment); }
 <in_comment>[^*\n]*        /* eat anything that's not a '*' */
 <in_comment>"*"+[^*/\n]*   /* eat up '*'s not followed by '/'s */
 <in_comment>\n
-<in_comment>"*"+"/"       { BEGIN(INITIAL); }
+<in_comment>"*"+"/" { BEGIN(INITIAL); }
 
 "+"       { return (TOK_CINIT_PLUS); }
 "-"       { return (TOK_CINIT_MINUS); }
@@ -123,5 +123,3 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 "="       { return (TOK_CINIT_ASSIGN); }
 .         { return (TOK_CINIT_ERROR); }
 %%
-
-

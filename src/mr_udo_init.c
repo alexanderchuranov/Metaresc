@@ -4,20 +4,20 @@
 #include <mr_udo_init.h>
 
 TYPEDEF_STRUCT (mr_type_ref_t, ATTRIBUTES ( , "type desciptor and list of type indexes that reffers this type"),
-		(mr_td_t *, tdp, , "type defscriptor"),
-		(unsigned *, ref, , "list of type indexes that reffer to this type",
-		 { .size_field_offset = offsetof (mr_type_ref_t, size), }, "size_field_offset"),
-		(ssize_t, size, , "size of ref list"),
-		(ssize_t, alloc_size, , "allocated size of ref list"),
-		);
+                (mr_td_t *, tdp, , "type defscriptor"),
+                (unsigned *, ref, , "list of type indexes that reffer to this type",
+                 { .size_field_offset = offsetof (mr_type_ref_t, size), }, "size_field_offset"),
+                (ssize_t, size, , "size of ref list"),
+                (ssize_t, alloc_size, , "allocated size of ref list"),
+                );
 
 TYPEDEF_STRUCT (mr_types_dep_t, ATTRIBUTES ( , "graph of types dependencies"),
-		(mr_type_ref_t *, types, , "all struct and unions",
-		 { .size_field_offset = offsetof (mr_types_dep_t, size), }, "size_field_offset"),
-		(ssize_t, size, , "size of types list"),
-		(ssize_t, alloc_size, , "allocated size of types list"),
-		(mr_ic_t, index, , "lookup by tdp"),
-		);
+                (mr_type_ref_t *, types, , "all struct and unions",
+                 { .size_field_offset = offsetof (mr_types_dep_t, size), }, "size_field_offset"),
+                (ssize_t, size, , "size of types list"),
+                (ssize_t, alloc_size, , "allocated size of types list"),
+                (mr_ic_t, index, , "lookup by tdp"),
+                );
 
 static mr_hash_value_t
 mr_tr_hash  (const mr_ptr_t x, const void * context)
@@ -45,7 +45,7 @@ mr_append_td  (mr_ptr_t key, void * context)
     {
       mr_type_ref_t * type_ref = mr_rarray_allocate_element ((void**)&types_dep->types, &types_dep->size, &types_dep->alloc_size, sizeof (types_dep->types[0]));
       if (NULL == type_ref)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       memset (type_ref, 0, sizeof (*type_ref));
       type_ref->tdp = tdp;
     }
@@ -76,9 +76,9 @@ mr_udo_init_index (mr_types_dep_t * types_dep)
 }
 
 TYPEDEF_STRUCT (mr_append_ref_t,
-		(mr_types_dep_t *, types_dep),
-		(int, idx),
-		);
+                (mr_types_dep_t *, types_dep),
+                (int, idx),
+                );
 
 static mr_status_t
 mr_append_ref  (mr_ptr_t key, void * context)
@@ -95,7 +95,7 @@ mr_append_ref  (mr_ptr_t key, void * context)
       mr_type_ref_t * tr = &types_dep->types[find->uintptr];
       typeof (tr->ref) ref = mr_rarray_allocate_element ((void**)&tr->ref, &tr->size, &tr->alloc_size, sizeof (tr->ref[0]));
       if (NULL == ref)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       *ref = append_ref->idx;
     }
 
@@ -120,7 +120,7 @@ mr_udo_build_ref_graph (mr_types_dep_t * types_dep)
       append_ref.idx = i;
       mr_status_t status = mr_ic_foreach (&types_dep->types[i].tdp->param.struct_param.field_by_name, mr_append_ref, &append_ref);
       if (status != MR_SUCCESS)
-	return (status);
+        return (status);
     }
   return (MR_SUCCESS);
 }
@@ -137,9 +137,9 @@ mr_udo_dfs (mr_types_dep_t * types_dep, int type_idx, bool * visited, char * fie
   if (fdp && fdp->stype.tdp)
     {
       if (NULL == *discriminator_type)
-	*discriminator_type = fdp->stype.tdp->type.str;
+        *discriminator_type = fdp->stype.tdp->type.str;
       else if (*discriminator_type != fdp->stype.tdp->type.str)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       return (MR_SUCCESS);
     }
 
@@ -156,7 +156,7 @@ static void
 mr_udo_detect_types (mr_types_dep_t * types_dep, int type_idx, mr_fd_t * fdp)
 {
   if ((NULL == fdp->res.ptr) || (NULL == fdp->res_type) || (NULL == fdp->stype.tdp)
-       || (0 == fdp->MR_SIZE) || (NULL == fdp->meta))
+      || (0 == fdp->MR_SIZE) || (NULL == fdp->meta))
     return;
   if (strcmp (fdp->res_type, "mr_ud_override_t") != 0)
     return;
@@ -178,10 +178,10 @@ mr_udo_detect_types (mr_types_dep_t * types_dep, int type_idx, mr_fd_t * fdp)
   if ((MR_SUCCESS == status) && (discriminator_type != NULL))
     for (i = 0; i < udo_count; ++i)
       if (udo[i].type == NULL)
-	{
-	  udo[i].type = discriminator_type;
-	  udo[i].typed_value.ptr = &udo[i].value;
-	}
+        {
+          udo[i].type = discriminator_type;
+          udo[i].typed_value.ptr = &udo[i].value;
+        }
 }
 
 static void
@@ -192,7 +192,7 @@ mr_udo_foreach (mr_types_dep_t * types_dep)
     {
       mr_struct_param_t * sp = &types_dep->types[i].tdp->param.struct_param;
       for (j = 0; j < sp->fields_count; ++j)
-	mr_udo_detect_types (types_dep, i, sp->fields[j]);
+        mr_udo_detect_types (types_dep, i, sp->fields[j]);
     }
 }
 
@@ -205,8 +205,8 @@ mr_udo_free (mr_types_dep_t * types_dep)
     {
       int i, types_count = types_dep->size / sizeof (types_dep->types[0]);
       for (i = 0; i < types_count; ++i)
-	if (types_dep->types[i].ref)
-	  MR_FREE (types_dep->types[i].ref);
+        if (types_dep->types[i].ref)
+          MR_FREE (types_dep->types[i].ref);
       MR_FREE (types_dep->types);
     }
 }

@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #define MR_XML1_DEBUG 0
-/* Pass the argument to yyparse through to yylex. */
+  /* Pass the argument to yyparse through to yylex. */
 #define MR_XML1_LTYPE mr_token_lloc_t
 #define MR_LOAD (mr_xml1_get_extra (scanner))
 #define mr_xml1_error MR_PARSE_ERROR
@@ -17,7 +17,7 @@
 #define YYSTYPE MR_XML1_STYPE
 #define YYLTYPE MR_XML1_LTYPE
 #include <xml1_load.lex.h>
-}
+ }
 
 %code {
   static inline mr_status_t load_idx (mr_substr_t * substr, mr_idx_t * idx, mr_ptrdes_flags_t * flags, mr_ptrdes_flags_t flag)
@@ -34,9 +34,9 @@
     *flags |= flag;
     return (MR_SUCCESS);
   }
-}
+ }
 
- /* a more advanced semantic type */
+/* a more advanced semantic type */
 %union {
   mr_substr_t string;
 }
@@ -49,7 +49,7 @@
  /* generate include-file with symbols and types */
 %defines
 
-/* Bison declarations.  */
+ /* Bison declarations.  */
 %token <string> TOK_XML_OPEN_TAG TOK_XML_CLOSE_TAG TOK_XML_CLOSE_EMPTY_TAG TOK_XML_CONTENT TOK_XML_ID TOK_XML_PROP_VALUE
 %token TOK_XML_DOC_OPEN_TAG TOK_XML_DOC_CLOSE_TAG TOK_XML_WS TOK_XML_ASSIGN TOK_XML_ERROR
 
@@ -95,7 +95,7 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
   mr_load->ptrs->ra[mr_load->parent].vt_string = "";
   
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
-}
+ }
 | start_tag TOK_XML_OPEN_TAG properties TOK_XML_CONTENT nested_tags TOK_XML_CLOSE_TAG TOK_XML_CONTENT {
   mr_load_t * mr_load = MR_LOAD;
   int i;
@@ -137,10 +137,10 @@ tag: start_tag TOK_XML_OPEN_TAG properties TOK_XML_CLOSE_EMPTY_TAG {
     {
       char * buf = MR_CALLOC (1, $4.length + sizeof (char));
       if (NULL == buf)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  YYERROR;
-	}
+        {
+          MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+          YYERROR;
+        }
       xml_unquote_string (&$4, buf);
       mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
       mr_load->ptrs->ra[mr_load->parent].vt_string = buf;
@@ -189,7 +189,7 @@ properties: | properties TOK_XML_WS TOK_XML_ID TOK_XML_ASSIGN TOK_XML_PROP_VALUE
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, property);
       YYERROR;
     }
- }
+}
 
 %%
 

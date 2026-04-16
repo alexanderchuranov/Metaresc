@@ -18,17 +18,17 @@ sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * 
   for (idx1 = (idx0 << 1) + 1; idx1 < count; idx1 = (idx1 << 1) + 1)
     {
       if (compar_fn (&array[idx1 * size], &array[(idx1 + 1) * size], context) <= 0)
-	++idx1;
+        ++idx1;
       if (compar_fn (&array[idx1 * size], x, context) <= 0)
-	break;
+        break;
       memcpy (&array[idx0 * size], &array[idx1 * size], size);
       idx0 = idx1;
     }
   if (idx1 == count)
     if (compar_fn (&array[idx1 * size], x, context) > 0)
       {
-	memcpy (&array[idx0 * size], &array[idx1 * size], size);
-	idx0 = idx1;
+        memcpy (&array[idx0 * size], &array[idx1 * size], size);
+        idx0 = idx1;
       }
   memcpy (&array[idx0 * size], x, size);
 }

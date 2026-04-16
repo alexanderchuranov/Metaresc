@@ -10,17 +10,17 @@
 #include <mr_ic.h>
 
 #undef MR_SAVE
-#define MR_SAVE(TDP, S_PTR) ({						\
-      void * __ptr__ = (void*)S_PTR;					\
-      mr_fd_t __fd__;							\
-      memset (&__fd__, 0, sizeof (__fd__));				\
-      __fd__.non_persistent = true;					\
-      __fd__.stype.tdp = TDP;						\
-      __fd__.name = __fd__.stype.tdp->type;				\
-      __fd__.stype.type = __fd__.stype.tdp->type.str;			\
-      __fd__.stype.size = __fd__.stype.tdp->size;			\
-      __fd__.stype.mr_type = __fd__.stype.tdp->mr_type;			\
-      mr_save (__ptr__, &__fd__);					\
+#define MR_SAVE(TDP, S_PTR) ({				\
+      void * __ptr__ = (void*)S_PTR;			\
+      mr_fd_t __fd__;					\
+      memset (&__fd__, 0, sizeof (__fd__));		\
+      __fd__.non_persistent = true;			\
+      __fd__.stype.tdp = TDP;				\
+      __fd__.name = __fd__.stype.tdp->type;		\
+      __fd__.stype.type = __fd__.stype.tdp->type.str;	\
+      __fd__.stype.size = __fd__.stype.tdp->size;	\
+      __fd__.stype.mr_type = __fd__.stype.tdp->mr_type;	\
+      mr_save (__ptr__, &__fd__);			\
     })
 
 mr_hash_value_t
@@ -140,11 +140,11 @@ mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_typ
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
       if (tdp)
-	{
-	  generic_context.data.ptr = tdp;
-	  compar_fn = mr_generic_cmp;
-	  context = &generic_context;
-	}
+        {
+          generic_context.data.ptr = tdp;
+          compar_fn = mr_generic_cmp;
+          context = &generic_context;
+        }
     }
 
   if (NULL == compar_fn)
@@ -181,9 +181,9 @@ mr_ic_sorted_array_find_idx (mr_ptr_t key, mr_ic_rarray_t * rarray, mr_compar_fn
       unsigned mid = (down + up) >> 1;
       diff = compar_fn (key, rarray->ra[mid], context);
       if (diff <= 0)
-	up = mid;
+        up = mid;
       else
-	down = mid + 1;
+        down = mid + 1;
     }
   *idx = up;
   return (diff);
@@ -225,14 +225,14 @@ mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key)
 {
   unsigned idx;
   return ((mr_ic_sorted_array_find_idx (key, &ic->rarray, ic->compar_fn, ic->context.data.ptr, &idx) == 0) ?
-	  &ic->rarray.ra[idx] : NULL);
+          &ic->rarray.ra[idx] : NULL);
 }
 
 TYPEDEF_STRUCT (mr_sort_context_t,
-		(mr_ptr_t *, rarray, , "input array for indexing"),
-		(mr_compar_fn_t, compar_fn, , "sorting function"),
-		(typeof (((mr_ic_t*)0)->context.data.ptr), context_data_ptr, , "context pointer for sorting function"),
-		);
+                (mr_ptr_t *, rarray, , "input array for indexing"),
+                (mr_compar_fn_t, compar_fn, , "sorting function"),
+                (typeof (((mr_ic_t*)0)->context.data.ptr), context_data_ptr, , "context pointer for sorting function"),
+                );
 
 static int
 mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
@@ -242,8 +242,8 @@ mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   const mr_ptr_t * _y = y.ptr;
   /* First compare values */
   int diff = mr_sort_context->compar_fn (mr_sort_context->rarray[_x->uintptr],
-					 mr_sort_context->rarray[_y->uintptr],
-					 mr_sort_context->context_data_ptr);
+                                         mr_sort_context->rarray[_y->uintptr],
+                                         mr_sort_context->context_data_ptr);
   if (diff)
     return (diff);
   /* If values are equal sort by indexes in input array */
@@ -260,20 +260,20 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
     {
       mr_ptr_t * add = mr_rarray_allocate_element ((void*)&ic->rarray.ra, &ic->rarray.size, &ic->rarray.alloc_size, items_count * sizeof (ic->rarray.ra[0]));
       if (NULL == add)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
 
       /*
-	Heap sort is not a stable sort. As a result elements with equal keys might come out in an arbitrary order.
-	To achieve stable sorting here we will sort array of indexes in original array. After that will make deduplication
-	and finally replace indexes on values from the input array.
-       */
+        Heap sort is not a stable sort. As a result elements with equal keys might come out in an arbitrary order.
+        To achieve stable sorting here we will sort array of indexes in original array. After that will make deduplication
+        and finally replace indexes on values from the input array.
+      */
       unsigned i;
       for (i = 0; i < items_count; ++i)
-	ic->rarray.ra[i].uintptr = i;
+        ic->rarray.ra[i].uintptr = i;
       mr_sort_context_t mr_sort_context = {
-	.rarray = rarray,
-	.compar_fn = ic->compar_fn,
-	.context_data_ptr = ic->context.data.ptr,
+        .rarray = rarray,
+        .compar_fn = ic->compar_fn,
+        .context_data_ptr = ic->context.data.ptr,
       };
 
       mr_hsort (ic->rarray.ra, items_count, sizeof (ic->rarray.ra[0]), mr_sort_key_cmp, &mr_sort_context);
@@ -283,12 +283,12 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
       mr_ptr_t prev = rarray[ic->rarray.ra[0].uintptr];
       ic->rarray.ra[dst++] = prev;
       for (src = 1; src < items_count; ++src)
-	{
-	  mr_ptr_t next = rarray[ic->rarray.ra[src].uintptr];
-	  if (ic->compar_fn (next, prev, ic->context.data.ptr) != 0)
-	    ic->rarray.ra[dst++] = next;
-	  prev = next;
-	}
+        {
+          mr_ptr_t next = rarray[ic->rarray.ra[src].uintptr];
+          if (ic->compar_fn (next, prev, ic->context.data.ptr) != 0)
+            ic->rarray.ra[dst++] = next;
+          prev = next;
+        }
       
       ic->items_count = dst; /* after deduplication actual number of elements might be lower */
       ic->rarray.size = ic->items_count * sizeof (ic->rarray.ra[0]); /* used array size */
@@ -329,11 +329,11 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
       if (tdp)
-	{
-	  generic_context.data.ptr = tdp;
-	  compar_fn = mr_generic_cmp;
-	  context = &generic_context;
-	}
+        {
+          generic_context.data.ptr = tdp;
+          compar_fn = mr_generic_cmp;
+          context = &generic_context;
+        }
     }
   
   if (NULL == compar_fn)
@@ -377,30 +377,30 @@ mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
       unsigned count = ic->hash.count - 1;
       
       if (0 == key.intptr)
-	{
-	  ++ic->items_count;
-	  ic->hash.zero_key = true;
-	  ic->hash.hash_table[count].intptr = 0;
-	  return (&ic->hash.hash_table[count]);
-	}
+        {
+          ++ic->items_count;
+          ic->hash.zero_key = true;
+          ic->hash.hash_table[count].intptr = 0;
+          return (&ic->hash.hash_table[count]);
+        }
 
       unsigned i, bucket = ic->hash.hash_fn (key, ic->context.data.ptr) % count;
 
       for (i = bucket; ;)
-	{
-	  if (0 == ic->hash.hash_table[i].intptr)
-	    {
-	      ++ic->items_count;
-	      ic->hash.hash_table[i] = key;
-	      return (&ic->hash.hash_table[i]);
-	    }
-	  if (0 == ic->compar_fn (key, ic->hash.hash_table[i], ic->context.data.ptr))
-	    return (&ic->hash.hash_table[i]);
-	  if (++i >= count)
-	    i = 0;
-	  if (i == bucket)
-	    break;
-	}
+        {
+          if (0 == ic->hash.hash_table[i].intptr)
+            {
+              ++ic->items_count;
+              ic->hash.hash_table[i] = key;
+              return (&ic->hash.hash_table[i]);
+            }
+          if (0 == ic->compar_fn (key, ic->hash.hash_table[i], ic->context.data.ptr))
+            return (&ic->hash.hash_table[i]);
+          if (++i >= count)
+            i = 0;
+          if (i == bucket)
+            break;
+        }
     }
   MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
   return (NULL);
@@ -425,18 +425,18 @@ mr_ic_hash_reindex (mr_ic_t * dst_ic, mr_ic_t * src_ic)
       unsigned count = (src_ic->items_count << 2) + 6; /* 6 is a magic constant found in a manual performance test */
 
       if (dst_ic->hash.count < count)
-	{
-	  dst_ic->hash.count = count;
-	  typeof (dst_ic->hash.hash_table) hash_table =
-	    MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.count * sizeof (dst_ic->hash.hash_table[0]));
-	  if (NULL == hash_table)
-	    {
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      mr_ic_hash_free (dst_ic);
-	      return (MR_FAILURE);
-	    }
-	  dst_ic->hash.hash_table = hash_table;
-	}
+        {
+          dst_ic->hash.count = count;
+          typeof (dst_ic->hash.hash_table) hash_table =
+            MR_REALLOC (dst_ic->hash.hash_table, dst_ic->hash.count * sizeof (dst_ic->hash.hash_table[0]));
+          if (NULL == hash_table)
+            {
+              MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+              mr_ic_hash_free (dst_ic);
+              return (MR_FAILURE);
+            }
+          dst_ic->hash.hash_table = hash_table;
+        }
     }
 
   if ((NULL != dst_ic->hash.hash_table) && (0 != dst_ic->hash.count))
@@ -473,10 +473,10 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key)
     {
       mr_ic_t dst_ic;
       if (MR_SUCCESS != mr_ic_hash_new (&dst_ic, ic->hash.hash_fn, ic->compar_fn, ic->key_type, &ic->context))
-	return (NULL);
+        return (NULL);
       ++ic->items_count;
       if (MR_SUCCESS != mr_ic_hash_reindex (&dst_ic, ic))
-	return (NULL);
+        return (NULL);
 
       mr_ic_free (ic);
       *ic = dst_ic;
@@ -503,26 +503,26 @@ mr_ic_hash_del (mr_ic_t * ic, mr_ptr_t key)
 
       ic->hash.hash_table[i].intptr = 0;
       for (;;) /* need to re-index all elements in sequential blocks after deleted element */
-	{
-	  if (++i >= count)
-	    i = 0;
+        {
+          if (++i >= count)
+            i = 0;
 
-	  if (0 == ic->hash.hash_table[i].intptr)
-	    break;
+          if (0 == ic->hash.hash_table[i].intptr)
+            break;
 
-	  if (i == bucket)
-	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
-	      return (MR_FAILURE);
-	    }
+          if (i == bucket)
+            {
+              MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_HASH_TABLE_ERROR);
+              return (MR_FAILURE);
+            }
 
-	  mr_ptr_t key = ic->hash.hash_table[i];
-	  ic->hash.hash_table[i].intptr = 0;
-	  --ic->items_count;
-	  
-	  if (mr_ic_hash_index_add (ic, key) == NULL)
-	    return (MR_FAILURE);
-	}
+          mr_ptr_t key = ic->hash.hash_table[i];
+          ic->hash.hash_table[i].intptr = 0;
+          --ic->items_count;
+
+          if (mr_ic_hash_index_add (ic, key) == NULL)
+            return (MR_FAILURE);
+        }
     }
 
   return (MR_SUCCESS);
@@ -540,13 +540,13 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key)
   for (i = bucket; ;)
     {
       if (0 == ic->hash.hash_table[i].intptr)
-	break;
+        break;
       if (0 == ic->compar_fn (key, ic->hash.hash_table[i], ic->context.data.ptr))
-	return (&ic->hash.hash_table[i]);
+        return (&ic->hash.hash_table[i]);
       if (++i >= count)
-	i = 0;
+        i = 0;
       if (i == bucket)
-	break;
+        break;
     }
   
   if (ic->hash.zero_key &&
@@ -571,7 +571,7 @@ mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
   for (i = 0; i < count; ++i)
     if (0 != ic->hash.hash_table[i].intptr)
       if (MR_SUCCESS != visit_fn (ic->hash.hash_table[i], context))
-	return (MR_FAILURE);
+        return (MR_FAILURE);
   return (MR_SUCCESS);
 }
 
@@ -595,12 +595,12 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
       if (tdp)
-	{
-	  generic_context.data.ptr = tdp;
-	  hash_fn = mr_generic_hash;
-	  compar_fn = mr_generic_cmp;
-	  context = &generic_context;
-	}
+        {
+          generic_context.data.ptr = tdp;
+          hash_fn = mr_generic_hash;
+          compar_fn = mr_generic_cmp;
+          context = &generic_context;
+        }
     }
   
   if ((NULL == ic) || (NULL == compar_fn) || (NULL == hash_fn))
@@ -643,11 +643,11 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
       mr_ic_t dst_ic;
       mr_status_t status = mr_ic_sorted_array_new (&dst_ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
-	return (NULL);
+        return (NULL);
 
       status = mr_ic_index (&dst_ic, ic->static_array, sizeof (ic->static_array));
       if (MR_SUCCESS != status)
-	return (NULL);
+        return (NULL);
 
       *ic = dst_ic;
       return (mr_ic_add (ic, key));
@@ -706,7 +706,7 @@ mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
     {
       mr_status_t status = mr_ic_sorted_array_new (ic, ic->compar_fn, ic->key_type, &ic->context);
       if (MR_SUCCESS != status)
-	return (status);
+        return (status);
       return (mr_ic_index (ic, rarray, size));
     }
 
@@ -743,11 +743,11 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
       if (tdp)
-	{
-	  generic_context.data.ptr = tdp;
-	  compar_fn = mr_generic_cmp;
-	  context = &generic_context;
-	}
+        {
+          generic_context.data.ptr = tdp;
+          compar_fn = mr_generic_cmp;
+          context = &generic_context;
+        }
     }
   
   if (NULL == compar_fn)
@@ -793,8 +793,8 @@ mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
   mr_tree_traverse_t traverse;
   mr_tree_find (key, &ic->tree, ic->compar_fn, ic->context.data.ptr, &traverse);
   return (traverse.equal ?
-	  &ic->tree.pool[traverse.path[traverse.count - 1].idx].key
-	  : NULL);
+          &ic->tree.pool[traverse.path[traverse.count - 1].idx].key
+          : NULL);
 }
 
 mr_status_t
@@ -804,7 +804,7 @@ mr_ic_tree_foreach_unsorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * contex
   if (ic->tree.size >= 2 * sizeof (ic->tree.pool[0]))
     for (i = ic->tree.size / sizeof (ic->tree.pool[0]) - 1; i > 0; --i)
       if (MR_SUCCESS != visit_fn (ic->tree.pool[i].key, context))
-	return (MR_FAILURE);
+        return (MR_FAILURE);
   return (MR_SUCCESS);
 }
 
@@ -857,11 +857,11 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
       if (tdp)
-	{
-	  generic_context.data.ptr = tdp;
-	  compar_fn = mr_generic_cmp;
-	  context = &generic_context;
-	}
+        {
+          generic_context.data.ptr = tdp;
+          compar_fn = mr_generic_cmp;
+          context = &generic_context;
+        }
     }
   
   if (NULL == compar_fn)
@@ -924,11 +924,11 @@ mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_r
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (key_type);
       if (tdp)
-	{
-	  generic_context.data.ptr = tdp;
-	  compar_fn = mr_generic_cmp;
-	  context = &generic_context;
-	}
+        {
+          generic_context.data.ptr = tdp;
+          compar_fn = mr_generic_cmp;
+          context = &generic_context;
+        }
     }
   
   if (NULL == compar_fn)

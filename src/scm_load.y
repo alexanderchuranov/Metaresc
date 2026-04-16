@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #define MR_SCM_DEBUG 0
-/* Pass the argument to yyparse through to yylex. */
+  /* Pass the argument to yyparse through to yylex. */
 #define MR_SCM_LTYPE mr_token_lloc_t
 #define MR_LOAD (mr_scm_get_extra (scanner))
 #define mr_scm_error MR_PARSE_ERROR
@@ -25,7 +25,7 @@
 #if MR_SCM_DEBUG
   __attribute__ ((constructor)) void init_scm_debug (void) { mr_scm_debug = 1; }
 #endif /* MR_SCM_DEBUG */
-}
+ }
 
 %code {
   static void
@@ -37,11 +37,11 @@
 
     if (!initialized)
       {
-	memset (map, 0, sizeof (map));
-	for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
-	  if (mr_esc_char_map[i])
-	    map[(unsigned char)mr_esc_char_map[i]] = i;
-	initialized = true;
+        memset (map, 0, sizeof (map));
+        for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
+          if (mr_esc_char_map[i])
+            map[(unsigned char)mr_esc_char_map[i]] = i;
+        initialized = true;
       }
 
     if (NULL == substr->str)
@@ -50,22 +50,22 @@
     length = 0;
     for (i = 0; i < substr->length; ++i)
       {
-	if ('\\' == substr->str[i])
-	  {
-	    int c = map[(unsigned char)substr->str[++i]];
-	    int size;
-	    if (c)
-	      dst[length++] = c;
-	    else if (1 == sscanf (&substr->str[i], "x%x%n;", &c, &size))
-	      {
-		i += size;
-		dst[length++] = c;
-	      }
-	    else
-	      dst[length++] = substr->str[i];
-	  }
-	else
-	  dst[length++] = substr->str[i];
+        if ('\\' == substr->str[i])
+          {
+            int c = map[(unsigned char)substr->str[++i]];
+            int size;
+            if (c)
+              dst[length++] = c;
+            else if (1 == sscanf (&substr->str[i], "x%x%n;", &c, &size))
+              {
+                i += size;
+                dst[length++] = c;
+              }
+            else
+              dst[length++] = substr->str[i];
+          }
+        else
+          dst[length++] = substr->str[i];
       }
     dst[length] = 0;
   }
@@ -123,20 +123,20 @@ value
   if ($1.id.str && $1.id.length)
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
-	}
+        {
+          mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
+          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
+        }
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
-	}
+        {
+          mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
+          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
+        }
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCED;
-	}
+        {
+          mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
+          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCED;
+        }
     }
 }
 
@@ -161,10 +161,10 @@ compaund
     {
       char * buf = MR_CALLOC (1, $1.length + sizeof (char));
       if (NULL == buf)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  YYERROR;
-	}
+        {
+          MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+          YYERROR;
+        }
       scm_unquote_str (&$1, buf);
       mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
       mr_load->ptrs->ra[mr_load->parent].vt_string = buf;
@@ -181,7 +181,7 @@ compaund
   mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INTPTR;
   mr_load->ptrs->ra[mr_load->parent].vt_intptr = 0;
-  }
+}
 
 compaund: TOK_SCM_LPARENTHESIS list TOK_SCM_RPARENTHESIS
 

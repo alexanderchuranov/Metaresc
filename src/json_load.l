@@ -21,8 +21,8 @@
 
 %}
 
-WS	[[:space:]]+
-ID	[_[:alpha:]][_[:alnum:]]*
+WS        [[:space:]]+
+ID        [_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [+-]?[[:digit:]]+
 FLOAT_NAN [+-]?[Nn][Aa][Nn]
 FLOAT_INF [+-]?[Ii][Nn][Ff]

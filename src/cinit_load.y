@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #define MR_CINIT_DEBUG 0
-/* Pass the argument to yyparse through to yylex. */
+  /* Pass the argument to yyparse through to yylex. */
 #define MR_CINIT_LTYPE mr_token_lloc_t
 #define MR_LOAD (mr_cinit_get_extra (scanner))
 #define mr_cinit_error MR_PARSE_ERROR
@@ -22,53 +22,53 @@
 #define YYLTYPE MR_CINIT_LTYPE
 #include <cinit_load.lex.h>
 
-}
+ }
 
 %code {
 
-static void
-cinit_unquote_str (mr_substr_t * substr, char * dst)
-{
-  typeof (substr->length) i, length;
-  static bool initialized = false;
-  static char map[MR_ESC_CHAR_MAP_SIZE];
+  static void
+    cinit_unquote_str (mr_substr_t * substr, char * dst)
+  {
+    typeof (substr->length) i, length;
+    static bool initialized = false;
+    static char map[MR_ESC_CHAR_MAP_SIZE];
 
-  if (!initialized)
-    {
-      memset (map, 0, sizeof (map));
-      for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
-	if (mr_esc_char_map[i])
-	  map[(unsigned char)mr_esc_char_map[i]] = i;
-      initialized = true;
-    }
+    if (!initialized)
+      {
+	memset (map, 0, sizeof (map));
+	for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
+	  if (mr_esc_char_map[i])
+	    map[(unsigned char)mr_esc_char_map[i]] = i;
+	initialized = true;
+      }
 
-  if (NULL == substr->str)
-    return;
+    if (NULL == substr->str)
+      return;
 
-  length = 0;
-  for (i = 0; i < substr->length; ++i)
-    {
-      if ('\\' == substr->str[i])
-	{
-	  int c = map[(unsigned char)substr->str[++i]];
-	  int size;
-	  if (c > 0)
-	    dst[length++] = c;
-	  else if (1 == sscanf (&substr->str[i], "%o%n", &c, &size))
-	    {
-	      i += size - 1;
+    length = 0;
+    for (i = 0; i < substr->length; ++i)
+      {
+	if ('\\' == substr->str[i])
+	  {
+	    int c = map[(unsigned char)substr->str[++i]];
+	    int size;
+	    if (c > 0)
 	      dst[length++] = c;
-	    }
-	  else
-	    dst[length++] = substr->str[i];
-	}
-      else
-	dst[length++] = substr->str[i];
-    }
-  dst[length] = 0;
-}
+	    else if (1 == sscanf (&substr->str[i], "%o%n", &c, &size))
+	      {
+		i += size - 1;
+		dst[length++] = c;
+	      }
+	    else
+	      dst[length++] = substr->str[i];
+	  }
+	else
+	  dst[length++] = substr->str[i];
+      }
+    dst[length] = 0;
+  }
 
-}
+ }
 
 %define api.prefix {mr_cinit_}
 %define api.pure full
@@ -125,20 +125,20 @@ casted_value
   if ($1.id.str && $1.id.length)
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
-	}
+        {
+          mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
+          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
+        }
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
-	}
+        {
+          mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
+          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
+        }
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
-	{
-	  mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCED;
-	}
+        {
+          mr_load->ptrs->ra[mr_load->parent].idx = $1.ivalue;
+          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCED;
+        }
     }
 }
 
@@ -153,17 +153,17 @@ value
     {
       mr_td_t * tdp = mr_get_td_by_name_internal (type);
       if (NULL == tdp)
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
-	  YYERROR;
-	}
+        {
+          MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_NO_TYPE_DESCRIPTOR, type);
+          YYERROR;
+        }
       else
-	{
-	  mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_TYPED;
-	  mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd; /* for mr_ptr_t union we get name of union member from type cast */
-	}
+        {
+          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_TYPED;
+          mr_load->ptrs->ra[mr_load->parent].fdp = &tdp->mr_ptr_fd; /* for mr_ptr_t union we get name of union member from type cast */
+        }
     }
- }
+}
 
 value:
 compaund
@@ -179,10 +179,10 @@ compaund
     {
       char * buf = MR_CALLOC (1, $1.length + sizeof (char));
       if (NULL == buf)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  YYERROR;
-	}
+        {
+          MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+          YYERROR;
+        }
       cinit_unquote_str (&$1, buf);
       mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
       mr_load->ptrs->ra[mr_load->parent].vt_string = buf;
@@ -193,16 +193,16 @@ compaund
       mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.offset = $1.str - mr_load->buf;
       mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.length = $1.length;
     }
-  }
+}
 | TOK_CINIT_NULL {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INTPTR;
   mr_load->ptrs->ra[mr_load->parent].vt_intptr = 0;
-  }
+}
 
 expr:
-  expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
+expr TOK_CINIT_PLUS expr { mr_value_add (&$$, &$1, &$3); }
 | expr TOK_CINIT_MINUS expr { mr_value_sub (&$$, &$1, &$3); }
 | expr TOK_CINIT_MUL expr { mr_value_mul (&$$, &$1, &$3); }
 | expr TOK_CINIT_DIV expr { mr_value_div (&$$, &$1, &$3); }
@@ -234,11 +234,11 @@ expr:
   $$.value_type = MR_VT_CHAR;
 }
 | TOK_CINIT_ID {
-    mr_load_t * mr_load = MR_LOAD;
-    $$.value_type = MR_VT_SUBSTR;
-    $$.vt_substr.str = &mr_load->ptrs->str[$1.str - mr_load->buf];
-    $$.vt_substr.length = $1.length;
-  }
+  mr_load_t * mr_load = MR_LOAD;
+  $$.value_type = MR_VT_SUBSTR;
+  $$.vt_substr.str = &mr_load->ptrs->str[$1.str - mr_load->buf];
+  $$.vt_substr.length = $1.length;
+}
 
 compaund: TOK_CINIT_LBRACE list TOK_CINIT_RBRACE
 

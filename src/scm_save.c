@@ -39,8 +39,8 @@ static int
 scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (*(bool*)ptrdes->data.ptr ?
-	  mr_ra_append_string (mr_ra_str, MR_SCM_TRUE) :
-	  mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
+          mr_ra_append_string (mr_ra_str, MR_SCM_TRUE) :
+          mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
 }
 
 static int
@@ -228,24 +228,24 @@ scm_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * m
   if (ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
-	mr_ra_str->mr_size--;
+        mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    limit_level * MR_SCM_INDENT_SPACES, "",
-			    (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
-			    (uint32_t)ptrs[ptrs[idx].first_child].idx);
+                            limit_level * MR_SCM_INDENT_SPACES, "",
+                            (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE) ? MR_REF_CONTENT : MR_REF,
+                            (uint32_t)ptrs[ptrs[idx].first_child].idx);
       if (count < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   if (ptrs[idx].flags & MR_IS_REFERENCED)
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
-	mr_ra_str->mr_size--;
+        mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_ATTR_INT,
-			    limit_level * MR_SCM_INDENT_SPACES, "",
-			    MR_REF_IDX, (uint32_t)ptrs[idx].idx);
+                            limit_level * MR_SCM_INDENT_SPACES, "",
+                            MR_REF_IDX, (uint32_t)ptrs[idx].idx);
       if (count < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   mr_idx_t parent = ptrs[idx].parent;
@@ -253,25 +253,25 @@ scm_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * m
   if ((parent != MR_NULL_IDX) && ptrs[parent].fdp)
     if ((MR_TYPE_UNION == ptrs[parent].mr_type) && ptrs[parent].fdp->stype.tdp)
       if (0 == strcmp (ptrs[parent].fdp->stype.tdp->type.str, "mr_ptr_t"))
-	ptrs[idx].flags &= ~MR_IS_UNNAMED;
+        ptrs[idx].flags &= ~MR_IS_UNNAMED;
 
   if (ptrs[idx].flags & MR_IS_UNNAMED)
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
-	{
-	  mr_ra_str->mr_size--;
-	  count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE,
-				limit_level * MR_SCM_INDENT_SPACES, "");
-	}
+        {
+          mr_ra_str->mr_size--;
+          count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE,
+                                limit_level * MR_SCM_INDENT_SPACES, "");
+        }
       else if ((ptrs[idx].parent != MR_NULL_IDX) && (ptrs[ptrs[idx].parent].first_child != idx))
-	count = mr_ra_append_char (mr_ra_str, ' ');
+        count = mr_ra_append_char (mr_ra_str, ' ');
     }
   else
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
-	mr_ra_str->mr_size--;
+        mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE MR_SCM_NAMED_FIELD,
-			    limit_level * MR_SCM_INDENT_SPACES, "", ptrs[idx].fdp->name.str);
+                            limit_level * MR_SCM_INDENT_SPACES, "", ptrs[idx].fdp->name.str);
     }
 
   if (count < 0)
@@ -280,15 +280,15 @@ scm_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * m
   if ((ptrs[idx].first_child != MR_NULL_IDX) && !(ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
-	{
-	  mr_ra_str->mr_size--;
-	  count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
-	  if (count < 0)
-	    return (MR_FAILURE);
-	}
+        {
+          mr_ra_str->mr_size--;
+          count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
+          if (count < 0)
+            return (MR_FAILURE);
+        }
       count = mr_ra_append_char (mr_ra_str, '(');
       if (count < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   if ((ptrs[idx].flags & MR_IS_UNNAMED) && (ptrs[idx].first_child == MR_NULL_IDX) && (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n'))
@@ -296,7 +296,7 @@ scm_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * m
       mr_ra_str->mr_size--;
       count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
       if (count < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   mr_ra_printf_t save_handler = NULL;
@@ -325,17 +325,17 @@ scm_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
       ((ptrs[idx].first_child != MR_NULL_IDX) && !(ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))))
     {
       if (mr_ra_str->data.string[mr_ra_str->mr_size - 2] == '\n')
-	{
-	  mr_ra_str->mr_size--;
-	  count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
-	  if (count < 0)
-	    return (MR_FAILURE);
-	}
+        {
+          mr_ra_str->mr_size--;
+          count = mr_ra_printf (mr_ra_str, MR_SCM_INDENT_TEMPLATE, limit_level * MR_SCM_INDENT_SPACES, "");
+          if (count < 0)
+            return (MR_FAILURE);
+        }
       count = mr_ra_printf (mr_ra_str, ")%s\n",
-			    (!(ptrs[idx].flags & (MR_IS_UNNAMED | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
-			     && (ptrs[idx].first_child != MR_NULL_IDX)) ? ")" : "");
+                            (!(ptrs[idx].flags & (MR_IS_UNNAMED | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+                             && (ptrs[idx].first_child != MR_NULL_IDX)) ? ")" : "");
       if (count < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   return (MR_SUCCESS);

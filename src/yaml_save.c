@@ -4,9 +4,9 @@
 #include <mr_save.h>
 
 TYPEDEF_STRUCT (mr_yaml_context_t,
-		VOID (yaml_emitter_t, emitter),
-		(mr_rarray_t, buffer)
-		);
+                VOID (yaml_emitter_t, emitter),
+                (mr_rarray_t, buffer)
+                );
 
 TYPEDEF_FUNC (mr_status_t, mr_yaml_save_handler_t, (mr_yaml_context_t * /* context */, mr_ptrdes_t * /* ptrs */, mr_idx_t /* idx */));
 
@@ -51,18 +51,18 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ptrdes_t * p
       yaml_event_t name_event;
       char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (!yaml_scalar_event_initialize (&name_event, NULL, (yaml_char_t *)YAML_STR_TAG,
-					 (yaml_char_t*)name, strlen (name),
-					 1, 0, YAML_PLAIN_SCALAR_STYLE))
-	{
-	  yaml_event_delete (event);
-	  return (MR_FAILURE);
-	}
+                                         (yaml_char_t*)name, strlen (name),
+                                         1, 0, YAML_PLAIN_SCALAR_STYLE))
+        {
+          yaml_event_delete (event);
+          return (MR_FAILURE);
+        }
   
       if (!yaml_emitter_emit (emitter, &name_event))
-	{
-	  yaml_event_delete (event);
-	  return (MR_FAILURE);
-	}
+        {
+          yaml_event_delete (event);
+          return (MR_FAILURE);
+        }
     }
 
   if (ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) // FIXME check for anchor index out of range
@@ -70,19 +70,19 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ptrdes_t * p
 #define MR_ANCHOR_SIZE (MR_MAX (sizeof (MR_YAML_REF_ANCHOR_TMPLT), sizeof (MR_YAML_REF_ANCHOR_CONTENT_TMPLT)) + (sizeof (ptrdes->idx) * 12 + 4) / 5)
       char anchor[MR_ANCHOR_SIZE];
       if (ptrdes->flags & MR_IS_CONTENT_REFERENCE)
-	snprintf (anchor, MR_ANCHOR_SIZE, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs[ptrdes->first_child].idx);
+        snprintf (anchor, MR_ANCHOR_SIZE, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, (uint32_t)ptrs[ptrdes->first_child].idx);
       else
-	snprintf (anchor, MR_ANCHOR_SIZE, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs[ptrdes->first_child].idx);
+        snprintf (anchor, MR_ANCHOR_SIZE, MR_YAML_REF_ANCHOR_TMPLT, (uint32_t)ptrs[ptrdes->first_child].idx);
 
       yaml_event_delete (event);
       if (!yaml_alias_event_initialize (event, (yaml_char_t *)anchor))
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
   else if (ptrdes->flags & MR_IS_NULL)
     {
       yaml_event_delete (event);
       if (!yaml_alias_event_initialize (event, (yaml_char_t *)MR_ISNULL))
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
   
   if (!yaml_emitter_emit (emitter, event))
@@ -101,9 +101,9 @@ yaml_emit_string (yaml_emitter_t * emitter, const char * value, mr_ptrdes_t * pt
     value = "";
   
   if (!yaml_scalar_event_initialize (&event, yaml_get_anchor (anchor, &ptrs[idx]),
-				     (yaml_char_t *)YAML_STR_TAG,
-				     (yaml_char_t *)value, strlen (value),
-				     1, 0, YAML_PLAIN_SCALAR_STYLE))
+                                     (yaml_char_t *)YAML_STR_TAG,
+                                     (yaml_char_t *)value, strlen (value),
+                                     1, 0, YAML_PLAIN_SCALAR_STYLE))
     return (MR_FAILURE);
 
   return (yaml_emit_field (emitter, &event, ptrs, idx));
@@ -162,7 +162,7 @@ yaml_save_func (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_
   const char * func_str = mr_serialize_func (*(void**)ptrdes->data.ptr);
   if (func_str)
     return (yaml_emit_string (&mr_yaml_context->emitter, func_str, ptrs, idx));
-  #define YAML_PTR_TMPLT "0x%llx"
+#define YAML_PTR_TMPLT "0x%llx"
   char buffer[sizeof (YAML_PTR_TMPLT) + sizeof (void*) * __CHAR_BIT__ / 4];
   snprintf (buffer, sizeof (buffer), YAML_PTR_TMPLT, (unsigned long long int)*(uintptr_t*)ptrdes->data.ptr);
   return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
@@ -175,8 +175,8 @@ yaml_pre_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, m
   char anchor[ANCHOR_SIZE];
   
   if (!yaml_mapping_start_event_initialize (&event, yaml_get_anchor (anchor, &ptrs[idx]),
-					    (yaml_char_t *)YAML_MAP_TAG,
-					    1, YAML_ANY_MAPPING_STYLE))
+                                            (yaml_char_t *)YAML_MAP_TAG,
+                                            1, YAML_ANY_MAPPING_STYLE))
     return (MR_FAILURE);
   
   return (yaml_emit_field (&mr_yaml_context->emitter, &event, ptrs, idx));
@@ -209,8 +209,8 @@ yaml_pre_save_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr
     sequence_style = YAML_FLOW_SEQUENCE_STYLE;
 
   if (!yaml_sequence_start_event_initialize (&event, yaml_get_anchor (anchor, &ptrs[idx]),
-					     (yaml_char_t *)YAML_SEQ_TAG,
-					     1, sequence_style))
+                                             (yaml_char_t *)YAML_SEQ_TAG,
+                                             1, sequence_style))
     return (MR_FAILURE);
   
   return (yaml_emit_field (&mr_yaml_context->emitter, &event, ptrs, idx));
@@ -239,7 +239,7 @@ yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, 
   if ((parent != MR_NULL_IDX) && ptrs[parent].fdp)
     if ((MR_TYPE_UNION == ptrs[parent].mr_type) && ptrs[parent].fdp->stype.tdp)
       if (0 == strcmp (ptrs[parent].fdp->stype.tdp->type.str, "mr_ptr_t"))
-	ptrdes->flags &= ~MR_IS_UNNAMED;
+        ptrdes->flags &= ~MR_IS_UNNAMED;
   
   if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     return (yaml_emit_string (&mr_yaml_context->emitter, "", ptrs, idx));
@@ -290,9 +290,9 @@ yaml_allocate_ra_str (mr_rarray_t * mr_ra_str)
        MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) () ( , __VA_ARGS__));	\
     if (count <= 0)							\
       return (MR_FAILURE);						\
-    return (yaml_emit_string (&mr_yaml_context->emitter,		\
-			      mr_yaml_context->buffer.data.string,	\
-			      ptrs, idx));				\
+    return (yaml_emit_string (&mr_yaml_context->emitter,                \
+                              mr_yaml_context->buffer.data.string,	\
+                              ptrs, idx));				\
   }
 
 MR_FOREACH (YAML_SAVE_HANDLER, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, int128_t, uint128_t, float, double, long_double_t);
@@ -391,13 +391,13 @@ yaml_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t ord
     switch (order)
       {
       case MR_DFS_PRE_ORDER:
-	save_handler = yaml_pre_save_tbl[mr_type];
-	break;
+        save_handler = yaml_pre_save_tbl[mr_type];
+        break;
       case MR_DFS_POST_ORDER:
-	save_handler = yaml_post_save_tbl[mr_type];
-	break;
+        save_handler = yaml_post_save_tbl[mr_type];
+        break;
       default:
-	break;
+        break;
       }
   
   if (NULL == save_handler)
@@ -489,7 +489,7 @@ mr_yaml_save (mr_ptrdes_t * ptrs)
   if (MR_SUCCESS != status)
     {
       if (mr_ra_str.data.ptr)
-	MR_FREE (mr_ra_str.data.ptr);
+        MR_FREE (mr_ra_str.data.ptr);
       return (NULL);
     }
 

@@ -8,9 +8,9 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_clas
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = MR_STRINGIFY_READONLY (TYPE),
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
-		string_t, char, bool,
-		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
-		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
+                string_t, char, bool,
+                int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
+                float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };
 
   if (NULL == value)
@@ -34,13 +34,13 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_clas
       __fd__.non_persistent = true;					\
       mr_detect_type (&__fd__);						\
       if (__fd__.stype.tdp && (size >= 0))				\
-	{								\
-	  __fd__.stype.size = size;					\
-	  __fd__.stype.mr_type_aux = __fd__.stype.mr_type;		\
-	  __fd__.stype.mr_type = MR_TYPE_ARRAY;				\
-	  __fd__.stype.dim.dim[0] = size / __fd__.stype.tdp->size;	\
-	  __fd__.stype.dim.dim_count = 1;				\
-	}								\
+        {								\
+          __fd__.stype.size = size;					\
+          __fd__.stype.mr_type_aux = __fd__.stype.mr_type;		\
+          __fd__.stype.mr_type = MR_TYPE_ARRAY;				\
+          __fd__.stype.dim.dim[0] = size / __fd__.stype.tdp->size;	\
+          __fd__.stype.dim.dim_count = 1;				\
+        }								\
       mr_save (__ptr__, &__fd__);					\
     })
 
@@ -58,7 +58,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_clas
     {
       serialized = MR_SAVE_CINIT (type, value);
       if (MR_POINTER_TYPE_CLASS == mr_type_class)
-	snprintf (typed_ptr_str, sizeof (typed_ptr_str), MR_TYPED_POINTER_TMPLT, value, type, (size >= 0) ? "[]" : "");
+        snprintf (typed_ptr_str, sizeof (typed_ptr_str), MR_TYPED_POINTER_TMPLT, value, type, (size >= 0) ? "[]" : "");
     }
   else if (0 == strcmp (method, "JSON"))
     serialized = MR_SAVE_JSON (type, value);
@@ -120,31 +120,31 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
     {
       mr_td_t * tdp = mr_get_td_by_name (type);
       if (tdp && (MR_TYPE_ENUM == tdp->mr_type))
-	{
-	  mr_enum_value_t value = { 0 };
-	  mr_fd_t fd = { .stype.tdp = tdp, };
-	  mr_ptrdes_t ptrdes = { .data.ptr = &value, .fdp = &fd, };
-	  mr_rarray_t mr_ra_str = {
-	    .data = { mr_strdup ("") },
-	    .MR_SIZE = sizeof (""),
-	    .type = "string",
-	    .alloc_size = sizeof (""),
-	  };
+        {
+          mr_enum_value_t value = { 0 };
+          mr_fd_t fd = { .stype.tdp = tdp, };
+          mr_ptrdes_t ptrdes = { .data.ptr = &value, .fdp = &fd, };
+          mr_rarray_t mr_ra_str = {
+            .data = { mr_strdup ("") },
+            .MR_SIZE = sizeof (""),
+            .type = "string",
+            .alloc_size = sizeof (""),
+          };
 
-	  switch (mr_type)
-	    {
+          switch (mr_type)
+            {
 #define MR_CASE_TYPE(TYPE)						\
-	      case MR_TYPE_DETECT (TYPE):				\
-		value._unsigned = va_arg (args, typeof (0 + (TYPE)0));	\
-		break;
-	      MR_FOREACH (MR_CASE_TYPE, MR_ENUM_INT_TYPES_LIST);
-	    default:
-	      break;
-	    }
+              case MR_TYPE_DETECT (TYPE):				\
+                value._unsigned = va_arg (args, typeof (0 + (TYPE)0));	\
+                break;
+              MR_FOREACH (MR_CASE_TYPE, MR_ENUM_INT_TYPES_LIST);
+            default:
+              break;
+            }
 
-	  mr_ra_printf_bitmask (&mr_ra_str, &ptrdes, " | ");
-	  serialized_enum = mr_ra_str.data.string;
-	}
+          mr_ra_printf_bitmask (&mr_ra_str, &ptrdes, " | ");
+          serialized_enum = mr_ra_str.data.string;
+        }
     }
 
   if ((mr_type >= 0) &&
@@ -162,63 +162,63 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
     switch (mr_type)
       {
       case MR_TYPE_BOOL:
-	{
-	  bool value = va_arg (args, int);
-	  if (value)
-	    rv = fprintf (fd, "true");
-	  else
-	    rv = fprintf (fd, "false");
-	  break;
-	}
+        {
+          bool value = va_arg (args, int);
+          if (value)
+            rv = fprintf (fd, "true");
+          else
+            rv = fprintf (fd, "false");
+          break;
+        }
       case MR_TYPE_INT128:
-	{
-	  mr_intmax_t value = va_arg (args, mr_intmax_t);
-	  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
-	  bool negative = false;
+        {
+          mr_intmax_t value = va_arg (args, mr_intmax_t);
+          char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
+          bool negative = false;
 
-	  if (value < 0)
-	    {
-	      negative = true;
-	      value = ~value + 1; /* clang has a bug so that -(1 << 127) == 0 */
-	    }
-	  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
-	  if (negative)
-	    *--out = '-';
-	  rv = fprintf (fd, "%s", out);
-	  break;
-	}
+          if (value < 0)
+            {
+              negative = true;
+              value = ~value + 1; /* clang has a bug so that -(1 << 127) == 0 */
+            }
+          char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
+          if (negative)
+            *--out = '-';
+          rv = fprintf (fd, "%s", out);
+          break;
+        }
       case MR_TYPE_UINT128:
-	{
-	  mr_uintmax_t value = va_arg (args, mr_uintmax_t);
-	  char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
-	  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
-	  rv = fprintf (fd, "%s", out);
-	  break;
-	}
+        {
+          mr_uintmax_t value = va_arg (args, mr_uintmax_t);
+          char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
+          char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
+          rv = fprintf (fd, "%s", out);
+          break;
+        }
       case MR_TYPE_COMPLEX_FLOAT:
-	{
-	  complex_float_t value = va_arg (args, complex_float_t);
-	  rv = fprintf (fd, "%g%+gI", __real__ value, __imag__ value);
-	  break;
-	}
+        {
+          complex_float_t value = va_arg (args, complex_float_t);
+          rv = fprintf (fd, "%g%+gI", __real__ value, __imag__ value);
+          break;
+        }
       case MR_TYPE_COMPLEX_DOUBLE:
-	{
-	  complex_double_t value = va_arg (args, complex_double_t);
-	  rv = fprintf (fd, "%g%+gI", __real__ value, __imag__ value);
-	  break;
-	}
+        {
+          complex_double_t value = va_arg (args, complex_double_t);
+          rv = fprintf (fd, "%g%+gI", __real__ value, __imag__ value);
+          break;
+        }
       case MR_TYPE_COMPLEX_LONG_DOUBLE:
-	{
-	  complex_long_double_t value = va_arg (args, complex_long_double_t);
-	  rv = fprintf (fd, "%Lg%+LgI", __real__ value, __imag__ value);
-	  break;
-	}
+        {
+          complex_long_double_t value = va_arg (args, complex_long_double_t);
+          rv = fprintf (fd, "%Lg%+LgI", __real__ value, __imag__ value);
+          break;
+        }
       case MR_TYPE_NONE:
-	rv = mr_print_pointer (fd, mr_type_aux, mr_type_class, size, type, method, va_arg (args, void *));
-	break;
-	
+        rv = mr_print_pointer (fd, mr_type_aux, mr_type_class, size, type, method, va_arg (args, void *));
+        break;
+
       default:
-	break;
+        break;
       }
   va_end (args);
   return (rv);

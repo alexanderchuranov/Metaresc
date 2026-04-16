@@ -35,10 +35,10 @@ static char * esc_char_map[MR_ESC_CHAR_MAP_SIZE] = {
 };
 
 TYPEDEF_STRUCT (mr_xml_esc_t,
-		(char *, esc_seq, , "escape sequence"),
-		(int, length, , "length of escape sequence"),
-		(char, symbol, , "escaped symbol"),
-		);
+                (char *, esc_seq, , "escape sequence"),
+                (int, length, , "length of escape sequence"),
+                (char, symbol, , "escaped symbol"),
+                );
 
 /**
  * XML unquote function. Replace XML special characters aliases on a source characters.
@@ -57,14 +57,14 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
     {
       memset (esc_seq_hash, 0, sizeof (esc_seq_hash));
       for (i = 0; i < sizeof (esc_seq_hash) / sizeof (esc_seq_hash[0]); ++i)
-	if (esc_char_map[i])
-	  {
-	    int length = strlen (esc_char_map[i]);
-	    unsigned char mapped = esc_char_map[i][1];
-	    esc_seq_hash[mapped].esc_seq = esc_char_map[i];
-	    esc_seq_hash[mapped].symbol = i;
-	    esc_seq_hash[mapped].length = length;
-	  }
+        if (esc_char_map[i])
+          {
+            int length = strlen (esc_char_map[i]);
+            unsigned char mapped = esc_char_map[i][1];
+            esc_seq_hash[mapped].esc_seq = esc_char_map[i];
+            esc_seq_hash[mapped].symbol = i;
+            esc_seq_hash[mapped].length = length;
+          }
       inited = true;
     }
 
@@ -73,46 +73,46 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
       dst[length++] = substr->str[i];
     else
       {
-	char esc[ESC_SIZE + 1];
-	strncpy (esc, &substr->str[i], sizeof (esc) - 1);
-	char * semicolon = strchr (esc, ';');
-	if (semicolon)
-	  semicolon[1] = 0;
-	else
-	  esc[sizeof (esc) - 1] = 0;
-	
-	if ('#' == substr->str[i + 1])
-	  {
-	    int32_t code = 0;
-	    int size = 0;
-	    if (1 != sscanf (&substr->str[i], XML_QUOTE_CHAR_PATTERN "%n", &code, &size))
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_XML_ESC, esc);
-	    else
-	      {
-		i += size - 1; /* one more +1 in the loop */
-		dst[length++] = code;
-	      }
-	  }
-	else
-	  {
-	    bool found = false;
-	    unsigned char hash = tolower (substr->str[i + 1]);
-	    if (esc_seq_hash[hash].esc_seq)
-	      if (0 == strncasecmp (&substr->str[i + 2],
-				    &esc_seq_hash[hash].esc_seq[2],
-				    esc_seq_hash[hash].length - 2))
-		{
-		  dst[length++] = esc_seq_hash[hash].symbol;
-		  i += esc_seq_hash[hash].length - 1; /* one more increase in the loop */
-		  found = true;
-		}
+        char esc[ESC_SIZE + 1];
+        strncpy (esc, &substr->str[i], sizeof (esc) - 1);
+        char * semicolon = strchr (esc, ';');
+        if (semicolon)
+          semicolon[1] = 0;
+        else
+          esc[sizeof (esc) - 1] = 0;
 
-	    if (!found)
-	      {
-		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_XML_ESC, esc);
-		dst[length++] = substr->str[i];
-	      }
-	  }
+        if ('#' == substr->str[i + 1])
+          {
+            int32_t code = 0;
+            int size = 0;
+            if (1 != sscanf (&substr->str[i], XML_QUOTE_CHAR_PATTERN "%n", &code, &size))
+              MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_XML_ESC, esc);
+            else
+              {
+                i += size - 1; /* one more +1 in the loop */
+                dst[length++] = code;
+              }
+          }
+        else
+          {
+            bool found = false;
+            unsigned char hash = tolower (substr->str[i + 1]);
+            if (esc_seq_hash[hash].esc_seq)
+              if (0 == strncasecmp (&substr->str[i + 2],
+                                    &esc_seq_hash[hash].esc_seq[2],
+                                    esc_seq_hash[hash].length - 2))
+                {
+                  dst[length++] = esc_seq_hash[hash].symbol;
+                  i += esc_seq_hash[hash].length - 1; /* one more increase in the loop */
+                  found = true;
+                }
+
+            if (!found)
+              {
+                MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_XML_ESC, esc);
+                dst[length++] = substr->str[i];
+              }
+          }
       }
   dst[length] = 0;
 }
@@ -263,7 +263,7 @@ xml1_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
 
   char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
   if (mr_ra_printf (mr_ra_str, MR_XML1_INDENT_TEMPLATE MR_XML1_OPEN_TAG_START,
-		    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", name) < 0)
+                    MR_LIMIT_LEVEL (level) * MR_XML1_INDENT_SPACES, "", name) < 0)
     return (MR_FAILURE);
   
   if (ptrs[idx].flags & MR_IS_REFERENCE)
@@ -287,17 +287,17 @@ xml1_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
   else
     {
       if (mr_ra_append_char (mr_ra_str, '>') < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       int count = save_handler (mr_ra_str, &ptrs[idx]);
       empty_tag = (ptrs[idx].first_child == MR_NULL_IDX) && (0 == count);
       if (empty_tag)
-	mr_ra_str->data.string[--mr_ra_str->MR_SIZE] = 0;
+        mr_ra_str->data.string[--mr_ra_str->MR_SIZE] = 0;
     }
       
   if (empty_tag)
     {
       if (mr_ra_append_string (mr_ra_str, MR_XML1_OPEN_EMPTY_TAG_END) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   ptrs[idx].vt_intptr = empty_tag;
@@ -316,12 +316,12 @@ xml1_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t *
   if (!ptrs[idx].vt_intptr)
     {
       if (mr_ra_append_string (mr_ra_str, "</") < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (mr_ra_append_string (mr_ra_str, name) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       if (mr_ra_append_char (mr_ra_str, '>') < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   return (MR_SUCCESS);
@@ -475,7 +475,7 @@ mr_xml2_save (mr_ptrdes_t * ptrs)
       mr_ptrs_dfs (ptrs, xml2_save_node, &mr_ra_str);
       
       if (NULL != ptrs[1].vt_ptr)
-	xmlDocSetRootElement (doc, ptrs[1].vt_ptr);
+        xmlDocSetRootElement (doc, ptrs[1].vt_ptr);
     }
 
   if (mr_ra_str.data.ptr)

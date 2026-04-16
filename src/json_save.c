@@ -229,26 +229,26 @@ json_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
   if (!unnamed)
     {
       if (mr_ra_append_char (mr_ra_str, '"') < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (mr_ra_append_string (mr_ra_str, name) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       if (mr_ra_append_string (mr_ra_str, "\": ") < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   if (ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
       if (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE)
-	if (mr_ra_append_char (mr_ra_str, '-') < 0)
-	  return (MR_FAILURE);
+        if (mr_ra_append_char (mr_ra_str, '-') < 0)
+          return (MR_FAILURE);
       if (mr_ra_printf (mr_ra_str, "%" SCNu32, (uint32_t)ptrs[ptrs[idx].first_child].idx) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
   else if (ptrs[idx].flags & MR_IS_NULL)
     {
       if (mr_ra_append_string (mr_ra_str, JSON_NULL) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
   else if (save_handler (mr_ra_str, &ptrs[idx]) < 0)
     return (MR_FAILURE);

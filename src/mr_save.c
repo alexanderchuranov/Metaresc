@@ -31,9 +31,9 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
   if (name != NULL)
     if (name[0])
       {
-	mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
-	if (NULL != fdp)
-	  return (fdp);
+        mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
+        if (NULL != fdp)
+          return (fdp);
       }
   
   if (tdp->param.union_param.fields_count > 0) /* check for an empty union */
@@ -77,127 +77,127 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
   for (;;)
     {
       switch (mr_type) /* switch over basic types */
-	{
-	case MR_TYPE_BOOL:
-	  {
-	    value._unsigned = !!*(bool*)discriminator;
-	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
-	    if (fdp)
-	      return (fdp);
-	    return (mr_union_discriminator_by_idx (tdp, value._unsigned));
-	  }
+        {
+        case MR_TYPE_BOOL:
+          {
+            value._unsigned = !!*(bool*)discriminator;
+            mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
+            if (fdp)
+              return (fdp);
+            return (mr_union_discriminator_by_idx (tdp, value._unsigned));
+          }
 
 #define CASE_RETURN_BY_TYPE(TYPE) CASE_RETURN_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
-#define CASE_RETURN_BY_TYPE_(TYPE, MR_TYPE)				\
-	  case MR_TYPE:							\
-	    {								\
-	      value._unsigned = *(TYPE*)discriminator;			\
-	      mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value); \
-	      if (fdp)							\
-		return (fdp);						\
-	      return (mr_union_discriminator_by_idx (tdp, value._unsigned)); \
-	    }
+#define CASE_RETURN_BY_TYPE_(TYPE, MR_TYPE)                             \
+          case MR_TYPE:                                                 \
+            {                                                           \
+              value._unsigned = *(TYPE*)discriminator;                  \
+              mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value); \
+              if (fdp)                                                  \
+                return (fdp);                                           \
+              return (mr_union_discriminator_by_idx (tdp, value._unsigned)); \
+            }
 
-	  MR_FOREACH (CASE_RETURN_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
-	  CASE_RETURN_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
-	  CASE_RETURN_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
+          MR_FOREACH (CASE_RETURN_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+          CASE_RETURN_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
+          CASE_RETURN_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
 
-	case MR_TYPE_BITFIELD:
-	  {
-	    mr_uintmax_t bf_value = 0;
-	    mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
-	    mr_td_t * enum_tdp = parent_fdp->stype.tdp;
+        case MR_TYPE_BITFIELD:
+          {
+            mr_uintmax_t bf_value = 0;
+            mr_ptrdes_t ptrdes = { .data.ptr = discriminator, .fdp = parent_fdp, };
+            mr_td_t * enum_tdp = parent_fdp->stype.tdp;
 
-	    mr_save_bitfield_value (&ptrdes, &bf_value); /* get value of the bitfield */
+            mr_save_bitfield_value (&ptrdes, &bf_value); /* get value of the bitfield */
 
-	    value._unsigned = bf_value;
-	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
-	    if (fdp)
-	      return (fdp);
-	  
-	    if (MR_TYPE_ENUM == parent_fdp->stype.mr_type_aux)
-	      {
-		/* if bitfield is a enumeration then get named discriminator from enum value meta field */
-		mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, value);
-		return (mr_union_discriminator_by_name (tdp, edp ? edp->meta : NULL));
-	      }
+            value._unsigned = bf_value;
+            mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
+            if (fdp)
+              return (fdp);
 
-	    if (MR_TYPE_BOOL == parent_fdp->stype.mr_type_aux)
-	      value._unsigned = !!value._unsigned;
-	    
-	    return (mr_union_discriminator_by_idx (tdp, value._unsigned));
-	  }
-	
-	case MR_TYPE_CHAR_ARRAY:
-	  return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
-	
-	case MR_TYPE_STRING:
-	  return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
-	
-	case MR_TYPE_ENUM:
-	  {
-	    mr_td_t * enum_tdp = parent_fdp->stype.tdp;
-	    if (NULL == enum_tdp)
-	      return (mr_union_discriminator_by_name (tdp, NULL));
+            if (MR_TYPE_ENUM == parent_fdp->stype.mr_type_aux)
+              {
+                /* if bitfield is a enumeration then get named discriminator from enum value meta field */
+                mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, value);
+                return (mr_union_discriminator_by_name (tdp, edp ? edp->meta : NULL));
+              }
 
-	    value = mr_get_enum_value (enum_tdp, discriminator);
-	    mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
-	    if (fdp)
-	      return (fdp);
-	    mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
-	    return (mr_union_discriminator_by_name (tdp, edp ? edp->meta : NULL));
-	  }
-	    
-	case MR_TYPE_ARRAY:
-	  if (parent_fdp->stype.mr_type_aux != MR_TYPE_POINTER)
-	    {
-	      mr_type = parent_fdp->stype.mr_type_aux;
-	      break;
-	    }
+            if (MR_TYPE_BOOL == parent_fdp->stype.mr_type_aux)
+              value._unsigned = !!value._unsigned;
 
-	  mr_init_pointer_fd (&parent_fdp, &fd);
-	  __attribute__ ((fallthrough));
-	  /* NB! proceed to pointer branch */
-	case MR_TYPE_POINTER:
-	  /* if discriminator is a pointer then we need address of the content */
-	  discriminator = *(void**)discriminator;
-	  if (NULL == discriminator)
-	    return (mr_union_discriminator_by_name (tdp, NULL));
-	  mr_type = parent_fdp->stype.mr_type_aux;
-	  if (MR_TYPE_POINTER == mr_type)
-	    mr_init_pointer_fd (&parent_fdp, &fd);
-	  break;
-	    
-	case MR_TYPE_VOID:
-	  mr_type = parent_fdp->stype.mr_type_aux;
+            return (mr_union_discriminator_by_idx (tdp, value._unsigned));
+          }
+
+        case MR_TYPE_CHAR_ARRAY:
+          return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
+
+        case MR_TYPE_STRING:
+          return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
+
+        case MR_TYPE_ENUM:
+          {
+            mr_td_t * enum_tdp = parent_fdp->stype.tdp;
+            if (NULL == enum_tdp)
+              return (mr_union_discriminator_by_name (tdp, NULL));
+
+            value = mr_get_enum_value (enum_tdp, discriminator);
+            mr_fd_t * fdp = mr_ud_override_value (ud_overrides, value);
+            if (fdp)
+              return (fdp);
+            mr_ed_t * edp = mr_get_enum_by_value (enum_tdp, value); /* get named discriminator from enum value meta field */
+            return (mr_union_discriminator_by_name (tdp, edp ? edp->meta : NULL));
+          }
+
+        case MR_TYPE_ARRAY:
+          if (parent_fdp->stype.mr_type_aux != MR_TYPE_POINTER)
+            {
+              mr_type = parent_fdp->stype.mr_type_aux;
+              break;
+            }
+
+          mr_init_pointer_fd (&parent_fdp, &fd);
+          __attribute__ ((fallthrough));
+          /* NB! proceed to pointer branch */
+        case MR_TYPE_POINTER:
+          /* if discriminator is a pointer then we need address of the content */
+          discriminator = *(void**)discriminator;
+          if (NULL == discriminator)
+            return (mr_union_discriminator_by_name (tdp, NULL));
+          mr_type = parent_fdp->stype.mr_type_aux;
+          if (MR_TYPE_POINTER == mr_type)
+            mr_init_pointer_fd (&parent_fdp, &fd);
+          break;
+
+        case MR_TYPE_VOID:
+          mr_type = parent_fdp->stype.mr_type_aux;
 #define NONRESOLVABLE (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_ARRAY, MR_TYPE_POINTER))
-	  if ((NONRESOLVABLE >> mr_type) & 1)
-	    mr_type = MR_TYPE_NONE;
-	  break;
+          if ((NONRESOLVABLE >> mr_type) & 1)
+            mr_type = MR_TYPE_NONE;
+          break;
 
-	case MR_TYPE_STRUCT:
-	case MR_TYPE_UNION:
-	case MR_TYPE_ANON_UNION:
-	case MR_TYPE_NAMED_ANON_UNION:
-	  if (parent_fdp->stype.tdp)
-	    if ((parent_fdp->stype.tdp->param.union_param.fields_count >= 1) &&
-		parent_fdp->stype.tdp->is_union_discriminator)
-	      {
-		discriminator = (char*)discriminator + parent_fdp->stype.tdp->param.union_param.fields[0]->offset;
-		parent_fdp = parent_fdp->stype.tdp->param.union_param.fields[0];
-		mr_type = parent_fdp->stype.mr_type;
-		break;
-	      }
-	  __attribute__ ((fallthrough));
-	  /* NB! proceed to default branch */
-	default:
-	  mr_type = MR_TYPE_NONE;
-	  break;
-	}
+        case MR_TYPE_STRUCT:
+        case MR_TYPE_UNION:
+        case MR_TYPE_ANON_UNION:
+        case MR_TYPE_NAMED_ANON_UNION:
+          if (parent_fdp->stype.tdp)
+            if ((parent_fdp->stype.tdp->param.union_param.fields_count >= 1) &&
+                parent_fdp->stype.tdp->is_union_discriminator)
+              {
+                discriminator = (char*)discriminator + parent_fdp->stype.tdp->param.union_param.fields[0]->offset;
+                parent_fdp = parent_fdp->stype.tdp->param.union_param.fields[0];
+                mr_type = parent_fdp->stype.mr_type;
+                break;
+              }
+          __attribute__ ((fallthrough));
+          /* NB! proceed to default branch */
+        default:
+          mr_type = MR_TYPE_NONE;
+          break;
+        }
       
       /* prevent from infinit redirect loop */
       if (MR_TYPE_NONE == mr_type)
-	break;
+        break;
     }
   
   return (mr_union_discriminator_by_name (tdp, NULL));
@@ -213,7 +213,7 @@ mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   if (diff)
     return (diff);
   return ((x_ud->discriminated_fdp > y_ud->discriminated_fdp) -
-	  (x_ud->discriminated_fdp < y_ud->discriminated_fdp));
+          (x_ud->discriminated_fdp < y_ud->discriminated_fdp));
 }
 
 mr_hash_value_t
@@ -254,18 +254,18 @@ mr_ud_find (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
     {
     case MR_VT_UD_PTR:
       {
-	mr_ptr_t * find = mr_ic_find (ptrdes->union_discriminator, key);
-	return (find ? find->uintptr : -1);
+        mr_ptr_t * find = mr_ic_find (ptrdes->union_discriminator, key);
+        return (find ? find->uintptr : -1);
       }
 
     case MR_VT_UD_SET:
       {
-	mr_ud_set_t * uds = &ptrdes->ud_set;
-	int i;
-	for (i = 0; i < uds->count; ++i)
-	  if (0 == mr_ud_cmp (key, (intptr_t)uds->idx[i], mr_save_data))
-	    return (uds->idx[i]);
-	return (-1);
+        mr_ud_set_t * uds = &ptrdes->ud_set;
+        int i;
+        for (i = 0; i < uds->count; ++i)
+          if (0 == mr_ud_cmp (key, (intptr_t)uds->idx[i], mr_save_data))
+            return (uds->idx[i]);
+        return (-1);
       }
 
     default:
@@ -282,65 +282,65 @@ mr_ud_add (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
     {
     case MR_VT_UD_PTR:
       {
-	mr_ptr_t * add = mr_ic_add (ptrdes->union_discriminator, key);
-	return (add ? add->uintptr : -1);
+        mr_ptr_t * add = mr_ic_add (ptrdes->union_discriminator, key);
+        return (add ? add->uintptr : -1);
       }
 
     case MR_VT_UD_SET:
       {
-	int find = mr_ud_find (ptrdes, key, mr_save_data);
-	if (find != -1)
-	  return (find);
+        int find = mr_ud_find (ptrdes, key, mr_save_data);
+        if (find != -1)
+          return (find);
 
-	mr_ud_set_t * uds = &ptrdes->ud_set;
-	if (uds->count > sizeof (uds->idx) / sizeof (uds->idx[0]))
-	  {
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, uds->count);
-	    uds->count = 0;
-	  }
+        mr_ud_set_t * uds = &ptrdes->ud_set;
+        if (uds->count > sizeof (uds->idx) / sizeof (uds->idx[0]))
+          {
+            MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NUMBER_OF_ITEMS, uds->count);
+            uds->count = 0;
+          }
 
-	if (uds->count == sizeof (uds->idx) / sizeof (uds->idx[0]))
-	  {
-	    mr_ic_t * dst_ic = MR_CALLOC (1, sizeof (*dst_ic));
-	    if (NULL == dst_ic)
-	      {
-		MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-		return (-1);
-	      }
-	    mr_res_t context = {
-	      .data = { mr_save_data },
-	      .type = "mr_save_data_t",
-	      .MR_SIZE = sizeof (mr_save_data_t),
-	    };
-	    mr_status_t status = mr_ic_hash_new (dst_ic, mr_ud_get_hash, mr_ud_cmp, "intptr", &context);
-	    if (MR_SUCCESS != status)
-	      {
-		MR_FREE (dst_ic);
-		return (-1);
-	      }
+        if (uds->count == sizeof (uds->idx) / sizeof (uds->idx[0]))
+          {
+            mr_ic_t * dst_ic = MR_CALLOC (1, sizeof (*dst_ic));
+            if (NULL == dst_ic)
+              {
+                MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+                return (-1);
+              }
+            mr_res_t context = {
+              .data = { mr_save_data },
+              .type = "mr_save_data_t",
+              .MR_SIZE = sizeof (mr_save_data_t),
+            };
+            mr_status_t status = mr_ic_hash_new (dst_ic, mr_ud_get_hash, mr_ud_cmp, "intptr", &context);
+            if (MR_SUCCESS != status)
+              {
+                MR_FREE (dst_ic);
+                return (-1);
+              }
 
-	    int i;
-	    mr_ptr_t idx[sizeof (uds->idx) / sizeof (uds->idx[0])];
+            int i;
+            mr_ptr_t idx[sizeof (uds->idx) / sizeof (uds->idx[0])];
 
-	    for (i = 0; i < sizeof (idx) / sizeof (idx[0]); ++i)
-	      idx[i].uintptr = uds->idx[i];
+            for (i = 0; i < sizeof (idx) / sizeof (idx[0]); ++i)
+              idx[i].uintptr = uds->idx[i];
 
-	    status = mr_ic_index (dst_ic, idx, sizeof (idx));
-	    if (MR_SUCCESS != status)
-	      {
-		MR_FREE (dst_ic);
-		return (-1);
-	      }
+            status = mr_ic_index (dst_ic, idx, sizeof (idx));
+            if (MR_SUCCESS != status)
+              {
+                MR_FREE (dst_ic);
+                return (-1);
+              }
 
-	    ptrdes->union_discriminator = dst_ic;
-	    ptrdes->value_type = MR_VT_UD_PTR;
+            ptrdes->union_discriminator = dst_ic;
+            ptrdes->value_type = MR_VT_UD_PTR;
 
-	    mr_ptr_t * add = mr_ic_add (dst_ic, key);
-	    return (add ? add->uintptr : -1);
-	  }
+            mr_ptr_t * add = mr_ic_add (dst_ic, key);
+            return (add ? add->uintptr : -1);
+          }
 
-	uds->idx[uds->count++] = key.uintptr;
-	return (key.uintptr);
+        uds->idx[uds->count++] = key.uintptr;
+        return (key.uintptr);
       }
 
     default:
@@ -359,12 +359,12 @@ mr_ud_foreach (mr_ptrdes_t * ptrdes, mr_visit_fn_t visit_fn, void * context)
 
     case MR_VT_UD_SET:
       {
-	mr_ud_set_t * uds = &ptrdes->ud_set;
-	int i;
-	for (i = 0; i < uds->count; ++i)
-	  if (MR_SUCCESS != visit_fn ((intptr_t)uds->idx[i], context))
-	    return (MR_FAILURE);
-	return (MR_SUCCESS);
+        mr_ud_set_t * uds = &ptrdes->ud_set;
+        int i;
+        for (i = 0; i < uds->count; ++i)
+          if (MR_SUCCESS != visit_fn ((intptr_t)uds->idx[i], context))
+            return (MR_FAILURE);
+        return (MR_SUCCESS);
       }
 
     default:
@@ -407,8 +407,8 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * 
     return (mr_union_discriminator_by_name (tdp, NULL));
 
   ud = mr_rarray_allocate_element ((void*)&mr_save_data->mr_ra_ud,
-				   &mr_save_data->mr_ra_ud_size, &mr_save_data->mr_ra_ud_alloc_size,
-				   sizeof (mr_save_data->mr_ra_ud[0]));
+                                   &mr_save_data->mr_ra_ud_size, &mr_save_data->mr_ra_ud_alloc_size,
+                                   sizeof (mr_save_data->mr_ra_ud[0]));
   /* create a record for further lookups in parent nodes for discriminator value */
   if (NULL == ud)
     return (NULL);
@@ -432,21 +432,21 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * 
       ud_find = mr_ud_find (parent_ptrdes, ud_idx, mr_save_data);
       /* break the traverse loop if it has */
       if (ud_find != -1)
-	break;
+        break;
 
       if ((MR_TYPE_ARRAY == parent_ptrdes->mr_type) || (MR_TYPE_POINTER == parent_ptrdes->mr_type))
-	continue;
+        continue;
 
       /* check if for some reason parent node doesn't have static field descriptor */
       if (NULL == parent_ptrdes->fdp)
-	continue;
+        continue;
       /* check if for some reason parent node doesn't have cached type descriptor */
       if (NULL == parent_ptrdes->fdp->stype.tdp)
-	continue;
+        continue;
       /* lookup for discriminator in this parent */
       mr_fd_t * parent_fdp = mr_get_fd_by_name (parent_ptrdes->fdp->stype.tdp, discriminator);
       if (NULL == parent_fdp)
-	continue;
+        continue;
       
       /* get an address of discriminator field */
       void * discriminator_ptr = (char*)parent_ptrdes->data.ptr + parent_fdp->offset;
@@ -460,20 +460,20 @@ mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * 
     {
       /* if union is still not resolved, set it to default branch */
       if (NULL == fdp)
-	fdp = mr_union_discriminator_by_name (tdp, NULL);
+        fdp = mr_union_discriminator_by_name (tdp, NULL);
 
       /* form union discriminator resolution entity and deduplicate it with existing */
       ud->discriminated_fdp = fdp;
       mr_ptr_t * add = mr_ic_add (&mr_save_data->union_discriminators, ud_idx);
       if (NULL == add)
-	return (NULL);
+        return (NULL);
       if (add->uintptr == ud_idx)
-	/* union discriminator info was not found in the set so we add new record */
-	mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
+        /* union discriminator info was not found in the set so we add new record */
+        mr_save_data->mr_ra_ud_size += sizeof (mr_save_data->mr_ra_ud[0]);
 
       /* set 'parent' on one level up to include actual parent node into traversal below */
       if (parent != MR_NULL_IDX)
-	parent = mr_save_data->ptrs.ra[parent].parent;
+        parent = mr_save_data->ptrs.ra[parent].parent;
       ud_find = add->uintptr;
     }
 
@@ -541,7 +541,7 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
       if ((NULL == x->fdp) || (NULL == y->fdp))
-	return ((x->fdp > y->fdp) - (x->fdp < y->fdp));
+        return ((x->fdp > y->fdp) - (x->fdp < y->fdp));
       return ((x->fdp->stype.tdp > y->fdp->stype.tdp) - (x->fdp->stype.tdp < y->fdp->stype.tdp));
       
     case MR_TYPE_END_ANON_UNION:
@@ -571,9 +571,9 @@ mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 }
 
 TYPEDEF_STRUCT (mr_check_ud_ctx_t,
-		(mr_save_data_t *, mr_save_data),
-		(mr_idx_t, node),
-		);
+                (mr_save_data_t *, mr_save_data),
+                (mr_idx_t, node),
+                );
 /**
  * We have a previously saved node that was a pointer,
  * but now we need to save the same pointer as a part of bigger structure. This means that
@@ -635,13 +635,13 @@ mr_get_persistent_fd (mr_ptrdes_t * ra, mr_idx_t idx)
     {
       mr_idx_t parent;
       for (parent = ra[idx].parent; parent != MR_NULL_IDX; parent = ra[parent].parent)
-	if (ra[parent].fdp)
-	  if (!ra[parent].fdp->non_persistent)
-	    break;
+        if (ra[parent].fdp)
+          if (!ra[parent].fdp->non_persistent)
+            break;
       if (parent != MR_NULL_IDX)
-	fdp = ra[parent].fdp;
+        fdp = ra[parent].fdp;
       else
-	fdp = fdp->stype.tdp ? &fdp->stype.tdp->mr_ptr_fd : NULL;
+        fdp = fdp->stype.tdp ? &fdp->stype.tdp->mr_ptr_fd : NULL;
     }
   return (fdp);
 }
@@ -744,7 +744,7 @@ mr_get_pointer_fd (mr_type_t mr_type, mr_fd_t * fdp)
   In default case we just need to walk list of children and find the one that refers on target node.
   This might yeld O(n) complexity for nodes within arrays of resizable pointers. For those cases we could
   find previous node based on it's address. Address could be calculated from address of node [idx].
- */
+*/
 static mr_idx_t *
 find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
 {
@@ -760,16 +760,16 @@ find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
     case MR_TYPE_POINTER:
     case MR_TYPE_ARRAY:
       {
-	mr_idx_t prev = mr_get_child_by_addr (mr_save_data, parent, ra[idx].data.uintptr - sizeof (void*));
-	if ((prev != MR_NULL_IDX) && (ra[prev].next == idx))
-	  return (&ra[prev].next);
+        mr_idx_t prev = mr_get_child_by_addr (mr_save_data, parent, ra[idx].data.uintptr - sizeof (void*));
+        if ((prev != MR_NULL_IDX) && (ra[prev].next == idx))
+          return (&ra[prev].next);
       }
       __attribute__ ((fallthrough));
 
     default:
       for (idx_ptr = &ra[parent].first_child; *idx_ptr != MR_NULL_IDX; idx_ptr = &ra[*idx_ptr].next)
-	if (*idx_ptr == idx)
-	  return (idx_ptr);
+        if (*idx_ptr == idx)
+          return (idx_ptr);
       break;
     }
   return (NULL);
@@ -785,24 +785,24 @@ merge_pointers_content (mr_save_data_t * mr_save_data, mr_idx_t ref_parent, mr_i
     will be required for less number of nodes.
 
     Below is a diagram of initial state:
+
                                         ┌────────────────┐                                                                  
                                         │ref_grand_parent│                                                                  
                                         └────────┬───────┘                                                                  
                                                  │                                                                          
 ┌────────────────┐                      ┌────────▼───────┐      ┌───────────────┐   ┌──────────┐  ┌───────────────┐         
-│  grand_parent  │                      │ref_parent_first├─► ──►│ref_parent_prev├───►REF_PARENT├──►ref_parent_next│         
+│  grand_parent  │                      │ref_parent_first├─► ──►│ref_parent_prev├───►ref_parent├──►ref_parent_next│         
 └────────┬───────┘                      └────────────────┘      └───────────────┘   └────┬─────┘  └───────────────┘         
          │                                                                               │                                  
 ┌────────▼───────┐      ┌───────────────┐   ┌──────────┐  ┌─────────────┐           ┌────▼─────┐  ┌────────┐      ┌────────┐
-│  parent_first  ├─► ──►│  parent_prev  ├───►  PARENT  ├──► parent_next │           │    ref   ├──►ref_next├─►  ──►ref_last│
+│  parent_first  ├─► ──►│  parent_prev  ├───►  parent  ├──► parent_next │           │    ref   ├──►ref_next├─►  ──►ref_last│
 └────────────────┘      └───────────────┘   └────┬─────┘  └─────────────┘           └──────────┘  └────────┘      └────────┘
                                                  │                                                                          
                                             ┌────▼──────┐   ┌────┐      ┌──────────┐  ┌──────┐                              
                                             │first_child├───►next├──► ──►last_child├──► idx  │                              
-                                            └───────────┘   └────┘      └──────────┘  └──────┘
-
-  Here is transformation that needs to be done:
-
+                                            └───────────┘   └────┘      └──────────┘  └──────┘                              
+                                                                                                                            
+    Here is transformation that needs to be done:                                                                                                                                                                                                                     
                                         ┌────────────────┐                                                                  
                                         │ref_grand_parent│                                                                  
                                         └────────┬───────┘                                                                  
@@ -818,13 +818,13 @@ merge_pointers_content (mr_save_data_t * mr_save_data, mr_idx_t ref_parent, mr_i
                                             ┌────▼──────┐   ┌────┐      ┌──────────┐  ┌──▼─────┐  ┌────────┐      ┌────────┐
                                             │first_child├───►next├──► ──►last_child├──► ref    ├──►ref_next├─►  ──►ref_last│
                                             └───────────┘   └────┘      └──────────┘  └────────┘  └────────┘      └────────┘
-
-  Nodes PARENT and REF_PARENT needs to be swapped and the following references updated:
-  1. ref_parent_prev.next = PARENT
-  2. parent_prev.next = REF_PARENT
-  3. last_child.next = ref
-  4. All nodes from [first_child, next, ..., last_child] needs update to parent to REF_PARENT
-  Search index over nodes (mr_save_data.untyped_ptrs) for PARENT and REF_PARENT also needs to be updated.
+                                            
+    Nodes PARENT and REF_PARENT needs to be swapped and the following references updated:
+    1. ref_parent_prev.next = PARENT
+    2. parent_prev.next = REF_PARENT
+    3. last_child.next = ref
+    4. All nodes from [first_child, next, ..., last_child] needs update to parent to REF_PARENT
+    Search index over nodes (mr_save_data.untyped_ptrs) for PARENT and REF_PARENT also needs to be updated.
   */
 
   mr_idx_t parent = mr_save_data->ptrs.ra[idx].parent;
@@ -905,7 +905,7 @@ mr_save_pointer_content (mr_save_data_t * mr_save_data, mr_idx_t idx)
     {
       mr_idx_t nodes_added = mr_save_inner (*data + i * fd.stype.size, &fd, count - i, mr_save_data, mr_save_data->pointer_idx);
       if (nodes_added == 0)
-	return (0);
+        return (0);
       i += nodes_added;
     }
 
@@ -945,7 +945,7 @@ mr_extend_pointer (mr_save_data_t * mr_save_data, mr_idx_t idx, mr_size_t delta)
     {
       mr_idx_t nodes_added = mr_save_inner (*data + i * fd.stype.size, &fd, count - i, mr_save_data, mr_save_data->pointer_idx);
       if (nodes_added == 0)
-	return (0);
+        return (0);
       i += nodes_added;
     }
 
@@ -970,63 +970,63 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
   if (ref_parent != MR_NULL_IDX)
     if ((ra[ref_parent].mr_type == MR_TYPE_POINTER) || (ra[ref_parent].mr_type == MR_TYPE_ARRAY))
       {
-	mr_idx_t ref_first_child = ra[ref_parent].first_child;
-	if (ref_first_child != MR_NULL_IDX)
-	  ref_mr_size = ra[ref_parent].MR_SIZE - (ra[ref_idx].data.ptr - ra[ref_first_child].data.ptr);
+        mr_idx_t ref_first_child = ra[ref_parent].first_child;
+        if (ref_first_child != MR_NULL_IDX)
+          ref_mr_size = ra[ref_parent].MR_SIZE - (ra[ref_idx].data.ptr - ra[ref_first_child].data.ptr);
       }
 
   if (MR_NULL_IDX == ra[parent].first_child) /* this is the first element in resizable array */
     {
       if (ref_mr_size >= ra[idx].MR_SIZE)
-	{
-	  *resolved = true;
-	  /* new resizable pointer is a part of already saved */
-	  ra[parent].first_child = ref_idx;
-	  ra[parent].flags |= MR_IS_REFERENCE;
-	  ra[ref_idx].flags |= MR_IS_REFERENCED;
-	  return (ra[idx].MR_SIZE / element_size);
-	}
+        {
+          *resolved = true;
+          /* new resizable pointer is a part of already saved */
+          ra[parent].first_child = ref_idx;
+          ra[parent].flags |= MR_IS_REFERENCE;
+          ra[ref_idx].flags |= MR_IS_REFERENCED;
+          return (ra[idx].MR_SIZE / element_size);
+        }
       /* otherwise we can handle only match with another resizable pointer */
       if (MR_TYPE_POINTER == ra[ref_parent].mr_type)
-	{
-	  /*
-	    Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
-	    but previously saved pointer is shorter then we need for new one.
-	    We need to append required number of nodes to previously saved pointer and set new resizable pointer as a references.
-	  */
-	  ra[parent].first_child = ref_idx;
-	  ra[parent].flags |= MR_IS_REFERENCE;
-	  ra[ref_idx].flags |= MR_IS_REFERENCED;
-	  *resolved = true;
-	  /* Need to save number of total nodes for current pointer, because this slot on arena will be reused for extension of another pointer */
-	  mr_idx_t total_nodes = ra[idx].MR_SIZE / element_size;
-	  mr_idx_t nodes_added = mr_extend_pointer (mr_save_data, ref_parent, ra[idx].MR_SIZE - ref_mr_size);
-	  return ((nodes_added == 0) ? 0 : total_nodes);
-	}
+        {
+          /*
+            Currently saving resizable pointer is pointing into the middle of previously saved resizable pointer,
+            but previously saved pointer is shorter then we need for new one.
+            We need to append required number of nodes to previously saved pointer and set new resizable pointer as a references.
+          */
+          ra[parent].first_child = ref_idx;
+          ra[parent].flags |= MR_IS_REFERENCE;
+          ra[ref_idx].flags |= MR_IS_REFERENCED;
+          *resolved = true;
+          /* Need to save number of total nodes for current pointer, because this slot on arena will be reused for extension of another pointer */
+          mr_idx_t total_nodes = ra[idx].MR_SIZE / element_size;
+          mr_idx_t nodes_added = mr_extend_pointer (mr_save_data, ref_parent, ra[idx].MR_SIZE - ref_mr_size);
+          return ((nodes_added == 0) ? 0 : total_nodes);
+        }
     }
   else
     {
       /* we can handle only match with another resizable pointer */
       if ((MR_TYPE_POINTER == ra[ref_parent].mr_type) &&
-	  is_first_child (ra, ref_idx) &&
-	  !ref_is_parent (ra, parent, ref_parent))
-	{
-	  /*
-	    in the middle of saving of resizable pointer we matched another resizable pointer
-	    we need to append all nodes from found resizable pointer to new one and
-	    adjust counters if total length of sequence increased
-	  */
-	  *resolved = true;
-	  mr_size_t parent_saved_size = ra[parent].MR_SIZE - ra[idx].MR_SIZE;
-	  if (ref_mr_size > ra[idx].MR_SIZE)
-	    ra[parent].MR_SIZE += ref_mr_size - ra[idx].MR_SIZE; /* increase size of resizable array on detected delta */
+          is_first_child (ra, ref_idx) &&
+          !ref_is_parent (ra, parent, ref_parent))
+        {
+          /*
+            in the middle of saving of resizable pointer we matched another resizable pointer
+            we need to append all nodes from found resizable pointer to new one and
+            adjust counters if total length of sequence increased
+          */
+          *resolved = true;
+          mr_size_t parent_saved_size = ra[parent].MR_SIZE - ra[idx].MR_SIZE;
+          if (ref_mr_size > ra[idx].MR_SIZE)
+            ra[parent].MR_SIZE += ref_mr_size - ra[idx].MR_SIZE; /* increase size of resizable array on detected delta */
 
-	  /* based on size of pointers decide on aggregation method */
-	  if (parent_saved_size >= ref_mr_size)
-	    return (move_nodes_to_parent (ptrs, ref_parent, idx));
-	  else
-	    return (merge_pointers_content (mr_save_data, ref_parent, idx, element_size));
-	}
+          /* based on size of pointers decide on aggregation method */
+          if (parent_saved_size >= ref_mr_size)
+            return (move_nodes_to_parent (ptrs, ref_parent, idx));
+          else
+            return (merge_pointers_content (mr_save_data, ref_parent, idx, element_size));
+        }
     }
   
   return (0);
@@ -1046,42 +1046,42 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
       mr_idx_t ref_parent = ra[ref_idx].parent;
 
       if (mr_cmp_ptrdes (&ra[ref_idx], &ra[idx]) != 0) /* skip pointers that typed differently */
-	continue;
+        continue;
 
       mr_check_ud_ctx.node = ref_idx;
       mr_status_t status = mr_ud_foreach (&ra[ref_idx], mr_check_ud, &mr_check_ud_ctx);
 
       if (MR_SUCCESS == status)
-	switch (ra[parent].mr_type)
-	  {
-	  case MR_TYPE_STRING:
-	    *resolved = true;
-	    ra[parent].first_child = ref_idx;
-	    ra[parent].flags |= MR_IS_REFERENCE;
-	    ra[ref_idx].flags |= MR_IS_REFERENCED;
-	    return (1);
+        switch (ra[parent].mr_type)
+          {
+          case MR_TYPE_STRING:
+            *resolved = true;
+            ra[parent].first_child = ref_idx;
+            ra[parent].flags |= MR_IS_REFERENCE;
+            ra[ref_idx].flags |= MR_IS_REFERENCED;
+            return (1);
 
-	  case MR_TYPE_POINTER:
-	    {
-	      mr_idx_t nodes_added = resolve_pointer (mr_save_data, ref_idx, resolved);
-	      if (*resolved)
-		return (nodes_added);
-	      break;
-	    }
-	    
-	  default:
-	    if (ref_parent != MR_NULL_IDX)
-	      if (((MR_TYPE_STRING == ra[ref_parent].mr_type)
-		   || ((MR_TYPE_POINTER == ra[ref_parent].mr_type)
-		       && is_first_child (ra, ref_idx)
-		       && (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
-		  && !ref_is_parent (ra, parent, ref_parent))
-		{
-		  *resolved = true;
-		  return (move_nodes_to_parent (ptrs, ref_parent, idx));
-		}
-	    break;
-	  }
+          case MR_TYPE_POINTER:
+            {
+              mr_idx_t nodes_added = resolve_pointer (mr_save_data, ref_idx, resolved);
+              if (*resolved)
+                return (nodes_added);
+              break;
+            }
+
+          default:
+            if (ref_parent != MR_NULL_IDX)
+              if (((MR_TYPE_STRING == ra[ref_parent].mr_type)
+                   || ((MR_TYPE_POINTER == ra[ref_parent].mr_type)
+                       && is_first_child (ra, ref_idx)
+                       && (ra[idx].MR_SIZE >= ra[ref_idx].MR_SIZE)))
+                  && !ref_is_parent (ra, parent, ref_parent))
+                {
+                  *resolved = true;
+                  return (move_nodes_to_parent (ptrs, ref_parent, idx));
+                }
+            break;
+          }
     }
   *resolved = false;
   return (0);
@@ -1117,24 +1117,24 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
       {
-	mr_td_t * tdp = src->fdp ? src->fdp->stype.tdp : NULL;
-	if (NULL == tdp)
-	  break;
-	if (tdp->mr_type != MR_TYPE_ENUM)
-	  break;
-	
-	switch (tdp->param.enum_param.mr_type_effective)
-	  {
+        mr_td_t * tdp = src->fdp ? src->fdp->stype.tdp : NULL;
+        if (NULL == tdp)
+          break;
+        if (tdp->mr_type != MR_TYPE_ENUM)
+          break;
+
+        switch (tdp->param.enum_param.mr_type_effective)
+          {
 #define GET_VALUE_BY_TYPE(TYPE) GET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define GET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: value = *(TYPE*)src_data; break;
-	    MR_FOREACH (GET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+            MR_FOREACH (GET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 #ifdef HAVE_INT128
-	    MR_FOREACH (GET_VALUE_BY_TYPE, mr_uint128_t, mr_int128_t);
+            MR_FOREACH (GET_VALUE_BY_TYPE, mr_uint128_t, mr_int128_t);
 #endif /* HAVE_INT128 */
-	  default:
-	    break;
-	  }
-	break;
+          default:
+            break;
+          }
+        break;
       }
       
       MR_FOREACH (GET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
@@ -1158,24 +1158,24 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     case MR_TYPE_VOID:
     case MR_TYPE_ENUM:
       {
-	mr_td_t * tdp = dst->fdp ? dst->fdp->stype.tdp : NULL;
-	if (NULL == tdp)
-	  break;
-	if (tdp->mr_type != MR_TYPE_ENUM)
-	  break;
-	
-	switch (tdp->param.enum_param.mr_type_effective)
-	  {
+        mr_td_t * tdp = dst->fdp ? dst->fdp->stype.tdp : NULL;
+        if (NULL == tdp)
+          break;
+        if (tdp->mr_type != MR_TYPE_ENUM)
+          break;
+
+        switch (tdp->param.enum_param.mr_type_effective)
+          {
 #define SET_VALUE_BY_TYPE(TYPE) SET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: *(TYPE*)dst_data = value; break;
-	    MR_FOREACH (SET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
+            MR_FOREACH (SET_VALUE_BY_TYPE, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
 #ifdef HAVE_INT128
-	    MR_FOREACH (SET_VALUE_BY_TYPE, mr_uint128_t, mr_int128_t);
+            MR_FOREACH (SET_VALUE_BY_TYPE, mr_uint128_t, mr_int128_t);
 #endif /* HAVE_INT128 */
-	  default:
-	    break;
-	  }
-	break;
+          default:
+            break;
+          }
+        break;
       }
 
       MR_FOREACH (SET_VALUE_BY_TYPE, bool, char, uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t);
@@ -1303,7 +1303,7 @@ mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_s
       bool resolved = false;
       mr_idx_t nodes_matched = resolve_matched (mr_save_data, search_result->uintptr, &resolved);
       if (resolved)
-	return (nodes_matched);
+        return (nodes_matched);
 
       mr_save_data->ptrs.size += sizeof (mr_save_data->ptrs.ra[0]);
 
@@ -1396,7 +1396,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       mr_idx_t nodes_added = mr_save_inner (&data[fdp->offset], fdp, 1, mr_save_data, idx);
       if (nodes_added == 0)
-	return (0);
+        return (0);
     }
   return (1);
 }
@@ -1415,7 +1415,7 @@ mr_save_union (mr_save_data_t * mr_save_data)
   for (parent = idx; parent != MR_NULL_IDX; parent = mr_save_data->ptrs.ra[parent].parent)
     if (mr_save_data->ptrs.ra[parent].fdp)
       if (!mr_save_data->ptrs.ra[parent].fdp->non_persistent)
-	break;
+        break;
       
   mr_fd_t * discriminated_fdp = NULL;
   if (parent != MR_NULL_IDX)
@@ -1455,37 +1455,37 @@ mr_save_array (mr_save_data_t * mr_save_data)
       fd.stype.mr_type = fd.stype.mr_type_aux;
       fd.stype.mr_type_aux = fd.mr_type_base;
       if (!mr_save_data->ptrs.ra[idx].fdp->non_persistent)
-	{
-	  mr_ptrdes_t src, dst;
-	  mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
-	  if (src.data.ptr != NULL)
-	    {
-	      ssize_t size_count;
-	      dst.data.ptr = &size_count;
-	      dst.mr_type = MR_TYPE_DETECT (typeof (size_count));
-	      mr_assign_int (&dst, &src);
-	      if (size_count <= 0)
-		count = 0;
-	      else
-		{
-		  /* We get to this execution branch only if src.data.ptr != NULL.
-		     In that case we will have src.res.data.string set to one of four possible values:
-		     1. size_field_offset
-		     2. size_field_name
-		     3. count_field_offset
-		     4. count_field_name
+        {
+          mr_ptrdes_t src, dst;
+          mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
+          if (src.data.ptr != NULL)
+            {
+              ssize_t size_count;
+              dst.data.ptr = &size_count;
+              dst.mr_type = MR_TYPE_DETECT (typeof (size_count));
+              mr_assign_int (&dst, &src);
+              if (size_count <= 0)
+                count = 0;
+              else
+                {
+                  /* We get to this execution branch only if src.data.ptr != NULL.
+                     In that case we will have src.res.data.string set to one of four possible values:
+                     1. size_field_offset
+                     2. size_field_name
+                     3. count_field_offset
+                     4. count_field_name
 
-		     By the first letter of this string we could determine that value is either size or count.
-		     In case of size we need to normalize size to count.
-		  */
-		  if (src.vt_string[0] == 's')
-		    size_count /= fd.stype.size;
-		  if (count > size_count)
-		    count = size_count;
-		}
-	    }
-	  mr_save_data->ptrs.ra[idx].MR_SIZE = count * fd.stype.size;
-	}
+                     By the first letter of this string we could determine that value is either size or count.
+                     In case of size we need to normalize size to count.
+                  */
+                  if (src.vt_string[0] == 's')
+                    size_count /= fd.stype.size;
+                  if (count > size_count)
+                    count = size_count;
+                }
+            }
+          mr_save_data->ptrs.ra[idx].MR_SIZE = count * fd.stype.size;
+        }
     }
   else
     {
@@ -1497,7 +1497,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
     {
       mr_idx_t nodes_added = mr_save_inner (data + i * fd.stype.size, &fd, count - i, mr_save_data, idx);
       if (nodes_added == 0)
-	return (0);
+        return (0);
       i += nodes_added;
     }
   return (1);
@@ -1517,28 +1517,28 @@ mr_ptrs_dfs_impl (mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t 
   while (idx != MR_NULL_IDX)
     {
       if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_PRE_ORDER, context))
-	return (MR_FAILURE);
+        return (MR_FAILURE);
 
       if ((ptrs[idx].first_child != MR_NULL_IDX) && !(ptrs[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	{
-	  idx = ptrs[idx].first_child;
-	  ++level;
-	}
+        {
+          idx = ptrs[idx].first_child;
+          ++level;
+        }
       else
-	{
-	  if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
-	    return (MR_FAILURE);
-	  while ((ptrs[idx].next == MR_NULL_IDX) && (ptrs[idx].parent != MR_NULL_IDX))
-	    {
-	      idx = ptrs[idx].parent;
-	      --level;
-	      if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
-		return (MR_FAILURE);
-	      if (idx == start)
-		return (MR_SUCCESS);
-	    }
-	  idx = ptrs[idx].next;
-	}
+        {
+          if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
+            return (MR_FAILURE);
+          while ((ptrs[idx].next == MR_NULL_IDX) && (ptrs[idx].parent != MR_NULL_IDX))
+            {
+              idx = ptrs[idx].parent;
+              --level;
+              if (MR_SUCCESS != processor (ptrs, idx, level, MR_DFS_POST_ORDER, context))
+                return (MR_FAILURE);
+              if (idx == start)
+                return (MR_SUCCESS);
+            }
+          idx = ptrs[idx].next;
+        }
     }
   return (MR_SUCCESS);
 }
@@ -1553,16 +1553,16 @@ mr_reorder_strings_visitor (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_
   if ((MR_TYPE_STRING == ptrs[idx].mr_type) && (ptrs[idx].flags & MR_IS_CONTENT_REFERENCE))
     {
       if (ptrs[ref_idx].flags & MR_IS_CONTENT_REFERENCE)
-	ptrs[idx].first_child = ptrs[ref_idx].first_child;
+        ptrs[idx].first_child = ptrs[ref_idx].first_child;
       else if (ptrs[idx].idx < ptrs[ref_idx].idx)
-	{
-	  ptrs[idx].first_child = MR_NULL_IDX;
-	  ptrs[idx].flags |= MR_IS_REFERENCED;
-	  ptrs[idx].flags &= ~MR_IS_CONTENT_REFERENCE;
-	  ptrs[ref_idx].first_child = idx;
-	  ptrs[ref_idx].flags &= ~MR_IS_REFERENCED;
-	  ptrs[ref_idx].flags |= MR_IS_CONTENT_REFERENCE;
-	}
+        {
+          ptrs[idx].first_child = MR_NULL_IDX;
+          ptrs[idx].flags |= MR_IS_REFERENCED;
+          ptrs[idx].flags &= ~MR_IS_CONTENT_REFERENCE;
+          ptrs[ref_idx].first_child = idx;
+          ptrs[ref_idx].flags &= ~MR_IS_REFERENCED;
+          ptrs[ref_idx].flags |= MR_IS_CONTENT_REFERENCE;
+        }
     }
   return (MR_SUCCESS);
 }
@@ -1585,9 +1585,9 @@ mr_reorder_strings (mr_ptrdes_t * ptrs)
       mr_idx_t ref_idx = ptrs[i].first_child;
 
       if ((MR_TYPE_POINTER == ptrs[i].mr_type) &&
-	  (ptrs[i].flags & MR_IS_CONTENT_REFERENCE) &&
-	  (ptrs[ref_idx].flags & MR_IS_CONTENT_REFERENCE))
-	ptrs[i].first_child = ptrs[ref_idx].first_child;
+          (ptrs[i].flags & MR_IS_CONTENT_REFERENCE) &&
+          (ptrs[ref_idx].flags & MR_IS_CONTENT_REFERENCE))
+        ptrs[i].first_child = ptrs[ref_idx].first_child;
     }
 }
 
@@ -1604,16 +1604,16 @@ mr_remove_empty_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_
       mr_idx_t * next = &ptrs[idx].first_child;
 
       while (*next != MR_NULL_IDX)
-	if ((ptrs[*next].first_child == MR_NULL_IDX)
-	    && !(ptrs[*next].flags & MR_IS_REFERENCED)
-	    && ((REMOVE_IF_EMPTY >> ptrs[*next].mr_type) & 1))
-	  {
-	    ptrs->vt_uintptr = true;
-	    /* empty node found - unchain it from previous node */
-	    *next = ptrs[*next].next;
-	  }
-	else
-	  next = &ptrs[*next].next;
+        if ((ptrs[*next].first_child == MR_NULL_IDX)
+            && !(ptrs[*next].flags & MR_IS_REFERENCED)
+            && ((REMOVE_IF_EMPTY >> ptrs[*next].mr_type) & 1))
+          {
+            ptrs->vt_uintptr = true;
+            /* empty node found - unchain it from previous node */
+            *next = ptrs[*next].next;
+          }
+        else
+          next = &ptrs[*next].next;
     }
 
   return (MR_SUCCESS);
@@ -1649,7 +1649,7 @@ mr_update_pointers_content (mr_ptrdes_t * ra, mr_idx_t idx, int level, mr_dfs_or
       ra[idx].fdp = ra[parent].fdp;
       ra[idx].flags |= MR_IS_UNNAMED;
       if (ra[idx].mr_type != MR_TYPE_POINTER)
-	ra[idx].MR_SIZE = ra[parent].MR_SIZE - (ra[idx].data.uintptr - *(uintptr_t*)ra[parent].data.ptr);
+        ra[idx].MR_SIZE = ra[parent].MR_SIZE - (ra[idx].data.uintptr - *(uintptr_t*)ra[parent].data.ptr);
     }
   return (MR_SUCCESS);
 }
@@ -1686,77 +1686,77 @@ mr_post_process (mr_save_data_t * mr_save_data)
     {
       mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
       /* Try resolve void pointers that were not resolved at save time.
-	 Those pointers might be saved as typed entries on a later stages. */
+         Those pointers might be saved as typed entries on a later stages. */
       switch (ptrdes->mr_type)
-	{
-	case MR_TYPE_POINTER:
-	  if (((MR_TYPE_NONE == ptrdes->mr_type_aux) || (MR_TYPE_VOID == ptrdes->mr_type_aux)) &&
-	      !(ptrdes->flags & MR_IS_NULL))
-	    {
-	      ptrdes->flags |= MR_IS_NULL; /* void pointers are saved as NULL */
-	      uintptr_t data_ptr = *(uintptr_t*)ptrdes->data.ptr;
-	      mr_idx_t * bucket = mr_get_bucket_ptr (mr_save_data, data_ptr);
-	      if (bucket == NULL)
-		break;
+        {
+        case MR_TYPE_POINTER:
+          if (((MR_TYPE_NONE == ptrdes->mr_type_aux) || (MR_TYPE_VOID == ptrdes->mr_type_aux)) &&
+              !(ptrdes->flags & MR_IS_NULL))
+            {
+              ptrdes->flags |= MR_IS_NULL; /* void pointers are saved as NULL */
+              uintptr_t data_ptr = *(uintptr_t*)ptrdes->data.ptr;
+              mr_idx_t * bucket = mr_get_bucket_ptr (mr_save_data, data_ptr);
+              if (bucket == NULL)
+                break;
 
-	      /* as we put multiple addresses into one bucket,
-		 we need to traverse through the list in this bucket and
-		 filter out only entries with matching address */
-	      mr_idx_t ref_idx = MR_NULL_IDX;
-	      for ( ; *bucket != MR_NULL_IDX; bucket = &ptrs->ra[*bucket].idx)
-		if (ptrs->ra[*bucket].data.uintptr == data_ptr)
-		  {
-		    if (MR_NULL_IDX == ref_idx)
-		      ref_idx = *bucket; /* first entry with the matched address */
-		    else if (ptrs->ra[*bucket].MR_SIZE > ptrs->ra[ref_idx].MR_SIZE)
-		      ref_idx = *bucket; /* another entry, but bigger in size */
-		  }
-	      if (MR_NULL_IDX == ref_idx)
-		break;
+              /* as we put multiple addresses into one bucket,
+                 we need to traverse through the list in this bucket and
+                 filter out only entries with matching address */
+              mr_idx_t ref_idx = MR_NULL_IDX;
+              for ( ; *bucket != MR_NULL_IDX; bucket = &ptrs->ra[*bucket].idx)
+                if (ptrs->ra[*bucket].data.uintptr == data_ptr)
+                  {
+                    if (MR_NULL_IDX == ref_idx)
+                      ref_idx = *bucket; /* first entry with the matched address */
+                    else if (ptrs->ra[*bucket].MR_SIZE > ptrs->ra[ref_idx].MR_SIZE)
+                      ref_idx = *bucket; /* another entry, but bigger in size */
+                  }
+              if (MR_NULL_IDX == ref_idx)
+                break;
 
-	      ptrs->ra[idx].first_child = ref_idx;
-	      ptrs->ra[idx].flags |= MR_IS_REFERENCE;
-	      ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
-	    }
-	  break;
+              ptrs->ra[idx].first_child = ref_idx;
+              ptrs->ra[idx].flags |= MR_IS_REFERENCE;
+              ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
+            }
+          break;
 
-	  /* unlink string content, but keep links from content on a parent node */
-	case MR_TYPE_STRING:
-	  if (!(ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-	    ptrdes->first_child = MR_NULL_IDX;
-	  break;
+          /* unlink string content, but keep links from content on a parent node */
+        case MR_TYPE_STRING:
+          if (!(ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+            ptrdes->first_child = MR_NULL_IDX;
+          break;
 
-	case MR_TYPE_CHAR_ARRAY:
+        case MR_TYPE_CHAR_ARRAY:
 #define MR_VECTOR_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_ARRAY, MR_TYPE_POINTER))
-	  if (ptrdes->parent != MR_NULL_IDX) /* in array of MR_TYPE_CHAR_ARRAY adjust MR_SIZE to a size of individual element */
-	    if (((MR_VECTOR_TYPES >> ptrs->ra[ptrdes->parent].mr_type) & 1) &&
-		(ptrdes->next != MR_NULL_IDX))
-	      ptrdes->MR_SIZE -= ptrs->ra[ptrdes->next].MR_SIZE;
-	  break;
+          if (ptrdes->parent != MR_NULL_IDX) /* in array of MR_TYPE_CHAR_ARRAY adjust MR_SIZE to a size of individual element */
+            if (((MR_VECTOR_TYPES >> ptrs->ra[ptrdes->parent].mr_type) & 1) &&
+                (ptrdes->next != MR_NULL_IDX))
+              ptrdes->MR_SIZE -= ptrs->ra[ptrdes->next].MR_SIZE;
+          break;
 
-	default:
-	  break;
-	}
+        default:
+          break;
+        }
 
       /* Save procedure creates additional entries for strings content required for pointers resolution.
-	 Those additional entries are not required for serialization process and we remove them here, but
-	 before that we need to update all references on string content.
+         Those additional entries are not required for serialization process and we remove them here, but
+         before that we need to update all references on string content.
       */
       if (ptrdes->flags & MR_IS_REFERENCE)
-	{
-	  mr_idx_t ref_parent = ptrs->ra[ptrdes->first_child].parent;
-	  if (ref_parent != MR_NULL_IDX)
-	    if (MR_TYPE_STRING == ptrs->ra[ref_parent].mr_type)
-	      {
-		/* move ref_idx on a parent node (of type MR_TYPE_STRING) */
-		ptrdes->first_child = ref_parent;
-		/* mark that this is a reference on content, but not on an entry itself */
-		ptrdes->flags &= ~MR_IS_REFERENCE;
-		ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
-		/* mark parent entry as referenced */
-		ptrs->ra[ref_parent].flags |= MR_IS_REFERENCED;
-	      }
-	}
+        {
+          mr_idx_t ref_parent = ptrs->ra[ptrdes->first_child].parent;
+          if (ref_parent != MR_NULL_IDX)
+            if (MR_TYPE_STRING == ptrs->ra[ref_parent].mr_type)
+              {
+                /* move ref_idx on a parent node (of type MR_TYPE_STRING) */
+                ptrdes->first_child = ref_parent;
+                /* mark that this is a reference on content, but not on an entry itself */
+                ptrdes->flags &= ~MR_IS_REFERENCE;
+                ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
+                /* mark parent entry as referenced */
+                ptrs->ra[ref_parent].flags |= MR_IS_REFERENCED;
+              }
+        }
     }
 
   for (idx = 1; idx < count; ++idx)
@@ -1787,34 +1787,34 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
       mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux);
       mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
       if ((0 == element_size) && tdp)
-	element_size = tdp->size;
+        element_size = tdp->size;
       ptrdes->MR_SIZE = element_size;
 
       /* pointers might have assosiated field with the size for resizable arrays.
-	 name of the size field is stored in 'res' of field meta-data.
-	 'res_type' in this case will be 'string' */
+         name of the size field is stored in 'res' of field meta-data.
+         'res_type' in this case will be 'string' */
       mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
       if (src.data.ptr != NULL)
-	{
-	  dst.data.ptr = &ptrdes->MR_SIZE;
-	  dst.mr_type = MR_TYPE_DETECT (typeof (ptrdes->MR_SIZE));
-	  mr_assign_int (&dst, &src);
-	  if (src.vt_string[0] == 'c') /* if pointer discriminated by count we need to scale MR_SIZE by element_size */
-	    ptrdes->MR_SIZE *= element_size;
-	}
+        {
+          dst.data.ptr = &ptrdes->MR_SIZE;
+          dst.mr_type = MR_TYPE_DETECT (typeof (ptrdes->MR_SIZE));
+          mr_assign_int (&dst, &src);
+          if (src.vt_string[0] == 'c') /* if pointer discriminated by count we need to scale MR_SIZE by element_size */
+            ptrdes->MR_SIZE *= element_size;
+        }
 
       if (ptrdes->fdp->name.str != NULL)
-	if (0 == strcmp (ptrdes->fdp->name.str, MR_OPAQUE_DATA_STR))
-	  {
-	    if (ptrdes->MR_SIZE == 0)
-	      ptrdes->flags |= MR_IS_NULL;
-	    else
-	      ptrdes->flags |= MR_IS_OPAQUE_DATA;
-	  }
+        if (0 == strcmp (ptrdes->fdp->name.str, MR_OPAQUE_DATA_STR))
+          {
+            if (ptrdes->MR_SIZE == 0)
+              ptrdes->flags |= MR_IS_NULL;
+            else
+              ptrdes->flags |= MR_IS_OPAQUE_DATA;
+          }
 
       if (!(ptrdes->flags & MR_IS_OPAQUE_DATA) &&
-	  ((0 == element_size) || (ptrdes->MR_SIZE < element_size)))
-	ptrdes->flags |= MR_IS_NULL;
+          ((0 == element_size) || (ptrdes->MR_SIZE < element_size)))
+        ptrdes->flags |= MR_IS_NULL;
     }
   return (1);
 }  
@@ -1854,17 +1854,17 @@ mr_save (void * data, mr_fd_t * fdp)
   if (nodes_added > 0)
     {
       for (i = 1; i < mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]); ++i)
-	if ((MR_TYPE_POINTER == mr_save_data.ptrs.ra[i].mr_type) &&
-	    (MR_TYPE_VOID != mr_save_data.ptrs.ra[i].mr_type_aux) &&
-	    (MR_TYPE_NONE != mr_save_data.ptrs.ra[i].mr_type_aux) &&
-	    !(mr_save_data.ptrs.ra[i].flags & (MR_IS_NULL | MR_IS_OPAQUE_DATA)))
-	  {
-	    nodes_added = mr_save_pointer_content (&mr_save_data, i);
-	    if (nodes_added == 0)
-	      break;
-	  }
+        if ((MR_TYPE_POINTER == mr_save_data.ptrs.ra[i].mr_type) &&
+            (MR_TYPE_VOID != mr_save_data.ptrs.ra[i].mr_type_aux) &&
+            (MR_TYPE_NONE != mr_save_data.ptrs.ra[i].mr_type_aux) &&
+            !(mr_save_data.ptrs.ra[i].flags & (MR_IS_NULL | MR_IS_OPAQUE_DATA)))
+          {
+            nodes_added = mr_save_pointer_content (&mr_save_data, i);
+            if (nodes_added == 0)
+              break;
+          }
       if (nodes_added > 0)
-	mr_post_process (&mr_save_data);
+        mr_post_process (&mr_save_data);
     }
 
   for (i = mr_save_data.ptrs.size / sizeof (mr_save_data.ptrs.ra[0]) - 1; i > 0; --i)

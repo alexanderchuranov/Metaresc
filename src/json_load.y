@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #define MR_JSON_DEBUG 0
-/* Pass the argument to yyparse through to yylex. */
+  /* Pass the argument to yyparse through to yylex. */
 #define MR_JSON_LTYPE mr_token_lloc_t
 #define MR_LOAD (mr_json_get_extra (scanner))
 #define mr_json_error MR_PARSE_ERROR
@@ -21,52 +21,52 @@
 #define YYLTYPE MR_JSON_LTYPE
 #include <json_load.lex.h>
 
-}
+ }
 
 %code {
 
-static void
-json_unquote_str (mr_substr_t * substr, char * dst)
-{
-  typeof (substr->length) i, length = 0;
-  static bool initialized = false;
-  static char map[MR_ESC_CHAR_MAP_SIZE];
+  static void
+    json_unquote_str (mr_substr_t * substr, char * dst)
+  {
+    typeof (substr->length) i, length = 0;
+    static bool initialized = false;
+    static char map[MR_ESC_CHAR_MAP_SIZE];
 
-  if (!initialized)
-    {
-      memset (map, 0, sizeof (map));
-      for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
-	if (mr_esc_char_map[i])
-	  map[(unsigned char)mr_esc_char_map[i]] = i;
-      initialized = true;
-    }
+    if (!initialized)
+      {
+	memset (map, 0, sizeof (map));
+	for (i = 0; i < MR_ESC_CHAR_MAP_SIZE; ++i)
+	  if (mr_esc_char_map[i])
+	    map[(unsigned char)mr_esc_char_map[i]] = i;
+	initialized = true;
+      }
 
-  if (NULL == substr->str)
-    return;
+    if (NULL == substr->str)
+      return;
 
-  for (i = 0; i < substr->length; ++i)
-    {
-      if ('\\' == substr->str[i])
-	{
-	  int c = map[(unsigned char)substr->str[++i]];
-	  int size;
-	  if (c > 0)
-	    dst[length++] = c;
-	  else if (1 == sscanf (&substr->str[i], "u%04x%n", &c, &size))
-	    {
-	      i += size - 1;
+    for (i = 0; i < substr->length; ++i)
+      {
+	if ('\\' == substr->str[i])
+	  {
+	    int c = map[(unsigned char)substr->str[++i]];
+	    int size;
+	    if (c > 0)
 	      dst[length++] = c;
-	    }
-	  else
-	    dst[length++] = substr->str[i];
-	}
-      else
-	dst[length++] = substr->str[i];
-    }
-  dst[length] = 0;
-}
+	    else if (1 == sscanf (&substr->str[i], "u%04x%n", &c, &size))
+	      {
+		i += size - 1;
+		dst[length++] = c;
+	      }
+	    else
+	      dst[length++] = substr->str[i];
+	  }
+	else
+	  dst[length++] = substr->str[i];
+      }
+    dst[length] = 0;
+  }
 
-}
+ }
 
 %define api.prefix {mr_json_}
 %define api.pure full
@@ -96,7 +96,7 @@ element: start_node value {
   mr_load_t * mr_load = MR_LOAD;
   mr_load->parent = mr_load->ptrs->ra[mr_load->parent].parent;
   (void)mr_json_nerrs; /* workaround compiler warning: variable 'mr_json_nerrs' set but not used */
-}
+ }
 
 start_node: { 
   mr_load_t * mr_load = MR_LOAD; 
@@ -115,10 +115,10 @@ value: object | array
     {
       char * buf = MR_CALLOC (1, $1.length + sizeof (char));
       if (NULL == buf)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  YYERROR;
-	}
+        {
+          MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+          YYERROR;
+        }
       json_unquote_str (&$1, buf);
       mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_STRING;
       mr_load->ptrs->ra[mr_load->parent].vt_string = buf;
@@ -129,7 +129,7 @@ value: object | array
       mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.offset = $1.str - mr_load->buf;
       mr_load->ptrs->ra[mr_load->parent].vt_substr_pos.length = $1.length;
     }
-  }
+ }
 | TOK_JSON_NUMBER {
   mr_load_t * mr_load = MR_LOAD;
   mr_status_t status = mr_value_to_mr_ptrdes (&mr_load->ptrs->ra[mr_load->parent], &$1, mr_load->ptrs->str);
@@ -141,7 +141,7 @@ value: object | array
   mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_NULL;
   mr_load->ptrs->ra[mr_load->parent].value_type = MR_VT_INTPTR;
   mr_load->ptrs->ra[mr_load->parent].vt_intptr = 0;
-  }
+ }
 
 object: TOK_JSON_LBRACE TOK_JSON_RBRACE
 | TOK_JSON_LBRACE members TOK_JSON_RBRACE

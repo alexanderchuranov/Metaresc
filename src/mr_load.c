@@ -47,56 +47,56 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   for (i = 0; i < count; ++i)
     if (ptrs->ra[i].idx != MR_NULL_IDX)
       {
-	/* checking indexes collision */
-	if (table[ptrs->ra[i].idx] != 0)
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, ptrs->ra[i].idx);
-	table[ptrs->ra[i].idx] = i;
+        /* checking indexes collision */
+        if (table[ptrs->ra[i].idx] != 0)
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, ptrs->ra[i].idx);
+        table[ptrs->ra[i].idx] = i;
       }
 
   /* set all cross refernces */
   for (i = 0; i < count; ++i)
     if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
       {
-	if (ptrs->ra[i].first_child > max_idx)
-	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
-	    continue;
-	  }
-	
-	mr_idx_t idx = table[ptrs->ra[i].first_child];
-	if (idx == 0)
-	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
-	    continue;
-	  }
+        if (ptrs->ra[i].first_child > max_idx)
+          {
+            MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
+            continue;
+          }
 
-	void * data = ptrs->ra[idx].data.ptr;
+        mr_idx_t idx = table[ptrs->ra[i].first_child];
+        if (idx == 0)
+          {
+            MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
+            continue;
+          }
 
-	if ((MR_TYPE_POINTER != ptrs->ra[i].mr_type) &&
-	    (MR_TYPE_STRING != ptrs->ra[i].mr_type))
-	  {
-	    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrs->ra[i].mr_type);
-	    continue;
-	  }
+        void * data = ptrs->ra[idx].data.ptr;
 
-	if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
-	  {
-	    if (NULL == data)
-	      {
-		MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-		continue;
-	      }
-	    else
-	      data = *(void**)data;
-	  }
+        if ((MR_TYPE_POINTER != ptrs->ra[i].mr_type) &&
+            (MR_TYPE_STRING != ptrs->ra[i].mr_type))
+          {
+            MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrs->ra[i].mr_type);
+            continue;
+          }
 
-	if (NULL == ptrs->ra[i].data.ptr)
-	  {
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	    continue;
-	  }
+        if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
+          {
+            if (NULL == data)
+              {
+                MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+                continue;
+              }
+            else
+              data = *(void**)data;
+          }
 
-	*(void**)ptrs->ra[i].data.ptr = data;
+        if (NULL == ptrs->ra[i].data.ptr)
+          {
+            MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+            continue;
+          }
+
+        *(void**)ptrs->ra[i].data.ptr = data;
       }
   
   MR_FREE (table);
@@ -117,27 +117,27 @@ mr_free_load_values (mr_ra_ptrdes_t * ptrs)
     switch (ptrs->ra[i].value_type)
       {
       case MR_VT_STRING:
-	if (ptrs->ra[i].vt_string)
-	  MR_FREE (ptrs->ra[i].vt_string);
-	break;
+        if (ptrs->ra[i].vt_string)
+          MR_FREE (ptrs->ra[i].vt_string);
+        break;
 
       case MR_VT_INTMAX:
-	if (ptrs->ra[i].vt_intmax)
-	  MR_FREE (ptrs->ra[i].vt_intmax);
-	break;
+        if (ptrs->ra[i].vt_intmax)
+          MR_FREE (ptrs->ra[i].vt_intmax);
+        break;
 
       case MR_VT_LONG_DOUBLE:
-	if (ptrs->ra[i].vt_long_double)
-	  MR_FREE (ptrs->ra[i].vt_long_double);
-	break;
+        if (ptrs->ra[i].vt_long_double)
+          MR_FREE (ptrs->ra[i].vt_long_double);
+        break;
 
       case MR_VT_COMPLEX_LONG_DOUBLE:
-	if (ptrs->ra[i].vt_complex_long_double)
-	  MR_FREE (ptrs->ra[i].vt_complex_long_double);
-	break;
+        if (ptrs->ra[i].vt_complex_long_double)
+          MR_FREE (ptrs->ra[i].vt_complex_long_double);
+        break;
 
       default:
-	break;
+        break;
       }
   MR_FREE (ptrs->ra);
   memset (ptrs, 0, sizeof (*ptrs));
@@ -182,18 +182,18 @@ mr_load_integer (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       
     case MR_TYPE_ENUM:
       switch (ptrdes->fdp->stype.size)
-	{
+        {
 #define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = mr_value.vt_intmax; break;
-	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
+          MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 #ifdef HAVE_INT128
-	  MR_FOREACH (CASE_SET_VALUE_BY_SIZE, mr_uint128_t);
+          MR_FOREACH (CASE_SET_VALUE_BY_SIZE, mr_uint128_t);
 #endif /* HAVE_INT128 */
 
-	default:
-	  if (ptrdes->fdp)
-	    memcpy (ptrdes->data.ptr, &mr_value.vt_intmax, MR_MIN (ptrdes->fdp->stype.size, sizeof (mr_value.vt_intmax)));
-	  break;
-	}
+        default:
+          if (ptrdes->fdp)
+            memcpy (ptrdes->data.ptr, &mr_value.vt_intmax, MR_MIN (ptrdes->fdp->stype.size, sizeof (mr_value.vt_intmax)));
+          break;
+        }
       break;
     default:
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->mr_type);
@@ -217,12 +217,12 @@ mr_get_func (void ** dst, char * func_name)
       mr_uintmax_t ptr = mr_strtouintmax (func_name, &end, 0);
 
       while (isspace (*end))
-	++end;
+        ++end;
       if (*end != 0)
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_FUNC, func_name);
-	  return (MR_FAILURE);
-	}
+        {
+          MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_FUNC, func_name);
+          return (MR_FAILURE);
+        }
 
       *dst = (void*)(uintptr_t)ptr;
     }
@@ -247,49 +247,49 @@ mr_load_func (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     switch (ptrdes->value_type)
       {
       case MR_VT_INTMAX:
-	*(void**)ptrdes->data.ptr = (void*)(uintptr_t)ptrdes->vt_intmax;
-	break;
+        *(void**)ptrdes->data.ptr = (void*)(uintptr_t)ptrdes->vt_intmax;
+        break;
 
       case MR_VT_UINTPTR:
       case MR_VT_INTPTR:
-	*(void**)ptrdes->data.ptr = (void*)ptrdes->vt_intptr;
-	break;
+        *(void**)ptrdes->data.ptr = (void*)ptrdes->vt_intptr;
+        break;
 
       case MR_VT_SUBSTR_POS:
-	{
-	  char buf[1 << 6];
-	  size_t length = (ptrdes->vt_substr_pos.length < sizeof (buf) - 1) ? ptrdes->vt_substr_pos.length : sizeof (buf) - 1;
+        {
+          char buf[1 << 6];
+          size_t length = (ptrdes->vt_substr_pos.length < sizeof (buf) - 1) ? ptrdes->vt_substr_pos.length : sizeof (buf) - 1;
 
-	  buf[0] = 0;
-	  buf[length] = 0;
-	  if (ptrs->str)
-	    memcpy (buf, &ptrs->str[ptrdes->vt_substr_pos.offset], length);
+          buf[0] = 0;
+          buf[length] = 0;
+          if (ptrs->str)
+            memcpy (buf, &ptrs->str[ptrdes->vt_substr_pos.offset], length);
 
-	  if (ptrdes->vt_substr_pos.length <= sizeof (buf) - 1)
-	    status = mr_get_func (ptrdes->data.ptr, buf);
-	  else
-	    {
-	      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_FUNC, buf);
-	      status = MR_FAILURE;
-	    }
-	}
-	break;
+          if (ptrdes->vt_substr_pos.length <= sizeof (buf) - 1)
+            status = mr_get_func (ptrdes->data.ptr, buf);
+          else
+            {
+              MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_FUNC, buf);
+              status = MR_FAILURE;
+            }
+        }
+        break;
 
       case MR_VT_STRING:
       case MR_VT_UNALLOCATED_STRING:
-	if (NULL == ptrdes->vt_string)
-	  {
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	    status = MR_FAILURE;
-	  }
-	else
-	  status = mr_get_func (ptrdes->data.ptr, ptrdes->vt_string);
-	break;
+        if (NULL == ptrdes->vt_string)
+          {
+            MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+            status = MR_FAILURE;
+          }
+        else
+          status = mr_get_func (ptrdes->data.ptr, ptrdes->vt_string);
+        break;
 
       default:
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
-	status = MR_FAILURE;
-	break;
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
+        status = MR_FAILURE;
+        break;
       }
   return (status);
 }
@@ -379,50 +379,50 @@ mr_load_char (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     {
     case MR_VT_SUBSTR_POS:
       if ((ptrdes->vt_substr_pos.length == 0) || (ptrs->str == NULL))
-	*(char*)ptrdes->data.ptr = 0;
+        *(char*)ptrdes->data.ptr = 0;
       else if (ptrdes->vt_substr_pos.length == sizeof (char))
-	*(char*)ptrdes->data.ptr = ptrs->str[ptrdes->vt_substr_pos.offset];
+        *(char*)ptrdes->data.ptr = ptrs->str[ptrdes->vt_substr_pos.offset];
       else
-	{
-	  char buf[1 << 8];
-	  size_t length = (ptrdes->vt_substr_pos.length < sizeof (buf) - 1) ? ptrdes->vt_substr_pos.length : sizeof (buf) - 1;
+        {
+          char buf[1 << 8];
+          size_t length = (ptrdes->vt_substr_pos.length < sizeof (buf) - 1) ? ptrdes->vt_substr_pos.length : sizeof (buf) - 1;
 
-	  buf[length] = 0;
-	  memcpy (buf, &ptrs->str[ptrdes->vt_substr_pos.offset], length);
+          buf[length] = 0;
+          memcpy (buf, &ptrs->str[ptrdes->vt_substr_pos.offset], length);
 
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, buf);
-	}
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_CHAR, buf);
+        }
       break;
 
     case MR_VT_CHAR:
       *(char*)ptrdes->data.ptr = ptrdes->vt_char;
       break;
-      
+
     case MR_VT_STRING:
     case MR_VT_UNALLOCATED_STRING:
       if (NULL == ptrdes->vt_string)
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	  status = MR_FAILURE;
-	  break;
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+          status = MR_FAILURE;
+          break;
+        }
 
       if (strlen (ptrdes->vt_string) == sizeof (char))
-	{
-	  *(char*)ptrdes->data.ptr = ptrdes->vt_string[0];
-	  break;
-	}
+        {
+          *(char*)ptrdes->data.ptr = ptrdes->vt_string[0];
+          break;
+        }
       __attribute__ ((fallthrough));
 
     default:
       {
-	mr_value_t mr_value;
-	if (MR_SUCCESS != mr_ptrdes_to_mr_value (&mr_value, ptrdes, ptrs->str))
-	  return (MR_FAILURE);
-	if (MR_SUCCESS != mr_value_cast (MR_VT_INTMAX, &mr_value))
-	  return (MR_FAILURE);
-	*(char*)ptrdes->data.ptr = mr_value.vt_intmax;
-	break;
+        mr_value_t mr_value;
+        if (MR_SUCCESS != mr_ptrdes_to_mr_value (&mr_value, ptrdes, ptrs->str))
+          return (MR_FAILURE);
+        if (MR_SUCCESS != mr_value_cast (MR_VT_INTMAX, &mr_value))
+          return (MR_FAILURE);
+        *(char*)ptrdes->data.ptr = mr_value.vt_intmax;
+        break;
       }
     }
 
@@ -445,65 +445,65 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (!(ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
     {
       switch (ptrdes->value_type)
-	{
-	case MR_VT_SUBSTR_POS:
-	  *(char**)ptrdes->data.ptr = MR_CALLOC (1, ptrdes->vt_substr_pos.length + sizeof (char));
-	  if (*(char**)ptrdes->data.ptr)
-	    memcpy (*(char**)ptrdes->data.ptr, &ptrs->str[ptrdes->vt_substr_pos.offset], ptrdes->vt_substr_pos.length);
-	  else
-	    {
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      status = MR_FAILURE;
-	    }
-	  break;
-	  
-	case MR_VT_STRING:
-	  *(char**)ptrdes->data.ptr = ptrdes->vt_string;
-	  ptrdes->vt_string = NULL;
-	  break;
+        {
+        case MR_VT_SUBSTR_POS:
+          *(char**)ptrdes->data.ptr = MR_CALLOC (1, ptrdes->vt_substr_pos.length + sizeof (char));
+          if (*(char**)ptrdes->data.ptr)
+            memcpy (*(char**)ptrdes->data.ptr, &ptrs->str[ptrdes->vt_substr_pos.offset], ptrdes->vt_substr_pos.length);
+          else
+            {
+              MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+              status = MR_FAILURE;
+            }
+          break;
+          
+        case MR_VT_STRING:
+          *(char**)ptrdes->data.ptr = ptrdes->vt_string;
+          ptrdes->vt_string = NULL;
+          break;
 
-	case MR_VT_UNALLOCATED_STRING:
-	  *(char**)ptrdes->data.ptr = mr_strdup (ptrdes->vt_string);
-	  break;
+        case MR_VT_UNALLOCATED_STRING:
+          *(char**)ptrdes->data.ptr = mr_strdup (ptrdes->vt_string);
+          break;
 
-	case MR_VT_INTPTR:
-	  if (ptrdes->vt_intptr >= 0)
-	    {
-	      ptrdes->first_child = ptrdes->vt_intptr;
-	      ptrdes->flags |= MR_IS_REFERENCE;
-	    }
-	  else
-	    {
-	      ptrdes->first_child = - ptrdes->vt_intptr;
-	      ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
-	    }
-	  break;
+        case MR_VT_INTPTR:
+          if (ptrdes->vt_intptr >= 0)
+            {
+              ptrdes->first_child = ptrdes->vt_intptr;
+              ptrdes->flags |= MR_IS_REFERENCE;
+            }
+          else
+            {
+              ptrdes->first_child = - ptrdes->vt_intptr;
+              ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
+            }
+          break;
 
-	case MR_VT_UINTPTR:
-	  ptrdes->first_child = ptrdes->vt_uintptr;
-	  ptrdes->flags |= MR_IS_REFERENCE;
-	  break;
+        case MR_VT_UINTPTR:
+          ptrdes->first_child = ptrdes->vt_uintptr;
+          ptrdes->flags |= MR_IS_REFERENCE;
+          break;
 
-	case MR_VT_INTMAX:
-	  {
-	    if (*ptrdes->vt_intmax >= 0)
-	      {
-		ptrdes->first_child = *ptrdes->vt_intmax;
-		ptrdes->flags |= MR_IS_REFERENCE;
-	      }
-	    else
-	      {
-		ptrdes->first_child = - *ptrdes->vt_intmax;
-		ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
-	      }
-	  }
-	  break;
-	  
-	default:
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
-	  status = MR_FAILURE;
-	  break;
-	}
+        case MR_VT_INTMAX:
+          {
+            if (*ptrdes->vt_intmax >= 0)
+              {
+                ptrdes->first_child = *ptrdes->vt_intmax;
+                ptrdes->flags |= MR_IS_REFERENCE;
+              }
+            else
+              {
+                ptrdes->first_child = - *ptrdes->vt_intmax;
+                ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
+              }
+          }
+          break;
+
+        default:
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->value_type);
+          status = MR_FAILURE;
+          break;
+        }
     }
   return (status);
 }
@@ -518,17 +518,17 @@ mr_get_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_l
   if ((str_len >= max_size) && (ptrdes->parent != MR_NULL_IDX))
     if (MR_TYPE_POINTER == ptrs->ra[ptrdes->parent].mr_type)
       {
-	void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
-	if (NULL == data)
-	  {
-	    if (ptrdes->data.ptr != NULL)
-	      MR_FREE (ptrdes->data.ptr);
-	    MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	    status = MR_FAILURE;
-	  }
-		  
-	*(void**)ptrs->ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
-	max_size = str_len + 1;
+        void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);
+        if (NULL == data)
+          {
+            if (ptrdes->data.ptr != NULL)
+              MR_FREE (ptrdes->data.ptr);
+            MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+            status = MR_FAILURE;
+          }
+
+        *(void**)ptrs->ra[ptrdes->parent].data.ptr = ptrdes->data.ptr = data;
+        max_size = str_len + 1;
       }
 
   if (str_len > max_size)
@@ -536,12 +536,12 @@ mr_get_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_l
       str_len = max_size;
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_STRING_TRUNCATED);
     }
-		  
+
   if (ptrdes->data.ptr != NULL)
     {
       memcpy (ptrdes->data.string, str, str_len);
       if (str_len < max_size)
-	ptrdes->data.string[str_len] = 0;
+        ptrdes->data.string[str_len] = 0;
     }
 
   return (status);
@@ -573,12 +573,12 @@ mr_load_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     case MR_VT_STRING:
     case MR_VT_UNALLOCATED_STRING:
       if (NULL == ptrdes->vt_string)
-	{
-	  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-	  status = MR_FAILURE;
-	}
+        {
+          MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+          status = MR_FAILURE;
+        }
       else
-	status = mr_get_char_array (idx, ptrs, ptrdes->vt_string, strlen (ptrdes->vt_string));
+        status = mr_get_char_array (idx, ptrs, ptrdes->vt_string, strlen (ptrdes->vt_string));
       break;
 
     default:
@@ -635,11 +635,11 @@ mr_load_struct (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       fdp = next_fdp ? next_fdp : mr_load_struct_next_field (tdp, fdp);
 
       if (NULL == fdp)
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, name);
-	  status = MR_FAILURE;
-	  continue;
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNKNOWN_SUBNODE, tdp->type.str, name);
+          status = MR_FAILURE;
+          continue;
+        }
 
       /* recursively load subnode */
       status = mr_load (&data[fdp->offset], fdp, idx, ptrs);
@@ -665,10 +665,10 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (0 == count)
     {
       if (ptrs->ra[idx].first_child != MR_NULL_IDX)
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
-	  return (MR_FAILURE);
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
+          return (MR_FAILURE);
+        }
       return (MR_SUCCESS);
     }
 
@@ -700,14 +700,14 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     {
       /* check if array index is in range */
       if (i >= count)
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
-	  return (MR_FAILURE);
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
+          return (MR_FAILURE);
+        }
       /* load recursively */
       status = mr_load (&data[i++ * fd_.stype.size], &fd_, idx, ptrs);
       if (status != MR_SUCCESS)
-	break;
+        break;
     }
   return (status);
 }
@@ -724,15 +724,15 @@ mr_pointer_set_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       src.data.ptr = &size;
       src.mr_type = MR_TYPE_DETECT (__typeof__ (size));
       if (dst.vt_string[0] == 'c')
-	{
-	  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-	  mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux);
-	  mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
-	  if (0 == element_size)
-	    element_size = tdp ? tdp->size : 0;
-	  if (0 != element_size)
-	    size /= element_size;
-	}
+        {
+          mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+          mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux);
+          mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
+          if (0 == element_size)
+            element_size = tdp ? tdp->size : 0;
+          if (0 != element_size)
+            size /= element_size;
+        }
       mr_assign_int (&dst, &src);
     }
 }
@@ -763,22 +763,22 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     {
       mr_intmax_t vt_int = 0;
       if (MR_VT_INTMAX == ptrdes->value_type)
-	vt_int = *ptrdes->vt_intmax;
+        vt_int = *ptrdes->vt_intmax;
       else if (MR_VT_UINTPTR == ptrdes->value_type)
-	vt_int = ptrdes->vt_uintptr;
+        vt_int = ptrdes->vt_uintptr;
       else if (MR_VT_INTPTR == ptrdes->value_type)
-	vt_int = ptrdes->vt_intptr;
+        vt_int = ptrdes->vt_intptr;
 
       if (vt_int >= 0)
-	{
-	  ptrdes->first_child = vt_int;
-	  ptrdes->flags |= MR_IS_REFERENCE;
-	}
+        {
+          ptrdes->first_child = vt_int;
+          ptrdes->flags |= MR_IS_REFERENCE;
+        }
       else
-	{
-	  ptrdes->first_child = - vt_int;
-	  ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
-	}
+        {
+          ptrdes->first_child = - vt_int;
+          ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
+        }
     }
 
   if (ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
@@ -847,8 +847,8 @@ mr_load_anon_union (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       (ptrdes->next != MR_NULL_IDX))
     if (NULL == ptrs->ra[ptrdes->next].fdp) /* there should be a next node without name */
       {
-	ptrs->ra[ptrdes->next].fdp = ptrdes->fdp;
-	return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
+        ptrs->ra[ptrdes->next].fdp = ptrdes->fdp;
+        return (MR_SUCCESS); /* now next node has a name and will be loaded by top level procedure */
       }
   return (mr_load_struct (idx, ptrs));
 }
@@ -920,19 +920,19 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if ((ptrs->ra[idx].flags & MR_IS_TYPED) && ptrs->ra[idx].fdp)
     if (fdp->stype.tdp != ptrs->ra[idx].fdp->stype.tdp)
       {
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str,
-		    fdp->stype.tdp ? fdp->stype.tdp->type.str : "undefined",
-		    ptrs->ra[idx].fdp->stype.tdp ? ptrs->ra[idx].fdp->stype.tdp->type.str : "undefined");
-	return (MR_FAILURE);
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_TYPE_MISSMATCH, fdp->name.str,
+                    fdp->stype.tdp ? fdp->stype.tdp->type.str : "undefined",
+                    ptrs->ra[idx].fdp->stype.tdp ? ptrs->ra[idx].fdp->stype.tdp->type.str : "undefined");
+        return (MR_FAILURE);
       }
 
   if (!fdp->unnamed && ptrs->ra[idx].fdp && fdp->name.str)
     if (ptrs->ra[idx].fdp->name.str)
       if (0 != strcmp (fdp->name.str, ptrs->ra[idx].fdp->name.str))
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, ptrs->ra[idx].fdp->name.str);
-	  return (MR_FAILURE);
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, ptrs->ra[idx].fdp->name.str);
+          return (MR_FAILURE);
+        }
 
   ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fdp = fdp;
@@ -956,20 +956,20 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
 
       for (i = 0; (MR_SUCCESS == status) && (i < count); ++i)
-	if (MR_TYPE_POINTER == ptrs->ra[i].mr_type)
-	  status = mr_load_pointer_postponed (i, ptrs);
+        if (MR_TYPE_POINTER == ptrs->ra[i].mr_type)
+          status = mr_load_pointer_postponed (i, ptrs);
       
       if (MR_SUCCESS == status)
-	status = mr_set_crossrefs (ptrs);
+        status = mr_set_crossrefs (ptrs);
 
       if (MR_SUCCESS != status)
-	for (i = count - 1; i > 0; --i)
-	  if (((MR_TYPE_POINTER == ptrs->ra[i].mr_type) || (MR_TYPE_STRING == ptrs->ra[i].mr_type))
-	      && *(void**)ptrs->ra[i].data.ptr)
-	    {
-	      MR_FREE (*(void**)ptrs->ra[i].data.ptr);
-	      *(void**)ptrs->ra[i].data.ptr = NULL;
-	    }
+        for (i = count - 1; i > 0; --i)
+          if (((MR_TYPE_POINTER == ptrs->ra[i].mr_type) || (MR_TYPE_STRING == ptrs->ra[i].mr_type))
+              && *(void**)ptrs->ra[i].data.ptr)
+            {
+              MR_FREE (*(void**)ptrs->ra[i].data.ptr);
+              *(void**)ptrs->ra[i].data.ptr = NULL;
+            }
     }
 
   if (fdp->non_persistent)

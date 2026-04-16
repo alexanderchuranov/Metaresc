@@ -13,14 +13,14 @@ mr_load_xml_property (xmlNodePtr node, char * property_name, mr_idx_t * idx, mr_
       char * tail = NULL;
       *idx = mr_strtouintmax (property, &tail, 0);
       if (tail)
-	while (isspace (*tail))
-	  ++tail;
+        while (isspace (*tail))
+          ++tail;
       bool fail = (NULL == tail) || *tail;
       if (fail)
-	MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, property);
+        MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, property);
       xmlFree (property);
       if (fail)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       *flags |= flag;
     }
   return (MR_SUCCESS);
@@ -74,15 +74,15 @@ mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
   for (node_ = node->xmlChildrenNode; node_; node_ = node_->next)
     if (XML_ELEMENT_NODE == node_->type)
       {
-	if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
-	  {
-	    MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_SUBNODES);
-	    goto failure;
-	  }
-	mr_idx_t child = mr_xml2_load (node_, ptrs);
-	if (MR_NULL_IDX == child)
-	  goto failure;
-	mr_add_child (ptrs, idx, child);
+        if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+          {
+            MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_SUBNODES);
+            goto failure;
+          }
+        mr_idx_t child = mr_xml2_load (node_, ptrs);
+        if (MR_NULL_IDX == child)
+          goto failure;
+        mr_add_child (ptrs, idx, child);
       }
   
   return (idx);

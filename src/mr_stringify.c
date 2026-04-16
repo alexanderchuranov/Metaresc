@@ -32,8 +32,8 @@ int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (*(bool*)ptrdes->data.ptr ?
-	  mr_ra_append_string (mr_ra_str, "true") :
-	  mr_ra_append_string (mr_ra_str, "false"));
+          mr_ra_append_string (mr_ra_str, "true") :
+          mr_ra_append_string (mr_ra_str, "false"));
 }
 
 #define MR_RA_PRINTF_TMPLT(TYPE, TMPLT)					\
@@ -100,17 +100,17 @@ int mr_ra_printf_uint128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
       return (TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, "NAN"))); \
     if (real != 0)							\
       {									\
-	_ptrdes.data.ptr = &real;					\
-	count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
-	if (imag != 0)							\
-	  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter)); \
+        _ptrdes.data.ptr = &real;					\
+        count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
+        if (imag != 0)							\
+          count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter)); \
       }									\
     if (imag != 0)							\
       {									\
-	_ptrdes.data.ptr = &imag;					\
-	if (imag != 1)							\
-	  count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
-	count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, 'I'));	\
+        _ptrdes.data.ptr = &imag;					\
+        if (imag != 1)							\
+          count += TRY_CATCH_THROW (mr_ra_printf_ ## SUFFIX (mr_ra_str, &_ptrdes)); \
+        count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, 'I'));	\
       }									\
     if ((real == 0) && (imag == 0))					\
       count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '0'));	\
@@ -118,10 +118,10 @@ int mr_ra_printf_uint128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
   }
 
 MR_RA_PRINTF_COMPLEX (float, float)
-MR_RA_PRINTF_COMPLEX (double, double)
-MR_RA_PRINTF_COMPLEX (long double, long_double_t)
+  MR_RA_PRINTF_COMPLEX (double, double)
+  MR_RA_PRINTF_COMPLEX (long double, long_double_t)
 
-#define MR_RA_PRINTF_TYPE(TYPE)	MR_RA_PRINTF_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
+#define MR_RA_PRINTF_TYPE(TYPE)        MR_RA_PRINTF_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define MR_RA_PRINTF_TYPE_(TYPE, MR_TYPE)				\
   int mr_ra_printf_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) { \
     if (mr_conf.output_format[MR_TYPE])					\
@@ -145,8 +145,8 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
       mr_enum_value_t value = mr_get_enum_value (tdp, ptrdes->data.ptr);
       mr_ed_t * edp = mr_get_enum_by_value (tdp, value);
       if (edp)
-	if (edp->name.str)
-	  return (mr_ra_append_string (mr_ra_str, edp->name.str));
+        if (edp->name.str)
+          return (mr_ra_append_string (mr_ra_str, edp->name.str));
       char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, name);
       mr_type = tdp->param.enum_param.mr_type_effective;
@@ -183,14 +183,14 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   for (i = 0; i < tdp->param.enum_param.enums_count; ++i)
     if (value._unsigned & tdp->param.enum_param.enums[i]->value._unsigned)
       {
-	if (first)
-	  first = false;
-	else
-	  count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
-	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, tdp->param.enum_param.enums[i]->name.str));
-	value._unsigned ^= tdp->param.enum_param.enums[i]->value._unsigned;
-	if (0 == value._unsigned)
-	  break;
+        if (first)
+          first = false;
+        else
+          count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
+        count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, tdp->param.enum_param.enums[i]->name.str));
+        value._unsigned ^= tdp->param.enum_param.enums[i]->value._unsigned;
+        if (0 == value._unsigned)
+          break;
       }
 
   if (0 != value._unsigned)
@@ -199,21 +199,21 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
       char * name = ptrdes->fdp ? ptrdes->fdp->name.str : MR_DEFAULT_NODE_NAME;
       MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_SAVE_ENUM, value, tdp->type.str, name);
       if (!first)
-	count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
+        count += TRY_CATCH_THROW (mr_ra_append_string (mr_ra_str, delimiter));
       
 #define CASE_PRINT_BY_TYPE(TYPE) CASE_PRINT_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define CASE_PRINT_BY_TYPE_(TYPE, MR_TYPE)				\
       case MR_TYPE:							\
-	count += TRY_CATCH_THROW (mr_ra_printf_ ## TYPE (mr_ra_str, &_ptrdes)); \
-	break;
+        count += TRY_CATCH_THROW (mr_ra_printf_ ## TYPE (mr_ra_str, &_ptrdes)); \
+        break;
       
       switch (tdp->param.enum_param.mr_type_effective)
-	{
-	  MR_FOREACH (CASE_PRINT_BY_TYPE, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
-	  CASE_PRINT_BY_TYPE_ (int128_t, MR_TYPE_INT128);
-	  CASE_PRINT_BY_TYPE_ (uint128_t, MR_TYPE_UINT128);
-	default: break;
-	}
+        {
+          MR_FOREACH (CASE_PRINT_BY_TYPE, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
+          CASE_PRINT_BY_TYPE_ (int128_t, MR_TYPE_INT128);
+          CASE_PRINT_BY_TYPE_ (uint128_t, MR_TYPE_UINT128);
+        default: break;
+        }
     }
   return (count);
 }
@@ -243,18 +243,18 @@ int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char *
 }  
 
 TYPEDEF_STRUCT (mr_func_name_t,
-		ANON_UNION (),
-		(uintptr_t, func_),
-		(void *, func),
-		END_ANON_UNION (),
-		(const char *, name)
-		);
+                ANON_UNION (),
+                (uintptr_t, func_),
+                (void *, func),
+                END_ANON_UNION (),
+                (const char *, name)
+                );
 
 TYPEDEF_STRUCT (mr_ra_fn_t,
-		(mr_func_name_t *, ra, , , { .size_field_offset = offsetof (mr_ra_fn_t, size) }, "size_field_offset"),
-		(ssize_t, size),
-		(ssize_t, alloc_size)
-		);
+                (mr_func_name_t *, ra, , , { .size_field_offset = offsetof (mr_ra_fn_t, size) }, "size_field_offset"),
+                (ssize_t, size),
+                (ssize_t, alloc_size)
+                );
 
 mr_hash_value_t
 mr_fn_get_hash (const mr_ptr_t x, const void * context)
@@ -294,27 +294,27 @@ const char * mr_serialize_func (void * func)
 
       new_fn = mr_rarray_allocate_element ((void*)&ra_fn.ra, &ra_fn.size, &ra_fn.alloc_size, sizeof (ra_fn.ra[0]));
       if (new_fn)
-	{
-	  new_fn->func = func;
-	  new_fn->name = NULL;
+        {
+          new_fn->func = func;
+          new_fn->name = NULL;
       
-	  if (MR_IC_UNINITIALIZED == cache.ic_type)
-	    {
-	      mr_res_t context = {
-		.data = { &ra_fn, },
-		.type = "mr_ra_fn_t",
-		.MR_SIZE = sizeof (ra_fn),
-	      };
-	      mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "intptr", MR_IC_HASH, &context);
-	    }
-	  mr_ptr_t * add = mr_ic_add (&cache, idx);
-	  if (add != NULL)
-	    if (add->intptr != idx)
-	      {
-		ra_fn.size -= sizeof (ra_fn.ra[0]);
-		return (ra_fn.ra[add->intptr].name);
-	      }
-	}
+          if (MR_IC_UNINITIALIZED == cache.ic_type)
+            {
+              mr_res_t context = {
+                .data = { &ra_fn, },
+                .type = "mr_ra_fn_t",
+                .MR_SIZE = sizeof (ra_fn),
+              };
+              mr_ic_new (&cache, mr_fn_get_hash, mr_fn_cmp, "intptr", MR_IC_HASH, &context);
+            }
+          mr_ptr_t * add = mr_ic_add (&cache, idx);
+          if (add != NULL)
+            if (add->intptr != idx)
+              {
+                ra_fn.size -= sizeof (ra_fn.ra[0]);
+                return (ra_fn.ra[add->intptr].name);
+              }
+        }
     }
   
   Dl_info info;
@@ -322,15 +322,15 @@ const char * mr_serialize_func (void * func)
   if (0 != dladdr (func, &info))
     {
       if (info.dli_sname && (func == info.dli_saddr)) /* found some non-null name and address matches */
-	{
-	  void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
-	  if (func_ == func)
-	    {
-	      if (new_fn)
-		new_fn->name = info.dli_sname;
-	      return (info.dli_sname);
-	    }
-	}
+        {
+          void * func_ = dlsym (RTLD_DEFAULT, info.dli_sname); /* try backward resolve. MAC OS X could resolve static functions, but can't make backward resolution */
+          if (func_ == func)
+            {
+              if (new_fn)
+                new_fn->name = info.dli_sname;
+              return (info.dli_sname);
+            }
+        }
     }
 #endif /* HAVE_LIBDL */
   return (NULL);
@@ -409,19 +409,18 @@ int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_
     {
       char mapped = mr_esc_char_map[(unsigned char)*ptr];
       if (*ptr == '"')
-	mapped = '"';
+        mapped = '"';
       if (mapped)
-	{
-	  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '\\'));
-	  count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, mapped));
-	}
+        {
+          count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '\\'));
+          count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, mapped));
+        }
       else if (isprint (*ptr))
-	count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, *ptr));
+        count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, *ptr));
       else
-	count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, char_pattern, *(unsigned char *)ptr));
+        count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, char_pattern, *(unsigned char *)ptr));
     }
   
   count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   return (count);
 }
-

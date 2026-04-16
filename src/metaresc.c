@@ -26,12 +26,12 @@
 #undef MR_MODE
 
 MR_FOREACH (MR_TYPEDEF_DESC_BI,
-	    MR_BUILTIN_TYPES,
-	    char *, char*, va_list, void,
-	    uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t,
-	    mr_uintmax_t, mr_intmax_t, mr_static_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
-	    string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, long_double_t,
-	    complex_float_t, complex_double_t, complex_long_double_t);
+            MR_BUILTIN_TYPES,
+            char *, char*, va_list, void,
+            uint8_t, int8_t, uint16_t, int16_t, uint32_t, int32_t, uint64_t, int64_t, mr_uint128_t, mr_int128_t,
+            mr_uintmax_t, mr_intmax_t, mr_static_string_t, mr_hash_value_t, mr_offset_t, mr_size_t, size_t, ssize_t,
+            string_t, long_int_t, long_long_int_t, uintptr_t, intptr_t, long_double_t,
+            complex_float_t, complex_double_t, complex_long_double_t);
 
 /* bool is defined as _Bool. Resolution of previous macro resolves bool into _Bool. Next statement declares "bool" without macro resolution. */
 MR_TYPEDEF_DESC (0, bool, MR_TYPE_BOOL) MR_TYPEDEF_END_DESC (0, bool, );
@@ -109,13 +109,13 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
     {
       char * tail = strchr (fmt, ' ');
       if (tail)
-	{
-	  int length = tail - fmt;
-	  char name[length + 1];
-	  memcpy (name, fmt, length);
-	  name[length] = 0;
-	  fdp = mr_get_any_fd_by_name (name, NULL);
-	}
+        {
+          int length = tail - fmt;
+          char name[length + 1];
+          memcpy (name, fmt, length);
+          name[length] = 0;
+          fdp = mr_get_any_fd_by_name (name, NULL);
+        }
     }
 
   ctx->type_name = fdp ? fdp->name.str : NULL;
@@ -139,35 +139,35 @@ mr_get_struct_type_name (const char * fmt, char * value)
 }
 
 TYPEDEF_UNION (mr_dump_struct_types_union_t,
-	       uint8_t _uint8,
-	       uint16_t _uint16,
-	       uint32_t _uint32,
-	       uint64_t _uint64,
-	       size_t _zu,
-	       ssize_t _zd,
-	       float _float,
-	       double _double,
-	       long double _long_double,
-	       signed char _sc,
-	       unsigned char _uc,
-	       signed short _ss,
-	       unsigned short _us,
-	       signed int _si,
-	       unsigned int _ui,
-	       signed long _sl,
-	       unsigned long _ul,
-	       signed long long _sll,
-	       unsigned long long _ull,
-	       (void *, _ptr),
-	       (uint8_t, bytes, [sizeof (long double)]),
-	       );
+               uint8_t _uint8,
+               uint16_t _uint16,
+               uint32_t _uint32,
+               uint64_t _uint64,
+               size_t _zu,
+               ssize_t _zd,
+               float _float,
+               double _double,
+               long double _long_double,
+               signed char _sc,
+               unsigned char _uc,
+               signed short _ss,
+               unsigned short _us,
+               signed int _si,
+               unsigned int _ui,
+               signed long _sl,
+               unsigned long _ul,
+               signed long long _sll,
+               unsigned long long _ull,
+               (void *, _ptr),
+               (uint8_t, bytes, [sizeof (long double)]),
+               );
 
 static mr_fd_t *
 mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
-			       char * type,
-			       char * name,
-			       mr_type_t mr_type,
-			       mr_dump_struct_types_union_t * value)
+                               char * type,
+                               char * name,
+                               mr_type_t mr_type,
+                               mr_dump_struct_types_union_t * value)
 {
   mr_struct_param_t * struct_param = &ctx->tdp->param.struct_param;
   
@@ -179,7 +179,7 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
     {
     case MR_TYPE_INT32:
       if (0 == (value->_uint32 >> __CHAR_BIT__))
-	mr_type = MR_TYPE_BOOL;
+        mr_type = MR_TYPE_BOOL;
       break;
 
     case MR_TYPE_INT8:
@@ -196,15 +196,15 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
 
     case MR_TYPE_DOUBLE:
       {
-	int i;
-	for (i = 0; i < sizeof (double); ++i)
-	  if ((value->bytes[i] != 0) && (value->bytes[i] != (uint8_t)-1))
-	    break;
-	if (i < sizeof (double))
-	  {
-	    mr_type = MR_TYPE_FLOAT;
-	    value->_float = value->_double;
-	  }
+        int i;
+        for (i = 0; i < sizeof (double); ++i)
+          if ((value->bytes[i] != 0) && (value->bytes[i] != (uint8_t)-1))
+            break;
+        if (i < sizeof (double))
+          {
+            mr_type = MR_TYPE_FLOAT;
+            value->_float = value->_double;
+          }
       }
       break;
 
@@ -227,17 +227,17 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   if (field_idx == struct_param->fields_count)
     {
       if (struct_param->fields_count >= ctx->fields_count)
-	{
-	  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_TDP_FIELDS_COUNT);
-	  longjmp (ctx->_jmp_buf, !0);
-	}
+        {
+          fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_TDP_FIELDS_COUNT);
+          longjmp (ctx->_jmp_buf, !0);
+        }
 
       fdp->stype.mr_type = mr_type;
       fdp->stype.type = type;
       fdp->name.str = name;
       fdp->offset = 0;
       if (MR_TYPE_NONE == mr_type)
-	fdp->offset = value->_ptr - ctx->struct_ptr;
+        fdp->offset = value->_ptr - ctx->struct_ptr;
 
       ++struct_param->fields_count;
       return (fdp);
@@ -263,10 +263,10 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
   if (' ' != fmt[0])
     {
       if (2 == indent_spaces)
-	{
-	  ctx->type = type;
-	  ctx->name = name;
-	}
+        {
+          ctx->type = type;
+          ctx->name = name;
+        }
       return;
     }
 
@@ -291,7 +291,7 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
 #define CASE(FIELD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) \
     (CASE_ (FIELD, MR_TYPE_DETECT (typeof (FIELD))))		\
     (CASE_ (FIELD, __VA_ARGS__))
-	  
+
   ++fmt;
   if (strcmp (fmt, "\"%.32s\"\n") == 0) { CASE (value._ptr, MR_TYPE_STRING) }
   else if (strcmp (fmt, "*%p\n") == 0) { CASE (value._ptr, MR_TYPE_NONE) }
@@ -393,10 +393,10 @@ mr_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args)
   if (field_idx == struct_param->fields_count)
     {
       if (struct_param->fields_count >= ctx->fields_count)
-	{
-	  fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_TDP_FIELDS_COUNT);
-	  longjmp (ctx->_jmp_buf, !0);
-	}
+        {
+          fprintf (stderr, "Type '%s' has over %d fields. Recompile Metaresc with a higher MR_PP_DEPTH value' (e.g. ./configure --enable-mr-pp-depth=512)\n", ctx->tdp->type.str, MR_TDP_FIELDS_COUNT);
+          longjmp (ctx->_jmp_buf, !0);
+        }
       fdp->stype.mr_type = MR_TYPE_BITFIELD;
       fdp->stype.type = type;
       fdp->name.str = name;
@@ -443,51 +443,51 @@ static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_
     {
       bool non_zero = true;
       if (struct_param->fields[i] != NULL)
-	non_zero = (strstr (struct_param->fields[i]->stype.type, "[0]") == NULL); /* detect zero-size arrays */
+        non_zero = (strstr (struct_param->fields[i]->stype.type, "[0]") == NULL); /* detect zero-size arrays */
 
       if ((struct_param->fields[i] != NULL) && (struct_param->fields[i]->offset == struct_param->fields[i - 1]->offset))
-	{
-	  ++same_offset_cnt;
-	  if (non_zero && (struct_param->fields[i]->stype.mr_type != MR_TYPE_BITFIELD))
-	    ++non_zero_cnt;
-	}
+        {
+          ++same_offset_cnt;
+          if (non_zero && (struct_param->fields[i]->stype.mr_type != MR_TYPE_BITFIELD))
+            ++non_zero_cnt;
+        }
       else
-	{
-	  if ((same_offset_cnt > 1) && (non_zero_cnt > 1))
-	    {
-	      if ((anon_union_count == 0) || (fields_count == 0))
-		{
-		  fprintf (stderr, "Too many anonynous unions. Define MR_TDP_FIELDS_COUNT (%d/%d) and MR_ANON_UNION_FD_COUNT (%d/%d) to higher values.\n",
-			   fields_count, MR_TDP_FIELDS_COUNT, anon_union_count, MR_ANON_UNION_FD_COUNT);
-		  return;
-		}
-	      else
-		{
-		  int idx = i - same_offset_cnt;
-		  mr_fd_t * trailing_fd = struct_param->fields[struct_param->fields_count + 1];
-		  trailing_fd->stype.mr_type = MR_TYPE_END_ANON_UNION;
+        {
+          if ((same_offset_cnt > 1) && (non_zero_cnt > 1))
+            {
+              if ((anon_union_count == 0) || (fields_count == 0))
+                {
+                  fprintf (stderr, "Too many anonynous unions. Define MR_TDP_FIELDS_COUNT (%d/%d) and MR_ANON_UNION_FD_COUNT (%d/%d) to higher values.\n",
+                           fields_count, MR_TDP_FIELDS_COUNT, anon_union_count, MR_ANON_UNION_FD_COUNT);
+                  return;
+                }
+              else
+                {
+                  int idx = i - same_offset_cnt;
+                  mr_fd_t * trailing_fd = struct_param->fields[struct_param->fields_count + 1];
+                  trailing_fd->stype.mr_type = MR_TYPE_END_ANON_UNION;
 
-		  memmove (&struct_param->fields[i + 1], &struct_param->fields[i], (++struct_param->fields_count - i) * sizeof (struct_param->fields[0]));
-		  struct_param->fields[i] = trailing_fd;
-		  memmove (&struct_param->fields[idx + 1], &struct_param->fields[idx], (++struct_param->fields_count - idx) * sizeof (struct_param->fields[0]));
-		  struct_param->fields[idx] = struct_param->fields[++anon_union_fd_idx];
+                  memmove (&struct_param->fields[i + 1], &struct_param->fields[i], (++struct_param->fields_count - i) * sizeof (struct_param->fields[0]));
+                  struct_param->fields[i] = trailing_fd;
+                  memmove (&struct_param->fields[idx + 1], &struct_param->fields[idx], (++struct_param->fields_count - idx) * sizeof (struct_param->fields[0]));
+                  struct_param->fields[idx] = struct_param->fields[++anon_union_fd_idx];
 
-		  --anon_union_count;
-		  --fields_count;
-		  i += 2;
-		}
-	    }
-	  same_offset_cnt = 1;
-	  non_zero_cnt = non_zero ? 1 : 0;
-	}
+                  --anon_union_count;
+                  --fields_count;
+                  i += 2;
+                }
+            }
+          same_offset_cnt = 1;
+          non_zero_cnt = non_zero ? 1 : 0;
+        }
     }
 }
 
 void
 mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
-						 int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...),
-						 mr_dump_struct_type_ctx_t * ctx),
-			 mr_td_t * tdp, int fields_count, int anon_union_count)
+                                                 int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...),
+                                                 mr_dump_struct_type_ctx_t * ctx),
+                         mr_td_t * tdp, int fields_count, int anon_union_count)
 {
   mr_struct_param_t * struct_param = &tdp->param.struct_param;
   mr_dump_struct_type_ctx_t dst_ctx = {};
@@ -512,11 +512,11 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
       uint8_t * ptr, * last_block = &value[tdp->size - block_size];
       i = 0;
       for (ptr = value; ptr <= last_block; ptr += block_size)
-	memset (ptr, -(i++ & 1), block_size);
+        memset (ptr, -(i++ & 1), block_size);
       memset (ptr, -(i++ & 1), tdp->size & (block_size - 1));
       dst_ctx.field_idx = 0;
       if (0 == setjmp (dst_ctx._jmp_buf))
-	mr_dump_struct (value, mr_fields_detection, &dst_ctx);
+        mr_dump_struct (value, mr_fields_detection, &dst_ctx);
     }
 
   /* Finally we need to find starting offset for bitfields within first byte. */
@@ -527,7 +527,7 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
       memset (value, pattern[i], tdp->size);
       dst_ctx.field_idx = 0;
       if (0 == setjmp (dst_ctx._jmp_buf))
-	mr_dump_struct (value, mr_fields_detection, &dst_ctx);
+        mr_dump_struct (value, mr_fields_detection, &dst_ctx);
     }
   /* Here we set a trailing NULL fields descriptor */
   struct_param->fields[fields_count] = struct_param->fields[struct_param->fields_count];
@@ -553,7 +553,7 @@ mr_conf_cleanup_visitor (mr_ptr_t key, void * context)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if ((MR_UNION_TYPES >> fdp->mr_type_base) & 1)
-	mr_ic_free (&fdp->union_param);
+        mr_ic_free (&fdp->union_param);
     }
   
   return (MR_SUCCESS);
@@ -676,8 +676,8 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
       *ptr++ = _value >> i;
     else
       {
-	*ptr &= ~((1 << (width - i)) - 1);
-	*ptr++ |= _value >> i;
+        *ptr &= ~((1 << (width - i)) - 1);
+        *ptr++ |= _value >> i;
       }
   return (MR_SUCCESS);
 }
@@ -702,13 +702,13 @@ mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, 
     {
       ssize_t realloc_size = new_size * 2;
       if (realloc_size < new_size)
-	realloc_size = new_size;
+        realloc_size = new_size;
       _data = MR_REALLOC (_data, realloc_size);
       if (NULL == _data)
-	{
-	  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	  return (NULL);
-	}
+        {
+          MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+          return (NULL);
+        }
       *alloc_size = realloc_size;
       *data = _data;
     }
@@ -901,14 +901,14 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
   if ((x_fdp->stype.mr_type == MR_TYPE_BITFIELD) && (y_fdp->stype.mr_type == MR_TYPE_BITFIELD))
     {
       diff = ((x_fdp->bitfield_param.shift > y_fdp->bitfield_param.shift) -
-	      (x_fdp->bitfield_param.shift < y_fdp->bitfield_param.shift));
+              (x_fdp->bitfield_param.shift < y_fdp->bitfield_param.shift));
       if (diff)
-	return (diff);
+        return (diff);
 
       diff = ((x_fdp->bitfield_param.width > y_fdp->bitfield_param.width) -
-	      (x_fdp->bitfield_param.width < y_fdp->bitfield_param.width));
+              (x_fdp->bitfield_param.width < y_fdp->bitfield_param.width));
       if (diff)
-	return (diff);
+        return (diff);
     }
 
   diff = ((x_fdp->stype.size > y_fdp->stype.size) - (x_fdp->stype.size < y_fdp->stype.size));
@@ -976,91 +976,91 @@ mr_anon_unions_extract (mr_td_t * tdp)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if ((MR_TYPE_ANON_UNION == fdp->stype.mr_type) || (MR_TYPE_NAMED_ANON_UNION == fdp->stype.mr_type))
-	{
-	  mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
-	  mr_fd_t ** first = &tdp->param.struct_param.fields[i + 1];
-	  mr_fd_t * last;
-	  int opened = 1;
+        {
+          mr_td_t * tdp_ = fdp->res.ptr; /* statically allocated memory for new type descriptor */
+          mr_fd_t ** first = &tdp->param.struct_param.fields[i + 1];
+          mr_fd_t * last;
+          int opened = 1;
 
-	  for (j = i + 1; j < count; ++j)
-	    {
-	      mr_fd_t * fdp_ = tdp->param.struct_param.fields[j];
-	      if ((MR_TYPE_ANON_UNION == fdp_->stype.mr_type) ||
-		  (MR_TYPE_NAMED_ANON_UNION == fdp_->stype.mr_type))
-		++opened;
-	      if (MR_TYPE_END_ANON_UNION == fdp_->stype.mr_type)
-		if (0 == --opened)
-		  break;
-	    }
-	  if (j >= count)
-	    return (MR_FAILURE);
+          for (j = i + 1; j < count; ++j)
+            {
+              mr_fd_t * fdp_ = tdp->param.struct_param.fields[j];
+              if ((MR_TYPE_ANON_UNION == fdp_->stype.mr_type) ||
+                  (MR_TYPE_NAMED_ANON_UNION == fdp_->stype.mr_type))
+                ++opened;
+              if (MR_TYPE_END_ANON_UNION == fdp_->stype.mr_type)
+                if (0 == --opened)
+                  break;
+            }
+          if (j >= count)
+            return (MR_FAILURE);
 
-	  int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_LAST */
-	  mr_fd_t * fields[fields_count];
-	  /*
-	    0  1  2  3  4  5  6  7  8
-	    F1 AH U1 U2 AE F2 F3 F4 T
-	    i = 1
-	    j = 4
-	    first = 2
-	    fields_count = 3
-	    count = 8
-	  */
-	  memcpy (fields, first, fields_count * sizeof (first[0]));
-	  memmove (first, &first[fields_count], (count - j) * sizeof (first[0])); /* blocks overlap possible */
-	  memcpy (&first[count - j], fields, fields_count * sizeof (first[0]));
+          int fields_count = j - i; /* additional trailing element with mr_type = MR_TYPE_LAST */
+          mr_fd_t * fields[fields_count];
+          /*
+            0  1  2  3  4  5  6  7  8
+            F1 AH U1 U2 AE F2 F3 F4 T
+            i = 1
+            j = 4
+            first = 2
+            fields_count = 3
+            count = 8
+          */
+          memcpy (fields, first, fields_count * sizeof (first[0]));
+          memmove (first, &first[fields_count], (count - j) * sizeof (first[0])); /* blocks overlap possible */
+          memcpy (&first[count - j], fields, fields_count * sizeof (first[0]));
 
-	  tdp_->size = 0;
-	  for (j = 0; j < fields_count - 1; ++j)
-	    {
-	      /* offset of union memebers may differ from offset of anonymous union place holder */
-	      if (fields[j]->offset != 0) /* MR_VOID and MR_END_ANON_UNION has zero offset */
-		fdp->offset = fields[j]->offset;
-	      /*
-		We need to reset offset of all fields to zero, but offset for bitfields within
-		anonymous unions will be calculated later at library init stage. To consolidate this
-		logic in one place we will not do it right now and will relay on initialization code.
+          tdp_->size = 0;
+          for (j = 0; j < fields_count - 1; ++j)
+            {
+              /* offset of union memebers may differ from offset of anonymous union place holder */
+              if (fields[j]->offset != 0) /* MR_VOID and MR_END_ANON_UNION has zero offset */
+                fdp->offset = fields[j]->offset;
+              /*
+                We need to reset offset of all fields to zero, but offset for bitfields within
+                anonymous unions will be calculated later at library init stage. To consolidate this
+                logic in one place we will not do it right now and will relay on initialization code.
 
-		fields[j]->offset = 0;
+                fields[j]->offset = 0;
 
-		The same applies to calculation of anonymous union size. At this stage sizes of
-		union memebers might be unknow and set to zero (MR_ADD_TYPES macro case). We need to
-		detect fields sizes first and set size of anonymous union to maximum of those values.
+                The same applies to calculation of anonymous union size. At this stage sizes of
+                union memebers might be unknow and set to zero (MR_ADD_TYPES macro case). We need to
+                detect fields sizes first and set size of anonymous union to maximum of those values.
 
-		if (tdp_->size < fields[j]->stype.size)
-		  tdp_->size = fields[j]->stype.size;
-	      */
-	    }
+                if (tdp_->size < fields[j]->stype.size)
+		tdp_->size = fields[j]->stype.size;
+              */
+            }
 
-	  last = tdp->param.struct_param.fields[count];
-	  tdp->param.struct_param.fields[count] = NULL;
-	  tdp_->mr_type = fdp->stype.mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
-	  tdp_->td_producer = MR_TDP_ANON_UNION;
+          last = tdp->param.struct_param.fields[count];
+          tdp->param.struct_param.fields[count] = NULL;
+          tdp_->mr_type = fdp->stype.mr_type; /* MR_TYPE_ANON_UNION or MR_TYPE_NAMED_ANON_UNION */
+          tdp_->td_producer = MR_TDP_ANON_UNION;
 
-	  size_t buffer_size = strlen (tdp_->type.str) + 1;
-	  snprintf (tdp_->type.str, buffer_size, MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, tdp->type.str, i);
-	  tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
+          size_t buffer_size = strlen (tdp_->type.str) + 1;
+          snprintf (tdp_->type.str, buffer_size, MR_ANONYMOUS_FIELD_TYPE_TEMPLATE, tdp->type.str, i);
+          tdp_->type.hash_value = mr_hash_str (tdp_->type.str);
 
-	  /* set name of anonymous union to temporary templatized name */
-	  if (0 == fdp->name.str[0])
-	    snprintf (fdp->name.str, buffer_size, MR_ANONYMOUS_FIELD_NAME_TEMPLATE, tdp->type.str, i);
-	  fdp->name.hash_value = mr_hash_str (fdp->name.str);
+          /* set name of anonymous union to temporary templatized name */
+          if (0 == fdp->name.str[0])
+            snprintf (fdp->name.str, buffer_size, MR_ANONYMOUS_FIELD_NAME_TEMPLATE, tdp->type.str, i);
+          fdp->name.hash_value = mr_hash_str (fdp->name.str);
 
-	  tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
+          tdp_->param.struct_param.fields = &tdp->param.struct_param.fields[count - fields_count + 1];
 
-	  fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
-	  fdp->res = last->res;
-	  fdp->res_type = last->res_type;
-	  fdp->MR_SIZE = last->MR_SIZE;
-	  tdp->param.struct_param.fields_count -= fields_count;
-	  count -= fields_count;
-	  fdp->stype.type = tdp_->type.str;
-	  fdp->stype.size = tdp_->size;
-	    
-	  mr_init_struct (tdp_);
-	  mr_ic_add (&mr_conf.type_by_name, tdp_);
-	  mr_add_type (tdp_);
-	}
+          fdp->meta = last->meta; /* copy meta from MR_END_ANON_UNION record */
+          fdp->res = last->res;
+          fdp->res_type = last->res_type;
+          fdp->MR_SIZE = last->MR_SIZE;
+          tdp->param.struct_param.fields_count -= fields_count;
+          count -= fields_count;
+          fdp->stype.type = tdp_->type.str;
+          fdp->stype.size = tdp_->size;
+
+          mr_init_struct (tdp_);
+          mr_ic_add (&mr_conf.type_by_name, tdp_);
+          mr_add_type (tdp_);
+        }
     }
   return (MR_SUCCESS);
 }
@@ -1171,7 +1171,7 @@ mr_ed_enum_value_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
   mr_ed_t * x_ = x.ptr;
   mr_ed_t * y_ = y.ptr;
   return ((x_->value._unsigned > y_->value._unsigned) -
-	  (x_->value._unsigned < y_->value._unsigned));
+          (x_->value._unsigned < y_->value._unsigned));
 }
 
 int
@@ -1217,16 +1217,16 @@ mr_init_enum (mr_td_t * tdp)
       tdp->param.enum_param.size_effective = tdp->size;
 
       switch (tdp->size)
-	{
+        {
 #define CASE_SET_TYPE_BY_SIZE(TYPE) case sizeof (TYPE): tdp->param.enum_param.mr_type_effective = MR_TYPE_DETECT (TYPE); break;
 
-	  MR_FOREACH (CASE_SET_TYPE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t, mr_uint128_t);
-	default:
-	  tdp->param.enum_param.mr_type_effective = MR_TYPE_DETECT (int);
-	  tdp->param.enum_param.size_effective = sizeof (int);
-	  tdp->size = sizeof (int);
-	  break;
-	}
+          MR_FOREACH (CASE_SET_TYPE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t, mr_uint128_t);
+        default:
+          tdp->param.enum_param.mr_type_effective = MR_TYPE_DETECT (int);
+          tdp->param.enum_param.size_effective = sizeof (int);
+          tdp->size = sizeof (int);
+          break;
+        }
       break;
     }
 
@@ -1239,27 +1239,27 @@ mr_init_enum (mr_td_t * tdp)
       mr_enum_value_t value = tdp->param.enum_param.enums[i]->value;
 
       /*
-	there is a corner case when enum has a single negative value which is a highest sign bit
-	Compiler will extend sign bit to higher positoins and this value will not be classified
-	as a power of two. That's why we need to truncate value to expected bit width before checking.
-       */
+        there is a corner case when enum has a single negative value which is a highest sign bit
+        Compiler will extend sign bit to higher positoins and this value will not be classified
+        as a power of two. That's why we need to truncate value to expected bit width before checking.
+      */
       value._unsigned &= (2LL << (tdp->param.enum_param.size_effective * __CHAR_BIT__ - 1)) - 1;
 
       if (value._unsigned != 0)
-	++non_zero_cnt;
+        ++non_zero_cnt;
       
       if ((value._unsigned & (value._unsigned - 1)) != 0)
-	tdp->param.enum_param.is_bitmask = false;
+        tdp->param.enum_param.is_bitmask = false;
       
       /* adding to global lookup table by enum literal names */
       mr_ptr_t * result = mr_ic_add (&mr_conf.enum_by_name, tdp->param.enum_param.enums[i]);
       if (NULL == result)
-	continue;
+        continue;
 
       mr_ed_t * edp = result->ptr;
       if ((edp != tdp->param.enum_param.enums[i]) &&
-	  (edp->value._unsigned != tdp->param.enum_param.enums[i]->value._unsigned))
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_ENUMS, edp->name.str, tdp->type.str, value, edp->value._unsigned);
+          (edp->value._unsigned != tdp->param.enum_param.enums[i]->value._unsigned))
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_ENUMS, edp->name.str, tdp->type.str, value, edp->value._unsigned);
     }
 
   if (non_zero_cnt < 2)
@@ -1350,12 +1350,12 @@ mr_fd_init_bitfield_params (mr_fd_t * fdp)
   for (j = fdp->offset; j < fdp->bitfield_param.size; ++j)
     {
       for ( ; i < __CHAR_BIT__; ++i)
-	if (fdp->bitfield_param.bitfield[j] & (1 << i))
-	  ++fdp->bitfield_param.width;
-	else
-	  break;
+        if (fdp->bitfield_param.bitfield[j] & (1 << i))
+          ++fdp->bitfield_param.width;
+        else
+          break;
       if (i < __CHAR_BIT__)
-	break;
+        break;
       i = 0;
     }
 }
@@ -1371,9 +1371,9 @@ mr_type_size (mr_type_t mr_type)
       [MR_TYPE_FUNC] = sizeof (void*),
       [MR_TYPE_FUNC_TYPE] = sizeof (void*),
       MR_FOREACH (MR_TYPE_SIZE,
-		  string_t, char, bool,
-		  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
-		  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
+                  string_t, char, bool,
+                  int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
+                  float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };
 
   if ((mr_type >= 0) && (mr_type < MR_TYPE_LAST))
@@ -1395,7 +1395,7 @@ mr_register_type_pointer (mr_td_t * tdp)
     {
       union_tdp = mr_get_td_by_name_internal ("mr_ptr_t");
       if (NULL == union_tdp)
-	return (MR_SUCCESS);
+        return (MR_SUCCESS);
     }
   /* check that requested type is already registered */
   if (NULL != mr_get_fd_by_name (union_tdp, tdp->type.str))
@@ -1427,7 +1427,7 @@ mr_type_is_a_pointer (char * type)
     {
       /* remove whitespaces before * */
       while (isspace (end[-1]))
-	--end;
+        --end;
       *end = 0; /* trancate type name */
       return (true);
     }
@@ -1448,9 +1448,9 @@ mr_type_is_an_array (mr_stype_t * stype, char * type)
 
       int count = atoi (open_bracket + 1);
       if (dim.dim_count < sizeof (dim.dim) / sizeof (dim.dim[0]))
-	dim.dim[dim.dim_count++] = count;
+        dim.dim[dim.dim_count++] = count;
       else
-	dim.dim[dim.dim_count - 1] *= count;
+        dim.dim[dim.dim_count - 1] *= count;
     }
 
   if ((dim.dim_count > 0) &&
@@ -1500,14 +1500,14 @@ mr_normalize_type (char * type)
       int length = strlen (keywords[i]);
       char * ptr = type;
       for (;;)
-	{
-	  char * found = strstr (ptr, keywords[i]);
-	  if (NULL == found)
-	    break;
-	  if (isdelimiter[(uint8_t)found[length]] && ((found == type) || isdelimiter[(uint8_t)found[-1]]))
-	    memset (found, ' ', length); /* replaced all keywords on spaces */
-	  ptr = &found[length]; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
-	}
+        {
+          char * found = strstr (ptr, keywords[i]);
+          if (NULL == found)
+            break;
+          if (isdelimiter[(uint8_t)found[length]] && ((found == type) || isdelimiter[(uint8_t)found[-1]]))
+            memset (found, ' ', length); /* replaced all keywords on spaces */
+          ptr = &found[length]; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
+        }
     }
 
   /* we need to squeeze all space characters including trailing spaces */
@@ -1519,10 +1519,10 @@ mr_normalize_type (char * type)
       prev_is_space = true;
     else
       {
-	if (prev_is_space)
-	  *ptr++ = ' ';
-	*ptr++ = type[i];
-	prev_is_space = false;
+        if (prev_is_space)
+          *ptr++ = ' ';
+        *ptr++ = type[i];
+        prev_is_space = false;
       }
   *ptr = 0;
 }
@@ -1545,23 +1545,23 @@ mr_detect_structured_type (mr_stype_t * stype)
   if (tdp)
     {
       if (MR_TYPE_BITFIELD == stype->mr_type)
-	stype->mr_type_aux = tdp->mr_type; /* enums case */
+        stype->mr_type_aux = tdp->mr_type; /* enums case */
       else if (((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128)) >> stype->mr_type) & 1)
-	stype->mr_type = tdp->mr_type; /* enums case */
+        stype->mr_type = tdp->mr_type; /* enums case */
     }
   else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_POINTER)) >> stype->mr_type) & 1)
-	   && mr_type_is_a_pointer (type))
+           && mr_type_is_a_pointer (type))
     {
       stype->mr_type = MR_TYPE_POINTER;
       tdp = mr_get_td_by_name_internal (type);
       if (tdp)
-	stype->mr_type_aux = tdp->mr_type;
+        stype->mr_type_aux = tdp->mr_type;
       else if ((((0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_NONE, MR_TYPE_POINTER)) >> stype->mr_type_aux) & 1)
-	       && mr_type_is_a_pointer (type))
-	{
-	  stype->mr_type_aux = MR_TYPE_POINTER;
-	  tdp = mr_get_td_by_name_internal (type);
-	}
+               && mr_type_is_a_pointer (type))
+        {
+          stype->mr_type_aux = MR_TYPE_POINTER;
+          tdp = mr_get_td_by_name_internal (type);
+        }
     }
 
   /* pointers on a basic types were detected by MR_TYPE_DETECT_PTR into mr_type_aux */
@@ -1575,17 +1575,17 @@ mr_detect_structured_type (mr_stype_t * stype)
   if (MR_TYPE_POINTER == stype->mr_type)
     {
       if (MR_TYPE_NONE == stype->mr_type_aux)
-	stype->mr_type_aux = MR_TYPE_VOID;
-      }
+        stype->mr_type_aux = MR_TYPE_VOID;
+    }
   else if (MR_TYPE_NONE == stype->mr_type)
     stype->mr_type = MR_TYPE_VOID;
 
 #define MR_TYPE_NAME(TYPE) [MR_TYPE_DETECT (TYPE)] = #TYPE,
   static char * type_name[] = {
     MR_FOREACH (MR_TYPE_NAME,
-		void, string_t, char, bool,
-		int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
-		float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
+                void, string_t, char, bool,
+                int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
+                float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
   };
   static mr_td_t * type_tdp[sizeof (type_name) / sizeof (type_name[0])] = {0};
 
@@ -1594,9 +1594,9 @@ mr_detect_structured_type (mr_stype_t * stype)
   if ((mr_type > 0) && (mr_type < sizeof (type_name) / sizeof (type_name[0])))
     if (type_name[mr_type])
       {
-	if (NULL == type_tdp[mr_type])
-	  type_tdp[mr_type] = mr_get_td_by_name_internal (type_name[mr_type]);
-	tdp = type_tdp[mr_type];
+        if (NULL == type_tdp[mr_type])
+          type_tdp[mr_type] = mr_get_td_by_name_internal (type_name[mr_type]);
+        tdp = type_tdp[mr_type];
       }
 
   stype->tdp = tdp;
@@ -1626,9 +1626,9 @@ mr_detect_structured_type (mr_stype_t * stype)
     {
       int i;
       if (MR_TYPE_POINTER == stype->mr_type_aux)
-	stype->size = sizeof (void*);
+        stype->size = sizeof (void*);
       for (i = stype->dim.dim_count - 1; i >= 0; --i)
-	stype->size *= stype->dim.dim[i];
+        stype->size *= stype->dim.dim[i];
     }
 }
 
@@ -1672,7 +1672,7 @@ mr_fd_detect_res_size (mr_fd_t * fdp)
     {
       mr_td_t * res_tdp = mr_get_td_by_name_internal (fdp->res_type);
       if (res_tdp != NULL)
-	fdp->MR_SIZE = res_tdp->size;
+        fdp->MR_SIZE = res_tdp->size;
     }
   return (MR_SUCCESS);
 }
@@ -1712,24 +1712,24 @@ mr_fd_init_ud_overrides (mr_fd_t * fdp)
   for (i = 0; i < count; ++i)
     {
       if (ud_overrides[i].type != NULL)
-	ud_overrides[i].typed_value.ptr = &ud_overrides[i].value;
+        ud_overrides[i].typed_value.ptr = &ud_overrides[i].value;
       ud_overrides[i].fdp = mr_get_fd_by_name (fdp->stype.tdp, ud_overrides[i].discriminator);
       if (NULL == ud_overrides[i].fdp)
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_INVALID_OVERRIDE, ud_overrides[i].value, ud_overrides[i].discriminator);
-	  continue;
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_INVALID_OVERRIDE, ud_overrides[i].value, ud_overrides[i].discriminator);
+          continue;
+        }
       
       mr_ptr_t * add = mr_ic_add (&fdp->union_param, &ud_overrides[i]);
       if (NULL == add)
-	{
-	  status = MR_FAILURE;
-	  break;
-	}
+        {
+          status = MR_FAILURE;
+          break;
+        }
       
       mr_ud_override_t * udo = add->ptr;
       if (strcmp (udo->discriminator, ud_overrides[i].discriminator) != 0)
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_OVERRIDES, udo->value, udo->discriminator, ud_overrides[i].discriminator);
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_CONFLICTED_OVERRIDES, udo->value, udo->discriminator, ud_overrides[i].discriminator);
     }
 
   return (status);
@@ -1753,7 +1753,7 @@ mr_normalize_field_name (mr_fd_t * fdp)
       fdp->name.str = name;
       for (; isalnum (*name) || (*name == '_'); ++name); /* skip valid characters */
       if (*name) /* strings with field names might be in read-only memory. For VOID names are saved in writable memory. */
-	*name = 0; /* truncate on first invalid charecter */
+        *name = 0; /* truncate on first invalid charecter */
     }
 }
 
@@ -1778,7 +1778,7 @@ mr_init_struct (mr_td_t * tdp)
 
   mr_ic_new (&tdp->param.struct_param.field_by_name, mr_fd_name_get_hash, mr_fd_name_cmp, "mr_fd_t", MR_IC_STATIC_ARRAY, NULL);
   mr_ic_index (&tdp->param.struct_param.field_by_name, (mr_ptr_t*)tdp->param.struct_param.fields,
-	       tdp->param.struct_param.fields_count * sizeof (tdp->param.struct_param.fields[0]));
+               tdp->param.struct_param.fields_count * sizeof (tdp->param.struct_param.fields[0]));
 }
 
 static void
@@ -1809,18 +1809,18 @@ mr_detect_struct_fields (mr_td_t * tdp)
       mr_fd_init_bitfield_params (fdp);
 #define MR_ANON_UNION_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
       if ((MR_ANON_UNION_TYPES >> tdp->mr_type) & 1)
-	{
-	  fdp->offset = 0;
-	  if (tdp->size < fdp->stype.size)
-	    tdp->size = fdp->stype.size; /* find union max size member */
-	}
+        {
+          fdp->offset = 0;
+          if (tdp->size < fdp->stype.size)
+            tdp->size = fdp->stype.size; /* find union max size member */
+        }
 
       if (fdp->name.str)
-	{
-	  mr_ic_add (&mr_conf.field_by_name, fdp);
-	  if (fdp->stype.tdp)
-	    mr_ic_add (&mr_conf.field_by_name_and_type, fdp);
-	}
+        {
+          mr_ic_add (&mr_conf.field_by_name, fdp);
+          if (fdp->stype.tdp)
+            mr_ic_add (&mr_conf.field_by_name_and_type, fdp);
+        }
     }
 
   /*
@@ -1832,9 +1832,9 @@ mr_detect_struct_fields (mr_td_t * tdp)
   */
   if (tdp->mr_type == MR_TYPE_STRUCT)
     mr_hsort (tdp->param.struct_param.fields,
-	      tdp->param.struct_param.fields_count,
-	      sizeof (tdp->param.struct_param.fields[0]),
-	      mr_fd_offset_cmp_sorting, NULL);
+              tdp->param.struct_param.fields_count,
+              sizeof (tdp->param.struct_param.fields[0]),
+              mr_fd_offset_cmp_sorting, NULL);
 }
 
 /**
@@ -1881,15 +1881,15 @@ mr_type_void_fields_impl (char * type, char * name, ...)
     {
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, name);
       if (NULL == fdp)
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_FIELD_NOT_FOUND, name, type);
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_FIELD_NOT_FOUND, name, type);
       else if (fdp->stype.mr_type != MR_TYPE_VOID)
-	{
-	  if ((fdp->stype.mr_type != MR_TYPE_BITFIELD) &&
-	      (fdp->stype.mr_type != MR_TYPE_ARRAY) &&
-	      (fdp->stype.mr_type != MR_TYPE_POINTER))
-	    fdp->stype.mr_type_aux = fdp->stype.mr_type;
-	  fdp->stype.mr_type = MR_TYPE_VOID;
-	}
+        {
+          if ((fdp->stype.mr_type != MR_TYPE_BITFIELD) &&
+              (fdp->stype.mr_type != MR_TYPE_ARRAY) &&
+              (fdp->stype.mr_type != MR_TYPE_POINTER))
+            fdp->stype.mr_type_aux = fdp->stype.mr_type;
+          fdp->stype.mr_type = MR_TYPE_VOID;
+        }
     }
 
   va_end (args);
@@ -1935,7 +1935,7 @@ mr_td_detect_res_size (mr_td_t * tdp)
     {
       mr_td_t * res_tdp = mr_get_td_by_name_internal (tdp->res_type);
       if (res_tdp != NULL)
-	tdp->MR_SIZE = res_tdp->size;
+        tdp->MR_SIZE = res_tdp->size;
     }
 }
 
@@ -1958,8 +1958,8 @@ mr_validate_stype (mr_stype_t * stype)
       
     case MR_TYPE_CHAR_ARRAY:
       if (stype->tdp)
-	if (stype->tdp->mr_type == MR_TYPE_CHAR)
-	  break;
+        if (stype->tdp->mr_type == MR_TYPE_CHAR)
+          break;
       __attribute__ ((fallthrough));
       
     case MR_TYPE_STRING:
@@ -1983,41 +1983,41 @@ mr_validate_stype (mr_stype_t * stype)
     case MR_TYPE_COMPLEX_LONG_DOUBLE:
     case MR_TYPE_FUNC_TYPE:
       if (stype->tdp)
-	if (stype->mr_type != stype->tdp->mr_type)
-	  status = MR_FAILURE;
+        if (stype->mr_type != stype->tdp->mr_type)
+          status = MR_FAILURE;
       break;
       
     case MR_TYPE_BITFIELD:
       if (!((MR_INT_TYPES >> stype->mr_type_aux) & 1))
-	status = MR_FAILURE;
+        status = MR_FAILURE;
       if (((MR_TYPED_TYPES >> stype->mr_type_aux) & 1) && (stype->tdp == NULL))
-	status = MR_FAILURE;
+        status = MR_FAILURE;
       if (((MR_TYPED_TYPES >> stype->mr_type_aux) & 1) && stype->tdp)
-	if (stype->mr_type_aux != stype->tdp->mr_type)
-	  status = MR_FAILURE;
+        if (stype->mr_type_aux != stype->tdp->mr_type)
+          status = MR_FAILURE;
       break;
       
 #define VALID_POINTER_AUX_TYPES (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY, MR_TYPE_CHAR, MR_TYPE_VOID, MR_TYPE_BOOL, MR_TYPE_INT8, MR_TYPE_UINT8, MR_TYPE_INT16, MR_TYPE_UINT16, MR_TYPE_INT32, MR_TYPE_UINT32, MR_TYPE_INT64, MR_TYPE_UINT64, MR_TYPE_INT128, MR_TYPE_UINT128, MR_TYPE_FLOAT, MR_TYPE_COMPLEX_FLOAT, MR_TYPE_DOUBLE, MR_TYPE_COMPLEX_DOUBLE, MR_TYPE_LONG_DOUBLE, MR_TYPE_COMPLEX_LONG_DOUBLE, MR_TYPE_STRUCT, MR_TYPE_ENUM, MR_TYPE_FUNC_TYPE, MR_TYPE_POINTER, MR_TYPE_UNION))
 
     case MR_TYPE_ARRAY:
       if (MR_TYPE_VOID == stype->mr_type_aux)
-	status = MR_FAILURE;
+        status = MR_FAILURE;
       __attribute__ ((fallthrough));
 
     case MR_TYPE_POINTER:
       if (MR_TYPE_POINTER == stype->mr_type_aux)
-	{
-	  if (stype->tdp == NULL)
-	    status = MR_FAILURE;
-	  break;
-	}
+        {
+          if (stype->tdp == NULL)
+            status = MR_FAILURE;
+          break;
+        }
       if (!((VALID_POINTER_AUX_TYPES >> stype->mr_type_aux) & 1))
-	status = MR_FAILURE;
+        status = MR_FAILURE;
       if (stype->tdp)
-	if (stype->mr_type_aux != stype->tdp->mr_type)
-	  status = MR_FAILURE;
+        if (stype->mr_type_aux != stype->tdp->mr_type)
+          status = MR_FAILURE;
       if (((MR_TYPED_TYPES >> stype->mr_type_aux) & 1) && (stype->tdp == NULL))
-	  status = MR_FAILURE;
+	status = MR_FAILURE;
       break;
       
     case MR_TYPE_STRUCT:
@@ -2026,16 +2026,16 @@ mr_validate_stype (mr_stype_t * stype)
     case MR_TYPE_ANON_UNION:
     case MR_TYPE_NAMED_ANON_UNION:
       if (stype->tdp == NULL)
-	status = MR_FAILURE;
+        status = MR_FAILURE;
       else if (stype->mr_type != stype->tdp->mr_type)
-	status = MR_FAILURE;
+        status = MR_FAILURE;
       break;
     }
 
   if (status != MR_SUCCESS)
     {
       if (stype->mr_type != MR_TYPE_POINTER)
-	stype->mr_type = MR_TYPE_VOID;
+        stype->mr_type = MR_TYPE_VOID;
       stype->mr_type_aux = MR_TYPE_VOID;
     }
   return (status);
@@ -2060,8 +2060,8 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
     {
       resolve_to->is_union_discriminator_set = true;
       if (((MR_STRUCT_TYPES >> resolve_to->mr_type) & 1) &&
-	  (resolve_to->param.struct_param.fields_count >= 1))
-	continue;
+          (resolve_to->param.struct_param.fields_count >= 1))
+        continue;
 #define MR_UNION_RESOLVABLE_TYPES (MR_INT_TYPES MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_STRING, MR_TYPE_CHAR_ARRAY))
       resolve_to->is_union_discriminator = (MR_UNION_RESOLVABLE_TYPES >> resolve_to->mr_type) & 1;
       break;
@@ -2081,47 +2081,47 @@ void mr_augment_fields (mr_td_t * tdp)
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       if ((fdp == NULL) || (fdp->name.str == NULL))
-	continue;
+        continue;
 
       int name_length = strlen (fdp->name.str);
       if (((fdp->stype.mr_type == MR_TYPE_POINTER) || (fdp->stype.mr_type == MR_TYPE_ARRAY)) &&
-	  (fdp->res_type == NULL) && (fdp->res.ptr == NULL))
-	{
-	  char count_field[name_length + sizeof (MR_POINTER_COUNT_SUFFIX_STR)];
-	  strcpy (count_field, fdp->name.str);
-	  strcat (count_field, MR_POINTER_COUNT_SUFFIX_STR);
-	  mr_fd_t * count_field_fdp = mr_get_any_fd_by_name (count_field, NULL);
+          (fdp->res_type == NULL) && (fdp->res.ptr == NULL))
+        {
+          char count_field[name_length + sizeof (MR_POINTER_COUNT_SUFFIX_STR)];
+          strcpy (count_field, fdp->name.str);
+          strcat (count_field, MR_POINTER_COUNT_SUFFIX_STR);
+          mr_fd_t * count_field_fdp = mr_get_any_fd_by_name (count_field, NULL);
 
-	  if (count_field_fdp != NULL)
-	    {
-	      fdp->res_type = "count_field_name";
-	      fdp->res.string = count_field_fdp->name.str;
-	    }
-	  else
-	    {
-	      char size_field[name_length + sizeof (MR_POINTER_SIZE_SUFFIX_STR)];
-	      strcpy (size_field, fdp->name.str);
-	      strcat (size_field, MR_POINTER_SIZE_SUFFIX_STR);
-	      mr_fd_t * size_field_fdp = mr_get_any_fd_by_name (size_field, NULL);
+          if (count_field_fdp != NULL)
+            {
+              fdp->res_type = "count_field_name";
+              fdp->res.string = count_field_fdp->name.str;
+            }
+          else
+            {
+              char size_field[name_length + sizeof (MR_POINTER_SIZE_SUFFIX_STR)];
+              strcpy (size_field, fdp->name.str);
+              strcat (size_field, MR_POINTER_SIZE_SUFFIX_STR);
+              mr_fd_t * size_field_fdp = mr_get_any_fd_by_name (size_field, NULL);
 
-	      if (size_field_fdp != NULL)
-		{
-		  fdp->res_type = "size_field_name";
-		  fdp->res.string = size_field_fdp->name.str;
-		}
-	    }
-	}
+              if (size_field_fdp != NULL)
+                {
+                  fdp->res_type = "size_field_name";
+                  fdp->res.string = size_field_fdp->name.str;
+                }
+            }
+        }
 
       if (((fdp->stype.mr_type == MR_TYPE_UNION) || (fdp->stype.mr_type == MR_TYPE_ANON_UNION) ||
-	   (fdp->stype.mr_type_aux == MR_TYPE_UNION) || (fdp->stype.mr_type_aux == MR_TYPE_ANON_UNION)) &&
-	  ((fdp->meta == NULL) || (0 == fdp->meta[0])))
-	{
-	  char ud_field[name_length + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX_STR)];
-	  strcpy (ud_field, fdp->name.str);
-	  strcat (ud_field, MR_UNION_DISCRIMINATOR_SUFFIX_STR);
-	  mr_fd_t * ud_field_fdp = mr_get_any_fd_by_name (ud_field, NULL);
-	  fdp->meta = (ud_field_fdp != NULL) ? ud_field_fdp->name.str : "";
-	}
+           (fdp->stype.mr_type_aux == MR_TYPE_UNION) || (fdp->stype.mr_type_aux == MR_TYPE_ANON_UNION)) &&
+          ((fdp->meta == NULL) || (0 == fdp->meta[0])))
+        {
+          char ud_field[name_length + sizeof (MR_UNION_DISCRIMINATOR_SUFFIX_STR)];
+          strcpy (ud_field, fdp->name.str);
+          strcat (ud_field, MR_UNION_DISCRIMINATOR_SUFFIX_STR);
+          mr_fd_t * ud_field_fdp = mr_get_any_fd_by_name (ud_field, NULL);
+          fdp->meta = (ud_field_fdp != NULL) ? ud_field_fdp->name.str : "";
+        }
     }
 }
 
@@ -2135,10 +2135,10 @@ mr_sort_td (mr_td_t * tdp)
     {
       mr_td_t * next = tdp->next;
       if (tdp->td_producer < MR_TDP_LAST)
-	{
-	  tdp->next = by_producer[tdp->td_producer];
-	  by_producer[tdp->td_producer] = tdp;
-	}
+        {
+          tdp->next = by_producer[tdp->td_producer];
+          by_producer[tdp->td_producer] = tdp;
+        }
       tdp = next;
     }
 
@@ -2147,10 +2147,10 @@ mr_sort_td (mr_td_t * tdp)
   for (i = MR_TDP_LAST - 1; i >= 0; --i)
     for (tdp = by_producer[i]; tdp; )
       {
-	mr_td_t * next = tdp->next;
-	tdp->next = root;
-	root = tdp;
-	tdp = next;
+        mr_td_t * next = tdp->next;
+        tdp->next = root;
+        root = tdp;
+        tdp = next;
       }
   return (root);
 }
@@ -2174,52 +2174,52 @@ mr_conf_init ()
 
       mr_dwarf_t * mr_dwarf;
       for (mr_dwarf = mr_conf.dwarf_list; mr_dwarf; mr_dwarf = mr_dwarf->next)
-	{
-	  int i;
-	  for (i = 0; i < mr_dwarf->tdps_count; ++i)
-	    mr_add_type (mr_dwarf->tdps[i]);
-	  for (i = 0; i < mr_dwarf->vars_count; ++i)
-	    mr_ic_add (&mr_conf.var_types, mr_dwarf->vars[i]);
-	}
+        {
+          int i;
+          for (i = 0; i < mr_dwarf->tdps_count; ++i)
+            mr_add_type (mr_dwarf->tdps[i]);
+          for (i = 0; i < mr_dwarf->vars_count; ++i)
+            mr_ic_add (&mr_conf.var_types, mr_dwarf->vars[i]);
+        }
 
       mr_conf.td_list = mr_sort_td (mr_conf.td_list);
       
       mr_td_t * tdp;
       for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
-	{
-	  tdp->type.str = mr_skip_keywords (tdp->type.str);
-	  tdp->type.hash_value = 0;
+        {
+          tdp->type.str = mr_skip_keywords (tdp->type.str);
+          tdp->type.hash_value = 0;
 
-	  /* check whether this type is already in the list */
-	  if (NULL != mr_get_td_by_name_internal (tdp->type.str))
-	    continue; /* this type is already registered */
+          /* check whether this type is already in the list */
+          if (NULL != mr_get_td_by_name_internal (tdp->type.str))
+            continue; /* this type is already registered */
 
-	  mr_init_struct (tdp);
-	  mr_init_enum (tdp);
-	  mr_init_func (tdp);
-	  mr_ic_add (&mr_conf.type_by_name, tdp);
-	}
-
-      for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
-	{
-	  if (tdp != mr_get_td_by_name_internal (tdp->type.str))
-	    continue; /* this type is a duplicate */
-
-	  mr_detect_func_args_types (tdp);
-	  mr_detect_struct_fields (tdp);
-	  mr_td_detect_res_size (tdp);
-	  mr_register_type_pointer (tdp);
-	  mr_validate_td (tdp);
-	}
+          mr_init_struct (tdp);
+          mr_init_enum (tdp);
+          mr_init_func (tdp);
+          mr_ic_add (&mr_conf.type_by_name, tdp);
+        }
 
       for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
-	{
-	  if (tdp != mr_get_td_by_name_internal (tdp->type.str))
-	    continue; /* this type is a duplicate */
+        {
+          if (tdp != mr_get_td_by_name_internal (tdp->type.str))
+            continue; /* this type is a duplicate */
 
-	  mr_type_is_union_discriminator (tdp);
-	  mr_augment_fields (tdp);
-	}
+          mr_detect_func_args_types (tdp);
+          mr_detect_struct_fields (tdp);
+          mr_td_detect_res_size (tdp);
+          mr_register_type_pointer (tdp);
+          mr_validate_td (tdp);
+        }
+
+      for (tdp = mr_conf.td_list; tdp; tdp = tdp->next)
+        {
+          if (tdp != mr_get_td_by_name_internal (tdp->type.str))
+            continue; /* this type is a duplicate */
+
+          mr_type_is_union_discriminator (tdp);
+          mr_augment_fields (tdp);
+        }
       mr_udo_init ();
 
       initialized = true;
@@ -2295,33 +2295,33 @@ mr_strtouintmax (char * str, char ** endptr, int base)
   else
     {
       if (((base == 0) || (base == 16)) &&
-	  (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X')))
-	{
-	  s += 2;
-	  base = 16;
-	}
+          (s[0] == '0') && ((s[1] == 'x') || (s[1] == 'X')))
+        {
+          s += 2;
+          base = 16;
+        }
       if (base == 0)
-	base = (s[0] == '0') ? 8 : 10;
+        base = (s[0] == '0') ? 8 : 10;
 
       for ( ; ; ++s)
-	{
-	  unsigned int c = s[0];
+        {
+          unsigned int c = s[0];
 
-	  if (isdigit (c))
-	    c -= '0';
-	  else if (isalpha (c))
-	    c -= isupper (c) ? 'A' - 10 : 'a' - 10;
-	  else
-	    break;
+          if (isdigit (c))
+            c -= '0';
+          else if (isalpha (c))
+            c -= isupper (c) ? 'A' - 10 : 'a' - 10;
+          else
+            break;
 
-	  if (c >= base)
-	    break;
+          if (c >= base)
+            break;
 
-	  acc = acc * base + c;
-	}
+          acc = acc * base + c;
+        }
 
       if (neg)
-	acc = -acc;
+        acc = -acc;
     }
 
   if (endptr != NULL)
@@ -2358,60 +2358,60 @@ mr_read_xml_doc (FILE * fd)
     {
       int c = fgetc (fd);
       if ((c == EOF) || (c == 0))
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_END);
-	  MR_FREE (str);
-	  return (NULL);
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_END);
+          MR_FREE (str);
+          return (NULL);
+        }
 
       str[++size] = c;
       if (size == max_size - 1)
-	{
-	  void * str_;
-	  max_size <<= 1; /* double input bufer size */
-	  str_ = MR_REALLOC (str, max_size);
-	  if (NULL == str_)
-	    {
-	      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-	      MR_FREE (str);
-	      return (NULL);
-	    }
-	  str = (char*) str_;
-	}
+        {
+          void * str_;
+          max_size <<= 1; /* double input bufer size */
+          str_ = MR_REALLOC (str, max_size);
+          if (NULL == str_)
+            {
+              MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+              MR_FREE (str);
+              return (NULL);
+            }
+          str = (char*) str_;
+        }
 
       if ((0 == opened_tags) && !(('<' == c) || isspace (c)))
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_DATA);
-	  MR_FREE (str);
-	  return (NULL);
-	}
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_DATA);
+          MR_FREE (str);
+          return (NULL);
+        }
 
       if ('<' == c)
-	opened_tags += 2;
+        opened_tags += 2;
       if (('/' == c_) && ('>' == c))
-	tags_to_close = -2;
+        tags_to_close = -2;
       if (('?' == c_) && ('>' == c))
-	tags_to_close = -2;
+        tags_to_close = -2;
       if (('<' == c_) && ('/' == c))
-	tags_to_close = -3;
+        tags_to_close = -3;
       if ('>' == c)
-	{
-	  opened_tags += tags_to_close;
-	  tags_to_close = -1;
-	  if (opened_tags < 0)
-	    {
-	      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNBALANCED_TAGS);
-	      MR_FREE (str);
-	      return (NULL);
-	    }
-	  if (0 == opened_tags)
-	    if (0 == --count)
-	      {
-		str[++size] = 0;
-		return (str);
-	      }
-	}
+        {
+          opened_tags += tags_to_close;
+          tags_to_close = -1;
+          if (opened_tags < 0)
+            {
+              MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNBALANCED_TAGS);
+              MR_FREE (str);
+              return (NULL);
+            }
+          if (0 == opened_tags)
+            if (0 == --count)
+              {
+                str[++size] = 0;
+                return (str);
+              }
+        }
       if (!isspace (c))
-	c_ = c;
+        c_ = c;
     }
 }

@@ -8,13 +8,13 @@
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
-		(mr_lloc_t, start, , "start of the token"),
-		(mr_lloc_t, end, , "end of the token"),
-		);
+                (mr_lloc_t, start, , "start of the token"),
+                (mr_lloc_t, end, , "end of the token"),
+                );
 
 #define MR_PARSE_ERROR(LLOCP, SCANNER, ERROR_MSG)			\
   MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
-	      (LLOCP)->start.lineno, (LLOCP)->start.column, (LLOCP)->end.lineno, (LLOCP)->end.column)
+              (LLOCP)->start.lineno, (LLOCP)->start.column, (LLOCP)->end.lineno, (LLOCP)->end.column)
 
 static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
 {
@@ -23,12 +23,12 @@ static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
   else
     for ( ; &mr_load->buf[mr_load->lloc.offset] < ptr; ++mr_load->lloc.offset)
       if ('\n' == mr_load->buf[mr_load->lloc.offset])
-	{
-	  ++mr_load->lloc.lineno;
-	  mr_load->lloc.column = 0;
-	}
+        {
+          ++mr_load->lloc.lineno;
+          mr_load->lloc.column = 0;
+        }
       else
-	++mr_load->lloc.column;
+        ++mr_load->lloc.column;
 }
 
 static inline int mr_substrcmp (char * str, mr_substr_t * substr)
@@ -63,18 +63,18 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
   ({									\
     if (N)								\
       {									\
-	(Current).start.lineno = YYRHSLOC (Rhs, 1).start.lineno;	\
-	(Current).start.column = YYRHSLOC (Rhs, 1).start.column;	\
-	(Current).start.offset = YYRHSLOC (Rhs, 1).start.offset;	\
-	(Current).end.lineno = YYRHSLOC (Rhs, N).end.lineno;		\
-	(Current).end.column = YYRHSLOC (Rhs, N).end.column;		\
-	(Current).end.offset = YYRHSLOC (Rhs, N).end.offset;		\
+        (Current).start.lineno = YYRHSLOC (Rhs, 1).start.lineno;        \
+        (Current).start.column = YYRHSLOC (Rhs, 1).start.column;        \
+        (Current).start.offset = YYRHSLOC (Rhs, 1).start.offset;        \
+        (Current).end.lineno = YYRHSLOC (Rhs, N).end.lineno;		\
+        (Current).end.column = YYRHSLOC (Rhs, N).end.column;		\
+        (Current).end.offset = YYRHSLOC (Rhs, N).end.offset;		\
       }									\
-    else								\
+    else                                                                \
       {									\
-	(Current).start.lineno = (Current).end.lineno = YYRHSLOC (Rhs, 0).end.lineno; \
-	(Current).start.column = (Current).end.column = YYRHSLOC (Rhs, 0).end.column; \
-	(Current).start.offset = (Current).end.offset = YYRHSLOC (Rhs, 0).end.offset; \
+        (Current).start.lineno = (Current).end.lineno = YYRHSLOC (Rhs, 0).end.lineno; \
+        (Current).start.column = (Current).end.column = YYRHSLOC (Rhs, 0).end.column; \
+        (Current).start.offset = (Current).end.offset = YYRHSLOC (Rhs, 0).end.offset; \
       }									\
   })
 
@@ -90,14 +90,14 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
     ptrs->str = str;							\
     if (NULL == str)							\
       {									\
-	MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
-	return (MR_FAILURE);						\
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);	\
+        return (MR_FAILURE);						\
       }									\
     if (mr_ ## METHOD ## _lex_init_extra (&mr_load, &scanner))		\
       return (MR_FAILURE);						\
     if (NULL != mr_ ## METHOD ## __scan_string (str, scanner))		\
       if (0 == mr_ ## METHOD ## _parse (scanner))			\
-	status = MR_SUCCESS;						\
+        status = MR_SUCCESS;						\
     if (status != MR_SUCCESS)						\
       mr_free_load_values (ptrs);					\
     mr_ ## METHOD ## _lex_destroy (scanner);				\

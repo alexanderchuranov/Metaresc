@@ -107,8 +107,8 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     {
       char * type = MR_VOIDP_T_STR;
       if ((MR_TYPE_FUNC != ptrdes->mr_type) && (ptrdes->fdp != NULL))
-	if (ptrdes->fdp->stype.tdp != NULL)
-	  type = ptrdes->fdp->stype.tdp->type.str;
+        if (ptrdes->fdp->stype.tdp != NULL)
+          type = ptrdes->fdp->stype.tdp->type.str;
       return (mr_ra_printf (mr_ra_str, "(%s)0x%llx", type, (long long unsigned int)*(uintptr_t*)ptrdes->data.ptr));
     }
 }
@@ -209,12 +209,12 @@ cinit_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t *
   if (!(ptrs[idx].flags & MR_IS_UNNAMED))
     {
       if (mr_ra_append_char (mr_ra_str, '.') < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       char * name = ptrs[idx].fdp ? ptrs[idx].fdp->name.str : MR_DEFAULT_NODE_NAME;
       if (mr_ra_append_string (mr_ra_str, name) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
       if (mr_ra_append_string (mr_ra_str, " = ") < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
 
   if (ptrs[idx].flags & MR_IS_REFERENCE)
@@ -232,7 +232,7 @@ cinit_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t *
   if (ptrs[idx].flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
       if (mr_ra_append_string (mr_ra_str, CINIT_NULL) < 0)
-	return (MR_FAILURE);
+        return (MR_FAILURE);
     }
   else if (save_handler (mr_ra_str, &ptrs[idx]) < 0)
     return (MR_FAILURE);

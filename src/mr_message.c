@@ -56,12 +56,12 @@ mr_message_format (mr_message_id_t message_id, va_list args)
     {
       mr_td_t * tdp = mr_get_td_by_name_internal ("mr_message_id_t");
       if (tdp)
-	{
-	  int i;
-	  for (i = 0; tdp->param.enum_param.enums[i] != NULL; ++i)
-	    messages[tdp->param.enum_param.enums[i]->value._unsigned] = tdp->param.enum_param.enums[i]->meta;
-	  messages_inited = true;
-	}
+        {
+          int i;
+          for (i = 0; tdp->param.enum_param.enums[i] != NULL; ++i)
+            messages[tdp->param.enum_param.enums[i]->value._unsigned] = tdp->param.enum_param.enums[i]->meta;
+          messages_inited = true;
+        }
     }
 
   if ((message_id <= sizeof (messages) / sizeof (messages[0])) && messages[message_id])
@@ -96,41 +96,41 @@ mr_message (const char * file_name, const char * func_name, int line, mr_log_lev
       const char * log_level_str_ = "Unknown";
 #define LL_INIT(LEVEL) [MR_LL_##LEVEL] = #LEVEL,
       static const char * log_level_str[] =
-	{ MR_FOREACH (LL_INIT, ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF) };
+        { MR_FOREACH (LL_INIT, ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF) };
 
       if (((int)log_level >= 0)
-	  && ((int)log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])))
-	if (log_level_str[log_level])
-	  log_level_str_ = log_level_str[log_level];
+          && ((int)log_level <= sizeof (log_level_str) / sizeof (log_level_str[0])))
+        if (log_level_str[log_level])
+          log_level_str_ = log_level_str[log_level];
 
 #ifdef HAVE_EXECINFO_H
       if (log_level <= MR_LL_DEBUG)
-	{
-	  void * array[8];
-	  size_t size;
-	  char ** strings;
-	  size_t i;
+        {
+          void * array[8];
+          size_t size;
+          char ** strings;
+          size_t i;
 
-	  size = backtrace (array, sizeof (array) / sizeof (array[0]));
-	  strings = backtrace_symbols (array, size);
-	  fprintf (stderr, "Obtained %zd stack frames.\n", size);
-	  if (strings)
-	    {
-	      for (i = 0; i < size; ++i)
-		fprintf (stderr, "%s\n", strings[i]);
-	      free (strings);
-	    }
-	}
+          size = backtrace (array, sizeof (array) / sizeof (array[0]));
+          strings = backtrace_symbols (array, size);
+          fprintf (stderr, "Obtained %zd stack frames.\n", size);
+          if (strings)
+            {
+              for (i = 0; i < size; ++i)
+                fprintf (stderr, "%s\n", strings[i]);
+              free (strings);
+            }
+        }
 #endif /* HAVE_EXECINFO_H */
       
       message = mr_message_format (message_id, args);
       if (NULL == message)
-	fprintf (stderr, "%s: in %s %s() line %d: Out of memory formating error message #%d\n", log_level_str_, file_name, func_name, line, message_id);
+        fprintf (stderr, "%s: in %s %s() line %d: Out of memory formating error message #%d\n", log_level_str_, file_name, func_name, line, message_id);
       else
-	{
-	  fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
-	  MR_FREE (message);
-	}
+        {
+          fprintf (stderr, "%s: in %s %s() line %d: %s\n", log_level_str_, file_name, func_name, line, message);
+          MR_FREE (message);
+        }
     }
   va_end (args);
 }

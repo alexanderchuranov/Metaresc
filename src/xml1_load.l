@@ -20,7 +20,7 @@
 
 %}
 
-ID	[_[:alpha:]][_[:alnum:]]*(:[_[:alpha:]][_[:alnum:]]*)?
+ID        [_[:alpha:]][_[:alnum:]]*(:[_[:alpha:]][_[:alnum:]]*)?
 %%
 
 [[:space:]]+  { return (TOK_XML_WS); }

@@ -20,8 +20,8 @@
 
 %}
 
-WS	[[:space:]]+
-ID	[_[:alpha:]][_[:alnum:]]*
+WS        [[:space:]]+
+ID        [_[:alpha:]][_[:alnum:]]*
 INT_NUMBER [+-]?[[:digit:]]+
 HEX_NUMBER [+-]?#(x|X)[[:xdigit:]]+
 OCT_NUMBER [+-]?#(o|O)[[0-7]]+
