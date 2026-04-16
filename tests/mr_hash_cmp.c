@@ -3,22 +3,22 @@
 #include <regression.h>
 
 TYPEDEF_STRUCT (embeded_struct_t,
-		int x,
-		)
+                int x,
+                );
 
 TYPEDEF_UNION (embeded_union_t,
 	       int32_t x,
 	       float y,
-	       )
+	       );
 
 TYPEDEF_ENUM (_enum_t,
 	      ZERO,
 	      ONE,
 	      TWO,
 	      THREE,
-	      )
+	      );
 
-TYPEDEF_FUNC (void, void_func_t, (void))
+TYPEDEF_FUNC (void, void_func_t, (void));
 
 TYPEDEF_STRUCT (all_t,
 		(char *, str),
@@ -50,7 +50,7 @@ TYPEDEF_STRUCT (all_t,
 		(void, f, (void)),
 		(void_func_t, void_func),
 		VOID (int, x),
-		)
+		);
 
 START_TEST (mr_hash_cmp_equal) {
   char * x[] = { "x", NULL, "y", };
@@ -330,7 +330,7 @@ START_TEST (mr_hash_cmp_mr_conf) {
 #define MR_MODE DESC
 TYPEDEF_STRUCT (div_t, quot, rem)
 
-START_TEST (mr_hash_cmp_great_or_less) {
+  START_TEST (mr_hash_cmp_great_or_less) {
   div_t x, y;
   memset (&x, 0, sizeof (x));
   memset (&y, 0, sizeof (y));
@@ -362,9 +362,9 @@ START_TEST (mr_cmp_arrays) {
 } END_TEST
 
 MAIN_TEST_SUITE ((mr_hash_cmp_equal, "check two identical arrays of strings"),
-		 (mr_hash_cmp_non_equal, "check two identical arrays of strings"),
-		 (mr_hash_cmp_all_types, "check hash and compare for struct with all elementary types"),
-		 (mr_hash_cmp_mr_conf, "Check hash and generic compare function on MR_COPY_RECURSIVELY"),
-		 (mr_hash_cmp_great_or_less, "Check that compare works correctly"),
-		 (mr_cmp_arrays, "Check that compare works correctly for arrays")
-		 );
+                 (mr_hash_cmp_non_equal, "check two identical arrays of strings"),
+                 (mr_hash_cmp_all_types, "check hash and compare for struct with all elementary types"),
+                 (mr_hash_cmp_mr_conf, "Check hash and generic compare function on MR_COPY_RECURSIVELY"),
+                 (mr_hash_cmp_great_or_less, "Check that compare works correctly"),
+                 (mr_cmp_arrays, "Check that compare works correctly for arrays")
+                 );

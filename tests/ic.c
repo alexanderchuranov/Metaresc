@@ -41,11 +41,11 @@ ic_types_foreach (int (*callback) (mr_ic_t * ic, char * mr_ic_type))
   for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
     if (mr_ic_types[ic_type] != NULL)
       {
-	mr_ic_t ic;
-	ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, uintptr_t_get_hash, uintptr_t_cmp, "uintptr", ic_type, NULL),
-		       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
-	ck_assert_msg (callback (&ic, mr_ic_types[ic_type]), "test failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
-	mr_ic_free (&ic);
+        mr_ic_t ic;
+        ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, uintptr_t_get_hash, uintptr_t_cmp, "uintptr", ic_type, NULL),
+                       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
+        ck_assert_msg (callback (&ic, mr_ic_types[ic_type]), "test failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
+        mr_ic_free (&ic);
       }
 }
 
@@ -84,12 +84,12 @@ static int ic_index_non_empty_cb (mr_ic_t * ic, char * mr_ic_type)
 START_TEST (ic_index_non_empty) { ic_types_foreach (ic_index_non_empty_cb); } END_TEST
 
 TYPEDEF_STRUCT (key_value_t,
-		string_t key,
-		ANON_UNION (),
-		VOID (char, unserializible),
-		char value,
-		END_ANON_UNION (),
-		);
+                string_t key,
+                ANON_UNION (),
+                VOID (char, unserializible),
+                char value,
+                END_ANON_UNION (),
+                );
 
 static mr_ptr_t kv[] = {
   { (key_value_t[]){{"key_a", { .value = 'a' }}}},
@@ -104,14 +104,14 @@ START_TEST (ic_index_order)
   for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
     if (mr_ic_types[ic_type] != NULL)
       {
-	mr_ic_t ic;
-	ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, NULL, NULL, "key_value_t", ic_type, NULL),
-		       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
-	ck_assert_msg (MR_SUCCESS == mr_ic_index (&ic, kv, sizeof (kv)), "index failed for mr_ic_type %s", mr_ic_types[ic_type]);
-	mr_ptr_t * find = mr_ic_find (&ic, (key_value_t[]){{"key_x"}});
-	ck_assert_msg (find != NULL, "find failed for mr_ic_type %s", mr_ic_types[ic_type]);
-	ck_assert_msg ('x' == ((key_value_t*)(find->ptr))->value, "found value mismatched expected for mr_ic_type %s", mr_ic_types[ic_type]);
-	mr_ic_free (&ic);
+        mr_ic_t ic;
+        ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, NULL, NULL, "key_value_t", ic_type, NULL),
+                       "mr_ic_new failed for mr_ic_type_t %s", mr_ic_types[ic_type]);
+        ck_assert_msg (MR_SUCCESS == mr_ic_index (&ic, kv, sizeof (kv)), "index failed for mr_ic_type %s", mr_ic_types[ic_type]);
+        mr_ptr_t * find = mr_ic_find (&ic, (key_value_t[]){{"key_x"}});
+        ck_assert_msg (find != NULL, "find failed for mr_ic_type %s", mr_ic_types[ic_type]);
+        ck_assert_msg ('x' == ((key_value_t*)(find->ptr))->value, "found value mismatched expected for mr_ic_type %s", mr_ic_types[ic_type]);
+        mr_ic_free (&ic);
       }
 } END_TEST
 
@@ -218,7 +218,7 @@ static int ic_find_indexed_cb (mr_ic_t * ic, char * mr_ic_type)
       find = mr_ic_find (ic, mr_ic_rarray[i]);
       ck_assert_msg (NULL != find, "Failed to find element in indexed data for mr_ic_type_t %s", mr_ic_type);
       ck_assert_msg (mr_ic_rarray[i].uintptr == find->uintptr,
-		     "Found wrong element in indexed data for mr_ic_type_t %s", mr_ic_type);
+                     "Found wrong element in indexed data for mr_ic_type_t %s", mr_ic_type);
     }
   return (!0);
 }
@@ -237,15 +237,15 @@ static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
 START_TEST (ic_find_added) { ic_types_foreach (ic_find_add_cb); } END_TEST
 
 MAIN_TEST_SUITE ((ic_empty, "Check empty ic"),
-		 (ic_index, "Check indexing of empty collection"),
-		 (ic_index_non_empty, "Check indexing of non empty collection"),
-		 (ic_index_order, "Check indexing order"),
-		 (ic_add_empty, "Check add to empty collection"),
-		 (ic_add_indexed, "Add existing element to indexed collection"),
-		 (ic_add_non_indexed, "Add new element to indexed collection"),
-		 (ic_del_added, "Check deletion of added element"),
-		 (ic_del_non_indexed, "Check deletion of non indexed element"),
-		 (ic_del_indexed, "Check deletion of indexed element"),
-		 (ic_find_indexed, "Check find over indexed data"),
-		 (ic_find_added, "Check search of added element")
-		 );
+                 (ic_index, "Check indexing of empty collection"),
+                 (ic_index_non_empty, "Check indexing of non empty collection"),
+                 (ic_index_order, "Check indexing order"),
+                 (ic_add_empty, "Check add to empty collection"),
+                 (ic_add_indexed, "Add existing element to indexed collection"),
+                 (ic_add_non_indexed, "Add new element to indexed collection"),
+                 (ic_del_added, "Check deletion of added element"),
+                 (ic_del_non_indexed, "Check deletion of non indexed element"),
+                 (ic_del_indexed, "Check deletion of indexed element"),
+                 (ic_find_indexed, "Check find over indexed data"),
+                 (ic_find_added, "Check search of added element")
+                 );

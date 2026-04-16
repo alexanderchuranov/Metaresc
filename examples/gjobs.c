@@ -13,49 +13,49 @@ TYPEDEF_STRUCT (project_t, int ID); // typedef struct project_t { int ID } proje
 #define MR_IS_BUILTIN_project_t project_t,
 
 TYPEDEF_ENUM (status_t,
-	      Open,
-	      Close,
-	      );
+              Open,
+              Close,
+              );
 
 #define MR_IS_BUILTIN_status_t status_t,
 
 TYPEDEF_STRUCT (update_t,
-		status_t Status,
-		string_t Modified,
-		string_t Salary,
-		);
+                status_t Status,
+                string_t Modified,
+                string_t Salary,
+                );
 
 #define MR_IS_BUILTIN_update_t update_t,
 
 TYPEDEF_STRUCT (person_t,
-		string_t Person,
-		string_t Email,
-		string_t Company,
-		string_t Organisation,
-		string_t Webpage,
-		string_t Snailmail,
-		string_t Phone,
-		);
+                string_t Person,
+                string_t Email,
+                string_t Company,
+                string_t Organisation,
+                string_t Webpage,
+                string_t Snailmail,
+                string_t Phone,
+                );
 
 #define MR_IS_BUILTIN_person_t person_t,
 
 TYPEDEF_STRUCT (job_t,
-		project_t Project,
-		string_t Application,
-		string_t Category,
-		update_t Update,
-		(person_t *, Developers),
-		_ size_t Developers_count,
-		person_t Contact,
-		string_t Requirements,
-		string_t Skills,
-		string_t Details,
-		);
+                project_t Project,
+                string_t Application,
+                string_t Category,
+                update_t Update,
+                (person_t *, Developers),
+                _ size_t Developers_count,
+                person_t Contact,
+                string_t Requirements,
+                string_t Skills,
+                string_t Details,
+                );
 
 TYPEDEF_STRUCT (helping_t,
-		(job_t *, Jobs),
-		_ size_t Jobs_count,
-		);
+                (job_t *, Jobs),
+                _ size_t Jobs_count,
+                );
 
 int
 main (int argc, char * argv[])

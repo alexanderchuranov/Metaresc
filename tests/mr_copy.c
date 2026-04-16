@@ -3,7 +3,7 @@
 #include <regression.h>
 
 TYPEDEF_STRUCT (ll_t,
-		(void *, ptr));
+                (void *, ptr));
 
 START_TEST (mr_copy_self_void_ptr) {
   ll_t x, y;
@@ -21,9 +21,9 @@ START_TEST (mr_copy_self_void_ptr) {
 
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
 TYPEDEF_STRUCT (tree_t,
-		int value,
-		(tree_t *, children, [2]),
-		);
+                int value,
+                (tree_t *, children, [2]),
+                );
 
 START_TEST (mr_copy_single_arg) {
   tree_t r = {0, {(tree_t[]){{1}}, (tree_t[]){{2}}}};
@@ -64,9 +64,9 @@ START_TEST (mr_copy_arg3) {
 
 MAIN_TEST_SUITE ((mr_copy_self_void_ptr, "test MR_COPY_RECURSIVELY works for self-refereed void pointers"),
 #ifdef HAVE_BUILTIN_DUMP_STRUCT
-		 (mr_copy_single_arg, "test single argumets MR_COPY_RECURSIVELY, MR_HASH_STRUCT, MR_CMP_STRUCTS, MR_FREE_RECURSIVELY"),
+                 (mr_copy_single_arg, "test single argumets MR_COPY_RECURSIVELY, MR_HASH_STRUCT, MR_CMP_STRUCTS, MR_FREE_RECURSIVELY"),
 #endif /* HAVE_BUILTIN_DUMP_STRUCT */
-		 (mr_copy_const_field, "test that MR_COPY_RECURSIVELY works for struct with const field"),
-		 (mr_copy_args2, "test that dump of mr_conf matches with dump of MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf)"),
-		 (mr_copy_arg3, "test that dump of mr_conf matches with dump of MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf, &mr_conf_copy)")
-		 );
+                 (mr_copy_const_field, "test that MR_COPY_RECURSIVELY works for struct with const field"),
+                 (mr_copy_args2, "test that dump of mr_conf matches with dump of MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf)"),
+                 (mr_copy_arg3, "test that dump of mr_conf matches with dump of MR_COPY_RECURSIVELY (mr_conf_t, &mr_conf, &mr_conf_copy)")
+                 );

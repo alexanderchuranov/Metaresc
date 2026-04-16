@@ -4,7 +4,7 @@
 #include <metaresc.h>
 #include <regression.h>
 
-TYPEDEF_STRUCT (struct_bool_t, bool x)
+TYPEDEF_STRUCT (struct_bool_t, bool x);
 
 START_TEST (bool_false) {
   ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, bool, false);
@@ -27,7 +27,7 @@ START_TEST (bool_nonzero) {
 } END_TEST
 
 MAIN_TEST_SUITE ((bool_false, "boolean false"),
-		 (bool_true, "boolean true"),
-		 (bool_zero, "boolean zero"),
-		 (bool_nonzero, "boolean non-zero")
-		 );
+                 (bool_true, "boolean true"),
+                 (bool_zero, "boolean zero"),
+                 (bool_nonzero, "boolean non-zero")
+                 );

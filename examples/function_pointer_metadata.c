@@ -9,7 +9,7 @@ TYPEDEF_STRUCT (ops,
 		(double, subtract, (float, int)),
 		(double, multiply, (float, int)),
 		(double, divide, (float, int))
-		)
+		);
 
 int print_func_field_signature (mr_fd_t const * fdp)
 {

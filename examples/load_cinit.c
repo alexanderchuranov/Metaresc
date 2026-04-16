@@ -5,15 +5,15 @@
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (employee_t,
-		(char *, firstname),
-		(char *, lastname),
-		(int, salary),
-		)
+                (char *, firstname),
+                (char *, lastname),
+                (int, salary),
+                );
 
 void print_info (employee_t const * e)
 {
   printf ("First name: %s\nLast name: %s\nSalary: %u\n",
-	  e->firstname, e->lastname, e->salary);
+          e->firstname, e->lastname, e->salary);
 }
 
 int main (int argc, char * argv[])

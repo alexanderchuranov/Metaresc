@@ -14,7 +14,7 @@ TYPEDEF_ENUM (color_t,
               MAGENTA,
               CYAN,
               WHITE
-              )
+              );
 
 int main ()
 {
@@ -26,8 +26,8 @@ int main ()
   if (NULL == tdp)
     {
       fprintf (stderr,
-	       "error: can't obtain type information for '%s'\n",
-	       type_name);
+               "error: can't obtain type information for '%s'\n",
+               type_name);
       return (EXIT_FAILURE);
     }
 

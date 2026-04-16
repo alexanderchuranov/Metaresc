@@ -9,7 +9,7 @@
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_complex_double_t, VALUE);	\
     })
 
-TYPEDEF_STRUCT (struct_complex_double_t, complex double x)
+TYPEDEF_STRUCT (struct_complex_double_t, complex double x);
 
 START_TEST (zero_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_DOUBLE, 0); } END_TEST
 START_TEST (nan1_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_DOUBLE, NAN); } END_TEST
@@ -26,16 +26,16 @@ START_TEST (one2_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_DOUBLE, I); } E
 START_TEST (two_double) { ALL_METHODS (ASSERT_SAVE_LOAD_COMPLEX_DOUBLE, 2I); } END_TEST
 
 MAIN_TEST_SUITE ((zero_double, "zero double"),
-		 (nan1_double, "NAN double"),
-		 (nan2_double, "NAN double"),
-		 (nan3_double, "NAN double"),
-		 (inf_double, "INFINITY double"),
-		 (huge_val_double, "HUGE_VAL double"),
-		 (dbl_max_double, "DBL_MAX double"),
-		 (dbl_min_double, "DBL_MIN double"),
-		 (dbl_epsilon_double, "DBL_EPSILON double"),
-		 (pi_double, "pi + e*i long_double"),
-		 (one1_double, "1"),
-		 (one2_double, "I"),
-		 (two_double, "2I")
-		 );
+                 (nan1_double, "NAN double"),
+                 (nan2_double, "NAN double"),
+                 (nan3_double, "NAN double"),
+                 (inf_double, "INFINITY double"),
+                 (huge_val_double, "HUGE_VAL double"),
+                 (dbl_max_double, "DBL_MAX double"),
+                 (dbl_min_double, "DBL_MIN double"),
+                 (dbl_epsilon_double, "DBL_EPSILON double"),
+                 (pi_double, "pi + e*i long_double"),
+                 (one1_double, "1"),
+                 (one2_double, "I"),
+                 (two_double, "2I")
+                 );

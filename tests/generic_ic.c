@@ -15,9 +15,9 @@ TYPEDEF_FUNC (void, void_func_t, (void));
 TYPEDEF_STRUCT (struct_2fields_t, int x, int y);
 
 TYPEDEF_STRUCT (type_samples_t,
-		string_t type,
-		size_t samples_size,
-		(mr_ptr_t *, samples, , "type", { .size_field_offset = offsetof (type_samples_t, samples_size) }, "size_field_offset"));
+                string_t type,
+                size_t samples_size,
+                (mr_ptr_t *, samples, , "type", { .size_field_offset = offsetof (type_samples_t, samples_size) }, "size_field_offset"));
 
 void func_zero (void) {}
 void func_one (void) {}
@@ -25,12 +25,12 @@ void func_two (void) {}
 
 #define MR_TYPE_SAMPLE(TYPE, X, I) { (TYPE[]){MR_REMOVE_PAREN (X)} }
 #define MR_APPEND_COMMA(NAME, I, REC, X) REC, X
-#define MR_TYPE_SAMPLES_VALUES_INIT(TYPE, ...) {			\
+#define MR_TYPE_SAMPLES_VALUES_INIT(TYPE, ...) {                        \
     .type = #TYPE,							\
-      .samples_size = MR_NARG (__VA_ARGS__) * sizeof (mr_ptr_t),	\
+      .samples_size = MR_NARG (__VA_ARGS__) * sizeof (mr_ptr_t),        \
       .samples = (mr_ptr_t[]){						\
-	MR_FOR (TYPE, MR_NARG (__VA_ARGS__), MR_APPEND_COMMA, MR_TYPE_SAMPLE, __VA_ARGS__) \
-      },								\
+        MR_FOR (TYPE, MR_NARG (__VA_ARGS__), MR_APPEND_COMMA, MR_TYPE_SAMPLE, __VA_ARGS__) \
+      },                                                                \
       },
 #define MR_TYPE_SAMPLES_VALUES(TYPE, ...) [MR_TYPE_DETECT (TYPE)] = MR_TYPE_SAMPLES_VALUES_INIT (TYPE, __VA_ARGS__)
 #define MR_TYPE_SAMPLES_NUMBERS(TYPE) MR_TYPE_SAMPLES_VALUES (TYPE, 0, 1, 2)
@@ -64,48 +64,48 @@ START_TEST (generic_ic) {
   for (ic_type = 0; ic_type < sizeof (mr_ic_types) / sizeof (mr_ic_types[0]); ++ic_type)
     if (mr_ic_types[ic_type] != NULL)
       for (mr_type = 0; mr_type < sizeof (type_samples) / sizeof (type_samples[0]); ++mr_type)
-	if (type_samples[mr_type].type != NULL)
-	  {
-	    int i, j, samples = type_samples[mr_type].samples_size / sizeof (type_samples[mr_type].samples[0]);
-	    mr_ic_t ic;
-	    
-	    ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, NULL, NULL, type_samples[mr_type].type, ic_type, NULL),
-			   "mr_ic_new failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);			   
-	    ck_assert_msg (MR_SUCCESS == mr_ic_index (&ic, type_samples[mr_type].samples, type_samples[mr_type].samples_size),
-			   "mr_ic_index failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);
-	    
-	    for (j = 0; j < samples; ++j)
-	      ck_assert_msg (NULL != mr_ic_find (&ic, type_samples[mr_type].samples[j]),
-			     "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);			   
+        if (type_samples[mr_type].type != NULL)
+          {
+            int i, j, samples = type_samples[mr_type].samples_size / sizeof (type_samples[mr_type].samples[0]);
+            mr_ic_t ic;
+            
+            ck_assert_msg (MR_SUCCESS == mr_ic_new (&ic, NULL, NULL, type_samples[mr_type].type, ic_type, NULL),
+                           "mr_ic_new failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);                           
+            ck_assert_msg (MR_SUCCESS == mr_ic_index (&ic, type_samples[mr_type].samples, type_samples[mr_type].samples_size),
+                           "mr_ic_index failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);
+            
+            for (j = 0; j < samples; ++j)
+              ck_assert_msg (NULL != mr_ic_find (&ic, type_samples[mr_type].samples[j]),
+                             "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);                           
 
-	    for (i = 0; i < samples; ++i)
-	      {
-		ck_assert_msg (MR_SUCCESS == mr_ic_del (&ic, type_samples[mr_type].samples[i]),
-			       "mr_ic_del failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);			   
-		ck_assert_msg (MR_SUCCESS != mr_ic_del (&ic, type_samples[mr_type].samples[i]),
-			       "mr_ic_del failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);			   
-		for (j = 0; j <= i; ++j)
-		  ck_assert_msg (NULL == mr_ic_find (&ic, type_samples[mr_type].samples[j]),
-				 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);
-		for (j = i + 1; j < samples; ++j)
-		  ck_assert_msg (NULL != mr_ic_find (&ic, type_samples[mr_type].samples[j]),
-				 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);
-	      }
-	    
-	    for (i = samples - 1; i >= 0; --i)
-	      {
-		ck_assert_msg (NULL != mr_ic_add (&ic, type_samples[mr_type].samples[i]),
-			       "mr_ic_add failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);			   
-		for (j = 0; j < i; ++j)
-		  ck_assert_msg (NULL == mr_ic_find (&ic, type_samples[mr_type].samples[j]),
-				 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);			   
-		for (j = i; j < samples; ++j)
-		  ck_assert_msg (NULL != mr_ic_find (&ic, type_samples[mr_type].samples[j]),
-				 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);			   
-	      }
-	    
-	    mr_ic_free (&ic);
-	  }
+            for (i = 0; i < samples; ++i)
+              {
+                ck_assert_msg (MR_SUCCESS == mr_ic_del (&ic, type_samples[mr_type].samples[i]),
+                               "mr_ic_del failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);                           
+                ck_assert_msg (MR_SUCCESS != mr_ic_del (&ic, type_samples[mr_type].samples[i]),
+                               "mr_ic_del failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);                           
+                for (j = 0; j <= i; ++j)
+                  ck_assert_msg (NULL == mr_ic_find (&ic, type_samples[mr_type].samples[j]),
+                                 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);
+                for (j = i + 1; j < samples; ++j)
+                  ck_assert_msg (NULL != mr_ic_find (&ic, type_samples[mr_type].samples[j]),
+                                 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);
+              }
+            
+            for (i = samples - 1; i >= 0; --i)
+              {
+                ck_assert_msg (NULL != mr_ic_add (&ic, type_samples[mr_type].samples[i]),
+                               "mr_ic_add failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);                           
+                for (j = 0; j < i; ++j)
+                  ck_assert_msg (NULL == mr_ic_find (&ic, type_samples[mr_type].samples[j]),
+                                 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);                           
+                for (j = i; j < samples; ++j)
+                  ck_assert_msg (NULL != mr_ic_find (&ic, type_samples[mr_type].samples[j]),
+                                 "mr_ic_find failed for mr_ic_type_t %s type %s", mr_ic_types[ic_type], type_samples[mr_type].type);                           
+              }
+            
+            mr_ic_free (&ic);
+          }
 } END_TEST
 
 static int
@@ -121,7 +121,7 @@ START_TEST (generic_sort_struct) {
   int i;
   struct_2fields_t array[] = { {1, 1}, {0, 1}, {1, 0}, {0, 0} };
   ck_assert_msg (MR_SUCCESS == mr_generic_sort (array, sizeof (array) / sizeof (array[0]), "struct_2fields_t"),
-		  "mr_generic_sort failed");
+		 "mr_generic_sort failed");
   for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
     ck_assert_msg (struct_2fields_cmp (&array[i - 1], &array[i]) <= 0, "Elements are not sorted");
 } END_TEST
@@ -130,7 +130,7 @@ START_TEST (generic_sort_string) {
   int i;
   string_t array[] = { "a", "b", "aa", "ab", "abc" };
   ck_assert_msg (MR_SUCCESS == mr_generic_sort (array, sizeof (array) / sizeof (array[0]), "string_t"),
-		  "mr_generic_sort failed");
+		 "mr_generic_sort failed");
   for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
     ck_assert_msg (strcmp (array[i - 1], array[i]) <= 0, "Elements are not sorted");
 } END_TEST
@@ -139,7 +139,7 @@ START_TEST (generic_sort_int) {
   int i;
   int array[] = { 2, 3, 1, 0 };
   ck_assert_msg (MR_SUCCESS == mr_generic_sort (array, sizeof (array) / sizeof (array[0]), "int"),
-		  "mr_generic_sort failed");
+		 "mr_generic_sort failed");
   for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
     ck_assert_msg (array[i - 1] <= array[i], "Elements are not sorted");
 } END_TEST
@@ -148,7 +148,7 @@ START_TEST (generic_sort_float) {
   int i;
   float array[] = { 2, 3, 1, 0 };
   ck_assert_msg (MR_SUCCESS == MR_GENERIC_SORT (array),
-		  "mr_generic_sort failed");
+		 "mr_generic_sort failed");
   for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
     ck_assert_msg (array[i - 1] <= array[i], "Elements are not sorted");
 } END_TEST
@@ -159,15 +159,15 @@ START_TEST (generic_sort_ca) {
   int i;
   ca_t array[] = { "a", "b", "aa", "ab", "abc" };
   ck_assert_msg (MR_SUCCESS == MR_GENERIC_SORT (array),
-		  "mr_generic_sort failed");
+		 "mr_generic_sort failed");
   for (i = 1; i < sizeof (array) / sizeof (array[0]); ++i)
     ck_assert_msg (strcmp (array[i - 1], array[i]) <= 0, "Elements are not sorted");
 } END_TEST
 
 MAIN_TEST_SUITE ((generic_ic, "Check generic IC implementation"),
-		 (generic_sort_struct, "Check generic sort implementation on structures"),
-		 (generic_sort_string, "Check generic sort implementation on strings"),
-		 (generic_sort_int, "Check generic sort implementation on integers"),
-		 (generic_sort_float, "Check MR_GENERIC_SORT on basic type (float)"),
-		 (generic_sort_ca, "Check MR_GENERIC_SORT on basic type of variable size (char array)")
-		 );
+                 (generic_sort_struct, "Check generic sort implementation on structures"),
+                 (generic_sort_string, "Check generic sort implementation on strings"),
+                 (generic_sort_int, "Check generic sort implementation on integers"),
+                 (generic_sort_float, "Check MR_GENERIC_SORT on basic type (float)"),
+                 (generic_sort_ca, "Check MR_GENERIC_SORT on basic type of variable size (char array)")
+                 );

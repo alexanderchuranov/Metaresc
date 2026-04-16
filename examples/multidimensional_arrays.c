@@ -7,19 +7,19 @@
 TYPEDEF_STRUCT (box_t,
                 (char *, name),
                 (time_t, creation_time)
-                )
+                );
 
 TYPEDEF_STRUCT (voxel_t,
                 (box_t *, pbox)
-                )
+                );
 
 TYPEDEF_STRUCT (plane_t,
                 (voxel_t, points, [2][2]),
-                )
+                );
 
 TYPEDEF_STRUCT (space_t,
                 (plane_t, planes, [2]),
-                )
+                );
 
 int main ()
 {

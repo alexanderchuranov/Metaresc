@@ -9,7 +9,7 @@ TYPEDEF_STRUCT (example_t,
                 (long, a2, [11][3]),
                 (double, a3, [5][2][9]),
                 (bool, a4, [7][5][3][1]),
-                )
+                );
 
 int print_array_field_info (mr_td_t * td, char name[])
 {
@@ -18,16 +18,16 @@ int print_array_field_info (mr_td_t * td, char name[])
   if (NULL == fdp)
     {
       fprintf (stderr,
-	       "error: can't obtain type information for field '%s'\n",
-	       name);
+               "error: can't obtain type information for field '%s'\n",
+               name);
       return (EXIT_FAILURE);
     }
 
   if (fdp->stype.mr_type != MR_TYPE_ARRAY)
     {
       fprintf (stderr,
-	       "error: the '%s' field is not an array\n",
-	       name);
+               "error: the '%s' field is not an array\n",
+               name);
       return (EXIT_FAILURE);
     }
 
@@ -50,7 +50,7 @@ int main ()
   if (NULL == td)
     {
       printf ("error: can't obtain type information for '%s'\n",
-	      type_name);
+              type_name);
       return (EXIT_FAILURE);
     }
   print_array_field_info(td, "a1");

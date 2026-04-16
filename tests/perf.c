@@ -6,16 +6,16 @@
 #include <regression.h>
 
 TYPEDEF_STRUCT (list_t,
-		(mr_ptr_t, mr_ptr, , "ptr_type"),
-		(list_t *, next));
+                (mr_ptr_t, mr_ptr, , "ptr_type"),
+                (list_t *, next));
 
 TYPEDEF_STRUCT (typed_list_t,
-		(char *, ptr_type),
-		(list_t *, root));
+                (char *, ptr_type),
+                (list_t *, root));
 
 TYPEDEF_STRUCT (vector_t,
-		(vector_t *, vec),
-		(size_t, vec_count));
+                (vector_t *, vec),
+                (size_t, vec_count));
 
 static clock_t
 union_resolution (int count, void (*save_load) (mr_res_t * res))
@@ -111,7 +111,7 @@ pointers_merger_overlap (int count, void (*save_load) (mr_res_t * res))
 
 static void
 check_cpu_complexity (void (*save_load) (mr_res_t * res), char * method,
-		      clock_t (*test_run) (int count, void (*save_load) (mr_res_t * res)))
+                      clock_t (*test_run) (int count, void (*save_load) (mr_res_t * res)))
 {
   int i, size = 1 << 8;
   clock_t base_time, double_time = test_run (size, save_load);
@@ -129,8 +129,8 @@ check_cpu_complexity (void (*save_load) (mr_res_t * res), char * method,
     }
 
   ck_assert_msg (double_time < (5 * base_time) / 2,
-		 "performance issue for method '%s' %lu / %lu = %.02g",
-		 method, (unsigned long)double_time, (unsigned long)base_time, (double)double_time / base_time);
+                 "performance issue for method '%s' %lu / %lu = %.02g",
+                 method, (unsigned long)double_time, (unsigned long)base_time, (double)double_time / base_time);
 }  
 
 static void
@@ -166,7 +166,7 @@ START_TEST (pointers_merger_overlap_complexity_mr_save) {
   }									\
   START_TEST (union_resolution_complexity_ ## METHOD) {			\
     check_cpu_complexity (mr_save_ ## METHOD ## _callback, #METHOD,	\
-			  union_resolution);				\
+                          union_resolution);				\
   } END_TEST
 
 #define SKIP_METHOD_XDR 0
@@ -181,8 +181,8 @@ ALL_METHODS (CPU_COMPLEXITY);
     ()
 
 MAIN_TEST_SUITE (
-		 MR_FOREACH (CPU_COMPLEXITY_TESTS, TEST_METHODS)
-		 (union_resolution_complexity_mr_save, "test union resolution complexity for MR_SAVE"),
-		 (pointers_extension_overlap_complexity_mr_save, "test pointers extension overlap complexity for MR_SAVE"),
-		 (pointers_merger_overlap_complexity_mr_save, "test pointers merger overlap complexity for MR_SAVE")
-		 );
+                 MR_FOREACH (CPU_COMPLEXITY_TESTS, TEST_METHODS)
+                 (union_resolution_complexity_mr_save, "test union resolution complexity for MR_SAVE"),
+                 (pointers_extension_overlap_complexity_mr_save, "test pointers extension overlap complexity for MR_SAVE"),
+                 (pointers_merger_overlap_complexity_mr_save, "test pointers merger overlap complexity for MR_SAVE")
+                 );

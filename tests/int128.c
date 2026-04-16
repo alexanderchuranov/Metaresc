@@ -17,8 +17,8 @@ START_TEST (min_signed_u_int128_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 128, (((
 START_TEST (random_u_int128_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 128, 0x123456789abcdef0LL); } END_TEST
 
 MAIN_TEST_SUITE ((zero_u_int128_t, "zero [u]int128_t"),
-		 (all_bits_u_int128_t, "all bits set [u]int128_t"),
-		 (max_signed_u_int128_t, "max signed [u]int128_t"),
-		 (min_signed_u_int128_t, "min signed [u]int128_t"),
-		 (random_u_int128_t, "random [u]int128_t")
-		 );
+                 (all_bits_u_int128_t, "all bits set [u]int128_t"),
+                 (max_signed_u_int128_t, "max signed [u]int128_t"),
+                 (min_signed_u_int128_t, "min signed [u]int128_t"),
+                 (random_u_int128_t, "random [u]int128_t")
+                 );

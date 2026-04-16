@@ -86,10 +86,10 @@ START_TEST (bitfield_negative_enum) {
 } END_TEST
 
 MAIN_TEST_SUITE ((bitfield_enum_zero, "bitfield as enum"),
-		 (bitfield_enum_three, "bitfield as enum"),
-		 (invalid_bitfield_enum_t, "invalid enum"),
-		 (bitfield_int_0, "bitfield as integer for value 0"),
-		 (bitfield_int_3, "bitfield as integer for value 3"),
-		 (bitfield_int_m1, "bitfield as integer for value -1"),
-		 (bitfield_negative_enum, "-1 should serialize as enum value, but not integer")
-		 );
+                 (bitfield_enum_three, "bitfield as enum"),
+                 (invalid_bitfield_enum_t, "invalid enum"),
+                 (bitfield_int_0, "bitfield as integer for value 0"),
+                 (bitfield_int_3, "bitfield as integer for value 3"),
+                 (bitfield_int_m1, "bitfield as integer for value -1"),
+                 (bitfield_negative_enum, "-1 should serialize as enum value, but not integer")
+                 );

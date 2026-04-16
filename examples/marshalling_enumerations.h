@@ -10,11 +10,11 @@ TYPEDEF_ENUM (color_t,
               (MAGENTA, = 5),
               (CYAN,    = 6),
               (WHITE,   = 7)
-              )
+              );
 
 TYPEDEF_STRUCT (screen_t,
                 (int, width),
                 (int, height),
                 (color_t, bg),
                 (color_t, fg)
-                )
+                );

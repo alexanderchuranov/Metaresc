@@ -78,12 +78,12 @@ START_TEST (uint64_ptr) {
 } END_TEST
 
 MAIN_TEST_SUITE ((int32_dptr, "double pointer on int"),
-		 (int8_ptr, "pointer on int"),
-		 (uint8_ptr, "pointer on uint"),
-		 (int16_ptr, "pointer on int"),
-		 (uint16_ptr, "pointer on uint"),
-		 (int32_ptr, "pointer on int"),
-		 (uint32_ptr, "pointer on uint"),
-		 (int64_ptr, "pointer on int"),
-		 (uint64_ptr, "pointer on uint")
-		 );
+                 (int8_ptr, "pointer on int"),
+                 (uint8_ptr, "pointer on uint"),
+                 (int16_ptr, "pointer on int"),
+                 (uint16_ptr, "pointer on uint"),
+                 (int32_ptr, "pointer on int"),
+                 (uint32_ptr, "pointer on uint"),
+                 (int64_ptr, "pointer on int"),
+                 (uint64_ptr, "pointer on uint")
+                 );

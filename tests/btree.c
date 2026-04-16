@@ -88,6 +88,6 @@ START_TEST (ic_avltree) {
 } END_TEST
 
 MAIN_TEST_SUITE (
-		 (ic_rbtree, "Check red/black tree implementation"),
-		 (ic_avltree, "Check AVL tree implementation")
-		 );
+                 (ic_rbtree, "Check red/black tree implementation"),
+                 (ic_avltree, "Check AVL tree implementation")
+                 );

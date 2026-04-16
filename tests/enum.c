@@ -4,43 +4,43 @@
 #include <regression.h>
 
 TYPEDEF_ENUM (mr_enum_t,
-	      ZERO,
-	      (ONE),
-	      (TWO, = 2 /* set value explicitly */),
-	      (THREE, = 3, "comment on enum value"),
-	      (FOUR, /* value */, /* comment */, { "metadata as a void pointer" }),
-	      (FIVE, /* value */, /* comment */, { "metadata as a void pointer" }, "string" /* type of metadata void pointer as string */),
-	      (SIX, /* value */, /* comment */, { (mr_enum_t[]){ 2 } }, "mr_enum_t" /* even enum itself */),
-	      SEVEN /* trailing comma is optional */
-	      );
+              ZERO,
+              (ONE),
+              (TWO, = 2 /* set value explicitly */),
+              (THREE, = 3, "comment on enum value"),
+              (FOUR, /* value */, /* comment */, { "metadata as a void pointer" }),
+              (FIVE, /* value */, /* comment */, { "metadata as a void pointer" }, "string" /* type of metadata void pointer as string */),
+              (SIX, /* value */, /* comment */, { (mr_enum_t[]){ 2 } }, "mr_enum_t" /* even enum itself */),
+              SEVEN /* trailing comma is optional */
+              );
 
 TYPEDEF_ENUM (mr_signed_bitmask_t, ATTRIBUTES (__attribute__ ((packed))),
-	      (SIGNED_ZERO, = 0),
-	      (SIGNED_ONE, = 1 << 0),
-	      (SIGNED_TWO, = 1 << 1),
-	      (SIGNED_FOUR, = 1 << 2),
-	      (SIGNED_MAX, = - (1 << (__CHAR_BIT__ - 1))),
-	      );
+              (SIGNED_ZERO, = 0),
+              (SIGNED_ONE, = 1 << 0),
+              (SIGNED_TWO, = 1 << 1),
+              (SIGNED_FOUR, = 1 << 2),
+              (SIGNED_MAX, = - (1 << (__CHAR_BIT__ - 1))),
+              );
 
 TYPEDEF_ENUM (mr_bitmask_t,
-	      (NONE, = 0),
-	      (FIRST, = 1 << 0),
-	      (SECOND, = 1 << 1),
-	      (THIRD, = 1 << 2),
-	      (FORTH, = 1 << 3),
-	      );
+              (NONE, = 0),
+              (FIRST, = 1 << 0),
+              (SECOND, = 1 << 1),
+              (THIRD, = 1 << 2),
+              (FORTH, = 1 << 3),
+              );
 
 TYPEDEF_ENUM (mr_enum_uint8_t, ATTRIBUTES (__attribute__ ((packed))),
-	      UINT8_ZERO, UINT8_ONE, (UINT8_TWO, = 2), (UINT8_THREE, = 3));
+              UINT8_ZERO, UINT8_ONE, (UINT8_TWO, = 2), (UINT8_THREE, = 3));
 TYPEDEF_ENUM (mr_enum_uint16_t, ATTRIBUTES (__attribute__ ((packed))),
-	      UINT16_ZERO, UINT16_ONE, (UINT16_TWO, = 2), (UINT16_THREE, = 3), (UINT16_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint16_t) - 1)));
+              UINT16_ZERO, UINT16_ONE, (UINT16_TWO, = 2), (UINT16_THREE, = 3), (UINT16_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint16_t) - 1)));
 TYPEDEF_ENUM (mr_enum_uint32_t, ATTRIBUTES (__attribute__ ((packed))),
-	      UINT32_ZERO, UINT32_ONE, (UINT32_TWO, = 2), (UINT32_THREE, = 3), (UINT32_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint32_t) - 1)));
+              UINT32_ZERO, UINT32_ONE, (UINT32_TWO, = 2), (UINT32_THREE, = 3), (UINT32_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint32_t) - 1)));
 TYPEDEF_ENUM (mr_enum_uint64_t, ATTRIBUTES (__attribute__ ((packed))),
-	      UINT64_ZERO, UINT64_ONE, (UINT64_TWO, = 2), (UINT64_THREE, = 3), (UINT64_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)));
+              UINT64_ZERO, UINT64_ONE, (UINT64_TWO, = 2), (UINT64_THREE, = 3), (UINT64_LAST, = 1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)));
 TYPEDEF_ENUM (mr_enum_int64_t, ATTRIBUTES (__attribute__ ((packed))),
-	      (INT64_FIRST, = -1),
-	      (INT64_LAST, = (1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)) - 1));
+              (INT64_FIRST, = -1),
+              (INT64_LAST, = (1ULL << (__CHAR_BIT__ * sizeof (uint64_t) - 1)) - 1));
 
 TYPEDEF_STRUCT (struct_mr_enum_t, (mr_enum_t, x));
 TYPEDEF_STRUCT (struct_mr_enum_uint8_t, (mr_enum_uint8_t, x));
@@ -59,7 +59,7 @@ TYPEDEF_STRUCT (struct_mr_signed_bitmask_t, (mr_signed_bitmask_t, x));
     })
 
 #define ASSERT_SAVE_LOAD_STRUCT_ENUM(METHOD, VALUE, ...) ({		\
-      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_mr_enum_t, VALUE, __VA_ARGS__);	\
+      ASSERT_SAVE_LOAD_TYPE (METHOD, struct_mr_enum_t, VALUE, __VA_ARGS__); \
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_mr_enum_uint8_t, VALUE, __VA_ARGS__); \
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_mr_enum_uint16_t, VALUE, __VA_ARGS__); \
       ASSERT_SAVE_LOAD_TYPE (METHOD, struct_mr_enum_uint32_t, VALUE, __VA_ARGS__); \
@@ -118,12 +118,12 @@ START_TEST (invalid_mr_enum_t) {
 #undef SKIP_METHOD_XDR
 
 MAIN_TEST_SUITE ((zero_mr_enum_t, "zero as number enum"),
-		 (zero_mr_struct_enum_t, "zero as number enum in struct"),
-		 (three_mr_enum_t, "three as enum"),
-		 (three_mr_struct_enum_t, "three as enum in struct"),
-		 (seven_mr_enum_t, "seven as enum"),
-		 (seven_mr_struct_enum_t, "seven as enum in struct"),
-		 (mr_intmax_signed_max_value, "Signed enum parsing"),
-		 (mr_intmax_unsigned_max_value, "Unsigned enum parsing"),
-		 (invalid_mr_enum_t, "invalid enum")
-		 );
+                 (zero_mr_struct_enum_t, "zero as number enum in struct"),
+                 (three_mr_enum_t, "three as enum"),
+                 (three_mr_struct_enum_t, "three as enum in struct"),
+                 (seven_mr_enum_t, "seven as enum"),
+                 (seven_mr_struct_enum_t, "seven as enum in struct"),
+                 (mr_intmax_signed_max_value, "Signed enum parsing"),
+                 (mr_intmax_unsigned_max_value, "Unsigned enum parsing"),
+                 (invalid_mr_enum_t, "invalid enum")
+                 );

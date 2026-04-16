@@ -6,7 +6,7 @@
 
 TYPEDEF_STRUCT (with_f_pointers_t,
                 (char *, pfunc, (int))
-                )
+                );
 
 int main ()
 {

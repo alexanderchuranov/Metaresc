@@ -15,8 +15,8 @@ TYPEDEF_STRUCT (struct_str_ca_t, string_t y, (char_array_t, x));
 TYPEDEF_STRUCT (struct_str_str_t, string_t x, string_t y);
 
 TYPEDEF_STRUCT (struct_ca_int_t, ATTRIBUTES (__attribute__ ((packed))),
-		(char, x, [1], , .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false),
-		int y);
+                (char, x, [1], , .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false),
+                int y);
 
 #define ASSERT_SAVE_LOAD_CHAR_POINTER(METHOD, ...) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, string_t,  __VA_ARGS__);		\
@@ -64,30 +64,30 @@ START_TEST (pointer_match_content_known) {
   if (ptrs != NULL)
     {
       mr_ptrdes_t expected[] =
-	{
-	  {},
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "struct_ca_str_t", .name.str = "struct_ca_str_t" }},
-	    .mr_type = MR_TYPE_STRUCT,
-	    .flags = MR_IS_UNNAMED,
-	    .next = 0,
-	    .first_child = 2,
-	  },
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
-	    .mr_type = MR_TYPE_CHAR_ARRAY,
-	    .flags = MR_IS_REFERENCED,
-	    .next = 3,
-	    .first_child = 0,
-	  },
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
-	    .mr_type = MR_TYPE_STRING,
-	    .flags = MR_IS_REFERENCE,
-	    .next = 0,
-	    .first_child = 2,
-	  },
-	};
+        {
+          {},
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "struct_ca_str_t", .name.str = "struct_ca_str_t" }},
+            .mr_type = MR_TYPE_STRUCT,
+            .flags = MR_IS_UNNAMED,
+            .next = 0,
+            .first_child = 2,
+          },
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
+            .mr_type = MR_TYPE_CHAR_ARRAY,
+            .flags = MR_IS_REFERENCED,
+            .next = 3,
+            .first_child = 0,
+          },
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
+            .mr_type = MR_TYPE_STRING,
+            .flags = MR_IS_REFERENCE,
+            .next = 0,
+            .first_child = 2,
+          },
+        };
       ASSERT_MR_SAVE (struct_ca_str_t, &orig, expected);
       MR_FREE (ptrs);
     }
@@ -102,30 +102,30 @@ START_TEST (pointer_match_content_unknown) {
   if (ptrs != NULL)
     {
       mr_ptrdes_t expected[] =
-	{
-	  {},
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "struct_str_ca_t", .name.str = "struct_str_ca_t" }},
-	    .mr_type = MR_TYPE_STRUCT,
-	    .flags = MR_IS_UNNAMED,
-	    .next = 0,
-	    .first_child = 2,
-	  },
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
-	    .mr_type = MR_TYPE_STRING,
-	    .flags = MR_IS_REFERENCE,
-	    .next = 3,
-	    .first_child = 3,
-	  },
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
-	    .mr_type = MR_TYPE_CHAR_ARRAY,
-	    .flags = MR_IS_REFERENCED,
-	    .next = 0,
-	    .first_child = 0,
-	  },
-	};
+        {
+          {},
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "struct_str_ca_t", .name.str = "struct_str_ca_t" }},
+            .mr_type = MR_TYPE_STRUCT,
+            .flags = MR_IS_UNNAMED,
+            .next = 0,
+            .first_child = 2,
+          },
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
+            .mr_type = MR_TYPE_STRING,
+            .flags = MR_IS_REFERENCE,
+            .next = 3,
+            .first_child = 3,
+          },
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
+            .mr_type = MR_TYPE_CHAR_ARRAY,
+            .flags = MR_IS_REFERENCED,
+            .next = 0,
+            .first_child = 0,
+          },
+        };
       ASSERT_MR_SAVE (struct_str_ca_t, &orig, expected);
 
       MR_FREE (ptrs);
@@ -141,37 +141,37 @@ START_TEST (pointer_match_another_pointer) {
   if (ptrs != NULL)
     {
       mr_ptrdes_t expected[] =
-	{
-	  {},
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "struct_str_str_t", .name.str = "struct_str_str_t" }},
-	    .mr_type = MR_TYPE_STRUCT,
-	    .flags = MR_IS_UNNAMED,
-	    .next = 0,
-	    .first_child = 2,
-	  },
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "x" }},
-	    .mr_type = MR_TYPE_STRING,
-	    .flags = MR_IS_REFERENCED,
-	    .next = 4,
-	    .first_child = 0,
-	  },
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
-	    .mr_type = MR_TYPE_CHAR_ARRAY,
-	    .flags = MR_IS_REFERENCED,
-	    .next = 0,
-	    .first_child = 0,
-	  },
-	  {
-	    .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
-	    .mr_type = MR_TYPE_STRING,
-	    .flags = MR_IS_CONTENT_REFERENCE,
-	    .next = 0,
-	    .first_child = 2,
-	  },
-	};
+        {
+          {},
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "struct_str_str_t", .name.str = "struct_str_str_t" }},
+            .mr_type = MR_TYPE_STRUCT,
+            .flags = MR_IS_UNNAMED,
+            .next = 0,
+            .first_child = 2,
+          },
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "x" }},
+            .mr_type = MR_TYPE_STRING,
+            .flags = MR_IS_REFERENCED,
+            .next = 4,
+            .first_child = 0,
+          },
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "char_array_t", .name.str = "x" }},
+            .mr_type = MR_TYPE_CHAR_ARRAY,
+            .flags = MR_IS_REFERENCED,
+            .next = 0,
+            .first_child = 0,
+          },
+          {
+            .fdp = (mr_fd_t[]){{ .stype.type = "string_t", .name.str = "y" }},
+            .mr_type = MR_TYPE_STRING,
+            .flags = MR_IS_CONTENT_REFERENCE,
+            .next = 0,
+            .first_child = 2,
+          },
+        };
       ASSERT_MR_SAVE (struct_str_str_t, &orig, expected);
       MR_FREE (ptrs);
     }
@@ -179,11 +179,11 @@ START_TEST (pointer_match_another_pointer) {
 } END_TEST
 
 MAIN_TEST_SUITE ((null_string, "NULL string"),
-		 (empty_string, "empty string"),
-		 (printable_string, "all printable characters string"),
-		 (xml_special_string, "xml special characters string"),
-		 (char_array_overflow, "inline char array overflow"),
-		 (pointer_match_content_known, "strings points on known char array"),
-		 (pointer_match_content_unknown, "strings points on unknown char array"),
-		 (pointer_match_another_pointer, "two strings points on the same content")
-		 );
+                 (empty_string, "empty string"),
+                 (printable_string, "all printable characters string"),
+                 (xml_special_string, "xml special characters string"),
+                 (char_array_overflow, "inline char array overflow"),
+                 (pointer_match_content_known, "strings points on known char array"),
+                 (pointer_match_content_unknown, "strings points on unknown char array"),
+                 (pointer_match_another_pointer, "two strings points on the same content")
+                 );

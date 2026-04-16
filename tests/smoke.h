@@ -25,9 +25,9 @@
     mr_conf_t mr_conf_saved = mr_conf;					\
     mr_conf_t * src = &mr_conf;						\
     mr_rarray_t mr_conf_serialized = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, src++); \
-    ck_assert_msg (src - &mr_conf == 1, "Multiple src post increment for method " #METHOD);	\
+    ck_assert_msg (src - &mr_conf == 1, "Multiple src post increment for method " #METHOD); \
     ck_assert_msg (((0 != mr_conf_serialized.MR_SIZE) && (NULL != mr_conf_serialized.data.ptr)), \
-		   "save for method " #METHOD " failed");		\
+                   "save for method " #METHOD " failed");		\
     mr_conf_t mr_conf_loaded;						\
     mr_conf_t * dst = &mr_conf_loaded;					\
     memset (&mr_conf_loaded, 0, sizeof (mr_conf_loaded));		\
@@ -37,14 +37,14 @@
     mr_conf = mr_conf_loaded;						\
     mr_rarray_t mr_conf_serialized_ = MR_SAVE_ ## METHOD ## _RA (mr_conf_t, &mr_conf); \
     ck_assert_msg ((mr_conf_serialized.MR_SIZE == mr_conf_serialized_.MR_SIZE) && \
-		   (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
-		   "restored mr_conf mismatched original dump for method " #METHOD); \
+                   (0 == memcmp (mr_conf_serialized.data.ptr, mr_conf_serialized_.data.ptr, mr_conf_serialized.MR_SIZE)), \
+                   "restored mr_conf mismatched original dump for method " #METHOD); \
     mr_conf = mr_conf_saved;						\
     MR_FREE_RECURSIVELY (mr_conf_t, &mr_conf_loaded);			\
     MR_FREE (mr_conf_serialized_.data.ptr);				\
     MR_FREE (mr_conf_serialized.data.ptr);				\
   } END_TEST								\
-									\
+                                                                        \
   int main (int argc, char * argv[])					\
   {									\
     int number_failed;							\
@@ -52,7 +52,7 @@
     if (NULL == suite)							\
       return (EXIT_FAILURE);						\
     SRunner * srunner = srunner_create (suite);				\
-    if (NULL == srunner)						\
+    if (NULL == srunner)                                                \
       return (EXIT_FAILURE);						\
     TCase * tcase = tcase_create ("mr_conf save/load");			\
     if (NULL == tcase)							\
@@ -63,5 +63,5 @@
     srunner_run_all (srunner, CK_ENV);					\
     number_failed = srunner_ntests_failed (srunner);			\
     srunner_free (srunner);						\
-    return ((number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE);	\
+    return ((number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE);        \
   }

@@ -9,4 +9,4 @@ TYPEDEF_STRUCT (specified_width_t,
                 (int_fast32_t, sif32),
                 (uintptr_t, uip),
                 (intmax_t, sim)
-                )
+                );

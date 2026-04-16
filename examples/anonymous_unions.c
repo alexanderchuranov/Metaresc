@@ -10,7 +10,7 @@ TYPEDEF_STRUCT (struct_t,
                   (float, y),
                 END_ANON_UNION (),
                 (char *, description)
-                )
+                );
 
 int main ()
 {

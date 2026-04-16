@@ -6,13 +6,13 @@
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (int_dbl_pointer_t,
-		(struct int_pointer_t *, ip_ptr),
-		(int *, ptr)
-		)
+                (struct int_pointer_t *, ip_ptr),
+                (int *, ptr)
+                );
 
 TYPEDEF_STRUCT (int_pointer_t,
-		(int *, ptr)
-		)
+                (int *, ptr)
+                );
 
 int main ()
 {

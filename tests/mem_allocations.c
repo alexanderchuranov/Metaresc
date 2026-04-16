@@ -68,8 +68,8 @@ check_mem_ops_complexity (void callback (mr_res_t * res), char * method)
   mr_conf.mr_mem = mr_mem;
   
   ck_assert_msg (mem_ops_for_doubled_size < 12,
-		 "Number of memory operations (%d) grows higher than logarithmically for method %s",
-		 mem_ops_for_doubled_size, method);
+                 "Number of memory operations (%d) grows higher than logarithmically for method %s",
+                 mem_ops_for_doubled_size, method);
 }
 
 static void
@@ -95,13 +95,13 @@ START_TEST (mem_allocation_complexity_mr_save) {
     check_mem_ops_complexity (MR_SAVE_ ## METHOD ## _CALLBACK, #METHOD); \
   } END_TEST
 
-  ALL_METHODS (CHECK_MEM_OPS_COMPLEXITY);
+ALL_METHODS (CHECK_MEM_OPS_COMPLEXITY);
 
 #define MEM_OPS_COMPLEXITY(METHOD) MR_IF_ELSE (MR_IS_EMPTY (METHOD)) ()	\
     ((mem_allocation_complexity_ ## METHOD,				\
       "test number of memory allocations for " #METHOD),)
 
 MAIN_TEST_SUITE (
-		 MR_FOREACH (MEM_OPS_COMPLEXITY, TEST_METHODS)
-		 (mem_allocation_complexity_mr_save, "test number of memory allocations for MR_SAVE")
-		 );
+                 MR_FOREACH (MEM_OPS_COMPLEXITY, TEST_METHODS)
+                 (mem_allocation_complexity_mr_save, "test number of memory allocations for MR_SAVE")
+                 );

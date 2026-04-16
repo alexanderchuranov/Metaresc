@@ -6,10 +6,10 @@
 #include <mr_ic.h>
 
 TYPEDEF_STRUCT (employee_t,
-		(char *, firstname),
-		(char *, lastname),
-		(int, salary),
-		)
+                (char *, firstname),
+                (char *, lastname),
+                (int, salary),
+                );
 
 int main ()
 {
@@ -27,7 +27,7 @@ int main ()
     {
       mr_fd_t * fdp = tdp->param.struct_param.fields[i];
       printf("\t%d: name = %s, type = %s, size = %u bytes\n",
-	     i, fdp->name.str, fdp->stype.type, fdp->stype.size);
+             i, fdp->name.str, fdp->stype.type, fdp->stype.size);
     }
 
   return (EXIT_SUCCESS);

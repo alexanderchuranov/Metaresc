@@ -8,7 +8,7 @@ TYPEDEF_STRUCT (employee_t,
                 (char *, firstname),
                 (char *, lastname),
                 (int, salary),
-                )
+                );
 
 int
 main (int argc, char * argv[])
@@ -23,11 +23,11 @@ main (int argc, char * argv[])
 
   employee_t employee = MR_LOAD_XML (employee_t, source);
   printf ("%11s: %s\n"
-	  "%11s: %s\n"
-	  "%11s: %u\n",
-	  "firstname", employee.firstname,
-	  "lastname",  employee.lastname,
-	  "salary",    employee.salary);
+          "%11s: %s\n"
+          "%11s: %u\n",
+          "firstname", employee.firstname,
+          "lastname",  employee.lastname,
+          "salary",    employee.salary);
 
   return (EXIT_SUCCESS);
 }

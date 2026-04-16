@@ -20,13 +20,13 @@ static mr_ic_t alloc_blocks;
 mr_mem_t _mr_mem, mr_mem;
 
 TYPEDEF_STRUCT (stack_trace_t,
-		(mr_ptr_t, ptr, , "type"),
-		(const char *, filename),
-		(const char *, function),
-		(int, line),
-		(mr_ptr_t *, stack, , "type", { .size_field_offset = offsetof (stack_trace_t, size), }, "size_field_offset"),
-		(ssize_t, size),
-		(char *, type))
+                (mr_ptr_t, ptr, , "type"),
+                (const char *, filename),
+                (const char *, function),
+                (int, line),
+                (mr_ptr_t *, stack, , "type", { .size_field_offset = offsetof (stack_trace_t, size), }, "size_field_offset"),
+                (ssize_t, size),
+                (char *, type));
 
 mr_hash_value_t
 ab_hash (mr_ptr_t x, const void * context)
@@ -63,7 +63,7 @@ st_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
     {
       diff = (x_->stack[i].ptr > y_->stack[i].ptr) - (x_->stack[i].ptr < y_->stack[i].ptr);
       if (diff)
-	return (diff);
+        return (diff);
     }
   return (0);
 }
@@ -84,12 +84,12 @@ st_print (stack_trace_t * stack_trace)
   int size = stack_trace->size / sizeof (stack_trace->stack[0]);
   char ** strings = backtrace_symbols ((void**)stack_trace->stack, size);
   fprintf (stderr, "Pointer %p from file %s function %s line %d:\n", 
-	   stack_trace->ptr.ptr, stack_trace->filename, stack_trace->function, stack_trace->line);
+           stack_trace->ptr.ptr, stack_trace->filename, stack_trace->function, stack_trace->line);
   if (strings)
     {
       int i;
       for (i = 0; i < size; ++i)
-	fprintf (stderr, "%s\n", strings[i]);
+        fprintf (stderr, "%s\n", strings[i]);
       free (strings);
     }
   fflush (stderr);
@@ -115,7 +115,7 @@ stack_entry_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   const stack_trace_t * stack_trace = context;
   return ((stack_trace->stack[x.uintptr].ptr > stack_trace->stack[y.uintptr].ptr) -
-	  (stack_trace->stack[x.uintptr].ptr < stack_trace->stack[y.uintptr].ptr));
+          (stack_trace->stack[x.uintptr].ptr < stack_trace->stack[y.uintptr].ptr));
 }
 
 static inline void
@@ -139,7 +139,7 @@ normalize_recursion (stack_trace_t * stack_trace)
     {
       mr_ptr_t * add = mr_ic_add (&last_call, i);
       if (NULL == add)
-	goto free_index;
+        goto free_index;
       has_duplicates |= (add->uintptr != i);
     }
 
@@ -147,13 +147,13 @@ normalize_recursion (stack_trace_t * stack_trace)
     {
       int dst = 0;
       for (i = 0; i < count; ++i)
-	{
-	  mr_ptr_t * find = mr_ic_find (&last_call, i);
-	  if (NULL == find)
-	    goto free_index;
-	  i = find->uintptr;
-	  stack_trace->stack[dst++] = stack_trace->stack[i];
-	}
+        {
+          mr_ptr_t * find = mr_ic_find (&last_call, i);
+          if (NULL == find)
+            goto free_index;
+          i = find->uintptr;
+          stack_trace->stack[dst++] = stack_trace->stack[i];
+        }
 
       stack_trace->size = dst * sizeof (stack_trace->stack[0]);
     }
@@ -179,19 +179,19 @@ stack_trace_get ()
       int alloc_count = stack_trace->size / sizeof (stack_trace->stack[0]);
       int count = backtrace ((void**)stack_trace->stack, alloc_count);
       if (count < alloc_count)
-	{
-	  stack_trace->size = count * sizeof (stack_trace->stack[0]);
-	  normalize_recursion (stack_trace);
-	  return (stack_trace);
-	}
+        {
+          stack_trace->size = count * sizeof (stack_trace->stack[0]);
+          normalize_recursion (stack_trace);
+          return (stack_trace);
+        }
 
       stack_trace->size <<= 1;
       typeof (stack_trace->stack) _stack = realloc (stack_trace->stack, stack_trace->size);
       if (NULL == _stack)
-	{
-	  free (stack_trace->stack);
-	  break;
-	}
+        {
+          free (stack_trace->stack);
+          break;
+        }
       stack_trace->stack = _stack;
     }
 
@@ -287,7 +287,7 @@ static void * _realloc (const char * filename, const char * function, int line, 
   if (stack_trace_ != NULL)
     {
       if (stack_trace_->stack) 
-	MR_FREE (stack_trace_->stack);
+        MR_FREE (stack_trace_->stack);
       MR_FREE (stack_trace_);
 
     }
@@ -334,7 +334,7 @@ static void _free (const char * filename, const char * function, int line, void 
   if (stack_trace_ != NULL)
     {
       if (stack_trace_->stack) 
-	MR_FREE (stack_trace_->stack);
+        MR_FREE (stack_trace_->stack);
       MR_FREE (stack_trace_);
     }
   mr_conf.mr_mem = _mr_mem;
@@ -385,17 +385,17 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
     {
       malloc_cnt = realloc_cnt = free_cnt = 0;
       if (once_per_allocation)
-	++successful_allocs_counter;
+        ++successful_allocs_counter;
       else
-	{
-	  successful_allocs = successful_allocs_counter;
-	  successful_allocs_counter += step;
-	  if (--steps_count <= 0)
-	    {
-	      step <<= 4;
-	      steps_count = STEPS_COUNT;
-	    }
-	}
+        {
+          successful_allocs = successful_allocs_counter;
+          successful_allocs_counter += step;
+          if (--steps_count <= 0)
+            {
+              step <<= 4;
+              steps_count = STEPS_COUNT;
+            }
+        }
 
       status = method (arg);
 
@@ -404,44 +404,44 @@ mem_failures_method (mr_status_t (*method) (void * arg), void * arg, bool once_p
 #endif /* DEBUG */
 
       if (malloc_cnt != free_cnt)
-	break;
+        break;
       if (MR_SUCCESS == status)
-	break;
+        break;
     }
 
   if (!once_per_allocation && (malloc_cnt == free_cnt))
     {
       successful_allocs_counter -= step;
       while (step > 1)
-	{
-	  step >>= 1;
-	  successful_allocs = successful_allocs_counter - step;
-	  malloc_cnt = realloc_cnt = free_cnt = 0;
-	  status = method (arg);
+        {
+          step >>= 1;
+          successful_allocs = successful_allocs_counter - step;
+          malloc_cnt = realloc_cnt = free_cnt = 0;
+          status = method (arg);
 #ifdef DEBUG
-	  fprintf (stderr, "##%d %d (%d) ~ (%d)\n", successful_allocs_counter - step, status, malloc_cnt, free_cnt);
+          fprintf (stderr, "##%d %d (%d) ~ (%d)\n", successful_allocs_counter - step, status, malloc_cnt, free_cnt);
 #endif /* DEBUG */
-	  if (malloc_cnt != free_cnt)
-	    break;
-	  if (status == MR_SUCCESS)
-	    successful_allocs_counter -= step;
-	}
+          if (malloc_cnt != free_cnt)
+            break;
+          if (status == MR_SUCCESS)
+            successful_allocs_counter -= step;
+        }
       int i;
       if (malloc_cnt == free_cnt)
-	for (i = MR_MAX (STEPS_COUNT, successful_allocs_counter - STEPS_COUNT);
-	     i < successful_allocs_counter; ++i)
-	  {
-	    successful_allocs = i;
-	    malloc_cnt = realloc_cnt = free_cnt = 0;
-	    status = method (arg);
+        for (i = MR_MAX (STEPS_COUNT, successful_allocs_counter - STEPS_COUNT);
+             i < successful_allocs_counter; ++i)
+          {
+            successful_allocs = i;
+            malloc_cnt = realloc_cnt = free_cnt = 0;
+            status = method (arg);
 #ifdef DEBUG
-	    fprintf (stderr, "###%d %d (%d) ~ (%d)\n", i, status, malloc_cnt, free_cnt);
+            fprintf (stderr, "###%d %d (%d) ~ (%d)\n", i, status, malloc_cnt, free_cnt);
 #endif
-	    if (malloc_cnt != free_cnt)
-	      break;
-	    if (status == MR_SUCCESS)
-	      break;
-	  }
+            if (malloc_cnt != free_cnt)
+              break;
+            if (status == MR_SUCCESS)
+              break;
+          }
     }
     
   mr_conf.mr_mem = mr_mem;

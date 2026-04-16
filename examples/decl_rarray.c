@@ -4,7 +4,7 @@
 
 static organization_t firm = {
   .name = "Gen-sys",
-  .size = 3 * sizeof (employee_t),
+  .employees_count = 3,
   .employees = (employee_t[]){
     { "Will", "Rodman", 200000 },
     { "Static", "Jacobs", 250000 },

@@ -5,7 +5,7 @@
 
 #include <union.h>
 
-#define ASSERT_SAVE_LOAD_ANON_UNION(METHOD, TYPE, VALUE, ...) ({	\
+#define ASSERT_SAVE_LOAD_ANON_UNION(METHOD, TYPE, VALUE, ...) ({        \
       TYPE x = { .dummy = 0, "", { MR_PI }, VALUE };			\
       ASSERT_SAVE_LOAD (METHOD, TYPE, &x, __VA_ARGS__);			\
     })
@@ -20,18 +20,18 @@
       mr_ptrdes_t * ptrs = MR_SAVE (TYPE, &orig);			\
       bool union_resolved_correctly = false;				\
       if (ptrs != NULL)							\
-	{								\
-	  mr_idx_t i;							\
-	  for (i = 1; i < ptrs[0].next; ++i)				\
-	    if (ptrs[i].fdp &&						\
-		(ptrs[i].fdp->name.str != NULL) &&			\
-		(0 == strcmp (ptrs[i].fdp->name.str, "y")))		\
-	      {								\
-		union_resolved_correctly = true;			\
-		break;							\
-	      }								\
-	  MR_FREE (ptrs);						\
-	}								\
+        {								\
+          mr_idx_t i;							\
+          for (i = 1; i < ptrs[0].next; ++i)				\
+            if (ptrs[i].fdp &&						\
+                (ptrs[i].fdp->name.str != NULL) &&			\
+                (0 == strcmp (ptrs[i].fdp->name.str, "y")))		\
+              {								\
+                union_resolved_correctly = true;                        \
+                break;							\
+              }								\
+          MR_FREE (ptrs);						\
+        }								\
       ck_assert_msg (union_resolved_correctly, "Union resolved incorrectly"); \
     })
 
@@ -225,53 +225,53 @@ START_TEST (union_top_level) {
     {
       {},
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "union_int32_float_t", .name.str = "union_int32_float_t" }},
-	.mr_type = MR_TYPE_UNION,
-	.flags = MR_IS_UNNAMED,
-	.next = 0,
-	.first_child = 2,
+        .fdp = (mr_fd_t[]){{ .stype.type = "union_int32_float_t", .name.str = "union_int32_float_t" }},
+        .mr_type = MR_TYPE_UNION,
+        .flags = MR_IS_UNNAMED,
+        .next = 0,
+        .first_child = 2,
       },
       {
-	.fdp = (mr_fd_t[]){{ .stype.type = "float", .name.str = "x" }},
-	.mr_type = MR_TYPE_FLOAT,
-	.flags = MR_NO_FLAGS,
-	.next = 0,
-	.first_child = 0,
+        .fdp = (mr_fd_t[]){{ .stype.type = "float", .name.str = "x" }},
+        .mr_type = MR_TYPE_FLOAT,
+        .flags = MR_NO_FLAGS,
+        .next = 0,
+        .first_child = 0,
       },
     };
- ASSERT_MR_SAVE (union_int32_float_t, &u, expected);
+  ASSERT_MR_SAVE (union_int32_float_t, &u, expected);
 } END_TEST
 
 
 MAIN_TEST_SUITE ((embed_anon_union, "embeded anonymous union"),
-		 (anon_union, "anonymous union"),
-		 (named_anon_union, "named anonymous union"),
-		 (union_enum, "union discriminated by enum"),
-		 (union_enum8, "union discriminated by enum8"),
-		 (union_enum16, "union discriminated by enum16"),
-		 (union_enum32, "union discriminated by enum32"),
-		 (union_enum64, "union discriminated by enum64"),
-		 (union_bitfield, "union discriminated by bitfield"),
-		 (union_enum_ptr, "union discriminated by pointer on enum"),
-		 (union_int8, "union discriminated by int8_t"),
-		 (union_int16, "union discriminated by int16_t"),
-		 (union_int32, "union discriminated by int32_t"),
-		 (union_int64, "union discriminated by int64_t"),
-		 (union_uint8, "union discriminated by uint8_t"),
-		 (union_uint16, "union discriminated by uint16_t"),
-		 (union_uint32, "union discriminated by uint32_t"),
-		 (union_uint64, "union discriminated by uint64_t"),
-		 (union_str, "union discriminated by string"),
-		 (union_ca, "union discriminated by char array"),
-		 (union_str_ptr, "union discriminated by pointer on string"),
-		 (union_str_struct_ptr, "union discriminated by pointer on string contained in struct"),
-		 (union_str_struct_ptr_array, "union discriminated by pointer on string contained in struct within an array"),
-		 (union_str_array, "union discriminated by array of strings"),
-		 (union_str_zero_array, "union discriminated by zero size array with tweaked offset"),
-		 (union_ca_ptr, "union discriminated by pointer on char array"),
-		 (union_enum_overrided, "union discriminated by enum, but resolution is swapped by override"),
-		 (union_int_overrided, "union discriminated by int, but resolution is swapped by override"),
-		 (union_bool_overrided, "union discriminated by bool, but resolution is swapped by override"),
-		 (union_bitfield_overrided, "union discriminated by bitfield, but resolution is swapped by override"),
-		 (union_top_level, "union is a top level saved object")
-		 );
+                 (anon_union, "anonymous union"),
+                 (named_anon_union, "named anonymous union"),
+                 (union_enum, "union discriminated by enum"),
+                 (union_enum8, "union discriminated by enum8"),
+                 (union_enum16, "union discriminated by enum16"),
+                 (union_enum32, "union discriminated by enum32"),
+                 (union_enum64, "union discriminated by enum64"),
+                 (union_bitfield, "union discriminated by bitfield"),
+                 (union_enum_ptr, "union discriminated by pointer on enum"),
+                 (union_int8, "union discriminated by int8_t"),
+                 (union_int16, "union discriminated by int16_t"),
+                 (union_int32, "union discriminated by int32_t"),
+                 (union_int64, "union discriminated by int64_t"),
+                 (union_uint8, "union discriminated by uint8_t"),
+                 (union_uint16, "union discriminated by uint16_t"),
+                 (union_uint32, "union discriminated by uint32_t"),
+                 (union_uint64, "union discriminated by uint64_t"),
+                 (union_str, "union discriminated by string"),
+                 (union_ca, "union discriminated by char array"),
+                 (union_str_ptr, "union discriminated by pointer on string"),
+                 (union_str_struct_ptr, "union discriminated by pointer on string contained in struct"),
+                 (union_str_struct_ptr_array, "union discriminated by pointer on string contained in struct within an array"),
+                 (union_str_array, "union discriminated by array of strings"),
+                 (union_str_zero_array, "union discriminated by zero size array with tweaked offset"),
+                 (union_ca_ptr, "union discriminated by pointer on char array"),
+                 (union_enum_overrided, "union discriminated by enum, but resolution is swapped by override"),
+                 (union_int_overrided, "union discriminated by int, but resolution is swapped by override"),
+                 (union_bool_overrided, "union discriminated by bool, but resolution is swapped by override"),
+                 (union_bitfield_overrided, "union discriminated by bitfield, but resolution is swapped by override"),
+                 (union_top_level, "union is a top level saved object")
+                 );

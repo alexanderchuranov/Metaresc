@@ -2,7 +2,7 @@
 #include <metaresc.h>
 #include <regression.h>
 
-TYPEDEF_STRUCT (struct_char_t, char x)
+TYPEDEF_STRUCT (struct_char_t, char x);
 
 #define SKIP_METHOD_XML2 0
 
@@ -27,14 +27,14 @@ START_TEST (print_chars) {
     {
       char c = i;
       if (isprint (c))
-	{
-	  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char, c);
-	  ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c);
-	}
+        {
+          ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, char, c);
+          ALL_METHODS (ASSERT_SAVE_LOAD_TYPE, struct_char_t, c);
+        }
     }
 #endif
 } END_TEST
 
 MAIN_TEST_SUITE ((all_chars, "run whole charset"),
-		 (print_chars, "run printable charset for libxml2")
-		 );
+                 (print_chars, "run printable charset for libxml2")
+                 );

@@ -4,8 +4,8 @@
 
 #include <int.h>
 
-TYPEDEF_STRUCT (struct_uint32_t, uint32_t x)
-TYPEDEF_STRUCT (struct_int32_t, int32_t x)
+TYPEDEF_STRUCT (struct_uint32_t, uint32_t x);
+TYPEDEF_STRUCT (struct_int32_t, int32_t x);
 
 START_TEST (zero_u_int32_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 32, 0); } END_TEST
 START_TEST (all_bits_u_int32_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 32, -1); } END_TEST

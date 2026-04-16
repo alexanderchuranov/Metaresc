@@ -31,31 +31,31 @@ START_TEST (json_cross_ref) {
   for (i = 1; i < ptrs_json_count; ++i)
     if (ptrs_json.ra[i].fdp)
       {
-	ck_assert_msg (map[i], "Deserialized JSON has a node that is not presented in original structure");
-	ck_assert_msg (map[i]->fdp, "Unnamed node in original structure has a name in deserialized JSON");
+        ck_assert_msg (map[i], "Deserialized JSON has a node that is not presented in original structure");
+        ck_assert_msg (map[i]->fdp, "Unnamed node in original structure has a name in deserialized JSON");
 
-	if (strcmp (ptrs_json.ra[i].fdp->name.str, map[i]->fdp->name.str) != 0)
-	  {
-	    fprintf (stderr, "[%d] original struct field name '%s' mismatched JSON deserialized '%s'\n",
-		     i,
-		     map[i]->fdp ? map[i]->fdp->name.str : "unnamed",
-		     ptrs_json.ra[i].fdp ? ptrs_json.ra[i].fdp->name.str : "unnamed");
+        if (strcmp (ptrs_json.ra[i].fdp->name.str, map[i]->fdp->name.str) != 0)
+          {
+            fprintf (stderr, "[%d] original struct field name '%s' mismatched JSON deserialized '%s'\n",
+                     i,
+                     map[i]->fdp ? map[i]->fdp->name.str : "unnamed",
+                     ptrs_json.ra[i].fdp ? ptrs_json.ra[i].fdp->name.str : "unnamed");
 
-	    fprintf (stderr, "Path in the original struct: ");
-	    for (j = map[i]->parent; j != MR_NULL_IDX; j = ptrs_orig[j].parent)
-	      fprintf (stderr, "(%s : %s) ",
-		       ptrs_orig[j].fdp ? ptrs_orig[j].fdp->stype.type : "untyped",
-		       ptrs_orig[j].fdp ? ptrs_orig[j].fdp->name.str : "unnamed");
-	    fprintf (stderr, "\n");
+            fprintf (stderr, "Path in the original struct: ");
+            for (j = map[i]->parent; j != MR_NULL_IDX; j = ptrs_orig[j].parent)
+              fprintf (stderr, "(%s : %s) ",
+                       ptrs_orig[j].fdp ? ptrs_orig[j].fdp->stype.type : "untyped",
+                       ptrs_orig[j].fdp ? ptrs_orig[j].fdp->name.str : "unnamed");
+            fprintf (stderr, "\n");
 
-	    fprintf (stderr, "Path in deserialized JSON: ");
-	    for (j = ptrs_json.ra[i].parent; j != MR_NULL_IDX; j = ptrs_json.ra[j].parent)
-	      fprintf (stderr, "(%s : %s) ",
-		       ptrs_json.ra[j].fdp ? ptrs_json.ra[j].fdp->stype.type : "untyped",
-		       ptrs_json.ra[j].fdp ? ptrs_json.ra[j].fdp->name.str : "unnamed");
-	    fprintf (stderr, "\n");
-	    mismatched_nodes = true;
-	  }
+            fprintf (stderr, "Path in deserialized JSON: ");
+            for (j = ptrs_json.ra[i].parent; j != MR_NULL_IDX; j = ptrs_json.ra[j].parent)
+              fprintf (stderr, "(%s : %s) ",
+                       ptrs_json.ra[j].fdp ? ptrs_json.ra[j].fdp->stype.type : "untyped",
+                       ptrs_json.ra[j].fdp ? ptrs_json.ra[j].fdp->name.str : "unnamed");
+            fprintf (stderr, "\n");
+            mismatched_nodes = true;
+          }
       }
 
   mr_free_load_values (&ptrs_json);

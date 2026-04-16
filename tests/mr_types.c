@@ -13,149 +13,149 @@ TYPEDEF_STRUCT (mr_empty_t);
 TYPEDEF_STRUCT (mr_incomplete_t, (int, x, [0]), VOID (int, y, []));
 
 TYPEDEF_ENUM (_enum_t, ATTRIBUTES (__attribute__ ((packed))),
-	      (ZERO, = 0),
-	      (ONE, = 1 << 0),
-	      (TWO, = 1 << 1),
-	      (HIGHEST_BIT, = -(1 << (__CHAR_BIT__ - 1))),
-	      );
+              (ZERO, = 0),
+              (ONE, = 1 << 0),
+              (TWO, = 1 << 1),
+              (HIGHEST_BIT, = -(1 << (__CHAR_BIT__ - 1))),
+              );
 
 TYPEDEF_STRUCT (embeded_struct_t,
-		int x
-		);
+                int x
+                );
 
 TYPEDEF_UNION (embeded_union_t,
-	       int x,
-	       float y,
-	       );
+               int x,
+               float y,
+               );
 
 #define MR_IS_BUILTIN_embeded_struct_t embeded_struct_t,
 #define MR_IS_BUILTIN__enum_t _enum_t,
 
 TYPEDEF_STRUCT (struct_t,
-		bool bool_,
-		int8_t int8_,
-		uint8_t uint8_,
-		int16_t int16_,
-		uint16_t uint16_,
-		int32_t int32_,
-		uint32_t uint32_,
-		int64_t int64_,
-		uint64_t uint64_,
-		(mr_intmax_t, mr_intmax),
-		(mr_uintmax_t, mr_uintmax),
-		float float_,
-		complex float complex_float_,
-		double double_,
-		complex double complex_double_,
-		long double long_double_,
-		complex long double complex_long_double_,
-		const volatile unsigned long long int const_volatile_unsigned_long_long_int_,
-		size_t size,
-		ssize_t ssize,
-		(char_array_t, char_array_),
-		char char_,
-		string_t string,
-		const string_t const_string,
-		volatile string_t volatile_string,
-		const volatile string_t const_volatile_string,
-		volatile const string_t volatile_const_string,
-		(char_ptr_t, char_ptr_),
-		(int32_alias_t, int32_alias0),
-		(int32_alias_t *, int32_alias1),
-		(int32_alias_t, int32_alias2, [1]),
-		(int32_alias_t *, int32_alias3, [1]),
-		(int32_alias_t, int32_alias4, : 1),
-		(int32_ptr_t, int32_ptr),
-		(char *, string_),
-		(const char *, const_string_),
-		(volatile char *, volatile_string_),
-		(const volatile char *, const_volatile_string_),
-		(volatile const char *, volatile_const_string_),
+                bool bool_,
+                int8_t int8_,
+                uint8_t uint8_,
+                int16_t int16_,
+                uint16_t uint16_,
+                int32_t int32_,
+                uint32_t uint32_,
+                int64_t int64_,
+                uint64_t uint64_,
+                (mr_intmax_t, mr_intmax),
+                (mr_uintmax_t, mr_uintmax),
+                float float_,
+                complex float complex_float_,
+                double double_,
+                complex double complex_double_,
+                long double long_double_,
+                complex long double complex_long_double_,
+                const volatile unsigned long long int const_volatile_unsigned_long_long_int_,
+                size_t size,
+                ssize_t ssize,
+                (char_array_t, char_array_),
+                char char_,
+                string_t string,
+                const string_t const_string,
+                volatile string_t volatile_string,
+                const volatile string_t const_volatile_string,
+                volatile const string_t volatile_const_string,
+                (char_ptr_t, char_ptr_),
+                (int32_alias_t, int32_alias0),
+                (int32_alias_t *, int32_alias1),
+                (int32_alias_t, int32_alias2, [1]),
+                (int32_alias_t *, int32_alias3, [1]),
+                (int32_alias_t, int32_alias4, : 1),
+                (int32_ptr_t, int32_ptr),
+                (char *, string_),
+                (const char *, const_string_),
+                (volatile char *, volatile_string_),
+                (const volatile char *, const_volatile_string_),
+                (volatile const char *, volatile_const_string_),
 
-		(void *, void_ptr_),
-		(void const *, void_const_ptr_),
-		(void * const, void_ptr_const),
-		(void const * const, void_const_ptr_const),
-		(const void *, const_void_ptr_),
-		(volatile void *, volatile_void_ptr_),
-		(const volatile void *, const_volatile_void_ptr_),
-		(volatile const void *, volatile_const_void_ptr_),
-		
-		(float *, float_ptr_),
-		(const float * const, const_float_ptr_),
-		(volatile float * volatile, volatile_float_ptr_),
-		(const volatile float * const volatile, const_volatile_float_ptr_),
-		(volatile const float * volatile const, volatile_const_float_ptr_),
-		
-		(char_array_t *, char_array_ptr_),
-		(const char_array_t *, const_char_array_ptr_),
-		(volatile char_array_t *, volatile_char_array_ptr_),
-		(const volatile char_array_t *, const_volatile_char_array_ptr_),
-		(volatile const char_array_t *, volatile_const_char_array_ptr_),
+                (void *, void_ptr_),
+                (void const *, void_const_ptr_),
+                (void * const, void_ptr_const),
+                (void const * const, void_const_ptr_const),
+                (const void *, const_void_ptr_),
+                (volatile void *, volatile_void_ptr_),
+                (const volatile void *, const_volatile_void_ptr_),
+                (volatile const void *, volatile_const_void_ptr_),
+                
+                (float *, float_ptr_),
+                (const float * const, const_float_ptr_),
+                (volatile float * volatile, volatile_float_ptr_),
+                (const volatile float * const volatile, const_volatile_float_ptr_),
+                (volatile const float * volatile const, volatile_const_float_ptr_),
+                
+                (char_array_t *, char_array_ptr_),
+                (const char_array_t *, const_char_array_ptr_),
+                (volatile char_array_t *, volatile_char_array_ptr_),
+                (const volatile char_array_t *, const_volatile_char_array_ptr_),
+                (volatile const char_array_t *, volatile_const_char_array_ptr_),
 
-		(char **, string_ptr_),
-		(const char **, const_string_ptr_),
-		(volatile char **, volatile_string_ptr_),
-		(const volatile char **, const_volatile_string_ptr_),
-		(volatile const char **, volatile_const_string_ptr_),
-		
-		(char * const *, string_const_ptr_),
-		(char * volatile *, string_volatile_ptr_),
-		(char * const volatile *, string_const_volatile_ptr_),
-		(char * volatile const *, string_volatile_const_ptr_),
-		
-		(string_t const *, string_t_const_ptr_),
-		(string_t volatile *, string_t_volatile_ptr_),
-		(string_t const volatile *, string_t_const_volatile_ptr_),
-		(string_t volatile const *, string_t_volatile_const_ptr_),
+                (char **, string_ptr_),
+                (const char **, const_string_ptr_),
+                (volatile char **, volatile_string_ptr_),
+                (const volatile char **, const_volatile_string_ptr_),
+                (volatile const char **, volatile_const_string_ptr_),
+                
+                (char * const *, string_const_ptr_),
+                (char * volatile *, string_volatile_ptr_),
+                (char * const volatile *, string_const_volatile_ptr_),
+                (char * volatile const *, string_volatile_const_ptr_),
+                
+                (string_t const *, string_t_const_ptr_),
+                (string_t volatile *, string_t_volatile_ptr_),
+                (string_t const volatile *, string_t_const_volatile_ptr_),
+                (string_t volatile const *, string_t_volatile_const_ptr_),
 
-		embeded_struct_t embeded_struct,
-		const volatile struct embeded_struct_t const_volatile_struct_embeded_struct,
-		(embeded_struct_t *, embeded_struct_ptr),
-		(const volatile struct embeded_struct_t *, const_volatile_struct_embeded_struct_ptr),
+                embeded_struct_t embeded_struct,
+                const volatile struct embeded_struct_t const_volatile_struct_embeded_struct,
+                (embeded_struct_t *, embeded_struct_ptr),
+                (const volatile struct embeded_struct_t *, const_volatile_struct_embeded_struct_ptr),
 
-		(embeded_union_t, embeded_union),
-		(const volatile union embeded_union_t, const_volatile_union_embeded_union),
-		(embeded_union_t *, embeded_union_ptr),
-		(const volatile union embeded_union_t *, const_volatile_union_embeded_union_ptr),
+                (embeded_union_t, embeded_union),
+                (const volatile union embeded_union_t, const_volatile_union_embeded_union),
+                (embeded_union_t *, embeded_union_ptr),
+                (const volatile union embeded_union_t *, const_volatile_union_embeded_union_ptr),
 
-		_enum_t _enum0,
-		AUTO _enum_t _enum1,
-		(_enum_t _enum2),
-		_ _enum_t _enum3,
-		VOID _enum_t _enum4,
-		_ (_enum_t _enum5),
-		VOID (_enum_t _enum6),
-		const volatile enum _enum_t const_volatile_enum_enum,
-		(_enum_t *, _enum_ptr),
-		(const volatile enum _enum_t *, const_volatile_enum_enum_ptr),
+                _enum_t _enum0,
+                AUTO _enum_t _enum1,
+                (_enum_t _enum2),
+                _ _enum_t _enum3,
+                VOID _enum_t _enum4,
+                _ (_enum_t _enum5),
+                VOID (_enum_t _enum6),
+                const volatile enum _enum_t const_volatile_enum_enum,
+                (_enum_t *, _enum_ptr),
+                (const volatile enum _enum_t *, const_volatile_enum_enum_ptr),
 
-		(bool, bf_bool, :1),
-		(uint8_t, bf_uint8_t, :__CHAR_BIT__ * sizeof (uint8_t) - 1),
-		(int8_t, bf_int8_t, :__CHAR_BIT__ * sizeof (int8_t) - 1),
-		(uint16_t, bf_uint16_t, :__CHAR_BIT__ * sizeof (uint16_t) - 1),
-		(int16_t, bf_int16_t, :__CHAR_BIT__ * sizeof (int16_t) - 1),
-		(uint32_t, bf_uint32_t, :__CHAR_BIT__ * sizeof (uint32_t) - 1),
-		(int32_t, bf_int32_t, :__CHAR_BIT__ * sizeof (int32_t) - 1),
-		(uint64_t, bf_uint64_t, :__CHAR_BIT__ * sizeof (uint64_t) - 1),
-		(int64_t, bf_int64_t, :__CHAR_BIT__ * sizeof (int64_t) - 1),
+                (bool, bf_bool, :1),
+                (uint8_t, bf_uint8_t, :__CHAR_BIT__ * sizeof (uint8_t) - 1),
+                (int8_t, bf_int8_t, :__CHAR_BIT__ * sizeof (int8_t) - 1),
+                (uint16_t, bf_uint16_t, :__CHAR_BIT__ * sizeof (uint16_t) - 1),
+                (int16_t, bf_int16_t, :__CHAR_BIT__ * sizeof (int16_t) - 1),
+                (uint32_t, bf_uint32_t, :__CHAR_BIT__ * sizeof (uint32_t) - 1),
+                (int32_t, bf_int32_t, :__CHAR_BIT__ * sizeof (int32_t) - 1),
+                (uint64_t, bf_uint64_t, :__CHAR_BIT__ * sizeof (uint64_t) - 1),
+                (int64_t, bf_int64_t, :__CHAR_BIT__ * sizeof (int64_t) - 1),
 #ifdef HAVE_INT128
-		(mr_uint128_t, bf_uint128_t, :__CHAR_BIT__ * sizeof (mr_uint128_t) - 1),
-		(mr_int128_t, bf_int128_t, :__CHAR_BIT__ * sizeof (mr_int128_t) - 1),
+                (mr_uint128_t, bf_uint128_t, :__CHAR_BIT__ * sizeof (mr_uint128_t) - 1),
+                (mr_int128_t, bf_int128_t, :__CHAR_BIT__ * sizeof (mr_int128_t) - 1),
 #endif /* HAVE_INT128 */
-		(mr_type_t, bf_enum, : 6),
-		(const volatile enum mr_type_t, bf_const_volatile_enum_enum, : 6),
-		(int32_alias_t, f, (volatile int32_alias_t const *, int32_t [2] [3], int32_t * [2] [3], char [2], char [2] [3])),
-		(nonmr_struct_t, nonmr_struct),
-		(nonmr_struct_t, nonmr_struct_array, [1]),
-		);
+                (mr_type_t, bf_enum, : 6),
+                (const volatile enum mr_type_t, bf_const_volatile_enum_enum, : 6),
+                (int32_alias_t, f, (volatile int32_alias_t const *, int32_t [2] [3], int32_t * [2] [3], char [2], char [2] [3])),
+                (nonmr_struct_t, nonmr_struct),
+                (nonmr_struct_t, nonmr_struct_array, [1]),
+                );
 
 TYPEDEF_STRUCT (void_fields_t,
-		VOID (int, _int),
-		VOID (void, func, (void)),
-		VOID (int, array, [1]),
-		VOID (int, bf, : 1),
-		);
+                VOID (int, _int),
+                VOID (void, func, (void)),
+                VOID (int, array, [1]),
+                VOID (int, bf, : 1),
+                );
 
 TYPEDEF_FUNC (int32_alias_t, func_t, (volatile int32_alias_t const *));
 
@@ -204,24 +204,24 @@ typedef enum ext_enum_t {
 
 #define MR_MODE DESC
 TYPEDEF_STRUCT (struct ext_struct_t,
-		( , y),
-		x,
-		z, z_c, z_v, z_cv, c_z, v_z, cv_z,
-		struct_ptr,
-		self_ptr, c_self_ptr, v_self_ptr, cv_self_ptr, self_ptr_c, self_ptr_v, self_ptr_cv, c_self_ptr_c, v_self_ptr_v,
-		);
+                ( , y),
+                x,
+                z, z_c, z_v, z_cv, c_z, v_z, cv_z,
+                struct_ptr,
+                self_ptr, c_self_ptr, v_self_ptr, cv_self_ptr, self_ptr_c, self_ptr_v, self_ptr_cv, c_self_ptr_c, v_self_ptr_v,
+                );
 
 TYPEDEF_ENUM (enum ext_enum_t, _0, _1);
 
-#define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({	\
-      mr_td_t * tdp = mr_get_td_by_name (#TYPE);			\
+#define ASSERT_FIELD_TYPE_(TYPE, FIELD, MR_TYPE, MR_TYPE_AUX) ({        \
+      mr_td_t * tdp = mr_get_td_by_name (#TYPE);                        \
       ck_assert_msg (tdp != NULL, "Failed to get type descriptor for type " #TYPE "."); \
       mr_fd_t * fdp = mr_get_fd_by_name (tdp, #FIELD);			\
       ck_assert_msg (fdp != NULL, "Failed to get field descriptor for field " #FIELD "."); \
       ck_assert_msg (fdp->stype.mr_type == MR_TYPE, "Mismatched mr_type for field " #FIELD " (%d != %d).", \
-		     fdp->stype.mr_type, MR_TYPE);				\
+                     fdp->stype.mr_type, MR_TYPE);			\
       ck_assert_msg (fdp->stype.mr_type_aux == MR_TYPE_AUX, "Mismatched mr_type_aux for field " #FIELD " (%d != %d).", \
-		     fdp->stype.mr_type_aux, MR_TYPE_AUX);			\
+                     fdp->stype.mr_type_aux, MR_TYPE_AUX);		\
     })
   
 #define ASSERT_FIELD_TYPE(TYPE, FIELD, MR_TYPE, ...)			\
@@ -239,9 +239,9 @@ START_TEST (check_ext_struct) {
   int i;
   for (i = tdp->param.struct_param.fields_count - 1; i > 0; --i)
     ck_assert_msg (tdp->param.struct_param.fields[i]->offset > tdp->param.struct_param.fields[i - 1]->offset,
-		   "Fields of ext_struct_t are not sorted according to their offsets. '%s' %d < '%s' %d",
-		   tdp->param.struct_param.fields[i - 1]->name.str, (int)tdp->param.struct_param.fields[i - 1]->offset,
-		   tdp->param.struct_param.fields[i]->name.str, (int)tdp->param.struct_param.fields[i]->offset);
+                   "Fields of ext_struct_t are not sorted according to their offsets. '%s' %d < '%s' %d",
+                   tdp->param.struct_param.fields[i - 1]->name.str, (int)tdp->param.struct_param.fields[i - 1]->offset,
+                   tdp->param.struct_param.fields[i]->name.str, (int)tdp->param.struct_param.fields[i]->offset);
   
   ASSERT_EXT_STRUCT_FIELD_TYPE (x);
   ASSERT_EXT_STRUCT_FIELD_TYPE (y);
@@ -486,68 +486,68 @@ TYPEDEF_STRUCT (wrap_embeded_struct_t, (embeded_struct_t, es));
 TYPEDEF_UNION (wrap_embeded_union_t, (embeded_union_t, eu));
 
 TYPEDEF_STRUCT (dump_struct_types_t,
-		(int, _5d_array, [5][4][3][2][1]),
-		(int, _4d_array, [5][4][3][2]),
-		(int, _3d_array, [4][3][2]),
-		(int, _2d_array, [3][2]),
-		(int, _array, [2]),
-		(char, _char_array, [2]),
-		(char *, _str_array, [2]),
-		(string_t, string),
-		(char, _char),
-		(int8_t, _int8),
-		(uint8_t, _uint8),
-		(bool, _bool),
-		(int16_t, _int16),
-		(uint16_t, _uint16),
-		(int32_t, _int32),
-		(uint32_t, _uint32),
-		(int64_t, _int64),
-		(uint64_t, _uint64),
-		(mr_int128_t, _int128),
-		(mr_uint128_t, _uint128),
-		(ssize_t, _ssize),
-		(size_t, _size),
-		(bool, x1, : 1),
-		(char, x2, : 2),
-		(signed char, x3, : 3),
-		(unsigned char, x4, : 4),
-		(signed short, x5, : 5),
-		(unsigned short, x6, : 6),
-		(signed int, x7, : 7),
-		(unsigned int, x9, : 9),
-		(signed long, x10, : 10),
-		(unsigned long, x11, : 11),
-		(signed long long, x12, : 12),
-		(unsigned long long, x13, : 13),
-		(mr_type_t, x14, : 7, "unsigned enum"),
-		(mr_type_class_t, x15, : 7, "signed enum"),
-		(mr_type_t, x16, , "unsigned enum randered as %c"),
-		(mr_empty_t *, _struct_ptr),
-		(void *, void_ptr),
-		(int *, int_ptr),
-		(int *, int_ptr_array, [5][4][3][2]),
-		(int **, int_dptr),
-		(int32_alias_t, int32_alias5),
-		(const int32_alias_t, int32_alias6),
-		(int32_alias_t volatile, int32_alias7),
-		(embeded_struct_t, embeded_struct),
-		(embeded_union_t, embeded_union),
-		(wrap_embeded_struct_t, wrap_embeded_struct),
-		(wrap_embeded_union_t, wrap_embeded_union),
-		(float, _float),
-		(double, _double),
-		(long double, long_double),
-		(complex float, cf),
-		(complex double, cd),
-		(complex long double, cld),
-		(int *, sized_ptr, , "meta", { .size_field_name = "sized_ptr_size" }, "size_field_name"),
-		(int, sized_ptr_size),
-		(int, sized_array, [2], "meta", { .size_field_name = "sized_array_size" }, "size_field_name"),
-		(int, sized_array_size),
-		(embeded_union_t, discriminated_union, , "discriminated_union_discriminator"),
-		(char *, discriminated_union_discriminator),
-		);
+                (int, _5d_array, [5][4][3][2][1]),
+                (int, _4d_array, [5][4][3][2]),
+                (int, _3d_array, [4][3][2]),
+                (int, _2d_array, [3][2]),
+                (int, _array, [2]),
+                (char, _char_array, [2]),
+                (char *, _str_array, [2]),
+                (string_t, string),
+                (char, _char),
+                (int8_t, _int8),
+                (uint8_t, _uint8),
+                (bool, _bool),
+                (int16_t, _int16),
+                (uint16_t, _uint16),
+                (int32_t, _int32),
+                (uint32_t, _uint32),
+                (int64_t, _int64),
+                (uint64_t, _uint64),
+                (mr_int128_t, _int128),
+                (mr_uint128_t, _uint128),
+                (ssize_t, _ssize),
+                (size_t, _size),
+                (bool, x1, : 1),
+                (char, x2, : 2),
+                (signed char, x3, : 3),
+                (unsigned char, x4, : 4),
+                (signed short, x5, : 5),
+                (unsigned short, x6, : 6),
+                (signed int, x7, : 7),
+                (unsigned int, x9, : 9),
+                (signed long, x10, : 10),
+                (unsigned long, x11, : 11),
+                (signed long long, x12, : 12),
+                (unsigned long long, x13, : 13),
+                (mr_type_t, x14, : 7, "unsigned enum"),
+                (mr_type_class_t, x15, : 7, "signed enum"),
+                (mr_type_t, x16, , "unsigned enum randered as %c"),
+                (mr_empty_t *, _struct_ptr),
+                (void *, void_ptr),
+                (int *, int_ptr),
+                (int *, int_ptr_array, [5][4][3][2]),
+                (int **, int_dptr),
+                (int32_alias_t, int32_alias5),
+                (const int32_alias_t, int32_alias6),
+                (int32_alias_t volatile, int32_alias7),
+                (embeded_struct_t, embeded_struct),
+                (embeded_union_t, embeded_union),
+                (wrap_embeded_struct_t, wrap_embeded_struct),
+                (wrap_embeded_union_t, wrap_embeded_union),
+                (float, _float),
+                (double, _double),
+                (long double, long_double),
+                (complex float, cf),
+                (complex double, cd),
+                (complex long double, cld),
+                (int *, sized_ptr, , "meta", { .size_field_name = "sized_ptr_size" }, "size_field_name"),
+                (int, sized_ptr_size),
+                (int, sized_array, [2], "meta", { .size_field_name = "sized_array_size" }, "size_field_name"),
+                (int, sized_array_size),
+                (embeded_union_t, discriminated_union, , "discriminated_union_discriminator"),
+                (char *, discriminated_union_discriminator),
+                );
 
 typedef struct anon_union_t {
   union {
@@ -611,50 +611,50 @@ START_TEST (dump_struct_types_detection) {
       ck_assert_msg (mr_fdp->stype.mr_type == dst_fdp->stype.mr_type, "dump_struct mismatched mr_type (%d != %d) for field '%s'", mr_fdp->stype.mr_type, dst_fdp->stype.mr_type, mr_fdp->name.str);
 
       if ((mr_fdp->stype.mr_type == MR_TYPE_ARRAY) || (mr_fdp->stype.mr_type == MR_TYPE_POINTER))
-	{
-	  ck_assert_msg (mr_fdp->stype.mr_type_aux == dst_fdp->stype.mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->stype.mr_type_aux, dst_fdp->stype.mr_type_aux, mr_fdp->name.str);
-	  if (mr_fdp->res_type != NULL)
-	    {
-	      ck_assert_msg (dst_fdp->res_type != NULL, "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
-	      ck_assert_msg (0 == strcmp (mr_fdp->res_type, dst_fdp->res_type), "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
-	      if ((0 == strcmp (mr_fdp->res_type, "size_field_name")) && (mr_fdp->res.string != NULL))
-		{
-		  ck_assert_msg (dst_fdp->res.string != NULL, "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);
-		  ck_assert_msg (0 == strcmp (mr_fdp->res.string, dst_fdp->res.string), "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);
-		}
-	    }
-	}
+        {
+          ck_assert_msg (mr_fdp->stype.mr_type_aux == dst_fdp->stype.mr_type_aux, "dump_struct mismatched mr_type_aux (%d != %d) for field '%s'", mr_fdp->stype.mr_type_aux, dst_fdp->stype.mr_type_aux, mr_fdp->name.str);
+          if (mr_fdp->res_type != NULL)
+            {
+              ck_assert_msg (dst_fdp->res_type != NULL, "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
+              ck_assert_msg (0 == strcmp (mr_fdp->res_type, dst_fdp->res_type), "dump_struct mismatched res_type (%s != %s) for field '%s'", mr_fdp->res_type, dst_fdp->res_type, mr_fdp->name.str);
+              if ((0 == strcmp (mr_fdp->res_type, "size_field_name")) && (mr_fdp->res.string != NULL))
+                {
+                  ck_assert_msg (dst_fdp->res.string != NULL, "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);
+                  ck_assert_msg (0 == strcmp (mr_fdp->res.string, dst_fdp->res.string), "dump_struct mismatched res.string (%s != %s) for field '%s'", mr_fdp->res.string, dst_fdp->res.string, mr_fdp->name.str);
+                }
+            }
+        }
 
       if ((mr_fdp->stype.mr_type == MR_TYPE_UNION) || (mr_fdp->stype.mr_type == MR_TYPE_ANON_UNION))
-	{
-	  if (mr_fdp->meta != NULL)
-	    {
-	      ck_assert_msg (dst_fdp->meta != NULL, "dump_struct mismatched meta (%s != %s) for union field '%s'", mr_fdp->meta, dst_fdp->meta, mr_fdp->name.str);
-	      ck_assert_msg (0 == strcmp (mr_fdp->meta, dst_fdp->meta), "dump_struct mismatched meta (%s != %s) for union field '%s'", mr_fdp->meta, dst_fdp->meta, mr_fdp->name.str);
-	    }
-	}
+        {
+          if (mr_fdp->meta != NULL)
+            {
+              ck_assert_msg (dst_fdp->meta != NULL, "dump_struct mismatched meta (%s != %s) for union field '%s'", mr_fdp->meta, dst_fdp->meta, mr_fdp->name.str);
+              ck_assert_msg (0 == strcmp (mr_fdp->meta, dst_fdp->meta), "dump_struct mismatched meta (%s != %s) for union field '%s'", mr_fdp->meta, dst_fdp->meta, mr_fdp->name.str);
+            }
+        }
 
       if (mr_fdp->stype.mr_type == MR_TYPE_ARRAY)
-	{
-	  int j;
-	  ck_assert_msg (mr_fdp->stype.dim.dim_count == dst_fdp->stype.dim.dim_count,
-			 "dump_struct mismatched array dimensions (%d != %d) for field '%s'",
-			 (int)mr_fdp->stype.dim.dim_count, (int)dst_fdp->stype.dim.dim_count, mr_fdp->name.str);
+        {
+          int j;
+          ck_assert_msg (mr_fdp->stype.dim.dim_count == dst_fdp->stype.dim.dim_count,
+                         "dump_struct mismatched array dimensions (%d != %d) for field '%s'",
+                         (int)mr_fdp->stype.dim.dim_count, (int)dst_fdp->stype.dim.dim_count, mr_fdp->name.str);
 
-	  for (j = 0; j < mr_fdp->stype.dim.dim_count; ++j)
-	    ck_assert_msg (mr_fdp->stype.dim.dim[j] == dst_fdp->stype.dim.dim[j],
-			   "dump_struct mismatched dim[%d] (%d != %d) for field '%s'",
-			   j, (int)mr_fdp->stype.dim.dim[j], (int)dst_fdp->stype.dim.dim[j], mr_fdp->name.str);
-	}
+          for (j = 0; j < mr_fdp->stype.dim.dim_count; ++j)
+            ck_assert_msg (mr_fdp->stype.dim.dim[j] == dst_fdp->stype.dim.dim[j],
+                           "dump_struct mismatched dim[%d] (%d != %d) for field '%s'",
+                           j, (int)mr_fdp->stype.dim.dim[j], (int)dst_fdp->stype.dim.dim[j], mr_fdp->name.str);
+        }
       if (mr_fdp->stype.mr_type == MR_TYPE_BITFIELD)
-	{
-	  ck_assert_msg (mr_fdp->bitfield_param.shift == dst_fdp->bitfield_param.shift,
-			 "dump_struct mismatched bitfield_param.shift (%d != %d) for field '%s'",
-			 (int)mr_fdp->bitfield_param.shift, (int)dst_fdp->bitfield_param.shift, mr_fdp->name.str);
-	  ck_assert_msg (mr_fdp->bitfield_param.width == dst_fdp->bitfield_param.width,
-			 "dump_struct mismatched bitfield_param.width (%d != %d) for field '%s'",
-			 (int)mr_fdp->bitfield_param.width, (int)dst_fdp->bitfield_param.width, mr_fdp->name.str);
-	}
+        {
+          ck_assert_msg (mr_fdp->bitfield_param.shift == dst_fdp->bitfield_param.shift,
+                         "dump_struct mismatched bitfield_param.shift (%d != %d) for field '%s'",
+                         (int)mr_fdp->bitfield_param.shift, (int)dst_fdp->bitfield_param.shift, mr_fdp->name.str);
+          ck_assert_msg (mr_fdp->bitfield_param.width == dst_fdp->bitfield_param.width,
+                         "dump_struct mismatched bitfield_param.width (%d != %d) for field '%s'",
+                         (int)mr_fdp->bitfield_param.width, (int)dst_fdp->bitfield_param.width, mr_fdp->name.str);
+        }
     }
 
   mr_td_t * tdp = mr_get_td_by_name ("aliases_t");
@@ -681,11 +681,11 @@ START_TEST (dump_struct_types_detection) { } END_TEST
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
 MAIN_TEST_SUITE ((check_void_function_field, "check that non-serializable function pointer is declared correctly"),
-		 (check_ext_struct, "check that descriptor for external type is correct"),
-		 (check_ext_enum, "check that descriptor for external enum is correct"),
-		 (check_type_autodetection, "check struct type autodetection"),
-		 (check_struct_array_autodetect, "check strcuts array autodetection"),
-		 (check_basic_type_array_autodetect, "check that MR_SAVE handles array correctly"),
-		 (check_types_detection, "check that types detected correctly"),
-		 (dump_struct_types_detection, "check types detected by __builtin_dump_struct")
-		 );
+                 (check_ext_struct, "check that descriptor for external type is correct"),
+                 (check_ext_enum, "check that descriptor for external enum is correct"),
+                 (check_type_autodetection, "check struct type autodetection"),
+                 (check_struct_array_autodetect, "check strcuts array autodetection"),
+                 (check_basic_type_array_autodetect, "check that MR_SAVE handles array correctly"),
+                 (check_types_detection, "check that types detected correctly"),
+                 (dump_struct_types_detection, "check types detected by __builtin_dump_struct")
+                 );

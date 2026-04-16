@@ -4,18 +4,18 @@
 #include <metaresc.h>
 
 TYPEDEF_STRUCT (employee_t,
-		(char *, firstname),
-		(char *, lastname),
-		(int, salary),
-		)
+                (char *, firstname),
+                (char *, lastname),
+                (int, salary),
+                );
 
 void print_employee_info (employee_t const * employee)
 {
   printf ("employee:\n"
-	  "\tfirst name: %s\n"
-	  "\tlast name: %s\n"
-	  "\tsalary: %u\n",
-	  employee->firstname, employee->lastname, employee->salary);
+          "\tfirst name: %s\n"
+          "\tlast name: %s\n"
+          "\tsalary: %u\n",
+          employee->firstname, employee->lastname, employee->salary);
 }
 
 int main ()
@@ -38,14 +38,14 @@ int main ()
   if (NULL == fd)
     {
       printf("error: can't obtain type information for field '%s' in '%s'\n",
-	     field_name, type_name);
+             field_name, type_name);
       return (EXIT_FAILURE);
     }
 
   size_t const offset = fd->offset;
 
   printf ("the value of field '%s' in variable employee is: %i\n",
-	  field_name, *(int*)(((char*)&employee) + offset));
+          field_name, *(int*)(((char*)&employee) + offset));
 
   printf ("setting field '%s' in variable employee...\n", field_name);
   *(int*)(((char*)&employee) + offset) = 9170;
