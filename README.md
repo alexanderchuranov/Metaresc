@@ -741,6 +741,7 @@ keywords:
 * `mr_ptr_t`
 * `volatile`
 * `const`
+* `_Atomic`
 * `struct`
 * `union`
 * `enum`
@@ -752,6 +753,7 @@ TYPEDEF_STRUCT (sample_t,
 		long int y,
 		long long int z,
 		volatile long long int v,
+		_Atomic bool b,
 		);
 ```
 
@@ -837,8 +839,8 @@ TYPEDEF_STRUCT (non_serializable_t,
 
 #### Field declaration
 Type of the field may consist of multiple tokens and could include
-keywords: `const`, `volatile`, `restrict`, `struct`, `union`,
-`enum`. Name of the field must be strictly one token.
+keywords: `const`, `volatile`, `_Atomic`, `restrict`, `struct`,
+`union`, `enum`. Name of the field must be strictly one token.
 
 #### Pointer declaration
 Metaresc is capable to resolve pointers on basic types and on custom
