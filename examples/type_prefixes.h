@@ -12,4 +12,4 @@ TYPEDEF_STRUCT (s2_t,
                 (int, a, [2]),
                 (int, a2d, [2][2]),
                 (int, f, (int)),
-                )
+                );

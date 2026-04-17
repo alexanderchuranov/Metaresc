@@ -165,10 +165,21 @@
 */
 
 #define MR_TYPE_DETECT(TYPE, ...) MR_TYPE_DETECT_ (TYPE, __VA_ARGS__)
+
 #define MR_TYPE_DETECT_(TYPE, SUFFIX)					\
   (0 /* MR_TYPE_NONE */							\
+   | MR_TYPE_DETECT__ (TYPE, SUFFIX)                                    \
+   | MR_TYPE_DETECT__ (TYPE, _Atomic SUFFIX)                            \
    | (__builtin_types_compatible_p (void SUFFIX, TYPE) ? MR_TYPE_VOID : 0) \
-   | (__builtin_types_compatible_p (bool SUFFIX, TYPE) ? MR_TYPE_BOOL : 0) \
+   | ((__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE)	\
+       | __builtin_types_compatible_p (__typeof__ (const char []) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (volatile char []) SUFFIX, TYPE) \
+       | __builtin_types_compatible_p (__typeof__ (const volatile char []) SUFFIX, TYPE) \
+       ) ? MR_TYPE_CHAR_ARRAY : 0)					\
+   )
+
+#define MR_TYPE_DETECT__(TYPE, SUFFIX)                            \
+  ((__builtin_types_compatible_p (bool SUFFIX, TYPE) ? MR_TYPE_BOOL : 0) \
    | (__builtin_types_compatible_p (char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
    | (__builtin_types_compatible_p (signed char SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_CHAR) : 0) \
    | (__builtin_types_compatible_p (unsigned char SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_UINT, MR_SIZEOF_CHAR) : 0) \
@@ -188,16 +199,11 @@
    | (__builtin_types_compatible_p (complex double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_DOUBLE : 0) \
    | (__builtin_types_compatible_p (long double SUFFIX, TYPE) ? MR_TYPE_LONG_DOUBLE : 0) \
    | (__builtin_types_compatible_p (complex long double SUFFIX, TYPE) ? MR_TYPE_COMPLEX_LONG_DOUBLE : 0) \
-   | ((__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE)	\
-       | __builtin_types_compatible_p (__typeof__ (const char []) SUFFIX, TYPE) \
-       | __builtin_types_compatible_p (__typeof__ (volatile char []) SUFFIX, TYPE) \
-       | __builtin_types_compatible_p (__typeof__ (const volatile char []) SUFFIX, TYPE) \
-       ) ? MR_TYPE_CHAR_ARRAY : 0)					\
    | ((__builtin_types_compatible_p (__typeof__ (char *) SUFFIX, TYPE)	\
        | __builtin_types_compatible_p (__typeof__ (const char *) SUFFIX, TYPE) \
        | __builtin_types_compatible_p (__typeof__ (volatile char *) SUFFIX, TYPE) \
        | __builtin_types_compatible_p (__typeof__ (const volatile char *) SUFFIX, TYPE) \
-       ) ? MR_TYPE_STRING : 0)						\
+       ) ? MR_TYPE_STRING : 0)                                          \
    )
 
 #define MR_TYPE_DETECT_PTR(TYPE) (MR_TYPE_DETECT (TYPE, *) | MR_TYPE_DETECT (TYPE, const *) | MR_TYPE_DETECT (TYPE, volatile *) | MR_TYPE_DETECT (TYPE, const volatile *))
@@ -480,6 +486,7 @@
 #define MR_IS_BUILTIN_long_double_t long_double_t,
 #define MR_IS_BUILTIN_string_t string_t,
 #define MR_IS_BUILTIN_mr_ptr_t mr_ptr_t,
+#define MR_IS_BUILTIN__Atomic _Atomic,
 #define MR_IS_BUILTIN_volatile volatile,
 #define MR_IS_BUILTIN___volatile __volatile,
 #define MR_IS_BUILTIN___volatile__ __volatile__,

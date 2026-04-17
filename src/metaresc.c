@@ -76,6 +76,7 @@ mr_skip_keywords (char * type)
 #define MR_STRUCT_KEYWORD "struct"
 #define MR_UNION_KEYWORD "union"
 #define MR_ENUM_KEYWORD "enum"
+#define MR_ATOMIC_KEYWORD "_Atomic"
 
   if (strncmp (type, MR_STRUCT_KEYWORD " ", sizeof (MR_STRUCT_KEYWORD)) == 0)
     type += sizeof (MR_STRUCT_KEYWORD);
@@ -359,7 +360,10 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
     };
 
   if (2 == indent_spaces)
-    fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
+    {
+      if (strncmp (type, MR_ATOMIC_KEYWORD, sizeof (MR_ATOMIC_KEYWORD) - sizeof ("")) != 0)
+        fdp->stype.mr_type_class = tc[fdp->stype.mr_type];
+    }
   else
     {
       fdp->stype.mr_type = MR_TYPE_NONE;
@@ -1476,6 +1480,7 @@ mr_normalize_type (char * type)
       MR_STRUCT_KEYWORD,
       MR_UNION_KEYWORD,
       MR_ENUM_KEYWORD,
+      MR_ATOMIC_KEYWORD,
       "const",
       "__const",
       "__const__",
@@ -1491,6 +1496,8 @@ mr_normalize_type (char * type)
       [0] = true,
       [(uint8_t)' '] = true,
       [(uint8_t)'\t'] = true,
+      [(uint8_t)'('] = true,
+      [(uint8_t)')'] = true,
       [(uint8_t)'*'] = true,
     };
   int i;
@@ -1509,6 +1516,17 @@ mr_normalize_type (char * type)
           ptr = &found[length]; /* keyword might be a part of type name and we need to start search of keyword from next symbol */
         }
     }
+
+  /* remove parentheses '()' from the type. It may come from _Atomic() modifier detected by __builtin_dump_struct */
+  char * parentheses;
+  for (parentheses = "()"; *parentheses; ++parentheses)
+    for (;;)
+      {
+        char * found = strchr (type, *parentheses);
+        if (NULL == found)
+          break;
+        *found = ' ';
+      }
 
   /* we need to squeeze all space characters including trailing spaces */
   bool prev_is_space = false;

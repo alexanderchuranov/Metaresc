@@ -43,6 +43,7 @@ TYPEDEF_STRUCT (struct_t,
                 uint64_t uint64_,
                 (mr_intmax_t, mr_intmax),
                 (mr_uintmax_t, mr_uintmax),
+                _Atomic int32_t atomic_int32,
                 float float_,
                 complex float complex_float_,
                 double double_,
@@ -346,6 +347,7 @@ START_TEST (check_types_detection) {
   ASSERT_STRUCT_FIELD_TYPE (mr_uintmax, MR_TYPE_UINT128);
 #endif /* HAVE_INT128 */
 
+  ASSERT_STRUCT_FIELD_TYPE (atomic_int32, MR_TYPE_INT32);
   ASSERT_STRUCT_FIELD_TYPE (float_, MR_TYPE_FLOAT);
   ASSERT_STRUCT_FIELD_TYPE (complex_float_, MR_TYPE_COMPLEX_FLOAT);
   ASSERT_STRUCT_FIELD_TYPE (double_, MR_TYPE_DOUBLE);
@@ -506,6 +508,7 @@ TYPEDEF_STRUCT (dump_struct_types_t,
                 (uint64_t, _uint64),
                 (mr_int128_t, _int128),
                 (mr_uint128_t, _uint128),
+                (_Atomic int32_t, atomic_int32),
                 (ssize_t, _ssize),
                 (size_t, _size),
                 (bool, x1, : 1),

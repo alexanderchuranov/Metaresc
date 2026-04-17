@@ -13,6 +13,12 @@ TYPEDEF_STRUCT (mr_builtin_types_t,
 		MR_FOREACH (MAKE_FIELD, MR_BUILTIN_TYPES)
 		);
 
+#define MAKE_ATOMIC_FIELD(TYPE) (_Atomic TYPE, MR_PASTE2 (_, __COUNTER__)),
+
+TYPEDEF_STRUCT (mr_atomic_types_t,
+		MR_FOREACH (MAKE_ATOMIC_FIELD, MR_BUILTIN_TYPES)
+		);
+
 typedef char * my_string_t;
 
 TYPEDEF_STRUCT (mr_array_t,

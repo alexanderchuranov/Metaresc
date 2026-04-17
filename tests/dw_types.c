@@ -4,6 +4,7 @@
 
 mr_pointer_t mr_pointer;
 mr_builtin_types_t mr_builtin_types;
+mr_atomic_types_t mr_atomic_types;
 mr_array_t mr_array;
 mr_anon_union_t mr_anon_union;
 mr_void_fields_t mr_void_fields;
