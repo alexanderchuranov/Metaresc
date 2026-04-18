@@ -44,6 +44,11 @@ TYPEDEF_STRUCT (struct_t,
                 (mr_intmax_t, mr_intmax),
                 (mr_uintmax_t, mr_uintmax),
                 _Atomic int32_t atomic_int32,
+                __attribute__ ((aligned (16))) int32_t attributed_int,
+                _ __attribute__ ((aligned (16))) int32_t attributed_void,
+                (__attribute__ ((aligned (16))) int32_t, attributed_func, ()),
+                (__attribute__ ((aligned (16))) int32_t, attributed_array, [2]),
+                (__attribute__ ((aligned (16))) int32_t, attributed_bf, :2),
                 float float_,
                 complex float complex_float_,
                 double double_,
@@ -348,6 +353,11 @@ START_TEST (check_types_detection) {
 #endif /* HAVE_INT128 */
 
   ASSERT_STRUCT_FIELD_TYPE (atomic_int32, MR_TYPE_INT32);
+  ASSERT_STRUCT_FIELD_TYPE (attributed_int, MR_TYPE_INT32);
+  ASSERT_STRUCT_FIELD_TYPE (attributed_void, MR_TYPE_VOID, MR_TYPE_INT32);
+  ASSERT_STRUCT_FIELD_TYPE (attributed_func, MR_TYPE_FUNC);
+  ASSERT_STRUCT_FIELD_TYPE (attributed_array, MR_TYPE_ARRAY, MR_TYPE_INT32);
+  ASSERT_STRUCT_FIELD_TYPE (attributed_bf, MR_TYPE_BITFIELD, MR_TYPE_INT32);
   ASSERT_STRUCT_FIELD_TYPE (float_, MR_TYPE_FLOAT);
   ASSERT_STRUCT_FIELD_TYPE (complex_float_, MR_TYPE_COMPLEX_FLOAT);
   ASSERT_STRUCT_FIELD_TYPE (double_, MR_TYPE_DOUBLE);

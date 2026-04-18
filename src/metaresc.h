@@ -159,17 +159,21 @@
 #define MR_DESCRIPTOR_ATTR static
 #endif /* MR_DESCRIPTOR_ATTR */
 
+#define MR___attribute___EQ___attribute__ 0,
+#define MR_STRIP_ATTRIBUTES(TYPE) MR_STRIP_ATTRIBUTES_0 (TYPE, MR___attribute___EQ_ ## TYPE)
+#define MR_STRIP_ATTRIBUTES_0(...) MR_STRIP_ATTRIBUTES_1 (__VA_ARGS__)
+#define MR_STRIP_ATTRIBUTES_1(TYPE, ZERO, ...) MR_IF_ELSE (ZERO) (TYPE) (MR_IGNORE __VA_ARGS__)
+
 /*
   Help macro for internal type detection. It compares variable with all known builin types.
   Compaund types are detected in runtime.
 */
+#define MR_TYPE_DETECT(TYPE, ...) MR_TYPE_DETECT_0 (TYPE, __VA_ARGS__)
 
-#define MR_TYPE_DETECT(TYPE, ...) MR_TYPE_DETECT_ (TYPE, __VA_ARGS__)
-
-#define MR_TYPE_DETECT_(TYPE, SUFFIX)					\
+#define MR_TYPE_DETECT_0(TYPE, SUFFIX)					\
   (0 /* MR_TYPE_NONE */							\
-   | MR_TYPE_DETECT__ (TYPE, SUFFIX)                                    \
-   | MR_TYPE_DETECT__ (TYPE, _Atomic SUFFIX)                            \
+   | MR_TYPE_DETECT_1 (TYPE, SUFFIX)                                    \
+   | MR_TYPE_DETECT_1 (TYPE, _Atomic SUFFIX)                            \
    | (__builtin_types_compatible_p (void SUFFIX, TYPE) ? MR_TYPE_VOID : 0) \
    | ((__builtin_types_compatible_p (__typeof__ (char []) SUFFIX, TYPE)	\
        | __builtin_types_compatible_p (__typeof__ (const char []) SUFFIX, TYPE) \
@@ -178,7 +182,7 @@
        ) ? MR_TYPE_CHAR_ARRAY : 0)					\
    )
 
-#define MR_TYPE_DETECT__(TYPE, SUFFIX)                            \
+#define MR_TYPE_DETECT_1(TYPE, SUFFIX)                                  \
   ((__builtin_types_compatible_p (bool SUFFIX, TYPE) ? MR_TYPE_BOOL : 0) \
    | (__builtin_types_compatible_p (char SUFFIX, TYPE) ? MR_TYPE_CHAR : 0) \
    | (__builtin_types_compatible_p (signed char SUFFIX, TYPE) ? MR_PASTE2 (MR_TYPE_INT, MR_SIZEOF_CHAR) : 0) \
@@ -442,10 +446,14 @@
     (P00_UNFOLD (MR_, ENUM_DEF, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (FIELD)))
 
 #define MR_EVAL_ARGS(FUNC, ...) FUNC (__VA_ARGS__)
+#define MR_ATTRIBUTES_ARGS(...) (__VA_ARGS__),
 
-#define MR_BI_TYPES(TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_TYPES_0 (TYPE, __VA_ARGS__, MR_PASTE2 (MR_IS_BUILTIN_, TYPE))) (TYPE, __VA_ARGS__)
-#define MR_BI_TYPES_0(...) MR_BI_TYPES_0_ (__VA_ARGS__)
-#define MR_BI_TYPES_0_(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (TYPE, NAME) (MR_BI_TYPES_1 (TYPE_, __VA_ARGS__, TYPE_ MR_PASTE2 (MR_IS_BUILTIN_, __VA_ARGS__)))
+#define MR_BI_TYPES(TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_TYPES_00 (TYPE, __VA_ARGS__, MR_PASTE2 (MR_IS_BUILTIN_, TYPE))) (TYPE, __VA_ARGS__)
+#define MR_BI_TYPES_00(...) MR_BI_TYPES_01 (__VA_ARGS__)
+#define MR_BI_TYPES_01(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (TYPE, NAME) (MR_BI_TYPES_02 (TYPE_, __VA_ARGS__, TYPE_ MR_ATTRIBUTES_ARGS __VA_ARGS__))
+#define MR_BI_TYPES_02(...) MR_BI_TYPES_03 (__VA_ARGS__)
+#define MR_BI_TYPES_03(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_TYPES_1 (TYPE, NAME, TYPE MR_PASTE2 (MR_IS_BUILTIN_, NAME))) (MR_BI_TYPES_1 (TYPE_, __VA_ARGS__, TYPE_ MR_PASTE2 (MR_IS_BUILTIN_, __VA_ARGS__)))
+
 #define MR_BI_TYPES_1(...) MR_BI_TYPES_1_ (__VA_ARGS__)
 #define MR_BI_TYPES_1_(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (TYPE, NAME) (MR_BI_TYPES_2 (TYPE_, __VA_ARGS__, TYPE_ MR_PASTE2 (MR_IS_BUILTIN_, __VA_ARGS__)))
 #define MR_BI_TYPES_2(...) MR_BI_TYPES_2_ (__VA_ARGS__)
@@ -496,6 +504,7 @@
 #define MR_IS_BUILTIN_struct struct,
 #define MR_IS_BUILTIN_union union,
 #define MR_IS_BUILTIN_enum enum,
+#define MR_IS_BUILTIN___attribute__ __attribute__,
 
 #define MR_UNIQ_NAME(ID) name_ ## ID
 #define MR_COMPILETIME_ASSERT(CONDITION, ...) MR_COMPILETIME_ASSERT_ (__COUNTER__, CONDITION, __VA_ARGS__)
@@ -558,7 +567,10 @@
                                                 __builtin_classify_type (MR_OBJ_OF_TYPE (TYPE))), \
         } },
 
-#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...)	\
+#define MR_FUNC_DESC(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...) \
+  MR_FUNC_DESC_0 (MR_TYPE_NAME, MR_STRIP_ATTRIBUTES (TYPE), NAME, ARGS, __VA_ARGS__)
+#define MR_FUNC_DESC_0(...) MR_FUNC_DESC_1 (__VA_ARGS__)
+#define MR_FUNC_DESC_1(MR_TYPE_NAME, TYPE, NAME, ARGS, /* META */ ...)	\
   (mr_fd_t[]){ {                                                        \
       .name.str = #NAME,                                                \
         .stype.type = #TYPE,						\
@@ -591,6 +603,9 @@
 #define MR_ARRAY_DIMENSIONS(TYPE, ARRAY) MR_ARRAY_DIMENSIONS_ (TYPE, ARRAY, ARRAY[0], MR_ARRAY_SLICE0 (TYPE, ARRAY)[0], MR_ARRAY_SLICE1 (TYPE, MR_ARRAY_SLICE0 (TYPE, ARRAY))[0])
 
 #define MR_ARRAY_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+  MR_ARRAY_DESC_0 (MR_TYPE_NAME, MR_STRIP_ATTRIBUTES (TYPE), NAME, SUFFIX, __VA_ARGS__)
+#define MR_ARRAY_DESC_0(...) MR_ARRAY_DESC_1 (__VA_ARGS__)
+#define MR_ARRAY_DESC_1(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {                                                        \
       .name.str = #NAME,                                                \
         .stype.type = #TYPE,						\
@@ -605,6 +620,9 @@
         } },
 
 #define MR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+  MR_BITFIELD_DESC_0 (MR_TYPE_NAME, MR_STRIP_ATTRIBUTES (TYPE), NAME, SUFFIX, __VA_ARGS__)
+#define MR_BITFIELD_DESC_0(...) MR_BITFIELD_DESC_1 (__VA_ARGS__)
+#define MR_BITFIELD_DESC_1(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {                                                        \
       .name.str = #NAME,                                                \
         .stype.type = #TYPE,						\
@@ -631,8 +649,9 @@
   __builtin_choose_expr (MR_IS_AN_ARRAY (((MR_TYPE_NAME*)0)->NAME),	\
                          NULL, (uint8_t*)((MR_AOB_TYPE (MR_TYPE_NAME, NAME, true)[]){ { .NAME = -1 } }))
 
-
-#define MR_ARRAY_OR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+#define MR_ARRAY_OR_BITFIELD_DESC(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) MR_ARRAY_OR_BITFIELD_DESC_0 (MR_TYPE_NAME, MR_STRIP_ATTRIBUTES (TYPE), NAME, SUFFIX, __VA_ARGS__)
+#define MR_ARRAY_OR_BITFIELD_DESC_0(...) MR_ARRAY_OR_BITFIELD_DESC_1 (__VA_ARGS__)
+#define MR_ARRAY_OR_BITFIELD_DESC_1(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {                                                        \
       .name.str = #NAME,                                                \
         .stype.type = #TYPE,						\
@@ -650,8 +669,9 @@
         } },
 
 #define MR_VOID_DESC(MR_TYPE_NAME, TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_EVAL_ARGS (MR_VOID_DESC_0, MR_TYPE_NAME, MR_BI_TYPES (TYPE))) (MR_VOID_DESC_0 (MR_TYPE_NAME, TYPE, __VA_ARGS__))
-#define MR_VOID_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_1 (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
-#define MR_VOID_DESC_1(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
+#define MR_VOID_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_VOID_DESC_1 (MR_TYPE_NAME, MR_STRIP_ATTRIBUTES (TYPE), NAME, __VA_ARGS__)
+#define MR_VOID_DESC_1(...) MR_VOID_DESC_2 (__VA_ARGS__)
+#define MR_VOID_DESC_2(MR_TYPE_NAME, TYPE, NAME, SUFFIX, /* META */ ...) \
   (mr_fd_t[]){ {                                                        \
       .name.str = (char []) { #NAME },					\
         .stype.mr_type = MR_TYPE_VOID,					\
@@ -678,7 +698,7 @@
 
 #define MR_AUTO_DESC(MR_TYPE_NAME, TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_EVAL_ARGS (MR_AUTO_DESC_0, MR_TYPE_NAME, MR_BI_TYPES (TYPE))) (MR_AUTO_DESC_0 (MR_TYPE_NAME, TYPE, __VA_ARGS__))
 /* ensure that name is a token without parentheses or braces at the end */
-#define MR_AUTO_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC_1 (_ ## NAME ## _, MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__)
+#define MR_AUTO_DESC_0(MR_TYPE_NAME, TYPE, NAME, ...) MR_AUTO_DESC_1 (_ ## NAME ## _, MR_TYPE_NAME, MR_STRIP_ATTRIBUTES (TYPE), NAME, __VA_ARGS__)
 #define MR_AUTO_DESC_1(VALIDATED_NAME, MR_TYPE_NAME, TYPE, NAME, ...) MR_IF_ELSE (MR_IS_EMPTY (TYPE)) \
     (MR_AUTO_DESC_2 (MR_TYPE_NAME, __typeof__ (((MR_TYPE_NAME*)0)->NAME), NAME, __VA_ARGS__)) \
     (MR_AUTO_DESC_2 (MR_TYPE_NAME, TYPE, NAME, __VA_ARGS__))
