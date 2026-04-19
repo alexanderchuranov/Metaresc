@@ -159,10 +159,10 @@
 #define MR_DESCRIPTOR_ATTR static
 #endif /* MR_DESCRIPTOR_ATTR */
 
-#define MR___attribute___EQ___attribute__ 0,
-#define MR_STRIP_ATTRIBUTES(TYPE) MR_STRIP_ATTRIBUTES_0 (TYPE, MR___attribute___EQ_ ## TYPE)
+#define MR___attribute___EQ___attribute__(...) 0,
+#define MR_STRIP_ATTRIBUTES(TYPE) MR_STRIP_ATTRIBUTES_0 (TYPE, MR_PASTE2 (MR___attribute___EQ_, TYPE))
 #define MR_STRIP_ATTRIBUTES_0(...) MR_STRIP_ATTRIBUTES_1 (__VA_ARGS__)
-#define MR_STRIP_ATTRIBUTES_1(TYPE, ZERO, ...) MR_IF_ELSE (ZERO) (TYPE) (MR_IGNORE __VA_ARGS__)
+#define MR_STRIP_ATTRIBUTES_1(TYPE, ZERO, ...) MR_IF_ELSE (ZERO) (TYPE) (__VA_ARGS__)
 
 /*
   Help macro for internal type detection. It compares variable with all known builin types.
@@ -446,14 +446,10 @@
     (P00_UNFOLD (MR_, ENUM_DEF, P00_GET_MODE P00_MODE_TYPE_NAME, P00_GET_TYPE_NAME P00_MODE_TYPE_NAME, MR_REMOVE_PAREN (FIELD)))
 
 #define MR_EVAL_ARGS(FUNC, ...) FUNC (__VA_ARGS__)
-#define MR_ATTRIBUTES_ARGS(...) (__VA_ARGS__),
 
-#define MR_BI_TYPES(TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_TYPES_00 (TYPE, __VA_ARGS__, MR_PASTE2 (MR_IS_BUILTIN_, TYPE))) (TYPE, __VA_ARGS__)
-#define MR_BI_TYPES_00(...) MR_BI_TYPES_01 (__VA_ARGS__)
-#define MR_BI_TYPES_01(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (TYPE, NAME) (MR_BI_TYPES_02 (TYPE_, __VA_ARGS__, TYPE_ MR_ATTRIBUTES_ARGS __VA_ARGS__))
-#define MR_BI_TYPES_02(...) MR_BI_TYPES_03 (__VA_ARGS__)
-#define MR_BI_TYPES_03(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_TYPES_1 (TYPE, NAME, TYPE MR_PASTE2 (MR_IS_BUILTIN_, NAME))) (MR_BI_TYPES_1 (TYPE_, __VA_ARGS__, TYPE_ MR_PASTE2 (MR_IS_BUILTIN_, __VA_ARGS__)))
-
+#define MR_BI_TYPES(TYPE, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_BI_TYPES_0 (TYPE, __VA_ARGS__, MR_PASTE2 (MR_IS_BUILTIN_, TYPE))) (TYPE, __VA_ARGS__)
+#define MR_BI_TYPES_0(...) MR_BI_TYPES_0_ (__VA_ARGS__)
+#define MR_BI_TYPES_0_(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (TYPE, NAME) (MR_BI_TYPES_1 (TYPE_, __VA_ARGS__, TYPE_ MR_PASTE2 (MR_IS_BUILTIN_, __VA_ARGS__)))
 #define MR_BI_TYPES_1(...) MR_BI_TYPES_1_ (__VA_ARGS__)
 #define MR_BI_TYPES_1_(TYPE, NAME, TYPE_, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (TYPE, NAME) (MR_BI_TYPES_2 (TYPE_, __VA_ARGS__, TYPE_ MR_PASTE2 (MR_IS_BUILTIN_, __VA_ARGS__)))
 #define MR_BI_TYPES_2(...) MR_BI_TYPES_2_ (__VA_ARGS__)
@@ -504,7 +500,7 @@
 #define MR_IS_BUILTIN_struct struct,
 #define MR_IS_BUILTIN_union union,
 #define MR_IS_BUILTIN_enum enum,
-#define MR_IS_BUILTIN___attribute__ __attribute__,
+#define MR_IS_BUILTIN___attribute__(...) __attribute__ (__VA_ARGS__),
 
 #define MR_UNIQ_NAME(ID) name_ ## ID
 #define MR_COMPILETIME_ASSERT(CONDITION, ...) MR_COMPILETIME_ASSERT_ (__COUNTER__, CONDITION, __VA_ARGS__)
