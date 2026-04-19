@@ -783,7 +783,7 @@ parentheses:
 
 Only the first two parameters are mandatory, the rest are optional.
 1. **type** is a field type
-If you need to apply any `__attributes__ (())` to the field those attributes should go first in the type name.
+If you need to apply any `__attribute__ (())` to the field those attributes should go first in the type name.
 2. **name** is a field name
 3. **_suffix_** is used for declaration of arrays, function pointers and bitfields
 4. **_text\_metadata_** is a user defined string
@@ -801,7 +801,7 @@ Example below demonstrates extended semantics:
 ```c
 TYPEDEF_STRUCT (sample_t,
 		(int, field),
-		(__attributes__ ((aligned (16))) int, attributed_field),
+		(__attribute__ ((aligned (16))) int, attributed_field),
 		(int *, pointer),
 		(int **, double_pointer),
 		(int, array1d, [2]),
@@ -838,7 +838,7 @@ TYPEDEF_STRUCT (non_serializable_t,
 		VOID (int, bitfield, : 4),
 		_ (char *, metadata, /* suffix */, "alternative way to declare non-serializable fields"),
 		_ int builtin_type_variable,
-		_ __attributes__ ((aligned (16))) int attributed_variable,
+		_ __attribute__ ((aligned (16))) int attributed_variable,
 		);
 ```
 
@@ -1074,7 +1074,7 @@ For declaration of anonymous union use keywords:
 All arguments for them are optional. Even though union is anonymous it
 still require some **name** for serialization into self-descriptive
 formats like XML, JSON or YAML. If name is not specified Metaresc will
-auto-generate the name for it. Compiler specific `__attributes__ (())`
+auto-generate the name for it. Compiler specific `__attribute__ (())`
 modifiers could be passed over **attributes** argument. Previous
 example with anonymous union will look as follows:
 
