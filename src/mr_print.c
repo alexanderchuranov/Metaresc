@@ -45,7 +45,7 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_clas
     })
 
 #define MR_POINTER_TMPLT "%p "
-#define MR_TYPE_TMPLT "(%s%s)"
+#define MR_TYPE_TMPLT "(%s%s) "
 #define MR_TYPED_POINTER_TMPLT MR_POINTER_TMPLT MR_TYPE_TMPLT
   char * serialized = NULL;
   char typed_ptr_str[sizeof (MR_TYPED_POINTER_TMPLT) + sizeof (void *) * 2 + strlen (type)];

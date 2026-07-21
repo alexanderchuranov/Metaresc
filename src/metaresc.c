@@ -509,19 +509,20 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
     mr_dump_struct (value, mr_fields_detection, &dst_ctx);
 
   /* on next passes we will fill non-zero values to addresses with i-th bit set in the offset. First iteration fills non-zeros to offsets with highest set bit */
-  for (block_size = 1UL << (sizeof (long long) * __CHAR_BIT__ - __builtin_clzll ((tdp->size <= 1) ? 1 : tdp->size - 1) - 1);
-       block_size != 0;
-       block_size >>= 1)
-    {
-      uint8_t * ptr, * last_block = &value[tdp->size - block_size];
-      i = 0;
-      for (ptr = value; ptr <= last_block; ptr += block_size)
-        memset (ptr, -(i++ & 1), block_size);
-      memset (ptr, -(i++ & 1), tdp->size & (block_size - 1));
-      dst_ctx.field_idx = 0;
-      if (0 == setjmp (dst_ctx._jmp_buf))
-        mr_dump_struct (value, mr_fields_detection, &dst_ctx);
-    }
+  if (tdp->size > 1)
+    for (block_size = 1UL << (sizeof (long long) * __CHAR_BIT__ - __builtin_clzll (tdp->size - 1) - 1);
+         block_size != 0;
+         block_size >>= 1)
+      {
+        uint8_t * ptr, * last_block = &value[tdp->size - block_size];
+        i = 0;
+        for (ptr = value; ptr <= last_block; ptr += block_size)
+          memset (ptr, -(i++ & 1), block_size);
+        memset (ptr, -(i++ & 1), tdp->size & (block_size - 1));
+        dst_ctx.field_idx = 0;
+        if (0 == setjmp (dst_ctx._jmp_buf))
+          mr_dump_struct (value, mr_fields_detection, &dst_ctx);
+      }
 
   /* Finally we need to find starting offset for bitfields within first byte. */
   dst_ctx.bitfield_detection = true;
@@ -2177,7 +2178,7 @@ inline void
 mr_conf_init ()
 {
   static volatile bool initialized = false;
-  static volatile bool init_in_progress = false;
+  static volatile _Atomic bool init_in_progress = false;
 
   if (initialized)
     return;

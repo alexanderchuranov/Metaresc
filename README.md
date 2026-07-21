@@ -782,10 +782,12 @@ parentheses:
 (type, name, _suffix_, _text\_metadata_, _{ pointer\_on\_resources\_array }_, _resource\_type_, _resources\_array\_size_)
 
 Only the first two parameters are mandatory, the rest are optional.
-1. **type** is a field type
-If you need to apply any `__attribute__ (())` to the field those attributes should go first in the type name.
+1. **type** is a field type. If you need to apply any `__attribute__
+   (())` to the field those attributes should go first in the type
+   name.
 2. **name** is a field name
-3. **_suffix_** is used for declaration of arrays, function pointers and bitfields
+3. **_suffix_** is used for declaration of arrays, function pointers
+   and bitfields
 4. **_text\_metadata_** is a user defined string
 5. **_pointer\_on\_resources\_array_** (**_resource_**) is a `void*`
    pointer that user can initialize with a pointer on array of

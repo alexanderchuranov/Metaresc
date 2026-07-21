@@ -144,9 +144,9 @@
 #ifndef MR_TYPEDEF_STUB_PREFIX
 #define MR_KETWORD_struct struct,
 #define MR_KETWORD_union union,
-#define MR_DROP_KEYWORDS_(MR_TYPE_NAME, KEYWORD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_TYPE_NAME) (__VA_ARGS__)
-#define MR_DROP_KEYWORDS(...) MR_DROP_KEYWORDS_ (__VA_ARGS__)
-#define MR_TYPEDEF_STUB_PREFIX(MR_TYPE_NAME) MR_PASTE2 (mr_stub_, MR_DROP_KEYWORDS (MR_TYPE_NAME, MR_PASTE2 (MR_KETWORD_, MR_TYPE_NAME)))
+#define MR_STRIP_KEYWORDS_(MR_TYPE_NAME, KEYWORD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (MR_TYPE_NAME) (__VA_ARGS__)
+#define MR_STRIP_KEYWORDS(...) MR_STRIP_KEYWORDS_ (__VA_ARGS__)
+#define MR_TYPEDEF_STUB_PREFIX(MR_TYPE_NAME) MR_PASTE2 (mr_stub_, MR_STRIP_KEYWORDS (MR_TYPE_NAME, MR_PASTE2 (MR_KETWORD_, MR_TYPE_NAME)))
 #endif /* MR_TYPEDEF_STUB_PREFIX */
 #ifndef MR_TYPEDEF_PREFIX
 #define MR_TYPEDEF_PREFIX(MR_TYPE_NAME) MR_TYPE_NAME
@@ -159,10 +159,10 @@
 #define MR_DESCRIPTOR_ATTR static
 #endif /* MR_DESCRIPTOR_ATTR */
 
-#define MR___attribute___EQ___attribute__(...) 0,
+#define MR___attribute___EQ___attribute__(...) __attribute__ (__VA_ARGS__),
 #define MR_STRIP_ATTRIBUTES(TYPE) MR_STRIP_ATTRIBUTES_0 (TYPE, MR_PASTE2 (MR___attribute___EQ_, TYPE))
 #define MR_STRIP_ATTRIBUTES_0(...) MR_STRIP_ATTRIBUTES_1 (__VA_ARGS__)
-#define MR_STRIP_ATTRIBUTES_1(TYPE, ZERO, ...) MR_IF_ELSE (ZERO) (TYPE) (__VA_ARGS__)
+#define MR_STRIP_ATTRIBUTES_1(TYPE, KEYWORD, ...) MR_IF_ELSE (MR_IS_EMPTY (__VA_ARGS__)) (TYPE) (__VA_ARGS__)
 
 /*
   Help macro for internal type detection. It compares variable with all known builin types.

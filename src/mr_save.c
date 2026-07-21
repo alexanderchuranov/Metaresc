@@ -929,7 +929,7 @@ mr_extend_pointer (mr_save_data_t * mr_save_data, mr_idx_t idx, mr_size_t delta)
 
   mr_idx_t i = ra[idx].MR_SIZE / fd.stype.size;
   ra[idx].MR_SIZE += delta;
-  mr_idx_t count =  ra[idx].MR_SIZE / fd.stype.size;
+  mr_idx_t count = ra[idx].MR_SIZE / fd.stype.size;
   char ** data = ra[idx].data.ptr;
 
   mr_save_data->ptrs.last_child = mr_get_child_by_addr (mr_save_data, idx, ra[first_child].data.uintptr + (i - 1) * fd.stype.size);
