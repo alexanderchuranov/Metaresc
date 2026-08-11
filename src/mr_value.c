@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#ifdef HAVE_CONFIG_H
+#include <mr_config.h>
+#endif /* HAVE_CONFIG_H */
 #include <metaresc.h>
 #include <mr_value.h>
 #include <mr_ic.h>
@@ -421,7 +424,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
         if (NULL == mr_value->vt_substr.str)
           return (MR_FAILURE);
 
-        int length = MR_MIN (mr_value->vt_substr.length, (1 << 6));
+        int length = MR_MIN (mr_value->vt_substr.length, sizeof ("-1.1e1111 + -1.1e1111 I") + 2 * MR_LDBL_DIG);
         char buf[length + sizeof (char)];
         memcpy (buf, mr_value->vt_substr.str, length);
         buf[length] = 0;
