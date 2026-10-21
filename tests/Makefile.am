@@ -25,7 +25,7 @@ if HAVE_EXECINFO
 endif
 
 if HAVE_XDR
-  check_PROGRAMS += smoke_xdr
+  check_PROGRAMS += smoke_xdr xdr_hostile
 if HAVE_EXECINFO
   check_PROGRAMS += mf_xdr_save mf_xdr_load
 endif
