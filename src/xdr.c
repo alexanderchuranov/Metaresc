@@ -563,15 +563,33 @@ xdr_char_array_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_uint32_t (xdrs, &str_len))
     return (MR_FAILURE);
 
-  if ((XDR_DECODE == xdrs->x_op) && (str_len > sizeof (char)) && is_a_dynamic_string)
+  if (XDR_DECODE == xdrs->x_op)
     {
-      void * data = MR_REALLOC (ptrs->ra[idx].data.ptr, str_len);
-      if (NULL == data)
+      if (is_a_dynamic_string)
         {
-          MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-          return (MR_FAILURE);
+          /* dynamic string: grow the allocation to the length from the stream */
+          if (str_len > sizeof (char))
+            {
+              void * data = MR_REALLOC (ptrs->ra[idx].data.ptr, str_len);
+              if (NULL == data)
+                {
+                  MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+                  return (MR_FAILURE);
+                }
+              *(void**)ptrs->ra[idx - 1].data.ptr = ptrs->ra[idx].data.ptr = data;
+            }
         }
-      *(void**)ptrs->ra[idx - 1].data.ptr = ptrs->ra[idx].data.ptr = data;
+      else
+        {
+          /* fixed-size char array: a length from the stream that exceeds the
+             declared field size would overflow the inline buffer */
+          typeof (ptrdes->MR_SIZE) max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
+          if (str_len > max_size)
+            {
+              MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, ptrdes->fdp ? ptrdes->fdp->name.str : "");
+              return (MR_FAILURE);
+            }
+        }
     }
   return (xdr_opaque (xdrs, ptrs->ra[idx].data.ptr, str_len) ? MR_SUCCESS : MR_FAILURE);
 }
@@ -888,6 +906,7 @@ xdr_load_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   char * data = ptrs->ra[idx].data.ptr;
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   mr_idx_t i, count = fd_.stype.dim.dim[0];
+  mr_idx_t max_count = count; /* declared capacity of the inline array */
 
   if (0 == count)
     return (MR_SUCCESS);
@@ -910,6 +929,13 @@ xdr_load_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
             return (MR_SUCCESS);
 
           count = ptrs->ra[idx].MR_SIZE / fd_.stype.size;
+          /* a count from the stream larger than the declared array capacity
+             would write past the inline buffer */
+          if (count > max_count)
+            {
+              MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
+              return (MR_FAILURE);
+            }
           ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
 
           mr_pointer_set_size (idx, ptrs);
