@@ -3,7 +3,7 @@
 [![YourActionName Actions Status](https://github.com/alexanderchuranov/Metaresc/workflows/ci/badge.svg)](https://github.com/alexanderchuranov/Metaresc/actions)
 
 METARESC is a software library that implements reflection in the C
-programming language. It allows to derive fields metadata from
+programming language. It lets you derive field metadata from
 declarations of structures and unions. You may use a special METARESC
 grammar for types declaration or get metadata from DWARF debug symbols
 or \__builtin_dump_struct function available in Clang. The variables
@@ -11,7 +11,7 @@ of discovered types may be subsequently serialized into various
 formats (XML, JSON, YAML, XDR) and deserialized later. To achieve this
 the library adds metadata annotations to types. These annotations may
 be used for many purposes far beyond just achieving persistence: deep
-copy, recursive memory deallocation, automatic hashing and comparation
+copy, recursive memory deallocation, automatic hashing and comparison
 of structures, generic sorting.
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
@@ -49,7 +49,7 @@ of structures, generic sorting.
     - [Deep copy](#deep-copy)
     - [Recursive memory deallocation](#recursive-memory-deallocation)
     - [Objects hashing](#objects-hashing)
-    - [Comparation of structures](#comparation-of-structures)
+    - [Comparison of structures](#comparison-of-structures)
     - [Generic sorting](#generic-sorting)
     - [Structure of serialization graph](#structure-of-serialization-graph)
     - [Access and structure of type descriptor](#access-and-structure-of-type-descriptor)
@@ -68,7 +68,7 @@ of structures, generic sorting.
 
 Install external dependencies `autoconf`, `automake`, `libtool`,
 `pkg-config`, `flex`, `bison`, `libxml2-dev`, `libyaml-dev`,
-`libtirpc-dev`, `check`. Clone Metaresc from Github, configure and
+`libtirpc-dev`, `check`. Clone Metaresc from GitHub, configure and
 build according to the standard autoconf/automake process.
 
 ### Ubuntu
@@ -79,7 +79,7 @@ On Ubuntu, run the following command:
 # apt-get install git autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev libtirpc-dev check
 ```
 
-Checkout Metaresc from github
+Check out Metaresc from GitHub
 
 ```console
 $ git clone https://github.com/alexanderchuranov/Metaresc.git
@@ -170,8 +170,8 @@ $ make -j 4 check
 
 ## How to build a sample app
 
-Instruction below will cover scenario when Metaresc is build locally
-and is not installed into the system.
+The instructions below cover the scenario where Metaresc is built
+locally and is not installed into the system.
 
 Create a folder at the same level as Metaresc. Start with hello world
 stub that will use `metaresc.h`.
@@ -186,8 +186,8 @@ int main (int argc, char * argv[])
 }
 ```
 
-Compiler should be instructed where to find Metaresc header file, so
-we should add `-I../Metaresc/src` as a compilation flag. Minimal
+The compiler must be told where to find the Metaresc header file, so
+we add `-I../Metaresc/src` as a compilation flag. A minimal
 `Makefile` for this app should be as follows: 
 
 ```make
@@ -195,6 +195,10 @@ all: sample
 
 CFLAGS += -I../Metaresc/src `xml2-config --cflags` -lyaml
 ```
+
+On Ubuntu (see [Ubuntu](#ubuntu)) all `Makefile` samples below also
+need `-I/usr/include/tirpc` in `CFLAGS` and `-ltirpc` at the end of
+`LDLIBS`, because the XDR headers and library come from libtirpc.
 
 As a next step we will add some custom structure type definition,
 variable of that type and serialization of this variable into format
@@ -232,7 +236,7 @@ int main (int argc, char * argv[])
 }
 ```
 
-At this point we need to link our application against statically build
+At this point we need to link our application against the statically built
 Metaresc library files. `Makefile` should be extended as follows:
 ```make
 all: sample
@@ -265,10 +269,10 @@ tree = {
 You may find custom macro language for types definition as an
 overkill. In this case you could use Metaresc macro language only for
 metadata generation and keep definitions of your types in a plain
-C. It basically means that you need to duplicate type definition:
-once in standard C and one more time with a Metaresc macro
-language. In this case global preprocessor variable `MR_MODE` should
-be defined into `DESC`. Example above will look as follows:
+C. It basically means that you need to duplicate the type definition:
+once in standard C and one more time with the Metaresc macro
+language. In this case the global preprocessor variable `MR_MODE` should
+be defined as `DESC`. The example above will look as follows:
 
 ```c
 #include <metaresc.h>
@@ -299,13 +303,13 @@ int main (int argc, char * argv[])
 }
 ```
 
-Metadata generation macro will validate at compile time that provided
-types matches types of the structure fields, but it is still on user
-to synchronize the list of fields with the original declaration. Order
-of the fields could be arbitrary and library will reorder them based
+The metadata-generation macro validates at compile time that the provided
+types match the types of the structure fields, but it is still on the user
+to synchronize the list of fields with the original declaration. The order
+of the fields could be arbitrary and the library will reorder them based
 on offset for use in serialization. Necessity to keep types of fields
 in sync might be annoying and overwhelming. The good news is that you
-could omit types specification in macro language for all fields of
+could omit the type specification in the macro language for all fields of
 basic types (boolean, integer, float, complex, single characters,
 strings, pointers on all types listed above and even pointers on
 structures of base type). So example above could be reduced to:
@@ -334,7 +338,7 @@ int main (int argc, char * argv[])
 }
 ```
 
-For happy users of clang15+ library provides one more option to
+For users of Clang 15+, the library provides one more option to
 discover type descriptors. Use macro `MR_ADD_TYPES` for structs and
 unions. This macro accepts variable number of type names. It will
 automatically discover fields of most basic types, inline structures
@@ -427,14 +431,14 @@ CFLAGS += -I../Metaresc/src `xml2-config --cflags` -O2 -g -Wall
 LDLIBS += ../Metaresc/src/.libs/libmetaresc.a `xml2-config --libs` -lyaml
 ```
 Here we build two binary executables: `sample` and
-`sample_no_types`. Both executable links `sample.o` object file, but
-real `sample` also requires `sample_types.o`. `sample_types.o` is
+`sample_no_types`. Both executables link the `sample.o` object file, but
+the real `sample` also requires `sample_types.o`. `sample_types.o` is
 built out of `sample_types.c` mentioned above. This is a static
 function that will be automatically executed at the start of
 application (`__attribute__ ((constructor))`). This function adds to
 library registry type descriptors that were discovered from DWARF debug
-symbols. Those type descriptors comes from `sample_types.h`
-file. Content of `sample_types.h` generated in the build process with
+symbols. Those type descriptors come from the `sample_types.h`
+file. The content of `sample_types.h` is generated in the build process with
 the use of `mr_dwarf` utility. This utility takes an arbitrary list of
 object files (on Linux only) and executables and dumps all types of
 information found in debug symbols. This type information is presented
@@ -446,8 +450,37 @@ is processed with `dsymutil` (MacOS utility to extract debug symbols
 in a separate folder consumable by libdwarf), afterwards `mr_dwarf` is
 used to produce `sample_types.h` out of debug symbols, at this point
 all dependencies for building `sample_types.o` are satisfied and
-`sample_types.c` is get compiled, finally we do linking of `sample.o`
+`sample_types.c` gets compiled, finally we do linking of `sample.o`
 and `sample_types.o` into `sample` executable.
+
+The output of this sample application is as follows:
+```c
+tree = {
+  {
+    .value = "root",
+    .left = (tree_node_t[]){
+      {
+        .value = "left",
+        .left = NULL,
+        .right = NULL
+      }
+    },
+    .right = (tree_node_t[]){
+      {
+        .value = "right",
+        .left = NULL,
+        .right = NULL
+      }
+    }
+  }
+}
+```
+
+Note the additional pair of braces compared to the output of the
+previous samples. When a structure is passed to `MR_PRINT` without an
+explicit type, it is serialized by its address, which adds one more
+level of braces. Use `(tree_node_t, &root)` to get the output without
+them.
 
 ## Serialization/deserialization interface
 Library provides serialization/deserialization to/from following formats:
@@ -461,31 +494,31 @@ corresponding types
 * XDR - binary format for [External Data Representation
 Standard](https://tools.ietf.org/html/rfc4506)
 
-Availability of each particular format determined at ./configure stage
-of the build process.
-* XML2 require libxml2 library
-* YAML require libyaml library
-* XDR is available as part of Libc on most platforms, but in 2023 this
-code was extracted into Suns Transport-Independent RPC library for
-Linux (libtrpc) in Debian based distributions.
-* Deserialization from CINIT/JSON/XML1/SCM require bison/flex
+Availability of each particular format is determined at the ./configure
+stage of the build process.
+* XML2 requires the libxml2 library
+* YAML requires the libyaml library
+* XDR is available as part of libc on most platforms, but in 2023 this
+code was extracted into Sun's Transport-Independent RPC library for
+Linux (libtirpc) in Debian-based distributions.
+* Deserialization from CINIT/JSON/XML1/SCM requires bison/flex
 
 ### Serialization
 
-`MR_SAVE_*` macroses do a serialization. 
+`MR_SAVE_*` macros perform serialization.
 `MR_SAVE_CINIT`/`MR_SAVE_JSON`/`MR_SAVE_YAML`/`MR_SAVE_XML1`/`MR_SAVE_XML2`/`MR_SAVE_SCM`
 are string based serialization and require only two arguments: type of
 the pointer and pointer on data. Type of the pointer by default should
-be specified as C language token. Save macro do verification that
-data pointer matches specified type and after that convert type to a
-string. The rest of serialization process require type only as a
+be specified as a C language token. The save macro verifies that the
+data pointer matches the specified type and then converts the type to a
+string. The rest of the serialization process requires the type only as a
 string. It might happen that user serialization function gets data
 pointer as `void*` and type as a string. In this case you need to skip
 type verification step and access serialization with stringified
 type. Unfortunately library can't automatically detect in which form
 type is provided, so you need to make some macro tricks for switching
-between those two modes. All serialization macroses internally uses
-macro `MR_SAVE (type, pointer)`. This macro serialize data into
+between those two modes. All serialization macros internally use the
+macro `MR_SAVE (type, pointer)`. This macro serializes data into
 graph-like internal representation, which later on gets converted to
 specific formats. By default `MR_SAVE` is defined to `MR_SAVE_TYPED`
 which expects `type` to be a C token. There is another underlying
@@ -499,9 +532,9 @@ to a string. On GCC this feature is not supported and empty `type` will
 work only for pointers on basic types (`int`, `float`, `complex`,
 `bool`, `char*`, etc) which doesn't really make much sense in real life
 use cases. Semantics of empty `type` and single argument macro applies
-to whole family of macroses for all serialization formats.
+to whole family of macros for all serialization formats.
 
-Data pointer might be a pointer on a local array. In this cases
+Data pointer might be a pointer on a local array. In this case the
 library will serialize the whole array. Example below demonstrates
 serialization of an array with auto detection of pointer type (works
 both with GCC and Clang).
@@ -530,7 +563,7 @@ array = {
 In case of failure, the serialization macro will return `NULL`. More
 details on error handling could be found in section [Error
 handling](#error_handling).
-Memory allocated by serialization macroses must be deallocated by
+Memory allocated by serialization macros must be deallocated by
 `MR_FREE` function. More details on memory allocation could be found
 in section [Memory allocation](#memory_allocation)
 
@@ -541,15 +574,15 @@ XDR stream descriptor. This macro returns status of the operation as
 an enum of type `mr_status_t`. Possible values of this enum are
 `MR_SUCCESS` and `MR_FAILURE`.
 Stream descriptor is a structure of type `XDR` that must be
-initialized with a designated constructor. LibC/libtrpc provides constructor
+initialized with a designated constructor. LibC/libtirpc provides constructor
 (`xdr_create`) for stream that will redirect serialized data to file
 descriptor. Metaresc also provide constructor (`mr_xdrra_create`) that
 will store serialized data into memory. 
 For convenience purposes library also provides wrapper macro
-(`MR_SAVE_XDR_RA (type, pointer)`) that have all boilerplate 
-code for serialization into memory and returns result in a form of
-*resizable array* (`mr_rarray_t`). Declaration of type could be found
-in mr_proto.h Other serialization methods also have corresponding
+(`MR_SAVE_XDR_RA (type, pointer)`) that has all the boilerplate
+code for serialization into memory and returns the result in the form of
+a *resizable array* (`mr_rarray_t`). The declaration of the type can be found
+in mr_protos.h. Other serialization methods also have corresponding
 `MR_SAVE_*_RA` equivalents for serialization to *resizable array*.
 
 For serialization to XML user could either use specific method
@@ -561,8 +594,8 @@ benefit of XML1 vs XML2 is a 40% reduction of the memory footprint and
 comparable improvement in performance.
 
 ### Deserialization
-`MR_LOAD_*` macro family do deserialization. There are two options how
-those macro could be used:
+The `MR_LOAD_*` macro family performs deserialization. There are two options
+for how those macros could be used:
 * with 3 arguments `(type, src, dst)` those macro will return status
   of the operation. In this case `type` is a C language token that
   define type of loading structure, `src` is either a string in
@@ -598,31 +631,31 @@ int main ()
 The output of this program is:
 ```c
 div2 = {
-  "quot" : 1,
-  "rem" : 2
+  "quot": 1,
+  "rem": 2
 }
 status = MR_SUCCESS
 div3 = {
-  "quot" : 3,
-  "rem" : 4
+  "quot": 3,
+  "rem": 4
 }
 ```
 
 For unification purposes all formats also support loading from
-*resizable arrays*. Macroses
+*resizable arrays*. Macros
 `MR_LOAD_*_RA (type, resizable_array, dst)` takes a pointer on a
-`resizable_array_t` as a second arguments. Those macroses also could
-be used with 2 arguments assuming the same semantics as primary versions
-of load macroses.
+`resizable_array_t` as a second argument. Those macros also could
+be used with 2 arguments, assuming the same semantics as the primary versions
+of the load macros.
 
 Note that Metaresc serialization/deserialization supports cross
 referencing of pointers on the same object. Object will be serialized
 only once and other references on this object will be annotated
 accordingly, so deserialization process will be able to restore
-pointers correctly. This also impose a limitation on deserialization
-with simplified semantics (2 arguments). It should not be used in case
-if serialization tree may contain a pointer on a root object. A
-simpliest example of this case is a linked list element referring to
+pointers correctly. This also imposes a limitation on deserialization
+with simplified semantics (2 arguments). It should not be used if the
+serialization tree may contain a pointer to a root object. The
+simplest example of this case is a linked list element referring to
 its root element.
 
 ```c
@@ -652,28 +685,36 @@ int main ()
   return (EXIT_SUCCESS);
 }
 ```
-The output is:
+The output with Clang 18 is:
 ```c
 YAML:
 
---- &ref_idx_0
-next: *ref_idx_0
+--- &ref_idx_1
+next: *ref_idx_1
 ...
+
 
 status = MR_SUCCESS
 ll2_self_referenced = false
 ll3_self_referenced = true
 ```
 
+The value of `ll2_self_referenced` is compiler dependent. The
+simplified (2 arguments) form returns the structure by value, so the
+restored `next` pointer refers to `ll2` only if the compiler does not
+copy the returned object. GCC 13 prints
+`ll2_self_referenced = true` for the same program. Use the 3
+arguments form if the result must be restored in place.
+
 ### MR_PRINT helper macro
-For logging and debugging purposes its useful to have a wrapper layer
+For logging and debugging purposes it's useful to have a wrapper layer
 that will incorporate standard routine for output of serialized objects:
 serialization to string, `NULL` checking, output to file and memory
-deallocation. Metaresc provides `MR_PRINT` and `MR_FPRINT` macroses
+deallocation. Metaresc provides `MR_PRINT` and `MR_FPRINT` macros
 that hides all the boiler plate code and simulate Python-like
-semantics. Those variadic macroses automatically detects type of
-arguments and output them with proper formatting. 
-Supported types are: strings, charecters, booleans,
+semantics. Those variadic macros automatically detect the type of
+arguments and output them with proper formatting.
+Supported types are: strings, characters, booleans,
 integers, float, complex, pointers. Pointers on basic types also
 output content of referenced memory. With Clang pointers on structures
 and unions are also augmented with serialized content of referenced
@@ -687,7 +728,7 @@ pointer, format)` that allows to serialize into any other supported
 format. Possible formats are: CINIT, JSON, YAML, SCM, XML, XML1, XML2.
 
 `MR_PRINT` output to `stdout` and `MR_FPRINT` use the first argument as
-file descriptor. Both macroses returns number of outputed bytes.
+file descriptor. Both macros return the number of output bytes.
 
 ## Types declaration macro language
 
@@ -859,7 +900,7 @@ Default serialization of a pointer is a single instance of designated
 type, but Metaresc also supports representation of pointers as arrays
 of variable size. Size of the array in this case should be provided as
 another field of the first wrapping structure (i.e. resolution of
-pointers within unions requie context of first top level structure
+pointers within unions require the context of the first top-level structure
 that contains this union). Size may be specified either in bytes and
 serialization engine will calculate number of elements based on size
 of base type of the pointer, or user may provide a field with a number
@@ -1011,11 +1052,11 @@ serialize at run-time. **_text\_metadata_** of the union field works
 for identification of discriminator. Discriminator is a field in
 serialization hierarchy that in run-time identifies active branch of
 the union. The reason why this field might not be in parent structure
-is because for structures like linked lists or trees it make sense to
+is because for structures like linked lists or trees it makes sense to
 have this discriminator only at the top level, but not in individual
-nodes. If **_text\_metadata_** is not specified union is serialized as
+nodes. If **_text\_metadata_** is not specified the union is serialized as
 a first branch in union declaration. The same default serialization
-works in case if discriminor was not found at run-time. Identification
+works in case if discriminator was not found at run-time. Identification
 of the active branch is based on the type of the discriminator field:
 
 * Integer types and booleans are interpreted as an index of active
@@ -1128,10 +1169,10 @@ TYPEDEF_STRUCT (double_linked_list_node_t,
 		);
 ```
 
-Those overrides affects discriminators of integer types, booleans and
+Those overrides affect discriminators of integer types, booleans and
 enums. Overrides also could be specified for pointers on unions and
-arrays of unions. Unfortunatelly you can't declare overrides for
-pointers on dynamic arrays, because both declarations uses structured
+arrays of unions. Unfortunately you can't declare overrides for
+pointers on dynamic arrays, because both declarations use structured
 resources of the field.
 
 In case if union field doesn't have **_text\_metadata_** Metaresc will
@@ -1159,9 +1200,9 @@ in Metaresc including types derived from DWARF and `MR_ADD_TYPES()`.
 #### Array declaration
 Third argument **_suffix_** in the field's declaration may be used for
 specification array dimensions. Metaresc is capable to distinguish
-multi-dimensional arrays up to 4 diminsions. Higher orders of
+multi-dimensional arrays up to 4 dimensions. Higher orders of
 dimensions are treated as four-dimensional arrays with aggregated
-lower dimension. You could use intermediate wrapper types for propper
+lower dimension. You could use intermediate wrapper types for proper
 serialization of 5+ dimensional arrays.
 
 ```c
@@ -1175,7 +1216,7 @@ TYPEDEF_STRUCT (array_8d_t,
 		(array_4d_t, array, [2][2][2][2]));
 ```
 
-Each dimension is limitted to 2<sup>32</sup> elements (uint32_t
+Each dimension is limited to 2<sup>32</sup> elements (uint32_t
 type). If you need more than that most probably you're doing something
 wrong.
 
@@ -1212,7 +1253,7 @@ TYPEDEF_STRUCT (array_t,
 		(union_t, array, [2], "element_discriminator"),
 		(bool, element_discriminator, , "discriminator for array elements"));
 ```
-Example demostrates array of two elements discriminated by boolean
+Example demonstrates array of two elements discriminated by boolean
 value `element_discriminator`. `element_discriminator` is interpreted
 as an integer index within union, i.e. both elements of the array will
 be serialized as `_bool` or as `_int` respectively.
@@ -1274,7 +1315,7 @@ string. For declaration of a pointer on a single character add
 
 ```c
 TYPEDEF_STRUCT (substr_t,
-	(char *, str, , { .offset = offsetof (substr_t, length) }, "count_field_offset", .stype.mr_type = MR_TYPE_POINTER),
+	(char *, str, /* suffix */, /* text metadata */, { .offset = offsetof (substr_t, length) }, "count_field_offset", .stype.mr_type = MR_TYPE_POINTER),
 	VOID (size_t, length));
 ```
 
@@ -1358,12 +1399,12 @@ TYPEDEF_FUNC (int, compar_fn_t, (const void * /* x */, const void * /* y */));
 ```
 
 Declaration of function type in C language optionally accepts names of
-the argument. Unfortunatelly with Metaresc types only must be
+the argument. Unfortunately with Metaresc types only must be
 used. Types of return value and all arguments are stored in type
 descriptor and are available for introspection at run time.
 
 ### Metadata and resources definition for types
-All type declaration macroses accepts keyword `ATTRIBUTES` as an
+All type declaration macros accepts keyword `ATTRIBUTES` as an
 argument at any position. This keyword must be followed with a list of
 parameters in parentheses.
 
@@ -1387,18 +1428,18 @@ representation enables a set of extra features, such as:
 - [Deep copy](#deep-copy)
 - [Recursive memory deallocation](#recursive-memory-deallocation)
 - [Objects hashing](#objects-hashing)
-- [Comparation of structures](#comparation-of-structures)
+- [Comparison of structures](#comparison-of-structures)
 - [Generic sorting](#generic-sorting)
 
 ### Deep copy
-`MR_COPY_RECURSIVELY` is similar to `MR_LOAD_*` macroses. It may take
+`MR_COPY_RECURSIVELY` is similar to `MR_LOAD_*` macros. It may take
 2 or 3 arguemnts and semantics of those arguments is the same as for
-`MR_LOAD_*` macroses. The source (`src`) in this case is a pointer on
+`MR_LOAD_*` macros. The source (`src`) in this case is a pointer on
 original structure. All non-void pointers and strings will be
 allocated with `MR_CALLOC` and copied from the original source. Cross
 references will be restored identically to origin.
 
-Example below demostrates a deep copy of a binary tree.
+Example below demonstrates a deep copy of a binary tree.
 
 ```c
 #include <metaresc.h>
@@ -1432,7 +1473,7 @@ int main (int argc, char * argv[])
 Macro `MR_FREE_RECURSIVELY` requires two arguments `(type,
 pointer)`. Underlying function call traverse through the graph and
 frees all non-NULL pointers and strings. Deallocation of the top level
-object is a duty of a calling function. Example above demostrates the
+object is a duty of a calling function. Example above demonstrates the
 usage of this macro. As a result of execution of this code all memory
 blocks allocated by `MR_COPY_RECURSIVELY` are freed by
 `MR_FREE_RECURSIVELY`. Valgrind memory check as follows:
@@ -1498,11 +1539,96 @@ pointers and strings are hashed based on content value, but not a
 pointer value. Copies derived by `MR_COPY_RECURSIVELY` have identical
 hash values as an original object.
 
-### Comparation of structures
+Example below demonstrates that structures with equal content have
+equal hash values:
+
+```c
+#include <metaresc.h>
+
+TYPEDEF_STRUCT (mr_div_t,
+                int quot,
+                int rem,
+                );
+
+int main ()
+{
+  mr_div_t a = { 1, 2 }, b = { 1, 3 }, c = { 1, 2 };
+  MR_PRINT ("a = ", (mr_div_t, &a),
+            "hash (a) = ", MR_HASH_STRUCT (mr_div_t, &a), "\n",
+            "b = ", (mr_div_t, &b),
+            "hash (b) = ", MR_HASH_STRUCT (mr_div_t, &b), "\n",
+            "c = ", (mr_div_t, &c),
+            "hash (c) = ", MR_HASH_STRUCT (mr_div_t, &c), "\n");
+  return (EXIT_SUCCESS);
+}
+```
+
+The output of this program is:
+
+```c
+a = {
+  .quot = 1,
+  .rem = 2
+}
+hash (a) = 9
+b = {
+  .quot = 1,
+  .rem = 3
+}
+hash (b) = 10
+c = {
+  .quot = 1,
+  .rem = 2
+}
+hash (c) = 9
+```
+
+### Comparison of structures
 `MR_CMP_STRUCTS` is a macro that has 3 arguments: `(type, pointer1,
-pointer2)`. It takes two pointers of the same type and returns
-integrer value that represents result of structures
-comparation. Non-serializable fields are not used for comparation.
+pointer2)`. It takes two pointers of the same type and returns an
+integer value that represents the result of the structure
+comparison. Non-serializable fields are not used for comparison.
+
+Example below compares the same structures as in the hashing example:
+
+```c
+#include <metaresc.h>
+
+TYPEDEF_STRUCT (mr_div_t,
+                int quot,
+                int rem,
+                );
+
+int main ()
+{
+  mr_div_t a = { 1, 2 }, b = { 1, 3 }, c = { 1, 2 };
+  MR_PRINT ("a = ", (mr_div_t, &a),
+            "b = ", (mr_div_t, &b),
+            "c = ", (mr_div_t, &c),
+            "cmp (a, b) = ", MR_CMP_STRUCTS (mr_div_t, &a, &b), "\n",
+            "cmp (a, c) = ", MR_CMP_STRUCTS (mr_div_t, &a, &c), "\n");
+  return (EXIT_SUCCESS);
+}
+```
+
+The output of this program is:
+
+```c
+a = {
+  .quot = 1,
+  .rem = 2
+}
+b = {
+  .quot = 1,
+  .rem = 3
+}
+c = {
+  .quot = 1,
+  .rem = 2
+}
+cmp (a, b) = -1
+cmp (a, c) = 0
+```
 
 ### Generic sorting
 
