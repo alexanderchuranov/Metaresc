@@ -841,7 +841,7 @@
 #define MR_ADD_TYPE_(ID, MR_TYPE_NAME)					\
   MR_DESCRIPTOR_ATTR mr_td_t MR_DESCRIPTOR_PREFIX (ID, MR_TYPE_NAME) = { \
     .type.str = #MR_TYPE_NAME,						\
-    .mr_type = (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(MR_TYPE_NAME*)0)) ? MR_TYPE_STRUCT : MR_TYPE_UNION, \
+    .mr_type = (MR_RECORD_TYPE_CLASS == __builtin_classify_type (*(volatile MR_TYPE_NAME*)0)) ? MR_TYPE_STRUCT : MR_TYPE_UNION, \
     .td_producer = MR_TDP_DUMP_STRUCT,					\
     .size = sizeof (MR_TYPE_NAME),					\
     .param.struct_param.fields = (mr_fd_t*[]){				\
