@@ -725,8 +725,9 @@
   MR_OBJ_OF_TYPE returns an object of specified type. It could be as simple as (TYPE){},
   but will not work for type void, that's why it's wrapped into __builtin_choose_expr.
   Type cast require additional typeof wrapper for array types, otherwise construct is invalid.
+  Pointer is volatile qualified, otherwise clang 23+ reports null pointer indirection (-Wnull-dereference).
 */
-#define MR_OBJ_OF_TYPE(TYPE) *__builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), "", (__typeof__ (TYPE) *)0)
+#define MR_OBJ_OF_TYPE(TYPE) *__builtin_choose_expr (__builtin_types_compatible_p (TYPE, void), "", (volatile __typeof__ (TYPE) *)0)
 
 #define MR_TYPEDEF_STUB_STUB(ID, MR_TYPE_NAME) typedef union {
 #define MR_END_STUB_STUB(ID, MR_TYPE_NAME, ATTR, ...) } MR_TYPEDEF_STUB_PREFIX (MR_TYPE_NAME);
