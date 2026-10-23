@@ -542,7 +542,7 @@ xdr_char_array_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   mr_idx_t parent = ptrs->ra[idx].parent;
   bool is_a_dynamic_string = ((parent != MR_NULL_IDX) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-  typeof (ptrdes->MR_SIZE) str_len;
+  uint32_t str_len;
 
   if (XDR_ENCODE == xdrs->x_op)
     {
@@ -583,7 +583,7 @@ xdr_char_array_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
         {
           /* fixed-size char array: a length from the stream that exceeds the
              declared field size would overflow the inline buffer */
-          typeof (ptrdes->MR_SIZE) max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
+          uint32_t max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
           if (str_len > max_size)
             {
               MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, ptrdes->fdp ? ptrdes->fdp->name.str : "");
