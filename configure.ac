@@ -217,5 +217,5 @@ if [[ x${HAVE_INT128} = xyes ]]; then
   AC_DEFINE(MR_HAVE_INT128, [], [define if __int128 is supported])
 fi
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile examples/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile fuzz/Makefile examples/Makefile])
 AC_OUTPUT

@@ -2,7 +2,7 @@
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = src tests examples
+SUBDIRS = src tests fuzz examples
 
 docs: Doxyfile
 	doxygen $<
