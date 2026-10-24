@@ -27,6 +27,23 @@
 #ifdef HAVE_RPC_TYPES_H
 # include <rpc/types.h>
 # include <rpc/xdr.h>
+
+/* Some systems (macOS) do not declare xdr_uint16_t and xdr_uint32_t */
+# ifndef HAVE_XDR_UINT16_T
+#  ifdef HAVE_XDR_U_INT16_T
+#   define xdr_uint16_t xdr_u_int16_t
+#  else /* HAVE_XDR_U_INT16_T */
+#   define xdr_uint16_t xdr_u_short
+#  endif /* HAVE_XDR_U_INT16_T */
+# endif /* HAVE_XDR_UINT16_T */
+
+# ifndef HAVE_XDR_UINT32_T
+#  ifdef HAVE_XDR_U_INT32_T
+#   define xdr_uint32_t xdr_u_int32_t
+#  else /* HAVE_XDR_U_INT32_T */
+#   define xdr_uint32_t xdr_u_int
+#  endif /* HAVE_XDR_U_INT32_T */
+# endif /* HAVE_XDR_UINT32_T */
 #endif /* HAVE_RPC_TYPES_H */
 
 /* Library exports */

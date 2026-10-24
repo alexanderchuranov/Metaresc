@@ -417,22 +417,6 @@ xdr_uint64_t (XDR * xdrs, uint64_t * uint64)
   return (xdr_int64_t (xdrs, (int64_t*) uint64));
 }
 
-#ifndef HAVE_XDR_UINT16_T
-#  ifdef HAVE_XDR_U_INT16_T
-#    define xdr_uint16_t xdr_u_int16_t
-#  else /* HAVE_XDR_U_INT16_T */
-#    define xdr_uint16_t xdr_u_short
-#  endif /* HAVE_XDR_U_INT16_T */
-#endif /* HAVE_XDR_UINT16_T */
-
-#ifndef HAVE_XDR_UINT32_T
-#  ifdef HAVE_XDR_U_INT32_T
-#    define xdr_uint32_t xdr_u_int32_t
-#  else /* HAVE_XDR_U_INT32_T */
-#    define xdr_uint32_t xdr_u_int
-#  endif /* HAVE_XDR_U_INT32_T */
-#endif /* HAVE_XDR_UINT32_T */
-
 #define XDR_INT_TYPE(TYPE)						\
   static mr_status_t _xdr_ ## TYPE (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs) \
   { return (xdr_ ## TYPE (xdrs, ptrs->ra[idx].data.ptr) ? MR_SUCCESS : MR_FAILURE); }

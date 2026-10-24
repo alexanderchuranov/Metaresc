@@ -95,7 +95,7 @@ START_TEST (valid_int_array_roundtrips)
 START_TEST (oversized_char_array_rejected)
 {
   hostile_char_array_t restored;
-  mr_rarray_t ra = encode_hostile_stream (sizeof (restored.str) + 1);
+  mr_rarray_t ra = encode_hostile_stream (sizeof (restored.str) + sizeof (restored.str[0]));
   memset (&restored, 0, sizeof (restored));
   mr_status_t status = MR_LOAD_XDR_RA (hostile_char_array_t, &ra, &restored);
 
