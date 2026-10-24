@@ -17,6 +17,18 @@
 /* Define to 1 if you have the <rpc/types.h> header file. */
 #undef HAVE_RPC_TYPES_H
 
+/* Define to 1 if you have the `xdr_u_int16_t' function. */
+#undef HAVE_XDR_U_INT16_T
+
+/* Define to 1 if you have the `xdr_u_int32_t' function. */
+#undef HAVE_XDR_U_INT32_T
+
+/* Define to 1 if you have the `xdr_uint16_t' function. */
+#undef HAVE_XDR_UINT16_T
+
+/* Define to 1 if you have the `xdr_uint32_t' function. */
+#undef HAVE_XDR_UINT32_T
+
 /* Preprocessor routines depth */
 #undef MR_PP_DEPTH
 
