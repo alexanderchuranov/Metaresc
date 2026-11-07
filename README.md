@@ -33,6 +33,7 @@ of structures, generic sorting.
       - [Fields of a basic types](#fields-of-a-basic-types)
       - [Extended semantics for fields declaration](#extended-semantics-for-fields-declaration)
       - [Non-serializable fields](#non-serializable-fields)
+      - [Fields renaming for serialization/deserialization](#fields-renaming-for-serializationdeserialization)
       - [Field declaration](#field-declaration)
       - [Pointer declaration](#pointer-declaration)
       - [Function pointer declaration](#function-pointer-declaration)
