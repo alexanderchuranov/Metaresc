@@ -108,7 +108,7 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
   mr_fd_t * fdp = mr_get_any_fd_by_name (fmt, NULL);
   if (NULL == fdp)
     {
-      char * tail = strchr (fmt, ' ');
+      char * tail = strchr ((char*)fmt, ' ');
       if (tail)
         {
           int length = tail - fmt;
