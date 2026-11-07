@@ -885,6 +885,44 @@ TYPEDEF_STRUCT (non_serializable_t,
 		);
 ```
 
+#### Fields renaming for serialization/deserialization
+By default a field is serialized under its name in the C declaration.
+This could be inconvenient if the data is exchanged with a system that
+uses a different naming convention, e.g. camelCase in JSON while the C
+code follows snake_case. A name used in serialized documents could be
+overridden with a designated initializer of the field descriptor
+`.name.str = "new_name"`. Put it right after the text metadata, i.e. as
+the fifth parameter of the field declaration. Skipped optional
+parameters are left empty:
+
+```c
+TYPEDEF_STRUCT (struct_t,
+		(int, snake_style, , , .name.str = "camelStyle"),
+		(int, other_field),
+		);
+```
+
+Serialization of this type produces the new name, and all
+deserializers accept it:
+
+```json
+{
+  "camelStyle": 1,
+  "other_field": 2
+}
+```
+
+The default name is also set by the declaration macro, so the
+override initializes the same member twice. Clang reports this with
+the warning `initializer overrides prior initialization of this
+subobject`. Add `-Wno-initializer-overrides` to the compiler flags to
+suppress it. Metaresc's own build uses this flag, and it is required
+for other declarations that rely on designated initializers as well.
+
+Name of the field in the C structure stays the same
+(`snake_style`). Only the name in the serialized document is changed,
+and the original name is no longer recognized on loading.
+
 #### Field declaration
 Type of the field may consist of multiple tokens and could include
 keywords: `const`, `volatile`, `_Atomic`, `restrict`, `struct`,
