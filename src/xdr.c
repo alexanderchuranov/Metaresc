@@ -148,7 +148,7 @@ xdrra_inline (XDR * xdrs, u_int len)
   mr_rarray_t * ra = (mr_rarray_t*)xdrs->x_private;
 
   if (NULL == ra)
-    return (false);
+    return (NULL);
   
   if (ra->MR_SIZE - xdrs->x_handy < len)
     return (NULL);
