@@ -986,6 +986,12 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (ptrs->ra[idx].flags & MR_IS_NULL)
     return (MR_SUCCESS);
 
+  /* xdr_save_pointer sets this flag only for the field MR_OPAQUE_DATA, anything else is a corrupted stream */
+  if ((ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA) &&
+      !(ptrs->ra[idx].fdp && ptrs->ra[idx].fdp->name.str &&
+        (0 == strcmp (ptrs->ra[idx].fdp->name.str, MR_OPAQUE_DATA_STR))))
+    return (MR_FAILURE);
+
   if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
     return (MR_FAILURE);
 
