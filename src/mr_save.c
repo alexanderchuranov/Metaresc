@@ -373,7 +373,7 @@ mr_ud_foreach (mr_ptrdes_t * ptrdes, mr_visit_fn_t visit_fn, void * context)
   return (MR_FAILURE);
 }
 
-static void
+void
 mr_ud_free (mr_ptrdes_t * ptrdes)
 {
   if (ptrdes->value_type == MR_VT_UD_PTR)
@@ -389,7 +389,7 @@ mr_ud_free (mr_ptrdes_t * ptrdes)
  * Finds out union discriminator
  * @param mr_save_data save routines data and lookup structures
  */
-static mr_fd_t *
+mr_fd_t *
 mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * union_fdp)
 {
   mr_fd_t * fdp = NULL; /* marker that discriminator was not found */
@@ -1799,7 +1799,11 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
           dst.data.ptr = &ptrdes->MR_SIZE;
           dst.mr_type = MR_TYPE_DETECT (typeof (ptrdes->MR_SIZE));
           mr_assign_int (&dst, &src);
-          if (src.vt_string[0] == 'c') /* if pointer discriminated by count we need to scale MR_SIZE by element_size */
+	  /*
+	    if pointer discriminated by count (count_field_offset or count_field_name
+	    fields of mr_ptr_t) we need to scale MR_SIZE by element_size
+	  */
+          if (src.vt_string[0] == 'c')
             ptrdes->MR_SIZE *= element_size;
         }
 

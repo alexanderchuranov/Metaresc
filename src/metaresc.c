@@ -1376,7 +1376,7 @@ mr_type_size (mr_type_t mr_type)
       [MR_TYPE_FUNC] = sizeof (void*),
       [MR_TYPE_FUNC_TYPE] = sizeof (void*),
       MR_FOREACH (MR_TYPE_SIZE,
-                  string_t, char, bool,
+                  string_t, mr_static_string_t, char, bool,
                   int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t, mr_int128_t, mr_uint128_t,
                   float, complex_float_t, double, complex_double_t, long_double_t, complex_long_double_t)
     };

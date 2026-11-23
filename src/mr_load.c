@@ -104,8 +104,14 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   return (MR_SUCCESS);
 }
 
+/**
+ * Frees values that were allocated by the loader for the nodes. The values
+ * share memory with union discriminators cache, so they must be freed before
+ * the cache is used.
+ * @param ptrs array with descriptors of loaded data
+ */
 void
-mr_free_load_values (mr_ra_ptrdes_t * ptrs)
+mr_free_ptrdes_values (mr_ra_ptrdes_t * ptrs)
 {
   if (NULL == ptrs)
     return;
@@ -114,31 +120,45 @@ mr_free_load_values (mr_ra_ptrdes_t * ptrs)
 
   mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
   for (i = 1; i < count; ++i)
-    switch (ptrs->ra[i].value_type)
-      {
-      case MR_VT_STRING:
-        if (ptrs->ra[i].vt_string)
-          MR_FREE (ptrs->ra[i].vt_string);
-        break;
+    {
+      switch (ptrs->ra[i].value_type)
+        {
+        case MR_VT_STRING:
+          if (ptrs->ra[i].vt_string)
+            MR_FREE (ptrs->ra[i].vt_string);
+          break;
 
-      case MR_VT_INTMAX:
-        if (ptrs->ra[i].vt_intmax)
-          MR_FREE (ptrs->ra[i].vt_intmax);
-        break;
+        case MR_VT_INTMAX:
+          if (ptrs->ra[i].vt_intmax)
+            MR_FREE (ptrs->ra[i].vt_intmax);
+          break;
 
-      case MR_VT_LONG_DOUBLE:
-        if (ptrs->ra[i].vt_long_double)
-          MR_FREE (ptrs->ra[i].vt_long_double);
-        break;
+        case MR_VT_LONG_DOUBLE:
+          if (ptrs->ra[i].vt_long_double)
+            MR_FREE (ptrs->ra[i].vt_long_double);
+          break;
 
-      case MR_VT_COMPLEX_LONG_DOUBLE:
-        if (ptrs->ra[i].vt_complex_long_double)
-          MR_FREE (ptrs->ra[i].vt_complex_long_double);
-        break;
+        case MR_VT_COMPLEX_LONG_DOUBLE:
+          if (ptrs->ra[i].vt_complex_long_double)
+            MR_FREE (ptrs->ra[i].vt_complex_long_double);
+          break;
 
-      default:
-        break;
-      }
+        default:
+          break;
+        }
+      ptrs->ra[i].value_type = MR_VT_VOID;
+    }
+}
+
+void
+mr_free_load_values (mr_ra_ptrdes_t * ptrs)
+{
+  if (NULL == ptrs)
+    return;
+  if (NULL == ptrs->ra)
+    return;
+
+  mr_free_ptrdes_values (ptrs);
   MR_FREE (ptrs->ra);
   memset (ptrs, 0, sizeof (*ptrs));
 }
@@ -712,6 +732,21 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (status);
 }
 
+/**
+ * Size of an element that a pointer points to.
+ * @param ptrdes descriptor of a pointer node
+ * @return size of the element or zero if it is not known
+ */
+static mr_size_t
+mr_pointer_element_size (mr_ptrdes_t * ptrdes)
+{
+  mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux);
+  mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
+  if (0 == element_size)
+    element_size = tdp ? tdp->size : 0;
+  return (element_size);
+}
+
 void
 mr_pointer_set_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -723,18 +758,179 @@ mr_pointer_set_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       __typeof__ (ptrs->ra[idx].MR_SIZE) size = ptrs->ra[idx].MR_SIZE;
       src.data.ptr = &size;
       src.mr_type = MR_TYPE_DETECT (__typeof__ (size));
+      /*
+	if pointer discriminated by count (count_field_offset or count_field_name
+	fields of mr_ptr_t) we need to scale size by element_size
+      */
       if (dst.vt_string[0] == 'c')
         {
-          mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
-          mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux);
-          mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
-          if (0 == element_size)
-            element_size = tdp ? tdp->size : 0;
+          mr_size_t element_size = mr_pointer_element_size (&ptrs->ra[idx]);
           if (0 != element_size)
             size /= element_size;
         }
       mr_assign_int (&dst, &src);
     }
+}
+
+/**
+ * Checks that a pointer that was loaded from a document has the size that the
+ * document declares in the size field. The size field of type void is updated
+ * to the size of loaded data. If a document has no size field,
+ * then the size is set by the loader and there is nothing to check.
+ * @param idx node index of a pointer
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS if the size field is consistent with the loaded data
+ */
+static mr_status_t
+mr_validate_pointer_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
+{
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+
+  /* references and nulls do not own a block, and there are no loaded data in a pointer without content */
+  if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+    return (MR_SUCCESS);
+  if ((MR_NULL_IDX == ptrdes->first_child) || (NULL == ptrdes->data.ptr) || (NULL == *(void**)ptrdes->data.ptr))
+    return (MR_SUCCESS);
+
+  mr_ptrdes_t src, dst;
+  mr_pointer_get_size_ptrdes (&src, idx, ptrs);
+  if (NULL == src.data.ptr)
+    return (MR_SUCCESS);
+
+  mr_size_t size = ptrdes->MR_SIZE;
+  /*
+    if pointer discriminated by count (count_field_offset or count_field_name
+    fields of mr_ptr_t) we need to scale size by element_size
+  */
+  if (src.vt_string[0] == 'c')
+    {
+      mr_size_t element_size = mr_pointer_element_size (ptrdes);
+      if (0 != element_size)
+        size /= element_size;
+    }
+
+  if (MR_TYPE_VOID == src.mr_type)
+    mr_pointer_set_size (idx, ptrs);
+  else
+    {
+      mr_size_t doc_size = 0;
+      dst.data.ptr = &doc_size;
+      dst.mr_type = MR_TYPE_DETECT (__typeof__ (doc_size));
+      mr_assign_int (&dst, &src);
+
+      if (doc_size > size)
+	{
+	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_POINTER_SIZE_MISMATCH, doc_size, size);
+	  return (MR_FAILURE);
+	}
+    }
+
+  return (MR_SUCCESS);
+}
+
+/**
+ * Checks that a loaded union has the branch that its discriminator resolves
+ * to. The branch of a document is selected by the name of a field or by a type
+ * cast, and the discriminator is an ordinary field of a document, so they may
+ * not agree. All consumers of a loaded object (save, copy, free) resolve the
+ * branch by the discriminator and would treat the data as a type that it was
+ * not loaded as. The resolution is cached in the nodes in the same way as on
+ * save.
+ * @param idx node index of a union
+ * @param mr_save_data context of the union discriminators resolution
+ * @return MR_SUCCESS if all loaded branches are the discriminated one
+ */
+static mr_status_t
+mr_validate_union_branch (mr_idx_t idx, mr_save_data_t * mr_save_data)
+{
+  mr_ra_ptrdes_t * ptrs = &mr_save_data->ptrs;
+  mr_idx_t parent, child;
+
+  if (MR_NULL_IDX == ptrs->ra[idx].first_child)
+    return (MR_SUCCESS);
+
+  /* the same lookup of a field descriptor of the union as in mr_save_union */
+  for (parent = idx; parent != MR_NULL_IDX; parent = ptrs->ra[parent].parent)
+    if (ptrs->ra[parent].fdp && !ptrs->ra[parent].fdp->non_persistent)
+      break;
+  if (MR_NULL_IDX == parent)
+    return (MR_SUCCESS);
+
+  mr_fd_t * union_fdp = ptrs->ra[parent].fdp;
+  /* a union without a discriminator is always saved as the default branch,
+     but documents may select any of the branches */
+  if (NULL == mr_get_any_fd_by_name (union_fdp->meta, NULL))
+    return (MR_SUCCESS);
+
+  mr_fd_t * discriminated_fdp = mr_union_discriminator (mr_save_data, idx, union_fdp);
+  for (child = ptrs->ra[idx].first_child; child != MR_NULL_IDX; child = ptrs->ra[child].next)
+    if (!(ptrs->ra[child].flags & MR_IS_NULL) && (ptrs->ra[child].fdp != discriminated_fdp))
+      {
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_BRANCH,
+                    ptrs->ra[child].fdp ? ptrs->ra[child].fdp->name.str : "unknown",
+                    discriminated_fdp ? discriminated_fdp->name.str : "unknown");
+        return (MR_FAILURE);
+      }
+  return (MR_SUCCESS);
+}
+
+/**
+ * Validates consistency of a loaded document: unions must be loaded as
+ * the branch that the discriminator selects, and sizes of pointers must be
+ * the same as in the size fields of the document. Memory of the values that
+ * were allocated by the loader is shared with the cache of union
+ * discriminators, so the values must be freed before this call
+ * (mr_free_ptrdes_values).
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS if the document is consistent
+ */
+mr_status_t
+mr_validate_load (mr_ra_ptrdes_t * ptrs)
+{
+  mr_save_data_t mr_save_data = { .ptrs = *ptrs, };
+  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_status_t status = MR_SUCCESS;
+  mr_res_t context = {
+    .data = { &mr_save_data.ptrs },
+    .type = "mr_ra_ptrdes_t",
+    .MR_SIZE = sizeof (mr_ra_ptrdes_t),
+  };
+
+  if (MR_SUCCESS != mr_ic_new (&mr_save_data.union_discriminators, mr_uds_get_hash, mr_uds_cmp, "uintptr", MR_IC_HASH, &context))
+    return (MR_FAILURE);
+
+  for (i = 1; i < count; ++i)
+    {
+      ptrs->ra[i].value_type = MR_VT_UD_SET;
+      ptrs->ra[i].ud_set.count = 0;
+    }
+
+  for (i = 1; (MR_SUCCESS == status) && (i < count); ++i)
+    switch (ptrs->ra[i].mr_type)
+      {
+      case MR_TYPE_POINTER:
+        status = mr_validate_pointer_size (i, ptrs);
+        break;
+
+      case MR_TYPE_UNION:
+      case MR_TYPE_ANON_UNION:
+      case MR_TYPE_NAMED_ANON_UNION:
+        if (!(ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+          status = mr_validate_union_branch (i, &mr_save_data);
+        break;
+
+      default:
+        break;
+      }
+
+  for (i = 1; i < count; ++i)
+    mr_ud_free (&ptrs->ra[i]);
+
+  if (mr_save_data.mr_ra_ud != NULL)
+    MR_FREE (mr_save_data.mr_ra_ud);
+  mr_ic_free (&mr_save_data.union_discriminators);
+
+  return (status);
 }
 
 /**
@@ -817,7 +1013,6 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     status = mr_load (*data + count++ * fd_.stype.size, &fd_, node, ptrs);
 
   ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
-  mr_pointer_set_size (idx, ptrs);
   
   return (status);
 }
@@ -962,12 +1157,21 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       if (MR_SUCCESS == status)
         status = mr_set_crossrefs (ptrs);
 
+      if (MR_SUCCESS == status)
+        {
+          /* values of the nodes share memory with the cache of union discriminators */
+          mr_free_ptrdes_values (ptrs);
+          status = mr_validate_load (ptrs);
+        }
+
       if (MR_SUCCESS != status)
         for (i = count - 1; i > 0; --i)
           if (((MR_TYPE_POINTER == ptrs->ra[i].mr_type) || (MR_TYPE_STRING == ptrs->ra[i].mr_type))
               && *(void**)ptrs->ra[i].data.ptr)
             {
-              MR_FREE (*(void**)ptrs->ra[i].data.ptr);
+              /* references do not own the memory, but they could be already set to the memory of other nodes */
+              if (!(ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+                MR_FREE (*(void**)ptrs->ra[i].data.ptr);
               *(void**)ptrs->ra[i].data.ptr = NULL;
             }
     }
