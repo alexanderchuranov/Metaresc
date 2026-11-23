@@ -245,48 +245,11 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
   mr_status_t status = MR_SUCCESS;
 
-  /* set all cross refernces */
+  /* in XDR a reference holds the index of the target node */
   for (i = 1; i < count; ++i)
     if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
-      {
-        mr_idx_t ref_idx = ptrs->ra[i].first_child;
-        if (ref_idx >= count)
-          {
-            MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, "ref_idx", ref_idx);
-            status = MR_FAILURE;
-          }
-        else
-          {
-            void * data = ptrs->ra[ref_idx].data.ptr;
-
-            if ((MR_TYPE_POINTER != ptrs->ra[i].mr_type) &&
-                (MR_TYPE_STRING != ptrs->ra[i].mr_type))
-              {
-                MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrs->ra[i].mr_type);
-                status = MR_FAILURE;
-                continue;
-              }
-
-            if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
-              {
-                if (NULL == data)
-                  {
-                    MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-                    status = MR_FAILURE;
-                  }
-                else
-                  data = *(void**)data;
-              }
-
-            if (NULL == ptrs->ra[i].data.ptr)
-              {
-                MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-                status = MR_FAILURE;
-              }
-            else
-              *(void**)ptrs->ra[i].data.ptr = data;
-          }
-      }
+      if (MR_SUCCESS != mr_set_crossref (ptrs, i, ptrs->ra[i].first_child))
+        status = MR_FAILURE;
   return (status);
 }
 
@@ -315,6 +278,10 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, m
   else
     MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNSUPPORTED_NODE_TYPE, fdp->stype.mr_type);
 
+  /* non persistent descriptors are local variables of the callers, so they can't be referenced after return */
+  if (fdp->non_persistent)
+    ptrs->ra[idx].fdp = fdp->stype.tdp ? &fdp->stype.tdp->mr_ptr_fd : NULL;
+
   return (status);
 }
 
@@ -333,10 +300,16 @@ mr_xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
     return (MR_FAILURE);
 
   mr_status_t status = xdr_load_inner (data, fdp, xdrs, &ptrs, 0);
-  mr_status_t crossref_status = mr_set_crossrefs (&ptrs);
 
   if (MR_SUCCESS == status)
-    status = crossref_status;
+    status = mr_set_crossrefs (&ptrs);
+
+  if (MR_SUCCESS == status)
+    status = mr_validate_load (&ptrs);
+
+  /* a failed load must not leave allocated memory behind */
+  if (MR_SUCCESS != status)
+    mr_free_loaded_pointers (&ptrs);
 
   if (ptrs.ra != NULL)
     MR_FREE (ptrs.ra);
@@ -620,6 +593,9 @@ xdr_save_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 static mr_status_t
 xdr_load_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
+  /* the pointer must be initialized before any failure, otherwise rollback would free garbage */
+  *(char**)ptrs->ra[idx].data.ptr = NULL;
+
   if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
     return (MR_FAILURE);
 
