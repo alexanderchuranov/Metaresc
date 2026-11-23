@@ -20,6 +20,78 @@
 TYPEDEF_FUNC (mr_status_t, mr_load_handler_t, (mr_idx_t /* idx */, mr_ra_ptrdes_t * /* ptrs */));
 
 /**
+ * Frees memory that was allocated by the loader for pointers and strings.
+ * It is used to roll back a failed load. References do not own the memory.
+ * @param ptrs array with descriptors of loaded data
+ */
+void
+mr_free_loaded_pointers (mr_ra_ptrdes_t * ptrs)
+{
+  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
+
+  /* in the reverse order, so a block is freed after the pointers that are stored in it */
+  for (i = count - 1; i > 0; --i)
+    if (((MR_TYPE_POINTER == ptrs->ra[i].mr_type) || (MR_TYPE_STRING == ptrs->ra[i].mr_type))
+        && ptrs->ra[i].data.ptr && *(void**)ptrs->ra[i].data.ptr)
+      {
+        /* references do not own the memory, but they could be already set to the memory of other nodes */
+        if (!(ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+          MR_FREE (*(void**)ptrs->ra[i].data.ptr);
+        *(void**)ptrs->ra[i].data.ptr = NULL;
+      }
+}
+
+/**
+ * Sets a single cross reference. The node is marked as a reference and
+ * must be substituted with the pointer to the data of the target node.
+ * This substitution can't be made during loading because of forward references.
+ * The function is shared by all loaders. Loaders differ in a way how
+ * they resolve a reference to a target node.
+ * @param ptrs array with descriptors of loaded data
+ * @param idx node index of the reference
+ * @param target node index of the node that the reference points to
+ * @return MR_SUCCESS if the reference was set
+ */
+mr_status_t
+mr_set_crossref (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, mr_idx_t target)
+{
+  mr_idx_t count = ptrs->size / sizeof (ptrs->ra[0]);
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+
+  if ((target <= 0) || (target >= count))
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, target);
+      return (MR_FAILURE);
+    }
+
+  if ((MR_TYPE_POINTER != ptrdes->mr_type) && (MR_TYPE_STRING != ptrdes->mr_type))
+    {
+      MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrdes->mr_type);
+      return (MR_FAILURE);
+    }
+
+  if (NULL == ptrdes->data.ptr)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (MR_FAILURE);
+    }
+
+  void * data = ptrs->ra[target].data.ptr;
+  if (ptrdes->flags & MR_IS_CONTENT_REFERENCE)
+    {
+      if (NULL == data)
+        {
+          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+          return (MR_FAILURE);
+        }
+      data = *(void**)data;
+    }
+
+  *(void**)ptrdes->data.ptr = data;
+  return (MR_SUCCESS);
+}
+
+/**
  * Post load references setting. If node was marked as references
  * it should be substitute with actual pointer. This substition
  * can't be made during structure loading because of forward references.
@@ -70,33 +142,8 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
             continue;
           }
 
-        void * data = ptrs->ra[idx].data.ptr;
-
-        if ((MR_TYPE_POINTER != ptrs->ra[i].mr_type) &&
-            (MR_TYPE_STRING != ptrs->ra[i].mr_type))
-          {
-            MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_TARGET_TYPE, ptrs->ra[i].mr_type);
-            continue;
-          }
-
-        if (ptrs->ra[i].flags & MR_IS_CONTENT_REFERENCE)
-          {
-            if (NULL == data)
-              {
-                MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-                continue;
-              }
-            else
-              data = *(void**)data;
-          }
-
-        if (NULL == ptrs->ra[i].data.ptr)
-          {
-            MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
-            continue;
-          }
-
-        *(void**)ptrs->ra[i].data.ptr = data;
+        /* an unresolved reference stays as it was loaded, the problem is already reported */
+        mr_set_crossref (ptrs, i, idx);
       }
   
   MR_FREE (table);
@@ -1165,15 +1212,7 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
         }
 
       if (MR_SUCCESS != status)
-        for (i = count - 1; i > 0; --i)
-          if (((MR_TYPE_POINTER == ptrs->ra[i].mr_type) || (MR_TYPE_STRING == ptrs->ra[i].mr_type))
-              && *(void**)ptrs->ra[i].data.ptr)
-            {
-              /* references do not own the memory, but they could be already set to the memory of other nodes */
-              if (!(ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-                MR_FREE (*(void**)ptrs->ra[i].data.ptr);
-              *(void**)ptrs->ra[i].data.ptr = NULL;
-            }
+        mr_free_loaded_pointers (ptrs);
     }
 
   if (fdp->non_persistent)
