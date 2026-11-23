@@ -42,6 +42,49 @@ mr_free_loaded_pointers (mr_ra_ptrdes_t * ptrs)
 }
 
 /**
+ * Checks that a node may be referenced by a pointer or by a string.
+ * References are made on save only between nodes of the same type
+ * (mr_cmp_ptrdes), so a reference to a node of another type comes from a
+ * damaged document. The pointer would be set to an object that is
+ * traversed later as an object of another type.
+ * @param ptrs array with descriptor of loaded data
+ * @param idx index of a node that is a reference
+ * @param ref_idx index of the node that is referenced
+ * @return true if the target is valid
+ */
+static bool
+mr_ref_target_is_valid (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, mr_idx_t ref_idx)
+{
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+  mr_ptrdes_t * target = &ptrs->ra[ref_idx];
+
+  /* a reference on content takes the value of a pointer from a string node */
+  if (ptrdes->flags & MR_IS_CONTENT_REFERENCE)
+    return (MR_TYPE_STRING == target->mr_type);
+
+  /* a string refers to the characters of another string */
+  if (MR_TYPE_STRING == ptrdes->mr_type)
+    return (MR_TYPE_CHAR_ARRAY == target->mr_type);
+
+  /* nothing is known about the type that a void pointer points to */
+  mr_type_t type = ptrdes->mr_type_aux;
+  if ((MR_TYPE_VOID == type) || (MR_TYPE_NONE == type))
+    return (true);
+
+  if (target->mr_type != type)
+    return (false);
+
+  /* the same rule as in mr_cmp_ptrdes: types that have a descriptor must have the same one */
+  if (((MR_TYPED_TYPES >> type) & 1) || (MR_TYPE_POINTER == type))
+    {
+      mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
+      mr_td_t * target_tdp = target->fdp ? target->fdp->stype.tdp : NULL;
+      return (tdp == target_tdp);
+    }
+  return (true);
+}
+
+/**
  * Sets a single cross reference. The node is marked as a reference and
  * must be substituted with the pointer to the data of the target node.
  * This substitution can't be made during loading because of forward references.
@@ -73,6 +116,12 @@ mr_set_crossref (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, mr_idx_t target)
   if (NULL == ptrdes->data.ptr)
     {
       MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_NULL_POINTER);
+      return (MR_FAILURE);
+    }
+
+  if (!mr_ref_target_is_valid (ptrs, idx, target))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_REF_TARGET_TYPE, ptrs->ra[target].mr_type, ptrdes->mr_type);
       return (MR_FAILURE);
     }
 

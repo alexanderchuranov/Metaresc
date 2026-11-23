@@ -95,6 +95,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
               (MR_MESSAGE_ZERO_SIZE_FIELD, , "Field '%s' has zero size."),
               (MR_MESSAGE_UNION_BRANCH, , "Union branch '%s' does not match the discriminator, which resolves to branch '%s'."),
               (MR_MESSAGE_POINTER_SIZE_MISMATCH, , "Size field of a pointer is %zd, but loaded data has size %zd."),
+              (MR_MESSAGE_REF_TARGET_TYPE, , "Reference on a node of type %d is not valid for a node of type %d."),
               (MR_MESSAGE_LAST, , "Last message ID."),
               );
 
