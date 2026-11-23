@@ -9,5 +9,9 @@
 
 extern void mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src);
 extern void mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t * ptrs);
+extern mr_fd_t * mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * union_fdp);
+extern void mr_ud_free (mr_ptrdes_t * ptrdes);
+extern int mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context);
+extern mr_hash_value_t mr_uds_get_hash (mr_ptr_t x, const void * context);
 
 #endif /* _MR_SAVE_H_ */

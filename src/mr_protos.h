@@ -93,6 +93,8 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
               (MR_MESSAGE_UNKNOWN_FIELD_NAME, , "Field name '%s' is not valid."),
               (MR_MESSAGE_INTERNAL_PARSER_ERROR, , "Internal parser error: load structure is corrupted."),
               (MR_MESSAGE_ZERO_SIZE_FIELD, , "Field '%s' has zero size."),
+              (MR_MESSAGE_UNION_BRANCH, , "Union branch '%s' does not match the discriminator, which resolves to branch '%s'."),
+              (MR_MESSAGE_POINTER_SIZE_MISMATCH, , "Size field of a pointer is %zd, but loaded data has size %zd."),
               (MR_MESSAGE_LAST, , "Last message ID."),
               );
 
