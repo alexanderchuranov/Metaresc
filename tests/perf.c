@@ -70,6 +70,7 @@ pointers_extension_overlap (int count, void (*save_load) (mr_res_t * res))
     .MR_SIZE = sizeof (vector_t),
     .data.ptr = &ra[0],
   };
+  mr_type_void_fields ("mr_res_t", MR_STRINGIFY_READONLY (MR_SIZE));
 
   clock_t _start = clock ();
   save_load (&res);
@@ -99,6 +100,7 @@ pointers_merger_overlap (int count, void (*save_load) (mr_res_t * res))
     .MR_SIZE = sizeof (vector_t),
     .data.ptr = &ra[0],
   };
+  mr_type_void_fields ("mr_res_t", MR_STRINGIFY_READONLY (MR_SIZE));
 
   clock_t _start = clock ();
   save_load (&res);

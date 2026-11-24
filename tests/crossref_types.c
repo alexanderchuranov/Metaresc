@@ -8,9 +8,8 @@
   `link` is a reference on the node `value`, which is an integer, and on the
   root node, which has the type of the pointer. Indexes in JSON are the
   numbers of the nodes in the document (the root is 1), the other formats
-  label the nodes. Text loaders warn about such a reference and leave the
-  pointer unset, so the load itself succeeds. Binary stream is covered by
-  fuzz/corpus.
+  label the nodes. A document with such a reference must fail to load and
+  must leave the pointer unset. Binary stream is covered by fuzz/corpus.
 */
 
 TYPEDEF_STRUCT (xref_t,
@@ -27,20 +26,19 @@ TYPEDEF_STRUCT (xref_t,
 #define XREF_BAD_SCM "(\n  ;(ref_idx . 5)\n  (value . 1)\n  ;(ref . 5)\n  (link . nil)\n)\n"
 #define XREF_BAD_CINIT "{ .value = /* ref_idx = 5 */ 1, .link = /* ref = 5 */ NULL }"
 
-#define CHECK_LINK(METHOD, TEXT, EXPECTED, MESSAGE) ({			\
+#define CHECK_LINK(METHOD, TEXT, EXPECTED_STATUS, EXPECTED, MESSAGE) ({	\
       char text[] = TEXT;						\
       xref_t dst;							\
       memset (&dst, 0, sizeof (dst));					\
       mr_status_t status = MR_LOAD_ ## METHOD (xref_t, text, &dst);	\
-      /* a document that fails to load would pass the check below for a wrong reason */ \
-      ck_assert_msg (MR_SUCCESS == status, "method " #METHOD ": document was not loaded"); \
+      ck_assert_msg ((EXPECTED_STATUS) == status, "method " #METHOD ": unexpected status of the load"); \
       ck_assert_msg (dst.link == (EXPECTED), "method " #METHOD ": " MESSAGE); \
     })
 
 #define CHECK_BAD_LINK(METHOD, TEXT) \
-  CHECK_LINK (METHOD, TEXT, NULL, "a reference on a node of another type was set")
+  CHECK_LINK (METHOD, TEXT, MR_FAILURE, NULL, "a reference on a node of another type was set")
 #define CHECK_OK_LINK(METHOD, TEXT) \
-  CHECK_LINK (METHOD, TEXT, &dst, "a reference on a node of the same type was not set")
+  CHECK_LINK (METHOD, TEXT, MR_SUCCESS, &dst, "a reference on a node of the same type was not set")
 
 #define CHECK_BAD_JSON() CHECK_BAD_LINK (JSON, XREF_BAD_JSON)
 #define CHECK_OK_JSON() CHECK_OK_LINK (JSON, XREF_OK_JSON)
@@ -63,6 +61,6 @@ TYPEDEF_STRUCT (xref_t,
 START_TEST (reference_on_a_node_of_another_type) { ALL_METHODS (CHECK_BAD); } END_TEST
 START_TEST (reference_on_a_node_of_the_same_type) { ALL_METHODS (CHECK_OK); } END_TEST
 
-MAIN_TEST_SUITE ((reference_on_a_node_of_another_type, "reference on a node of another type is not set"),
+MAIN_TEST_SUITE ((reference_on_a_node_of_another_type, "load of a reference on a node of another type fails"),
                  (reference_on_a_node_of_the_same_type, "reference on a node of the same type is set")
                  );
