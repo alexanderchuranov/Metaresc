@@ -174,13 +174,16 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
         table[ptrs->ra[i].idx] = i;
       }
 
+  mr_status_t status = MR_SUCCESS;
+
   /* set all cross refernces */
-  for (i = 0; i < count; ++i)
+  for (i = 0; (MR_SUCCESS == status) && (i < count); ++i)
     if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
       {
         if (ptrs->ra[i].first_child > max_idx)
           {
             MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
+            status = MR_FAILURE;
             continue;
           }
 
@@ -188,16 +191,18 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
         if (idx == 0)
           {
             MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
+            status = MR_FAILURE;
             continue;
           }
 
-        /* an unresolved reference stays as it was loaded, the problem is already reported */
-        mr_set_crossref (ptrs, i, idx);
+        /* the problem is reported, the failed load frees the pointers that were set */
+        if (MR_SUCCESS != mr_set_crossref (ptrs, i, idx))
+          status = MR_FAILURE;
       }
   
   MR_FREE (table);
 
-  return (MR_SUCCESS);
+  return (status);
 }
 
 /**
@@ -914,7 +919,7 @@ mr_validate_pointer_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       dst.mr_type = MR_TYPE_DETECT (__typeof__ (doc_size));
       mr_assign_int (&dst, &src);
 
-      if (doc_size > size)
+      if (doc_size != size)
 	{
 	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_POINTER_SIZE_MISMATCH, doc_size, size);
 	  return (MR_FAILURE);

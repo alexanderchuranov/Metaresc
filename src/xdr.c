@@ -246,7 +246,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   mr_status_t status = MR_SUCCESS;
 
   /* in XDR a reference holds the index of the target node */
-  for (i = 1; i < count; ++i)
+  for (i = 1; (MR_SUCCESS == status) && (i < count); ++i)
     if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
       if (MR_SUCCESS != mr_set_crossref (ptrs, i, ptrs->ra[i].first_child))
         status = MR_FAILURE;
