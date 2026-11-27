@@ -162,7 +162,65 @@ START_TEST (unexpected_flags_rejected)
                  "both reference flags were accepted");
 } END_TEST
 
+/*
+  A pointer on a char array type with a descriptor has elements of a fixed
+  size in the block of the pointer. Each element is encoded as a string:
+  [uint32 str_len][str_len payload bytes padded to 4]. The stream of
+  hostile_ca_ptr_t is the flags of the pointer, the size of the block in
+  bytes, the elements and the count field.
+*/
+typedef char hostile_ca4_t[4];
+MR_TYPEDEF_DESC_BI (hostile_ca4_t);
+TYPEDEF_STRUCT (hostile_ca_ptr_t,
+                (hostile_ca4_t *, p, , "pointer on char arrays", { "n" }, "count_field_name"),
+                (int32_t, n));
+
+static mr_status_t
+load_ca_ptr (uint32_t block_size, char * first, uint32_t first_len, char * second, uint32_t second_len, int32_t n)
+{
+  XDR xdrs;
+  mr_rarray_t ra = { .type = "uint8_t" };
+  uint32_t flags = 0;
+
+  mr_xdrra_create (&xdrs, &ra, XDR_ENCODE);
+  ck_assert (xdr_uint32_t (&xdrs, &flags));
+  ck_assert (xdr_uint32_t (&xdrs, &block_size));
+  ck_assert (xdr_uint32_t (&xdrs, &first_len));
+  ck_assert (xdr_opaque (&xdrs, first, first_len));
+  ck_assert (xdr_uint32_t (&xdrs, &second_len));
+  ck_assert (xdr_opaque (&xdrs, second, second_len));
+  ck_assert (xdr_int32_t (&xdrs, &n));
+
+  hostile_ca_ptr_t restored;
+  memset (&restored, 0, sizeof (restored));
+  mr_status_t status = MR_LOAD_XDR_RA (hostile_ca_ptr_t, &ra, &restored);
+  if (MR_SUCCESS == status)
+    {
+      ck_assert_msg ((0 == strcmp (restored.p[0], first)) && (0 == strcmp (restored.p[1], second)),
+                     "wrong elements loaded");
+      MR_FREE_RECURSIVELY (hostile_ca_ptr_t, &restored);
+    }
+  MR_FREE (ra.data.ptr);
+  return (status);
+}
+
+START_TEST (char_array_pointer_elements)
+{
+  hostile_ca_ptr_t orig = { .p = (hostile_ca4_t[]){ "ab", "cde" }, .n = 2 };
+  ASSERT_SAVE_LOAD (XDR, hostile_ca_ptr_t, &orig);
+
+  ck_assert_msg (MR_SUCCESS == load_ca_ptr (8, "ab", sizeof ("ab"), "cde", sizeof ("cde"), 2),
+                 "valid pointer on char arrays failed to load");
+  ck_assert_msg (MR_FAILURE == load_ca_ptr (8, "ab", sizeof ("ab"), "abcdefg", sizeof ("abcdefg"), 2),
+                 "second element longer than its type was accepted");
+  ck_assert_msg (MR_FAILURE == load_ca_ptr (8, "abcdefg", sizeof ("abcdefg"), "ab", sizeof ("ab"), 2),
+                 "first element longer than its type was accepted");
+  ck_assert_msg (MR_FAILURE == load_ca_ptr (8, "ab", sizeof ("ab"), "cd", sizeof ("cd"), 3),
+                 "count field larger than the loaded elements was accepted");
+} END_TEST
+
 MAIN_TEST_SUITE ((valid_char_array_roundtrips, "valid char array round-trips"),
+                 (char_array_pointer_elements, "elements of pointers on char arrays have a fixed size"),
                  (valid_int_array_roundtrips, "valid int array round-trips"),
                  (oversized_char_array_rejected, "oversized char array length rejected"),
                  (oversized_int_array_rejected, "oversized int array count rejected"),

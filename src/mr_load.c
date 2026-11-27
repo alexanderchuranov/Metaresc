@@ -685,7 +685,13 @@ mr_get_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_l
   typeof (str_len) max_size = ptrdes->fdp ? ptrdes->fdp->stype.size : 0;
   mr_status_t status = MR_SUCCESS;
 
-  if ((str_len >= max_size) && (ptrdes->parent != MR_NULL_IDX))
+  /*
+    Only a char array of unknown size (a pointer on a char array type without a descriptor)
+    is a dynamic string that owns its block. Elements of a known size are fixed char arrays
+    in the block of the pointer, and the address of an element after the first one
+    is not an address of an allocated block.
+  */
+  if ((0 == max_size) && (ptrdes->parent != MR_NULL_IDX))
     if (MR_TYPE_POINTER == ptrs->ra[ptrdes->parent].mr_type)
       {
         void * data = MR_REALLOC (ptrdes->data.ptr, str_len + 1);

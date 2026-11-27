@@ -240,6 +240,7 @@ TYPEDEF_STRUCT (struct_union_string_struct_ptr_array_t,
 		);
 
 typedef char ca2_t[2];
+MR_TYPEDEF_DESC_BI (ca2_t);
 
 TYPEDEF_STRUCT (struct_union_ca_t,
 		(empty_union_t, empty_union),

@@ -218,7 +218,105 @@ START_TEST (cinit_load_wide_count_field) {
   ASSERT_WIDE_COUNT_FAILS (negative);
 } END_TEST
 
+/*
+  Elements of a pointer on a char array type are fixed size char arrays in
+  the block of the pointer. The type needs a descriptor (MR_TYPEDEF_DESC_BI),
+  otherwise the size of the elements is not known. A string that is longer
+  than an element is truncated as for a char array field. It must not grow
+  the element in place: an element after the first one is in the middle of
+  the block of the pointer.
+*/
+
+typedef char ca4_t[4];
+MR_TYPEDEF_DESC_BI (ca4_t);
+
+TYPEDEF_STRUCT (ca_ptr_t,
+                (ca4_t *, p, , "pointer on char arrays", { "n" }, "count_field_name"),
+                (int, n),
+                );
+
+TYPEDEF_STRUCT (ca_ref_t,
+                string_t s,
+                (ca4_t, a),
+                (ca4_t *, p, , "a single char array"),
+                );
+
+static mr_status_t
+load_ca_ptr (char * text, ca_ptr_t * x)
+{
+  memset (x, 0, sizeof (*x));
+  mr_status_t status = MR_LOAD_CINIT (ca_ptr_t, text, x);
+  if (MR_SUCCESS != status)
+    memset (x, 0, sizeof (*x));
+  return (status);
+}
+
+START_TEST (char_array_pointer_round_trip) {
+  ca_ptr_t ptr = { .p = (ca4_t[]){ "ab", "cde", "" }, .n = 3, };
+  ALL_METHODS (ASSERT_SAVE_LOAD, ca_ptr_t, &ptr);
+
+  ca_ref_t ref = { .s = "abc", .a = "xyz", };
+  ref.p = &ref.a;
+  ALL_METHODS (ASSERT_SAVE_LOAD, ca_ref_t, &ref);
+  ref.p = (ca4_t*)ref.s;
+  ALL_METHODS (ASSERT_SAVE_LOAD, ca_ref_t, &ref);
+} END_TEST
+
+START_TEST (cinit_load_char_array_pointer) {
+  char valid[] = "{ .p = (ca4_t[]){ \"ab\", \"cde\" }, .n = 2 }";
+  char second_long[] = "{ .p = (ca4_t[]){ \"ab\", \"abcdefghijklmnop\" }, .n = 2 }";
+  char first_long[] = "{ .p = (ca4_t[]){ \"abcdefghijklmnop\", \"ab\" }, .n = 2 }";
+  char more[] = "{ .p = (ca4_t[]){ \"ab\", \"cd\" }, .n = 3 }";
+  char fewer[] = "{ .p = (ca4_t[]){ \"ab\", \"cd\" }, .n = 1 }";
+  ca_ptr_t x;
+
+  ck_assert_msg (MR_SUCCESS == load_ca_ptr (valid, &x), "load of %s failed", valid);
+  ck_assert_msg ((0 == strcmp (x.p[0], "ab")) && (0 == strcmp (x.p[1], "cde")), "wrong elements loaded from %s", valid);
+  MR_FREE_RECURSIVELY (ca_ptr_t, &x);
+
+  ck_assert_msg (MR_SUCCESS == load_ca_ptr (second_long, &x), "load of %s failed", second_long);
+  ck_assert_msg ((0 == strcmp (x.p[0], "ab")) && (0 == memcmp (x.p[1], "abcd", sizeof (x.p[1]))),
+                 "second element of %s was not truncated", second_long);
+  MR_FREE_RECURSIVELY (ca_ptr_t, &x);
+
+  ck_assert_msg (MR_SUCCESS == load_ca_ptr (first_long, &x), "load of %s failed", first_long);
+  ck_assert_msg ((0 == memcmp (x.p[0], "abcd", sizeof (x.p[0]))) && (0 == strcmp (x.p[1], "ab")),
+                 "first element of %s was not truncated", first_long);
+  MR_FREE_RECURSIVELY (ca_ptr_t, &x);
+
+  ck_assert_msg (MR_FAILURE == load_ca_ptr (more, &x), "load of %s succeeded", more);
+  ck_assert_msg (MR_FAILURE == load_ca_ptr (fewer, &x), "load of %s succeeded", fewer);
+} END_TEST
+
+START_TEST (cinit_load_char_array_reference) {
+  /* the content of a string must have at least the size of an element */
+  char content[] = "{ .s = /* ref_idx = 1 */ \"abc\", .p = /* ref_content = 1 */ NULL }";
+  char content_short[] = "{ .s = /* ref_idx = 1 */ \"ab\", .p = /* ref_content = 1 */ NULL }";
+  /* a pointer on a char array may refer on a char array, but not on a string node */
+  char char_array[] = "{ .s = \"\", .a = /* ref_idx = 1 */ \"abc\", .p = /* ref = 1 */ NULL }";
+  char string[] = "{ .s = /* ref_idx = 1 */ \"abc\", .p = /* ref = 1 */ NULL }";
+  ca_ref_t x;
+
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (ca_ref_t, content, &x), "load of %s failed", content);
+  ck_assert_msg ((void*)x.p == (void*)x.s, "pointer was not set to the content of the string");
+  MR_FREE_RECURSIVELY (ca_ref_t, &x);
+
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (ca_ref_t, char_array, &x), "load of %s failed", char_array);
+  ck_assert_msg (x.p == &x.a, "pointer was not set to the char array field");
+  MR_FREE_RECURSIVELY (ca_ref_t, &x);
+
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_FAILURE == MR_LOAD_CINIT (ca_ref_t, content_short, &x), "load of %s succeeded", content_short);
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_FAILURE == MR_LOAD_CINIT (ca_ref_t, string, &x), "load of %s succeeded", string);
+} END_TEST
+
 MAIN_TEST_SUITE ((cinit_load_reference_index_is_not_node_index, "size of a reference is checked against the node it resolves to"),
+                 (char_array_pointer_round_trip, "pointers on char array types are saved and loaded"),
+                 (cinit_load_char_array_pointer, "elements of pointers on char arrays are fixed size"),
+                 (cinit_load_char_array_reference, "references of pointers on char arrays are checked"),
                  (cinit_load_wide_count_field, "size fields are not truncated or wrapped around"),
                  (matrix_cross_row_reference, "pointer into a row of a matrix may refer on the following rows"),
                  (cinit_load_union_elements_branch, "union elements of arrays and pointers must be loaded as the discriminated branch"),

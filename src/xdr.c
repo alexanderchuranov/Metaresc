@@ -558,24 +558,26 @@ static mr_status_t
 xdr_char_array_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_idx_t parent = ptrs->ra[idx].parent;
-  bool is_a_dynamic_string = ((parent != MR_NULL_IDX) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type));
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+  /*
+    A pointer on a char array type without a descriptor has elements of unknown size.
+    xdr_load_pointer allocates a single byte for it, and the string grows to the length
+    from the stream. Elements of a known size are fixed char arrays in the block of the pointer.
+  */
+  bool is_a_dynamic_string = ((parent != MR_NULL_IDX) && (MR_TYPE_POINTER == ptrs->ra[parent].mr_type)
+                              && ((NULL == ptrdes->fdp) || (0 == ptrdes->fdp->stype.size)));
   uint32_t str_len;
 
   if (XDR_ENCODE == xdrs->x_op)
     {
+      /* save sets MR_SIZE of a char array to its size, also for the elements of pointers */
       typeof (ptrdes->MR_SIZE) size = ptrdes->MR_SIZE;
       char * string = ptrs->ra[idx].data.string;
-      if (is_a_dynamic_string)
-        str_len = strlen (string) + 1;
-      else
-        {
-          for (str_len = 0; (str_len < size) && (*string != 0); ++str_len)
-            ++string;
+      for (str_len = 0; (str_len < size) && (*string != 0); ++str_len)
+        ++string;
 
-          if (str_len < size)
-            str_len += 1;
-        }
+      if (str_len < size)
+        str_len += 1;
     }
 
   if (!xdr_uint32_t (xdrs, &str_len))
@@ -594,7 +596,7 @@ xdr_char_array_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
                   MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
                   return (MR_FAILURE);
                 }
-              *(void**)ptrs->ra[idx - 1].data.ptr = ptrs->ra[idx].data.ptr = data;
+              *(void**)ptrs->ra[parent].data.ptr = ptrs->ra[idx].data.ptr = data;
             }
         }
       else
