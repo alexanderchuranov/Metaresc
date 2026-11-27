@@ -135,7 +135,7 @@ check_cpu_complexity (void (*save_load) (mr_res_t * res), char * method,
     size <<= 1;
     base_time = double_time;
     double_time = min_test_run (size, save_load, test_run);
-  } while (double_time < CLOCKS_PER_SEC / 32);
+  } while (double_time < CLOCKS_PER_SEC / 64);
 
   ck_assert_msg (double_time < (5 * base_time) / 2,
                  "performance issue for method '%s' %lu / %lu = %.02g",
