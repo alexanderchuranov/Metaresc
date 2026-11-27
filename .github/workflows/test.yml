@@ -24,22 +24,22 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}} || ( cat config.log ; false )
+        run: ./configure --without-perftest CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}} || ( cat config.log ; false )
       - name: make check
-        run: make check || ( cat tests/test-suite.log ; false )
+        run: make check -j $(nproc) || ( cat tests/test-suite.log ; false )
       - name: check with valgrind
         run: |
           cd tests
           sed -i.bak -e "s/long double, long_double/double, long_double/" mr_types.c
           rm -f mr_types
-          CK_TIMEOUT_MULTIPLIER=2 make valgrind || ( cat test-suite.log ; false )
+          CK_TIMEOUT_MULTIPLIER=2 make valgrind -j $(nproc) || ( cat test-suite.log ; false )
       - name: check with address sanitizer
         run: |
           make clean
           # drop test_sanitized/test_tied list items, then strip a trailing backslash left before a blank line
           sed -i.bak -e '/^[[:space:]]*test_sanitized[[:space:]]*\\*$/d' -e '/^[[:space:]]*test_tied[[:space:]]*\\*$/d' -e 's/test_dwarfdumpMacos\.sh//' libdwarf-code/test/Makefile.am
           sed -i.bak -e '$!N' -e 's/[[:space:]]*\\\(\n[[:space:]]*\)$/\1/' -e 'P' -e 'D' libdwarf-code/test/Makefile.am
-          make check CFLAGS="-I/usr/include/tirpc -Werror -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
+          make check -j $(nproc) CFLAGS="-I/usr/include/tirpc -Werror -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
 
   macos-clang:
     runs-on: macos-latest
@@ -53,7 +53,7 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CFLAGS=-Werror HAVE_BISON=yes YACC=$(brew --prefix)/opt/bison/bin/bison
+        run: ./configure --without-perftest CFLAGS=-Werror HAVE_BISON=yes YACC=$(brew --prefix)/opt/bison/bin/bison
       - name: make check
         run: make check -j 2 || ( cat tests/test-suite.log ; false )
 
@@ -72,8 +72,8 @@ jobs:
           git config --global --add safe.directory `pwd`
           git submodule update --init --recursive --remote
           ./autogen.sh
-          ./configure CFLAGS="-I/usr/local/include/ -Werror" CPPFLAGS="-fcx-limited-range" --without-perftest
-          make check || ( cat tests/test-suite.log ; false )
+          ./configure --without-perftest CFLAGS="-I/usr/local/include/ -Werror" CPPFLAGS="-fcx-limited-range"
+          make check -j $(nproc) || ( cat tests/test-suite.log ; false )
 
   windows:
     runs-on: windows-latest
@@ -99,11 +99,11 @@ jobs:
       - name: autoconf/automake
         run: ./autogen.sh
       - name: configure
-        run: ./configure CFLAGS=-Werror --disable-static --enable-shared --without-perftest
+        run: ./configure --without-perftest CFLAGS=-Werror --disable-static --enable-shared
       - name: patch libtool
         run: sed -i.bak -e "s/\(allow_undefined=\)yes/\1no/" libtool
       - name: make check
-        run: make check || ( cat tests/test-suite.log ; false )
+        run: make check -j $(nproc) || ( cat tests/test-suite.log ; false )
       - name: archive build artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -148,6 +148,6 @@ jobs:
   #           git config --global --add safe.directory '*'
   #           git submodule update --init --recursive --remote
   #           ./autogen.sh
-  #           ./configure CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}} --without-perftest
-  #           make check || ( cat tests/test-suite.log ; false )
+  #           ./configure --without-perftest CFLAGS="-I/usr/include/tirpc -Werror" LIBS=-ltirpc CC=${{matrix.cc}}
+  #           make -j $(nproc) check || ( cat tests/test-suite.log ; false )
 
