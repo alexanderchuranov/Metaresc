@@ -3,20 +3,25 @@ name: ci
 on: [ push, pull_request ]
 
 jobs:
-  x86-ubuntu-gcc-clang:
-    runs-on: ubuntu-latest
-    name: x86 Ubuntu with
+  ubuntu-gcc-clang:
+    # long double has 10 significant bytes on x86 (x87 extended) and 16 on arm (IEEE quad)
+    runs-on: ${{ matrix.runner }}
+    name: ${{ matrix.arch }} Ubuntu with ${{ matrix.cc }}
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - cc: gcc
-          - cc: clang
+          - { arch: x86, runner: ubuntu-latest, cc: gcc }
+          - { arch: x86, runner: ubuntu-latest, cc: clang }
+          - { arch: arm, runner: ubuntu-24.04-arm, cc: gcc }
+          - { arch: arm, runner: ubuntu-24.04-arm, cc: clang }
     steps:
       - uses: actions/checkout@v7
       - name: update packages
         run: sudo apt-get update -y
       - name: install dependencies
-        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev libtirpc-dev check valgrind python3
+        # libclang-rt-dev provides the sanitizer runtimes of clang
+        run: sudo apt-get install -y autoconf automake libtool pkg-config flex bison libxml2-dev libyaml-dev libtirpc-dev check valgrind python3 gcc clang libclang-rt-dev
       - name: submodule update
         run: git submodule update --init --recursive --remote
       - name: skip failing libdwarf tests
