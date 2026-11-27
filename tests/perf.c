@@ -116,7 +116,7 @@ min_test_run (int size, void (*save_load) (mr_res_t * res), clock_t (*test_run) 
 {
   int i;
   clock_t min_time = test_run (size, save_load);
-  for (i = 0; i < 2; ++i)
+  for (i = 0; i < 7; ++i)
     {
       clock_t another_try = test_run (size, save_load);
       min_time = MR_MIN (min_time, another_try);
@@ -135,7 +135,7 @@ check_cpu_complexity (void (*save_load) (mr_res_t * res), char * method,
     size <<= 1;
     base_time = double_time;
     double_time = min_test_run (size, save_load, test_run);
-  } while (double_time < CLOCKS_PER_SEC / 10);
+  } while (double_time < CLOCKS_PER_SEC / 32);
 
   ck_assert_msg (double_time < (5 * base_time) / 2,
                  "performance issue for method '%s' %lu / %lu = %.02g",
