@@ -318,7 +318,7 @@ mr_xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
 }
 
 /**
- * Handler for RL_TYPE_NONE.
+ * Handler for MR_TYPE_NONE.
  * @param xdrs XDR stream descriptor
  * @param idx index of node in ptrs
  * @param ptrs array with descriptor of loaded data
@@ -885,7 +885,8 @@ xdr_save_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 }
 
 /**
- * Loads char array from XDR stream.
+ * Loads an array from XDR stream. A single dimensional array of a structure
+ * is preceded by the number of bytes of its loaded elements.
  * @param xdrs XDR stream descriptor
  * @param idx index of node in ptrs
  * @param ptrs array with descriptor of loaded data
@@ -950,12 +951,15 @@ xdr_load_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 }
 
 /**
- * Saves pointer into binary XDR stream. First goes flags of the node
- * and if pointer is not NULL, then ref_idx goes next.
+ * Saves pointer into binary XDR stream. First go the flags of the node.
+ * A reference is followed by the index of the target node. A pointer that
+ * is not NULL is followed by the size of its block in bytes, and opaque
+ * data by the bytes of the block. Elements of other pointers are saved
+ * as child nodes.
  * @param xdrs XDR stream descriptor
  * @param idx index of the node in nodes collection
  * @param ptrs resizeable array with pointers descriptors
- * @return status of operation. 0 - failure, !0 - success.
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 xdr_save_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)

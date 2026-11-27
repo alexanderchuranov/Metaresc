@@ -84,9 +84,9 @@ scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
 /**
  * MR_TYPE_FUNC & MR_TYPE_FUNC_TYPE type saving handler.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @return stringified function name
+ * @param mr_ra_str output buffer
+ * @param ptrdes descriptor of the node
+ * @return number of appended characters, negative on failure
  */
 static int
 scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
@@ -107,9 +107,9 @@ scm_save_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
 /**
  * MR_CHAR type saving handler. Stringify char.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @return stringified char
+ * @param mr_ra_str output buffer
+ * @param ptrdes descriptor of the node
+ * @return number of appended characters, negative on failure
  */
 static int
 scm_save_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
@@ -123,9 +123,9 @@ scm_save_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
 /**
  * MR_CHAR_ARRAY type saving handler. Save char array.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @return char array value
+ * @param mr_ra_str output buffer
+ * @param ptrdes descriptor of the node
+ * @return number of appended characters, negative on failure
  */
 static int
 scm_save_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
@@ -138,9 +138,9 @@ scm_save_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 
 /**
  * MR_STRING type saving handler. Save string.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @return string value
+ * @param mr_ra_str output buffer
+ * @param ptrdes descriptor of the node
+ * @return number of appended characters, negative on failure
  */
 static int
 scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
@@ -153,10 +153,11 @@ scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 }
 
 /**
- * MR_POINTER type saving handler. Save pointer as a string.
- * @param idx an index of node in ptrs
- * @param ptrs resizeable array with pointers descriptors
- * @return stringified pointer
+ * MR_POINTER type saving handler. Saves NULL pointers and references as false,
+ * elements of other pointers are saved as child nodes.
+ * @param mr_ra_str output buffer
+ * @param ptrdes descriptor of the node
+ * @return number of appended characters, negative on failure
  */
 static int
 scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)

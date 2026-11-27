@@ -177,6 +177,7 @@ calc_relative_addr (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t 
 /**
  * Recursively copy
  * @param ptrs resizable array with serialized data
+ * @param dst pointer on the destination object
  * @return status
  */
 mr_status_t

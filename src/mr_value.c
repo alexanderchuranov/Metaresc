@@ -183,8 +183,8 @@ enum_names_visitor (mr_ptr_t key, void * context)
 
 /**
  * Read enum value from string
- * @param data pointer on place to save value
  * @param str string with enum
+ * @param data pointer on place to save value
  * @return A pointer on the rest of parsed string
  */
 static char *

@@ -388,6 +388,9 @@ mr_ud_free (mr_ptrdes_t * ptrdes)
 /**
  * Finds out union discriminator
  * @param mr_save_data save routines data and lookup structures
+ * @param node index of the union node
+ * @param union_fdp field descriptor with the name of the discriminator in meta
+ * @return field descriptor of the discriminated branch
  */
 mr_fd_t *
 mr_union_discriminator (mr_save_data_t * mr_save_data, mr_idx_t node, mr_fd_t * union_fdp)
@@ -879,9 +882,11 @@ merge_pointers_content (mr_save_data_t * mr_save_data, mr_idx_t ref_parent, mr_i
 }
 
 /**
- * Saves pointer into internal representation.
- * @param idx node index
+ * Saves the elements of a pointer into internal representation, or links
+ * the pointer to already saved data.
  * @param mr_save_data save routines data and lookup structures
+ * @param idx node index of the pointer
+ * @return number of added nodes, zero on failure
  */
 static mr_idx_t
 mr_save_pointer_content (mr_save_data_t * mr_save_data, mr_idx_t idx)
@@ -1285,9 +1290,11 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
 /**
  * Save scheduler. Save any object into internal representation.
  * @param data a pointer on data
- * @param fdp a ponter of field descriptor
+ * @param fdp a pointer on field descriptor
+ * @param count number of elements of the same type that start at data
  * @param mr_save_data save routines data and lookup structures
  * @param parent index of parent node
+ * @return number of added nodes, zero on failure
  */
 static mr_idx_t
 mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent)
@@ -1419,7 +1426,7 @@ mr_save_struct (mr_save_data_t * mr_save_data)
 }
 
 /**
- * MR_UNION type saving handler. Saves structure as internal representation tree node.
+ * MR_UNION type saving handler. Saves the branch that the discriminator selects.
  * @param mr_save_data save routines data and lookup structures
  */
 static mr_idx_t
@@ -1486,7 +1493,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
               else
                 {
                   /* We get to this execution branch only if src.data.ptr != NULL.
-                     In that case we will have src.res.data.string set to one of four possible values:
+                     In that case we will have src.vt_string set to one of four possible values:
                      1. size_field_offset
                      2. size_field_name
                      3. count_field_offset
@@ -1522,7 +1529,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
 
 /**
  * Abstract DFS for pointers descriptors
- * @param mr_ptrdes_t resizable array with pointers descriptors
+ * @param ptrs resizable array with pointers descriptors
  * @param processor visitor function
  * @param context untyped pointer on context passed through DFS traverse
  */
@@ -1588,7 +1595,7 @@ mr_reorder_strings_visitor (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_
  * Memory allocation failure test for XDR can't properly deallocate strings if it is saved as forward reference.
  * This function makes first reference on a string in DFS traverse as a primary entry and point other references
  * on this entry.
- * @param mr_ptrdes_t resizable array with pointers descriptors
+ * @param ptrs resizable array with pointers descriptors
  */
 void
 mr_reorder_strings (mr_ptrdes_t * ptrs)
@@ -1638,7 +1645,7 @@ mr_remove_empty_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_
 
 /**
  * DFS visitor for nodes renumbering
- * @param mr_ptrdes_t resizable array with pointers descriptors
+ * @param ptrs resizable array with pointers descriptors
  * @param idx index of processed node
  * @param context untyped pointer on context passed through DFS traverse
  */
@@ -1672,8 +1679,8 @@ mr_update_pointers_content (mr_ptrdes_t * ra, mr_idx_t idx, int level, mr_dfs_or
 }
 
 /**
- * There is no need to save empty nodes and possibly their parent structures 
- * @param mr_ptrdes_t resizable array with pointers descriptors
+ * There is no need to save empty nodes and possibly their parent structures
+ * @param ptrs resizable array with pointers descriptors
  */
 void
 mr_remove_empty_nodes (mr_ptrdes_t * ptrs)
@@ -1784,7 +1791,8 @@ mr_post_process (mr_save_data_t * mr_save_data)
 }
 
 /**
- * MR_POINTER_STRUCT type saving handler. Save referenced structure into internal representation.
+ * MR_TYPE_POINTER saving handler. Sets the size of the block of the pointer
+ * or marks it as NULL. The elements are saved later by mr_save_pointer_content.
  * @param mr_save_data save routines data and lookup structures
  */
 static mr_idx_t
@@ -1807,9 +1815,10 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
         element_size = tdp->size;
       ptrdes->MR_SIZE = element_size;
 
-      /* pointers might have assosiated field with the size for resizable arrays.
-         name of the size field is stored in 'res' of field meta-data.
-         'res_type' in this case will be 'string' */
+      /* pointers might have associated field with the size for resizable arrays.
+         name or offset of the size field is stored in 'res' of field meta-data,
+         'res_type' is one of size_field_name, size_field_offset, count_field_name
+         or count_field_offset */
       mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
       if (src.data.ptr != NULL)
         {

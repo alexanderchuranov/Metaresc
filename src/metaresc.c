@@ -54,7 +54,7 @@ MR_COMPILETIME_ASSERT (offsetof (mr_hashed_string_t, str) == 0, "'str' must be a
 /** Metaresc configuration structure */
 mr_conf_t mr_conf = {
   .mr_mem = { /**< all memory functions may be replaced on user defined */
-    .calloc = mr_calloc, /**< Pointer to malloc function. */
+    .calloc = mr_calloc, /**< Pointer to calloc function. */
     .realloc = mr_realloc, /**< Pointer to realloc function. */
     .free = mr_free, /**< Pointer to free function. */
   },
@@ -730,7 +730,7 @@ mr_rarray_append (mr_rarray_t * rarray, ssize_t size)
 /**
  * Allocate element for pointer descriptor in resizable array.
  * @param ptrs resizable array with pointers on already saved structures
- * @return Index of pointer in the list or -1 in case of memory operation error.
+ * @return Index of pointer in the list or MR_NULL_IDX in case of memory operation error.
  * On higher level we need index because array is always reallocating and
  * pointer on element is changing (index remains constant).
  */
@@ -1387,7 +1387,7 @@ mr_type_size (mr_type_t mr_type)
 }
 
 /**
- * Add type to union mr_void_ptr_t.
+ * Add type to union mr_ptr_t.
  * @param tdp a pointer on statically initialized type descriptor
  * @return status
  */
@@ -1395,7 +1395,7 @@ static mr_status_t
 mr_register_type_pointer (mr_td_t * tdp)
 {
   static mr_td_t * union_tdp = NULL;
-  /* check that mr_ptr_t have already a registered */
+  /* check that mr_ptr_t is already registered */
   if (NULL == union_tdp)
     {
       union_tdp = mr_get_td_by_name_internal ("mr_ptr_t");

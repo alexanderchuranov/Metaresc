@@ -46,7 +46,8 @@ mr_free_loaded_pointers (mr_ra_ptrdes_t * ptrs)
  * References are made on save only between nodes of the same type
  * (mr_cmp_ptrdes), so a reference to a node of another type comes from a
  * damaged document. The pointer would be set to an object that is
- * traversed later as an object of another type.
+ * traversed later as an object of another type. A content reference must
+ * refer on a string, and only pointers on bytes may hold one.
  * @param ptrs array with descriptor of loaded data
  * @param idx index of a node that is a reference
  * @param ref_idx index of the node that is referenced
@@ -150,11 +151,12 @@ mr_set_crossref (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, mr_idx_t target)
 }
 
 /**
- * Post load references setting. If node was marked as references
- * it should be substitute with actual pointer. This substition
- * can't be made during structure loading because of forward references.
- * @param mr_load_data structures that holds context of loading
- * @return Status.
+ * Post load references setting. A node that is marked as a reference is set
+ * to the address of its target. This can't be done during loading because of
+ * forward references. The reference index of the document in first_child is
+ * replaced with the node index of the target.
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS if all references were resolved and set
  */
 static mr_status_t
 mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
@@ -278,8 +280,8 @@ mr_free_load_values (mr_ra_ptrdes_t * ptrs)
 /**
  * MR_NONE load handler (dummy)
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_none (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -290,8 +292,8 @@ mr_load_none (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 /**
  * MR_INTEGER load handler
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read (0 - failure, !0 - success)
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 mr_status_t
 mr_load_integer (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -365,8 +367,8 @@ mr_get_func (void ** dst, char * func_name)
 /**
  * MR_FUNC load handler
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read (0 - failure, !0 - success)
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 mr_status_t
 mr_load_func (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -430,8 +432,8 @@ mr_load_func (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
  * MR_BITFIELD load handler. Load int from string and save it to
  * bit shifted field.
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_bitfield (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -498,8 +500,8 @@ mr_load_complex (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 /**
  * MR_CHAR load handler. Handles nonprint characters in octal format.
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_char (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -564,8 +566,8 @@ mr_load_char (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 /**
  * MR_STRING load handler. Allocate memory for a string.
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -683,8 +685,8 @@ mr_get_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_l
  * MR_CHAR_ARRAY load handler.
  * Save string in place (truncate string if needed).
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -740,8 +742,8 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
  * MR_STRUCT load handler.
  * Save content of subnodes to structure fileds.
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_struct (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -783,8 +785,8 @@ mr_load_struct (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
  * MR_ARRAY load handler.
  * Save content of subnodes to array elements.
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -1162,8 +1164,9 @@ mr_validate_array_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 
 /**
  * Validates consistency of a loaded document: unions must be loaded as
- * the branch that the discriminator selects, and sizes of pointers must be
- * the same as in the size fields of the document. Memory of the values that
+ * the branch that the discriminator selects, sizes of pointers and arrays
+ * must be the same as in their size fields, and references must fit into
+ * the blocks that they refer on. Memory of the values that
  * were allocated by the loader is shared with the cache of union
  * discriminators, so the values must be freed before this call
  * (mr_free_ptrdes_values).
@@ -1223,10 +1226,12 @@ mr_validate_load (mr_ra_ptrdes_t * ptrs)
 }
 
 /**
- * Loads element into newly allocate memory.
+ * Allocates the block of a pointer and loads its elements into it.
+ * A pointer whose value is a reference index is marked as a reference
+ * and is set later by mr_set_crossrefs.
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read (0 - failure, !0 - success)
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -1310,8 +1315,8 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
  * MR_ANON_UNION load handler.
  * Load anonymous union
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 static mr_status_t
 mr_load_anon_union (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
@@ -1378,11 +1383,13 @@ static mr_load_handler_t mr_load_handler[MR_TYPE_LAST] =
 
 /**
  * Public function. Load router. Load any object from internal representation graph.
+ * On the root node (idx 1) it also loads the pointers, sets the references
+ * and validates the loaded data, and frees what was allocated if it fails.
  * @param data pointer on place to save data
- * @param fdp filed descriptor
+ * @param fdp field descriptor
  * @param idx node index
- * @param mr_load_data structures that holds context of loading
- * @return Status of read
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS or MR_FAILURE
  */
 mr_status_t
 mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)

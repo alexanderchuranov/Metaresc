@@ -420,7 +420,7 @@ xml2_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t orde
   
   if (ptrs[idx].flags & MR_IS_REFERENCE)
     {
-      /* set REF_IDX property */
+      /* set REF property */
       snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs[ptrs[idx].first_child].idx);
       xmlSetProp (node, BAD_CAST MR_REF, BAD_CAST number);
     }
@@ -432,7 +432,7 @@ xml2_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t orde
     }
   if (ptrs[idx].flags & MR_IS_REFERENCED)
     {
-      /* set IDX property */
+      /* set REF_IDX property */
       snprintf (number, sizeof (number), "%" SCNd32, (uint32_t)ptrs[idx].idx);
       xmlSetProp (node, BAD_CAST MR_REF_IDX, BAD_CAST number);
     }

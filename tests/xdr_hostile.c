@@ -5,10 +5,11 @@
 
   The round-trip tests only ever feed the loader data that the library
   itself produced, so they never exercise the loader against a crafted
-  stream. These tests hand-build hostile XDR streams whose embedded
-  length/count fields exceed the capacity of the destination field, and
-  check that the loader rejects them (returns MR_FAILURE) instead of
-  overflowing the fixed-size destination buffer.
+  stream. These tests hand-build hostile XDR streams and check that the
+  loader rejects them (returns MR_FAILURE): streams whose embedded
+  length/count fields exceed the capacity of the destination field, which
+  would overflow the fixed-size destination buffer, and streams with
+  pointer flags that XDR save never writes.
 
   Stream layout for a struct with a single leading array field is just
   the field's own encoding (XDR has no per-struct/per-field framing):
