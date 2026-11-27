@@ -42,6 +42,7 @@ of structures, generic sorting.
       - [Array declaration](#array-declaration)
       - [Text metadata and resource information](#text-metadata-and-resource-information)
       - [NULL-terminated strings vs character arrays](#null-terminated-strings-vs-character-arrays)
+      - [Pointers on character array types](#pointers-on-character-array-types)
     - [Union type declaration](#union-type-declaration)
     - [Enumeration type declaration](#enumeration-type-declaration)
     - [Function pointer type declaration](#function-pointer-type-declaration)
