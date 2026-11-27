@@ -93,25 +93,44 @@ $ gcc -DHAVE_CONFIG_H -Isrc -Ifuzz -I/usr/include/libxml2 -I/usr/include/tirpc \
 $ ./fuzz_xdr_seed fuzz/corpus/xdr_load
 ```
 
+## Corpus
+
+`corpus/xdr_load/` holds three kinds of inputs:
+
+* `seed_*.xdr` - the seeds (see above)
+* `regress_*.xdr` - inputs that crashed or were wrongly accepted by the
+  loader before a fix
+* files named by a SHA-1 hash - inputs that the fuzzer found and that add
+  coverage. They were selected with `-merge=1` after a fuzzing run.
+
+To refresh the coverage inputs, fuzz a copy of the corpus and merge the
+result back. `-merge=1` only adds the inputs that reach new code:
+
+```console
+$ cp -r fuzz/corpus/xdr_load /tmp/grown
+$ ./fuzz_xdr_load /tmp/grown -max_len=512 -max_total_time=300 -fork=4 -detect_leaks=0
+$ ./fuzz_xdr_load -merge=1 -max_len=512 -detect_leaks=0 fuzz/corpus/xdr_load /tmp/grown
+```
+
 ## Known issues
 
-Inputs in `known_issues/` fail now. Move them into `corpus/xdr_load/` when
-the issue is fixed, so that they become regression tests.
+There are none at the moment. An input for an issue that is not fixed yet
+goes into a `known_issues/` directory (add it to `EXTRA_DIST`), and moves
+into `corpus/xdr_load/` with the fix, so that it becomes a regression test.
 
-* `xdr_count_mismatch.xdr` - a pointer and its count field are two separate
-  values in the stream. `xdr_load_pointer` sets the count from the size of
-  the allocation, but the count field is loaded after the pointer and
-  overwrites it with the value from the stream. The load succeeds with
-  `nodes_count` far above the number of elements that were allocated, and
-  `MR_FREE_RECURSIVELY` (like any other traversal of the object) reads past
-  the end of the block. The text loaders set the sizes of the pointers in a
-  pass after all fields are loaded (`mr_load_pointer_postponed`). It is not
-  related to the bounds checks in the XDR loader: the input fails the same
-  way without them.
-* `xdr.c:403` (`xdr_int64_t`) - UBSan reports a left shift of a negative
-  value. It is reported for any input with a negative high word and does not
-  stop the run.
+Regression inputs:
 
-`corpus/xdr_load/regress_array_count_overflow.xdr` is the input that the
-fuzzer found against the loader without the bounds checks (heap overflow in
-`xdr_load_array`, within the first 5 executions).
+* `regress_array_count_overflow.xdr` - the input that the fuzzer found
+  against the loader without the bounds checks (heap overflow in
+  `xdr_load_array`, within the first 5 executions).
+* `regress_count_mismatch.xdr` - a pointer and its count field are two
+  separate values in the stream, and the count field from the stream did not
+  match the number of loaded elements. The loader now requires the size
+  field to match the loaded data exactly.
+* `regress_opaque_flag.xdr` - the opaque flag on a field other than
+  `MR_OPAQUE_DATA`. The flag was removed, and opaque data is selected by
+  the name of the field only.
+* `regress_content_ref_type.xdr`, `regress_content_ref_overflow.xdr` - a
+  typed pointer that aliases the characters of a string.
+* `regress_unsized_pointer_elements.xdr` - a pointer without a size field
+  that owns more than one element.

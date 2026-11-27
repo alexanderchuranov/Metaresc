@@ -6,7 +6,7 @@ AM_LDFLAGS = @AM_LDFLAGS@
 AM_CPPFLAGS = -I$(top_srcdir)/src -I$(srcdir)
 LIBS += ../src/libmetaresc.la
 
-EXTRA_DIST = README.md fuzz_xdr_types.h fuzz_xdr_seed.c corpus known_issues
+EXTRA_DIST = README.md fuzz_xdr_types.h fuzz_xdr_seed.c corpus
 
 # The libFuzzer build is not a part of the autotools build, see README.md.
 # Here the same harness replays the corpus as a regular test.
