@@ -17,6 +17,12 @@ TYPEDEF_STRUCT (string_array_t, (string_t, x, [2]));
 TYPEDEF_STRUCT (packed_enum_array2d_t, (packed_enum_t, x, [2][2]));
 TYPEDEF_STRUCT (string_array2d_t, (string_t, x, [2][2]));
 TYPEDEF_STRUCT (int_array2d_t, (int, x, [2][2]));
+/* dimensions differ, so a wrong inner dimension changes the number of saved elements */
+TYPEDEF_STRUCT (int_array_multi_dim_t,
+                (int, x2, [2][3]),
+                (int, x3, [2][3][4]),
+                (int, x4, [3][1][2][2]),
+                );
 
 TYPEDEF_STRUCT (int_ptr_array_t, (int *, x, [2]));
 TYPEDEF_STRUCT (enum_ptr_array_t, (packed_enum_t *, x, [2]));
@@ -56,6 +62,18 @@ START_TEST (numeric_array_int64) { ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, int64_ar
 START_TEST (numeric_array_float) { ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, float_array_t); } END_TEST
 START_TEST (numeric_array_double) { ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, double_array_t); } END_TEST
 START_TEST (numeric_array_long_double) { ALL_METHODS (ASSERT_SAVE_LOAD_ARRAY, ld_array_t); } END_TEST
+
+START_TEST (multi_dimensional_array_int) {
+  int_array_multi_dim_t orig;
+  int i;
+  for (i = 0; i < sizeof (orig.x2) / sizeof (orig.x2[0][0]); ++i)
+    (&orig.x2[0][0])[i] = i + 1;
+  for (i = 0; i < sizeof (orig.x3) / sizeof (orig.x3[0][0][0]); ++i)
+    (&orig.x3[0][0][0])[i] = 100 + i;
+  for (i = 0; i < sizeof (orig.x4) / sizeof (orig.x4[0][0][0][0]); ++i)
+    (&orig.x4[0][0][0][0])[i] = -1 - i;
+  ALL_METHODS (ASSERT_SAVE_LOAD, int_array_multi_dim_t, &orig);
+} END_TEST
 
 START_TEST (char_array) {
   char_array_t orig = { { 'a', 'b' }, };
@@ -542,6 +560,7 @@ MAIN_TEST_SUITE ((numeric_array_int8, "array of numerics"),
                  (two_dimensional_array_string, "array2d"),
                  (two_dimensional_array_duplicated_strings, "array2d"),
                  (two_dimensional_array_int, "array2d"),
+                 (multi_dimensional_array_int, "arrays with 2, 3 and 4 dimensions of different sizes"),
                  (int_ptr_array, "array of int pointers"),
                  (enum_ptr_array, "array of pointers on enums"),
                  (union_ptr_array, "array of union pointers"),

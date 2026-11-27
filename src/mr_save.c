@@ -1490,7 +1490,7 @@ mr_save_array (mr_save_data_t * mr_save_data)
   else
     {
       --fd.stype.dim.dim_count;
-      memmove (&fd.stype.dim.dim[0], &fd.stype.dim.dim[0], fd.stype.dim.dim_count * sizeof (fd.stype.dim.dim[0]));
+      memmove (&fd.stype.dim.dim[0], &fd.stype.dim.dim[1], fd.stype.dim.dim_count * sizeof (fd.stype.dim.dim[0]));
     }
 
   for (i = 0; i < count; )
