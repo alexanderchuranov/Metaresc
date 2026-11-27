@@ -9,8 +9,8 @@ TYPEDEF_STRUCT (struct_int8_t, int8_t x);
 
 START_TEST (zero_u_int8_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 8, 0); } END_TEST
 START_TEST (all_bits_u_int8_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 8, -1); } END_TEST
-START_TEST (max_signed_u_int8_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 8, (1ULL << (8 - 1)) - 1); } END_TEST
-START_TEST (min_signed_u_int8_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 8, (1ULL << (8 - 1))); } END_TEST
+START_TEST (max_signed_u_int8_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 8, (UINT64_C (1) << (8 - 1)) - 1); } END_TEST
+START_TEST (min_signed_u_int8_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 8, (UINT64_C (1) << (8 - 1))); } END_TEST
 START_TEST (random_u_int8_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 8, 0x12); } END_TEST
 
 MAIN_TEST_SUITE ((zero_u_int8_t, "zero [u]int8_t"),

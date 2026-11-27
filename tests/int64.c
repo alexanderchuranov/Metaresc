@@ -9,9 +9,9 @@ TYPEDEF_STRUCT (struct_int64_t, int64_t x);
 
 START_TEST (zero_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, 0); } END_TEST
 START_TEST (all_bits_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, -1); } END_TEST
-START_TEST (max_signed_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, (1ULL << (64 - 1)) - 1); } END_TEST
-START_TEST (min_signed_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, (1ULL << (64 - 1))); } END_TEST
-START_TEST (random_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, 0x123456789abcdef0LL); } END_TEST
+START_TEST (max_signed_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, (UINT64_C (1) << (64 - 1)) - 1); } END_TEST
+START_TEST (min_signed_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, (UINT64_C (1) << (64 - 1))); } END_TEST
+START_TEST (random_u_int64_t) { ALL_METHODS (ASSERT_SAVE_LOAD_INT, 64, INT64_C (0x123456789abcdef0)); } END_TEST
 
 MAIN_TEST_SUITE ((zero_u_int64_t, "zero [u]int64_t"),
 		 (all_bits_u_int64_t, "all bits set [u]int64_t"),
