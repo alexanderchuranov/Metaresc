@@ -32,6 +32,15 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 
 {WS}  { return (TOK_SCM_WS); }
 
+ /* a name of a field is followed by a dot, so it is not a number or a keyword (inf, nan, t, nil) */
+{ID}{WS}"."{WS} {
+  /* the dot is returned to the input for TOK_SCM_DOT */
+  yyless (strcspn (yytext, " \t\n\r\f\v"));
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
+  return (TOK_SCM_ID);
+}
+
 {INT_NUMBER} {
   yylval->value.value_type = MR_VT_INTMAX;
   yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 10);
