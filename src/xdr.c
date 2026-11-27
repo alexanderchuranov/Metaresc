@@ -264,6 +264,7 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, m
   ptrs->ra[idx].data.ptr = data;
 
   ptrs->ra[idx].fdp = fdp;
+  ptrs->ra[idx].MR_SIZE = fdp->stype.size;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
 
@@ -373,7 +374,7 @@ xdr_int64_t (XDR * xdrs, int64_t * int64)
         return (false);
       if (!XDR_GETINT32 (xdrs, &low))
         return (false);
-      *int64 = ((int64_t) hi) << 32 | (uint32_t) low;
+      *int64 = ((uint64_t) hi) << 32 | (uint32_t) low;
       return (true);
 
     case XDR_FREE:
@@ -551,6 +552,36 @@ xdr_char_array_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (xdr_opaque (xdrs, ptrs->ra[idx].data.ptr, str_len) ? MR_SUCCESS : MR_FAILURE);
 }
 
+/* flags that XDR save writes for pointers and strings, MR_IS_TYPED is set only by the CINIT loader */
+#define XDR_PTRDES_FLAGS (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_REFERENCED | MR_IS_CONTENT_REFERENCE | MR_IS_UNNAMED)
+
+/**
+ * Loads flags of a pointer or a string node from XDR stream and rejects
+ * values that XDR save never writes.
+ * @param xdrs XDR stream descriptor
+ * @param idx index of node in ptrs
+ * @param ptrs array with descriptor of loaded data
+ * @return status
+ */
+static mr_status_t
+xdr_load_flags (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
+{
+  uint8_t flags = 0;
+  if (!xdr_uint8_t (xdrs, &flags))
+    return (MR_FAILURE);
+
+  /* unknown bits, or a node that is both a reference and a content reference */
+  if ((flags & ~XDR_PTRDES_FLAGS) ||
+      ((flags & MR_IS_REFERENCE) && (flags & MR_IS_CONTENT_REFERENCE)))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_XDR_WRONG_FLAGS, flags);
+      return (MR_FAILURE);
+    }
+
+  ptrs->ra[idx].flags = flags;
+  return (MR_SUCCESS);
+}
+
 /**
  * Save handler for char pointers.
  * @param xdrs XDR stream descriptor
@@ -596,7 +627,7 @@ xdr_load_string (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   /* the pointer must be initialized before any failure, otherwise rollback would free garbage */
   *(char**)ptrs->ra[idx].data.ptr = NULL;
 
-  if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
+  if (MR_SUCCESS != xdr_load_flags (xdrs, idx, ptrs))
     return (MR_FAILURE);
 
   if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
@@ -888,17 +919,21 @@ xdr_load_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
           if (fd_.stype.size == 0)
             return (MR_SUCCESS);
 
+          if (ptrs->ra[idx].MR_SIZE % fd_.stype.size != 0)
+            {
+              MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_ARRAY_SIZE, ptrs->ra[idx].MR_SIZE);
+              return (MR_FAILURE);
+            }
+
           count = ptrs->ra[idx].MR_SIZE / fd_.stype.size;
           /* a count from the stream larger than the declared array capacity
              would write past the inline buffer */
           if (count > max_count)
             {
-              MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
+              MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_RANGE_CHECK, fd_.name.str);
               return (MR_FAILURE);
             }
           ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
-
-          mr_pointer_set_size (idx, ptrs);
         }
     }
   else
@@ -910,6 +945,7 @@ xdr_load_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   for (i = 0; i < count; ++i)
     if (MR_SUCCESS != xdr_load_inner (&data[i * fd_.stype.size], &fd_, xdrs, ptrs, idx))
       return (MR_FAILURE);
+
   return (MR_SUCCESS);
 }
 
@@ -939,7 +975,7 @@ xdr_save_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
     return (MR_FAILURE);
   
-  if ((ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA) && (ptrs->ra[idx].MR_SIZE > 0))
+  if (mr_is_opaque_data (&ptrs->ra[idx]) && (ptrs->ra[idx].MR_SIZE > 0))
     return (xdr_opaque (xdrs, *(void**)ptrs->ra[idx].data.ptr, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);
 
   return (MR_SUCCESS);
@@ -971,7 +1007,7 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   
   *data = NULL;
 
-  if (!xdr_uint8_t (xdrs, (uint8_t*)&ptrs->ra[idx].flags))
+  if (MR_SUCCESS != xdr_load_flags (xdrs, idx, ptrs))
     return (MR_FAILURE);
 
   if (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
@@ -986,18 +1022,13 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (ptrs->ra[idx].flags & MR_IS_NULL)
     return (MR_SUCCESS);
 
-  /* xdr_save_pointer sets this flag only for the field MR_OPAQUE_DATA, anything else is a corrupted stream */
-  if ((ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA) &&
-      !(ptrs->ra[idx].fdp && ptrs->ra[idx].fdp->name.str &&
-        (0 == strcmp (ptrs->ra[idx].fdp->name.str, MR_OPAQUE_DATA_STR))))
-    return (MR_FAILURE);
-
   if (!xdr_uint32_t (xdrs, &ptrs->ra[idx].MR_SIZE))
     return (MR_FAILURE);
 
   mr_idx_t count = 0;
-      
-  if (!(ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA))
+  bool opaque = mr_is_opaque_data (&ptrs->ra[idx]);
+
+  if (!opaque)
     {
       if (fd_.stype.size > 0) /* types with zero size used for dynamics strings allocation */
         {
@@ -1014,8 +1045,6 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   if (ptrs->ra[idx].MR_SIZE <= 0)
     return (MR_FAILURE);
 
-  mr_pointer_set_size (idx, ptrs);
-
   *data = MR_CALLOC (1, ptrs->ra[idx].MR_SIZE);
   if (NULL == *data)
     {
@@ -1023,7 +1052,7 @@ xdr_load_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
-  if (ptrs->ra[idx].flags & MR_IS_OPAQUE_DATA)
+  if (opaque)
     return (xdr_opaque (xdrs, *data, ptrs->ra[idx].MR_SIZE) ? MR_SUCCESS : MR_FAILURE);
   else
     {
