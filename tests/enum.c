@@ -100,20 +100,26 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 
 #define SKIP_METHOD_XDR 0
 
-START_TEST (invalid_mr_enum_t) {
-  int checked = 0;
-  mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
-  
-#define CMP_ENUMS(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
-#define CMP_STRUCT_ENUMS(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
+/*
+  Every save of an invalid enum value must produce a warning.
+  Enums and enums in structures are checked in separate tests, because
+  a single function with both expansions of ALL_METHODS is too large
+  for variable tracking of gcc.
+*/
+#define ASSERT_INVALID_ENUM_WARNINGS(ASSERT_SAVE_LOAD) ({               \
+      int checked = 0;                                                  \
+      mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;          \
+      warnings = 0;                                                     \
+      mr_conf.msg_handler = msg_handler;                                \
+      ALL_METHODS (ASSERT_SAVE_LOAD, -1, CMP_INVALID_ENUMS);            \
+      mr_conf.msg_handler = save_msg_handler;                           \
+      ck_assert_msg ((checked == warnings), "Save/load of invalid enum value didn't produce matching number of warnings (%d != %d)", checked, warnings); \
+    })
 
-  mr_conf.msg_handler = msg_handler;
-  ALL_METHODS (ASSERT_SAVE_LOAD_ENUM, -1, CMP_ENUMS);
-  ALL_METHODS (ASSERT_SAVE_LOAD_STRUCT_ENUM, -1, CMP_STRUCT_ENUMS);
-  mr_conf.msg_handler = save_msg_handler;
+#define CMP_INVALID_ENUMS(...) ({ ++checked; CMP_SERIALIAZED (__VA_ARGS__);})
 
-  ck_assert_msg ((checked == warnings), "Save/load of ivnalid enum value didn't produced mathced number of warnings (%d != %d)", checked, warnings);
-} END_TEST
+START_TEST (invalid_mr_enum_t) { ASSERT_INVALID_ENUM_WARNINGS (ASSERT_SAVE_LOAD_ENUM); } END_TEST
+START_TEST (invalid_mr_struct_enum_t) { ASSERT_INVALID_ENUM_WARNINGS (ASSERT_SAVE_LOAD_STRUCT_ENUM); } END_TEST
 
 #undef SKIP_METHOD_XDR
 
@@ -125,5 +131,6 @@ MAIN_TEST_SUITE ((zero_mr_enum_t, "zero as number enum"),
                  (seven_mr_struct_enum_t, "seven as enum in struct"),
                  (mr_intmax_signed_max_value, "Signed enum parsing"),
                  (mr_intmax_unsigned_max_value, "Unsigned enum parsing"),
-                 (invalid_mr_enum_t, "invalid enum")
+                 (invalid_mr_enum_t, "invalid enum"),
+                 (invalid_mr_struct_enum_t, "invalid enum in struct")
                  );
