@@ -26,14 +26,14 @@ START_TEST (parse_bits_op2) { ASSERT_LOAD_EXPR (int, 2 | 5 * 8); } END_TEST
   expr.c is built with -ffinite-math-only, so the values are finite.
 */
 TYPEDEF_STRUCT (keyword_fields_t,
-                (bool, t),
-                (bool, nil),
-                (int, i),
+                (intptr_t, t),
+                (uintptr_t, nil),
+                (intptr_t, i),
                 (double, inf),
                 (complex double, nan),
                 );
 
-#define KEYWORD_FIELDS_VAL { . i = 1, . inf = 2.3, . nan = 4.5I + 6.7, . t = true, . nil = true }
+#define KEYWORD_FIELDS_VAL { . t = 1, . nil = 2, . i = 4, . inf = 5.6, . nan = 7.8I + 9.0, . t = true, . nil = true }
 
 START_TEST (parse_keyword_field_names) {
   char text[] = MR_STRINGIFY_READONLY (KEYWORD_FIELDS_VAL);
