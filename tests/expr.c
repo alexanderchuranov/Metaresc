@@ -1,5 +1,4 @@
 #include <complex.h>
-#include <math.h>
 
 #include <check.h>
 #include <metaresc.h>
@@ -22,7 +21,10 @@ START_TEST (parse_float_op2) { ASSERT_LOAD_EXPR (float, 3.14159265358979323846 +
 START_TEST (parse_bits_op1) { ASSERT_LOAD_EXPR (int, 7 ^ 5 * 8); } END_TEST
 START_TEST (parse_bits_op2) { ASSERT_LOAD_EXPR (int, 2 | 5 * 8); } END_TEST
 
-/* names of fields are not keywords or numbers, but values are (i and inf in CINIT, inf, t and nil in SCM) */
+/*
+  names of fields are not keywords or numbers, but values are (I in CINIT).
+  expr.c is built with -ffinite-math-only, so the values are finite.
+*/
 TYPEDEF_STRUCT (keyword_fields_t,
                 (int, i),
                 (double, inf),
@@ -32,11 +34,11 @@ TYPEDEF_STRUCT (keyword_fields_t,
                 );
 
 START_TEST (parse_keyword_field_names) {
-  char text[] = "{ .i = 1, . inf = inf, .nan = 2 * I }";
+  char text[] = "{ .i = 1, . inf = -1.5, .nan = 2 * I }";
   keyword_fields_t x;
   memset (&x, 0, sizeof (x));
   ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (keyword_fields_t, text, &x), "load of %s failed", text);
-  ck_assert_msg ((1 == x.i) && isinf (x.inf) && (2 * I == x.nan), "load of %s gave wrong values", text);
+  ck_assert_msg ((1 == x.i) && (-1.5 == x.inf) && (2 * I == x.nan), "load of %s gave wrong values", text);
 
   keyword_fields_t orig = { .i = 3, .inf = -1.5, .nan = 1 + 2 * I, .t = true, .nil = true, };
   ALL_METHODS (ASSERT_SAVE_LOAD, keyword_fields_t, &orig);
