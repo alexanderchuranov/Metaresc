@@ -40,6 +40,7 @@ START_TEST (parse_keyword_field_names) {
   keyword_fields_t x, orig = KEYWORD_FIELDS_VAL;
   memset (&x, 0, sizeof (x));
   ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (keyword_fields_t, text, &x), "load of %s failed", text);
+  MR_FPRINT (stderr, (keyword_fields_t, &x), (keyword_fields_t, &orig));
   ck_assert_msg ((0 == memcmp (&x, &orig, sizeof (x))), "load of %s gave wrong values", text);
   ALL_METHODS (ASSERT_SAVE_LOAD, keyword_fields_t, &orig);
 } END_TEST
