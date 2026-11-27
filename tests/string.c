@@ -14,9 +14,15 @@ TYPEDEF_STRUCT (struct_ca_str_t, (char_array_t, x), string_t y);
 TYPEDEF_STRUCT (struct_str_ca_t, string_t y, (char_array_t, x));
 TYPEDEF_STRUCT (struct_str_str_t, string_t x, string_t y);
 
-TYPEDEF_STRUCT (struct_ca_int_t, ATTRIBUTES (__attribute__ ((packed))),
-                (char, x, [1], , .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false),
+/*
+  A string that fills a char array has no terminating zero. A loader that writes
+  the terminator past the end of the array overwrites y, which follows x
+  without padding (the size of x is a multiple of the alignment of int).
+*/
+TYPEDEF_STRUCT (struct_ca_int_t,
+                (char, x, [sizeof (int)], , .stype.mr_type = MR_TYPE_CHAR_ARRAY, .stype.is_array = false),
                 int y);
+_Static_assert (offsetof (struct_ca_int_t, y) == sizeof (((struct_ca_int_t*)0)->x), "y must follow x without padding");
 
 #define ASSERT_SAVE_LOAD_CHAR_POINTER(METHOD, ...) ({			\
       ASSERT_SAVE_LOAD_TYPE (METHOD, string_t,  __VA_ARGS__);		\
@@ -52,7 +58,7 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 START_TEST (char_array_overflow) {
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
   mr_conf.msg_handler = msg_handler;
-  ALL_METHODS (ASSERT_SAVE_LOAD_CA_INT, "0");
+  ALL_METHODS (ASSERT_SAVE_LOAD_CA_INT, "0123");
   mr_conf.msg_handler = save_msg_handler;
   ck_assert_msg ((0 == warnings), "Unexpected warnings #%d", warnings);
 } END_TEST
