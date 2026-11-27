@@ -33,14 +33,14 @@ TYPEDEF_STRUCT (keyword_fields_t,
                 (bool, nil),
                 );
 
+#define KEYWORD_FIELDS_VAL { .i = 1, . inf = 2.3, .nan = 4.5I + 6.7, .t = true, .nil = true }
+
 START_TEST (parse_keyword_field_names) {
-  char text[] = "{ .i = 1, . inf = -1.5, .nan = 2 * I }";
-  keyword_fields_t x;
+  char text[] = MR_STRINGIFY_READONLY (KEYWORD_FIELDS_VAL);
+  keyword_fields_t x, orig = KEYWORD_FIELDS_VAL;
   memset (&x, 0, sizeof (x));
   ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (keyword_fields_t, text, &x), "load of %s failed", text);
-  ck_assert_msg ((1 == x.i) && (-1.5 == x.inf) && (2 * I == x.nan), "load of %s gave wrong values", text);
-
-  keyword_fields_t orig = { .i = 3, .inf = -1.5, .nan = 1 + 2 * I, .t = true, .nil = true, };
+  ck_assert_msg ((0 == memcmp (&x, &orig, sizeof (x))), "load of %s gave wrong values", text);
   ALL_METHODS (ASSERT_SAVE_LOAD, keyword_fields_t, &orig);
 } END_TEST
 
