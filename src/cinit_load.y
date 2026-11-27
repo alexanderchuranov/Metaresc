@@ -128,13 +128,13 @@ casted_value
     {
       if (0 == mr_substrcmp (MR_REF, &$1.id))
         {
-          mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
-          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_REFERENCE;
+          if (MR_SUCCESS != mr_load_set_reference (mr_load->ptrs, mr_load->parent, $1.ivalue, MR_IS_REFERENCE))
+            { YYERROR; }
         }
       else if (0 == mr_substrcmp (MR_REF_CONTENT, &$1.id))
         {
-          mr_load->ptrs->ra[mr_load->parent].first_child = $1.ivalue;
-          mr_load->ptrs->ra[mr_load->parent].flags |= MR_IS_CONTENT_REFERENCE;
+          if (MR_SUCCESS != mr_load_set_reference (mr_load->ptrs, mr_load->parent, $1.ivalue, MR_IS_CONTENT_REFERENCE))
+            { YYERROR; }
         }
       else if (0 == mr_substrcmp (MR_REF_IDX, &$1.id))
         {

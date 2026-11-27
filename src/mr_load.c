@@ -286,7 +286,9 @@ mr_free_load_values (mr_ra_ptrdes_t * ptrs)
 /**
  * Adds a node of a document to the children of its parent. A reference keeps
  * the reference index of the document in first_child until mr_set_crossrefs,
- * so a node that is a reference can not have children.
+ * so a node that is a reference can not have children. XML1 and YAML read
+ * the annotation of a reference before the children of the node; CINIT and SCM
+ * read it after them, and check it in mr_load_set_reference.
  * @param ptrs array with descriptors of loaded data
  * @param parent index of the parent node or MR_NULL_IDX
  * @param child index of the new node
@@ -301,6 +303,30 @@ mr_load_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child)
       return (MR_FAILURE);
     }
   mr_add_child (ptrs, parent, child);
+  return (MR_SUCCESS);
+}
+
+/**
+ * Marks a node of a document as a reference. CINIT and SCM read the annotation
+ * of a reference after the value, so the node may already have child nodes,
+ * or be marked as a reference by another annotation. The reference index
+ * would replace the first child, and the child nodes would not be loaded.
+ * @param ptrs array with descriptors of loaded data
+ * @param idx index of the node
+ * @param ref_idx reference index of the document
+ * @param flag MR_IS_REFERENCE or MR_IS_CONTENT_REFERENCE
+ * @return status, failure if the node has child nodes or is a reference already
+ */
+mr_status_t
+mr_load_set_reference (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, mr_idx_t ref_idx, mr_ptrdes_flags_t flag)
+{
+  if ((ptrs->ra[idx].first_child != MR_NULL_IDX) || (ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_SUBNODES);
+      return (MR_FAILURE);
+    }
+  ptrs->ra[idx].first_child = ref_idx;
+  ptrs->ra[idx].flags |= flag;
   return (MR_SUCCESS);
 }
 

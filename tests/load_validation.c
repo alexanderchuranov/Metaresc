@@ -342,6 +342,41 @@ START_TEST (load_reference_on_non_pointer) {
 } END_TEST
 
 /*
+  CINIT and SCM read the annotation of a reference after the value. A value with
+  elements, or a second annotation, would lose its child nodes to the reference index.
+*/
+START_TEST (load_reference_after_value) {
+  ASSERT_TEXT_LOAD_STATUS (SCM, ref_idx_t, MR_SUCCESS, "(\n;(ref_idx . 5)\n(small . 7)\n;(ref . 5)\n(p . nil)\n(n . 1))");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = /* ref_idx = 1 */ 7, .p = /* ref = 1 */ (int32_t[]){ 5 }, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = /* ref_idx = 1 */ 7, .p = /* ref_content = 1 */ (int32_t[]){ 5 }, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = /* ref_idx = 1 */ 7, .p = /* ref = 1 */ /* ref = 1 */ NULL, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (SCM, ref_idx_t, MR_FAILURE, "(\n;(ref_idx . 5)\n(small . 7)\n;(ref . 5)\n(p . (5))\n(n . 1))");
+} END_TEST
+
+/* SCM saves a character as \x%02x; a malformed escape keeps the characters that follow it */
+START_TEST (scm_load_hex_escape) {
+  struct {
+    char * text;
+    char * expected;
+  } cases[] = {
+    { "((s . \"\\x41;z\"))", "Az" },
+    { "((s . \"\\x41z\"))", "Az" },
+    { "((s . \"\\x414;z\"))", "A4;z" },
+  };
+  int i;
+  for (i = 0; i < sizeof (cases) / sizeof (cases[0]); ++i)
+    {
+      char text[64];
+      ca_ref_t x;
+      strcpy (text, cases[i].text);
+      memset (&x, 0, sizeof (x));
+      ck_assert_msg (MR_SUCCESS == MR_LOAD_SCM (ca_ref_t, text, &x), "load of %s failed", cases[i].text);
+      ck_assert_msg ((x.s != NULL) && (0 == strcmp (x.s, cases[i].expected)), "load of %s gave '%s'", cases[i].text, x.s ? x.s : "(null)");
+      MR_FREE_RECURSIVELY (ca_ref_t, &x);
+    }
+} END_TEST
+
+/*
   As in C, a field may be initialized more than once and the last value wins.
   But a field that owns memory (a string or a pointer with elements) can not be
   overwritten: the memory would be lost, or freed twice on a failed load.
@@ -406,7 +441,9 @@ START_TEST (cinit_load_float_out_of_int_range) {
 
 MAIN_TEST_SUITE ((cinit_load_reference_index_is_not_node_index, "size of a reference is checked against the node it resolves to"),
                  (load_reference_on_non_pointer, "only pointers and strings without child nodes may be references"),
-                 (load_field_twice, "a field that owns memory can not be loaded twice"),
+                 (load_reference_after_value, "a reference annotation after a value with child nodes is rejected"),
+                 (scm_load_hex_escape, "a malformed hex escape of SCM keeps the following characters"),
+                 (load_field_twice,"a field that owns memory can not be loaded twice"),
                  (xml1_load_incomplete_escape, "an incomplete numeric escape of XML is loaded as text"),
                  (control_char_before_digit_round_trip, "a control character followed by a digit is saved and loaded"),
                  (cinit_load_float_out_of_int_range, "a floating point value out of the range of an integer is rejected"),
