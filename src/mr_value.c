@@ -605,11 +605,11 @@ static inline mr_intmax_t mr_intmax_bit_xor (mr_intmax_t x, mr_intmax_t y) { ret
 
 /*
   Defines mr_status_t mr_value_<OP_NAME> (mr_value_t * result, mr_value_t * left, mr_value_t * right)
-  that computes left OP right for integer operands with mr_intmax_<OP_NAME>.
+  that computes mr_intmax_<OP_NAME> (left, right) for integer operands.
   __VA_ARGS__ is a statement run before the operation (e.g. a check of a divisor).
   It returns MR_SUCCESS or MR_FAILURE for non-integer operands.
 */
-#define MR_INT_VALUE_OP(OP_NAME, OP, ...)				\
+#define MR_INT_VALUE_OP(OP_NAME, ...)					\
   mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
     memset (result, 0, sizeof (*result));				\
@@ -652,7 +652,7 @@ MR_VALUE_OP (add, +);
 MR_VALUE_OP (sub, -);
 MR_VALUE_OP (mul, *);
 MR_VALUE_OP (div, /, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
-MR_INT_VALUE_OP (mod, %, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
-MR_INT_VALUE_OP (bit_or, |);
-MR_INT_VALUE_OP (bit_and, &);
-MR_INT_VALUE_OP (bit_xor, ^);
+MR_INT_VALUE_OP (mod, if (mr_value_is_zero (right)) { MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_DIVISION_BY_ZERO); return (MR_FAILURE); });
+MR_INT_VALUE_OP (bit_or);
+MR_INT_VALUE_OP (bit_and);
+MR_INT_VALUE_OP (bit_xor);

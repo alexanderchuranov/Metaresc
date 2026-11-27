@@ -946,7 +946,8 @@ mr_get_size_field_bytes (mr_ptrdes_t * size_field, mr_size_t element_size, mr_si
       return (MR_FAILURE);
     }
 
-  *bytes = value * scale;
+  /* the check above makes the value fit into mr_size_t, and the product fits too */
+  *bytes = (mr_size_t)value * scale;
   return (MR_SUCCESS);
 }
 

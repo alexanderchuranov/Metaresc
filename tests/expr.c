@@ -44,6 +44,43 @@ START_TEST (parse_keyword_field_names) {
   ALL_METHODS (ASSERT_SAVE_LOAD, keyword_fields_t, &orig);
 } END_TEST
 
+/*
+  Integer expressions are computed in mr_intmax_t. They wrap around as in two's
+  complement instead of signed overflow, which is undefined behavior.
+*/
+#define MR_INTMAX_BITS (sizeof (mr_intmax_t) * __CHAR_BIT__)
+#define MR_INTMAX_MIN ((mr_intmax_t)(((mr_uintmax_t)1) << (MR_INTMAX_BITS - 1)))
+#define MR_INTMAX_MAX ((mr_intmax_t)((((mr_uintmax_t)1) << (MR_INTMAX_BITS - 1)) - 1))
+
+static void
+assert_intmax_expr (char * max, char * fmt, mr_intmax_t expected)
+{
+  char text[256];
+  mr_intmax_t x = 0;
+  snprintf (text, sizeof (text), fmt, max, max);
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (mr_intmax_t, text, &x), "load of %s failed", text);
+  ck_assert_msg (x == expected, "wrong value of %s", text);
+}
+
+START_TEST (parse_intmax_wrap_around) {
+  mr_intmax_t max_value = MR_INTMAX_MAX;
+  char * max = MR_SAVE_CINIT (mr_intmax_t, &max_value);
+  ck_assert_ptr_nonnull (max);
+  max[strcspn (max, " \n")] = 0;
+
+  assert_intmax_expr (max, "%s", MR_INTMAX_MAX);
+  assert_intmax_expr (max, "-%s - 1", MR_INTMAX_MIN);
+  assert_intmax_expr (max, "%s + 1", MR_INTMAX_MIN);
+  assert_intmax_expr (max, "(-%s - 1) - 1", MR_INTMAX_MAX);
+  assert_intmax_expr (max, "%s * 2", -2);
+  assert_intmax_expr (max, "-(-%s - 1)", MR_INTMAX_MIN);
+  assert_intmax_expr (max, "(-%s - 1) / -1", MR_INTMAX_MIN);
+  assert_intmax_expr (max, "(-%s - 1) %% -1", 0);
+  assert_intmax_expr (max, "7 / -1", -7);
+  assert_intmax_expr (max, "7 %% -3", 1);
+  MR_FREE (max);
+} END_TEST
+
 MAIN_TEST_SUITE ((parse_bool_true, "parse bool true"),
                  (parse_bool_false, "parse bool (false)"),
                  (parse_bool_char_plus_num, "parse int ('a' + 1)"),
@@ -56,5 +93,6 @@ MAIN_TEST_SUITE ((parse_bool_true, "parse bool true"),
                  (parse_float_op2, "parse float x = MR_PI + 2 * MR_E"),
                  (parse_bits_op1, "parse int x = 7 ^ 5 * 8"),
                  (parse_bits_op2, "parse int x = 2 | 5 * 8"),
-                 (parse_keyword_field_names, "fields named i, inf, nan, t and nil")
+                 (parse_keyword_field_names, "fields named i, inf, nan, t and nil"),
+                 (parse_intmax_wrap_around, "integer expressions wrap around without signed overflow")
                  );

@@ -36,7 +36,7 @@ Ubuntu) and runs on Linux. Build the library statically with coverage
 instrumentation, then link the harness with `-fsanitize=fuzzer`:
 
 ```console
-$ SAN="-g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize=signed-integer-overflow,function"
+$ SAN="-g -O1 -fno-omit-frame-pointer -fsanitize=address,undefined -fno-sanitize=function"
 $ ./configure CFLAGS="-I/usr/include/tirpc $SAN -fsanitize=fuzzer-no-link" \
     LIBS=-ltirpc CC=clang --without-libdwarf --disable-shared
 $ make -C src
@@ -46,11 +46,11 @@ $ clang $SAN -fsanitize=fuzzer -DHAVE_CONFIG_H -Isrc -Ifuzz \
     -o fuzz_xdr_load
 ```
 
-Two UBSan checks are excluded. `signed-integer-overflow`, because for
-`__int128` multiplication (`mr_value_mul`) Clang emits calls to `__muloti4`
-from compiler-rt, and the link fails without it. `function`, because the
-library calls handlers through pointers of a different function type
-(reported in `mr_save.c`) and every run is flooded with those reports.
+One UBSan check is excluded: `function`, because the library calls handlers
+through pointers of a different function type (reported in `mr_save.c`) and
+every run is flooded with those reports. The library has no signed `__int128`
+multiplication: Clang checks it for overflow with `__muloti4` from
+compiler-rt, and the link of the fuzzer fails without it.
 
 Run it on a copy of the corpus, because libFuzzer adds new inputs to the
 directory it is given:

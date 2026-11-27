@@ -39,7 +39,7 @@ _Static_assert (offsetof (struct_ca_int_t, y) == sizeof (((struct_ca_int_t*)0)->
     })
 
 #define ASSERT_SAVE_LOAD_CA_INT(METHOD, VALUE, ...) ({			\
-      struct_ca_int_t x = { VALUE, '0' };				\
+      struct_ca_int_t x = { MR_REMOVE_PAREN (VALUE), '0' };		\
       ASSERT_SAVE_LOAD (METHOD, struct_ca_int_t, &x, __VA_ARGS__);	\
     })
 
@@ -58,7 +58,7 @@ msg_handler (const char * file_name, const char * func_name, int line, mr_log_le
 START_TEST (char_array_overflow) {
   mr_msg_handler_t save_msg_handler = mr_conf.msg_handler;
   mr_conf.msg_handler = msg_handler;
-  ALL_METHODS (ASSERT_SAVE_LOAD_CA_INT, "0123");
+  ALL_METHODS (ASSERT_SAVE_LOAD_CA_INT, ({ '0', '1', '2', '3' }));
   mr_conf.msg_handler = save_msg_handler;
   ck_assert_msg ((0 == warnings), "Unexpected warnings #%d", warnings);
 } END_TEST
