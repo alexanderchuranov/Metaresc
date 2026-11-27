@@ -1417,8 +1417,10 @@ mr_init_enum (mr_td_t * tdp)
         there is a corner case when enum has a single negative value which is a highest sign bit
         Compiler will extend sign bit to higher positoins and this value will not be classified
         as a power of two. That's why we need to truncate value to expected bit width before checking.
+        Values of the full width of the value need no truncation, and a shift by the full width is undefined.
       */
-      value._unsigned &= (2LL << (tdp->param.enum_param.size_effective * __CHAR_BIT__ - 1)) - 1;
+      if (tdp->param.enum_param.size_effective < sizeof (value._unsigned))
+        value._unsigned &= (UINT64_C (1) << (tdp->param.enum_param.size_effective * __CHAR_BIT__)) - 1;
 
       if (value._unsigned != 0)
         ++non_zero_cnt;
