@@ -536,7 +536,8 @@ mr_value_neg (mr_value_t * value)
   switch (value->value_type)
     {
     case MR_VT_INTMAX:
-      value->vt_intmax = -value->vt_intmax;
+      /* negation of the minimal value overflows the signed type, so negate it as unsigned */
+      value->vt_intmax = -(mr_uintmax_t)value->vt_intmax;
       break;
       
     case MR_VT_LONG_DOUBLE:
@@ -555,8 +556,23 @@ mr_value_neg (mr_value_t * value)
 }
 
 /*
+  Integer operations on values of documents. Signed overflow is undefined, so the operations
+  wrap around in the unsigned type, and the division of the minimal value by -1 is defined
+  as in two's complement: the quotient is the minimal value, and the remainder is zero.
+*/
+static inline mr_intmax_t mr_intmax_add (mr_intmax_t x, mr_intmax_t y) { return ((mr_uintmax_t)x + (mr_uintmax_t)y); }
+static inline mr_intmax_t mr_intmax_sub (mr_intmax_t x, mr_intmax_t y) { return ((mr_uintmax_t)x - (mr_uintmax_t)y); }
+static inline mr_intmax_t mr_intmax_mul (mr_intmax_t x, mr_intmax_t y) { return ((mr_uintmax_t)x * (mr_uintmax_t)y); }
+static inline mr_intmax_t mr_intmax_div (mr_intmax_t x, mr_intmax_t y) { return ((-1 == y) ? -(mr_uintmax_t)x : x / y); }
+static inline mr_intmax_t mr_intmax_mod (mr_intmax_t x, mr_intmax_t y) { return ((-1 == y) ? 0 : x % y); }
+static inline mr_intmax_t mr_intmax_bit_or (mr_intmax_t x, mr_intmax_t y) { return (x | y); }
+static inline mr_intmax_t mr_intmax_bit_and (mr_intmax_t x, mr_intmax_t y) { return (x & y); }
+static inline mr_intmax_t mr_intmax_bit_xor (mr_intmax_t x, mr_intmax_t y) { return (x ^ y); }
+
+/*
   Defines mr_status_t mr_value_<OP_NAME> (mr_value_t * result, mr_value_t * left, mr_value_t * right)
   that computes left OP right. Operands are cast to the wider of their types, at least an integer.
+  Integers are computed with mr_intmax_<OP_NAME>.
   __VA_ARGS__ is a statement run before the operation (e.g. a check of a divisor).
   It returns MR_SUCCESS or MR_FAILURE for non-numeric operands.
 */
@@ -577,7 +593,7 @@ mr_value_neg (mr_value_t * value)
     __VA_ARGS__;                                                        \
     switch (result_type)                                                \
       {									\
-      case MR_VT_INTMAX: result->vt_intmax = left->vt_intmax OP right->vt_intmax; break; \
+      case MR_VT_INTMAX: result->vt_intmax = mr_intmax_ ## OP_NAME (left->vt_intmax, right->vt_intmax); break; \
       case MR_VT_LONG_DOUBLE: result->vt_long_double = left->vt_long_double OP right->vt_long_double; break; \
       case MR_VT_COMPLEX_LONG_DOUBLE: result->vt_complex_long_double = left->vt_complex_long_double OP right->vt_complex_long_double; break; \
       default:								\
@@ -589,7 +605,7 @@ mr_value_neg (mr_value_t * value)
 
 /*
   Defines mr_status_t mr_value_<OP_NAME> (mr_value_t * result, mr_value_t * left, mr_value_t * right)
-  that computes left OP right for integer operands.
+  that computes left OP right for integer operands with mr_intmax_<OP_NAME>.
   __VA_ARGS__ is a statement run before the operation (e.g. a check of a divisor).
   It returns MR_SUCCESS or MR_FAILURE for non-integer operands.
 */
@@ -610,7 +626,7 @@ mr_value_neg (mr_value_t * value)
       }									\
     result->value_type = MR_VT_INTMAX;					\
     __VA_ARGS__;                                                        \
-    result->vt_intmax = left->vt_intmax OP right->vt_intmax;		\
+    result->vt_intmax = mr_intmax_ ## OP_NAME (left->vt_intmax, right->vt_intmax); \
     return (MR_SUCCESS);                                                \
   }
 

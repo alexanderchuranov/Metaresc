@@ -98,14 +98,10 @@ int mr_ra_printf_int128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes
 {
   mr_intmax_t value = *(mr_intmax_t*)ptrdes->data.ptr;
   char buffer[(sizeof (value) * 12 + 4) / 5 + sizeof ("-")]; /* log10 (256) = 12/5 */
-  bool negative = false;
-
-  if (value < 0)
-    {
-      negative = true;
-      value = ~value + 1; /* clang has a bug so that -(1 << 127) == 0 */
-    }
-  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], value);
+  bool negative = (value < 0);
+  /* the magnitude of the minimal value does not fit into the signed type, so negate it as unsigned */
+  mr_uintmax_t magnitude = negative ? -(mr_uintmax_t)value : (mr_uintmax_t)value;
+  char * out = mr_uintmaxtostr (&buffer[sizeof (buffer)], magnitude);
   if (negative)
     *--out = '-';
   return (mr_ra_append_string (mr_ra_str, out));

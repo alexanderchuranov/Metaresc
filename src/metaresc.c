@@ -590,7 +590,7 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
 
   /* on next passes we will fill non-zero values to addresses with i-th bit set in the offset. First iteration fills non-zeros to offsets with highest set bit */
   if (tdp->size > 1)
-    for (block_size = 1UL << (sizeof (long long) * __CHAR_BIT__ - __builtin_clzll (tdp->size - 1) - 1);
+    for (block_size = UINT64_C (1) << (sizeof (long long) * __CHAR_BIT__ - __builtin_clzll (tdp->size - 1) - 1);
          block_size != 0;
          block_size >>= 1)
       {
@@ -726,6 +726,14 @@ mr_save_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
   int shift = ptrdes->fdp->bitfield_param.shift;
   int width = ptrdes->fdp->bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
+
+  /* a bit-field without bits has no value, and masks below would shift by -1 */
+  if (0 == width)
+    {
+      *value = 0;
+      return (MR_SUCCESS);
+    }
+
   typeof (*value) _value = *ptr++ >> shift;
 
   for (i = __CHAR_BIT__ - shift; i < width; i += __CHAR_BIT__)
@@ -760,6 +768,11 @@ mr_load_bitfield_value (mr_ptrdes_t * ptrdes, mr_uintmax_t * value)
   int shift = ptrdes->fdp->bitfield_param.shift;
   int width = ptrdes->fdp->bitfield_param.width;
   uint8_t * ptr = ptrdes->data.ptr;
+
+  /* a bit-field without bits stores nothing, and masks below would shift by -1 */
+  if (0 == width)
+    return (MR_SUCCESS);
+
   typeof (*value) _value = *value;
 
   _value &= (((typeof (*value))2) << (width - 1)) - 1;

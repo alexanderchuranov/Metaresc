@@ -417,6 +417,8 @@ TYPEDEF_ENUM (mr_dw_form_t,
 
 #define DW_FORM_STRING (0 MR_FOREACH (MR_ONE_SHIFT, DW_FORM_STRING_LIST))
 #define DW_FORM_UNSIGNED (0 MR_FOREACH (MR_ONE_SHIFT, DW_FORM_UNSIGNED_LIST))
+/* forms come from the file and may be vendor extensions beyond the width of the masks */
+#define DW_FORM_IN(MASK, FORM) (((FORM) < sizeof (MASK) * __CHAR_BIT__) && (((MASK) >> (FORM)) & 1))
 
 TYPEDEF_STRUCT (mr_dw_attribute_t,
                 (mr_dw_attribute_code_t, code),
@@ -527,10 +529,14 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
             uint8_t * leb128 = block->bl_data + sizeof (uint8_t);
             Dwarf_Unsigned value = 0;
             int i, shift = 0;
-            for (i = 1; i < block->bl_len; ++i)
+            /* unsigned LEB128: 7 bits per byte, the high bit marks that more bytes follow */
+            for (i = 1; (i < block->bl_len) && (shift < sizeof (value) * __CHAR_BIT__); ++i)
               {
-                value |= (*leb128++ & ((1 << 7) - 1)) << shift;
+                uint8_t byte = *leb128++;
+                value |= ((Dwarf_Unsigned)(byte & 0x7f)) << shift;
                 shift += 7;
+                if (0 == (byte & 0x80))
+                  break;
               }
             mr_attr->dw_unsigned = value;
           }
@@ -678,7 +684,7 @@ walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray, char * filename)
     case _DW_TAG_compile_unit:
       attr = die_attribute (mr_die, _DW_AT_name);
       assert (attr != NULL);
-      assert ((DW_FORM_STRING >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
       assert (attr->dw_str != NULL);
       filename = attr->dw_str;
       break;
@@ -731,7 +737,7 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 
   if (fdp->stype.type == NULL)
     {
-      assert ((DW_FORM_STRING >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
       assert (attr->dw_str != NULL);
       fdp->stype.type = mr_strdup (attr->dw_str);
       assert (fdp->stype.type != NULL);
@@ -740,7 +746,7 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
-      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
       fdp->stype.size = attr->dw_unsigned;
     }
 }
@@ -785,12 +791,12 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_byte_size);
   assert (attr != NULL);
-  assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+  assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
   mr_type_sign.size = attr->dw_unsigned;
 
   attr = die_attribute (mr_die, _DW_AT_name);
   assert (attr != NULL);
-  assert ((DW_FORM_STRING >> attr->form) & 1);
+  assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
   mr_type_sign.type.str = attr->dw_str;
 
   mr_ptr_t * find = mr_ic_find (&mr_type_sign_ic, &mr_type_sign);
@@ -829,14 +835,14 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
       mr_dw_attribute_t * attr = die_attribute (&mr_die->children[i], _DW_AT_count);
       if (attr != NULL)
         {
-          assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+          assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
           dimension = attr->dw_unsigned;
         }
 
       attr = die_attribute (&mr_die->children[i], _DW_AT_upper_bound);
       if (attr != NULL)
         {
-          assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+          assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
           dimension = attr->dw_unsigned + 1;
         }
       if (j < sizeof (fdp->stype.dim.dim) / sizeof (fdp->stype.dim.dim[0]))
@@ -956,14 +962,14 @@ load_enumerator (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t *
   
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   assert (attr != NULL);
-  assert ((DW_FORM_STRING >> attr->form) & 1);
+  assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
   assert (attr->dw_str != NULL);
   edp->name.str = mr_strdup (attr->dw_str);
   assert (edp->name.str != NULL);
 
   attr = die_attribute (mr_die, _DW_AT_const_value);
   assert (attr != NULL);
-  assert (((DW_FORM_UNSIGNED >> attr->form) & 1) || (_DW_FORM_sdata == attr->form));
+  assert ((DW_FORM_IN (DW_FORM_UNSIGNED, attr->form)) || (_DW_FORM_sdata == attr->form));
 
   if (_DW_FORM_sdata == attr->form)
     {
@@ -993,7 +999,7 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   if (attr != NULL)
     {
-      assert ((DW_FORM_STRING >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
       assert (attr->dw_str != NULL);
       fdp->name.str = mr_strdup (attr->dw_str);
       assert (fdp->name.str != NULL);
@@ -1018,28 +1024,28 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
-      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
       fdp->stype.size = attr->dw_unsigned;
     }
   
   attr = die_attribute (mr_die, _DW_AT_data_member_location);
   if (attr != NULL)
     {
-      assert (((DW_FORM_UNSIGNED >> attr->form) & 1) || (_DW_FORM_block1 == attr->form));
+      assert ((DW_FORM_IN (DW_FORM_UNSIGNED, attr->form)) || (_DW_FORM_block1 == attr->form));
       fdp->offset = attr->dw_unsigned;
     }
 
   attr = die_attribute (mr_die, _DW_AT_bit_size);
   if (attr != NULL)
     {
-      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
       fdp->stype.mr_type_ptr = MR_TYPE_BITFIELD;
       fdp->bitfield_param.width = attr->dw_unsigned;
 
       attr = die_attribute (mr_die, _DW_AT_data_bit_offset);
       if (attr != NULL)
         {
-          assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+          assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
           fdp->bitfield_param.shift = attr->dw_unsigned % __CHAR_BIT__;
           fdp->offset = attr->dw_unsigned / __CHAR_BIT__;
         }
@@ -1047,7 +1053,7 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
       attr = die_attribute (mr_die, _DW_AT_bit_offset);
       if (attr != NULL)
         {
-          assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+          assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
           fdp->bitfield_param.shift = fdp->stype.size * __CHAR_BIT__ - fdp->bitfield_param.width - attr->dw_unsigned;
           fdp->offset += fdp->bitfield_param.shift / __CHAR_BIT__;
           fdp->bitfield_param.shift %= __CHAR_BIT__;
@@ -1142,7 +1148,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (attr == NULL)
     return;
 
-  assert ((DW_FORM_STRING >> attr->form) & 1);
+  assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
   assert (attr->dw_str != NULL);
 
   /* skip types that are already extracted */
@@ -1182,7 +1188,7 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   attr = die_attribute (mr_die, _DW_AT_byte_size);
   if (attr != NULL)
     {
-      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
       tdp->size = attr->dw_unsigned;
     }
 
@@ -1235,7 +1241,7 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   mr_dw_attribute_t * attr = die_attribute (mr_die, _DW_AT_name);
   if (attr == NULL)
     return;
-  assert ((DW_FORM_STRING >> attr->form) & 1);
+  assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
   assert (attr->dw_str != NULL);
 
   char * varname = attr->dw_str;
@@ -1284,13 +1290,13 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   if (attr == NULL)
     return;
 
-  assert ((DW_FORM_STRING >> attr->form) & 1);
+  assert (DW_FORM_IN (DW_FORM_STRING, attr->form));
   char * type = attr->dw_str;
 
   attr = die_attribute (mr_die_type, _DW_AT_byte_size);
   if (attr)
     {
-      assert ((DW_FORM_UNSIGNED >> attr->form) & 1);
+      assert (DW_FORM_IN (DW_FORM_UNSIGNED, attr->form));
       /* skip variables of basic types */
       find = mr_ic_find (&mr_type_sign_ic, (mr_type_sign_t[]){{ .size = attr->dw_unsigned, .type.str = type, .type.hash_value = 0, }});
       if (find != NULL)
@@ -1620,7 +1626,7 @@ free_die (mr_die_t * mr_die)
   int i;
 
   for (i = mr_die->attributes_size / sizeof (mr_die->attributes[0]) - 1; i >= 0; --i)
-    if ((DW_FORM_STRING >> mr_die->attributes[i].form) & 1)
+    if (DW_FORM_IN (DW_FORM_STRING, mr_die->attributes[i].form))
       {
         if (mr_die->attributes[i].dw_str)
           MR_FREE (mr_die->attributes[i].dw_str);
