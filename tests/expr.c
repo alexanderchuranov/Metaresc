@@ -1,4 +1,5 @@
 #include <complex.h>
+#include <math.h>
 
 #include <check.h>
 #include <metaresc.h>
@@ -21,6 +22,26 @@ START_TEST (parse_float_op2) { ASSERT_LOAD_EXPR (float, 3.14159265358979323846 +
 START_TEST (parse_bits_op1) { ASSERT_LOAD_EXPR (int, 7 ^ 5 * 8); } END_TEST
 START_TEST (parse_bits_op2) { ASSERT_LOAD_EXPR (int, 2 | 5 * 8); } END_TEST
 
+/* names of fields are not keywords or numbers, but values are (i and inf in CINIT, inf, t and nil in SCM) */
+TYPEDEF_STRUCT (keyword_fields_t,
+                (int, i),
+                (double, inf),
+                (complex double, nan),
+                (bool, t),
+                (bool, nil),
+                );
+
+START_TEST (parse_keyword_field_names) {
+  char text[] = "{ .i = 1, . inf = inf, .nan = 2 * I }";
+  keyword_fields_t x;
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (keyword_fields_t, text, &x), "load of %s failed", text);
+  ck_assert_msg ((1 == x.i) && isinf (x.inf) && (2 * I == x.nan), "load of %s gave wrong values", text);
+
+  keyword_fields_t orig = { .i = 3, .inf = -1.5, .nan = 1 + 2 * I, .t = true, .nil = true, };
+  ALL_METHODS (ASSERT_SAVE_LOAD, keyword_fields_t, &orig);
+} END_TEST
+
 MAIN_TEST_SUITE ((parse_bool_true, "parse bool true"),
                  (parse_bool_false, "parse bool (false)"),
                  (parse_bool_char_plus_num, "parse int ('a' + 1)"),
@@ -32,5 +53,6 @@ MAIN_TEST_SUITE ((parse_bool_true, "parse bool true"),
                  (parse_float_op1, "parse float x = (1. + 1i) / 2"),
                  (parse_float_op2, "parse float x = MR_PI + 2 * MR_E"),
                  (parse_bits_op1, "parse int x = 7 ^ 5 * 8"),
-                 (parse_bits_op2, "parse int x = 2 | 5 * 8")
+                 (parse_bits_op2, "parse int x = 2 | 5 * 8"),
+                 (parse_keyword_field_names, "fields named i, inf, nan, t and nil")
                  );

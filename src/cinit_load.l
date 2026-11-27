@@ -41,6 +41,8 @@
 %}
 
 %x in_comment
+ /* a name of a field follows a dot, so it is not a keyword or a number (I, inf, NULL, true) */
+%x field_name
 
 WS        [[:space:]]*
 ID        [_[:alpha:]][_[:alnum:]]*
@@ -119,7 +121,16 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 "("       { return (TOK_CINIT_LPAREN); }
 ")"       { return (TOK_CINIT_RPAREN); }
 ","       { return (TOK_CINIT_COMMA); }
-"."       { return (TOK_CINIT_DOT); }
+"."       { BEGIN(field_name); return (TOK_CINIT_DOT); }
+
+<field_name>{WS} { /* eat up whitespace */ }
+<field_name>{ID} {
+  BEGIN(INITIAL);
+  yylval->string.str = yytext;
+  yylval->string.length = strlen (yytext);
+  return (TOK_CINIT_ID);
+}
+<field_name>.|\n { yyless (0); BEGIN(INITIAL); }
 "="       { return (TOK_CINIT_ASSIGN); }
 .         { return (TOK_CINIT_ERROR); }
 %%
