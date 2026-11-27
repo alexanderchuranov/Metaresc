@@ -8,6 +8,12 @@
 #include <stdlib.h> /* free () */
 #include <metaresc.h>
 
+/**
+ * Calculates the length of a formatted string.
+ * @param format format string
+ * @param args arguments of the format
+ * @return length without the terminating zero, negative on error
+ */
 static int
 mr_vscprintf (const char * format, va_list args) 
 {
@@ -18,6 +24,13 @@ mr_vscprintf (const char * format, va_list args)
   return (retval);
 }
 
+/**
+ * Formats a string into newly allocated memory, like vasprintf.
+ * @param strp receives the allocated string or NULL
+ * @param fmt format string
+ * @param args arguments of the format
+ * @return length of the string, negative or zero if nothing was allocated
+ */
 static int 
 mr_vasprintf (char ** strp, const char * fmt, va_list args) 
 {

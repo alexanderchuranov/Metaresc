@@ -2,6 +2,19 @@
 #include <mr_save.h> /* MR_ONE_SHIFT */
 #include <mr_stringify.h>
 
+/**
+ * Prints the value that a pointer points to. Pointers on registered types are
+ * serialized with the given method, pointers on unknown types are printed as
+ * addresses.
+ * @param fd output stream
+ * @param mr_type_aux type of the pointed value
+ * @param mr_type_class class of the pointed type
+ * @param size size of the pointed block or -1 if unknown
+ * @param type type name of the pointed value or NULL
+ * @param method serialization method
+ * @param value pointer to print
+ * @return number of printed characters, negative on error
+ */
 static int
 mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ssize_t size, char * type, char * method, void * value)
 {
@@ -86,6 +99,20 @@ mr_print_pointer (FILE * fd, mr_type_t mr_type_aux, mr_type_class_t mr_type_clas
   return (rv);
 }
 
+/**
+ * Prints a value for MR_PRINT. Enums and bitmasks are printed by names,
+ * structures, unions, arrays and pointers are serialized with the given
+ * method, basic types are printed with printf formats.
+ * @param fd output stream
+ * @param mr_type type of the value
+ * @param mr_type_aux type of the elements of pointers and arrays
+ * @param mr_type_class class of the type
+ * @param size size of the value
+ * @param type type name of the value or NULL
+ * @param method serialization method
+ * @param ... the value to print
+ * @return number of printed characters, negative on error
+ */
 int
 mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_class_t mr_type_class, ssize_t size, char * type, char * method, ...)
 {

@@ -1,6 +1,12 @@
 #include <yaml.h>
 #include <metaresc.h>
 
+/**
+ * Makes the targets of references valid when the document refers to nodes
+ * by position: a reference to an index that no node declares marks the
+ * node at that position as referenced.
+ * @param ptrs array with descriptors of loaded data
+ */
 static void
 add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
 {
@@ -37,6 +43,19 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
   MR_FREE (table);
 }
 
+/**
+ * Adds a node for a YAML scalar, sequence or mapping. Aliases are parsed
+ * into references or the NULL marker, anchors into reference indexes, the
+ * value is stored as a string.
+ * @param ptrs array with descriptors of loaded data
+ * @param parent index of the parent node, set to the new node if it opens a collection
+ * @param name_fd field descriptor of the key or NULL
+ * @param value scalar value or NULL
+ * @param anchor anchor of the node or NULL
+ * @param alias alias of the node or NULL
+ * @param unnamed true for elements of sequences
+ * @return status
+ */
 static mr_status_t
 yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char * value, char * anchor, char * alias, bool unnamed)
 {
@@ -94,6 +113,12 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
   return (MR_SUCCESS);
 }
 
+/**
+ * Parses a YAML document into node descriptors.
+ * @param str YAML text
+ * @param ptrs array that receives node descriptors
+ * @return status
+ */
 mr_status_t
 mr_yaml_load (char * str, mr_ra_ptrdes_t * ptrs)
 {

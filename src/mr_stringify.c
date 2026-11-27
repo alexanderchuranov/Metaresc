@@ -24,11 +24,23 @@
 #include <mr_stringify.h>
 #include <mr_ic.h>
 
+/**
+ * Prints nothing for a void node.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return 0
+ */
 int mr_ra_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (0);
 }
 
+/**
+ * Appends a bool value as 'true' or 'false'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (*(bool*)ptrdes->data.ptr ?
@@ -36,6 +48,11 @@ int mr_ra_printf_bool_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
           mr_ra_append_string (mr_ra_str, "false"));
 }
 
+/*
+  Defines int mr_ra_printf_<TYPE>_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+  that appends a value of TYPE formatted with TMPLT.
+  It returns the number of appended characters or -1 on error.
+*/
 #define MR_RA_PRINTF_TMPLT(TYPE, TMPLT)					\
   int mr_ra_printf_ ## TYPE ## _default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)	\
   { return (mr_ra_printf (mr_ra_str, TMPLT, *(TYPE *)ptrdes->data.ptr)); }
@@ -53,6 +70,13 @@ MR_RA_PRINTF_TMPLT (uint32_t, "%" SCNu32);
 MR_RA_PRINTF_TMPLT (int64_t, "%" SCNi64);
 MR_RA_PRINTF_TMPLT (uint64_t, "%" SCNu64);
 
+/**
+ * Converts an unsigned integer to a decimal string. The digits are written
+ * backwards from the end of the buffer.
+ * @param out end of the output buffer
+ * @param value value to convert
+ * @return pointer on the first digit
+ */
 char *
 mr_uintmaxtostr (char * out, mr_uintmax_t value)
 {
@@ -64,6 +88,12 @@ mr_uintmaxtostr (char * out, mr_uintmax_t value)
   return (out);
 }
 
+/**
+ * Appends a signed 128 bit integer in decimal.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_printf_int128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_intmax_t value = *(mr_intmax_t*)ptrdes->data.ptr;
@@ -81,6 +111,12 @@ int mr_ra_printf_int128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes
   return (mr_ra_append_string (mr_ra_str, out));
 }
 
+/**
+ * Appends an unsigned 128 bit integer in decimal.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_printf_uint128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_uintmax_t value = *(mr_uintmax_t*)ptrdes->data.ptr;
@@ -89,6 +125,12 @@ int mr_ra_printf_uint128_t_default (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
   return (mr_ra_append_string (mr_ra_str, out));
 }
 
+/*
+  Defines int mr_ra_printf_complex_<SUFFIX> (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
+  that appends a complex TYPE value as 'real <delimiter> imag I'. Zero parts are omitted,
+  a unit imaginary part is printed as 'I' and NaN as 'NAN'.
+  It returns the number of appended characters or -1 on error.
+*/
 #define MR_RA_PRINTF_COMPLEX(TYPE, SUFFIX)				\
   int mr_ra_printf_complex_ ## SUFFIX (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)	\
   {									\
@@ -121,6 +163,12 @@ MR_RA_PRINTF_COMPLEX (float, float)
   MR_RA_PRINTF_COMPLEX (double, double)
   MR_RA_PRINTF_COMPLEX (long double, long_double_t)
 
+/*
+  Defines int mr_ra_printf_<TYPE> (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+  that appends a value with the output format set in mr_conf.output_format or
+  with mr_ra_printf_<TYPE>_default.
+  It returns the number of appended characters or -1 on error.
+*/
 #define MR_RA_PRINTF_TYPE(TYPE)        MR_RA_PRINTF_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
 #define MR_RA_PRINTF_TYPE_(TYPE, MR_TYPE)				\
   int mr_ra_printf_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) { \
@@ -134,6 +182,13 @@ MR_RA_PRINTF_TYPE_ (bool, MR_TYPE_BOOL);
 MR_RA_PRINTF_TYPE_ (int128_t, MR_TYPE_INT128);
 MR_RA_PRINTF_TYPE_ (uint128_t, MR_TYPE_UINT128);
 
+/**
+ * Appends an enum value by name. A value without a name is appended as an
+ * integer with a warning.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
@@ -163,6 +218,15 @@ int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     }
 }
 
+/**
+ * Appends a bitmask enum value as names of its bits joined with a delimiter.
+ * Bits without names are appended as an integer with a warning. Other enums
+ * are appended with mr_ra_printf_enum.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @param delimiter string between names
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
 {
   mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
@@ -218,6 +282,13 @@ int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * 
   return (count);
 }
 
+/**
+ * Appends the value of a bit-field as an integer, a bool or an enum.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @param delimiter string between names of a bitmask enum
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter)
 {
   mr_ptrdes_t _ptrdes = *ptrdes;
@@ -256,6 +327,13 @@ TYPEDEF_STRUCT (mr_ra_fn_t,
                 (ssize_t, alloc_size)
                 );
 
+/**
+ * Hash function for the cache of function names. Elements are indexes in the
+ * array of function descriptors.
+ * @param x index of a function descriptor
+ * @param context array of function descriptors
+ * @return hash value of the function pointer
+ */
 mr_hash_value_t
 mr_fn_get_hash (const mr_ptr_t x, const void * context)
 {
@@ -263,6 +341,13 @@ mr_fn_get_hash (const mr_ptr_t x, const void * context)
   return (ra_fn->ra[x.intptr].func_);
 }
 
+/**
+ * Compares function descriptors by function pointer.
+ * @param x index of a function descriptor
+ * @param y index of another function descriptor
+ * @param context array of function descriptors
+ * @return comparation sign
+ */
 int
 mr_fn_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -273,6 +358,9 @@ mr_fn_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 static mr_ic_t cache = { .ic_type = MR_IC_UNINITIALIZED, };
 static mr_ra_fn_t ra_fn = { .ra = NULL, .size = 0, .alloc_size = 0, };
 
+/**
+ * Frees the cache of function names on exit.
+ */
 static void __attribute__ ((destructor))
 mr_fn_cache_cleanup (void)
 {
@@ -283,6 +371,13 @@ mr_fn_cache_cleanup (void)
   mr_ic_free (&cache);
 }
 
+/**
+ * Finds the name of a function by its address with dladdr. The name is used
+ * only if dlsym resolves it back to the same address. Results are cached if
+ * mr_conf.cache_func_resolve is set.
+ * @param func function pointer
+ * @return function name or NULL if it can not be resolved
+ */
 const char * mr_serialize_func (void * func)
 {
 #ifdef HAVE_LIBDL
@@ -336,6 +431,13 @@ const char * mr_serialize_func (void * func)
   return (NULL);
 }
 
+/**
+ * Appends a character to a zero terminated string in a resizable array. On
+ * error the string is freed.
+ * @param mr_ra_str output string
+ * @param c character to append
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_append_char (mr_rarray_t * mr_ra_str, char c)
 {
   if ((0 == mr_ra_str->MR_SIZE) || (NULL == mr_ra_str->data.ptr))
@@ -358,6 +460,13 @@ int mr_ra_append_char (mr_rarray_t * mr_ra_str, char c)
   return (-1);
 }
 
+/**
+ * Appends a string to a zero terminated string in a resizable array. On
+ * error the output string is freed.
+ * @param mr_ra_str output string
+ * @param str string to append
+ * @return number of appended characters or -1 on error
+ */
 int mr_ra_append_string (mr_rarray_t * mr_ra_str, char * str)
 {
   if ((0 == mr_ra_str->MR_SIZE) || (NULL == mr_ra_str->data.ptr))

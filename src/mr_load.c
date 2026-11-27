@@ -264,6 +264,11 @@ mr_free_ptrdes_values (mr_ra_ptrdes_t * ptrs)
     }
 }
 
+/**
+ * Frees the values that a text loader stored in the node descriptors and the
+ * array of descriptors itself, and clears the array.
+ * @param ptrs array with descriptors of loaded data, may be NULL
+ */
 void
 mr_free_load_values (mr_ra_ptrdes_t * ptrs)
 {
@@ -336,6 +341,13 @@ mr_load_integer (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (MR_SUCCESS);
 }
 
+/**
+ * Resolves a function pointer from its name with dlsym, or parses it as a
+ * number (an address) if the symbol is not found.
+ * @param dst pointer on a variable that receives the function pointer
+ * @param func_name name of the function or its address
+ * @return status
+ */
 static mr_status_t
 mr_get_func (void ** dst, char * func_name)
 {
@@ -451,6 +463,13 @@ mr_load_bitfield (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (mr_load_bitfield_value (ptrdes, &value));
 }
 
+/**
+ * Loads a floating point node: casts the parsed value to long double and
+ * stores it as float, double or long double.
+ * @param idx index of the node
+ * @param ptrs array with descriptors of loaded data
+ * @return status
+ */
 static mr_status_t
 mr_load_float (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -474,6 +493,13 @@ mr_load_float (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (MR_SUCCESS);
 }
 
+/**
+ * Loads a complex node: casts the parsed value to complex long double and
+ * stores it with the precision of the field.
+ * @param idx index of the node
+ * @param ptrs array with descriptors of loaded data
+ * @return status
+ */
 static mr_status_t
 mr_load_complex (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -642,6 +668,16 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (status);
 }
 
+/**
+ * Copies a string into a char array. A char array that is the target of a
+ * pointer is reallocated to fit the string, a fixed char array truncates it
+ * with a warning.
+ * @param idx index of the node
+ * @param ptrs array with descriptors of loaded data
+ * @param str string to copy, not necessarily zero terminated
+ * @param str_len length of the string
+ * @return status
+ */
 static mr_status_t
 mr_get_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs, char * str, size_t str_len)
 {
@@ -724,6 +760,13 @@ mr_load_char_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (status);
 }
 
+/**
+ * Returns the field that follows a given field in the declaration order.
+ * Used to load unnamed values of a structure.
+ * @param tdp type descriptor of the structure
+ * @param fdp current field or NULL for the first field
+ * @return next field or NULL after the last one
+ */
 static mr_fd_t *
 mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
 {

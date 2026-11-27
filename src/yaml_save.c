@@ -10,6 +10,14 @@ TYPEDEF_STRUCT (mr_yaml_context_t,
 
 TYPEDEF_FUNC (mr_status_t, mr_yaml_save_handler_t, (mr_yaml_context_t * /* context */, mr_ptrdes_t * /* ptrs */, mr_idx_t /* idx */));
 
+/**
+ * Output handler of the YAML emitter that appends to a resizable string.
+ * On error the string is freed.
+ * @param data output string
+ * @param buffer emitted text
+ * @param size size of the text
+ * @return non-zero on success, 0 on error
+ */
 static int
 yaml_ra_string_writer (void * data, unsigned char * buffer, size_t size)
 {
@@ -31,6 +39,12 @@ yaml_ra_string_writer (void * data, unsigned char * buffer, size_t size)
 
 #define ANCHOR_SIZE (sizeof (MR_YAML_ANCHOR_TMPLT) + (sizeof (((mr_ptrdes_t*)0)->idx) * 12 + 4) / 5)
 
+/**
+ * Formats the anchor of a referenced node.
+ * @param anchor buffer of ANCHOR_SIZE bytes
+ * @param ptrdes node descriptor
+ * @return anchor or NULL if the node is not referenced
+ */
 static inline yaml_char_t *
 yaml_get_anchor (char * anchor, mr_ptrdes_t * ptrdes)
 {
@@ -41,6 +55,16 @@ yaml_get_anchor (char * anchor, mr_ptrdes_t * ptrdes)
   return ((yaml_char_t*)anchor);
 }
 
+/**
+ * Emits the key of a named node and the event of its value. A reference is
+ * emitted as an alias to the anchor of its target, a NULL pointer as an
+ * alias to the NULL marker. The event is deleted on error.
+ * @param emitter YAML emitter
+ * @param event event of the value
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static inline mr_status_t
 yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -65,7 +89,7 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ptrdes_t * p
         }
     }
 
-  if (ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) // FIXME check for anchor index out of range
+  if (ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     {
 #define MR_ANCHOR_SIZE (MR_MAX (sizeof (MR_YAML_REF_ANCHOR_TMPLT), sizeof (MR_YAML_REF_ANCHOR_CONTENT_TMPLT)) + (sizeof (ptrdes->idx) * 12 + 4) / 5)
       char anchor[MR_ANCHOR_SIZE];
@@ -91,6 +115,14 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ptrdes_t * p
   return (MR_SUCCESS);
 }
 
+/**
+ * Emits a node with a scalar value.
+ * @param emitter YAML emitter
+ * @param value scalar value, NULL is emitted as an empty string
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static inline mr_status_t
 yaml_emit_string (yaml_emitter_t * emitter, const char * value, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -109,6 +141,13 @@ yaml_emit_string (yaml_emitter_t * emitter, const char * value, mr_ptrdes_t * pt
   return (yaml_emit_field (emitter, &event, ptrs, idx));
 }
 
+/**
+ * Emits a string node.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_save_string (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -116,6 +155,14 @@ yaml_save_string (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_id
   return (yaml_emit_string (&mr_yaml_context->emitter, value, ptrs, idx));
 }
 
+/**
+ * Emits a char node. Characters outside of printable ASCII are emitted as
+ * hexadecimal codes.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_save_char (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -132,6 +179,13 @@ yaml_save_char (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_
   return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
 }
 
+/**
+ * Emits a char array node. The array may be not zero terminated.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_save_char_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -142,12 +196,26 @@ yaml_save_char_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, m
   return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
 }
 
+/**
+ * Emits nothing for a void node.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_save_void (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
   return (MR_SUCCESS);
 }
 
+/**
+ * Emits a bool node as 'true' or 'false'.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_save_bool (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -155,6 +223,13 @@ yaml_save_bool (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_
   return (yaml_emit_string (&mr_yaml_context->emitter, value, ptrs, idx));
 }
 
+/**
+ * Emits a function pointer by name or as an address.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_save_func (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -168,6 +243,13 @@ yaml_save_func (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_
   return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
 }
 
+/**
+ * Starts a mapping for a structure or union.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_pre_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -182,6 +264,13 @@ yaml_pre_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, m
   return (yaml_emit_field (&mr_yaml_context->emitter, &event, ptrs, idx));
 }
 
+/**
+ * Ends the mapping of a structure or union.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_post_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -196,6 +285,14 @@ yaml_post_save_struct (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, 
   return (MR_SUCCESS);
 }
 
+/**
+ * Starts a sequence for an array or pointer. Sequences of scalars use the
+ * flow style.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_pre_save_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -216,6 +313,13 @@ yaml_pre_save_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr
   return (yaml_emit_field (&mr_yaml_context->emitter, &event, ptrs, idx));
 }
 
+/**
+ * Ends the sequence of an array or pointer.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_post_save_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -230,6 +334,14 @@ yaml_post_save_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, m
   return (MR_SUCCESS);
 }
 
+/**
+ * Starts a sequence for a pointer. NULL pointers and references are emitted
+ * as scalars (aliases).
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -247,6 +359,13 @@ yaml_pre_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, 
   return (yaml_pre_save_array (mr_yaml_context, ptrs, idx));
 }
 
+/**
+ * Ends the sequence of a pointer unless it was emitted as a scalar.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -257,6 +376,13 @@ yaml_post_save_pointer (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs,
   return (yaml_post_save_array (mr_yaml_context, ptrs, idx));
 }
 
+/**
+ * Starts a mapping for an anonymous union. The union is always named.
+ * @param mr_yaml_context YAML emitter and buffer
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
 static mr_status_t
 yaml_pre_save_anon_union (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
@@ -264,6 +390,12 @@ yaml_pre_save_anon_union (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptr
   return (yaml_pre_save_struct (mr_yaml_context, ptrs, idx));
 }
 
+/**
+ * Allocates the buffer for formatted values on the first use and makes it
+ * an empty string.
+ * @param mr_ra_str buffer
+ * @return status
+ */
 static inline mr_status_t
 yaml_allocate_ra_str (mr_rarray_t * mr_ra_str)
 {
@@ -279,6 +411,12 @@ yaml_allocate_ra_str (mr_rarray_t * mr_ra_str)
   return (MR_SUCCESS);
 }
 
+/*
+  Defines static mr_status_t yaml_save_<TYPE> (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
+  that formats the node idx with mr_ra_printf_<TYPE> and emits it as a scalar.
+  Extra arguments are passed to mr_ra_printf_<TYPE>.
+  It returns MR_SUCCESS or MR_FAILURE.
+*/
 #define YAML_SAVE_HANDLER(TYPE, ...)					\
   static mr_status_t							\
   yaml_save_ ## TYPE (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx) \
@@ -380,6 +518,16 @@ static mr_yaml_save_handler_t yaml_post_save_tbl[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = yaml_post_save_struct,
   };
 
+/**
+ * DFS visitor that emits YAML events for a node with the pre-order or
+ * post-order handler of its type.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order
+ * @param context YAML emitter and buffer
+ * @return status
+ */
 static mr_status_t
 yaml_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {

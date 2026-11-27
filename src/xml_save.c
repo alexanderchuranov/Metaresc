@@ -119,6 +119,13 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
 
 #define COMPLEX_REAL_IMAG_DELIMITER " + "
 
+/**
+ * Appends a character with XML escapes. Unprintable characters are
+ * appended as numeric character references.
+ * @param mr_ra_str output string
+ * @param c character
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_quote_char (mr_rarray_t * mr_ra_str, unsigned char c)
 {
@@ -134,12 +141,24 @@ xml_ra_printf_quote_char (mr_rarray_t * mr_ra_str, unsigned char c)
   return (count);
 }
 
+/**
+ * Appends a char with XML escapes.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (xml_ra_printf_quote_char (mr_ra_str, *ptrdes->data.string));
 }
 
+/**
+ * Appends a string with XML escapes.
+ * @param mr_ra_str output string
+ * @param str string
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str)
 {
@@ -149,18 +168,36 @@ xml_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str)
   return (count);
 }
 
+/**
+ * Appends a float complex value as 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_complex_float (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
+/**
+ * Appends a double complex value as 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_complex_double (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
+/**
+ * Appends a long double complex value as 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -169,18 +206,37 @@ xml_ra_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrd
 
 #define MR_XML_BITMASK_DELIMITER " | "
 
+/**
+ * Appends a bitmask enum as names joined with the XML bitmask delimiter.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_bitmask (mr_ra_str, ptrdes, MR_XML_BITMASK_DELIMITER));
 }
 
+/**
+ * Appends the value of a bit-field, bitmask enums as names.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, MR_XML_BITMASK_DELIMITER));
 }
 
+/**
+ * Appends a char array with XML escapes. The array may be not zero
+ * terminated.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -190,12 +246,24 @@ xml_ra_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (xml_ra_printf_quote_string (mr_ra_str, buffer));
 }
 
+/**
+ * Appends a string with XML escapes.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (xml_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr));
 }
 
+/**
+ * Appends a function pointer by name or as an address.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 xml_ra_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -245,6 +313,16 @@ static mr_ra_printf_t xml_ra_printf_tbl[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = mr_ra_printf_void,
   };
 
+/**
+ * Prints the opening tag of a node with reference and NULL attributes, and
+ * the value. Nodes without a value and children are printed as empty tags;
+ * the flag is stored in the node for the post-order pass.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 xml1_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -306,6 +384,14 @@ xml1_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
   return (MR_SUCCESS);
 }
 
+/**
+ * Prints the closing tag of a node unless it was printed as an empty tag.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 xml1_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -327,6 +413,15 @@ xml1_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t *
   return (MR_SUCCESS);
 }
 
+/**
+ * DFS visitor that prints a node as XML text.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order
+ * @param context output string
+ * @return status
+ */
 static mr_status_t
 xml1_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -374,6 +469,16 @@ mr_xml1_save (mr_ptrdes_t * ptrs)
 
 #ifdef HAVE_LIBXML2
 
+/**
+ * DFS visitor that builds a libxml2 node for a node with its value and
+ * reference attributes, and links it to the node of the parent.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only pre-order is handled
+ * @param context buffer for formatted values
+ * @return status
+ */
 static mr_status_t
 xml2_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {

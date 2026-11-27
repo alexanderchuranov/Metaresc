@@ -253,6 +253,16 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   return (status);
 }
 
+/**
+ * Adds a node for a value, links it to its parent and loads the value with
+ * the XDR handler of its type.
+ * @param data pointer on the value
+ * @param fdp field descriptor of the value
+ * @param xdrs XDR stream
+ * @param ptrs array with descriptors of loaded data
+ * @param parent index of the parent node
+ * @return status
+ */
 static mr_status_t
 xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, mr_idx_t parent)
 {
@@ -286,6 +296,14 @@ xdr_load_inner (void * data, mr_fd_t * fdp, XDR * xdrs, mr_ra_ptrdes_t * ptrs, m
   return (status);
 }
 
+/**
+ * Loads a value from an XDR stream, resolves references and validates the
+ * loaded data. A failed load frees everything it allocated.
+ * @param data pointer on the value to load into
+ * @param fdp field descriptor of the value
+ * @param xdrs XDR stream
+ * @return status
+ */
 mr_status_t
 mr_xdr_load (void * data, mr_fd_t * fdp, XDR * xdrs)
 {
@@ -349,12 +367,24 @@ xdr_int8_t (XDR * xdrs, int8_t * cp)
   return (true);
 }
 
+/**
+ * Encodes or decodes an unsigned byte. Not provided by all XDR libraries.
+ * @param xdrs XDR stream
+ * @param cp pointer on the value
+ * @return true on success
+ */
 bool_t
 xdr_uint8_t (XDR * xdrs, uint8_t * cp)
 {
   return (xdr_int8_t (xdrs, (int8_t*)cp));
 }
 
+/**
+ * Encodes or decodes a 64 bit integer as two 32 bit words, high word first.
+ * @param xdrs XDR stream
+ * @param int64 pointer on the value
+ * @return true on success
+ */
 bool_t
 xdr_int64_t (XDR * xdrs, int64_t * int64)
 {
@@ -385,12 +415,23 @@ xdr_int64_t (XDR * xdrs, int64_t * int64)
     }
 }
 
+/**
+ * Encodes or decodes an unsigned 64 bit integer.
+ * @param xdrs XDR stream
+ * @param uint64 pointer on the value
+ * @return true on success
+ */
 bool_t
 xdr_uint64_t (XDR * xdrs, uint64_t * uint64)
 {
   return (xdr_int64_t (xdrs, (int64_t*) uint64));
 }
 
+/*
+  Defines static mr_status_t _xdr_<TYPE> (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs),
+  an XDR handler that encodes or decodes the integer node idx with xdr_<TYPE>.
+  It returns MR_SUCCESS or MR_FAILURE.
+*/
 #define XDR_INT_TYPE(TYPE)						\
   static mr_status_t _xdr_ ## TYPE (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs) \
   { return (xdr_ ## TYPE (xdrs, ptrs->ra[idx].data.ptr) ? MR_SUCCESS : MR_FAILURE); }
@@ -404,6 +445,13 @@ XDR_INT_TYPE (int32_t)
 XDR_INT_TYPE (uint64_t)
 XDR_INT_TYPE (int64_t)
 
+/**
+ * XDR handler for a 128 bit integer, encoded as two 64 bit words.
+ * @param xdrs XDR stream
+ * @param idx index of the node
+ * @param ptrs array with node descriptors
+ * @return status
+ */
 static mr_status_t _xdr_uint128_t (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   uint64_t * u64 = ptrs->ra[idx].data.ptr;
@@ -425,6 +473,11 @@ xdr_float_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (xdr_float (xdrs, ptrs->ra[idx].data.ptr) ? MR_SUCCESS : MR_FAILURE);
 }
 
+/*
+  Defines static mr_status_t xdr_complex_<NAME_SUFFIX> (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs),
+  an XDR handler that encodes or decodes a complex TYPE_NAME node as its real and imaginary parts.
+  It returns MR_SUCCESS or MR_FAILURE.
+*/
 #define XDR_COMPLEX(NAME_SUFFIX, TYPE_NAME)				\
   static mr_status_t xdr_complex_ ## NAME_SUFFIX (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs) { \
     TYPE_NAME real = 0;							\
@@ -479,6 +532,13 @@ xdr_long_double (XDR * xdrs, long double * data)
   return (xdr_opaque (xdrs, (void*)data, MR_SIZEOF_LONG_DOUBLE));
 }
 
+/**
+ * XDR handler for a long double node.
+ * @param xdrs XDR stream
+ * @param idx index of the node
+ * @param ptrs array with node descriptors
+ * @return status
+ */
 static mr_status_t
 xdr_long_double_ (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -791,6 +851,14 @@ _xdr_enum (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (MR_FAILURE);
 }
 
+/**
+ * Encodes or decodes the value of a pointer as an unsigned integer of the
+ * pointer size.
+ * @param xdrs XDR stream
+ * @param idx index of the node
+ * @param ptrs array with node descriptors
+ * @return status
+ */
 static mr_status_t
 mr_xdr_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -805,6 +873,14 @@ mr_xdr_pointer (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (MR_FAILURE);
 }
 
+/**
+ * XDR handler for a bool node, encoded as an unsigned integer of the size of
+ * bool.
+ * @param xdrs XDR stream
+ * @param idx index of the node
+ * @param ptrs array with node descriptors
+ * @return status
+ */
 static mr_status_t
 mr_xdr_bool (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -872,6 +948,14 @@ xdr_load_bitfield (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   return (mr_load_bitfield_value (&ptrs->ra[idx], &value));
 }
 
+/**
+ * Saves the number of loaded bytes of a single dimension array field. Other
+ * arrays have a fixed size and save nothing.
+ * @param xdrs XDR stream
+ * @param idx index of the array node
+ * @param ptrs array with node descriptors
+ * @return status
+ */
 static mr_status_t
 xdr_save_array (XDR * xdrs, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -1108,6 +1192,15 @@ static xdr_handler_t xdr_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = xdr_save_union,
   };
 
+/**
+ * DFS visitor that saves a node with the XDR handler of its type.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only pre-order is handled
+ * @param context XDR stream
+ * @return status
+ */
 static mr_status_t
 xdr_save_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {

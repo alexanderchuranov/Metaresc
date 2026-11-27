@@ -70,6 +70,11 @@ mr_conf_t mr_conf = {
   .dwarf_list = NULL,
 };
 
+/**
+ * Skips the leading 'struct', 'union' and 'enum' keywords of a type name.
+ * @param type type name
+ * @return pointer into the same string after the keywords
+ */
 static char *
 mr_skip_keywords (char * type)
 {
@@ -90,6 +95,16 @@ mr_skip_keywords (char * type)
   return (type);
 }
 
+/**
+ * A callback for __builtin_dump_struct that detects the type of the dumped
+ * structure. Only the first call carries the type name, so the type name is
+ * taken from the format (or from the argument of a "%s" format), keywords
+ * are skipped and the name is looked up as a field name. Then the dump is
+ * stopped with a longjmp to ctx->_jmp_buf.
+ * @param ctx context that receives the type name, NULL if type is unknown
+ * @param fmt format string of __builtin_dump_struct
+ * @return does not return
+ */
 int
 mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt, ...)
 {
@@ -127,12 +142,26 @@ mr_get_struct_type_name_extra (mr_get_struct_type_name_t * ctx, const char * fmt
 #ifndef HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS
 __thread mr_get_struct_type_name_t mr_get_struct_type_name_ctx;
 
+/**
+ * A callback for __builtin_dump_struct without extra arguments. Stores the type
+ * name in the global mr_get_struct_type_name_ctx.
+ * @param fmt format string of __builtin_dump_struct
+ * @return does not return, see mr_get_struct_type_name_extra
+ */
 int
 mr_get_struct_type_name (const char * fmt, ...)
 {
   return (mr_get_struct_type_name_extra (&mr_get_struct_type_name_ctx, fmt));
 }
 #else /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
+/**
+ * A stub of the callback for compilers where __builtin_dump_struct takes
+ * extra arguments and type detection goes through
+ * mr_get_struct_type_name_extra.
+ * @param fmt format string of __builtin_dump_struct
+ * @param value unused
+ * @return 0
+ */
 int
 mr_get_struct_type_name (const char * fmt, char * value)
 {
@@ -163,6 +192,17 @@ TYPEDEF_UNION (mr_dump_struct_types_union_t,
                (uint8_t, bytes, [sizeof (long double)]),
                );
 
+/**
+ * Adds a field descriptor of a structure dumped by __builtin_dump_struct.
+ * The type of the field is refined from its dumped value: an int with a value
+ * that fits into a byte is a bool.
+ * @param ctx context of the structure type detection
+ * @param type type name of the field
+ * @param name name of the field
+ * @param mr_type Metaresc type detected from the format of the field
+ * @param value dumped value of the field
+ * @return field descriptor or NULL if the field was not added
+ */
 static mr_fd_t *
 mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
                                char * type,
@@ -250,6 +290,13 @@ mr_dump_struct_type_add_field (mr_dump_struct_type_ctx_t * ctx,
   return (NULL);
 }
 
+/**
+ * Handles a non bit-field record of __builtin_dump_struct. Records of nested
+ * fields are used to detect the offset of the top level field.
+ * @param ctx context of the structure type detection
+ * @param args arguments of the record: indent, type, name and value
+ * @param fmt format of the record
+ */
 static void
 mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const char * fmt)
 {
@@ -371,6 +418,13 @@ mr_non_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args, const 
     }
 }
 
+/**
+ * Handles a bit-field record of __builtin_dump_struct and stores the width of
+ * the bit-field. Jumps out of the dump through ctx->_jmp_buf on an
+ * unexpected field index or too many fields.
+ * @param ctx context of the structure type detection
+ * @param args arguments of the record: indent, type, name, width and value
+ */
 static void
 mr_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args)
 {
@@ -417,6 +471,13 @@ mr_bitfield_detection (mr_dump_struct_type_ctx_t * ctx, va_list args)
     fdp->offset = (fdp->offset << 1) | (value & 1);
 }
 
+/**
+ * A callback for __builtin_dump_struct that dispatches the dumped records to
+ * the handlers of plain fields and bit-fields.
+ * @param ctx context of the structure type detection
+ * @param fmt format of the record
+ * @return 0 to continue the dump
+ */
 static int
 mr_fields_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
 {
@@ -432,6 +493,14 @@ mr_fields_detection (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...)
   return (0);
 }
 
+/**
+ * Detects anonymous unions in a structure from fields that share an offset.
+ * A group of fields with the same offset and more than one non-zero field
+ * is wrapped with a spare anonymous union descriptor and an end marker.
+ * @param struct_param fields of the structure
+ * @param fields_count number of allocated field descriptors
+ * @param anon_union_count number of spare anonymous union descriptors
+ */
 static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_count, int anon_union_count)
 {
   if (struct_param->fields_count == 0)
@@ -487,6 +556,17 @@ static void mr_detect_anon_unions (mr_struct_param_t * struct_param, int fields_
     }
 }
 
+/**
+ * Builds a type descriptor of a structure from the output of
+ * __builtin_dump_struct. The first pass allocates field descriptors, next
+ * passes fill the structure with bit patterns to detect the offsets of
+ * fields, and the last pass detects bit-fields. Finally anonymous unions are
+ * detected and the type is registered.
+ * @param mr_dump_struct function that calls __builtin_dump_struct with a given callback
+ * @param tdp type descriptor to fill
+ * @param fields_count maximum number of fields
+ * @param anon_union_count maximum number of anonymous unions
+ */
 void
 mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
                                                  int (*callback) (mr_dump_struct_type_ctx_t * ctx, const char * fmt, ...),
@@ -544,6 +624,13 @@ mr_dump_struct_add_type (void (*mr_dump_struct) (void * value,
 }
 #endif /* HAVE_BUILTIN_DUMP_STRUCT_EXTRA_ARGS */
 
+/**
+ * Frees the field lookup tables of a structure type and the union override
+ * tables of its fields. A visitor for mr_ic_foreach over the registered types.
+ * @param key type descriptor
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 mr_conf_cleanup_visitor (mr_ptr_t key, void * context)
 {
@@ -607,6 +694,11 @@ mr_strndup (const char * str, size_t size)
   return (_str);
 }
 
+/**
+ * Duplicates a string with MR_CALLOC.
+ * @param str string to duplicate
+ * @return newly allocated copy or NULL if out of memory
+ */
 char *
 mr_strdup (const char * str)
 {
@@ -721,6 +813,12 @@ mr_rarray_allocate_element (void ** data, ssize_t * size, ssize_t * alloc_size, 
   return (&_data[_size]);
 }
 
+/**
+ * Appends an element to a resizable array.
+ * @param rarray resizable array
+ * @param size size of the element
+ * @return pointer on the new element or NULL if out of memory
+ */
 void *
 mr_rarray_append (mr_rarray_t * rarray, ssize_t size)
 {
@@ -744,6 +842,15 @@ mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs)
   return (ptrs->size / sizeof (ptrs->ra[0]) - 1);
 }
 
+/**
+ * Finds the last child of a node. The last added node and its ancestors are
+ * checked first, as children are usually appended to the latest parent.
+ * Otherwise the list of children is walked. The result is cached in
+ * ptrs->last_child.
+ * @param ptrs array with node descriptors
+ * @param parent index of the parent node
+ * @return index of the last child or MR_NULL_IDX if the node has no children
+ */
 mr_idx_t
 mr_last_child_for_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t parent)
 {
@@ -788,6 +895,11 @@ mr_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child)
     ra[last_child].next = child;
 }
 
+/**
+ * Returns the hash of a string and caches it in the hashed string.
+ * @param x hashed string
+ * @return hash value of the string
+ */
 mr_hash_value_t
 mr_hashed_string_get_hash (const mr_hashed_string_t * x)
 {
@@ -823,6 +935,12 @@ mr_hashed_string_cmp (const mr_hashed_string_t * x, const mr_hashed_string_t * y
   return (strcmp (x->str, y->str));
 }
 
+/**
+ * Hash function for a lookup of fields by name and type.
+ * @param x field descriptor
+ * @param context unused
+ * @return sum of the hashes of the field name and its type name
+ */
 mr_hash_value_t
 mr_fd_name_and_type_get_hash (mr_ptr_t x, const void * context)
 {
@@ -830,6 +948,13 @@ mr_fd_name_and_type_get_hash (mr_ptr_t x, const void * context)
   return (mr_hashed_string_get_hash (&x_->name) + mr_hashed_string_get_hash (&x_->stype.tdp->type));
 }
 
+/**
+ * Compares field descriptors by name and then by the name of their type.
+ * @param x field descriptor
+ * @param y another field descriptor
+ * @param context unused
+ * @return comparation sign
+ */
 int
 mr_fd_name_and_type_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -841,6 +966,12 @@ mr_fd_name_and_type_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * contex
   return (mr_hashed_string_cmp (&x_->stype.tdp->type, &y_->stype.tdp->type));
 }
 
+/**
+ * Hash function for a lookup of fields by name.
+ * @param x field descriptor
+ * @param context unused
+ * @return hash value of the field name
+ */
 mr_hash_value_t
 mr_fd_name_get_hash (mr_ptr_t x, const void * context)
 {
@@ -848,6 +979,12 @@ mr_fd_name_get_hash (mr_ptr_t x, const void * context)
   return (mr_hashed_string_get_hash (&x_->name));
 }
 
+/**
+ * Hash function for a lookup of enum values by name.
+ * @param x enum value descriptor
+ * @param context unused
+ * @return hash value of the enum value name
+ */
 mr_hash_value_t
 mr_ed_name_get_hash (mr_ptr_t x, const void * context)
 {
@@ -869,6 +1006,13 @@ mr_fd_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (mr_hashed_string_cmp (&x_->name, &y_->name));
 }
 
+/**
+ * Compares enum value descriptors by name.
+ * @param x enum value descriptor
+ * @param y another enum value descriptor
+ * @param context unused
+ * @return comparation sign
+ */
 int
 mr_ed_name_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -891,6 +1035,14 @@ mr_fd_offset_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return ((x_->offset > y_->offset) - (x_->offset < y_->offset));
 }
 
+/**
+ * Compares pointers on field descriptors for sorting by offset. Bit-fields at
+ * the same offset are ordered by shift and width, other fields by size.
+ * @param x pointer on a field descriptor pointer
+ * @param y pointer on another field descriptor pointer
+ * @param context unused
+ * @return comparation sign
+ */
 int
 mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -923,6 +1075,12 @@ mr_fd_offset_cmp_sorting (const mr_ptr_t x, const mr_ptr_t y, const void * conte
   return (0);
 }
 
+/**
+ * Hash function for a lookup of types by name.
+ * @param x type descriptor
+ * @param context unused
+ * @return hash value of the type name
+ */
 mr_hash_value_t
 mr_td_name_get_hash (mr_ptr_t x, const void * context)
 {
@@ -958,6 +1116,11 @@ mr_get_td_by_name_internal (const char * type)
   return (result ? result->ptr : NULL);
 }
 
+/**
+ * Finds a type descriptor by name. Initializes the library on the first call.
+ * @param type type name
+ * @return type descriptor or NULL if the type is unknown
+ */
 mr_td_t *
 mr_get_td_by_name (char * type)
 {
@@ -1179,6 +1342,13 @@ mr_ed_enum_value_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
           (x_->value._unsigned < y_->value._unsigned));
 }
 
+/**
+ * Compares pointers on enum value descriptors for sorting by value.
+ * @param x pointer on an enum value descriptor pointer
+ * @param y pointer on another enum value descriptor pointer
+ * @param context unused
+ * @return comparation sign
+ */
 int
 mr_ed_enum_value_cmp_sorting (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
@@ -1271,6 +1441,10 @@ mr_init_enum (mr_td_t * tdp)
     tdp->param.enum_param.is_bitmask = false;
 }
 
+/**
+ * Counts the arguments of a function type. The list of arguments ends with NULL.
+ * @param tdp type descriptor, other types are ignored
+ */
 void
 mr_init_func (mr_td_t * tdp)
 {
@@ -1365,6 +1539,11 @@ mr_fd_init_bitfield_params (mr_fd_t * fdp)
     }
 }
 
+/**
+ * Returns the size of a basic type.
+ * @param mr_type Metaresc type
+ * @return size in bytes or 0 for types without a fixed size
+ */
 mr_size_t
 mr_type_size (mr_type_t mr_type)
 {
@@ -1421,6 +1600,12 @@ mr_register_type_pointer (mr_td_t * tdp)
   return ((NULL == mr_ic_add (&union_tdp->param.struct_param.field_by_name, fdp)) ? MR_FAILURE : MR_SUCCESS);
 }
 
+/**
+ * Checks whether a type name ends with '*' and cuts the '*' with the
+ * whitespaces before it.
+ * @param type type name, modified in place
+ * @return true if the type is a pointer
+ */
 static bool
 mr_type_is_a_pointer (char * type)
 {
@@ -1439,6 +1624,14 @@ mr_type_is_a_pointer (char * type)
   return (false);
 }
 
+/**
+ * Parses the dimensions of an array from a type name and cuts them. Extra
+ * dimensions are folded into the last one. A one dimensional char array
+ * stays a char array.
+ * @param stype type of a field that receives the dimensions
+ * @param type type name, modified in place
+ * @return true if the type is an array
+ */
 static bool
 mr_type_is_an_array (mr_stype_t * stype, char * type)
 {
@@ -1546,6 +1739,11 @@ mr_normalize_type (char * type)
   *ptr = 0;
 }
 
+/**
+ * Resolves the type of a field or argument from its type name: enums, arrays,
+ * pointers and registered types. Sets mr_type, mr_type_aux and tdp.
+ * @param stype type to resolve
+ */
 static void
 mr_detect_structured_type (mr_stype_t * stype)
 {
@@ -1651,6 +1849,10 @@ mr_detect_structured_type (mr_stype_t * stype)
     }
 }
 
+/**
+ * Resolves the type of a field and sets its base type.
+ * @param fdp field descriptor, may be NULL
+ */
 static void
 mr_fd_detect_field_type (mr_fd_t * fdp)
 {
@@ -1684,6 +1886,12 @@ mr_func_field_detect (mr_fd_t * fdp)
   fdp->func_param.args_count = i;
 }
 
+/**
+ * Sets the size of the resource of a field from the size of its resource
+ * type, if the size is not set.
+ * @param fdp field descriptor
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 mr_fd_detect_res_size (mr_fd_t * fdp)
 {
@@ -1696,6 +1904,12 @@ mr_fd_detect_res_size (mr_fd_t * fdp)
   return (MR_SUCCESS);
 }
 
+/**
+ * Hash function for a lookup of union discriminator overrides by value.
+ * @param x union discriminator override
+ * @param context unused
+ * @return hash value of the override value
+ */
 mr_hash_value_t
 mr_ud_override_hash (mr_ptr_t x, const void * context)
 {
@@ -1703,6 +1917,13 @@ mr_ud_override_hash (mr_ptr_t x, const void * context)
   return (mr_hash_block (&udo->value, sizeof (udo->value)));
 }
 
+/**
+ * Compares union discriminator overrides by value.
+ * @param x union discriminator override
+ * @param y another union discriminator override
+ * @param context unused
+ * @return comparation sign
+ */
 int
 mr_ud_override_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
 {
@@ -1711,6 +1932,13 @@ mr_ud_override_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
   return ((_x->value > _y->value) - (_x->value < _y->value));
 }
 
+/**
+ * Builds the lookup table of union discriminator overrides of a union field.
+ * The overrides come from the resource of the field of type mr_ud_override_t.
+ * Overrides with unknown branch names are skipped with a warning.
+ * @param fdp field descriptor
+ * @return status
+ */
 static mr_status_t
 mr_fd_init_ud_overrides (mr_fd_t * fdp)
 {
@@ -1800,6 +2028,10 @@ mr_init_struct (mr_td_t * tdp)
                tdp->param.struct_param.fields_count * sizeof (tdp->param.struct_param.fields[0]));
 }
 
+/**
+ * Resolves the types of the arguments of a function type.
+ * @param tdp type descriptor, other types are ignored
+ */
 static void
 mr_detect_func_args_types (mr_td_t * tdp)
 {
@@ -1811,6 +2043,12 @@ mr_detect_func_args_types (mr_td_t * tdp)
     mr_detect_structured_type (tdp->param.func_param.args[i]);
 }
 
+/**
+ * Resolves the types of the fields of a structure or union, initializes their
+ * resources, bit-fields and union overrides, and registers the fields in the
+ * global lookup tables. Sets the size of anonymous unions.
+ * @param tdp type descriptor, other types are ignored
+ */
 static void
 mr_detect_struct_fields (mr_td_t * tdp)
 {
@@ -1875,6 +2113,12 @@ mr_get_fd_by_name (mr_td_t * tdp, char * name)
   return (result ? result->ptr : NULL);
 }
 
+/**
+ * Marks fields of a type as void, so they are skipped on save and load.
+ * Unknown types and fields are reported as warnings.
+ * @param type type name
+ * @param name names of the fields, the list ends with NULL
+ */
 void __attribute__ ((sentinel(0)))
 mr_type_void_fields_impl (char * type, char * name, ...)
 {
@@ -1914,6 +2158,12 @@ mr_type_void_fields_impl (char * type, char * name, ...)
   va_end (args);
 }
 
+/**
+ * Finds a field by name among the fields of all registered types.
+ * @param name field name
+ * @param type type name of the field or NULL for a lookup by name only
+ * @return field descriptor or NULL if not found
+ */
 mr_fd_t *
 mr_get_any_fd_by_name (const char * name, const char * type)
 {
@@ -1940,6 +2190,11 @@ mr_add_type (mr_td_t * tdp)
   mr_conf.td_list = tdp;
 }
 
+/**
+ * Adds type descriptors extracted from DWARF to the list processed by
+ * mr_conf_init.
+ * @param mr_dwarf descriptors of types and variables
+ */
 void
 mr_add_dwarf (mr_dwarf_t * mr_dwarf)
 {
@@ -1947,6 +2202,11 @@ mr_add_dwarf (mr_dwarf_t * mr_dwarf)
   mr_conf.dwarf_list = mr_dwarf;
 }
 
+/**
+ * Sets the size of the resource of a type from the size of its resource
+ * type, if the size is not set.
+ * @param tdp type descriptor
+ */
 static void
 mr_td_detect_res_size (mr_td_t * tdp)
 {
@@ -1958,6 +2218,12 @@ mr_td_detect_res_size (mr_td_t * tdp)
     }
 }
 
+/**
+ * Checks the type of a field and replaces invalid types with void. Types that
+ * are not supported by the field declaration are reported.
+ * @param stype type of a field
+ * @return status
+ */
 static mr_status_t
 mr_validate_stype (mr_stype_t * stype)
 {
@@ -2060,6 +2326,10 @@ mr_validate_stype (mr_stype_t * stype)
   return (status);
 }
 
+/**
+ * Validates the types of all fields of a structure or union.
+ * @param tdp type descriptor, other types are ignored
+ */
 static void
 mr_validate_td (mr_td_t * tdp)
 {
@@ -2071,6 +2341,12 @@ mr_validate_td (mr_td_t * tdp)
     mr_validate_stype (&tdp->param.struct_param.fields[i]->stype);
 }
 
+/**
+ * Detects whether a type may be a union discriminator: an integer, a string, a
+ * char array, or a structure whose first field may be one. The flag is set on
+ * all structures along the chain of first fields.
+ * @param tdp type descriptor
+ */
 static void
 mr_type_is_union_discriminator (mr_td_t * tdp)
 {
@@ -2090,6 +2366,12 @@ mr_type_is_union_discriminator (mr_td_t * tdp)
       resolve_to->is_union_discriminator = true;
 }
 
+/**
+ * Sets default resources of fields from naming conventions: a pointer or
+ * array 'x' gets the size field 'x_count' or 'x_size', a union 'x' gets the
+ * discriminator 'x_discriminator'.
+ * @param tdp type descriptor, other types are ignored
+ */
 void mr_augment_fields (mr_td_t * tdp)
 {
   if (!((MR_STRUCT_TYPES >> tdp->mr_type) & 1))
@@ -2144,6 +2426,13 @@ void mr_augment_fields (mr_td_t * tdp)
     }
 }
 
+/**
+ * Sorts the list of types by the producer of their descriptors, so
+ * descriptors of preferred producers are registered first. The order within
+ * one producer is kept.
+ * @param tdp list of type descriptors
+ * @return sorted list
+ */
 static mr_td_t *
 mr_sort_td (mr_td_t * tdp)
 {
@@ -2174,6 +2463,12 @@ mr_sort_td (mr_td_t * tdp)
   return (root);
 }
 
+/**
+ * Initializes the library on the first call: registers all types, resolves
+ * the types of fields, builds the lookup tables and initializes union
+ * discriminator overrides. Concurrent callers wait until the first one
+ * finishes.
+ */
 inline void
 mr_conf_init ()
 {
@@ -2264,6 +2559,12 @@ mr_detect_type (mr_fd_t * fdp)
   mr_validate_stype (&fdp->stype);
 }
 
+/**
+ * Hash function for a lookup of variable types by file and variable name.
+ * @param x variable descriptor
+ * @param context unused
+ * @return hash value of the file name and variable name
+ */
 mr_hash_value_t
 mr_var_get_hash (mr_ptr_t x, const void * context)
 {
@@ -2271,6 +2572,13 @@ mr_var_get_hash (mr_ptr_t x, const void * context)
   return (mr_hash_str (x_->filename) + mr_hash_str (x_->varname));
 }
 
+/**
+ * Compares variable descriptors by file name and then by variable name.
+ * @param x variable descriptor
+ * @param y another variable descriptor
+ * @param context unused
+ * @return comparation sign
+ */
 int
 mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -2282,6 +2590,12 @@ mr_var_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return (strcmp (x_->varname, y_->varname));
 }
 
+/**
+ * Finds the type of a variable from the DWARF information.
+ * @param filename name of the source file of the variable
+ * @param varname name of the variable
+ * @return type name or NULL if the variable is unknown
+ */
 char *
 mr_ptr_detect_type (char * filename, char * varname, ...)
 {
@@ -2295,6 +2609,14 @@ mr_ptr_detect_type (char * filename, char * varname, ...)
   return (var->type);
 }
 
+/**
+ * Converts a string to an unsigned integer of maximum width, like strtoull.
+ * A leading minus negates the value.
+ * @param str string to convert
+ * @param endptr receives the end of the parsed number, may be NULL
+ * @param base base of the number, 0 to detect it from the prefix
+ * @return parsed value
+ */
 mr_uintmax_t
 mr_strtouintmax (char * str, char ** endptr, int base)
 {

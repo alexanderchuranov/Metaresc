@@ -17,6 +17,12 @@
 #define JSON_QUOTE_CHAR_PATTERN "\\u%04x"
 #define JSON_BITMASK_DELIMITER " | "
 
+/**
+ * Appends a char as a one character JSON string with escapes.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -40,6 +46,12 @@ json_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (count);
 }
 
+/**
+ * Appends a float complex value as a JSON string 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -52,6 +64,12 @@ json_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (count);
 }
 
+/**
+ * Appends a double complex value as a JSON string 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -64,6 +82,12 @@ json_printf_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (count);
 }
 
+/**
+ * Appends a long double complex value as a JSON string 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -76,6 +100,13 @@ json_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes
   return (count);
 }
 
+/**
+ * Appends a char array as a JSON string. The array may be not zero
+ * terminated.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -85,12 +116,24 @@ json_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_printf_quote_string (mr_ra_str, buffer, JSON_QUOTE_CHAR_PATTERN));
 }
 
+/**
+ * Appends a string as a JSON string.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, JSON_QUOTE_CHAR_PATTERN));
 }
 
+/**
+ * Appends a bitmask enum as a JSON string of names joined with '|'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -103,6 +146,12 @@ json_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (count);
 }
 
+/**
+ * Appends the value of a bit-field, enums as a JSON string of names.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -119,6 +168,13 @@ json_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, JSON_BITMASK_DELIMITER));
 }
 
+/**
+ * Opens a structure with '{'. The closing brace is stored in the node for
+ * the post-order pass.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -127,6 +183,12 @@ json_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "{\n"));
 }
 
+/**
+ * Appends a function pointer as a JSON string with its name or address.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -138,6 +200,13 @@ json_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     return (mr_ra_printf (mr_ra_str, "\"0x%llx\"", (unsigned long long int)*(uintptr_t*)ptrdes->data.ptr));
 }
 
+/**
+ * Opens an array or pointer with '['. The closing bracket is stored in the
+ * node for the post-order pass.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -146,6 +215,13 @@ json_printf_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "[\n"));
 }
 
+/**
+ * Appends a placeholder for a void node: '{}' for records, unions and
+ * arrays, null for pointers, 0 otherwise.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 json_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -200,6 +276,16 @@ static mr_ra_printf_t json_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NAMED_ANON_UNION] = json_printf_struct,
 };
 
+/**
+ * Prints the beginning of a node: indent, '"name": ' for fields of
+ * structures, and the value. A reference is printed as the index of its
+ * target, a content reference as the negative index.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 json_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -256,6 +342,15 @@ json_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
   return (MR_SUCCESS);
 }
 
+/**
+ * Prints the end of a node: the closing bracket stored by the pre-order pass,
+ * a comma if a sibling follows, and a new line.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 json_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -273,6 +368,15 @@ json_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t *
   return (MR_SUCCESS);
 }
 
+/**
+ * DFS visitor that prints a node in JSON.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order
+ * @param context output string
+ * @return status
+ */
 static mr_status_t
 json_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -289,6 +393,11 @@ json_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t ord
     }
 }
 
+/**
+ * Serializes a saved graph into JSON.
+ * @param ptrs saved graph
+ * @return newly allocated string or NULL on error
+ */
 char *
 mr_json_save (mr_ptrdes_t * ptrs)
 {

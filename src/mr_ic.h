@@ -57,6 +57,12 @@ extern mr_status_t mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, ch
 
 /* ----------------------- MR_IC_* ----------------------- */
 
+/**
+ * Deletes a key from an indexed collection.
+ * @param ic indexed collection
+ * @param key key to delete
+ * @return status, failure if the key is not found
+ */
 static inline mr_status_t
 mr_ic_del (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -65,6 +71,12 @@ mr_ic_del (mr_ic_t * ic, mr_ptr_t key)
   return (ic->virt_func->del (ic, key));
 }
 
+/**
+ * Finds a key in an indexed collection.
+ * @param ic indexed collection
+ * @param key key to look for
+ * @return pointer on the found key or NULL
+ */
 static inline mr_ptr_t *
 mr_ic_find (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -73,6 +85,12 @@ mr_ic_find (mr_ic_t * ic, mr_ptr_t key)
   return (ic->virt_func->find (ic, key));
 }
 
+/**
+ * Adds a key to an indexed collection, unless an equal key is already there.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL on error
+ */
 static inline mr_ptr_t *
 mr_ic_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -81,6 +99,13 @@ mr_ic_add (mr_ic_t * ic, mr_ptr_t key)
   return (ic->virt_func->add (ic, key));
 }
 
+/**
+ * Calls a function for each key of an indexed collection.
+ * @param ic indexed collection
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed
+ */
 static inline mr_status_t
 mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
@@ -89,6 +114,10 @@ mr_ic_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
   return (ic->virt_func->foreach (ic, visit_fn, context));
 }
 
+/**
+ * Frees the memory of an indexed collection. The keys are not freed.
+ * @param ic indexed collection, may be NULL
+ */
 static inline void
 mr_ic_free (mr_ic_t * ic)
 {
@@ -97,6 +126,13 @@ mr_ic_free (mr_ic_t * ic)
   ic->virt_func->free (ic);
 }
 
+/**
+ * Fills an indexed collection from an array of keys.
+ * @param ic indexed collection
+ * @param rarray array of keys
+ * @param size size of the array in bytes
+ * @return status
+ */
 static inline mr_status_t
 mr_ic_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
@@ -105,6 +141,18 @@ mr_ic_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
   return (ic->virt_func->index (ic, rarray, size));
 }
 
+/**
+ * Initializes an indexed collection of a given kind. Without hash and
+ * comparison functions and context the generic functions of the key type are
+ * used.
+ * @param ic indexed collection
+ * @param hash_fn hash function, used by hash tables only
+ * @param compar_fn comparison function
+ * @param key_type type name of the keys
+ * @param mr_ic_type kind of the collection
+ * @param context context for the hash and comparison functions, may be NULL
+ * @return status
+ */
 static inline mr_status_t
 mr_ic_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_ic_type_t mr_ic_type, mr_res_t * context)
 {

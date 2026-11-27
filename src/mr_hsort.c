@@ -8,6 +8,15 @@
 #include <metaresc.h>
 #include <mr_hsort.h>
 
+/**
+ * Sifts an element down a binary heap.
+ * @param array heap
+ * @param count index of the last element of the heap
+ * @param size size of an element
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @param idx0 index of the element to sift
+ */
 static inline void
 sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context, unsigned idx0)
 {
@@ -33,6 +42,15 @@ sift (char * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * 
   memcpy (&array[idx0 * size], x, size);
 }
 
+/**
+ * Sorts an array with heap sort. Unlike qsort it passes a context to the
+ * comparison function.
+ * @param array array to sort
+ * @param count number of elements
+ * @param size size of an element
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ */
 void
 mr_hsort (void * array, size_t count, size_t size, mr_compar_fn_t compar_fn, void * context)
 {

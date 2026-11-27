@@ -451,6 +451,13 @@ TYPEDEF_STRUCT (mr_type_sign_t,
 
 static mr_ic_t mr_type_sign_ic;
 
+/**
+ * Copies a DWARF attribute into the internal representation. Strings are
+ * duplicated, so they outlive the DWARF session.
+ * @param debug DWARF session
+ * @param dw_attribute attribute to copy
+ * @param mr_attr receives the attribute
+ */
 static void
 dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute_t * mr_attr)
 {
@@ -532,6 +539,13 @@ dump_attribute (Dwarf_Debug debug, Dwarf_Attribute dw_attribute, mr_dw_attribute
     }
 }
 
+/**
+ * Copies a DIE with its attributes and all its children into a new child of
+ * the parent node.
+ * @param debug DWARF session
+ * @param die DIE to copy
+ * @param mr_parent_die node that receives the copy as a child
+ */
 static void
 dump_die_tree (Dwarf_Debug debug, Dwarf_Die die, mr_die_t * mr_parent_die)
 {
@@ -585,6 +599,11 @@ dump_die_tree (Dwarf_Debug debug, Dwarf_Die die, mr_die_t * mr_parent_die)
       }
 }
 
+/**
+ * Copies the DIE trees of all compilation units.
+ * @param debug DWARF session
+ * @param mr_parent_die node that receives the compilation units as children
+ */
 static void
 dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
 {
@@ -610,6 +629,12 @@ dump_cu_list (Dwarf_Debug debug, mr_die_t * mr_parent_die)
     }
 }
 
+/**
+ * Finds an attribute of a DIE by code.
+ * @param mr_die DIE
+ * @param code attribute code
+ * @return attribute or NULL if the DIE has none
+ */
 static inline mr_dw_attribute_t *
 die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
 {
@@ -620,6 +645,13 @@ die_attribute (mr_die_t * mr_die, mr_dw_attribute_code_t code)
   return (NULL);
 }
 
+/**
+ * Collects the DIEs of types and variables of a tree into an array and sets
+ * the source file name of every DIE from its compilation unit.
+ * @param mr_die root of the tree
+ * @param ic_rarray receives pointers on the collected DIEs
+ * @param filename name of the current compilation unit
+ */
 static void
 walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray, char * filename)
 {
@@ -660,6 +692,13 @@ walk_dies (mr_die_t * mr_die, mr_ic_rarray_t * ic_rarray, char * filename)
     walk_dies (&mr_die->children[i], ic_rarray, filename);
 }
 
+/**
+ * Sets the type name of a field from the DIE of its type. An anonymous type
+ * gets a generated name, which is also added to the DIE as a name attribute.
+ * @param fdp field descriptor
+ * @param mr_die DIE of the type
+ * @param die_off_ic index of DIEs by offset
+ */
 static void
 get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
@@ -706,6 +745,12 @@ get_type_name (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     }
 }
 
+/**
+ * Pushes a type into the type chain of a field (mr_type_ptr, mr_type_aux,
+ * mr_type). Chains deeper than three levels collapse into void.
+ * @param fdp field descriptor
+ * @param mr_type type to push
+ */
 static void
 push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
 {
@@ -726,6 +771,12 @@ push_mr_type (mr_fd_t * fdp, mr_type_t mr_type)
     }
 }
 
+/**
+ * Sets the Metaresc type of a field from the DIE of a base type, found by
+ * type name and size.
+ * @param fdp field descriptor
+ * @param mr_die DIE of the base type
+ */
 static void
 get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 {
@@ -760,6 +811,12 @@ get_base_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   assert (fdp->stype.type != NULL);
 }
 
+/**
+ * Sets the dimensions of an array field from the subranges of the DIE of the
+ * array type.
+ * @param fdp field descriptor
+ * @param mr_die DIE of the array type
+ */
 static void
 get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
 {
@@ -790,6 +847,14 @@ get_array_mr_type (mr_fd_t * fdp, mr_die_t * mr_die)
   fdp->stype.dim.dim_count = j;
 }
 
+/**
+ * Resolves the type of a field by following the type chain of its DIE
+ * through qualifiers, typedefs, arrays and pointers down to a base or a
+ * named type.
+ * @param fdp field descriptor
+ * @param mr_die DIE of the field
+ * @param die_off_ic index of DIEs by offset
+ */
 static void
 get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
@@ -876,6 +941,14 @@ get_mr_type (mr_fd_t * fdp, mr_die_t * mr_die, mr_ic_t * die_off_ic)
       }
 }
 
+/**
+ * Fills an enum value descriptor from the DIE of an enumerator.
+ * @param type type name of the enum
+ * @param idx index of the enumerator
+ * @param elem enum value descriptor to fill
+ * @param mr_die DIE of the enumerator
+ * @param die_off_ic index of DIEs by offset
+ */
 static void
 load_enumerator (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
@@ -904,6 +977,15 @@ load_enumerator (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t *
     }
 }
 
+/**
+ * Fills a field descriptor from the DIE of a structure or union member.
+ * Anonymous members get generated field and type names.
+ * @param type type name of the structure
+ * @param idx index of the member
+ * @param elem field descriptor to fill
+ * @param mr_die DIE of the member
+ * @param die_off_ic index of DIEs by offset
+ */
 static void
 load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
@@ -975,6 +1057,13 @@ load_member (char * type, int idx, void * elem, mr_die_t * mr_die, mr_ic_t * die
   get_mr_type (fdp, mr_die, die_off_ic);
 }
 
+/**
+ * Fills the field descriptors of a structure or union from the DIEs of its
+ * members. The array of fields ends with NULL.
+ * @param mr_die DIE of the structure
+ * @param tdp type descriptor
+ * @param die_off_ic index of DIEs by offset
+ */
 static void load_struct (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
 {
   int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
@@ -1000,6 +1089,13 @@ static void load_struct (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
   tdp->param.struct_param.fields_count = ++idx;
 }
 
+/**
+ * Fills the enum value descriptors from the DIEs of the enumerators. The array
+ * of values ends with NULL.
+ * @param mr_die DIE of the enum
+ * @param tdp type descriptor
+ * @param die_off_ic index of DIEs by offset
+ */
 static void load_enum (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
 {
   int i, count = mr_die->children_size / sizeof (mr_die->children[0]);
@@ -1025,6 +1121,14 @@ static void load_enum (mr_die_t * mr_die, mr_td_t * tdp, mr_ic_t * die_off_ic)
   tdp->param.enum_param.enums_count = ++idx;
 }
 
+/**
+ * Creates a type descriptor from the DIE of a named structure, union, enum or
+ * function type. Declarations, unnamed types and types already extracted are
+ * skipped. Typedefs are followed to the type they name.
+ * @param td_ic receives the type descriptor
+ * @param mr_die DIE of the type
+ * @param die_off_ic index of DIEs by offset
+ */
 static void
 create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
@@ -1117,6 +1221,14 @@ create_td (mr_ic_t * td_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
     }
 }
 
+/**
+ * Records the type of a variable created by MR_OBJ_TYPE_DWARF. Only arrays of
+ * any order and pointers on zero size arrays of non basic types are
+ * recorded.
+ * @param var_ic receives the variable descriptor
+ * @param mr_die DIE of the variable
+ * @param die_off_ic index of DIEs by offset
+ */
 static void
 create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
 {
@@ -1198,6 +1310,12 @@ create_var (mr_ic_t * var_ic, mr_die_t * mr_die, mr_ic_t * die_off_ic)
   assert (find != NULL);
 }
 
+/**
+ * Hash function for the index of DIEs by offset.
+ * @param x DIE
+ * @param context unused
+ * @return offset of the DIE
+ */
 static mr_hash_value_t
 die_off_hash (mr_ptr_t x, const void * context)
 {
@@ -1205,6 +1323,13 @@ die_off_hash (mr_ptr_t x, const void * context)
   return (x_->off);
 }
 
+/**
+ * Compares DIEs by offset.
+ * @param x DIE
+ * @param y another DIE
+ * @param context unused
+ * @return comparation sign
+ */
 static int
 die_off_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -1213,6 +1338,12 @@ die_off_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return ((x_->off > y_->off) - (x_->off < y_->off));
 }
 
+/**
+ * Hash function for the index of base types by name and size.
+ * @param x base type signature
+ * @param context unused
+ * @return hash value of the name and size
+ */
 static mr_hash_value_t
 mr_type_sign_hash (mr_ptr_t x, const void * context)
 {
@@ -1220,6 +1351,13 @@ mr_type_sign_hash (mr_ptr_t x, const void * context)
   return (mr_hashed_string_get_hash (&x_->type) + x_->size);
 }
 
+/**
+ * Compares base type signatures by size and then by name.
+ * @param x base type signature
+ * @param y another base type signature
+ * @param context unused
+ * @return comparation sign
+ */
 static int
 mr_type_sign_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -1247,6 +1385,14 @@ static mr_type_sign_t * mr_type_sign[] =
     MR_FOREACH (MR_BI_SIGN, MR_BUILTIN_TYPES)
   };
 
+/**
+ * Extracts type descriptors and variable types from a tree of DIEs. Runs two
+ * passes, as anonymous types are named on the first pass and extracted on
+ * the second.
+ * @param td_ic receives type descriptors
+ * @param var_ic receives variable descriptors
+ * @param mr_die root of the tree
+ */
 static void
 extract_metadata (mr_ic_t * td_ic, mr_ic_t * var_ic, mr_die_t * mr_die)
 {
@@ -1290,6 +1436,13 @@ extract_metadata (mr_ic_t * td_ic, mr_ic_t * var_ic, mr_die_t * mr_die)
   mr_ic_free (&die_off_ic);
 }
 
+/**
+ * Visitor for the extracted types that finishes their descriptors: detects
+ * the effective type of enums, and the sizes of array fields.
+ * @param key type descriptor
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 process_td (mr_ptr_t key, void * context)
 {
@@ -1346,6 +1499,16 @@ process_td (mr_ptr_t key, void * context)
 
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION, MR_TYPE_POINTER))
 
+/**
+ * DFS visitor that unlinks empty children and NULL strings from structures
+ * that are not references.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only post-order of structures is handled
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t __attribute__ ((unused))
 mr_remove_empty_node_visitor (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -1369,6 +1532,12 @@ mr_remove_empty_node_visitor (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_df
 
 #define mr_remove_empty_nodes(ptrs) mr_ptrs_dfs (ptrs, mr_remove_empty_node_visitor, NULL)
 
+/**
+ * Visitor that appends a type descriptor to the output.
+ * @param key type descriptor
+ * @param context output descriptors
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 append_td (mr_ptr_t key, void * context)
 {
@@ -1377,6 +1546,12 @@ append_td (mr_ptr_t key, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Visitor that appends a variable descriptor to the output.
+ * @param key variable descriptor
+ * @param context output descriptors
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 append_var (mr_ptr_t key, void * context)
 {
@@ -1385,6 +1560,12 @@ append_var (mr_ptr_t key, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Visitor that frees a type descriptor.
+ * @param key type descriptor
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 free_td (mr_ptr_t key, void * context)
 {
@@ -1394,6 +1575,12 @@ free_td (mr_ptr_t key, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Visitor that frees a variable descriptor.
+ * @param key variable descriptor
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 free_var (mr_ptr_t key, void * context)
 {
@@ -1405,6 +1592,10 @@ free_var (mr_ptr_t key, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Marks internal fields of the descriptor types as void, so they are not
+ * printed.
+ */
 static void
 tweak_mr_conf ()
 {
@@ -1419,6 +1610,10 @@ tweak_mr_conf ()
   mr_type_void_fields ("mr_hashed_string_t", "hash_value");
 }
 
+/**
+ * Frees the attributes and children of a DIE.
+ * @param mr_die DIE
+ */
 static void
 free_die (mr_die_t * mr_die)
 {
@@ -1441,6 +1636,13 @@ free_die (mr_die_t * mr_die)
     MR_FREE (mr_die->children);
 }
 
+/**
+ * Extracts type descriptors from the DWARF information of object files and
+ * prints them in the CINIT format.
+ * @param argc number of arguments
+ * @param argv names of object files
+ * @return EXIT_SUCCESS or EXIT_FAILURE
+ */
 int
 main (int argc, char * argv [])
 {

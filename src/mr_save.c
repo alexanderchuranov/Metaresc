@@ -13,6 +13,13 @@ static mr_save_handler_t mr_save_handler[];
 
 static mr_idx_t mr_save_inner (void * data, mr_fd_t * fdp, mr_idx_t count, mr_save_data_t * mr_save_data, mr_idx_t parent);
 
+/**
+ * Selects a union branch by its index in the declaration order. An index out
+ * of range selects the first branch.
+ * @param tdp type descriptor of the union
+ * @param idx index of the branch
+ * @return field descriptor of the branch or NULL for an empty union
+ */
 static inline mr_fd_t *
 mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
 {
@@ -25,6 +32,13 @@ mr_union_discriminator_by_idx (mr_td_t * tdp, int idx)
     return (NULL);
 }
 
+/**
+ * Selects a union branch by name. An unknown or empty name selects the first
+ * branch.
+ * @param tdp type descriptor of the union
+ * @param name name of the branch, may be NULL
+ * @return field descriptor of the branch or NULL for an empty union
+ */
 static inline mr_fd_t *
 mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
 {
@@ -42,6 +56,12 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
     return (NULL);
 }
 
+/**
+ * Looks up a union branch in the discriminator overrides of a field.
+ * @param ud_overrides lookup table of overrides, may be NULL
+ * @param value value of the discriminator
+ * @return field descriptor of the branch or NULL if there is no override
+ */
 static inline mr_fd_t *
 mr_ud_override_value (mr_ic_t * ud_overrides, mr_enum_value_t value)
 {
@@ -54,6 +74,12 @@ mr_ud_override_value (mr_ic_t * ud_overrides, mr_enum_value_t value)
   return (udo ? udo->fdp : NULL);
 }
 
+/**
+ * Makes a field descriptor for the element of a pointer from the descriptor
+ * of the pointer field and switches the field to it.
+ * @param fdp pointer on the field descriptor, replaced with ptr_fdp
+ * @param ptr_fdp storage for the descriptor of the element
+ */
 static void
 mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
 {
@@ -67,6 +93,16 @@ mr_init_pointer_fd (mr_fd_t ** fdp, mr_fd_t * ptr_fdp)
   *fdp = ptr_fdp;
 }
 
+/**
+ * Selects a union branch from the value of a discriminator. Integers, bools
+ * and enums select a branch by override or index, strings and char arrays
+ * by name, structures by their first field, pointers by the pointed value.
+ * @param tdp type descriptor of the union
+ * @param parent_fdp field descriptor of the discriminator
+ * @param discriminator pointer on the value of the discriminator
+ * @param ud_overrides lookup table of discriminator overrides, may be NULL
+ * @return field descriptor of the branch or NULL for an empty union
+ */
 static mr_fd_t *
 mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * discriminator, mr_ic_t * ud_overrides)
 {
@@ -203,6 +239,14 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
   return (mr_union_discriminator_by_name (tdp, NULL));
 }
 
+/**
+ * Compares cached union discriminators by union field and discriminated
+ * field.
+ * @param x index of a union discriminator in mr_save_data->mr_ra_ud
+ * @param y index of another union discriminator
+ * @param context save context
+ * @return comparation sign
+ */
 int
 mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -216,6 +260,12 @@ mr_uds_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
           (x_ud->discriminated_fdp < y_ud->discriminated_fdp));
 }
 
+/**
+ * Hash function for the set of cached union discriminators of a node.
+ * @param x index of a union discriminator in mr_save_data->mr_ra_ud
+ * @param context save context
+ * @return hash value of the union field and discriminated field
+ */
 mr_hash_value_t
 mr_uds_get_hash (mr_ptr_t x, const void * context)
 {
@@ -239,6 +289,12 @@ mr_ud_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return ((x_ud->union_fdp > y_ud->union_fdp) - (x_ud->union_fdp < y_ud->union_fdp));
 }
 
+/**
+ * Hash function for a lookup of a union discriminator by union field.
+ * @param x index of a union discriminator in mr_save_data->mr_ra_ud
+ * @param context save context
+ * @return hash value of the union field
+ */
 mr_hash_value_t
 mr_ud_get_hash (mr_ptr_t x, const void * context)
 {
@@ -247,6 +303,15 @@ mr_ud_get_hash (mr_ptr_t x, const void * context)
   return ((uintptr_t)x_ud->union_fdp);
 }
 
+/**
+ * Finds a union discriminator in the cache of a node. A node keeps a few
+ * discriminators in a small set and switches to a hash table when the set is
+ * full.
+ * @param ptrdes node descriptor
+ * @param key index of the discriminator to look for
+ * @param mr_save_data save context
+ * @return index of the found discriminator or -1
+ */
 static int
 mr_ud_find (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
 {
@@ -275,6 +340,14 @@ mr_ud_find (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
   return (-1);
 }
 
+/**
+ * Adds a union discriminator to the cache of a node, unless an equal one is
+ * already there. Converts the small set into a hash table when it is full.
+ * @param ptrdes node descriptor
+ * @param key index of the discriminator to add
+ * @param mr_save_data save context
+ * @return index of the added or found discriminator or -1 on error
+ */
 static int
 mr_ud_add (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
 {
@@ -349,6 +422,13 @@ mr_ud_add (mr_ptrdes_t * ptrdes, mr_ptr_t key, mr_save_data_t * mr_save_data)
   return (-1);
 }
 
+/**
+ * Calls a function for each union discriminator in the cache of a node.
+ * @param ptrdes node descriptor
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed or the node has no cache
+ */
 static mr_status_t
 mr_ud_foreach (mr_ptrdes_t * ptrdes, mr_visit_fn_t visit_fn, void * context)
 {
@@ -373,6 +453,10 @@ mr_ud_foreach (mr_ptrdes_t * ptrdes, mr_visit_fn_t visit_fn, void * context)
   return (MR_FAILURE);
 }
 
+/**
+ * Frees the cache of union discriminators of a node.
+ * @param ptrdes node descriptor
+ */
 void
 mr_ud_free (mr_ptrdes_t * ptrdes)
 {
@@ -557,6 +641,12 @@ mr_cmp_ptrdes (mr_ptrdes_t * x, mr_ptrdes_t * y)
 
 #define MR_PTR_HASH_MASK (~3)
 
+/**
+ * Hash function for a lookup of saved nodes by address.
+ * @param x index of a node
+ * @param context array with node descriptors
+ * @return hash value of the address of the node
+ */
 mr_hash_value_t
 mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
 {
@@ -564,6 +654,13 @@ mr_typed_ptrdes_get_hash (const mr_ptr_t x, const void * context)
   return (ra_ptrdes->ra[x.uintptr].data.uintptr & MR_PTR_HASH_MASK);
 }
 
+/**
+ * Compares saved nodes by address only.
+ * @param x index of a node
+ * @param y index of another node
+ * @param context array with node descriptors
+ * @return comparation sign
+ */
 int
 mr_untyped_ptrdes_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -613,6 +710,12 @@ mr_check_ud (mr_ptr_t key, void * context)
   return ((fdp == discriminated_fdp) ? MR_SUCCESS : MR_FAILURE);
 }
 
+/**
+ * Checks whether a node is the first child of its parent.
+ * @param ra array with node descriptors
+ * @param node index of the node
+ * @return true if the node is the first child
+ */
 static bool
 is_first_child (mr_ptrdes_t * ra, mr_idx_t node)
 {
@@ -622,6 +725,13 @@ is_first_child (mr_ptrdes_t * ra, mr_idx_t node)
   return (ra[parent].first_child == node);
 }
 
+/**
+ * Checks whether a node is an ancestor of another node or the node itself.
+ * @param ra array with node descriptors
+ * @param node index of the descendant node
+ * @param ref_idx index of the possible ancestor
+ * @return true if ref_idx is node or one of its ancestors
+ */
 static bool
 ref_is_parent (mr_ptrdes_t * ra, mr_idx_t node, mr_idx_t ref_idx)
 {
@@ -630,6 +740,14 @@ ref_is_parent (mr_ptrdes_t * ra, mr_idx_t node, mr_idx_t ref_idx)
   return (node == ref_idx);
 }
 
+/**
+ * Returns a field descriptor of a node that stays valid after the save.
+ * Non persistent (stack) descriptors are replaced with the descriptor of the
+ * closest ancestor with a persistent one, or with the mr_ptr_fd of the type.
+ * @param ra array with node descriptors
+ * @param idx index of the node
+ * @return field descriptor or NULL
+ */
 static mr_fd_t *
 mr_get_persistent_fd (mr_ptrdes_t * ra, mr_idx_t idx)
 {
@@ -649,6 +767,16 @@ mr_get_persistent_fd (mr_ptrdes_t * ra, mr_idx_t idx)
   return (fdp);
 }
 
+/**
+ * Moves the elements of an earlier saved pointer to the end of the children
+ * of the parent of a node and marks the earlier pointer as a reference to
+ * them. Used when a pointer being saved continues into memory that an
+ * earlier pointer owns.
+ * @param ptrs array with node descriptors
+ * @param ref_parent index of the earlier saved pointer
+ * @param idx index of the node being saved
+ * @return number of moved nodes or 0 on error
+ */
 static mr_idx_t
 move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
 {
@@ -682,6 +810,13 @@ move_nodes_to_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_parent, mr_idx_t idx)
   return (count);
 }
 
+/**
+ * Finds the bucket of saved nodes with a given address. A spare node
+ * descriptor is used as the lookup key.
+ * @param mr_save_data save context
+ * @param addr address to look for
+ * @return pointer on the index of the first node in the bucket or NULL
+ */
 static mr_idx_t *
 mr_get_bucket_ptr (mr_save_data_t * mr_save_data, uintptr_t addr)
 {
@@ -694,6 +829,13 @@ mr_get_bucket_ptr (mr_save_data_t * mr_save_data, uintptr_t addr)
   return ((mr_idx_t*)mr_ic_find (&mr_save_data->untyped_ptrs, (uintptr_t)alloc_idx));
 }
 
+/**
+ * Finds the link that points on a node in the bucket of nodes with the same
+ * address.
+ * @param mr_save_data save context
+ * @param idx index of the node
+ * @return pointer on the link or NULL if the node is not found
+ */
 static mr_idx_t *
 mr_get_idx_ptr (mr_save_data_t * mr_save_data, mr_idx_t idx)
 {
@@ -708,6 +850,13 @@ mr_get_idx_ptr (mr_save_data_t * mr_save_data, mr_idx_t idx)
   return (NULL);
 }
 
+/**
+ * Finds a child of a node by address.
+ * @param mr_save_data save context
+ * @param parent index of the parent node
+ * @param addr address of the child
+ * @return index of the child or MR_NULL_IDX
+ */
 static mr_idx_t
 mr_get_child_by_addr (mr_save_data_t * mr_save_data, mr_idx_t parent, uintptr_t addr)
 {
@@ -722,6 +871,12 @@ mr_get_child_by_addr (mr_save_data_t * mr_save_data, mr_idx_t parent, uintptr_t 
   return (*bucket);
 }
 
+/**
+ * Makes a non persistent field descriptor for the elements of a pointer.
+ * @param mr_type type of the elements
+ * @param fdp field descriptor of the pointer, may be NULL
+ * @return field descriptor
+ */
 static mr_fd_t
 mr_get_pointer_fd (mr_type_t mr_type, mr_fd_t * fdp)
 {
@@ -747,6 +902,9 @@ mr_get_pointer_fd (mr_type_t mr_type, mr_fd_t * fdp)
   In default case we just need to walk list of children and find the one that refers on target node.
   This might yeld O(n) complexity for nodes within arrays of resizable pointers. For those cases we could
   find previous node based on it's address. Address could be calculated from address of node [idx].
+  @param mr_save_data save context
+  @param idx index of the node
+  @return pointer on the link that refers on the node or NULL if not found
 */
 static mr_idx_t *
 find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
@@ -778,6 +936,16 @@ find_prev_idx (mr_save_data_t * mr_save_data, mr_idx_t idx)
   return (NULL);
 }
 
+/**
+ * Merges the elements of an earlier saved pointer into the pointer that is
+ * being saved. The parent of the node being saved and the earlier pointer
+ * swap places in the graph, so fewer nodes need a new parent.
+ * @param mr_save_data save context
+ * @param ref_parent index of the earlier saved pointer
+ * @param idx index of the node being saved
+ * @param element_size size of an element
+ * @return number of added nodes or 0 on error
+ */
 static mr_idx_t
 merge_pointers_content (mr_save_data_t * mr_save_data, mr_idx_t ref_parent, mr_idx_t idx, mr_size_t element_size)
 {
@@ -917,6 +1085,14 @@ mr_save_pointer_content (mr_save_data_t * mr_save_data, mr_idx_t idx)
   return (i);
 }
 
+/**
+ * Saves more elements of an earlier saved pointer, when a pointer saved later
+ * refers into it and goes beyond its end.
+ * @param mr_save_data save context
+ * @param idx index of the earlier saved pointer
+ * @param delta number of bytes to add
+ * @return total number of elements of the pointer or 0 on error
+ */
 static mr_idx_t
 mr_extend_pointer (mr_save_data_t * mr_save_data, mr_idx_t idx, mr_size_t delta)
 {
@@ -957,6 +1133,16 @@ mr_extend_pointer (mr_save_data_t * mr_save_data, mr_idx_t idx, mr_size_t delta)
   return (i);
 }
 
+/**
+ * Resolves an element of a pointer that is being saved against a matching
+ * node saved earlier. The pointer becomes a reference if the earlier block is
+ * long enough, the earlier pointer is extended if it is shorter, and two
+ * pointers are merged when they overlap in the middle.
+ * @param mr_save_data save context, the node being saved is the spare node at the end
+ * @param ref_idx index of the matching node saved earlier
+ * @param resolved set to true if the pointer was resolved
+ * @return number of elements of the pointer handled, 0 if not resolved or on error
+ */
 static mr_idx_t
 resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolved)
 {
@@ -1037,6 +1223,16 @@ resolve_pointer (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
   return (0);
 }
 
+/**
+ * Resolves a node that is being saved against earlier saved nodes with the same
+ * address. Nodes of another type or with other union discriminators are
+ * skipped. Strings and pointers become references, other nodes are moved
+ * under the parent of the new node.
+ * @param mr_save_data save context, the node being saved is the spare node at the end
+ * @param ref_idx index of the first node with the same address
+ * @param resolved set to true if the node was resolved
+ * @return number of handled elements, 0 if not resolved or on error
+ */
 static mr_idx_t
 resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolved)
 {
@@ -1092,6 +1288,12 @@ resolve_matched (mr_save_data_t * mr_save_data, mr_idx_t ref_idx, bool * resolve
   return (0);
 }
 
+/**
+ * Copies an integer value between nodes of different integer types. Pointers
+ * are dereferenced. Used to set size fields from loaded data.
+ * @param dst destination node
+ * @param src source node
+ */
 void
 mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
 {
@@ -1195,6 +1397,13 @@ mr_assign_int (mr_ptrdes_t * dst, mr_ptrdes_t * src)
     }
 }
 
+/**
+ * Finds a field of a structure by offset with a binary search. Among fields
+ * with the same offset (zero size fields) the last one is returned.
+ * @param tdp type descriptor of the structure
+ * @param offset offset of the field
+ * @return field descriptor or NULL if no field has this offset
+ */
 static mr_fd_t *
 mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->offset) offset)
 {
@@ -1237,6 +1446,14 @@ mr_is_opaque_data (mr_ptrdes_t * ptrdes)
   return (0 == strcmp (fdp->name.str, MR_OPAQUE_DATA_STR));
 }
 
+/**
+ * Builds a node descriptor of the size field of a pointer or array. The size
+ * field is named or located by offset in the resource of the field and is
+ * searched in the closest enclosing structure.
+ * @param ptrdes receives the descriptor of the size field, zeroed if there is none
+ * @param idx index of the pointer or array node
+ * @param ptrs array with node descriptors
+ */
 void
 mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
@@ -1567,6 +1784,16 @@ mr_ptrs_dfs_impl (mr_ptrdes_t * ptrs, mr_ptrdes_processor_t processor, mr_ptr_t 
   return (MR_SUCCESS);
 }
 
+/**
+ * DFS visitor that makes the first string in the save order the owner of
+ * shared string content, so a reference never precedes its target.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only post-order is handled
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 mr_reorder_strings_visitor (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -1617,6 +1844,16 @@ mr_reorder_strings (mr_ptrdes_t * ptrs)
 
 #define REMOVE_IF_EMPTY (0 MR_FOREACH (MR_ONE_SHIFT, MR_TYPE_VOID, MR_TYPE_STRUCT, MR_TYPE_ARRAY, MR_TYPE_UNION, MR_TYPE_ANON_UNION, MR_TYPE_NAMED_ANON_UNION))
 
+/**
+ * DFS visitor that unlinks empty children of structures that are not
+ * referenced. Sets ptrs->vt_uintptr if a node was removed.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only post-order of structures is handled
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 mr_remove_empty_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -1659,6 +1896,17 @@ mr_renumber_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t or
   return (MR_SUCCESS);
 }
 
+/**
+ * DFS visitor that numbers nodes in the save order. Elements of pointers
+ * take the field descriptor of the pointer and the size of the rest of the
+ * pointed block.
+ * @param ra array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only pre-order is handled
+ * @param context pointer on the counter of node indexes
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 mr_update_pointers_content (mr_ptrdes_t * ra, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {

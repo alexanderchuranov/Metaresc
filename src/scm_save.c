@@ -21,6 +21,11 @@
 
 #define MR_SCM_BITMASK_OR_DELIMITER " | "
 
+/*
+  Defines static int scm_save_complex_<TYPE> (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
+  that appends a complex value as a string "real + imag I".
+  It returns the number of appended characters or -1 on error.
+*/
 #define SCM_SAVE_COMPLEX(TYPE)						\
   static int scm_save_complex_ ## TYPE (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes) \
   {									\
@@ -35,6 +40,12 @@ SCM_SAVE_COMPLEX (float)
 SCM_SAVE_COMPLEX (double)
 SCM_SAVE_COMPLEX (long_double_t)
 
+/**
+ * Appends a bool as a Scheme boolean.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -43,6 +54,13 @@ scm_printf_bool (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
           mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
 }
 
+/**
+ * Appends a bitmask enum as a string of names joined with the Scheme
+ * bitmask delimiter.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -53,6 +71,12 @@ scm_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (count);
 }
 
+/**
+ * Appends the value of a bit-field as a bool, an integer or an enum.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 scm_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -167,6 +191,13 @@ scm_save_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (0);
 }
 
+/**
+ * Appends '()' for a structure, union, array or pointer without children.
+ * Children are printed by the DFS.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 scm_printf_compaund (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -175,6 +206,12 @@ scm_printf_compaund (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (0);
 }
 
+/**
+ * Prints nothing for a void node.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 scm_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -220,6 +257,15 @@ static mr_ra_printf_t scm_save_handler[MR_TYPE_LAST] =
     [MR_TYPE_NAMED_ANON_UNION] = scm_printf_compaund,
   };
 
+/**
+ * Prints the beginning of a node: reference annotations, indent, '(' and the
+ * field name for named nodes, and the value.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 scm_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -316,6 +362,15 @@ scm_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * m
   return ((count >= 0) ? MR_SUCCESS : MR_FAILURE);
 }
 
+/**
+ * Prints the end of a node: the closing parentheses of named nodes and of
+ * nodes with children.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 scm_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -342,6 +397,15 @@ scm_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * 
   return (MR_SUCCESS);
 }
 
+/**
+ * DFS visitor that prints a node as an S-expression.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order
+ * @param context output string
+ * @return status
+ */
 static mr_status_t
 scm_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {

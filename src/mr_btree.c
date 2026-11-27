@@ -9,12 +9,20 @@
 #define FLIP 1
 #define MR_PATH_SIZE (sizeof (((mr_tree_traverse_t*)0)->path) / sizeof (((mr_tree_traverse_t*)0)->path[0]))
 
+/**
+ * Initializes an empty tree.
+ * @param tree tree
+ */
 void
 mr_tree_init (mr_tree_t * tree)
 {
   memset (tree, 0, sizeof (*tree));
 }
 
+/**
+ * Frees the node pool of a tree and makes it empty.
+ * @param tree tree
+ */
 void
 mr_tree_free (mr_tree_t * tree)
 {
@@ -23,6 +31,14 @@ mr_tree_free (mr_tree_t * tree)
   mr_tree_init (tree);
 }
 
+/**
+ * Preallocates the node pool for a number of keys. Slot 0 of the pool holds
+ * the root link.
+ * @param tree tree
+ * @param items_count number of keys
+ * @param reset true to drop all nodes of the tree
+ * @return status
+ */
 mr_status_t
 mr_tree_reserve (mr_tree_t * tree, unsigned items_count, bool reset)
 {
@@ -48,6 +64,11 @@ mr_tree_reserve (mr_tree_t * tree, unsigned items_count, bool reset)
   return (MR_SUCCESS);
 }
 
+/**
+ * Allocates a zeroed node in the pool.
+ * @param tree tree
+ * @return index of the node or NONE_IDX if out of memory
+ */
 static unsigned
 mr_tree_node_new (mr_tree_t * tree)
 {
@@ -61,6 +82,13 @@ mr_tree_node_new (mr_tree_t * tree)
   return (tree->size / sizeof (tree->pool[0]) - 1);
 }
 
+/**
+ * Calls a function for each key of a tree in sorted order, without recursion.
+ * @param tree tree
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed
+ */
 mr_status_t
 mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, void * context)
 {
@@ -83,6 +111,13 @@ mr_tree_walk (mr_tree_t * tree, mr_visit_fn_t visit_fn, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Moves a traverse path to the next node in a direction: the in-order
+ * successor for MR_RIGHT or predecessor for MR_LEFT.
+ * @param tree tree
+ * @param traverse path to a node, updated in place
+ * @param next direction
+ */
 void
 mr_tree_next (mr_tree_t * tree, mr_tree_traverse_t * traverse, mr_child_idx_t next)
 {
@@ -110,6 +145,15 @@ mr_tree_next (mr_tree_t * tree, mr_tree_traverse_t * traverse, mr_child_idx_t ne
   traverse->equal = true;
 }
 
+/**
+ * Searches a tree for a key and records the path from the root. The path
+ * ends at the found node or at the node where the key would be inserted.
+ * @param key key
+ * @param tree tree
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @param traverse receives the path and whether the key was found
+ */
 void
 mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, mr_tree_traverse_t * traverse)
 {
@@ -142,6 +186,15 @@ mr_tree_find (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * c
   traverse->equal = equal;
 }
 
+/**
+ * Adds a key to a binary search tree and rebalances it.
+ * @param key key
+ * @param tree tree
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @param rebalance function that restores the balance after an insert
+ * @return pointer on the added or already present key, NULL on error
+ */
 static inline mr_ptr_t *
 mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_traverse_t *))
 {
@@ -173,6 +226,16 @@ mr_tree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
   return (&tree->pool[idx].key);
 }
 
+/**
+ * Deletes a key from a binary search tree and rebalances it. A node with two
+ * children is replaced with its in-order neighbour.
+ * @param key key
+ * @param tree tree
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @param rebalance function that restores the balance after a delete
+ * @return status, failure if the key is not found
+ */
 static inline mr_status_t
 mr_tree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context, void (rebalance) (mr_tree_t *, mr_tree_traverse_t *))
 {
@@ -223,6 +286,20 @@ mr_tree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * co
 
 TYPEDEF_FUNC (bool, node_validator_t, (mr_tree_t * /* tree */, unsigned /* idx */, uint8_t * /* height */));
 
+/**
+ * Recursively checks the order of keys, the link structure and the
+ * balance of a subtree. Used by tests.
+ * @param tree tree
+ * @param idx index of the root of the subtree
+ * @param cmp comparison function
+ * @param context context for the comparison function
+ * @param node_validator check of the balance of a node
+ * @param height heights of visited nodes, 0 for not visited
+ * @param level depth of the subtree
+ * @param left index of the closest left bound or NONE_IDX
+ * @param right index of the closest right bound or NONE_IDX
+ * @return true if the subtree is valid
+ */
 static bool
 mr_btree_is_valid_recurse (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, void * context, node_validator_t node_validator, uint8_t * height, int level, unsigned left, unsigned right)
 {
@@ -261,6 +338,15 @@ mr_btree_is_valid_recurse (mr_tree_t * tree, unsigned idx, mr_compar_fn_t cmp, v
   return (node_validator (tree, idx, height));
 }
 
+/**
+ * Checks a binary search tree: link indexes, order of keys, reachability of
+ * all nodes and balance. Used by tests.
+ * @param tree tree
+ * @param cmp comparison function
+ * @param context context for the comparison function
+ * @param node_validator check of the balance of a node
+ * @return true if the tree is valid
+ */
 static bool
 mr_btree_is_valid (mr_tree_t * tree, mr_compar_fn_t cmp, void * context, node_validator_t node_validator)
 {
@@ -305,6 +391,12 @@ mr_btree_is_valid (mr_tree_t * tree, mr_compar_fn_t cmp, void * context, node_va
   return (valid);
 }
 
+/**
+ * Rotates a node with its child, so the child takes the place of the node.
+ * @param tree tree
+ * @param path path element of the node; path[-1] is its parent
+ * @param child_idx side of the child
+ */
 static inline void
 mr_tree_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t child_idx)
 {
@@ -317,6 +409,12 @@ mr_tree_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t child_id
   tree->pool[path[-1].idx].next[path[-1].child_idx].idx = child;
 }
 
+/**
+ * Double rotation: the inner grandchild of a node takes the place of the node.
+ * @param tree tree
+ * @param path path element of the node; path[-1] is its parent
+ * @param child_idx side of the child
+ */
 static inline void 
 mr_tree_grand_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t child_idx)
 {
@@ -333,6 +431,11 @@ mr_tree_grand_rotate (mr_tree_t * tree, mr_tree_path_t * path, mr_child_idx_t ch
   tree->pool[path[-1].idx].next[path[-1].child_idx].idx = grand_child;
 }
 
+/**
+ * Restores the red-black properties after an insert. The new node is red.
+ * @param tree tree
+ * @param traverse path from the root to the added or deleted node
+ */
 static inline void 
 mr_rbtree_rebalance_add (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 {
@@ -375,12 +478,25 @@ mr_rbtree_rebalance_add (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
   rbtree->pool[rbtree->pool->root.idx].rb.red = false;
 }
 
+/**
+ * Adds a key to a red-black tree.
+ * @param key key
+ * @param tree tree
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_rbtree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context)
 {
   return (mr_tree_add (key, tree, compar_fn, context, mr_rbtree_rebalance_add));
 }
 
+/**
+ * Restores the red-black properties after a delete.
+ * @param tree tree
+ * @param traverse path from the root to the added or deleted node
+ */
 static void
 mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
 {
@@ -446,12 +562,28 @@ mr_rbtree_rebalance_del (mr_tree_t * rbtree, mr_tree_traverse_t * traverse)
   rbtree->pool[rbtree->pool->root.idx].rb.red = false;
 }
 
+/**
+ * Deletes a key from a red-black tree.
+ * @param key key
+ * @param tree tree
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_rbtree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context)
 {
   return (mr_tree_del (key, tree, compar_fn, context, mr_rbtree_rebalance_del));
 }
 
+/**
+ * Checks that a red node has no red children and that both subtrees have
+ * the same black height, and stores the black height of the node.
+ * @param rbtree tree
+ * @param idx index of the node
+ * @param height black heights of nodes
+ * @return true if the node is valid
+ */
 static bool
 mr_rbnode_is_valid (mr_tree_t * rbtree, unsigned idx, uint8_t * height)
 {
@@ -477,6 +609,13 @@ mr_rbnode_is_valid (mr_tree_t * rbtree, unsigned idx, uint8_t * height)
   return (true);
 }
 
+/**
+ * Checks a red-black tree. Used by tests.
+ * @param rbtree tree
+ * @param cmp comparison function
+ * @param context context for the comparison function
+ * @return true if the tree is valid
+ */
 bool
 mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
 {
@@ -501,6 +640,11 @@ mr_rbtree_is_valid (mr_tree_t * rbtree, mr_compar_fn_t cmp, void * context)
   return (true);
 }
 
+/**
+ * Restores the AVL balance after an insert.
+ * @param tree tree
+ * @param traverse path from the root to the added or deleted node
+ */
 static inline void 
 mr_avltree_rebalance_add (mr_tree_t * avltree, mr_tree_traverse_t * traverse)
 {
@@ -571,12 +715,25 @@ mr_avltree_rebalance_add (mr_tree_t * avltree, mr_tree_traverse_t * traverse)
     }
 }
 
+/**
+ * Adds a key to an AVL tree.
+ * @param key key
+ * @param tree tree
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_avltree_add (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context)
 {
   return (mr_tree_add (key, tree, compar_fn, context, mr_avltree_rebalance_add));
 }
 
+/**
+ * Restores the AVL balance after a delete.
+ * @param tree tree
+ * @param traverse path from the root to the added or deleted node
+ */
 static void 
 mr_avltree_rebalance_del (mr_tree_t * avltree, mr_tree_traverse_t * traverse)
 {
@@ -641,12 +798,28 @@ mr_avltree_rebalance_del (mr_tree_t * avltree, mr_tree_traverse_t * traverse)
     }
 }
 
+/**
+ * Deletes a key from an AVL tree.
+ * @param key key
+ * @param tree tree
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_avltree_del (mr_ptr_t key, mr_tree_t * tree, mr_compar_fn_t compar_fn, void * context)
 {
   return (mr_tree_del (key, tree, compar_fn, context, mr_avltree_rebalance_del));
 }
 
+/**
+ * Checks that the heights of the subtrees of a node differ by at most one and
+ * match its balance flags, and stores the height of the node.
+ * @param avltree tree
+ * @param idx index of the node
+ * @param height heights of nodes
+ * @return true if the node is valid
+ */
 static bool
 mr_avlnode_is_valid (mr_tree_t * avltree, unsigned idx, uint8_t * height)
 {
@@ -697,6 +870,13 @@ mr_avlnode_is_valid (mr_tree_t * avltree, unsigned idx, uint8_t * height)
   return (true);
 }
 
+/**
+ * Checks an AVL tree. Used by tests.
+ * @param avltree tree
+ * @param cmp comparison function
+ * @param context context for the comparison function
+ * @return true if the tree is valid
+ */
 bool
 mr_avltree_is_valid (mr_tree_t * avltree, mr_compar_fn_t cmp, void * context)
 {

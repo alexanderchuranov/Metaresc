@@ -16,6 +16,12 @@ TYPEDEF_STRUCT (mr_token_lloc_t, ATTRIBUTES ( , "token location"),
   MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_PARSE_ERROR, ERROR_MSG,		\
               (LLOCP)->start.lineno, (LLOCP)->start.column, (LLOCP)->end.lineno, (LLOCP)->end.column)
 
+/**
+ * Advances the location of the lexer (line, column and offset) up to a
+ * position in the parsed text. The first call remembers the start of the text.
+ * @param mr_load lexer context
+ * @param ptr position in the parsed text
+ */
 static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
 {
   if (NULL == mr_load->buf)
@@ -31,6 +37,12 @@ static inline void mr_calc_lloc (mr_load_t * mr_load, char * ptr)
         ++mr_load->lloc.column;
 }
 
+/**
+ * Compares a string with a substring.
+ * @param str zero terminated string
+ * @param substr substring
+ * @return 0 if equal, nonzero otherwise
+ */
 static inline int mr_substrcmp (char * str, mr_substr_t * substr)
 {
   typeof (substr->length) str_len = strlen (str);
@@ -39,6 +51,11 @@ static inline int mr_substrcmp (char * str, mr_substr_t * substr)
   return (strncmp (str, substr->str, str_len));
 }
 
+/**
+ * Finds an identifier in a text, skipping leading whitespaces.
+ * @param substr receives the identifier
+ * @param start text
+ */
 static inline void mr_get_id (mr_substr_t * substr, char * start)
 {
   char * stop;
@@ -82,6 +99,11 @@ static inline void mr_get_id (mr_substr_t * substr, char * start)
 #define YYINITDEPTH 256
 #define YYMAXDEPTH ((unsigned)-1)
 
+/*
+  Defines mr_status_t mr_<METHOD>_load (char * str, mr_ra_ptrdes_t * ptrs)
+  that parses a text with the flex/bison parser of METHOD into node descriptors.
+  On failure the parsed values are freed. It returns MR_SUCCESS or MR_FAILURE.
+*/
 #define MR_LOAD_FUNC(METHOD)						\
   mr_status_t mr_ ## METHOD ## _load (char * str, mr_ra_ptrdes_t * ptrs) { \
     mr_status_t status = MR_FAILURE;					\

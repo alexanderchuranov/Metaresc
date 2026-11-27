@@ -13,6 +13,15 @@
 #include <mr_value.h>
 #include <mr_ic.h>
 
+/**
+ * Stores a parsed value into a node descriptor. A substring is stored as an
+ * offset into the loaded string, an integer in the narrowest fitting
+ * representation.
+ * @param ptrdes node descriptor
+ * @param mr_value parsed value
+ * @param str loaded string that substrings point into
+ * @return status
+ */
 mr_status_t
 mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
 {
@@ -102,6 +111,14 @@ mr_value_to_mr_ptrdes (mr_ptrdes_t * ptrdes, mr_value_t * mr_value, char * str)
   return (MR_SUCCESS);
 }
 
+/**
+ * Restores a parsed value from a node descriptor. This is the inverse of
+ * mr_value_to_mr_ptrdes.
+ * @param mr_value receives the value
+ * @param ptrdes node descriptor
+ * @param str loaded string that substrings point into, may be NULL
+ * @return status
+ */
 mr_status_t
 mr_ptrdes_to_mr_value (mr_value_t * mr_value, mr_ptrdes_t * ptrdes, char * str)
 {
@@ -170,6 +187,13 @@ mr_ptrdes_to_mr_value (mr_value_t * mr_value, mr_ptrdes_t * ptrdes, char * str)
   return (MR_SUCCESS);
 }
 
+/**
+ * Visitor for the enum values of a type that finds the length of the
+ * longest name.
+ * @param key enum value descriptor
+ * @param context pointer on the maximum length, updated in place
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 enum_names_visitor (mr_ptr_t key, void * context)
 {
@@ -233,6 +257,12 @@ mr_get_int (char * str, mr_intmax_t * data)
   return (str);
 }
 
+/**
+ * Parses an integer or a bitmask of integers or enum names joined with '|'.
+ * @param str string to parse
+ * @param mr_value receives the integer value
+ * @return pointer after the parsed text or NULL on error
+ */
 static char * 
 mr_load_bitmask (char * str, mr_value_t * mr_value)
 {
@@ -254,6 +284,12 @@ mr_load_bitmask (char * str, mr_value_t * mr_value)
   return (str);
 }
 
+/**
+ * Parses a floating point number.
+ * @param str string to parse
+ * @param mr_value receives the value
+ * @return pointer after the parsed text or NULL on error
+ */
 static char *
 mr_load_long_double (char * str, mr_value_t * mr_value)
 {
@@ -267,6 +303,13 @@ mr_load_long_double (char * str, mr_value_t * mr_value)
   return (next);
 }
 
+/**
+ * Parses a complex number: a real part, an imaginary part with an 'I' suffix,
+ * or both joined with '+' or '-'.
+ * @param str string to parse
+ * @param mr_value receives the value
+ * @return pointer after the parsed text or NULL on error
+ */
 static char *
 mr_load_complex_long_double (char * str, mr_value_t * mr_value)
 {
@@ -341,6 +384,13 @@ mr_load_complex_long_double (char * str, mr_value_t * mr_value)
   return (NULL);
 }
 
+/**
+ * Parses a value of the type that is set in mr_value and skips the
+ * whitespaces after it.
+ * @param mr_value value with the expected value type, receives the value
+ * @param str string to parse
+ * @return pointer after the parsed text or NULL on error
+ */
 static char *
 mr_load_var (mr_value_t * mr_value, char * str)
 {
@@ -372,6 +422,13 @@ mr_load_var (mr_value_t * mr_value, char * str)
   return (str);
 }
 
+/**
+ * Converts a value to another value type in place. Strings and substrings are
+ * parsed and must not have text after the value.
+ * @param value_type target value type
+ * @param mr_value value to convert
+ * @return status
+ */
 mr_status_t
 mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
 {
@@ -468,6 +525,11 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
   return (status);
 }
 
+/**
+ * Negates a numeric value in place.
+ * @param value value to negate
+ * @return status, failure for non-numeric values
+ */
 mr_status_t
 mr_value_neg (mr_value_t * value)
 {
@@ -492,6 +554,12 @@ mr_value_neg (mr_value_t * value)
   return (MR_SUCCESS);
 }
 
+/*
+  Defines mr_status_t mr_value_<OP_NAME> (mr_value_t * result, mr_value_t * left, mr_value_t * right)
+  that computes left OP right. Operands are cast to the wider of their types, at least an integer.
+  __VA_ARGS__ is a statement run before the operation (e.g. a check of a divisor).
+  It returns MR_SUCCESS or MR_FAILURE for non-numeric operands.
+*/
 #define MR_VALUE_OP(OP_NAME, OP, ...)					\
   mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
@@ -519,6 +587,12 @@ mr_value_neg (mr_value_t * value)
     return (MR_SUCCESS);                                                \
   }
 
+/*
+  Defines mr_status_t mr_value_<OP_NAME> (mr_value_t * result, mr_value_t * left, mr_value_t * right)
+  that computes left OP right for integer operands.
+  __VA_ARGS__ is a statement run before the operation (e.g. a check of a divisor).
+  It returns MR_SUCCESS or MR_FAILURE for non-integer operands.
+*/
 #define MR_INT_VALUE_OP(OP_NAME, OP, ...)				\
   mr_status_t mr_value_ ## OP_NAME (mr_value_t * result, mr_value_t * left, mr_value_t * right) \
   {									\
@@ -540,6 +614,11 @@ mr_value_neg (mr_value_t * value)
     return (MR_SUCCESS);                                                \
   }
 
+/**
+ * Checks whether a numeric value is zero.
+ * @param value value to check
+ * @return true if the value is zero, false otherwise and for non-numeric values
+ */
 bool
 mr_value_is_zero (mr_value_t * value)
 {

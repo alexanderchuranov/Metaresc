@@ -4,6 +4,15 @@
 
 #include <metaresc.h>
 
+/**
+ * Reads an integer property of an XML node and sets a flag if it is present.
+ * @param node XML node
+ * @param property_name name of the property
+ * @param idx receives the value of the property
+ * @param flags flags of the node
+ * @param flag flag to set if the property is present
+ * @return status, failure if the value is not an integer
+ */
 static mr_status_t
 mr_load_xml_property (xmlNodePtr node, char * property_name, mr_idx_t * idx, mr_ptrdes_flags_t * flags, mr_ptrdes_flags_t flag)
 {
@@ -26,6 +35,14 @@ mr_load_xml_property (xmlNodePtr node, char * property_name, mr_idx_t * idx, mr_
   return (MR_SUCCESS);
 }
 
+/**
+ * Converts a libxml2 tree into node descriptors: field names, reference
+ * properties, NULL flags and text content. Children are converted
+ * recursively.
+ * @param node XML node
+ * @param ptrs array that receives node descriptors
+ * @return index of the node or MR_NULL_IDX on error
+ */
 mr_idx_t
 mr_xml2_load (xmlNodePtr node, mr_ra_ptrdes_t * ptrs)
 {

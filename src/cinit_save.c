@@ -20,6 +20,12 @@
 #define CINIT_BITMASK_DELIMITER " | "
 #define CINIT_NULL "NULL"
 
+/**
+ * Appends a char as a C character literal with escapes.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -43,24 +49,49 @@ cinit_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (count);
 }
 
+/**
+ * Appends a float complex value as 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_complex_float (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_complex_float (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
+/**
+ * Appends a double complex value as 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_complex_double (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_complex_double (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
+/**
+ * Appends a long double complex value as 'real + imag I'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_complex_long_double_t (mr_ra_str, ptrdes, COMPLEX_REAL_IMAG_DELIMITER));
 }
 
+/**
+ * Appends a char array as a quoted C string. The array may be not zero
+ * terminated.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -70,24 +101,49 @@ cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_printf_quote_string (mr_ra_str, buffer, CINIT_QUOTE_CHAR_PATTERN));
 }
 
+/**
+ * Appends a string as a quoted C string.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, CINIT_QUOTE_CHAR_PATTERN));
 }
 
+/**
+ * Appends a bitmask enum as names joined with '|'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_bitmask (mr_ra_str, ptrdes, CINIT_BITMASK_DELIMITER));
 }
 
+/**
+ * Appends the value of a bit-field, bitmask enums as names joined with '|'.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
   return (mr_ra_printf_bitfield (mr_ra_str, ptrdes, CINIT_BITMASK_DELIMITER));
 }
 
+/**
+ * Opens a structure with '{'. The closing brace is stored in the node for
+ * the post-order pass.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -96,6 +152,13 @@ cinit_printf_struct (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "{\n"));
 }
 
+/**
+ * Appends a function pointer by name, or as a typed address if the name can
+ * not be resolved.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -113,6 +176,13 @@ cinit_printf_func (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
     }
 }
 
+/**
+ * Opens a pointer as a compound literal '(type[]){'. The closing brace is
+ * stored in the node for the post-order pass.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -124,6 +194,13 @@ cinit_printf_pointer (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_printf (mr_ra_str, "(%s%s[]){\n", type, pointer));
 }
 
+/**
+ * Opens an anonymous union with an empty discriminator string and '{'. The
+ * closing brace is stored in the node for the post-order pass.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -132,6 +209,13 @@ cinit_printf_anon_union (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   return (mr_ra_append_string (mr_ra_str, "\"\", {\n"));
 }
 
+/**
+ * Appends a placeholder for a void node: '{}' for records, unions and
+ * arrays, NULL for pointers, 0 otherwise.
+ * @param mr_ra_str output string
+ * @param ptrdes node descriptor
+ * @return number of appended characters or -1 on error
+ */
 static int
 cinit_printf_void (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
@@ -186,6 +270,16 @@ static mr_ra_printf_t cinit_save_tbl[MR_TYPE_LAST] = {
   [MR_TYPE_NAMED_ANON_UNION] = cinit_printf_anon_union,
 };
 
+/**
+ * Prints the beginning of a node: indent, '.name = ', reference annotations
+ * in comments and the value. References and NULL pointers are printed as
+ * NULL.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 cinit_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -240,6 +334,15 @@ cinit_pre_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t *
   return (MR_SUCCESS);
 }
 
+/**
+ * Prints the end of a node: the closing bracket stored by the pre-order pass,
+ * a comma if a sibling follows, and a new line.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param mr_ra_str output string
+ * @return status
+ */
 static mr_status_t
 cinit_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t * mr_ra_str)
 {
@@ -257,6 +360,15 @@ cinit_post_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_rarray_t 
   return (MR_SUCCESS);
 }
 
+/**
+ * DFS visitor that prints a node in the CINIT format.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order
+ * @param context output string
+ * @return status
+ */
 static mr_status_t
 cinit_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -273,6 +385,11 @@ cinit_print_node (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t or
     }
 }
 
+/**
+ * Serializes a saved graph into the CINIT format (C designated initializers).
+ * @param ptrs saved graph
+ * @return newly allocated string or NULL on error
+ */
 char *
 mr_cinit_save (mr_ptrdes_t * ptrs)
 {

@@ -1,12 +1,28 @@
 #include <metaresc.h>
 #include <mr_hsort.h>
 
+/**
+ * Compares saved graphs of two elements for mr_generic_sort.
+ * @param x pointer on the saved graph of an element
+ * @param y pointer on the saved graph of another element
+ * @param context unused
+ * @return comparation sign
+ */
 static int
 mr_elements_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   return (mr_cmp_structs (*(mr_ptrdes_t**)x.ptr, *(mr_ptrdes_t**)y.ptr));
 }
 
+/**
+ * Sorts an array of elements of any registered type. Each element is saved
+ * into a graph, graphs are sorted with mr_cmp_structs and the elements are
+ * copied into the new order.
+ * @param data array to sort
+ * @param count number of elements
+ * @param key_type type name of the elements
+ * @return status
+ */
 mr_status_t
 mr_generic_sort (void * data, size_t count, char * key_type)
 {
@@ -57,6 +73,10 @@ mr_generic_sort (void * data, size_t count, char * key_type)
 }
 
 #define MR_TYPE_CMP_FUNC_NAME(TYPE) mr_ ## TYPE ## _cmp
+/*
+  Defines static int mr_<TYPE>_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
+  that compares values of TYPE pointed by x and y and returns the comparation sign.
+*/
 #define MR_TYPE_CMP_FUNC(TYPE)					\
   static int MR_TYPE_CMP_FUNC_NAME (TYPE)			\
     (const mr_ptr_t x, const mr_ptr_t y, const void * context)	\
@@ -72,6 +92,13 @@ typedef void * void_ptr;
 
 MR_FOREACH (MR_TYPE_CMP_FUNC, void_ptr, MR_BASIC_TYPES);
 
+/**
+ * Compares strings. NULL strings are ordered by pointer value.
+ * @param x pointer on a string
+ * @param y pointer on another string
+ * @param context unused
+ * @return comparation sign
+ */
 static int MR_TYPE_CMP_FUNC_NAME (string_t) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   string_t * _x = x.ptr;
@@ -81,6 +108,13 @@ static int MR_TYPE_CMP_FUNC_NAME (string_t) (const mr_ptr_t x, const mr_ptr_t y,
   return ((*_x > *_y) - (*_x < *_y));
 }
 
+/**
+ * Compares char arrays as strings.
+ * @param x char array
+ * @param y another char array
+ * @param context unused
+ * @return comparation sign
+ */
 static int MR_TYPE_CMP_FUNC_NAME (char_array) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   char * _x = x.ptr;
@@ -88,6 +122,11 @@ static int MR_TYPE_CMP_FUNC_NAME (char_array) (const mr_ptr_t x, const mr_ptr_t 
   return (strcmp (_x, _y));
 }
 
+/**
+ * Returns the comparison function for a basic type.
+ * @param mr_type Metaresc type
+ * @return comparison function or NULL if the type has none
+ */
 static mr_compar_fn_t
 mr_type_compar_fn (mr_type_t mr_type)
 {
@@ -105,6 +144,16 @@ mr_type_compar_fn (mr_type_t mr_type)
   return (NULL);
 }
 
+/**
+ * Sorts an array of a basic type with its comparison function, or with
+ * mr_generic_sort if the type is not basic.
+ * @param data array to sort
+ * @param count number of elements
+ * @param key_type type name of the elements, used for non-basic types
+ * @param mr_type Metaresc type of the elements or MR_TYPE_NONE
+ * @param element_size size of an element
+ * @return status
+ */
 mr_status_t
 mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_type, size_t element_size)
 {
@@ -159,6 +208,17 @@ mr_free_recursively (mr_ptrdes_t * ptrs)
   return (status);
 }
 
+/**
+ * DFS visitor that sets the address of a node in the copy from the address
+ * of its parent, keeping the offset of the node within the parent. Nodes
+ * with an address already set are not changed.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only pre-order is handled
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 calc_relative_addr (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -295,6 +355,12 @@ mr_copy_recursively (mr_ptrdes_t * ptrs, void * dst)
   return (MR_FAILURE);
 }
 
+/**
+ * Computes a hash of a memory block. The block may be unaligned.
+ * @param block memory block
+ * @param size size of the block
+ * @return hash value
+ */
 mr_hash_value_t
 mr_hash_block (const void * block, mr_size_t size)
 {
@@ -332,6 +398,17 @@ mr_hash_str (const char * str)
   return (str ? mr_hash_block (str, strlen (str)) : 1);
 }
 
+/**
+ * DFS visitor that computes the hash of a node from its value and the hashes
+ * of its children. The hash is stored in vt_uintptr of the node. All NaNs
+ * have the same hash.
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @param level depth of the node
+ * @param order DFS order, only post-order is handled
+ * @param context unused
+ * @return MR_SUCCESS
+ */
 static mr_status_t
 node_hash (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, void * context)
 {
@@ -437,6 +514,11 @@ node_hash (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, vo
   return (MR_SUCCESS);
 }
 
+/**
+ * Computes a hash of a saved graph.
+ * @param ptrs saved graph, may be NULL
+ * @return hash value, 0 for NULL
+ */
 mr_hash_value_t
 mr_hash_struct (mr_ptrdes_t * ptrs)
 {
@@ -456,6 +538,12 @@ mr_hash_struct (mr_ptrdes_t * ptrs)
   return (ptrs[1].vt_uintptr);
 }
 
+/**
+ * Compares two saved graphs node by node: structure, types and values.
+ * @param x saved graph
+ * @param y another saved graph
+ * @return comparation sign
+ */
 int
 mr_cmp_structs (mr_ptrdes_t * x, mr_ptrdes_t * y)
 {

@@ -19,6 +19,12 @@ TYPEDEF_STRUCT (mr_types_dep_t, ATTRIBUTES ( , "graph of types dependencies"),
                 (mr_ic_t, index, , "lookup by tdp"),
                 );
 
+/**
+ * Hash function for the index of structure types by type descriptor.
+ * @param x index of a type in types_dep->types
+ * @param context graph of type dependencies
+ * @return hash value of the type descriptor
+ */
 static mr_hash_value_t
 mr_tr_hash  (const mr_ptr_t x, const void * context)
 {
@@ -26,6 +32,13 @@ mr_tr_hash  (const mr_ptr_t x, const void * context)
   return ((uintptr_t)types_dep->types[x.uintptr].tdp);
 }
 
+/**
+ * Compares types of the dependency graph by type descriptor.
+ * @param x index of a type in types_dep->types
+ * @param y index of another type
+ * @param context graph of type dependencies
+ * @return comparation sign
+ */
 static int
 mr_tr_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -35,6 +48,13 @@ mr_tr_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return ((x_tdp > y_tdp) - (x_tdp < y_tdp));
 }
 
+/**
+ * Visitor for registered types that adds structures and unions to the
+ * graph of type dependencies.
+ * @param key type descriptor
+ * @param context graph of type dependencies
+ * @return status
+ */
 static mr_status_t
 mr_append_td  (mr_ptr_t key, void * context)
 {
@@ -53,6 +73,11 @@ mr_append_td  (mr_ptr_t key, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Builds the index of the types of the dependency graph.
+ * @param types_dep graph of type dependencies
+ * @return status
+ */
 static mr_status_t
 mr_udo_init_index (mr_types_dep_t * types_dep)
 {
@@ -80,6 +105,13 @@ TYPEDEF_STRUCT (mr_append_ref_t,
                 (int, idx),
                 );
 
+/**
+ * Visitor for the fields of a type that adds the type to the list of types
+ * containing the type of the field.
+ * @param key field descriptor
+ * @param context the graph and the index of the containing type
+ * @return status
+ */
 static mr_status_t
 mr_append_ref  (mr_ptr_t key, void * context)
 {
@@ -102,6 +134,13 @@ mr_append_ref  (mr_ptr_t key, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Builds the graph of type dependencies: for each type the list of types
+ * that have a field of this type. A spare element at the end of the types
+ * array is reserved as a lookup key.
+ * @param types_dep graph of type dependencies
+ * @return status
+ */
 static mr_status_t
 mr_udo_build_ref_graph (mr_types_dep_t * types_dep)
 {
@@ -125,6 +164,17 @@ mr_udo_build_ref_graph (mr_types_dep_t * types_dep)
   return (MR_SUCCESS);
 }
 
+/**
+ * Searches the types that contain a given type, directly or through other
+ * types, for a discriminator field with a given name. All found fields must
+ * have the same type.
+ * @param types_dep graph of type dependencies
+ * @param type_idx index of the type to start from
+ * @param visited flags of visited types
+ * @param field_name name of the discriminator field
+ * @param discriminator_type receives the type name of the discriminator
+ * @return status, failure if discriminators of different types are found
+ */
 static mr_status_t
 mr_udo_dfs (mr_types_dep_t * types_dep, int type_idx, bool * visited, char * field_name, char ** discriminator_type)
 {
@@ -152,6 +202,13 @@ mr_udo_dfs (mr_types_dep_t * types_dep, int type_idx, bool * visited, char * fie
   return (MR_SUCCESS);
 }
 
+/**
+ * Sets the type of untyped union discriminator overrides of a field to the
+ * type of its discriminator, found in the enclosing types.
+ * @param types_dep graph of type dependencies
+ * @param type_idx index of the type of the field
+ * @param fdp field descriptor of a union field
+ */
 static void
 mr_udo_detect_types (mr_types_dep_t * types_dep, int type_idx, mr_fd_t * fdp)
 {
@@ -184,6 +241,11 @@ mr_udo_detect_types (mr_types_dep_t * types_dep, int type_idx, mr_fd_t * fdp)
         }
 }
 
+/**
+ * Detects the types of union discriminator overrides of all fields of all
+ * structure types.
+ * @param types_dep graph of type dependencies
+ */
 static void
 mr_udo_foreach (mr_types_dep_t * types_dep)
 {
@@ -196,6 +258,10 @@ mr_udo_foreach (mr_types_dep_t * types_dep)
     }
 }
 
+/**
+ * Frees the graph of type dependencies.
+ * @param types_dep graph of type dependencies
+ */
 static void
 mr_udo_free (mr_types_dep_t * types_dep)
 {
@@ -211,6 +277,11 @@ mr_udo_free (mr_types_dep_t * types_dep)
     }
 }
 
+/**
+ * Sets the types of union discriminator overrides that have no type. The
+ * type is the type of the discriminator field found in the structures that
+ * contain the union.
+ */
 void mr_udo_init ()
 {
   mr_types_dep_t types_dep;

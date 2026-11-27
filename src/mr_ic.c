@@ -23,6 +23,13 @@
       mr_save (__ptr__, &__fd__);			\
     })
 
+/**
+ * Hash function for keys of a registered type, computed from the saved graph
+ * of the key.
+ * @param x key
+ * @param context type descriptor of the key
+ * @return hash value
+ */
 mr_hash_value_t
 mr_generic_hash (const mr_ptr_t x, const void * context)
 {
@@ -30,6 +37,13 @@ mr_generic_hash (const mr_ptr_t x, const void * context)
   return (MR_HASH_STRUCT (tdp, x.ptr));
 }
 
+/**
+ * Compares keys of a registered type by their saved graphs.
+ * @param x key
+ * @param y another key
+ * @param context type descriptor of the key
+ * @return comparation sign
+ */
 int
 mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -39,6 +53,13 @@ mr_generic_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 
 /* ----------------------- MR_IC_UNSORTED_ARRAY ----------------------- */
 
+/**
+ * Adds a key to an unsorted array. The unsorted array does not own its
+ * memory, so it is converted into a sorted array first.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_ic_unsorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -59,6 +80,13 @@ mr_ic_unsorted_array_add (mr_ic_t * ic, mr_ptr_t key)
   return (mr_ic_add (ic, key));
 }
 
+/**
+ * Deletes a key from an unsorted array. The array is converted into a
+ * sorted array first.
+ * @param ic indexed collection
+ * @param key key to delete
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_ic_unsorted_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -79,6 +107,12 @@ mr_ic_unsorted_array_del (mr_ic_t * ic, mr_ptr_t key)
   return (mr_ic_del (ic, key));
 }
 
+/**
+ * Finds a key in an unsorted array with a linear search.
+ * @param ic indexed collection
+ * @param key key to look for
+ * @return pointer on the found key or NULL
+ */
 mr_ptr_t *
 mr_ic_unsorted_array_find (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -89,6 +123,13 @@ mr_ic_unsorted_array_find (mr_ic_t * ic, mr_ptr_t key)
   return (NULL);
 }
 
+/**
+ * Calls a function for each key of an array in the stored order.
+ * @param ic indexed collection
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed
+ */
 mr_status_t
 mr_ic_unsorted_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
@@ -99,6 +140,14 @@ mr_ic_unsorted_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * conte
   return (MR_SUCCESS);
 }
 
+/**
+ * Makes an unsorted array over an external array of keys. The keys are not
+ * copied, the collection refers on the given array.
+ * @param ic indexed collection
+ * @param rarray array of keys
+ * @param size size of the array in bytes
+ * @return MR_SUCCESS
+ */
 mr_status_t
 mr_ic_unsorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
@@ -109,6 +158,10 @@ mr_ic_unsorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
   return (MR_SUCCESS);
 }
 
+/**
+ * Detaches an unsorted array from its keys. The keys are not freed.
+ * @param ic indexed collection
+ */
 void
 mr_ic_unsorted_array_free (mr_ic_t * ic)
 {
@@ -117,6 +170,15 @@ mr_ic_unsorted_array_free (mr_ic_t * ic)
   ic->items_count = 0;
 }
 
+/**
+ * Initializes an unsorted array collection. Without a comparison function
+ * and context the generic comparison of the key type is used.
+ * @param ic indexed collection
+ * @param compar_fn comparison function
+ * @param key_type type name of the keys
+ * @param context context for the comparison function, may be NULL
+ * @return status
+ */
 mr_status_t
 mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
@@ -169,6 +231,15 @@ mr_ic_unsorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_typ
 
 /* ----------------------- MR_IC_SORTED_ARRAY ----------------------- */
 
+/**
+ * Binary search in a sorted array.
+ * @param key key to look for
+ * @param rarray sorted array
+ * @param compar_fn comparison function
+ * @param context context for the comparison function
+ * @param idx receives the index of the found key or the insert position
+ * @return 0 if the key is found, comparation sign of the last comparison otherwise
+ */
 int
 mr_ic_sorted_array_find_idx (mr_ptr_t key, mr_ic_rarray_t * rarray, mr_compar_fn_t compar_fn, void * context, unsigned * idx)
 {
@@ -189,6 +260,12 @@ mr_ic_sorted_array_find_idx (mr_ptr_t key, mr_ic_rarray_t * rarray, mr_compar_fn
   return (diff);
 }
 
+/**
+ * Adds a key to a sorted array at its sorted position.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -207,6 +284,12 @@ mr_ic_sorted_array_add (mr_ic_t * ic, mr_ptr_t key)
   return (&ic->rarray.ra[idx]);
 }
 
+/**
+ * Deletes a key from a sorted array.
+ * @param ic indexed collection
+ * @param key key to delete
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -220,6 +303,12 @@ mr_ic_sorted_array_del (mr_ic_t * ic, mr_ptr_t key)
   return (MR_SUCCESS);
 }
 
+/**
+ * Finds a key in a sorted array with a binary search.
+ * @param ic indexed collection
+ * @param key key to look for
+ * @return pointer on the found key or NULL
+ */
 mr_ptr_t *
 mr_ic_sorted_array_find (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -234,6 +323,14 @@ TYPEDEF_STRUCT (mr_sort_context_t,
                 (typeof (((mr_ic_t*)0)->context.data.ptr), context_data_ptr, , "context pointer for sorting function"),
                 );
 
+/**
+ * Compares sort entries by key and then by the index in the input array,
+ * which makes the heap sort stable.
+ * @param x sort entry
+ * @param y another sort entry
+ * @param context sort context with the keys and the comparison function
+ * @return comparation sign
+ */
 static int
 mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
@@ -250,6 +347,14 @@ mr_sort_key_cmp (const mr_ptr_t x, const mr_ptr_t y, const void * context)
   return ((_x->uintptr > _y->uintptr) - (_x->uintptr < _y->uintptr));
 }
 
+/**
+ * Builds a sorted array from an array of keys. The keys are copied and
+ * sorted, duplicates are dropped, the first one is kept.
+ * @param ic indexed collection
+ * @param rarray array of keys
+ * @param size size of the array in bytes
+ * @return status
+ */
 mr_status_t
 mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
@@ -296,6 +401,10 @@ mr_ic_sorted_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
   return (MR_SUCCESS);
 }
 
+/**
+ * Frees the memory of a sorted array.
+ * @param ic indexed collection
+ */
 void
 mr_ic_sorted_array_free (mr_ic_t * ic)
 {
@@ -306,6 +415,15 @@ mr_ic_sorted_array_free (mr_ic_t * ic)
   ic->items_count = 0;
 }
 
+/**
+ * Initializes a sorted array collection. Without a comparison function
+ * and context the generic comparison of the key type is used.
+ * @param ic indexed collection
+ * @param compar_fn comparison function
+ * @param key_type type name of the keys
+ * @param context context for the comparison function, may be NULL
+ * @return status
+ */
 mr_status_t
 mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
@@ -358,6 +476,10 @@ mr_ic_sorted_array_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type,
 
 /* ----------------------- MR_IC_HASH ----------------------- */
 
+/**
+ * Frees the memory of a hash table.
+ * @param ic indexed collection
+ */
 void
 mr_ic_hash_free (mr_ic_t * ic)
 {
@@ -369,6 +491,13 @@ mr_ic_hash_free (mr_ic_t * ic)
   ic->items_count = 0;
 }
 
+/**
+ * Adds a key to a hash table with open addressing and linear probing. The
+ * table must have a free slot. The zero key is kept in the last slot.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL if the table is full
+ */
 static mr_ptr_t *
 mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -406,6 +535,12 @@ mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
   return (NULL);
 }
 
+/**
+ * Visitor that adds a key into another hash table.
+ * @param key key to add
+ * @param context destination hash table
+ * @return status
+ */
 static mr_status_t
 mr_ic_hash_index_visitor (mr_ptr_t key, void * context)
 {
@@ -414,6 +549,13 @@ mr_ic_hash_index_visitor (mr_ptr_t key, void * context)
   return ((NULL == add) ? MR_FAILURE : MR_SUCCESS);
 }
 
+/**
+ * Rebuilds a hash table from the keys of another collection. The table is
+ * sized to four times the number of keys.
+ * @param dst_ic destination hash table
+ * @param src_ic source collection
+ * @return status
+ */
 static mr_status_t
 mr_ic_hash_reindex (mr_ic_t * dst_ic, mr_ic_t * src_ic)
 {
@@ -444,6 +586,13 @@ mr_ic_hash_reindex (mr_ic_t * dst_ic, mr_ic_t * src_ic)
   return (mr_ic_foreach (src_ic, mr_ic_hash_index_visitor, dst_ic));
 }
 
+/**
+ * Builds a hash table from an array of keys.
+ * @param ic indexed collection
+ * @param rarray array of keys
+ * @param size size of the array in bytes
+ * @return status
+ */
 mr_status_t
 mr_ic_hash_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
@@ -462,6 +611,13 @@ mr_ic_hash_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
   return (status);
 }
 
+/**
+ * Adds a key to a hash table. The table is rebuilt with a bigger size when
+ * it is half full.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -484,6 +640,13 @@ mr_ic_hash_add (mr_ic_t * ic, mr_ptr_t key)
   return (mr_ic_hash_index_add (ic, key));
 }
 
+/**
+ * Deletes a key from a hash table and moves the following keys of the
+ * probe sequence to keep them reachable.
+ * @param ic indexed collection
+ * @param key key to delete
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_ic_hash_del (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -528,6 +691,12 @@ mr_ic_hash_del (mr_ic_t * ic, mr_ptr_t key)
   return (MR_SUCCESS);
 }
 
+/**
+ * Finds a key in a hash table.
+ * @param ic indexed collection
+ * @param key key to look for
+ * @return pointer on the found key or NULL
+ */
 mr_ptr_t *
 mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -556,6 +725,13 @@ mr_ic_hash_find (mr_ic_t * ic, mr_ptr_t key)
   return (NULL);
 }
 
+/**
+ * Calls a function for each key of a hash table.
+ * @param ic indexed collection
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed
+ */
 mr_status_t
 mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
@@ -575,6 +751,16 @@ mr_ic_hash_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
   return (MR_SUCCESS);
 }
 
+/**
+ * Initializes a hash table collection. Without hash and comparison functions
+ * and context the generic functions of the key type are used.
+ * @param ic indexed collection
+ * @param hash_fn hash function
+ * @param compar_fn comparison function
+ * @param key_type type name of the keys
+ * @param context context for the hash and comparison functions, may be NULL
+ * @return status
+ */
 mr_status_t
 mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
@@ -625,6 +811,13 @@ mr_ic_hash_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, ch
 
 /* ----------------------- MR_IC_STATIC_ARRAY ----------------------- */
 
+/**
+ * Adds a key to a small array embedded in the collection. A full array is
+ * converted into a sorted array.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -658,6 +851,12 @@ mr_ic_static_array_add (mr_ic_t * ic, mr_ptr_t key)
   return (add);
 }
 
+/**
+ * Deletes a key from an embedded array.
+ * @param ic indexed collection
+ * @param key key to delete
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_ic_static_array_del (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -672,6 +871,12 @@ mr_ic_static_array_del (mr_ic_t * ic, mr_ptr_t key)
   return (MR_SUCCESS);
 }
 
+/**
+ * Finds a key in an embedded array with a linear search.
+ * @param ic indexed collection
+ * @param key key to look for
+ * @return pointer on the found key or NULL
+ */
 mr_ptr_t *
 mr_ic_static_array_find (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -682,6 +887,13 @@ mr_ic_static_array_find (mr_ic_t * ic, mr_ptr_t key)
   return (NULL);
 }
 
+/**
+ * Calls a function for each key of an embedded array.
+ * @param ic indexed collection
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed
+ */
 mr_status_t
 mr_ic_static_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
@@ -692,6 +904,10 @@ mr_ic_static_array_foreach (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context
   return (MR_SUCCESS);
 }
 
+/**
+ * Clears an embedded array.
+ * @param ic indexed collection
+ */
 void
 mr_ic_static_array_free (mr_ic_t * ic)
 {
@@ -699,6 +915,14 @@ mr_ic_static_array_free (mr_ic_t * ic)
   memset (&ic->static_array, 0, sizeof (ic->static_array));
 }
 
+/**
+ * Fills an embedded array from an array of keys. Too many keys convert the
+ * collection into a sorted array.
+ * @param ic indexed collection
+ * @param rarray array of keys
+ * @param size size of the array in bytes
+ * @return status
+ */
 mr_status_t
 mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
@@ -720,6 +944,16 @@ mr_ic_static_array_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
   return (MR_SUCCESS);
 }
 
+/**
+ * Initializes an embedded array collection. Without a comparison function
+ * and context the generic comparison of the key type is used.
+ * @param ic indexed collection
+ * @param hash_fn unused
+ * @param compar_fn comparison function
+ * @param key_type type name of the keys
+ * @param context context for the comparison function, may be NULL
+ * @return status
+ */
 mr_status_t
 mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
@@ -771,6 +1005,12 @@ mr_ic_static_array_new (mr_ic_t * ic, mr_hash_fn_t hash_fn, mr_compar_fn_t compa
 
 /* ----------------------- MR_IC_RBTREE ----------------------- */
 
+/**
+ * Adds a key to a red-black tree.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -779,6 +1019,12 @@ mr_ic_rbtree_add (mr_ic_t * ic, mr_ptr_t key)
   return (add);
 }
 
+/**
+ * Deletes a key from a red-black tree.
+ * @param ic indexed collection
+ * @param key key to delete
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_ic_rbtree_del (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -787,6 +1033,12 @@ mr_ic_rbtree_del (mr_ic_t * ic, mr_ptr_t key)
   return (status);
 }
 
+/**
+ * Finds a key in a red-black or AVL tree.
+ * @param ic indexed collection
+ * @param key key to look for
+ * @return pointer on the found key or NULL
+ */
 mr_ptr_t *
 mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -797,6 +1049,13 @@ mr_ic_tree_find (mr_ic_t * ic, mr_ptr_t key)
           : NULL);
 }
 
+/**
+ * Calls a function for each key of a tree in the order of the node pool.
+ * @param ic indexed collection
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed
+ */
 mr_status_t
 mr_ic_tree_foreach_unsorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
@@ -808,12 +1067,23 @@ mr_ic_tree_foreach_unsorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * contex
   return (MR_SUCCESS);
 }
 
+/**
+ * Calls a function for each key of a tree in sorted order.
+ * @param ic indexed collection
+ * @param visit_fn function to call
+ * @param context context for the function
+ * @return status, failure if a call failed
+ */
 mr_status_t
 mr_ic_tree_foreach_sorted (mr_ic_t * ic, mr_visit_fn_t visit_fn, void * context)
 {
   return (mr_tree_walk (&ic->tree, visit_fn, context));
 }
 
+/**
+ * Frees the node pool of a tree.
+ * @param ic indexed collection
+ */
 void
 mr_ic_tree_free (mr_ic_t * ic)
 {
@@ -821,6 +1091,13 @@ mr_ic_tree_free (mr_ic_t * ic)
   mr_tree_free (&ic->tree);
 }
 
+/**
+ * Builds a tree from an array of keys. Of equal keys only the first is added.
+ * @param ic indexed collection
+ * @param rarray array of keys
+ * @param size size of the array in bytes
+ * @return status
+ */
 mr_status_t
 mr_ic_tree_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
 {
@@ -834,6 +1111,15 @@ mr_ic_tree_index (mr_ic_t * ic, mr_ptr_t * rarray, size_t size)
   return (MR_SUCCESS);
 }
 
+/**
+ * Initializes a red-black tree collection. Without a comparison function
+ * and context the generic comparison of the key type is used.
+ * @param ic indexed collection
+ * @param compar_fn comparison function
+ * @param key_type type name of the keys
+ * @param context context for the comparison function, may be NULL
+ * @return status
+ */
 mr_status_t
 mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
@@ -885,6 +1171,12 @@ mr_ic_rbtree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_re
 
 /* ----------------------- MR_IC_AVLTREE ----------------------- */
 
+/**
+ * Adds a key to an AVL tree.
+ * @param ic indexed collection
+ * @param key key to add
+ * @return pointer on the added or already present key, NULL on error
+ */
 mr_ptr_t *
 mr_ic_avltree_add (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -893,6 +1185,12 @@ mr_ic_avltree_add (mr_ic_t * ic, mr_ptr_t key)
   return (add);
 }
 
+/**
+ * Deletes a key from an AVL tree.
+ * @param ic indexed collection
+ * @param key key to delete
+ * @return status, failure if the key is not found
+ */
 mr_status_t
 mr_ic_avltree_del (mr_ic_t * ic, mr_ptr_t key)
 {
@@ -901,6 +1199,15 @@ mr_ic_avltree_del (mr_ic_t * ic, mr_ptr_t key)
   return (status);
 }
 
+/**
+ * Initializes an AVL tree collection. Without a comparison function
+ * and context the generic comparison of the key type is used.
+ * @param ic indexed collection
+ * @param compar_fn comparison function
+ * @param key_type type name of the keys
+ * @param context context for the comparison function, may be NULL
+ * @return status
+ */
 mr_status_t
 mr_ic_avltree_new (mr_ic_t * ic, mr_compar_fn_t compar_fn, char * key_type, mr_res_t * context)
 {
