@@ -1398,6 +1398,54 @@ following output.
 }
 ```
 
+#### Pointers on character array types
+A character array type such as `static_string_t` above needs no
+extra declaration when it is used for fields of a structure. The size
+of the field comes from the descriptor of the structure.
+
+A pointer on a character array type needs a type descriptor of the
+character array type. A descriptor of a pointer field knows only the
+size of the pointer, and the size of the elements comes from the
+descriptor of the type they have. Character array types are builtin
+C types, so Metaresc does not have descriptors for them. Declare one
+with the macro `MR_TYPEDEF_DESC_BI`, which produces descriptors for
+builtin types. Without a descriptor the size of the elements is not
+known, and the pointer is serialized as `NULL`.
+
+```c
+typedef char name_t[sizeof ("Metaresc")];
+typedef char code_t[4];
+
+MR_TYPEDEF_DESC_BI (name_t);
+
+TYPEDEF_STRUCT (record_t,
+		(name_t, name, , "char array field: no extra declaration needed"),
+		(name_t *, aliases, , "pointer on char array: needs MR_TYPEDEF_DESC_BI (name_t)", { "aliases_count" }, "count_field_name"),
+		(int, aliases_count),
+		(code_t *, code, , "pointer on char array without descriptor"));
+```
+
+Serialization of `record_t` with `.aliases = (name_t[]){ "MR",
+"reflect" }`, `.aliases_count = 2` and `.code = (code_t[]){ "abc" }`
+into C-init format produces the following output. `code` is lost,
+because `code_t` has no descriptor.
+
+```c
+{
+  .name = "Metaresc",
+  .aliases = (name_t[]){
+    "MR",
+    "reflect"
+  },
+  .aliases_count = 2,
+  .code = NULL
+}
+```
+
+`MR_TYPEDEF_DESC_BI` may be placed in a header next to the `typedef`.
+Every compilation unit that includes the header gets its own copy of
+the descriptor, and only the first one is registered.
+
 ### Union type declaration
 Union declaration is matching structure type declaration on 100%. Use
 macro `TYPEDEF_UNION` for union type declaration. Everything that
