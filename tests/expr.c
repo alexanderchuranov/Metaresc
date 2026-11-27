@@ -26,24 +26,20 @@ START_TEST (parse_bits_op2) { ASSERT_LOAD_EXPR (int, 2 | 5 * 8); } END_TEST
   expr.c is built with -ffinite-math-only, so the values are finite.
 */
 TYPEDEF_STRUCT (keyword_fields_t,
+                (bool, t),
+                (bool, nil),
                 (int, i),
                 (double, inf),
                 (complex double, nan),
-                (bool, t),
-                (bool, nil),
                 );
 
-#define KEYWORD_FIELDS_VAL { .i = 1, . inf = 2.3, .nan = 4.5I + 6.7, .t = true, .nil = true }
+#define KEYWORD_FIELDS_VAL { . i = 1, . inf = 2.3, . nan = 4.5I + 6.7, . t = true, . nil = true }
 
 START_TEST (parse_keyword_field_names) {
   char text[] = MR_STRINGIFY_READONLY (KEYWORD_FIELDS_VAL);
   keyword_fields_t x, orig = KEYWORD_FIELDS_VAL;
   memset (&x, 0, sizeof (x));
   ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (keyword_fields_t, text, &x), "load of %s failed", text);
-  (void)MR_FPRINT (stderr, (keyword_fields_t, &x), (keyword_fields_t, &orig));
-  mr_res_t a = { .type = "uint8_t", .mr_size = sizeof (x), .data.ptr = &x, };
-  mr_res_t b = { .type = "uint8_t", .mr_size = sizeof (orig), .data.ptr = &orig, };
-  (void)MR_FPRINT (stderr, (mr_res_t, &a), (mr_res_t, &b));
   ck_assert_msg ((0 == memcmp (&x, &orig, sizeof (x))), "load of %s gave wrong values", text);
   ALL_METHODS (ASSERT_SAVE_LOAD, keyword_fields_t, &orig);
 } END_TEST
