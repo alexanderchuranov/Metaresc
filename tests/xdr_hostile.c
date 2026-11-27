@@ -118,10 +118,54 @@ START_TEST (oversized_int_array_rejected)
   MR_FREE (ra.data.ptr);
 } END_TEST
 
+/*
+  A string and a pointer start with a byte of flags (an XDR unit of 4 bytes).
+  The stream below has flags for both fields, followed by a reference index
+  if a flag says that the node is a reference.
+*/
+TYPEDEF_STRUCT (hostile_flags_t, (char *, str), (int32_t *, ptr));
+
+static mr_status_t
+load_with_flags (uint32_t str_flags, uint32_t ptr_flags)
+{
+  XDR xdrs;
+  mr_rarray_t ra = { .type = "uint8_t" };
+  uint32_t ref_idx = 1;
+
+  mr_xdrra_create (&xdrs, &ra, XDR_ENCODE);
+  ck_assert (xdr_uint32_t (&xdrs, &str_flags)); /* the same encoding as xdr_uint8_t */
+  if (str_flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+    ck_assert (xdr_uint32_t (&xdrs, &ref_idx));
+  ck_assert (xdr_uint32_t (&xdrs, &ptr_flags));
+  if (ptr_flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+    ck_assert (xdr_uint32_t (&xdrs, &ref_idx));
+
+  hostile_flags_t restored;
+  memset (&restored, 0, sizeof (restored));
+  mr_status_t status = MR_LOAD_XDR_RA (hostile_flags_t, &ra, &restored);
+  if (MR_SUCCESS == status)
+    MR_FREE_RECURSIVELY (hostile_flags_t, &restored);
+  MR_FREE (ra.data.ptr);
+  return (status);
+}
+
+START_TEST (unexpected_flags_rejected)
+{
+  ck_assert_msg (MR_SUCCESS == load_with_flags (MR_IS_NULL, MR_IS_NULL), "NULL fields failed to load");
+  ck_assert_msg (MR_SUCCESS == load_with_flags (MR_IS_NULL | MR_IS_UNNAMED, MR_IS_NULL | MR_IS_REFERENCED),
+                 "flags that XDR save writes failed to load");
+  ck_assert_msg (MR_FAILURE == load_with_flags (MR_IS_NULL | 0x80, MR_IS_NULL), "unknown flag of a string was accepted");
+  ck_assert_msg (MR_FAILURE == load_with_flags (MR_IS_NULL, MR_IS_NULL | 0x80), "unknown flag of a pointer was accepted");
+  ck_assert_msg (MR_FAILURE == load_with_flags (MR_IS_NULL | MR_IS_TYPED, MR_IS_NULL), "MR_IS_TYPED was accepted");
+  ck_assert_msg (MR_FAILURE == load_with_flags (MR_IS_NULL, MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE),
+                 "both reference flags were accepted");
+} END_TEST
+
 MAIN_TEST_SUITE ((valid_char_array_roundtrips, "valid char array round-trips"),
                  (valid_int_array_roundtrips, "valid int array round-trips"),
                  (oversized_char_array_rejected, "oversized char array length rejected"),
-                 (oversized_int_array_rejected, "oversized int array count rejected")
+                 (oversized_int_array_rejected, "oversized int array count rejected"),
+                 (unexpected_flags_rejected, "pointer flags that XDR save does not write are rejected")
                  );
 
 #else /* HAVE_RPC_TYPES_H */

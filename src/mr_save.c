@@ -1213,13 +1213,32 @@ mr_get_fd_by_offset (mr_td_t * tdp, __typeof__ (((mr_fd_t*)0)->offset) offset)
   return (tdp->param.struct_param.fields[idx]);
 }
 
+/**
+ * XDR serializes the pointer in a field MR_OPAQUE_DATA as a single block of bytes.
+ * @param ptrdes descriptor of a pointer node
+ * @return true if the node is a field MR_OPAQUE_DATA
+ */
+bool
+mr_is_opaque_data (mr_ptrdes_t * ptrdes)
+{
+  static mr_hashed_string_t opaque_data = { .str = MR_OPAQUE_DATA_STR, };
+  mr_fd_t * fdp = ptrdes->fdp;
+
+  if ((NULL == fdp) || (NULL == fdp->name.str))
+    return (false);
+  /* names of registered fields are hashed, so most of the fields are rejected without a comparison of strings */
+  if ((0 != fdp->name.hash_value) && (fdp->name.hash_value != mr_hashed_string_get_hash (&opaque_data)))
+    return (false);
+  return (0 == strcmp (fdp->name.str, MR_OPAQUE_DATA_STR));
+}
+
 void
 mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   memset (ptrdes, 0, sizeof (*ptrdes));
 
   mr_fd_t * fdp = ptrs->ra[idx].fdp;
-  if (fdp->res_type == NULL)
+  if ((NULL == fdp) || (NULL == fdp->res_type))
     return;
 
   bool field_by_name = ((0 == strcmp ("size_field_name", fdp->res_type)) || (0 == strcmp ("count_field_name", fdp->res_type)));
@@ -1227,10 +1246,8 @@ mr_pointer_get_size_ptrdes (mr_ptrdes_t * ptrdes, mr_idx_t idx, mr_ra_ptrdes_t *
 
   if (!field_by_name && !field_by_offset)
     return;
-
-  if (field_by_name)
-    if (mr_get_any_fd_by_name (fdp->res.string, NULL) == NULL)
-      return; /* quit if size field is not defined */
+  if (field_by_name && (NULL == fdp->res.string))
+    return;
 
   mr_idx_t parent;
   /* traverse through parents up to first structure */
@@ -1807,16 +1824,8 @@ mr_save_pointer (mr_save_data_t * mr_save_data)
             ptrdes->MR_SIZE *= element_size;
         }
 
-      if (ptrdes->fdp->name.str != NULL)
-        if (0 == strcmp (ptrdes->fdp->name.str, MR_OPAQUE_DATA_STR))
-          {
-            if (ptrdes->MR_SIZE == 0)
-              ptrdes->flags |= MR_IS_NULL;
-            else
-              ptrdes->flags |= MR_IS_OPAQUE_DATA;
-          }
-
-      if (!(ptrdes->flags & MR_IS_OPAQUE_DATA) &&
+      /* opaque data is a block of bytes of any size, other pointers hold whole elements */
+      if (mr_is_opaque_data (ptrdes) ? (0 == ptrdes->MR_SIZE) :
           ((0 == element_size) || (ptrdes->MR_SIZE < element_size)))
         ptrdes->flags |= MR_IS_NULL;
     }
@@ -1861,7 +1870,8 @@ mr_save (void * data, mr_fd_t * fdp)
         if ((MR_TYPE_POINTER == mr_save_data.ptrs.ra[i].mr_type) &&
             (MR_TYPE_VOID != mr_save_data.ptrs.ra[i].mr_type_aux) &&
             (MR_TYPE_NONE != mr_save_data.ptrs.ra[i].mr_type_aux) &&
-            !(mr_save_data.ptrs.ra[i].flags & (MR_IS_NULL | MR_IS_OPAQUE_DATA)))
+            !(mr_save_data.ptrs.ra[i].flags & MR_IS_NULL) &&
+            !mr_is_opaque_data (&mr_save_data.ptrs.ra[i]))
           {
             nodes_added = mr_save_pointer_content (&mr_save_data, i);
             if (nodes_added == 0)

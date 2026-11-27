@@ -58,9 +58,18 @@ mr_ref_target_is_valid (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, mr_idx_t ref_idx)
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
   mr_ptrdes_t * target = &ptrs->ra[ref_idx];
 
-  /* a reference on content takes the value of a pointer from a string node */
+  /*
+    A reference on content takes the value of a pointer from a string node.
+    Characters of a string are accessible through pointers on bytes only.
+  */
   if (ptrdes->flags & MR_IS_CONTENT_REFERENCE)
-    return (MR_TYPE_STRING == target->mr_type);
+    {
+      if (MR_TYPE_STRING != target->mr_type)
+        return (false);
+      if (MR_TYPE_POINTER != ptrdes->mr_type)
+        return (true);
+      return ((MR_TYPE_VOID == ptrdes->mr_type_aux) || (MR_TYPE_CHAR_ARRAY == ptrdes->mr_type_aux));
+    }
 
   /* a string refers to the characters of another string */
   if (MR_TYPE_STRING == ptrdes->mr_type)
@@ -154,7 +163,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   mr_idx_t max_idx = 0;
   mr_idx_t * table;
 
-  for (i = 0; i < count; ++i)
+  for (i = 1; i < count; ++i)
     if (ptrs->ra[i].idx > max_idx)
       max_idx = ptrs->ra[i].idx;
 
@@ -165,7 +174,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
-  for (i = 0; i < count; ++i)
+  for (i = 1; i < count; ++i)
     if (ptrs->ra[i].idx != MR_NULL_IDX)
       {
         /* checking indexes collision */
@@ -177,7 +186,7 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   mr_status_t status = MR_SUCCESS;
 
   /* set all cross refernces */
-  for (i = 0; (MR_SUCCESS == status) && (i < count); ++i)
+  for (i = 1; (MR_SUCCESS == status) && (i < count); ++i)
     if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
       {
         if (ptrs->ra[i].first_child > max_idx)
@@ -198,6 +207,8 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
         /* the problem is reported, the failed load frees the pointers that were set */
         if (MR_SUCCESS != mr_set_crossref (ptrs, i, idx))
           status = MR_FAILURE;
+        else
+          ptrs->ra[i].first_child = idx; /* the validation of the loaded data needs the node, not the index of the document */
       }
   
   MR_FREE (table);
@@ -782,6 +793,7 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   mr_fd_t fd_ = *ptrs->ra[idx].fdp;
   mr_status_t status = MR_SUCCESS;
   mr_idx_t i, count = fd_.stype.dim.dim[0];
+  mr_idx_t array_idx = idx;
 
   if (0 == count)
     {
@@ -830,6 +842,10 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       if (status != MR_SUCCESS)
         break;
     }
+
+  /* a size field of a single dimensional array declares the number of loaded elements */
+  if (1 == ptrs->ra[array_idx].fdp->stype.dim.dim_count)
+    ptrs->ra[array_idx].MR_SIZE = i * fd_.stype.size;
   return (status);
 }
 
@@ -841,6 +857,9 @@ mr_load_array (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 static mr_size_t
 mr_pointer_element_size (mr_ptrdes_t * ptrdes)
 {
+  /* a pointer on void does not have elements, whatever descriptor is attached to it */
+  if ((MR_TYPE_VOID == ptrdes->mr_type_aux) || (MR_TYPE_NONE == ptrdes->mr_type_aux))
+    return (0);
   mr_size_t element_size = mr_type_size (ptrdes->mr_type_aux);
   mr_td_t * tdp = ptrdes->fdp ? ptrdes->fdp->stype.tdp : NULL;
   if (0 == element_size)
@@ -848,36 +867,177 @@ mr_pointer_element_size (mr_ptrdes_t * ptrdes)
   return (element_size);
 }
 
-void
-mr_pointer_set_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
+/**
+ * Reads a size field of a pointer or of an array as a number of bytes.
+ * A size field of a document may be of any integer type, so the value is
+ * read without truncation and checked to fit into mr_size_t.
+ * @param size_field descriptor of the size field (mr_pointer_get_size_ptrdes)
+ * @param element_size size of an element, zero if it is not known
+ * @param bytes the number of bytes that the size field declares
+ * @return MR_SUCCESS if the value is not negative and fits into mr_size_t
+ */
+static mr_status_t
+mr_get_size_field_bytes (mr_ptrdes_t * size_field, mr_size_t element_size, mr_size_t * bytes)
 {
-  mr_ptrdes_t src, dst;
-  mr_pointer_get_size_ptrdes (&dst, idx, ptrs);
-      
-  if (dst.data.ptr != NULL)
+  const mr_size_t max_size = ~(mr_size_t)0;
+  mr_intmax_t value = 0;
+  mr_ptrdes_t dst = {
+    .data.ptr = &value,
+    .mr_type = MR_TYPE_DETECT (__typeof__ (value)),
+  };
+  mr_assign_int (&dst, size_field);
+
+  /* a count field (count_field_offset or count_field_name) holds the number of elements */
+  mr_size_t scale = ((size_field->vt_string[0] == 'c') && (0 != element_size)) ? element_size : 1;
+  if ((value < 0) || (value > max_size / scale))
     {
-      __typeof__ (ptrs->ra[idx].MR_SIZE) size = ptrs->ra[idx].MR_SIZE;
-      src.data.ptr = &size;
-      src.mr_type = MR_TYPE_DETECT (__typeof__ (size));
-      /*
-	if pointer discriminated by count (count_field_offset or count_field_name
-	fields of mr_ptr_t) we need to scale size by element_size
-      */
-      if (dst.vt_string[0] == 'c')
-        {
-          mr_size_t element_size = mr_pointer_element_size (&ptrs->ra[idx]);
-          if (0 != element_size)
-            size /= element_size;
-        }
-      mr_assign_int (&dst, &src);
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_WRONG_SIZE_FIELD, (long long)value);
+      return (MR_FAILURE);
     }
+
+  *bytes = value * scale;
+  return (MR_SUCCESS);
+}
+
+/**
+ * Checks the size field of a pointer or of an array against the size of
+ * the loaded data. A serializable size field must match the loaded data.
+ * A size field of type void is not in a document, so it is set from
+ * the loaded data.
+ * @param size_field descriptor of the size field (mr_pointer_get_size_ptrdes)
+ * @param size number of loaded bytes
+ * @param element_size size of an element, zero if it is not known
+ * @return MR_SUCCESS if the size field is consistent with the loaded data
+ */
+static mr_status_t
+mr_validate_size_field (mr_ptrdes_t * size_field, mr_size_t size, mr_size_t element_size)
+{
+  if (MR_TYPE_VOID == size_field->mr_type)
+    {
+      mr_size_t value = size;
+      mr_ptrdes_t src = {
+        .data.ptr = &value,
+        .mr_type = MR_TYPE_DETECT (__typeof__ (value)),
+      };
+      /* a count field (count_field_offset or count_field_name) holds the number of elements */
+      if ((size_field->vt_string[0] == 'c') && (0 != element_size))
+        value /= element_size;
+      mr_assign_int (size_field, &src);
+      return (MR_SUCCESS);
+    }
+
+  mr_size_t doc_size = 0;
+  if (MR_SUCCESS != mr_get_size_field_bytes (size_field, element_size, &doc_size))
+    return (MR_FAILURE);
+
+  if (doc_size != size)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_SIZE_MISMATCH, doc_size, size);
+      return (MR_FAILURE);
+    }
+  return (MR_SUCCESS);
+}
+
+/**
+ * Number of bytes that are available for a pointer that refers on a node,
+ * starting from the address of this node.
+ * @param ptrs array with descriptors of loaded data
+ * @param ref_idx index of the referenced node
+ * @param content true if the reference is on a content of a string node
+ * @return number of bytes, zero if the extent is not known
+ */
+static mr_size_t
+mr_ref_target_extent (mr_ra_ptrdes_t * ptrs, mr_idx_t ref_idx, bool content)
+{
+  mr_ptrdes_t * target = &ptrs->ra[ref_idx];
+
+  if (NULL == target->data.ptr)
+    return (0);
+
+  /* content of a string is the block that the string points to, mr_set_crossref accepts only string targets for content */
+  if (content)
+    {
+      char * str = *(char**)target->data.ptr;
+      return (str ? strlen (str) + 1 : 0);
+    }
+
+  /* an element of a block that is owned by a pointer or of an array extends up to the end of the block */
+  mr_idx_t parent = target->parent;
+  if ((parent != MR_NULL_IDX) && (NULL != ptrs->ra[parent].data.ptr) &&
+      ((MR_TYPE_POINTER == ptrs->ra[parent].mr_type) || (MR_TYPE_ARRAY == ptrs->ra[parent].mr_type)))
+    {
+      /*
+        a row of a multi dimensional array is a part of the block of the outermost array,
+        MR_SIZE of the outermost array is the size of the whole block
+      */
+      if (MR_TYPE_ARRAY == ptrs->ra[parent].mr_type)
+        while ((ptrs->ra[parent].parent != MR_NULL_IDX) &&
+               (MR_TYPE_ARRAY == ptrs->ra[ptrs->ra[parent].parent].mr_type))
+          parent = ptrs->ra[parent].parent;
+
+      /* the block starts with the first element (the first row starts at the same address) */
+      mr_idx_t first_child = ptrs->ra[parent].first_child;
+      if (MR_NULL_IDX == first_child)
+        return (0);
+
+      char * start = ptrs->ra[first_child].data.ptr;
+      if ((char*)target->data.ptr < start)
+        return (0);
+      mr_offset_t offset = (char*)target->data.ptr - start;
+      mr_size_t extent = ptrs->ra[parent].MR_SIZE;
+      return (offset < extent ? extent - offset : 0);
+    }
+
+  mr_size_t size = mr_type_size (target->mr_type);
+  mr_td_t * tdp = target->fdp ? target->fdp->stype.tdp : NULL;
+  if ((0 == size) && tdp && (((MR_TYPED_TYPES >> target->mr_type) & 1)))
+    size = tdp->size;
+  if ((0 == size) && target->fdp)
+    size = target->fdp->stype.size;
+  return (size);
+}
+
+/**
+ * A pointer that refers on a node does not own a block, but it must not
+ * declare more data than there is in the block that it refers on.
+ * @param idx node index of a pointer
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS if the declared size fits into the referenced block
+ */
+static mr_status_t
+mr_validate_reference_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
+{
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+  mr_size_t element_size = mr_pointer_element_size (ptrdes);
+  mr_ptrdes_t src;
+  mr_pointer_get_size_ptrdes (&src, idx, ptrs);
+
+  mr_size_t declared = element_size; /* a pointer without a size field points on a single element */
+  if (src.data.ptr != NULL)
+    {
+      if (MR_TYPE_VOID == src.mr_type)
+        return (MR_SUCCESS); /* there is nothing declared in a document */
+      if (MR_SUCCESS != mr_get_size_field_bytes (&src, element_size, &declared))
+        return (MR_FAILURE);
+    }
+
+  /* mr_set_crossrefs replaced the index of the document with the index of the target node and checked its type */
+  bool content = ptrdes->flags & MR_IS_CONTENT_REFERENCE;
+  mr_size_t available = mr_ref_target_extent (ptrs, ptrdes->first_child, content);
+  if (declared > available)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_REFERENCE_SIZE_MISMATCH, declared, available);
+      return (MR_FAILURE);
+    }
+  return (MR_SUCCESS);
 }
 
 /**
  * Checks that a pointer that was loaded from a document has the size that the
  * document declares in the size field. The size field of type void is updated
- * to the size of loaded data. If a document has no size field,
- * then the size is set by the loader and there is nothing to check.
+ * to the size of loaded data. A pointer without a size field points on a
+ * single element. A pointer that refers on another node must fit into
+ * the referenced block.
  * @param idx node index of a pointer
  * @param ptrs array with descriptors of loaded data
  * @return MR_SUCCESS if the size field is consistent with the loaded data
@@ -887,45 +1047,31 @@ mr_validate_pointer_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 {
   mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
 
-  /* references and nulls do not own a block, and there are no loaded data in a pointer without content */
-  if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+  /* a reference is set by the loader of references even if the node is flagged as NULL */
+  if (ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+    return (mr_validate_reference_size (idx, ptrs));
+  if (ptrdes->flags & MR_IS_NULL)
     return (MR_SUCCESS);
-  if ((MR_NULL_IDX == ptrdes->first_child) || (NULL == ptrdes->data.ptr) || (NULL == *(void**)ptrdes->data.ptr))
-    return (MR_SUCCESS);
-
-  mr_ptrdes_t src, dst;
-  mr_pointer_get_size_ptrdes (&src, idx, ptrs);
-  if (NULL == src.data.ptr)
-    return (MR_SUCCESS);
-
-  mr_size_t size = ptrdes->MR_SIZE;
   /*
-    if pointer discriminated by count (count_field_offset or count_field_name
-    fields of mr_ptr_t) we need to scale size by element_size
+    there are no loaded data in a pointer without content,
+    but opaque data are loaded as a block of bytes without child nodes
   */
-  if (src.vt_string[0] == 'c')
+  if (((MR_NULL_IDX == ptrdes->first_child) && !mr_is_opaque_data (ptrdes)) ||
+      (NULL == ptrdes->data.ptr) || (NULL == *(void**)ptrdes->data.ptr))
+    return (MR_SUCCESS);
+
+  mr_size_t element_size = mr_pointer_element_size (ptrdes);
+  mr_ptrdes_t src;
+  mr_pointer_get_size_ptrdes (&src, idx, ptrs);
+  if (src.data.ptr != NULL)
+    return (mr_validate_size_field (&src, ptrdes->MR_SIZE, element_size));
+
+  /* nothing declares the size, so the pointer owns a single element */
+  if ((0 != element_size) && (ptrdes->MR_SIZE != element_size))
     {
-      mr_size_t element_size = mr_pointer_element_size (ptrdes);
-      if (0 != element_size)
-        size /= element_size;
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_POINTER_SIZE_MISMATCH, element_size, ptrdes->MR_SIZE);
+      return (MR_FAILURE);
     }
-
-  if (MR_TYPE_VOID == src.mr_type)
-    mr_pointer_set_size (idx, ptrs);
-  else
-    {
-      mr_size_t doc_size = 0;
-      dst.data.ptr = &doc_size;
-      dst.mr_type = MR_TYPE_DETECT (__typeof__ (doc_size));
-      mr_assign_int (&dst, &src);
-
-      if (doc_size != size)
-	{
-	  MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_POINTER_SIZE_MISMATCH, doc_size, size);
-	  return (MR_FAILURE);
-	}
-    }
-
   return (MR_SUCCESS);
 }
 
@@ -950,10 +1096,22 @@ mr_validate_union_branch (mr_idx_t idx, mr_save_data_t * mr_save_data)
   if (MR_NULL_IDX == ptrs->ra[idx].first_child)
     return (MR_SUCCESS);
 
-  /* the same lookup of a field descriptor of the union as in mr_save_union */
+  /*
+    The same lookup of a field descriptor of the union as in mr_save_union.
+    Elements of arrays and pointers are saved with temporary descriptors,
+    and mr_save_union takes the descriptor of the array or pointer field with
+    the discriminator. The loaders replace temporary descriptors with
+    the descriptor of the type (mr_ptr_fd) on exit, so these are skipped too.
+    A root union has no field with a discriminator in both cases: text loaders
+    validate before the temporary descriptor of the root is replaced, and XDR
+    replaces it with mr_ptr_fd.
+  */
   for (parent = idx; parent != MR_NULL_IDX; parent = ptrs->ra[parent].parent)
-    if (ptrs->ra[parent].fdp && !ptrs->ra[parent].fdp->non_persistent)
-      break;
+    {
+      mr_fd_t * fdp = ptrs->ra[parent].fdp;
+      if (fdp && !fdp->non_persistent && !(fdp->stype.tdp && (fdp == &fdp->stype.tdp->mr_ptr_fd)))
+        break;
+    }
   if (MR_NULL_IDX == parent)
     return (MR_SUCCESS);
 
@@ -967,12 +1125,39 @@ mr_validate_union_branch (mr_idx_t idx, mr_save_data_t * mr_save_data)
   for (child = ptrs->ra[idx].first_child; child != MR_NULL_IDX; child = ptrs->ra[child].next)
     if (!(ptrs->ra[child].flags & MR_IS_NULL) && (ptrs->ra[child].fdp != discriminated_fdp))
       {
-        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNION_BRANCH,
+        MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_BRANCH,
                     ptrs->ra[child].fdp ? ptrs->ra[child].fdp->name.str : "unknown",
                     discriminated_fdp ? discriminated_fdp->name.str : "unknown");
         return (MR_FAILURE);
       }
   return (MR_SUCCESS);
+}
+
+/**
+ * A single dimensional array may have a size field in the same way as
+ * a pointer. The size field limits the number of serialized elements.
+ * A serializable size field must match the number of loaded elements,
+ * and a size field of type void is set from the loaded data.
+ * @param idx node index of an array
+ * @param ptrs array with descriptors of loaded data
+ * @return MR_SUCCESS if the size field is consistent with the loaded data
+ */
+static mr_status_t
+mr_validate_array_size (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
+{
+  mr_ptrdes_t * ptrdes = &ptrs->ra[idx];
+  mr_fd_t * fdp = ptrdes->fdp;
+
+  /* only arrays that are fields of a structure have a size field */
+  if ((NULL == fdp) || fdp->non_persistent || (fdp->stype.dim.dim_count != 1) || (0 == fdp->stype.dim.dim[0]))
+    return (MR_SUCCESS);
+
+  mr_ptrdes_t src;
+  mr_pointer_get_size_ptrdes (&src, idx, ptrs);
+  if (NULL == src.data.ptr)
+    return (MR_SUCCESS);
+
+  return (mr_validate_size_field (&src, ptrdes->MR_SIZE, fdp->stype.size / fdp->stype.dim.dim[0]));
 }
 
 /**
@@ -1013,11 +1198,14 @@ mr_validate_load (mr_ra_ptrdes_t * ptrs)
         status = mr_validate_pointer_size (i, ptrs);
         break;
 
+      case MR_TYPE_ARRAY:
+        status = mr_validate_array_size (i, ptrs);
+        break;
+
       case MR_TYPE_UNION:
       case MR_TYPE_ANON_UNION:
       case MR_TYPE_NAMED_ANON_UNION:
-        if (!(ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
-          status = mr_validate_union_branch (i, &mr_save_data);
+        status = mr_validate_union_branch (i, &mr_save_data);
         break;
 
       default:
@@ -1109,9 +1297,9 @@ mr_load_pointer_postponed (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     }
   
   /* load recursively */
-  count = 0;
+  mr_idx_t i = 0;
   for (node = ptrs->ra[idx].first_child; (MR_SUCCESS == status) && (node != MR_NULL_IDX); node = ptrs->ra[node].next)
-    status = mr_load (*data + count++ * fd_.stype.size, &fd_, node, ptrs);
+    status = mr_load (*data + i++ * fd_.stype.size, &fd_, node, ptrs); /* mr_load sets MR_SIZE of the element */
 
   ptrs->ra[idx].MR_SIZE = count * fd_.stype.size;
   
@@ -1232,7 +1420,7 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 
   ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fdp = fdp;
-  ptrs->ra[idx].mr_size = fdp->stype.size;
+  ptrs->ra[idx].MR_SIZE = fdp->stype.size;
   ptrs->ra[idx].mr_type = fdp->stype.mr_type;
   ptrs->ra[idx].mr_type_aux = fdp->stype.mr_type_aux;
 
