@@ -73,20 +73,27 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
       dst[length++] = substr->str[i];
     else
       {
+        /* the escape sequence for the messages, strncpy does not terminate a copy of the full size */
         char esc[ESC_SIZE + 1];
         strncpy (esc, &substr->str[i], sizeof (esc) - 1);
+        esc[sizeof (esc) - 1] = 0;
         char * semicolon = strchr (esc, ';');
         if (semicolon)
           semicolon[1] = 0;
-        else
-          esc[sizeof (esc) - 1] = 0;
 
         if ('#' == substr->str[i + 1])
           {
             int32_t code = 0;
             int size = 0;
-            if (1 != sscanf (&substr->str[i], XML_QUOTE_CHAR_PATTERN "%n", &code, &size))
-              MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_XML_ESC, esc);
+            /*
+              sscanf returns 1 once the code is read, but sets size only if the closing ';' matches too.
+              Without the size the loop would not advance and would write past the end of dst.
+            */
+            if ((1 != sscanf (&substr->str[i], XML_QUOTE_CHAR_PATTERN "%n", &code, &size)) || (size <= 0))
+              {
+                MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_XML_ESC, esc);
+                dst[length++] = substr->str[i];
+              }
             else
               {
                 i += size - 1; /* one more +1 in the loop */

@@ -18,7 +18,7 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
     if (ptrs->ra[i].idx > max_idx)
       max_idx = ptrs->ra[i].idx;
 
-  table = MR_CALLOC (max_idx + 1, sizeof (table[0]));
+  table = MR_CALLOC ((size_t)max_idx + 1, sizeof (table[0])); /* max_idx + 1 wraps around in mr_idx_t */
   if (NULL == table)
     return;
 
@@ -63,7 +63,8 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
   mr_idx_t idx = mr_add_ptr_to_list (ptrs);
   if (MR_NULL_IDX == idx)
     return (MR_FAILURE);
-  mr_add_child (ptrs, *parent, idx);
+  if (MR_SUCCESS != mr_load_add_child (ptrs, *parent, idx))
+    return (MR_FAILURE);
 
   ptrs->ra[idx].flags = unnamed ? MR_IS_UNNAMED : MR_NO_FLAGS;
   ptrs->ra[idx].fdp = name_fd;

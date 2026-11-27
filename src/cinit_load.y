@@ -54,7 +54,8 @@
 	    int size;
 	    if (c > 0)
 	      dst[length++] = c;
-	    else if (1 == sscanf (&substr->str[i], "%o%n", &c, &size))
+	    /* an octal escape has at most 3 digits, as in C and as save writes it */
+	    else if (1 == sscanf (&substr->str[i], "%3o%n", &c, &size))
 	      {
 		i += size - 1;
 		dst[length++] = c;
@@ -114,7 +115,8 @@ start_node: {
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (MR_NULL_IDX == idx)
     { YYERROR; }
-  mr_add_child (mr_load->ptrs, mr_load->parent, idx);
+  if (MR_SUCCESS != mr_load_add_child (mr_load->ptrs, mr_load->parent, idx))
+    { YYERROR; }
   mr_load->parent = idx;
 }
 

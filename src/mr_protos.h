@@ -36,7 +36,7 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
               (MR_MESSAGE_OUT_OF_MEMORY, , "Out of memory."),
               (MR_MESSAGE_UNEXPECTED_END, , "Unexpected end of file or end of string."),
               (MR_MESSAGE_UNEXPECTED_DATA, , "Unexpected data in stream."),
-              (MR_MESSAGE_UNEXPECTED_SUBNODES, , "Unexpected subnodes for pointer marked as a reference."),
+              (MR_MESSAGE_UNEXPECTED_SUBNODES, , "Unexpected subnodes for a node marked as a reference."),
               (MR_MESSAGE_UNBALANCED_TAGS, , "Unbalanced tags."),
               (MR_MESSAGE_XDR_WRONG_ENCODING_MODE, , "XDR wrong encoding mode."),
               (MR_MESSAGE_XDR_SAVE_FAILED, , "XDR save to resizable array failed."),
@@ -100,6 +100,10 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
               (MR_MESSAGE_POINTER_SIZE_MISMATCH, , "Size field declares %" SCNu32 " bytes, but loaded data has %" SCNu32 " bytes."),
               (MR_MESSAGE_REFERENCE_SIZE_MISMATCH, , "Reference declares %" SCNu32 " bytes, but only %" SCNu32 " bytes are available in the referenced block."),
               (MR_MESSAGE_REF_TARGET_TYPE, , "Reference on a node of type %d is not valid for a node of type %d."),
+              (MR_MESSAGE_REFERENCE_NOT_A_POINTER, , "Field '%s' is a reference, but only pointers and strings may be references."),
+              (MR_MESSAGE_FIELD_LOADED_TWICE, , "Field '%s' of '%s' is loaded more than once."),
+              (MR_MESSAGE_UNION_BRANCHES, , "Union '%s' has more than one branch."),
+              (MR_MESSAGE_INT_RANGE, , "Value %Lg is out of the range of integers."),
               (MR_MESSAGE_LAST, , "Last message ID."),
               );
 

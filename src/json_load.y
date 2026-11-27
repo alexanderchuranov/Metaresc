@@ -103,7 +103,8 @@ start_node: {
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (MR_NULL_IDX == idx)
     { YYERROR; }
-  mr_add_child (mr_load->ptrs, mr_load->parent, idx);
+  if (MR_SUCCESS != mr_load_add_child (mr_load->ptrs, mr_load->parent, idx))
+    { YYERROR; }
   mr_load->parent = idx;
   mr_load->ptrs->ra[idx].idx = idx;
 }

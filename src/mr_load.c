@@ -169,7 +169,8 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
     if (ptrs->ra[i].idx > max_idx)
       max_idx = ptrs->ra[i].idx;
 
-  table = MR_CALLOC (max_idx + 1, sizeof (table[0]));
+  /* max_idx comes from the document, and max_idx + 1 wraps around in mr_idx_t */
+  table = MR_CALLOC ((size_t)max_idx + 1, sizeof (table[0]));
   if (NULL == table)
     {
       MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
@@ -280,6 +281,27 @@ mr_free_load_values (mr_ra_ptrdes_t * ptrs)
   mr_free_ptrdes_values (ptrs);
   MR_FREE (ptrs->ra);
   memset (ptrs, 0, sizeof (*ptrs));
+}
+
+/**
+ * Adds a node of a document to the children of its parent. A reference keeps
+ * the reference index of the document in first_child until mr_set_crossrefs,
+ * so a node that is a reference can not have children.
+ * @param ptrs array with descriptors of loaded data
+ * @param parent index of the parent node or MR_NULL_IDX
+ * @param child index of the new node
+ * @return status, failure if the parent is a reference
+ */
+mr_status_t
+mr_load_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child)
+{
+  if ((parent != MR_NULL_IDX) && (ptrs->ra[parent].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNEXPECTED_SUBNODES);
+      return (MR_FAILURE);
+    }
+  mr_add_child (ptrs, parent, child);
+  return (MR_SUCCESS);
 }
 
 /**
@@ -788,6 +810,53 @@ mr_load_struct_next_field (mr_td_t * tdp, mr_fd_t * fdp)
 }
 
 /**
+ * Checks whether a loaded node or any node below it sets a pointer: a string
+ * that is set, a pointer with elements, or a reference. Elements of pointers
+ * are allocated, and references are set, after the whole document is parsed,
+ * so the pointer would be written through this node later, and the memory it
+ * refers on would be freed through every node that shares the field.
+ * The first_child of a reference is not a child node.
+ * @param ptrs array with descriptors of loaded data
+ * @param root index of the node
+ * @return true if another node must not share the memory of this node
+ */
+static bool
+mr_node_owns_memory (mr_ra_ptrdes_t * ptrs, mr_idx_t root)
+{
+  mr_idx_t node = root;
+  for (;;)
+    {
+      mr_ptrdes_t * ptrdes = &ptrs->ra[node];
+      bool reference = ptrdes->flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE);
+
+      if (MR_TYPE_STRING == ptrdes->mr_type)
+        {
+          if (reference || (ptrdes->data.ptr && *(char**)ptrdes->data.ptr))
+            return (true);
+        }
+      else if (MR_TYPE_POINTER == ptrdes->mr_type)
+        {
+          /* mr_load_pointer_postponed makes a reference of a pointer with an integer value */
+          bool int_value = (MR_VT_INTMAX == ptrdes->value_type) || (MR_VT_UINTPTR == ptrdes->value_type) || (MR_VT_INTPTR == ptrdes->value_type);
+          if (reference || int_value || (!(ptrdes->flags & MR_IS_NULL) && (ptrdes->first_child != MR_NULL_IDX)))
+            return (true);
+        }
+      else if (!reference && (ptrdes->first_child != MR_NULL_IDX))
+        {
+          node = ptrdes->first_child;
+          continue;
+        }
+
+      /* go to the next sibling, climbing up until the root */
+      while ((node != root) && (MR_NULL_IDX == ptrs->ra[node].next))
+        node = ptrs->ra[node].parent;
+      if (node == root)
+        return (false);
+      node = ptrs->ra[node].next;
+    }
+}
+
+/**
  * MR_STRUCT load handler.
  * Save content of subnodes to structure fileds.
  * @param idx node index
@@ -810,6 +879,17 @@ mr_load_struct (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
 
+  /*
+    Fields of a document are nodes that refer on the memory of the field. As in C, a field may
+    be initialized more than once, and the last value wins, unless the earlier node owns memory
+    that would be overwritten. Branches of a union share the memory in the same way.
+  */
+  int fields_count = tdp->param.struct_param.fields_count;
+  mr_idx_t loaded[fields_count > 0 ? fields_count : 1];
+  mr_idx_t branch = MR_NULL_IDX;
+  int field_idx = -1;
+  memset (loaded, 0, sizeof (loaded));
+
   /* loop on all subnodes */
   for (idx = first_child; (MR_SUCCESS == status) && (idx != MR_NULL_IDX); idx = ptrs->ra[idx].next)
     {
@@ -824,8 +904,57 @@ mr_load_struct (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
           continue;
         }
 
+      /* mr_validate_load checks every branch node against the discriminator, so a union has one branch */
+      mr_idx_t prev_branch = branch;
+      if ((MR_UNION_TYPES >> tdp->mr_type) & 1)
+        {
+          if (branch != MR_NULL_IDX)
+            {
+              MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_UNION_BRANCHES, tdp->type.str);
+              status = MR_FAILURE;
+              continue;
+            }
+          branch = idx;
+        }
+
+      /* fields usually follow in the order of declaration, so check the next field first */
+      if ((field_idx + 1 < fields_count) && (tdp->param.struct_param.fields[field_idx + 1] == fdp))
+        ++field_idx;
+      else
+        for (field_idx = 0; field_idx < fields_count; ++field_idx)
+          if (tdp->param.struct_param.fields[field_idx] == fdp)
+            break;
+
+      mr_idx_t prev_loaded = MR_NULL_IDX;
+      if (field_idx < fields_count)
+        {
+          prev_loaded = loaded[field_idx];
+          if ((prev_loaded != MR_NULL_IDX) && mr_node_owns_memory (ptrs, prev_loaded))
+            {
+              MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_FIELD_LOADED_TWICE, fdp->name.str, tdp->type.str);
+              status = MR_FAILURE;
+              continue;
+            }
+          loaded[field_idx] = idx;
+        }
+
+      /*
+        CINIT saves an anonymous union as a placeholder with its name followed by an unnamed node.
+        mr_load_anon_union passes the field to the next node, which loads the union itself.
+      */
+      mr_idx_t next = ptrs->ra[idx].next;
+      bool placeholder = (MR_TYPE_NAMED_ANON_UNION == fdp->stype.mr_type) && (MR_NULL_IDX == ptrs->ra[idx].first_child)
+        && (next != MR_NULL_IDX) && (NULL == ptrs->ra[next].fdp);
+
       /* recursively load subnode */
       status = mr_load (&data[fdp->offset], fdp, idx, ptrs);
+
+      if (placeholder && (MR_SUCCESS == status) && (ptrs->ra[next].fdp == fdp))
+        {
+          if (field_idx < fields_count)
+            loaded[field_idx] = prev_loaded;
+          branch = prev_branch;
+        }
     }
   return (status);
 }
@@ -1474,6 +1603,18 @@ mr_load (void * data, mr_fd_t * fdp, mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
           MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_NODE_NAME_MISSMATCH, fdp->name.str, ptrs->ra[idx].fdp->name.str);
           return (MR_FAILURE);
         }
+
+  /*
+    Save makes references only of pointers and strings. A reference keeps the reference
+    index of the document in first_child, and load handlers of other types would take it
+    for the index of the first child node.
+  */
+  if ((ptrs->ra[idx].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) &&
+      (MR_TYPE_POINTER != fdp->stype.mr_type) && (MR_TYPE_STRING != fdp->stype.mr_type))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_REFERENCE_NOT_A_POINTER, fdp->name.str ? fdp->name.str : MR_DEFAULT_NODE_NAME);
+      return (MR_FAILURE);
+    }
 
   ptrs->ra[idx].data.ptr = data;
   ptrs->ra[idx].fdp = fdp;

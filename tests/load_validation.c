@@ -313,7 +313,103 @@ START_TEST (cinit_load_char_array_reference) {
   ck_assert_msg (MR_FAILURE == MR_LOAD_CINIT (ca_ref_t, string, &x), "load of %s succeeded", string);
 } END_TEST
 
+/*
+  A reference keeps the reference index of the document in first_child until
+  the references are resolved, so only pointers and strings may be references,
+  and a reference can not have child nodes. Otherwise the index is taken for
+  the index of the first child node, which may be out of the nodes.
+*/
+#define ASSERT_TEXT_LOAD_STATUS(METHOD, TYPE, STATUS, TEXT) ({          \
+      char text[] = TEXT;                                               \
+      TYPE x;                                                           \
+      memset (&x, 0, sizeof (x));                                       \
+      mr_status_t status = MR_LOAD_ ## METHOD (TYPE, text, &x);         \
+      ck_assert_msg (STATUS == status, "load of %s returned %d", TEXT, status); \
+      if (MR_SUCCESS == status)                                         \
+        MR_FREE_RECURSIVELY (TYPE, &x);                                 \
+    })
+
+START_TEST (load_reference_on_non_pointer) {
+  /* positive control: a pointer may be a reference */
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_SUCCESS, "{ .small = /* ref_idx = 1 */ 7, .p = /* ref = 1 */ NULL, .n = 1 }");
+
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "/* ref = 5 */ 4");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "/* ref = 9 */ { .small = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = /* ref = 1 */ 7 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ca_ptr_t, MR_FAILURE, "{ .p = /* ref = 9 */ (ca4_t[]){ \"ab\" }, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (SCM, ref_idx_t, MR_FAILURE, ";(ref . 11)\n()");
+  ASSERT_TEXT_LOAD_STATUS (XML1, ref_idx_t, MR_FAILURE, "<?xml version=\"1.0\"?><ref_idx_t ref=\"11\"><small>1</small></ref_idx_t>");
+} END_TEST
+
+/*
+  As in C, a field may be initialized more than once and the last value wins.
+  But a field that owns memory (a string or a pointer with elements) can not be
+  overwritten: the memory would be lost, or freed twice on a failed load.
+  Branches of a union share the memory, and a union has only one branch.
+*/
+TYPEDEF_UNION (int_str_t, (int32_t, whole), (string_t, text));
+TYPEDEF_ENUM (int_str_disc_t, (IS_INT, , "whole"), (IS_STR, , "text"));
+TYPEDEF_STRUCT (int_str_field_t, (int_str_t, u, , "disc"), (int_str_disc_t, disc));
+
+START_TEST (load_field_twice) {
+  ref_idx_t x;
+  char scalars[] = "{ .small = 1, .small = 2 }";
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (ref_idx_t, scalars, &x), "load of %s failed", scalars);
+  ck_assert_msg (2 == x.small, "the last value of a field must win");
+
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_str_field_t, MR_SUCCESS, "{ .u = { .whole = 3 }, .u = { .whole = 4 }, .disc = IS_INT }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_str_field_t, MR_FAILURE, "{ .u = { .whole = 3, .text = \"a\" }, .disc = IS_STR }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ca_ref_t, MR_FAILURE, "{ .s = \"a\", .s = \"b\" }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ca_ptr_t, MR_FAILURE, "{ .p = (ca4_t[]){ \"a\" }, .p = (ca4_t[]){ \"b\" }, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_str_field_t, MR_FAILURE, "{ .u = { .text = \"a\" }, .u = { .whole = 3 }, .disc = IS_INT }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_str_field_t, MR_FAILURE, "{ .u = { .text = \"a\", .whole = 3 }, .disc = IS_INT }");
+  ASSERT_TEXT_LOAD_STATUS (SCM, ca_ref_t, MR_FAILURE, "((s . \"a\") (s . \"b\"))");
+
+  /* a reference is set after the document is parsed, and would be freed through the other node */
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ca_ref_t, MR_SUCCESS, "{ .s = NULL, .s = /* ref_idx = 1 */ \"abc\", .p = /* ref_content = 1 */ NULL }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ca_ref_t, MR_FAILURE, "{ .s = /* ref_idx = 1 */ \"abc\", .p = /* ref_content = 1 */ NULL, .p = NULL }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = /* ref_idx = 1 */ 7, .p = /* ref = 1 */ NULL, .p = NULL, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (JSON, ref_idx_t, MR_FAILURE, "{ \"small\" : 7, \"p\" : 2, \"p\" : null, \"n\" : 1 }");
+} END_TEST
+
+/* a numeric escape of XML without the closing ';' is not an escape */
+START_TEST (xml1_load_incomplete_escape) {
+  char text[] = "<?xml version=\"1.0\"?><ca_ref_t><s>&#x01abcdefghijklmnopqrstuvwxyz</s></ca_ref_t>";
+  ca_ref_t x;
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_XML1 (ca_ref_t, text, &x), "load of %s failed", text);
+  ck_assert_msg (x.s && (0 == strcmp (x.s, "&#x01abcdefghijklmnopqrstuvwxyz")), "wrong string loaded from %s", text);
+  MR_FREE_RECURSIVELY (ca_ref_t, &x);
+} END_TEST
+
+/*
+  CINIT saves a control character as an octal escape of 3 digits, which may be followed by a digit.
+  XML can not hold control characters, so the other formats are not checked here.
+*/
+START_TEST (control_char_before_digit_round_trip) {
+  ca_ref_t x = { .s = "\0012\0377", .a = "\0029" };
+  ASSERT_SAVE_LOAD (CINIT, ca_ref_t, &x);
+} END_TEST
+
+/* a conversion of a floating point value out of the range of an integer is undefined */
+START_TEST (cinit_load_float_out_of_int_range) {
+  ref_idx_t x;
+  char in_range[] = "{ .small = 2.0 }";
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (ref_idx_t, in_range, &x), "load of %s failed", in_range);
+  ck_assert_msg (2 == x.small, "wrong value loaded from %s", in_range);
+
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = 1e999 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = -1e999 }");
+} END_TEST
+
 MAIN_TEST_SUITE ((cinit_load_reference_index_is_not_node_index, "size of a reference is checked against the node it resolves to"),
+                 (load_reference_on_non_pointer, "only pointers and strings without child nodes may be references"),
+                 (load_field_twice, "a field that owns memory can not be loaded twice"),
+                 (xml1_load_incomplete_escape, "an incomplete numeric escape of XML is loaded as text"),
+                 (control_char_before_digit_round_trip, "a control character followed by a digit is saved and loaded"),
+                 (cinit_load_float_out_of_int_range, "a floating point value out of the range of an integer is rejected"),
                  (char_array_pointer_round_trip, "pointers on char array types are saved and loaded"),
                  (cinit_load_char_array_pointer, "elements of pointers on char arrays are fixed size"),
                  (cinit_load_char_array_reference, "references of pointers on char arrays are checked"),

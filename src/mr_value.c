@@ -423,6 +423,27 @@ mr_load_var (mr_value_t * mr_value, char * str)
 }
 
 /**
+ * Converts a floating point value to an integer. A conversion of a value out
+ * of the range of the integer type is undefined, so it is rejected.
+ * @param value floating point value
+ * @param result receives the integer value
+ * @return status, failure for NaN and values out of range
+ */
+static mr_status_t
+mr_long_double_to_intmax (long double value, mr_intmax_t * result)
+{
+  /* the minimal value is a power of two, so the bounds are exact in long double */
+  const long double min = (mr_intmax_t)(((mr_uintmax_t)1) << (sizeof (mr_intmax_t) * __CHAR_BIT__ - 1));
+  if (!((value >= min) && (value < -min))) /* also false for NaN */
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INT_RANGE, value);
+      return (MR_FAILURE);
+    }
+  *result = value;
+  return (MR_SUCCESS);
+}
+
+/**
  * Converts a value to another value type in place. Strings and substrings are
  * parsed and must not have text after the value.
  * @param value_type target value type
@@ -458,7 +479,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
     case MR_VT_LONG_DOUBLE:
       switch (value_type)
         {
-        case MR_VT_INTMAX: mr_value->vt_intmax = mr_value->vt_long_double; break;
+        case MR_VT_INTMAX: status = mr_long_double_to_intmax (mr_value->vt_long_double, &mr_value->vt_intmax); break;
         case MR_VT_LONG_DOUBLE: break;
         case MR_VT_COMPLEX_LONG_DOUBLE: mr_value->vt_complex_long_double = mr_value->vt_long_double; break;
         default: status = MR_FAILURE; break;
@@ -468,7 +489,7 @@ mr_value_cast (mr_value_type_t value_type, mr_value_t * mr_value)
     case MR_VT_COMPLEX_LONG_DOUBLE:
       switch (value_type)
         {
-        case MR_VT_INTMAX: mr_value->vt_intmax = mr_value->vt_complex_long_double; break;
+        case MR_VT_INTMAX: status = mr_long_double_to_intmax (__real__ mr_value->vt_complex_long_double, &mr_value->vt_intmax); break;
         case MR_VT_LONG_DOUBLE: mr_value->vt_long_double = mr_value->vt_complex_long_double; break;
         case MR_VT_COMPLEX_LONG_DOUBLE: break;
         default: status = MR_FAILURE; break;

@@ -56,7 +56,8 @@
             int size;
             if (c)
               dst[length++] = c;
-            else if (1 == sscanf (&substr->str[i], "x%x%n;", &c, &size))
+            /* save writes characters as \\x%02x; */
+            else if (1 == sscanf (&substr->str[i], "x%2x%n;", &c, &size))
               {
                 i += size;
                 dst[length++] = c;
@@ -112,7 +113,8 @@ start_node: {
   mr_idx_t idx = mr_add_ptr_to_list (mr_load->ptrs);
   if (MR_NULL_IDX == idx)
     { YYERROR; }
-  mr_add_child (mr_load->ptrs, mr_load->parent, idx);
+  if (MR_SUCCESS != mr_load_add_child (mr_load->ptrs, mr_load->parent, idx))
+    { YYERROR; }
   mr_load->parent = idx;
 }
 

@@ -1539,6 +1539,7 @@ extern char * mr_strndup (const char * str, size_t size);
 extern mr_idx_t mr_add_ptr_to_list (mr_ra_ptrdes_t * ptrs);
 extern mr_idx_t mr_last_child_for_parent (mr_ra_ptrdes_t * ptrs, mr_idx_t parent);
 extern void mr_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child);
+extern mr_status_t mr_load_add_child (mr_ra_ptrdes_t * ptrs, mr_idx_t parent, mr_idx_t child);
 extern void mr_detect_type (mr_fd_t * fdp);
 extern char * mr_ptr_detect_type (char * filename, char * varname, ...);
 extern mr_hash_value_t mr_var_get_hash (mr_ptr_t x, const void * context);
