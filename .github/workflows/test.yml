@@ -44,8 +44,8 @@ jobs:
           # drop test_sanitized/test_tied list items, then strip a trailing backslash left before a blank line
           sed -i.bak -e '/^[[:space:]]*test_sanitized[[:space:]]*\\*$/d' -e '/^[[:space:]]*test_tied[[:space:]]*\\*$/d' -e 's/test_dwarfdumpMacos\.sh//' libdwarf-code/test/Makefile.am
           sed -i.bak -e '$!N' -e 's/[[:space:]]*\\\(\n[[:space:]]*\)$/\1/' -e 'P' -e 'D' libdwarf-code/test/Makefile.am
-          # the memory failure tests take a stack trace on every allocation, which is slow with gcc ASan on arm
-          CK_TIMEOUT_MULTIPLIER=4 make check -j $(nproc) CFLAGS="-I/usr/include/tirpc -Werror -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
+          # the memory failure tests take a stack trace on every allocation, which is slow under ASan (mf_xdr_load ran out of 480 s)
+          CK_TIMEOUT_MULTIPLIER=10 make check -j $(nproc) CFLAGS="-I/usr/include/tirpc -Werror -fsanitize=address -fsanitize=leak -fsanitize=undefined -fno-omit-frame-pointer"
 
   macos-clang:
     runs-on: macos-latest
