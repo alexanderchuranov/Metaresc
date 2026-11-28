@@ -236,6 +236,23 @@ static int ic_find_add_cb (mr_ic_t * ic, char * mr_ic_type)
 
 START_TEST (ic_find_added) { ic_types_foreach (ic_find_add_cb); } END_TEST
 
+static int ic_index_duplicates_cb (mr_ic_t * ic, char * mr_ic_type)
+{
+  /* the hash collection keeps the zero key in a slot of its own; the unsorted array keeps duplicates */
+  if (MR_IC_UNSORTED_ARRAY == ic->ic_type)
+    return (true);
+  mr_ptr_t keys[] = { { .uintptr = 0, }, { .uintptr = 5, }, { .uintptr = 0, }, { .uintptr = 5, }, { .uintptr = 0, } };
+  mr_ptr_t zero = { .uintptr = 0, };
+
+  ck_assert_msg (MR_SUCCESS == mr_ic_index (ic, keys, sizeof (keys)), "index failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (2 == ic->items_count, "mr_ic_type %s counted %u distinct keys instead of 2", mr_ic_type, (unsigned)ic->items_count);
+  ck_assert_msg (MR_SUCCESS == mr_ic_del (ic, zero), "delete failed for mr_ic_type %s", mr_ic_type);
+  ck_assert_msg (1 == ic->items_count, "mr_ic_type %s counted %u keys after delete instead of 1", mr_ic_type, (unsigned)ic->items_count);
+  return (NULL == mr_ic_find (ic, zero));
+}
+
+START_TEST (ic_index_duplicates) { ic_types_foreach (ic_index_duplicates_cb); } END_TEST
+
 MAIN_TEST_SUITE ((ic_empty, "Check empty ic"),
                  (ic_index, "Check indexing of empty collection"),
                  (ic_index_non_empty, "Check indexing of non empty collection"),
@@ -247,5 +264,6 @@ MAIN_TEST_SUITE ((ic_empty, "Check empty ic"),
                  (ic_del_non_indexed, "Check deletion of non indexed element"),
                  (ic_del_indexed, "Check deletion of indexed element"),
                  (ic_find_indexed, "Check find over indexed data"),
-                 (ic_find_added, "Check search of added element")
+                 (ic_find_added, "Check search of added element"),
+                 (ic_index_duplicates, "Duplicate keys, including zero, are counted once")
                  );

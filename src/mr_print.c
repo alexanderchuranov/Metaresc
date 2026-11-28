@@ -1,3 +1,4 @@
+#include <limits.h> /* INT_MAX */
 #include <metaresc.h>
 #include <mr_save.h> /* MR_ONE_SHIFT */
 #include <mr_stringify.h>
@@ -130,7 +131,6 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
       [MR_TYPE_DOUBLE] = "%g",
       [MR_TYPE_LONG_DOUBLE] = "%Lg",
       [MR_TYPE_CHAR]   = "%c",
-      [MR_TYPE_CHAR_ARRAY] = "%s",
       [MR_TYPE_STRING] = "%s",
     };
   const char * format = NULL;
@@ -234,6 +234,16 @@ mr_print_value (FILE * fd, mr_type_t mr_type, mr_type_t mr_type_aux, mr_type_cla
         {
           complex_long_double_t value = va_arg (args, complex_long_double_t);
           rv = fprintf (fd, "%Lg%+LgI", __real__ value, __imag__ value);
+          break;
+        }
+      case MR_TYPE_CHAR_ARRAY:
+        {
+          /* a char array may be filled to its size without a terminating zero */
+          char * value = va_arg (args, char *);
+          if ((size >= 0) && (size <= INT_MAX))
+            rv = fprintf (fd, "%.*s", (int)size, value);
+          else
+            rv = fprintf (fd, "%s", value);
           break;
         }
       case MR_TYPE_NONE:

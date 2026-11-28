@@ -80,7 +80,21 @@ START_TEST (huge_char_array_save) {
   MR_FREE (x);
 } END_TEST
 
+START_TEST (full_char_array_print) {
+  char buffer[] = "abcdzzzz";
+  name4_t * name = (void*)buffer;
+  char printed[sizeof (buffer)] = "";
+  FILE * fd = tmpfile ();
+  ck_assert_msg (fd != NULL, "tmpfile failed");
+  MR_FPRINT (fd, *name);
+  rewind (fd);
+  ck_assert_msg (fgets (printed, sizeof (printed), fd) != NULL, "nothing printed");
+  fclose (fd);
+  ck_assert_msg (0 == strcmp (printed, "abcd"), "MR_PRINT of a full char array printed '%s'", printed);
+} END_TEST
+
 MAIN_TEST_SUITE ((full_char_array_discriminator, "a char array without a terminating zero selects a union branch"),
+                 (full_char_array_print, "MR_PRINT stops at the end of a char array without a terminating zero"),
                  (full_char_array_hash_cmp, "char arrays without a terminating zero are hashed and compared"),
                  (huge_char_array_save, "a large char array is saved without a copy on the stack")
                  );

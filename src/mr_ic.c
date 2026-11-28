@@ -507,7 +507,8 @@ mr_ic_hash_index_add (mr_ic_t * ic, mr_ptr_t key)
       
       if (0 == key.intptr)
         {
-          ++ic->items_count;
+          if (!ic->hash.zero_key)
+            ++ic->items_count;
           ic->hash.zero_key = true;
           ic->hash.hash_table[count].intptr = 0;
           return (&ic->hash.hash_table[count]);
