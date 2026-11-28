@@ -129,12 +129,61 @@ yaml_emit_chars (yaml_emitter_t * emitter, const char * value, size_t length, mr
 {
   yaml_event_t event;
   char anchor[ANCHOR_SIZE];
+  char * utf8 = NULL;
+  size_t i;
 
-  if (!yaml_scalar_event_initialize (&event, yaml_get_anchor (anchor, &ptrs[idx]),
-                                     (yaml_char_t *)YAML_STR_TAG,
-                                     (yaml_char_t *)value, length,
-                                     1, 0, YAML_PLAIN_SCALAR_STYLE))
-    return (MR_FAILURE);
+  /*
+    libyaml accepts only valid UTF-8. As in JSON and XML, a byte that is not a
+    part of a valid sequence is saved as the code point of the same value, so
+    the copy needs at most two bytes for each byte of the value.
+  */
+  for (i = 0; i < length; ++i)
+    if ((unsigned char)value[i] >= 0x80)
+      {
+        size_t sequence = mr_utf8_sequence_length (&value[i], length - i);
+        if (0 == sequence)
+          break;
+        i += sequence - 1;
+      }
+
+  if (i < length)
+    {
+      utf8 = MR_CALLOC (2 * length + sizeof (char), sizeof (char));
+      if (NULL == utf8)
+        {
+          MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+          return (MR_FAILURE);
+        }
+      size_t utf8_length = i;
+      memcpy (utf8, value, i);
+      while (i < length)
+        {
+          size_t sequence = ((unsigned char)value[i] < 0x80) ? 1 : mr_utf8_sequence_length (&value[i], length - i);
+          if (0 == sequence)
+            utf8_length += mr_utf8_encode ((unsigned char)value[i++], &utf8[utf8_length]);
+          else
+            {
+              memcpy (&utf8[utf8_length], &value[i], sequence);
+              utf8_length += sequence;
+              i += sequence;
+            }
+        }
+      value = utf8;
+      length = utf8_length;
+    }
+
+  int initialized = yaml_scalar_event_initialize (&event, yaml_get_anchor (anchor, &ptrs[idx]),
+                                                  (yaml_char_t *)YAML_STR_TAG,
+                                                  (yaml_char_t *)value, length,
+                                                  1, 0, YAML_PLAIN_SCALAR_STYLE);
+  /* the event keeps its own copy of the value */
+  if (utf8)
+    MR_FREE (utf8);
+  if (!initialized)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_YAML_ERROR, "can't create an event of a scalar");
+      return (MR_FAILURE);
+    }
 
   return (yaml_emit_field (emitter, &event, ptrs, idx));
 }

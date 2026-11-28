@@ -60,7 +60,33 @@ START_TEST (xml1_load_character_references) {
   ASSERT_LOAD_TEXT (XML1, "<?xml version=\"1.0\"?><utf8_struct_t><text>&#xD800;&#x110000;</text></utf8_struct_t>", REPLACEMENT REPLACEMENT);
 } END_TEST
 
+/*
+  A byte that is not a part of a valid UTF-8 sequence is saved as the code
+  point of the same value, and loads as the UTF-8 sequence of that code point.
+*/
+#define ASSERT_INVALID_UTF8_SAVE_LOAD(METHOD) ({                        \
+      utf8_struct_t x = { .text = "a\xff" CAFE "\xc3", .name = "b\xfe", .c = 'c' }; \
+      utf8_struct_t y;                                                  \
+      memset (&y, 0, sizeof (y));                                       \
+      char * saved = MR_SAVE_ ## METHOD (utf8_struct_t, &x);            \
+      ck_assert_msg (saved != NULL, #METHOD " save of invalid UTF-8 failed"); \
+      ck_assert_msg (MR_SUCCESS == MR_LOAD_ ## METHOD (utf8_struct_t, saved, &y), #METHOD " load failed:\n%s", saved); \
+      ck_assert_msg ((y.text != NULL) && (0 == strcmp (y.text, "a\xc3\xbf" CAFE "\xc3\x83")), #METHOD " loaded '%s'", y.text); \
+      ck_assert_msg (0 == strcmp (y.name, "b\xc3\xbe"), #METHOD " loaded '%s'", y.name); \
+      MR_FREE (saved);                                                  \
+      MR_FREE_RECURSIVELY (utf8_struct_t, &y);                          \
+    })
+
+START_TEST (invalid_utf8_saved_as_code_points) {
+  ASSERT_INVALID_UTF8_SAVE_LOAD (JSON);
+  ASSERT_INVALID_UTF8_SAVE_LOAD (XML1);
+#ifdef HAVE_LIBYAML
+  ASSERT_INVALID_UTF8_SAVE_LOAD (YAML);
+#endif /* HAVE_LIBYAML */
+} END_TEST
+
 MAIN_TEST_SUITE ((utf8_round_trip, "UTF-8 strings, char arrays and chars beyond ASCII are saved and loaded"),
+                 (invalid_utf8_saved_as_code_points, "bytes that are not valid UTF-8 are saved as code points"),
                  (utf8_saved_as_is, "JSON and XML save UTF-8 as is"),
                  (json_load_unicode_escapes, "JSON escapes of code points load as UTF-8"),
                  (xml1_load_character_references, "XML character references load as UTF-8")

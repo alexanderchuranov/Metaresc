@@ -27,6 +27,7 @@ of structures, generic sorting.
   - [Serialization/deserialization interface](#serializationdeserialization-interface)
     - [Serialization](#serialization)
     - [Deserialization](#deserialization)
+    - [Character encoding](#character-encoding)
     - [MR_PRINT helper macro](#mr_print-helper-macro)
   - [Types declaration macro language](#types-declaration-macro-language)
     - [Structure type declaration](#structure-type-declaration)
@@ -707,6 +708,39 @@ restored `next` pointer refers to `ll2` only if the compiler does not
 copy the returned object. GCC 13 prints
 `ll2_self_referenced = true` for the same program. Use the 3
 arguments form if the result must be restored in place.
+
+### Character encoding
+Strings and character arrays are stored as bytes, and Metaresc treats
+them as UTF-8 in the formats whose documents are text in Unicode:
+* JSON and XML1 write valid UTF-8 sequences as they are. A byte that is
+  not a part of a valid sequence is escaped as a code point of the same
+  value (`\u00ff` in JSON, `&#xFF;` in XML).
+* XML2 lets libxml2 write characters beyond ASCII as character
+  references (`&#xE9;`).
+* YAML lets libyaml escape characters beyond ASCII (`"caf\xE9"`). A
+  byte that is not a part of a valid sequence is saved as a code point
+  of the same value, as in JSON (`"\xFF"`).
+* CINIT and SCM escape every byte beyond ASCII separately (`\303\251`
+  in CINIT, `\xc3;\xa9;` in SCM), so they keep any bytes.
+* XDR writes the bytes as they are.
+
+On load, JSON decodes `\uXXXX` escapes, including surrogate pairs, and
+XML decodes `&#xXXXX;` and `&#NNNN;` references into UTF-8. A lone
+surrogate or a code point beyond U+10FFFF is loaded as U+FFFD (the
+replacement character).
+
+A single `char` holds one byte. JSON and XML save a `char` above 127
+as a code point of the same value (`"\u00e9"` in JSON), and a code
+point from U+0080 to U+00FF loads back into the same byte. The other
+formats save the byte itself (`0xe9` in YAML, `'\351'` in CINIT).
+
+Two cases do not load back into the same bytes in JSON, XML and YAML:
+* A character array that is cut in the middle of a multi-byte sequence
+  ends with bytes that are not valid UTF-8. They are escaped as code
+  points and load as UTF-8 sequences of those code points.
+* Documents that were saved before UTF-8 support escaped every byte
+  beyond ASCII separately: `café` was saved as `"caf\u00c3\u00a9"`.
+  Such a document now loads as `cafÃ©`.
 
 ### MR_PRINT helper macro
 For logging and debugging purposes it's useful to have a wrapper layer
