@@ -24,8 +24,13 @@
   {
     char * end = &substr->str[substr->length];
     char * tail = NULL;
-    *idx = strtoull (substr->str, &tail, 0);
-    if (NULL == tail)
+    /* a node is either a reference or a content reference */
+    if ((flag & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) && (*flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+      {
+        MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_REFERENCE_TWICE);
+        return (MR_FAILURE);
+      }
+    if (MR_SUCCESS != mr_parse_idx (substr->str, &tail, idx))
       return (MR_FAILURE);
     while ((tail < end) && isspace (*tail))
       ++tail;

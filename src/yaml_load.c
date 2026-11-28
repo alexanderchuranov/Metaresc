@@ -56,10 +56,33 @@ add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
  * @param unnamed true for elements of sequences
  * @return status
  */
+/**
+ * Parses an anchor or an alias of a reference: a prefix and a node index.
+ * @param text anchor or alias
+ * @param prefix expected prefix, MR_REF_IDX, MR_REF or MR_REF_CONTENT
+ * @param idx receives the index
+ * @return 1 if the text has the prefix and a valid index, 0 if the text does
+ * not have the prefix and a number, -1 if the index is out of range
+ */
+static int
+yaml_parse_anchor (char * text, char * prefix, mr_idx_t * idx)
+{
+  size_t length = strlen (prefix);
+  if ((0 != strncmp (text, prefix, length)) || ('_' != text[length]))
+    return (0);
+  text += length + 1;
+  if (!isdigit ((unsigned char)*text))
+    return (0);
+  char * tail = NULL;
+  if (MR_SUCCESS != mr_parse_idx (text, &tail, idx))
+    return (-1);
+  return ((0 == *tail) ? 1 : 0);
+}
+
 static mr_status_t
 yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char * value, char * anchor, char * alias, bool unnamed)
 {
-  uint32_t prop_value = 0;
+  mr_idx_t prop_value = 0;
   mr_idx_t idx = mr_add_ptr_to_list (ptrs);
   if (MR_NULL_IDX == idx)
     return (MR_FAILURE);
@@ -79,28 +102,32 @@ yaml_add_node (mr_ra_ptrdes_t * ptrs, mr_idx_t * parent, mr_fd_t * name_fd, char
 
   if (alias)
     {
-      if (1 == sscanf (alias, MR_YAML_REF_ANCHOR_CONTENT_TMPLT, &prop_value))
+      int content = yaml_parse_anchor (alias, MR_REF_CONTENT, &prop_value);
+      int ref = (0 == content) ? yaml_parse_anchor (alias, MR_REF_IDX, &prop_value) : 0;
+      if ((content < 0) || (ref < 0))
+        return (MR_FAILURE);
+      if (content > 0)
         {
           ptrs->ra[idx].first_child = prop_value;
           ptrs->ra[idx].flags |= MR_IS_CONTENT_REFERENCE;
         }
-      else if (1 == sscanf (alias, MR_YAML_REF_ANCHOR_TMPLT, &prop_value))
+      else if (ref > 0)
         {
           ptrs->ra[idx].first_child = prop_value;
           ptrs->ra[idx].flags |= MR_IS_REFERENCE;
         }
+      else if (strcmp (alias, MR_ISNULL) == 0)
+        ptrs->ra[idx].flags |= MR_IS_NULL;
       else
-        {
-          if (strcmp (alias, MR_ISNULL) == 0)
-            ptrs->ra[idx].flags |= MR_IS_NULL;
-          else
-            MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, alias);
-        }
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_READ_REF, alias);
     }
 
   if (anchor)
     {
-      if (1 == sscanf (anchor, MR_YAML_ANCHOR_TMPLT, &prop_value))
+      int ref = yaml_parse_anchor (anchor, MR_REF_IDX, &prop_value);
+      if (ref < 0)
+        return (MR_FAILURE);
+      if (ref > 0)
         {
           ptrs->ra[idx].idx = prop_value;
           ptrs->ra[idx].flags |= MR_IS_REFERENCED;

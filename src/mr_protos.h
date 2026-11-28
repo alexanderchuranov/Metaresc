@@ -104,6 +104,9 @@ TYPEDEF_ENUM (mr_message_id_t, ATTRIBUTES ( , "Messages enum. Message string sav
               (MR_MESSAGE_FIELD_LOADED_TWICE, , "Field '%s' of '%s' is loaded more than once."),
               (MR_MESSAGE_UNION_BRANCHES, , "Union '%s' has more than one branch."),
               (MR_MESSAGE_INT_RANGE, , "Value %Lg is out of the range of integers."),
+              (MR_MESSAGE_INT_LITERAL_RANGE, , "Integer '%s' is out of the range of integers."),
+              (MR_MESSAGE_INT_FIELD_RANGE, , "Value is out of the range of field '%s'."),
+              (MR_MESSAGE_REFERENCE_TWICE, , "Node is marked as a reference more than once."),
               (MR_MESSAGE_LAST, , "Last message ID."),
               );
 

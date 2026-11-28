@@ -65,7 +65,7 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 "TRUE" { yylval->value.value_type = MR_VT_INTMAX; yylval->value.vt_intmax = true; return (TOK_CINIT_NUMBER); }
 [Ii] { yylval->value.value_type = MR_VT_COMPLEX_LONG_DOUBLE; yylval->value.vt_complex_long_double = I; return (TOK_CINIT_NUMBER); }
 
-{NUMBER} { yylval->value.value_type = MR_VT_INTMAX; yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 0); return (TOK_CINIT_NUMBER); }
+{NUMBER} { mr_value_set_int_literal (&yylval->value, yytext, 0); return (TOK_CINIT_NUMBER); }
 
 {FLOAT_NUMBER} { yylval->value.value_type = MR_VT_LONG_DOUBLE; yylval->value.vt_long_double = strtold (yytext, NULL); return (TOK_CINIT_NUMBER); }
 
@@ -97,7 +97,8 @@ IMAGENARY_NUMBER {INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{INT_NUMBER})?[Ii]
 
 "/*"{WS}{ID}{WS}"="{WS}[[:digit:]]+{WS}"*/" {
   mr_get_id (&yylval->id_ivalue.id, &yytext[2]);
-  yylval->id_ivalue.ivalue = strtoull (strchr (yytext, '=') + 1, NULL, 0);
+  if (MR_SUCCESS != mr_parse_idx (strchr (yytext, '=') + 1, NULL, &yylval->id_ivalue.ivalue))
+    return (TOK_CINIT_ERROR);
   return (TOK_CINIT_ID_IVALUE);
 				       }
 

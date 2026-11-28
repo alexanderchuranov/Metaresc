@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <setjmp.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include <metaresc.h>
 #include <mr_save.h>
@@ -2625,7 +2626,8 @@ mr_ptr_detect_type (char * filename, char * varname, ...)
 
 /**
  * Converts a string to an unsigned integer of maximum width, like strtoull.
- * A leading minus negates the value.
+ * A leading minus negates the value. A value that does not fit the type sets
+ * errno to ERANGE, and the maximal value is returned; errno is unchanged otherwise.
  * @param str string to convert
  * @param endptr receives the end of the parsed number, may be NULL
  * @param base base of the number, 0 to detect it from the prefix
@@ -2634,10 +2636,12 @@ mr_ptr_detect_type (char * filename, char * varname, ...)
 mr_uintmax_t
 mr_strtouintmax (char * str, char ** endptr, int base)
 {
+  const mr_uintmax_t max = ~(mr_uintmax_t)0;
   mr_uintmax_t acc = 0;
+  bool overflow = false;
   char * s = str;
 
-  while (isspace (s[0]))
+  while (isspace ((unsigned char)s[0]))
     ++s;
 
   bool neg = (s[0] == '-');
@@ -2645,7 +2649,7 @@ mr_strtouintmax (char * str, char ** endptr, int base)
   if ((s[0] == '+') || (s[0] == '-'))
     ++s;
 
-  if (!isdigit (*s))
+  if (!isdigit ((unsigned char)*s))
     s = str;
   else
     {
@@ -2660,7 +2664,7 @@ mr_strtouintmax (char * str, char ** endptr, int base)
 
       for ( ; ; ++s)
         {
-          unsigned int c = s[0];
+          unsigned int c = (unsigned char)s[0];
 
           if (isdigit (c))
             c -= '0';
@@ -2672,10 +2676,18 @@ mr_strtouintmax (char * str, char ** endptr, int base)
           if (c >= base)
             break;
 
-          acc = acc * base + c;
+          if (acc > (max - c) / base)
+            overflow = true;
+          else
+            acc = acc * base + c;
         }
 
-      if (neg)
+      if (overflow)
+        {
+          errno = ERANGE;
+          acc = max;
+        }
+      else if (neg)
         acc = -acc;
     }
 
@@ -2683,6 +2695,41 @@ mr_strtouintmax (char * str, char ** endptr, int base)
     *endptr = s;
 
   return (acc);
+}
+
+/**
+ * Parses the node index of a reference annotation (ref_idx, ref, ref_content).
+ * Signs are not accepted, and an index that does not fit mr_idx_t is rejected
+ * instead of being cut to its low bits.
+ * @param str string to parse
+ * @param endptr receives the end of the parsed number, may be NULL
+ * @param idx receives the index
+ * @return status, failure if there is no number or it is out of range
+ */
+mr_status_t
+mr_parse_idx (char * str, char ** endptr, mr_idx_t * idx)
+{
+  char * s = str;
+  while (isspace ((unsigned char)*s))
+    ++s;
+  if (!isdigit ((unsigned char)*s))
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, str);
+      return (MR_FAILURE);
+    }
+
+  int saved_errno = errno;
+  errno = 0;
+  mr_uintmax_t value = mr_strtouintmax (s, endptr, 0);
+  bool overflow = (ERANGE == errno) || (value > (mr_idx_t)-1);
+  errno = saved_errno;
+  if (overflow)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, str);
+      return (MR_FAILURE);
+    }
+  *idx = value;
+  return (MR_SUCCESS);
 }
 
 /**

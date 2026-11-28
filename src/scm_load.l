@@ -42,16 +42,14 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 }
 
 {INT_NUMBER} {
-  yylval->value.value_type = MR_VT_INTMAX;
-  yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 10);
+  mr_value_set_int_literal (&yylval->value, yytext, 10);
   return (TOK_SCM_NUMBER);
 }
 
 {HEX_NUMBER} {
   char * hash = ('#' == *yytext) ? yytext : &yytext[1];
   hash[0] = '0';
-  yylval->value.value_type = MR_VT_INTMAX;
-  yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 16);
+  mr_value_set_int_literal (&yylval->value, yytext, 16);
   return (TOK_SCM_NUMBER);
 }
 
@@ -59,8 +57,7 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
   char * hash = ('#' == *yytext) ? yytext : &yytext[1];
   hash[0] = '0';
   hash[1] = '0';
-  yylval->value.value_type = MR_VT_INTMAX;
-  yylval->value.vt_intmax = mr_strtouintmax (yytext, NULL, 8);
+  mr_value_set_int_literal (&yylval->value, yytext, 8);
   return (TOK_SCM_NUMBER);
 }
 
@@ -99,7 +96,8 @@ FLOAT_NUMBER {FLOAT_NAN}|{FLOAT_INF}|{INT_NUMBER}("."[[:digit:]]*)?([eE][+-]?{IN
 
 ";"+{WS}*"("{WS}*{ID}{WS}*\.{WS}*[[:digit:]]+{WS}*")"{WS}* {
   mr_get_id (&yylval->id_ivalue.id, strchr (yytext, '(') + 1);
-  yylval->id_ivalue.ivalue = strtoull (strchr (yytext, '.') + 1, NULL, 0);
+  if (MR_SUCCESS != mr_parse_idx (strchr (yytext, '.') + 1, NULL, &yylval->id_ivalue.ivalue))
+    return (TOK_SCM_ERROR);
   return (TOK_SCM_ID_IVALUE);
 }
 

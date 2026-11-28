@@ -20,13 +20,23 @@ mr_load_xml_property (xmlNodePtr node, char * property_name, mr_idx_t * idx, mr_
   if (property)
     {
       char * tail = NULL;
-      *idx = mr_strtouintmax (property, &tail, 0);
-      if (tail)
-        while (isspace (*tail))
-          ++tail;
-      bool fail = (NULL == tail) || *tail;
-      if (fail)
-        MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, property);
+      bool fail = false;
+      /* a node is either a reference or a content reference */
+      if ((flag & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)) && (*flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE)))
+        {
+          MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_REFERENCE_TWICE);
+          fail = true;
+        }
+      else if (MR_SUCCESS != mr_parse_idx (property, &tail, idx))
+        fail = true;
+      else
+        {
+          while (isspace ((unsigned char)*tail))
+            ++tail;
+          fail = (0 != *tail);
+          if (fail)
+            MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_READ_REF, property);
+        }
       xmlFree (property);
       if (fail)
         return (MR_FAILURE);

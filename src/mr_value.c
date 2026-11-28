@@ -3,6 +3,8 @@
 /* This file is a part of Metaresc project */
 
 #include <string.h>
+#include <errno.h>
+#include <ctype.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -250,11 +252,106 @@ mr_get_int (char * str, mr_intmax_t * data)
 {
   while (isspace (*str))
     ++str;
-  if (isalpha (*str) || ('_' == *str))
+  if (isalpha ((unsigned char)*str) || ('_' == *str))
     str = mr_get_enum (str, data);
   else
-    *data = mr_strtouintmax (str, &str, 0);
+    {
+      char * start = str;
+      int saved_errno = errno;
+      errno = 0;
+      *data = mr_strtouintmax (str, &str, 0);
+      bool overflow = (ERANGE == errno);
+      errno = saved_errno;
+      if (overflow)
+        {
+          MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INT_LITERAL_RANGE, start);
+          return (NULL);
+        }
+    }
   return (str);
+}
+
+/**
+ * Converts the text of an integer literal to long double digit by digit. It is
+ * used for literals that do not fit an integer.
+ * @param s text of the literal
+ * @param base base of the literal, 0 to detect it from the prefix
+ * @return value of the literal
+ */
+static long double
+mr_int_literal_to_long_double (char * s, int base)
+{
+  while (isspace ((unsigned char)*s))
+    ++s;
+  char * sign = s;
+  bool neg = ('-' == *s);
+  if (('-' == *s) || ('+' == *s))
+    ++s;
+  /* without a leading zero base 0 is decimal */
+  if ((10 == base) || ((0 == base) && ('0' != *s)))
+    return (strtold (sign, NULL)); /* rounds correctly */
+
+  if (((0 == base) || (16 == base)) && ('0' == s[0]) && (('x' == s[1]) || ('X' == s[1])))
+    {
+      s += 2;
+      base = 16;
+    }
+  else if (0 == base)
+    base = 8;
+
+  long double value = 0;
+  for ( ; ; ++s)
+    {
+      unsigned int c = (unsigned char)*s;
+      if (isdigit (c))
+        c -= '0';
+      else if (isalpha (c))
+        c -= isupper (c) ? 'A' - 10 : 'a' - 10;
+      else
+        break;
+      if (c >= base)
+        break;
+      value = value * base + c;
+    }
+  return (neg ? -value : value);
+}
+
+/**
+ * Sets a value from the text of an integer literal in a document. A literal that
+ * does not fit the integer type is not wrapped around: it becomes a long double,
+ * so a floating point field gets its value, and an integer field rejects it.
+ * @param value receives the value
+ * @param text text of the literal, with an optional sign
+ * @param base base of the literal, 0 to detect it from the prefix
+ */
+void
+mr_value_set_int_literal (mr_value_t * value, char * text, int base)
+{
+  int saved_errno = errno;
+  errno = 0;
+  mr_uintmax_t uvalue = mr_strtouintmax (text, NULL, base);
+  bool overflow = (ERANGE == errno);
+  errno = saved_errno;
+
+  if (!overflow)
+    {
+      char * s = text;
+      while (isspace ((unsigned char)*s))
+        ++s;
+      /* a negative literal must fit the signed type */
+      overflow = ('-' == *s) && ((mr_intmax_t)uvalue > 0);
+    }
+
+  if (overflow)
+    {
+      value->value_type = MR_VT_LONG_DOUBLE;
+      value->vt_long_double = mr_int_literal_to_long_double (text, base);
+    }
+  else
+    {
+      value->value_type = MR_VT_INTMAX;
+      value->vt_intmax = uvalue;
+    }
 }
 
 /**

@@ -1498,6 +1498,8 @@ extern int mr_get_struct_type_name (const char * fmt, ...);
 extern void mr_add_type (mr_td_t * tdp);
 extern void mr_add_dwarf (mr_dwarf_t * mr_dwarf);
 extern mr_uintmax_t mr_strtouintmax (char * s, char ** endptr, int base);
+extern mr_status_t mr_parse_idx (char * str, char ** endptr, mr_idx_t * idx);
+extern void mr_value_set_int_literal (mr_value_t * value, char * text, int base);
 extern char * mr_read_xml_doc (FILE * fd);
 
 extern mr_ptrdes_t * mr_save (void * data, mr_fd_t * fdp);

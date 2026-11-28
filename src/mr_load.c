@@ -343,6 +343,25 @@ mr_load_none (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 }
 
 /**
+ * Checks that an integer fits a field of the given size as a signed or as an
+ * unsigned value, so that -1 still loads into an unsigned field, but 257 does
+ * not load into a byte.
+ * @param value value to check
+ * @param size size of the field in bytes
+ * @return true if the value fits
+ */
+static inline bool
+mr_int_fits (mr_intmax_t value, size_t size)
+{
+  if (size >= sizeof (value))
+    return (true);
+  int bits = size * __CHAR_BIT__;
+  mr_intmax_t min = -(((mr_intmax_t)1) << (bits - 1));
+  mr_intmax_t max = (((mr_intmax_t)1) << bits) - 1;
+  return ((value >= min) && (value <= max));
+}
+
+/**
  * MR_INTEGER load handler
  * @param idx node index
  * @param ptrs array with descriptors of loaded data
@@ -362,7 +381,7 @@ mr_load_integer (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
   switch (ptrdes->mr_type)
     {
 #define CASE_SET_VALUE_BY_TYPE(TYPE) CASE_SET_VALUE_BY_TYPE_ (TYPE, MR_TYPE_DETECT (TYPE))
-#define CASE_SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: *(TYPE*)ptrdes->data.ptr = mr_value.vt_intmax; break;
+#define CASE_SET_VALUE_BY_TYPE_(TYPE, MR_TYPE) case MR_TYPE: if (!mr_int_fits (mr_value.vt_intmax, sizeof (TYPE))) goto out_of_range; *(TYPE*)ptrdes->data.ptr = mr_value.vt_intmax; break;
       MR_FOREACH (CASE_SET_VALUE_BY_TYPE, bool, int8_t, uint8_t, int16_t, uint16_t, int32_t, uint32_t, int64_t, uint64_t);
       CASE_SET_VALUE_BY_TYPE_ (mr_intmax_t, MR_TYPE_INT128);
       CASE_SET_VALUE_BY_TYPE_ (mr_uintmax_t, MR_TYPE_UINT128);
@@ -370,7 +389,7 @@ mr_load_integer (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
     case MR_TYPE_ENUM:
       switch (ptrdes->fdp->stype.size)
         {
-#define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): *(TYPE*)ptrdes->data.ptr = mr_value.vt_intmax; break;
+#define CASE_SET_VALUE_BY_SIZE(TYPE) case sizeof (TYPE): if (!mr_int_fits (mr_value.vt_intmax, sizeof (TYPE))) goto out_of_range; *(TYPE*)ptrdes->data.ptr = mr_value.vt_intmax; break;
           MR_FOREACH (CASE_SET_VALUE_BY_SIZE, uint8_t, uint16_t, uint32_t, uint64_t);
 #ifdef HAVE_INT128
           MR_FOREACH (CASE_SET_VALUE_BY_SIZE, mr_uint128_t);
@@ -387,6 +406,10 @@ mr_load_integer (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
       return (MR_FAILURE);
     }
   return (MR_SUCCESS);
+
+ out_of_range:
+  MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INT_FIELD_RANGE, ptrdes->fdp ? ptrdes->fdp->name.str : "");
+  return (MR_FAILURE);
 }
 
 /**
@@ -650,6 +673,27 @@ mr_load_char (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
 }
 
 /**
+ * Sets a reference of a string node given by a number: a positive number is a
+ * reference, a negative number is a content reference.
+ * @param ptrdes node of the string
+ * @param value index of the referenced node, negated for a content reference
+ * @return status, failure if the index does not fit mr_idx_t
+ */
+static mr_status_t
+mr_load_string_reference (mr_ptrdes_t * ptrdes, mr_intmax_t value)
+{
+  mr_uintmax_t magnitude = (value >= 0) ? (mr_uintmax_t)value : -(mr_uintmax_t)value;
+  if (magnitude > (mr_idx_t)-1)
+    {
+      MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INT_FIELD_RANGE, ptrdes->fdp ? ptrdes->fdp->name.str : "");
+      return (MR_FAILURE);
+    }
+  ptrdes->first_child = magnitude;
+  ptrdes->flags |= (value >= 0) ? MR_IS_REFERENCE : MR_IS_CONTENT_REFERENCE;
+  return (MR_SUCCESS);
+}
+
+/**
  * MR_STRING load handler. Allocate memory for a string.
  * @param idx node index
  * @param ptrs array with descriptors of loaded data
@@ -687,36 +731,24 @@ mr_load_string (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
           break;
 
         case MR_VT_INTPTR:
-          if (ptrdes->vt_intptr >= 0)
-            {
-              ptrdes->first_child = ptrdes->vt_intptr;
-              ptrdes->flags |= MR_IS_REFERENCE;
-            }
-          else
-            {
-              ptrdes->first_child = - ptrdes->vt_intptr;
-              ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
-            }
+          status = mr_load_string_reference (ptrdes, ptrdes->vt_intptr);
           break;
 
         case MR_VT_UINTPTR:
-          ptrdes->first_child = ptrdes->vt_uintptr;
-          ptrdes->flags |= MR_IS_REFERENCE;
+          if (ptrdes->vt_uintptr > (mr_idx_t)-1)
+            {
+              MR_MESSAGE (MR_LL_ERROR, MR_MESSAGE_INT_FIELD_RANGE, ptrdes->fdp ? ptrdes->fdp->name.str : "");
+              status = MR_FAILURE;
+            }
+          else
+            {
+              ptrdes->first_child = ptrdes->vt_uintptr;
+              ptrdes->flags |= MR_IS_REFERENCE;
+            }
           break;
 
         case MR_VT_INTMAX:
-          {
-            if (*ptrdes->vt_intmax >= 0)
-              {
-                ptrdes->first_child = *ptrdes->vt_intmax;
-                ptrdes->flags |= MR_IS_REFERENCE;
-              }
-            else
-              {
-                ptrdes->first_child = - *ptrdes->vt_intmax;
-                ptrdes->flags |= MR_IS_CONTENT_REFERENCE;
-              }
-          }
+          status = mr_load_string_reference (ptrdes, *ptrdes->vt_intmax);
           break;
 
         default:

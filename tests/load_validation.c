@@ -439,7 +439,70 @@ START_TEST (cinit_load_float_out_of_int_range) {
   ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = -1e999 }");
 } END_TEST
 
+TYPEDEF_STRUCT (int_range_t,
+                (double, d),
+                (int64_t, i64),
+                (uint8_t, u8),
+                (int8_t, i8),
+                );
+
+#define TEN_TO_40 "10000000000000000000000000000000000000000"
+
+/* integer literals are not wrapped around, neither in the literal nor in the field */
+START_TEST (load_int_literal_out_of_range) {
+  int_range_t x;
+  char cinit[] = "{ .d = " TEN_TO_40 ", .i64 = 18446744073709551615, .u8 = -1, .i8 = -128 }";
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_CINIT (int_range_t, cinit, &x), "load of %s failed", cinit);
+  ck_assert_msg ((x.d > 0.999999e40) && (x.d < 1.000001e40), "%s loaded d = %g", cinit, x.d);
+  ck_assert_msg ((-1 == x.i64) && (255 == x.u8) && (-128 == x.i8), "wrong values loaded from %s", cinit);
+
+  char json[] = "{ \"d\" : -" TEN_TO_40 " }";
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_JSON (int_range_t, json, &x), "load of %s failed", json);
+  ck_assert_msg ((x.d < -0.999999e40) && (x.d > -1.000001e40), "%s loaded d = %g", json, x.d);
+
+  char scm[] = "(\n(d . " TEN_TO_40 ")\n)";
+  memset (&x, 0, sizeof (x));
+  ck_assert_msg (MR_SUCCESS == MR_LOAD_SCM (int_range_t, scm, &x), "load of %s failed", scm);
+  ck_assert_msg ((x.d > 0.999999e40) && (x.d < 1.000001e40), "%s loaded d = %g", scm, x.d);
+
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_range_t, MR_FAILURE, "{ .u8 = 256 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_range_t, MR_FAILURE, "{ .i8 = -129 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_range_t, MR_FAILURE, "{ .i64 = 18446744073709551617 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, int_range_t, MR_FAILURE, "{ .i64 = " TEN_TO_40 " }");
+  ASSERT_TEXT_LOAD_STATUS (JSON, int_range_t, MR_FAILURE, "{ \"i64\" : " TEN_TO_40 " }");
+  ASSERT_TEXT_LOAD_STATUS (SCM, int_range_t, MR_FAILURE, "(\n(u8 . 257)\n)");
+  ASSERT_TEXT_LOAD_STATUS (XML1, int_range_t, MR_FAILURE, "<?xml version=\"1.0\"?><int_range_t><u8>257</u8></int_range_t>");
+  ASSERT_TEXT_LOAD_STATUS (XML1, int_range_t, MR_FAILURE, "<?xml version=\"1.0\"?><int_range_t><i64>" TEN_TO_40 "</i64></int_range_t>");
+} END_TEST
+
+/* indexes of references are not cut to 32 bits, and a node is not both kinds of a reference */
+START_TEST (load_reference_index_out_of_range) {
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = /* ref_idx = 4294967297 */ 7, .p = /* ref = 1 */ NULL, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (CINIT, ref_idx_t, MR_FAILURE, "{ .small = /* ref_idx = 1 */ 7, .p = /* ref = 4294967297 */ NULL, .n = 1 }");
+  ASSERT_TEXT_LOAD_STATUS (SCM, ref_idx_t, MR_FAILURE, "(\n;(ref_idx . 4294967301)\n(small . 7)\n;(ref . 5)\n(p . nil)\n(n . 1))");
+
+#define XML1_REF(SMALL_ATTR, P_ATTR) "<?xml version=\"1.0\"?><ref_idx_t><small " SMALL_ATTR ">7</small><p " P_ATTR "/><n>1</n></ref_idx_t>"
+  ASSERT_TEXT_LOAD_STATUS (XML1, ref_idx_t, MR_SUCCESS, XML1_REF ("ref_idx=\"2\"", "ref=\"2\""));
+  ASSERT_TEXT_LOAD_STATUS (XML1, ref_idx_t, MR_FAILURE, XML1_REF ("ref_idx=\"4294967298\"", "ref=\"2\""));
+  ASSERT_TEXT_LOAD_STATUS (XML1, ref_idx_t, MR_FAILURE, XML1_REF ("ref_idx=\"2\"", "ref=\"4294967298\""));
+  ASSERT_TEXT_LOAD_STATUS (XML1, ref_idx_t, MR_FAILURE, XML1_REF ("ref_idx=\"2\"", "ref=\"2\" ref_content=\"2\""));
+#ifdef HAVE_LIBXML2
+  ASSERT_TEXT_LOAD_STATUS (XML2, ref_idx_t, MR_SUCCESS, XML1_REF ("ref_idx=\"2\"", "ref=\"2\""));
+  ASSERT_TEXT_LOAD_STATUS (XML2, ref_idx_t, MR_FAILURE, XML1_REF ("ref_idx=\"4294967298\"", "ref=\"2\""));
+  ASSERT_TEXT_LOAD_STATUS (XML2, ref_idx_t, MR_FAILURE, XML1_REF ("ref_idx=\"2\"", "ref=\"2\" ref_content=\"2\""));
+#endif /* HAVE_LIBXML2 */
+#ifdef HAVE_LIBYAML
+  ASSERT_TEXT_LOAD_STATUS (YAML, ref_idx_t, MR_SUCCESS, "---\nsmall: &ref_idx_2 7\np: *ref_idx_2\nn: 1\n...\n");
+  ASSERT_TEXT_LOAD_STATUS (YAML, ref_idx_t, MR_FAILURE, "---\nsmall: &ref_idx_4294967298 7\np: *ref_idx_2\nn: 1\n...\n");
+  ASSERT_TEXT_LOAD_STATUS (YAML, ref_idx_t, MR_FAILURE, "---\nsmall: &ref_idx_2 7\np: *ref_idx_4294967298\nn: 1\n...\n");
+#endif /* HAVE_LIBYAML */
+} END_TEST
+
 MAIN_TEST_SUITE ((cinit_load_reference_index_is_not_node_index, "size of a reference is checked against the node it resolves to"),
+                 (load_int_literal_out_of_range, "integers out of the range of the literal or of the field are rejected"),
+                 (load_reference_index_out_of_range, "reference indexes out of 32 bits and double references are rejected"),
                  (load_reference_on_non_pointer, "only pointers and strings without child nodes may be references"),
                  (load_reference_after_value, "a reference annotation after a value with child nodes is rejected"),
                  (scm_load_hex_escape, "a malformed hex escape of SCM keeps the following characters"),
