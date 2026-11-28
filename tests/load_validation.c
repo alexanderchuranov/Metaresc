@@ -500,7 +500,44 @@ START_TEST (load_reference_index_out_of_range) {
 #endif /* HAVE_LIBYAML */
 } END_TEST
 
+static size_t largest_calloc = 0;
+static void * (*saved_calloc) (const char *, const char *, int, size_t, size_t) = NULL;
+
+static void *
+recording_calloc (const char * filename, const char * function, int line, size_t count, size_t size)
+{
+  if (count * size > largest_calloc)
+    largest_calloc = count * size;
+  return (saved_calloc (filename, function, line, count, size));
+}
+
+TYPEDEF_STRUCT (big_ref_node_t, (int32_t, v), (big_ref_node_t *, next));
+TYPEDEF_STRUCT (big_ref_t, (big_ref_node_t, a), (big_ref_node_t, b), (big_ref_node_t *, p));
+
+#define ASSERT_BIG_REF_IDX_LOAD(METHOD, TEXT) ({                        \
+      char text[] = TEXT;                                               \
+      big_ref_t x;                                                      \
+      memset (&x, 0, sizeof (x));                                       \
+      largest_calloc = 0;                                               \
+      saved_calloc = mr_conf.mr_mem.calloc;                             \
+      mr_conf.mr_mem.calloc = recording_calloc;                         \
+      mr_status_t status = MR_LOAD_ ## METHOD (big_ref_t, text, &x);    \
+      mr_conf.mr_mem.calloc = saved_calloc;                             \
+      ck_assert_msg (MR_SUCCESS == status, "load of %s failed", TEXT);  \
+      ck_assert_msg (&x.a == x.p, "reference of %s is not resolved", TEXT); \
+      ck_assert_msg (largest_calloc < (1 << 20), "load of %s allocated %zu bytes", TEXT, largest_calloc); \
+    })
+
+/* memory for resolving references depends on the number of nodes, not on the values of reference indexes */
+START_TEST (load_big_reference_index) {
+  ASSERT_BIG_REF_IDX_LOAD (CINIT, "{ .a = /* ref_idx = 4000000000 */ { .v = 1 }, .p = /* ref = 4000000000 */ NULL }");
+#ifdef HAVE_LIBYAML
+  ASSERT_BIG_REF_IDX_LOAD (YAML, "---\na: &ref_idx_4000000000\n  v: 1\np: *ref_idx_4000000000\n...\n");
+#endif /* HAVE_LIBYAML */
+} END_TEST
+
 MAIN_TEST_SUITE ((cinit_load_reference_index_is_not_node_index, "size of a reference is checked against the node it resolves to"),
+                 (load_big_reference_index, "a large reference index does not allocate memory in proportion to it"),
                  (load_int_literal_out_of_range, "integers out of the range of the literal or of the field are rejected"),
                  (load_reference_index_out_of_range, "reference indexes out of 32 bits and double references are rejected"),
                  (load_reference_on_non_pointer, "only pointers and strings without child nodes may be references"),

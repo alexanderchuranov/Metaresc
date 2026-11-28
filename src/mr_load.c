@@ -6,6 +6,7 @@
 #endif /* HAVE_CONFIG_H */
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 #ifdef HAVE_DLFCN_H
 #define __USE_GNU
 #include <dlfcn.h>
@@ -150,6 +151,148 @@ mr_set_crossref (mr_ra_ptrdes_t * ptrs, mr_idx_t idx, mr_idx_t target)
   return (MR_SUCCESS);
 }
 
+/* the key of mr_ref_idx_set_t that stands for the searched reference index, never a node */
+#define MR_REF_IDX_SEARCH_KEY ((uintptr_t)-1)
+
+/**
+ * Gives the reference index of a key of mr_ref_idx_set_t.
+ * @param key node index or MR_REF_IDX_SEARCH_KEY
+ * @param set the set
+ * @return reference index
+ */
+static inline mr_idx_t
+mr_ref_idx_set_key (mr_ptr_t key, const mr_ref_idx_set_t * set)
+{
+  return ((MR_REF_IDX_SEARCH_KEY == key.uintptr) ? set->ref_idx : set->ra[key.uintptr].idx);
+}
+
+/**
+ * Hashes a reference index with the multiplier of the set. The high bits of
+ * the product depend on all bits of the index.
+ * @param key node index or MR_REF_IDX_SEARCH_KEY
+ * @param context the set
+ * @return hash value
+ */
+static mr_hash_value_t
+mr_ref_idx_set_hash (mr_ptr_t key, const void * context)
+{
+  const mr_ref_idx_set_t * set = context;
+  return ((mr_ref_idx_set_key (key, set) * set->seed) >> 32);
+}
+
+/**
+ * Makes a random odd multiplier for the hash of a set. It does not need to be
+ * secure, only unknown to the author of a document: it mixes the time, the
+ * processor time and the address of the set (randomized by ASLR) with
+ * splitmix64. It keeps no state, so loads in several threads do not race.
+ * @param set the set
+ * @return odd multiplier
+ */
+static uint64_t
+mr_ref_idx_set_seed (mr_ref_idx_set_t * set)
+{
+  uint64_t x = (uint64_t)time (NULL) ^ ((uint64_t)clock () << 20) ^ ((uint64_t)(uintptr_t)set * 0x9E3779B97F4A7C15ULL);
+  x = (x ^ (x >> 30)) * 0xBF58476D1CE4E5B9ULL;
+  x = (x ^ (x >> 27)) * 0x94D049BB133111EBULL;
+  x ^= x >> 31;
+  return (x | 1);
+}
+
+static int
+mr_ref_idx_set_cmp (mr_ptr_t x, mr_ptr_t y, const void * context)
+{
+  mr_idx_t x_idx = mr_ref_idx_set_key (x, context);
+  mr_idx_t y_idx = mr_ref_idx_set_key (y, context);
+  return ((x_idx > y_idx) - (x_idx < y_idx));
+}
+
+/**
+ * Adds a node with a reference index to the set. If another node has the same
+ * reference index, the added node replaces it, and a warning is reported if
+ * the set was made with warn_collisions.
+ * @param set the set
+ * @param node index of the node
+ * @return status, failure if out of memory
+ */
+mr_status_t
+mr_ref_idx_set_add (mr_ref_idx_set_t * set, mr_idx_t node)
+{
+  mr_ptr_t key = { .uintptr = node };
+  mr_ptr_t * found = mr_ic_add (&set->ic, key);
+  if (NULL == found)
+    {
+      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
+      return (MR_FAILURE);
+    }
+  if (found->uintptr != node)
+    {
+      if (set->warn_collisions)
+        MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, set->ra[node].idx);
+      *found = key;
+    }
+  return (MR_SUCCESS);
+}
+
+/**
+ * Builds the set of the nodes of a document that have a reference index.
+ * @param set the set, must be freed with mr_ref_idx_set_free on success
+ * @param ptrs nodes of the document
+ * @param warn_collisions report nodes with the same reference index
+ * @return status
+ */
+mr_status_t
+mr_ref_idx_set_new (mr_ref_idx_set_t * set, mr_ra_ptrdes_t * ptrs, bool warn_collisions)
+{
+  mr_res_t context = {
+    .data = { set },
+    .type = "mr_ref_idx_set_t",
+    .MR_SIZE = sizeof (*set),
+  };
+  mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
+
+  set->ra = ptrs->ra;
+  set->ref_idx = MR_NULL_IDX;
+  set->seed = mr_ref_idx_set_seed (set);
+  set->warn_collisions = warn_collisions;
+  if (MR_SUCCESS != mr_ic_new (&set->ic, mr_ref_idx_set_hash, mr_ref_idx_set_cmp, "uintptr", MR_IC_HASH, &context))
+    return (MR_FAILURE);
+
+  for (i = 1; i < count; ++i)
+    if (ptrs->ra[i].idx != MR_NULL_IDX)
+      if (MR_SUCCESS != mr_ref_idx_set_add (set, i))
+        {
+          mr_ref_idx_set_free (set);
+          return (MR_FAILURE);
+        }
+  return (MR_SUCCESS);
+}
+
+/**
+ * Finds the node with a reference index.
+ * @param set the set
+ * @param ref_idx reference index of the document
+ * @return index of the node or MR_NULL_IDX if no node has this reference index
+ */
+mr_idx_t
+mr_ref_idx_set_find (mr_ref_idx_set_t * set, mr_idx_t ref_idx)
+{
+  if (MR_NULL_IDX == ref_idx)
+    return (MR_NULL_IDX);
+  set->ref_idx = ref_idx;
+  mr_ptr_t * found = mr_ic_find (&set->ic, (mr_ptr_t){ .uintptr = MR_REF_IDX_SEARCH_KEY });
+  return (found ? found->uintptr : MR_NULL_IDX);
+}
+
+/**
+ * Frees the set.
+ * @param set the set
+ */
+void
+mr_ref_idx_set_free (mr_ref_idx_set_t * set)
+{
+  mr_ic_free (&set->ic);
+}
+
 /**
  * Post load references setting. A node that is marked as a reference is set
  * to the address of its target. This can't be done during loading because of
@@ -162,29 +305,11 @@ static mr_status_t
 mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
 {
   mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  mr_idx_t max_idx = 0;
-  mr_idx_t * table;
+  mr_ref_idx_set_t set;
 
-  for (i = 1; i < count; ++i)
-    if (ptrs->ra[i].idx > max_idx)
-      max_idx = ptrs->ra[i].idx;
-
-  /* max_idx comes from the document, and max_idx + 1 wraps around in mr_idx_t */
-  table = MR_CALLOC ((size_t)max_idx + 1, sizeof (table[0]));
-  if (NULL == table)
-    {
-      MR_MESSAGE (MR_LL_FATAL, MR_MESSAGE_OUT_OF_MEMORY);
-      return (MR_FAILURE);
-    }
-
-  for (i = 1; i < count; ++i)
-    if (ptrs->ra[i].idx != MR_NULL_IDX)
-      {
-        /* checking indexes collision */
-        if (table[ptrs->ra[i].idx] != 0)
-          MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_IDS_COLLISION, MR_REF_IDX, ptrs->ra[i].idx);
-        table[ptrs->ra[i].idx] = i;
-      }
+  /* a set and not a table indexed by the reference index: the indexes come from the document */
+  if (MR_SUCCESS != mr_ref_idx_set_new (&set, ptrs, true))
+    return (MR_FAILURE);
 
   mr_status_t status = MR_SUCCESS;
 
@@ -192,15 +317,8 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
   for (i = 1; (MR_SUCCESS == status) && (i < count); ++i)
     if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
       {
-        if (ptrs->ra[i].first_child > max_idx)
-          {
-            MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
-            status = MR_FAILURE;
-            continue;
-          }
-
-        mr_idx_t idx = table[ptrs->ra[i].first_child];
-        if (idx == 0)
+        mr_idx_t idx = mr_ref_idx_set_find (&set, ptrs->ra[i].first_child);
+        if (MR_NULL_IDX == idx)
           {
             MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_UNDEFINED_REF_IDX, MR_REF_IDX, ptrs->ra[i].first_child);
             status = MR_FAILURE;
@@ -213,8 +331,8 @@ mr_set_crossrefs (mr_ra_ptrdes_t * ptrs)
         else
           ptrs->ra[i].first_child = idx; /* the validation of the loaded data needs the node, not the index of the document */
       }
-  
-  MR_FREE (table);
+
+  mr_ref_idx_set_free (&set);
 
   return (status);
 }

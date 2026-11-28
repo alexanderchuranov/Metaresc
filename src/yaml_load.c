@@ -1,5 +1,6 @@
 #include <yaml.h>
 #include <metaresc.h>
+#include <mr_load.h>
 
 /**
  * Makes the targets of references valid when the document refers to nodes
@@ -11,36 +12,31 @@ static void
 add_missed_crossrefs (mr_ra_ptrdes_t * ptrs)
 {
   mr_idx_t i, count = ptrs->size / sizeof (ptrs->ra[0]);
-  mr_idx_t max_idx = 0;
-  mr_idx_t * table;
+  mr_ref_idx_set_t set;
 
-  for (i = 1; i < count; ++i)
-    if (ptrs->ra[i].idx > max_idx)
-      max_idx = ptrs->ra[i].idx;
-
-  table = MR_CALLOC ((size_t)max_idx + 1, sizeof (table[0])); /* max_idx + 1 wraps around in mr_idx_t */
-  if (NULL == table)
+  /*
+    On failure mr_set_crossrefs reports the references that are not resolved.
+    It also reports the nodes with the same reference index, so they are not
+    reported here.
+  */
+  if (MR_SUCCESS != mr_ref_idx_set_new (&set, ptrs, false))
     return;
 
   for (i = 1; i < count; ++i)
-    if (ptrs->ra[i].idx != MR_NULL_IDX)
-      table[ptrs->ra[i].idx] = i;
+    if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
+      {
+        mr_idx_t ref_idx = ptrs->ra[i].first_child;
+        if ((ref_idx != MR_NULL_IDX) && (ref_idx < count) && (ptrs->ra[ref_idx].idx == MR_NULL_IDX) &&
+            (MR_NULL_IDX == mr_ref_idx_set_find (&set, ref_idx)))
+          {
+            ptrs->ra[ref_idx].idx = ref_idx;
+            ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
+            if (MR_SUCCESS != mr_ref_idx_set_add (&set, ref_idx))
+              break;
+          }
+      }
 
-  for (i = 1; i < count; ++i)
-    {
-      int ref_idx = ptrs->ra[i].first_child;
-      if (ptrs->ra[i].flags & (MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
-        if ((ref_idx > max_idx) || (table[ref_idx] == 0))
-          if ((ref_idx < count) && (ptrs->ra[ref_idx].idx == MR_NULL_IDX))
-            {
-              ptrs->ra[ref_idx].idx = ref_idx;
-              ptrs->ra[ref_idx].flags |= MR_IS_REFERENCED;
-              if (ref_idx <= max_idx)
-                table[ref_idx] = ref_idx;
-            }
-    }
-  
-  MR_FREE (table);
+  mr_ref_idx_set_free (&set);
 }
 
 /**
