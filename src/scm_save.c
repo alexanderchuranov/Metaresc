@@ -154,10 +154,7 @@ scm_save_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 scm_save_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char buffer[ptrdes->MR_SIZE + 1];
-  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
-  buffer[ptrdes->MR_SIZE] = 0;
-  return (mr_ra_printf_quote_string (mr_ra_str, buffer, "\\x%02x;"));
+  return (mr_ra_printf_quote_char_array (mr_ra_str, ptrdes, "\\x%02x;", false));
 }
 
 /**
@@ -173,7 +170,7 @@ scm_save_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
   if (ptrdes->flags & (MR_IS_NULL | MR_IS_REFERENCE | MR_IS_CONTENT_REFERENCE))
     return (mr_ra_append_string (mr_ra_str, MR_SCM_FALSE));
   else
-    return (mr_ra_printf_quote_string (mr_ra_str, str, "\\x%02x;"));
+    return (mr_ra_printf_quote_string (mr_ra_str, str, "\\x%02x;", false));
 }
 
 /**

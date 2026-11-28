@@ -57,6 +57,43 @@ mr_union_discriminator_by_name (mr_td_t * tdp, char * name)
 }
 
 /**
+ * Selects a union branch by the name in a char array. As in C, a char array
+ * may be filled up to its size without a terminating zero.
+ * @param tdp type descriptor of the union
+ * @param name char array with the name of the branch
+ * @param size size of the char array, 0 for a zero terminated string of unknown size
+ * @return field descriptor of the branch or NULL for an empty union
+ */
+static mr_fd_t *
+mr_union_discriminator_by_char_array (mr_td_t * tdp, char * name, size_t size)
+{
+  if ((0 == size) || (memchr (name, 0, size) != NULL))
+    return (mr_union_discriminator_by_name (tdp, name));
+
+  char * terminated = mr_strndup (name, size);
+  mr_fd_t * fdp = mr_union_discriminator_by_name (tdp, terminated);
+  if (terminated != NULL)
+    MR_FREE (terminated);
+  return (fdp);
+}
+
+/**
+ * Calculates the size of an element of an array.
+ * @param fdp field descriptor of the array
+ * @return size of the element
+ */
+static size_t
+mr_array_element_size (mr_fd_t * fdp)
+{
+  size_t size = fdp->stype.size;
+  int i;
+  for (i = 0; i < fdp->stype.dim.dim_count; ++i)
+    if (fdp->stype.dim.dim[i] > 0)
+      size /= fdp->stype.dim.dim[i];
+  return (size);
+}
+
+/**
  * Looks up a union branch in the discriminator overrides of a field.
  * @param ud_overrides lookup table of overrides, may be NULL
  * @param value value of the discriminator
@@ -108,6 +145,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
 {
   mr_enum_value_t value = { 0 };
   mr_type_t mr_type = parent_fdp->stype.mr_type;
+  /* size of a char array discriminator, 0 for a zero terminated string of unknown size */
+  size_t size = parent_fdp->stype.size;
   mr_fd_t fd;
 
   for (;;)
@@ -165,7 +204,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
           }
 
         case MR_TYPE_CHAR_ARRAY:
-          return (mr_union_discriminator_by_name (tdp, (char*)discriminator));
+          return (mr_union_discriminator_by_char_array (tdp, (char*)discriminator, size));
 
         case MR_TYPE_STRING:
           return (mr_union_discriminator_by_name (tdp, *(char**)discriminator));
@@ -188,6 +227,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
           if (parent_fdp->stype.mr_type_aux != MR_TYPE_POINTER)
             {
               mr_type = parent_fdp->stype.mr_type_aux;
+              size = mr_array_element_size (parent_fdp);
               break;
             }
 
@@ -200,6 +240,8 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
           if (NULL == discriminator)
             return (mr_union_discriminator_by_name (tdp, NULL));
           mr_type = parent_fdp->stype.mr_type_aux;
+          /* a char array type without a descriptor is a zero terminated string of unknown size */
+          size = parent_fdp->stype.tdp ? parent_fdp->stype.tdp->size : 0;
           if (MR_TYPE_POINTER == mr_type)
             mr_init_pointer_fd (&parent_fdp, &fd);
           break;
@@ -222,6 +264,7 @@ mr_union_discriminator_by_type (mr_td_t * tdp, mr_fd_t * parent_fdp, void * disc
                 discriminator = (char*)discriminator + parent_fdp->stype.tdp->param.union_param.fields[0]->offset;
                 parent_fdp = parent_fdp->stype.tdp->param.union_param.fields[0];
                 mr_type = parent_fdp->stype.mr_type;
+                size = parent_fdp->stype.size;
                 break;
               }
           __attribute__ ((fallthrough));
@@ -1702,7 +1745,8 @@ mr_save_array (mr_save_data_t * mr_save_data)
           mr_pointer_get_size_ptrdes (&src, idx, &mr_save_data->ptrs);
           if (src.data.ptr != NULL)
             {
-              ssize_t size_count;
+              /* mr_assign_int does not assign a size field that is a NULL pointer; then the whole array is saved */
+              ssize_t size_count = (src.vt_string[0] == 's') ? (ssize_t)count * fd.stype.size : (ssize_t)count;
               dst.data.ptr = &size_count;
               dst.mr_type = MR_TYPE_DETECT (typeof (size_count));
               mr_assign_int (&dst, &src);

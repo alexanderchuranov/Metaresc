@@ -116,6 +116,30 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ptrdes_t * p
 }
 
 /**
+ * Emits a node with a scalar value of a given length.
+ * @param emitter YAML emitter
+ * @param value characters of the value, not necessarily zero terminated
+ * @param length number of characters
+ * @param ptrs array with node descriptors
+ * @param idx index of the node
+ * @return status
+ */
+static inline mr_status_t
+yaml_emit_chars (yaml_emitter_t * emitter, const char * value, size_t length, mr_ptrdes_t * ptrs, mr_idx_t idx)
+{
+  yaml_event_t event;
+  char anchor[ANCHOR_SIZE];
+
+  if (!yaml_scalar_event_initialize (&event, yaml_get_anchor (anchor, &ptrs[idx]),
+                                     (yaml_char_t *)YAML_STR_TAG,
+                                     (yaml_char_t *)value, length,
+                                     1, 0, YAML_PLAIN_SCALAR_STYLE))
+    return (MR_FAILURE);
+
+  return (yaml_emit_field (emitter, &event, ptrs, idx));
+}
+
+/**
  * Emits a node with a scalar value.
  * @param emitter YAML emitter
  * @param value scalar value, NULL is emitted as an empty string
@@ -126,19 +150,9 @@ yaml_emit_field (yaml_emitter_t * emitter, yaml_event_t * event, mr_ptrdes_t * p
 static inline mr_status_t
 yaml_emit_string (yaml_emitter_t * emitter, const char * value, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
-  yaml_event_t event;
-  char anchor[ANCHOR_SIZE];
-
   if (NULL == value)
     value = "";
-  
-  if (!yaml_scalar_event_initialize (&event, yaml_get_anchor (anchor, &ptrs[idx]),
-                                     (yaml_char_t *)YAML_STR_TAG,
-                                     (yaml_char_t *)value, strlen (value),
-                                     1, 0, YAML_PLAIN_SCALAR_STYLE))
-    return (MR_FAILURE);
-
-  return (yaml_emit_field (emitter, &event, ptrs, idx));
+  return (yaml_emit_chars (emitter, value, strlen (value), ptrs, idx));
 }
 
 /**
@@ -190,10 +204,8 @@ static mr_status_t
 yaml_save_char_array (mr_yaml_context_t * mr_yaml_context, mr_ptrdes_t * ptrs, mr_idx_t idx)
 {
   mr_ptrdes_t * ptrdes = &ptrs[idx];
-  char buffer[ptrdes->MR_SIZE + 1];
-  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
-  buffer[ptrdes->MR_SIZE] = 0;
-  return (yaml_emit_string (&mr_yaml_context->emitter, buffer, ptrs, idx));
+  /* a char array may be filled up to its size without a terminating zero */
+  return (yaml_emit_chars (&mr_yaml_context->emitter, ptrdes->data.ptr, strnlen (ptrdes->data.ptr, ptrdes->MR_SIZE), ptrs, idx));
 }
 
 /**

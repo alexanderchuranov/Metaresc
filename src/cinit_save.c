@@ -95,10 +95,7 @@ cinit_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrde
 static int
 cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char buffer[ptrdes->MR_SIZE + 1];
-  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
-  buffer[ptrdes->MR_SIZE] = 0;
-  return (mr_ra_printf_quote_string (mr_ra_str, buffer, CINIT_QUOTE_CHAR_PATTERN));
+  return (mr_ra_printf_quote_char_array (mr_ra_str, ptrdes, CINIT_QUOTE_CHAR_PATTERN, false));
 }
 
 /**
@@ -110,7 +107,7 @@ cinit_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 cinit_printf_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, CINIT_QUOTE_CHAR_PATTERN));
+  return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, CINIT_QUOTE_CHAR_PATTERN, false));
 }
 
 /**

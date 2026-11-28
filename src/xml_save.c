@@ -25,7 +25,8 @@
 #define MR_XML1_OPEN_EMPTY_TAG_END "/>"
 
 #define XML_QUOTE_CHAR_PATTERN "&#x%02X;"
-#define ESC_SIZE (sizeof (XML_QUOTE_CHAR_PATTERN))
+/* a reference of the largest code point, for messages about references */
+#define ESC_SIZE (sizeof ("&#x10FFFF;"))
 #define ESC_CHAR_MAP_SIZE (1 << __CHAR_BIT__)
 static char * esc_char_map[MR_ESC_CHAR_MAP_SIZE] = {
   [(unsigned char)'&'] = "&amp;",
@@ -89,7 +90,11 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
               sscanf returns 1 once the code is read, but sets size only if the closing ';' matches too.
               Without the size the loop would not advance and would write past the end of dst.
             */
-            if ((1 != sscanf (&substr->str[i], XML_QUOTE_CHAR_PATTERN "%n", &code, &size)) || (size <= 0))
+            /* a reference has a hexadecimal or a decimal code point, up to U+10FFFF */
+            int scanned = ('x' == substr->str[i + 2]) ?
+              sscanf (&substr->str[i], "&#x%6X;%n", &code, &size) :
+              sscanf (&substr->str[i], "&#%7d;%n", &code, &size);
+            if ((1 != scanned) || (size <= 0))
               {
                 MR_MESSAGE (MR_LL_WARN, MR_MESSAGE_WRONG_XML_ESC, esc);
                 dst[length++] = substr->str[i];
@@ -97,7 +102,8 @@ xml_unquote_string (mr_substr_t * substr, char * dst)
             else
               {
                 i += size - 1; /* one more +1 in the loop */
-                dst[length++] = code;
+                /* a reference is a Unicode code point, written in UTF-8; it is not longer than the reference */
+                length += mr_utf8_encode (code, &dst[length]);
               }
           }
         else
@@ -161,6 +167,34 @@ xml_ra_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 }
 
 /**
+ * Appends characters with XML escapes.
+ * @param mr_ra_str output string
+ * @param str characters, not necessarily zero terminated
+ * @param length number of characters
+ * @return number of appended characters or -1 on error
+ */
+static int
+xml_ra_printf_quote_chars (mr_rarray_t * mr_ra_str, char * str, size_t length)
+{
+  int count = 0;
+  size_t i;
+  for (i = 0; i < length; ++i)
+    {
+      /* XML is UTF-8, so a character beyond ASCII is written as is; a byte that is not a part of it is escaped */
+      size_t sequence = mr_utf8_sequence_length (&str[i], length - i);
+      if (sequence > 0)
+        {
+          for ( ; sequence > 1; --sequence)
+            count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, str[i++]));
+          count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, str[i]));
+        }
+      else
+        count += TRY_CATCH_THROW (xml_ra_printf_quote_char (mr_ra_str, str[i]));
+    }
+  return (count);
+}
+
+/**
  * Appends a string with XML escapes.
  * @param mr_ra_str output string
  * @param str string
@@ -169,10 +203,7 @@ xml_ra_printf_char (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 xml_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str)
 {
-  int count = 0;
-  while (*str)
-    count += TRY_CATCH_THROW (xml_ra_printf_quote_char (mr_ra_str, *str++));
-  return (count);
+  return (xml_ra_printf_quote_chars (mr_ra_str, str, strlen (str)));
 }
 
 /**
@@ -247,10 +278,8 @@ xml_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 xml_ra_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char buffer[ptrdes->MR_SIZE + 1];
-  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
-  buffer[ptrdes->MR_SIZE] = 0;
-  return (xml_ra_printf_quote_string (mr_ra_str, buffer));
+  /* a char array may be filled up to its size without a terminating zero */
+  return (xml_ra_printf_quote_chars (mr_ra_str, ptrdes->data.ptr, strnlen (ptrdes->data.ptr, ptrdes->MR_SIZE)));
 }
 
 /**

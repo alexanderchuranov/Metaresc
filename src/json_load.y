@@ -54,8 +54,21 @@
 	      dst[length++] = c;
 	    else if (1 == sscanf (&substr->str[i], "u%04x%n", &c, &size))
 	      {
+		uint32_t code = c;
 		i += size - 1;
-		dst[length++] = c;
+		/* a character above U+FFFF is a pair of surrogates \uD8xx\uDCxx */
+		if ((code >= 0xD800) && (code < 0xDC00) && (i + 2 < substr->length)
+		    && ('\\' == substr->str[i + 1]) && ('u' == substr->str[i + 2]))
+		  {
+		    int low, low_size;
+		    if ((1 == sscanf (&substr->str[i + 2], "u%04x%n", &low, &low_size)) && (low >= 0xDC00) && (low < 0xE000))
+		      {
+			code = 0x10000 + ((code - 0xD800) << 10) + (low - 0xDC00);
+			i += low_size + 1;
+		      }
+		  }
+		/* the code point is written in UTF-8, which is not longer than the escape */
+		length += mr_utf8_encode (code, &dst[length]);
 	      }
 	    else
 	      dst[length++] = substr->str[i];

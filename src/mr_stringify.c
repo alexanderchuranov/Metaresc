@@ -498,20 +498,109 @@ char mr_esc_char_map[MR_ESC_CHAR_MAP_SIZE] =
   };
 
 /**
- * Quote string.
- * @param mr_ra_str output buffer
- * @param str string pointer
- * @return number of outputed chars
+ * Checks for a valid UTF-8 sequence of a character beyond ASCII: no overlong
+ * encodings, no surrogates, nothing above U+10FFFF.
+ * @param str characters
+ * @param length number of available characters
+ * @return length of the sequence (2 to 4), or 0 if str does not start with a valid multibyte sequence
  */
-int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_pattern)
+size_t
+mr_utf8_sequence_length (const char * str, size_t length)
+{
+  const unsigned char * s = (const unsigned char *)str;
+  size_t size, i;
+  uint32_t code;
+
+  if ((0 == length) || (s[0] < 0xC2) || (s[0] > 0xF4))
+    return (0);
+  if (s[0] < 0xE0)
+    { size = 2; code = s[0] & 0x1F; }
+  else if (s[0] < 0xF0)
+    { size = 3; code = s[0] & 0x0F; }
+  else
+    { size = 4; code = s[0] & 0x07; }
+
+  if (size > length)
+    return (0);
+  for (i = 1; i < size; ++i)
+    {
+      if ((s[i] & 0xC0) != 0x80)
+        return (0);
+      code = (code << 6) | (s[i] & 0x3F);
+    }
+
+  if (((3 == size) && (code < 0x800)) || ((4 == size) && (code < 0x10000)) ||
+      ((code >= 0xD800) && (code <= 0xDFFF)) || (code > 0x10FFFF))
+    return (0);
+  return (size);
+}
+
+/**
+ * Encodes a Unicode code point in UTF-8. A surrogate or a value above
+ * U+10FFFF is encoded as the replacement character U+FFFD.
+ * @param code code point
+ * @param dst receives 1 to 4 bytes
+ * @return number of bytes written
+ */
+size_t
+mr_utf8_encode (uint32_t code, char * dst)
+{
+  unsigned char * d = (unsigned char *)dst;
+  if (((code >= 0xD800) && (code <= 0xDFFF)) || (code > 0x10FFFF))
+    code = 0xFFFD;
+
+  if (code < 0x80)
+    {
+      d[0] = code;
+      return (1);
+    }
+  if (code < 0x800)
+    {
+      d[0] = 0xC0 | (code >> 6);
+      d[1] = 0x80 | (code & 0x3F);
+      return (2);
+    }
+  if (code < 0x10000)
+    {
+      d[0] = 0xE0 | (code >> 12);
+      d[1] = 0x80 | ((code >> 6) & 0x3F);
+      d[2] = 0x80 | (code & 0x3F);
+      return (3);
+    }
+  d[0] = 0xF0 | (code >> 18);
+  d[1] = 0x80 | ((code >> 12) & 0x3F);
+  d[2] = 0x80 | ((code >> 6) & 0x3F);
+  d[3] = 0x80 | (code & 0x3F);
+  return (4);
+}
+
+/**
+ * Appends characters as a quoted string with escapes.
+ * @param mr_ra_str output buffer
+ * @param str characters, not necessarily zero terminated
+ * @param length number of characters
+ * @param char_pattern printf pattern for characters that have no escape and are not printable
+ * @param utf8 if true, valid UTF-8 sequences are appended as is, otherwise their bytes are escaped
+ * @return number of outputed chars or -1 on error
+ */
+int mr_ra_printf_quote_chars (mr_rarray_t * mr_ra_str, char * str, size_t length, char * char_pattern, bool utf8)
 {
   char * ptr;
   int count = 0;
   
   count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   
-  for (ptr = str; *ptr; ++ptr)
+  for (ptr = str; ptr < str + length; ++ptr)
     {
+      size_t sequence = utf8 ? mr_utf8_sequence_length (ptr, str + length - ptr) : 0;
+      if (sequence > 0)
+        {
+          for ( ; sequence > 1; --sequence)
+            count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, *ptr++));
+          count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, *ptr));
+          continue;
+        }
+
       char mapped = mr_esc_char_map[(unsigned char)*ptr];
       if (*ptr == '"')
         mapped = '"';
@@ -520,7 +609,7 @@ int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_
           count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '\\'));
           count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, mapped));
         }
-      else if (isprint (*ptr))
+      else if (isprint ((unsigned char)*ptr)) /* isprint of a negative char is undefined */
         count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, *ptr));
       else
         count += TRY_CATCH_THROW (mr_ra_printf (mr_ra_str, char_pattern, *(unsigned char *)ptr));
@@ -528,4 +617,31 @@ int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_
   
   count += TRY_CATCH_THROW (mr_ra_append_char (mr_ra_str, '"'));
   return (count);
+}
+
+/**
+ * Quote string.
+ * @param mr_ra_str output buffer
+ * @param str string pointer
+ * @param char_pattern printf pattern for characters that have no escape and are not printable
+ * @param utf8 if true, valid UTF-8 sequences are appended as is
+ * @return number of outputed chars or -1 on error
+ */
+int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_pattern, bool utf8)
+{
+  return (mr_ra_printf_quote_chars (mr_ra_str, str, strlen (str), char_pattern, utf8));
+}
+
+/**
+ * Appends a char array as a quoted string with escapes. A char array may be
+ * filled up to its size without a terminating zero.
+ * @param mr_ra_str output buffer
+ * @param ptrdes node descriptor of the char array, MR_SIZE is its size
+ * @param char_pattern printf pattern for characters that have no escape and are not printable
+ * @param utf8 if true, valid UTF-8 sequences are appended as is
+ * @return number of outputed chars or -1 on error
+ */
+int mr_ra_printf_quote_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * char_pattern, bool utf8)
+{
+  return (mr_ra_printf_quote_chars (mr_ra_str, ptrdes->data.ptr, strnlen (ptrdes->data.ptr, ptrdes->MR_SIZE), char_pattern, utf8));
 }

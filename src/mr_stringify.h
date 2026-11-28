@@ -30,7 +30,11 @@ extern int mr_ra_printf_int128_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 extern int mr_ra_printf_uint128_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
 extern int mr_ra_printf_enum (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes);
 extern int mr_ra_printf_bitfield (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter);
-extern int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_pattern);
+extern size_t mr_utf8_sequence_length (const char * str, size_t length);
+extern size_t mr_utf8_encode (uint32_t code, char * dst);
+extern int mr_ra_printf_quote_chars (mr_rarray_t * mr_ra_str, char * str, size_t length, char * char_pattern, bool utf8);
+extern int mr_ra_printf_quote_string (mr_rarray_t * mr_ra_str, char * str, char * char_pattern, bool utf8);
+extern int mr_ra_printf_quote_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * char_pattern, bool utf8);
 extern int mr_ra_printf_bitmask (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes, char * delimiter);
 extern const char * mr_serialize_func (void * func);
 extern char * mr_uintmaxtostr (char * out, mr_uintmax_t value);

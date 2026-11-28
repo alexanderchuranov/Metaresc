@@ -10,7 +10,7 @@ CALLGRIND = valgrind --tool=callgrind --collect-jumps=yes --quiet
 
 if HAVE_CHECK
 
-  check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic btree generic_ic mr_types mem_allocations mr_copy mr_hash_cmp crossref_types
+  check_PROGRAMS = long_double double float string int8 int16 int32 int64 enum char array union mr_ptr bitfield pointer_int pointer_other resizable_pointer bool complex_float complex_double complex_long_double function ic btree generic_ic mr_types mem_allocations mr_copy mr_hash_cmp crossref_types char_array
 
 if HAVE_INT128
   check_PROGRAMS += int128
@@ -32,7 +32,7 @@ endif
 endif
 
 if HAVE_BISON_FLEX
-  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr json_cross_ref load_validation
+  check_PROGRAMS += smoke_cinit smoke_json smoke_scm smoke_xml1 expr json_cross_ref load_validation utf8
 
   expr.$(OBJEXT): CFLAGS += -fno-math-errno -ffinite-math-only -fno-rounding-math -ffp-contract=fast
 

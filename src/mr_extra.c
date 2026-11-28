@@ -109,16 +109,19 @@ static int MR_TYPE_CMP_FUNC_NAME (string_t) (const mr_ptr_t x, const mr_ptr_t y,
 }
 
 /**
- * Compares char arrays as strings.
+ * Compares char arrays as strings. A char array may be filled up to its size
+ * without a terminating zero.
  * @param x char array
  * @param y another char array
- * @param context unused
+ * @param context pointer on the size of the char arrays (size_t), or NULL for zero terminated strings
  * @return comparation sign
  */
 static int MR_TYPE_CMP_FUNC_NAME (char_array) (const mr_ptr_t x, const mr_ptr_t y, const void * context)
 {
   char * _x = x.ptr;
   char * _y = y.ptr;
+  if (context != NULL)
+    return (strncmp (_x, _y, *(const size_t*)context));
   return (strcmp (_x, _y));
 }
 
@@ -164,7 +167,8 @@ mr_basic_types_sort (void * data, size_t count, char * key_type, mr_type_t mr_ty
       mr_compar_fn_t compar_fn = mr_type_compar_fn (mr_type);
       if (NULL == compar_fn)
         return (MR_FAILURE);
-      mr_hsort (data, count, element_size, compar_fn, NULL);
+      /* the comparison function of char arrays needs their size, the others ignore the context */
+      mr_hsort (data, count, element_size, compar_fn, &element_size);
     }
   return (MR_SUCCESS);
 }
@@ -388,6 +392,42 @@ mr_hash_block (const void * block, mr_size_t size)
 }
 
 /**
+ * Computes a hash of a char array as a string. A char array may be filled up
+ * to its size without a terminating zero. The hash of a zero terminated char
+ * array equals the hash of the string.
+ * @param str char array
+ * @param size size of the char array, 0 for a zero terminated string of unknown size
+ * @return hash value
+ */
+static mr_hash_value_t
+mr_hash_char_array (const char * str, mr_size_t size)
+{
+  if (NULL == str)
+    return (1);
+  return (mr_hash_block (str, size ? strnlen (str, size) : strlen (str)));
+}
+
+/**
+ * Compares two char arrays as strings. A char array may be filled up to its
+ * size without a terminating zero.
+ * @param x char array
+ * @param x_size size of x, 0 for a zero terminated string of unknown size
+ * @param y another char array
+ * @param y_size size of y, 0 for a zero terminated string of unknown size
+ * @return comparation sign
+ */
+static int
+mr_cmp_char_arrays (const char * x, mr_size_t x_size, const char * y, mr_size_t y_size)
+{
+  size_t x_len = x_size ? strnlen (x, x_size) : strlen (x);
+  size_t y_len = y_size ? strnlen (y, y_size) : strlen (y);
+  int diff = memcmp (x, y, (x_len < y_len) ? x_len : y_len);
+  if (diff)
+    return (diff);
+  return ((x_len > y_len) - (x_len < y_len));
+}
+
+/**
  * Default hash function.
  * @param str a pointer on null terminated string
  * @return Hash function value.
@@ -424,7 +464,7 @@ node_hash (mr_ptrdes_t * ptrs, mr_idx_t idx, int level, mr_dfs_order_t order, vo
       break;
 
     case MR_TYPE_CHAR_ARRAY:
-      ptrdes->vt_uintptr = mr_hash_str ((char*)ptrdes->data.ptr);
+      ptrdes->vt_uintptr = mr_hash_char_array ((char*)ptrdes->data.ptr, ptrdes->MR_SIZE);
       break;
 
     case MR_TYPE_BOOL:
@@ -593,7 +633,7 @@ mr_cmp_structs (mr_ptrdes_t * x, mr_ptrdes_t * y)
           }
 
         case MR_TYPE_CHAR_ARRAY:
-          diff = strcmp (x_i->data.ptr, y_i->data.ptr);
+          diff = mr_cmp_char_arrays (x_i->data.ptr, x_i->MR_SIZE, y_i->data.ptr, y_i->MR_SIZE);
           if (diff)
             return (diff);
           break;

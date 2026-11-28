@@ -110,10 +110,7 @@ json_printf_complex_long_double_t (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes
 static int
 json_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  char buffer[ptrdes->MR_SIZE + 1];
-  strncpy (buffer, ptrdes->data.ptr, ptrdes->MR_SIZE);
-  buffer[ptrdes->MR_SIZE] = 0;
-  return (mr_ra_printf_quote_string (mr_ra_str, buffer, JSON_QUOTE_CHAR_PATTERN));
+  return (mr_ra_printf_quote_char_array (mr_ra_str, ptrdes, JSON_QUOTE_CHAR_PATTERN, true));
 }
 
 /**
@@ -125,7 +122,7 @@ json_printf_char_array (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 static int
 json_printf_string (mr_rarray_t * mr_ra_str, mr_ptrdes_t * ptrdes)
 {
-  return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, JSON_QUOTE_CHAR_PATTERN));
+  return (mr_ra_printf_quote_string (mr_ra_str, *(char**)ptrdes->data.ptr, JSON_QUOTE_CHAR_PATTERN, true));
 }
 
 /**

@@ -620,6 +620,18 @@ mr_load_char (mr_idx_t idx, mr_ra_ptrdes_t * ptrs)
           *(char*)ptrdes->data.ptr = ptrdes->vt_string[0];
           break;
         }
+      /*
+        JSON and XML are UTF-8, and save writes a char beyond ASCII as an escape of
+        the code point U+0080 to U+00FF, which loads as a sequence of two bytes.
+      */
+      {
+        unsigned char * s = (unsigned char *)ptrdes->vt_string;
+        if ((2 == strlen (ptrdes->vt_string)) && ((0xC2 == s[0]) || (0xC3 == s[0])) && (0x80 == (s[1] & 0xC0)))
+          {
+            *(unsigned char*)ptrdes->data.ptr = ((s[0] & 0x1F) << 6) | (s[1] & 0x3F);
+            break;
+          }
+      }
       __attribute__ ((fallthrough));
 
     default:
